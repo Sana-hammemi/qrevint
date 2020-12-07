@@ -379,6 +379,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Save all transects by default
         self.save_all = True
 
+        # Use unweighted medians for extrapolation by default
+        try:
+            wght = self.sticky_settings.get('UseWeighted')
+            self.use_weighted = wght
+        except KeyError:
+            self.sticky_settings.new('UseWeighted', False)
+            self.use_weighted = False
+
         # Stylesheet setting
         try:
             ss = self.sticky_settings.get('StyleSheet')
@@ -650,7 +658,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.meas = Measurement(in_file=select.fullName,
                                                 source='SonTek',
                                                 proc_type='QRev',
-                                                run_oursin=self.run_oursin)
+                                                run_oursin=self.run_oursin,
+                                                use_weighted=self.use_weighted)
                     except CoordError as error:
                         self.popup_message(error.text)
             # Load and process Sontek data
@@ -662,7 +671,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas = Measurement(in_file=select.fullName,
                                             source='Nortek',
                                             proc_type='QRev',
-                                            run_oursin=self.run_oursin)
+                                            run_oursin=self.run_oursin,
+                                            use_weighted=self.use_weighted)
 
             # Load and process TRDI data
             elif select.type == 'TRDI':
@@ -674,7 +684,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                             source='TRDI',
                                             proc_type='QRev',
                                             checked=select.checked,
-                                            run_oursin=self.run_oursin)
+                                            run_oursin=self.run_oursin,
+                                            use_weighted=self.use_weighted)
 
             # Load QRev data
             elif select.type == 'QRev':
@@ -705,7 +716,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.meas = Measurement(in_file=mat_data,
                                                     source='QRev',
                                                     proc_type='QRev',
-                                                    run_oursin=self.run_oursin)
+                                                    run_oursin=self.run_oursin,
+                                                    use_weighted=self.use_weighted)
                 else:
                     self.meas = Measurement(in_file=mat_data,
                                             source='QRev',
@@ -736,7 +748,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def save_measurement(self):
         """Save measurement in Matlab format.
         """
-        # Create default file name
+
+        if self.enter_rating:
+            # Intialize dialog
+            rating_dialog = Rating(self)
+            rating_dialog.uncertainty_value.setText('{:4.1f}'.format(self.meas.uncertainty.total_95_user))
+            if self.meas.uncertainty.total_95_user < 3:
+                rating_dialog.rb_excellent.setChecked(True)
+            elif self.meas.uncertainty.total_95_user < 5.01:
+                rating_dialog.rb_good.setChecked(True)
+            elif self.meas.uncertainty.total_95_user < 8.01:
+                rating_dialog.rb_fair.setChecked(True)
+            else:
+                rating_dialog.rb_poor.setChecked(True)
+            rating_entered = rating_dialog.exec_()
+
+            # If data entered.
+            with self.wait_cursor():
+                if rating_entered:
+                    if rating_dialog.rb_excellent.isChecked():
+                        rating = 'Excellent'
+                    elif rating_dialog.rb_good.isChecked():
+                        rating = 'Good'
+                    elif rating_dialog.rb_fair.isChecked():
+                        rating = 'Fair'
+                    else:
+                        rating = 'Poor'
+
+            # Create default file name
+            if rating_entered:
+                self.meas.user_rating = rating
+
         save_file = SaveMeasurementDialog(parent=self)
 
         if len(save_file.full_Name) > 0:
@@ -925,6 +967,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_stylesheet.setChecked(False)
 
+        if self.use_weighted:
+            options.cb_weighted_extrap.setChecked(True)
+        else:
+            options.cb_weighted_extrap.setChecked(False)
+
         # Execute the options window
         rsp = options.exec_()
 
@@ -958,6 +1005,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.save_stylesheet = False
                     self.sticky_settings.set('StyleSheet', False)
+                # Update tabs
+                self.tab_manager()
+
+                # Use of weighted medians for extrapolation fit
+                if options.cb_weighted_extrap.isChecked():
+                    use_weighted = True
+                else:
+                    use_weighted = False
+
+                # Check for change
+                if self.use_weighted == use_weighted:
+                    self.change = False
+                # If change made with measurement loaded recompute measurement
+                elif self.meas is not None:
+                    settings = self.meas.current_settings()
+                    settings['UseWeighted'] = use_weighted
+                    self.meas.apply_settings(settings)
+                    self.sticky_settings.set('UseWeighted', use_weighted)
+                    self.use_weighted = use_weighted
+                    self.change = True
+                # If change made before measurement loaded, set value
+                else:
+                    self.use_weighted = use_weighted
+                    self.sticky_settings.set('UseWeighted', use_weighted)
+
                 # Update tabs
                 self.tab_manager()
 
@@ -7705,6 +7777,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.extrap_index(len(self.checked_transects_idx))
         self.start_bank = None
 
+        # ID Weighted Method
+        if self.meas.extrap_fit.use_weighted:
+            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+        else:
+            self.gb_fit.setTitle('Fit Parameters')
+
         # Setup number of points data table
         tbl = self.table_extrap_n_points
         table_header = [self.tr('Z'),
@@ -8392,6 +8470,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                    exponent=exponent)
 
             self.extrap_update()
+
+    def compare_medians(self):
+        """This method computes and displays the median values for the measurement using an alternative method to allow
+        comparison. If weighted is used the unweighted are computed and display. If the unweighted are used
+        the method computes and displays the weighted. This method does not affect the computed discharge
+        only the extrapolation display."""
+
+        # Create a copy of the normalized values of the entire measurement
+        compare_norm = copy.deepcopy(self.meas.extrap_fit.norm_data[-1])
+        if self.meas.extrap_fit.use_weighted:
+            # Compute unweighted medians
+            compare_norm.use_weighted = False
+            compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+        else:
+            # Compute weighted medians
+            compare_norm.use_weighted = True
+            compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+
+        # Display data on extrapolation figure
+        self.extrap_fig.extrap_plot_med_compare(compare_norm)
+        self.extrap_canvas.draw()
 
     def cancel_extrap(self):
         """Rest extrapolation to settings that were inplace when the tab was opened.
@@ -10332,6 +10431,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Create default file name
         if rating_entered:
+            self.meas.user_rating = rating
             save_file = SaveMeasurementDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
@@ -10456,6 +10556,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.mb_row += 1
 
             self.mb_table_clicked(self.mb_row, 3)
+
+        # Turn on or off display of alternate method medians to allow comparison
+        if self.current_tab == 'Extrap':
+            # Turn on comparison medians
+            if e.key() == QtCore.Qt.Key_F8:
+                self.compare_medians()
+            # Turn off comparison medians
+            if e.key() == QtCore.Qt.Key_F9:
+                self.extrap_plot()
 
     def change_selected_transect(self):
         """Coordinates changing the displayed transect when changing transects with the up/down arrow keys.

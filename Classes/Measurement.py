@@ -59,7 +59,7 @@ class Measurement(object):
     """
 
     # @profile
-    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False):
+    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -77,6 +77,8 @@ class Measurement(object):
             TRDI data.
         run_oursin: bool
             Determines if the Oursin uncertainty model should be run
+        use_weighted: bool
+            Specifies if discharge weighted medians are used for extrapolation
         """
 
         self.run_oursin = run_oursin
@@ -144,8 +146,7 @@ class Measurement(object):
                 # Set processing type
                 if proc_type == 'QRev':
                     # Apply QRev default settings
-                    settings = self.qrev_default_settings(check_user_excluded_dist=True)
-
+                    settings = self.qrev_default_settings(check_user_excluded_dist=True, use_weighted=use_weighted)
                     settings['Processing'] = 'QRev'
                     self.apply_settings(settings)
 
@@ -1173,10 +1174,13 @@ class Measurement(object):
         if self.transects[ref_transect].w_vel.interpolate_cells == 'TRDI':
             if self.extrap_fit is None:
                 self.extrap_fit = ComputeExtrap()
-                self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+                self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
+                                              use_weighted=settings['UseWeighted'])
+                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                          use_weighted=settings['UseWeighted'])
             elif self.extrap_fit.fit_method == 'Automatic':
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                          use_weighted=settings['UseWeighted'])
             else:
                 if 'extrapTop' not in settings.keys():
                     settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
@@ -1187,7 +1191,8 @@ class Measurement(object):
                                       top=settings['extrapTop'],
                                       bot=settings['extrapBot'],
                                       exp=settings['extrapExp'],
-                                      compute_q=False)
+                                      compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
 
         for transect in self.transects:
 
@@ -1198,10 +1203,13 @@ class Measurement(object):
 
         if self.extrap_fit is None:
             self.extrap_fit = ComputeExtrap()
-            self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+            self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
+                                          use_weighted=settings['UseWeighted'])
+            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
         elif self.extrap_fit.fit_method == 'Automatic':
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
         else:
             if 'extrapTop' not in settings.keys():
                 settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
@@ -1212,7 +1220,8 @@ class Measurement(object):
                                   top=settings['extrapTop'],
                                   bot=settings['extrapBot'],
                                   exp=settings['extrapExp'],
-                                  compute_q=False)
+                                  compute_q=False,
+                                  use_weighted=settings['UseWeighted'])
 
         self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
         self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
@@ -1337,18 +1346,20 @@ class Measurement(object):
             settings['extrapTop'] = transect.extrap.top_method
             settings['extrapBot'] = transect.extrap.bot_method
             settings['extrapExp'] = transect.extrap.exponent
+            settings['UseWeighted'] = False
         else:
             settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
             settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
             settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
-        
+            settings['UseWeighted'] = self.extrap_fit.norm_data[-1].use_weighted
+
         # Edge Settings
         settings['edgeVelMethod'] = transect.edges.vel_method
         settings['edgeRecEdgeMethod'] = transect.edges.rec_edge_method
         
         return settings
 
-    def qrev_default_settings(self, check_user_excluded_dist=False):
+    def qrev_default_settings(self, check_user_excluded_dist=False, use_weighted=False):
         """QRev default and filter settings for a measurement.
         """
 
@@ -1444,6 +1455,7 @@ class Measurement(object):
         settings['extrapTop'] = 'Power'
         settings['extrapBot'] = 'Power'
         settings['extrapExp'] = 0.1667
+        settings['UseWeighted'] = use_weighted
 
         return settings
 
@@ -1695,7 +1707,8 @@ class Measurement(object):
 
         return settings
 
-    def change_extrapolation(self, method, top=None, bot=None, exp=None, extents=None, threshold=None, compute_q=True):
+    def change_extrapolation(self, method, top=None, bot=None, exp=None, extents=None, threshold=None, compute_q=True,
+                             use_weighted=False):
         """Applies the selected extrapolation method to each transect.
 
         Parameters
@@ -1714,6 +1727,8 @@ class Measurement(object):
             Percent of discharge, does not account for transect direction
         compute_q: bool
             Specifies if the discharge should be computed
+        use_weighted: bool
+            Specifies is discharge weighting is used
         """
 
         if top is None:
@@ -1735,10 +1750,10 @@ class Measurement(object):
             self.extrap_fit.fit_method = 'Manual'
             for transect in self.transects:
                 transect.extrap.set_extrap_data(top=top, bot=bot, exp=exp)
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type)
+            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
         else:
             self.extrap_fit.fit_method = 'Automatic'
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type)
+            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
             for transect in self.transects:
                 transect.extrap.set_extrap_data(top=self.extrap_fit.sel_fit[-1].top_method,
                                                 bot=self.extrap_fit.sel_fit[-1].bot_method,

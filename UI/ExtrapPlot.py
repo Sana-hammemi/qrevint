@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.cm as cm
 
 
 class ExtrapPlot(object):
@@ -290,9 +291,12 @@ class ExtrapPlot(object):
             Object of class NormData
 
         """
-
-        self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
-                         color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
+        cmap = cm.get_cmap('Blues')
+        # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
+        #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
+        idx = np.argsort(np.abs(np.nan_to_num(norm_data.weights)), axis=None)
+        self.fig.ax.scatter(norm_data.unit_normalized.flat[idx], 1 - norm_data.cell_depth_normalized.flat[idx],
+                            marker='o', s=10, c=norm_data.weights.flat[idx], cmap=cmap)
 
     def extrap_plot_surface(self, norm_data):
         """Highlights the depth cell data representing the topmost depth cell. These data will be either for a
@@ -309,8 +313,45 @@ class ExtrapPlot(object):
         idx = (surface_idx, range(len(surface_idx)))
 
         # Plot data
-        self.fig.ax.plot(norm_data.unit_normalized[idx], 1 - norm_data.cell_depth_normalized[idx], marker='o',
-                         markerfacecolor='g', linestyle='None', markersize=2)
+        self.fig.ax.scatter(norm_data.unit_normalized[idx], 1 - norm_data.cell_depth_normalized[idx], marker='o',s=10,
+                            c='#00ffff')
+
+    def extrap_plot_med_compare(self, norm_data):
+        """Plots median values and associated error bars.
+
+        Parameters
+        ----------
+        norm_data: list or NormData
+            List of or single object of class NormData
+        idx: int
+            Index to data to be plotted
+        """
+
+        # If composite measurement the color is black otherwise use start bank
+        # line_color = '#ffff00'
+        # line_color = '#ffcc00'
+        line_color = '#ff8000'
+        # # All median values in red
+        # self.fig.ax.plot(norm_data.unit_normalized_med, norm_data.unit_normalized_z, 'rs',
+        #                  markerfacecolor='#ff9999', linestyle='None')
+        #
+        # # All error bars in red
+        # for n in range(len(norm_data.unit_normalized_25)):
+        #     self.fig.ax.plot([norm_data.unit_normalized_25[n], norm_data.unit_normalized_75[n]],
+        #                      [norm_data.unit_normalized_z[n], norm_data.unit_normalized_z[n]],
+        #                      'r-')
+
+        # Valid median values
+        self.fig.ax.plot(norm_data.unit_normalized_med[norm_data.valid_data],
+                         norm_data.unit_normalized_z[norm_data.valid_data],
+                         marker='s', color=line_color, markerfacecolor=line_color,
+                         linestyle='None')
+
+        # # Valid error bars
+        # for idx in norm_data.valid_data:
+        #     self.fig.ax.plot([norm_data.unit_normalized_25[idx], norm_data.unit_normalized_75[idx]],
+        #                      [norm_data.unit_normalized_z[idx], norm_data.unit_normalized_z[idx]],
+        #                      color=line_color)
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes

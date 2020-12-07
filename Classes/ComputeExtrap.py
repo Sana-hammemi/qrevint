@@ -23,6 +23,8 @@ class ComputeExtrap(object):
         Object of class ExtrapQSensitivity
     messages: str
         Variable for messages to UserWarning
+    use_weighted: bool
+        Specifies if discharge weighted medians are used in extrapolations
 
     """
     
@@ -36,8 +38,9 @@ class ComputeExtrap(object):
         self.sel_fit = []  # Object of class SelectFit
         self.q_sensitivity = None  # Object of class ExtrapQSensitivity
         self.messages = []  # Variable for messages to UserWarning
+        self.use_weighted = False
         
-    def populate_data(self, transects, compute_sensitivity=True):
+    def populate_data(self, transects, compute_sensitivity=True, use_weighted=False):
         """Store data in instance variables.
 
         Parameters
@@ -46,12 +49,15 @@ class ComputeExtrap(object):
             List of transects of TransectData
         compute_sensitivity: bool
             Determines is sensitivity should be computed.
+        use_weighted: bool
+        Specifies if discharge weighted medians are used in extrapolations
         """
 
         self.threshold = 20
         self.subsection = [0, 100]
         self.fit_method = 'Automatic'
-        self.process_profiles(transects=transects, data_type='q')
+        self.use_weighted = use_weighted
+        self.process_profiles(transects=transects, data_type='q', use_weighted=use_weighted)
 
         # Compute the sensitivity of the final discharge to changes in extrapolation methods
         if compute_sensitivity:
@@ -80,7 +86,7 @@ class ComputeExtrap(object):
             elif type(meas_struct.extrapFit.messages) is np.ndarray:
                 self.messages = meas_struct.extrapFit.messages.tolist()
 
-    def process_profiles(self, transects, data_type):
+    def process_profiles(self, transects, data_type, use_weighted):
         """Function that coordinates the fitting process.
 
         Parameters
@@ -91,6 +97,8 @@ class ComputeExtrap(object):
             Type of data processing (q or v)
         """
 
+        self.use_weighted = use_weighted
+
         # Compute normalized data for each transect
         self.norm_data = []
         for transect in transects:
@@ -98,7 +106,8 @@ class ComputeExtrap(object):
             norm_data.populate_data(transect=transect,
                                     data_type=data_type,
                                     threshold=self.threshold,
-                                    data_extent=self.subsection)
+                                    data_extent=self.subsection,
+                                    use_weighted=self.use_weighted)
             self.norm_data.append(norm_data)
 
         # Compute composite normalized data

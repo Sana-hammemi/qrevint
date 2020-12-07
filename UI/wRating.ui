@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>420</width>
-    <height>235</height>
+    <width>556</width>
+    <height>246</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,6 +18,21 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="txt_rating_msg">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;IMPORTANT:&lt;/span&gt; The rating for a measurement should include the uncertainty of the stage associated with the measurement in addition to the uncertainty of the discharge.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
@@ -50,7 +65,7 @@
           <widget class="QLabel" name="Uncertainty_label">
            <property name="font">
             <font>
-             <pointsize>10</pointsize>
+             <pointsize>12</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -99,6 +114,11 @@
          </item>
          <item>
           <widget class="QLabel" name="uncertainty_units">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>%</string>
            </property>
@@ -153,7 +173,7 @@
            <widget class="QRadioButton" name="rb_excellent">
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>12</pointsize>
               <weight>50</weight>
               <bold>false</bold>
              </font>
@@ -170,7 +190,7 @@
            <widget class="QRadioButton" name="rb_good">
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>12</pointsize>
               <weight>50</weight>
               <bold>false</bold>
              </font>
@@ -184,6 +204,7 @@
            <widget class="QRadioButton" name="rb_fair">
             <property name="font">
              <font>
+              <pointsize>12</pointsize>
               <weight>50</weight>
               <bold>false</bold>
              </font>
@@ -197,6 +218,7 @@
            <widget class="QRadioButton" name="rb_poor">
             <property name="font">
              <font>
+              <pointsize>12</pointsize>
               <weight>50</weight>
               <bold>false</bold>
              </font>
@@ -215,6 +237,11 @@
    </item>
    <item row="1" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
