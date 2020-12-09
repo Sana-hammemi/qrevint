@@ -81,6 +81,10 @@ class ComputeExtrap(object):
             self.sel_fit = SelectFit.qrev_mat_in(meas_struct.extrapFit)
             self.q_sensitivity = ExtrapQSensitivity()
             self.q_sensitivity.populate_from_qrev_mat(meas_struct.extrapFit)
+            if hasattr(meas_struct.extrapFit, 'use_weighted'):
+                self.use_weighted = meas_struct.extrapFit.use_weighted
+            else:
+                self.use_weighted = False
             if type(meas_struct.extrapFit.messages) is str:
                 self.messages = [meas_struct.extrapFit.messages]
             elif type(meas_struct.extrapFit.messages) is np.ndarray:

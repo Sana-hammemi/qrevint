@@ -67,6 +67,8 @@ class NormData(object):
             Number of data points in an increment for the increment to be valid.
         data_extent: list
             Defines percent of data from start of transect to use, default [0, 100]
+        use_weighted: bool
+            Specifies if discharge weighted medians are to be used in the extrapolation fit
         """
 
         # If the data extent is not defined set data_extent to zero to trigger all data to be used
@@ -128,14 +130,12 @@ class NormData(object):
         weight_ensemble = abs(unit_ens) / np.nansum(abs(unit_ens))
         weights = np.tile(weight_ensemble, (cell_depth.shape[0], 1))
 
-        
         # Adjust to positive value
         if unit_total < 0:
             unit *= -1
             
         # Compute normalize unit values
         unit_norm = np.divide(unit, np.abs(np.nanmean(unit, 0)))
-        # weighted_unit_norm = unit_norm * weights
 
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
@@ -157,7 +157,6 @@ class NormData(object):
                                                  np.less(unit_total, unit_upper)))[0]
             unit_norm = unit_norm[:, idx_extent]
             norm_cell_depth = norm_cell_depth[:, idx_extent]
-            # weighted_unit_norm = weighted_unit_norm[:, idx_extent]
             weights = weights[:, idx_extent]
             
         # If whole profile is negative make positive
@@ -168,7 +167,6 @@ class NormData(object):
             idx_neg2[c] = len(np.where(np.isnan(unit_norm[:, c]) == False)[0])
         idx_neg = np.squeeze(idx_neg1) == np.squeeze(idx_neg2)
         unit_norm[:, idx_neg] = unit_norm[:, idx_neg] * -1
-        # weighted_unit_norm[:, idx_neg] = weighted_unit_norm[:, idx_neg] * -1
 
         # Store results
         self.file_name = filename
@@ -223,6 +221,12 @@ class NormData(object):
         self.data_type = mat_data.dataType
         self.data_extent = mat_data.dataExtent
         self.valid_data = mat_data.validData - 1
+        if hasattr(mat_data, 'use_weighted'):
+            self.use_weighted = mat_data.use_weighted
+            self.weights = mat_data.weights
+        else:
+            self.use_weighted = False
+            self.weights = None
 
     def compute_stats(self, threshold):
         """Computes the statistics for the normalized data.
@@ -308,7 +312,6 @@ class NormData(object):
 
         return results
 
-
     def create_composite(self, transects, norm_data, threshold):
         """Compute normalized data for measurement composite.
 
@@ -335,7 +338,6 @@ class NormData(object):
 
         # Initialize normalized variables
         self.unit_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
-        self.weighted_unit_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
         self.cell_depth_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
         self.weights = np.tile([np.nan], (max_cells, sum_ens[-1]))
 

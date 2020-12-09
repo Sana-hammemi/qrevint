@@ -107,6 +107,11 @@
          </item>
          <item>
           <widget class="QLabel" name="uncertainty_value">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string/>
            </property>

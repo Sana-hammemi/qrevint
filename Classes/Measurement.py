@@ -14,6 +14,7 @@ from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.Uncertainty import Uncertainty
 from Classes.QAData import QAData
 from Classes.BoatStructure import BoatStructure
+from Classes.NormData import  NormData
 from Classes.Oursin import Oursin
 # from Classes.Oursin_orig import Oursin_orig
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
@@ -56,6 +57,8 @@ class Measurement(object):
         List of all user supplied comments
     ext_temp_chk: dict
         Dictionary of external temperature readings
+    use_weighted: bool
+        Indicates the setting for use_weighted to be used for reprocessing
     """
 
     # @profile
@@ -100,6 +103,7 @@ class Measurement(object):
         self.ext_temp_chk = {'user': np.nan, 'units': 'C', 'adcp': np.nan, 'user_orig': np.nan, 'adcp_orig': np.nan}
         self.checked_transect_idx = []
         self.oursin = None
+        self.use_weighted = use_weighted
 
         # Load data from selected source
         if source == 'QRev':
@@ -688,6 +692,28 @@ class Measurement(object):
         self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
+
+        # For compatibility with files saved prior to the implementation of the discharge weighted median option
+        if self.extrap_fit.norm_data[-1].weights is None:
+            # Compute normalized data for each transect to obtain the weights
+            for n, transect in enumerate(self.transects):
+                norm_data_temp = NormData()
+                norm_data_temp.populate_data(transect=transect,
+                                        data_type=self.extrap_fit.norm_data[n].data_type,
+                                        threshold=self.extrap_fit.threshold,
+                                        data_extent=self.extrap_fit.subsection,
+                                        use_weighted=self.extrap_fit.use_weighted)
+                # Update the norm_data with the newly computed weights
+                self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
+
+            # Compute composite normalized data
+            norm_data_temp = NormData()
+            norm_data_temp.create_composite(transects=self.transects,
+                                            norm_data=self.extrap_fit.norm_data[0:-1],
+                                            threshold=self.extrap_fit.threshold)
+            # Update the norm_data with newly computed weights
+            self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
         # For compatibility with older QRev.mat files that didn't have this feature
@@ -1346,12 +1372,14 @@ class Measurement(object):
             settings['extrapTop'] = transect.extrap.top_method
             settings['extrapBot'] = transect.extrap.bot_method
             settings['extrapExp'] = transect.extrap.exponent
-            settings['UseWeighted'] = False
         else:
             settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
             settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
             settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
-            settings['UseWeighted'] = self.extrap_fit.norm_data[-1].use_weighted
+
+        # Use of self.use_weighted allows a QRev mat file to be loaded and intially processed with the settings from
+        # the QRev file but upon reprocessing the self.use_weights will be set to the options setting for use_weights
+        settings['UseWeighted'] = self.use_weighted
 
         # Edge Settings
         settings['edgeVelMethod'] = transect.edges.vel_method
@@ -2614,6 +2642,14 @@ class Measurement(object):
         # (4) Exponent Node
         temp = self.transects[self.checked_transect_idx[0]].extrap.exponent
         ETree.SubElement(extrap, 'Exponent', type='double').text = '{:.4f}'.format(temp)
+
+        # (4) Discharge weighted medians
+        temp = self.extrap_fit.use_weighted
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(extrap, 'UseWeighted', type='char').text = temp
 
         # (3) Sensor Node
         sensor = ETree.SubElement(processing, 'Sensor')
