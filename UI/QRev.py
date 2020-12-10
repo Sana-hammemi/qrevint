@@ -359,7 +359,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.23'
+        self.QRev_version = 'QRev 4.24'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
 
@@ -1346,8 +1346,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)'}
             item =  rating[self.meas.user_rating]
         tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.item(row, 0).setFont(self.font_bold)
+        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+
 
         tbl.itemChanged.connect(self.recompute_uncertainty)
 
