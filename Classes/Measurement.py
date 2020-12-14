@@ -1833,15 +1833,15 @@ class Measurement(object):
                 int_cells_q.append(self.discharge[n].int_cells)
                 int_ensembles_q.append(self.discharge[n].int_ens)
 
-        discharge = {'total_mean': np.mean(total_q),
-                     'uncorrected_mean': np.mean(uncorrected_q),
-                     'top_mean': np.mean(top_q),
-                     'mid_mean': np.mean(mid_q),
-                     'bot_mean': np.mean(bot_q),
-                     'left_mean': np.mean(left_q),
-                     'right_mean': np.mean(right_q),
-                     'int_cells_mean': np.mean(int_cells_q),
-                     'int_ensembles_mean': np.mean(int_ensembles_q)}
+        discharge = {'total_mean': np.nanmean(total_q),
+                     'uncorrected_mean': np.nanmean(uncorrected_q),
+                     'top_mean': np.nanmean(top_q),
+                     'mid_mean': np.nanmean(mid_q),
+                     'bot_mean': np.nanmean(bot_q),
+                     'left_mean': np.nanmean(left_q),
+                     'right_mean': np.nanmean(right_q),
+                     'int_cells_mean': np.nanmean(int_cells_q),
+                     'int_ensembles_mean': np.nanmean(int_ensembles_q)}
 
         return discharge
 
