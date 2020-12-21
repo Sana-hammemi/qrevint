@@ -226,7 +226,12 @@ class ComputeExtrap(object):
         data_type: str
             Specifies the data type (discharge or velocity)
         """
-        self.process_profiles(transects=transects, data_type=data_type)
+        if data_type.lower() == 'q':
+            use_weighted = self.use_weighted
+        else:
+            use_weighted = False
+
+        self.process_profiles(transects=transects, data_type=data_type, use_weighted=use_weighted)
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
 
@@ -240,7 +245,7 @@ class ComputeExtrap(object):
         """
         self.threshold = 20
         self.subsection = [0, 100]
-        self.process_profiles(transects=transects, data_type='q')
+        self.process_profiles(transects=transects, data_type='q', use_weighted=self.use_weighted)
 
         # Compute the sensitivity of the final discharge to changes in extrapolation methods
         self.q_sensitivity = ExtrapQSensitivity()

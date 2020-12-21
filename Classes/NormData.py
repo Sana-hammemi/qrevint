@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as sp
 from MiscLibs.common_functions import cart2pol, pol2cart
-
+from Classes.QComp import QComp
 
 class NormData(object):
     """Class creates normalized depth and unit discharge or velocity.
@@ -36,6 +36,10 @@ class NormData(object):
         Defines percent of data from start of transect to use, default [0, 100]
     valid_data: np.array(int)
         Index of median values with point count greater than threshold cutoff
+    weights: np.array(float)
+        Discharge based weights for computing a weighted median
+    use_weights: bool
+        Specifies if discharge weighted medians are to be used in the extrapolation fit
     """
     
     def __init__(self):
@@ -91,7 +95,7 @@ class NormData(object):
         invalid_data = np.logical_not(transect.w_vel.valid_data[0, :, in_transect_idx]).T
         w_vel_x[invalid_data] = np.nan
         w_vel_y[invalid_data] = np.nan
-        
+
         boat_select = getattr(transect.boat_vel, transect.boat_vel.selected)
         if boat_select is not None:
             bt_vel_x = np.copy(boat_select.u_processed_mps[in_transect_idx])
@@ -99,7 +103,27 @@ class NormData(object):
         else:
             bt_vel_x = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps[in_transect_idx].shape)
             bt_vel_y = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps[in_transect_idx].shape)
-            
+
+        # Compute discharges
+        xprod = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+        cell_size = depths_selected.depth_cell_size_m
+        delta_t = transect.date_time.ens_duration_sec[in_transect_idx]
+        q = np.multiply(xprod[:, in_transect_idx] * cell_size[:, in_transect_idx], delta_t)
+        q_ens = np.nansum(q, 0)
+
+        # Ensure all elements of xprod can be used to compute q (have a delta_t), first ensemble has no delta_t
+        idx_invalid = np.where(np.isnan(delta_t))[0]
+        xprod[:, idx_invalid] = np.nan
+
+        if np.abs(np.nansum(abs(q_ens))) > 0:
+            # Compute ensemble weights
+            weight_ensemble = abs(q_ens) / np.nansum(abs(q_ens))
+
+            # Apply weights to cells
+            weights = np.tile(weight_ensemble, (cell_depth.shape[0], 1))
+        else:
+            weights = np.ones(w_vel_x.shape)
+
         # Compute normalized cell depth by average depth in each ensemble
         norm_cell_depth = np.divide(cell_depth, depth_ens)
         norm_cell_depth[norm_cell_depth < 0] = np.nan
@@ -107,8 +131,15 @@ class NormData(object):
         # If data type is discharge compute unit discharge for each cell
         if data_type.lower() == 'q':
             # Compute the cross product for each cell
-            unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+            unit = xprod
         else:
+            w_vel_x = np.copy(transect.w_vel.u_processed_mps[:, in_transect_idx])
+            w_vel_y = np.copy(transect.w_vel.v_processed_mps[:, in_transect_idx])
+
+            invalid_data = np.logical_not(transect.w_vel.valid_data[0, :, in_transect_idx]).T
+            w_vel_x[invalid_data] = np.nan
+            w_vel_y[invalid_data] = np.nan
+
             # Compute mean velocity components in each ensemble
             w_vel_mean_1 = np.nanmean(w_vel_x, 0)
             w_vel_mean_2 = np.nanmean(w_vel_y, 0)
@@ -123,14 +154,12 @@ class NormData(object):
             unit = np.tile([np.nan], w_vel_x.shape)
             for i in range(w_vel_x.shape[0]):
                 unit[i, :] = np.sum(np.vstack([w_vel_x[i, :], w_vel_y[i, :]]) * unit_vec, 0)
-                                       
-        # Compute Total
-        unit_total = np.nansum(np.nansum(unit), 0)
-        unit_ens = np.nansum(unit, axis=0)
-        weight_ensemble = abs(unit_ens) / np.nansum(abs(unit_ens))
-        weights = np.tile(weight_ensemble, (cell_depth.shape[0], 1))
+
+            # Discharge weighting of velocity data is not permitted
+            use_weighted = False
 
         # Adjust to positive value
+        unit_total = np.nansum(np.nansum(unit), 0)
         if unit_total < 0:
             unit *= -1
             
@@ -140,21 +169,31 @@ class NormData(object):
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
 
-            if data_type.lower() == 'v':
-                # Unit discharge is computed here because the unit norm could be based on velocity
-                unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
-                unit_ens = np.nansum(unit, 0)
-                unit_total = np.nancumsum(unit_ens)
+            q_cum = np.nancumsum(q_ens)
+            # Adjust so total discharge is positive
+            if q_cum[-1] < 0:
+                q_cum *= -1
 
-                # Adjust so total discharge is positive
-                if unit_total[-1] < 0:
-                    unit_total *= -1
-                
             # Apply extents
-            unit_lower = unit_total[-1] * data_extent[0] / 100
-            unit_upper = unit_total[-1] * data_extent[1] / 100
-            idx_extent = np.where(np.logical_and(np.greater(unit_total, unit_lower),
-                                                 np.less(unit_total, unit_upper)))[0]
+            unit_lower = q_cum[-1] * data_extent[0] / 100
+            unit_upper = q_cum[-1] * data_extent[1] / 100
+            idx_extent = np.where(np.logical_and(np.greater(q_cum, unit_lower),
+                                                 np.less(q_cum, unit_upper)))[0]
+            # if data_type.lower() == 'v':
+            #     # Unit discharge is computed here because the unit norm could be based on velocity
+            #     unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+            #     unit_ens = np.nansum(unit, 0)
+            #     unit_total = np.nancumsum(unit_ens)
+            #
+            #     # Adjust so total discharge is positive
+            #     if unit_total[-1] < 0:
+            #         unit_total *= -1
+                
+            # # Apply extents
+            # unit_lower = unit_total[-1] * data_extent[0] / 100
+            # unit_upper = unit_total[-1] * data_extent[1] / 100
+            # idx_extent = np.where(np.logical_and(np.greater(unit_total, unit_lower),
+            #                                      np.less(unit_total, unit_upper)))[0]
             unit_norm = unit_norm[:, idx_extent]
             norm_cell_depth = norm_cell_depth[:, idx_extent]
             weights = weights[:, idx_extent]
@@ -254,7 +293,7 @@ class NormData(object):
             condition_3 = np.logical_not(np.isnan(self.unit_normalized))
             condition_all = np.logical_and(np.logical_and(condition_1, condition_2), condition_3)
             if np.any(condition_all):
-                if self.use_weighted:
+                if self.data_type.lower() == 'q' and self.use_weighted:
                     results = self.weighted_quantile(self.unit_normalized[condition_all],
                                                      quantiles=[0.25, 0.5, 0.75],
                                                      sample_weight=self.weights[condition_all])

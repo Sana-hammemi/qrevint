@@ -1343,8 +1343,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if self.meas.user_rating is None or len(self.meas.user_rating) < 1:
             item = 'Not rated'
         else:
-            rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)'}
-            item =  rating[self.meas.user_rating]
+            rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)',
+                      'Not Rated':'Not Rated'}
+            item = rating[self.meas.user_rating]
         tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
@@ -7809,7 +7810,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.start_bank = None
 
         # ID Weighted Method
-        if self.meas.extrap_fit.use_weighted:
+        if self.meas.extrap_fit.norm_data[-1].use_weighted:
             self.gb_fit.setTitle('Fit Parameters (Weighted)')
         else:
             self.gb_fit.setTitle('Fit Parameters')
@@ -7911,6 +7912,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             # Run qa to update messages for user data setting changes if other than Measurement selected
             self.meas.update_qa()
+
+        # ID Weighted Method
+        if self.meas.extrap_fit.norm_data[-1].use_weighted:
+            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+        else:
+            self.gb_fit.setTitle('Fit Parameters')
 
         # Update tab
         self.n_points_table()
@@ -8508,20 +8515,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         the method computes and displays the weighted. This method does not affect the computed discharge
         only the extrapolation display."""
 
-        # Create a copy of the normalized values of the entire measurement
-        compare_norm = copy.deepcopy(self.meas.extrap_fit.norm_data[-1])
-        if self.meas.extrap_fit.use_weighted:
-            # Compute unweighted medians
-            compare_norm.use_weighted = False
-            compare_norm.compute_stats(self.meas.extrap_fit.threshold)
-        else:
-            # Compute weighted medians
-            compare_norm.use_weighted = True
-            compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+        if self.meas.extrap_fit.norm_data[-1].data_type.lower() == 'q':
+            # Create a copy of the normalized values of the entire measurement
+            compare_norm = copy.deepcopy(self.meas.extrap_fit.norm_data[-1])
+            if self.meas.extrap_fit.use_weighted:
+                # Compute unweighted medians
+                compare_norm.use_weighted = False
+                compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+            else:
+                # Compute weighted medians
+                compare_norm.use_weighted = True
+                compare_norm.compute_stats(self.meas.extrap_fit.threshold)
 
-        # Display data on extrapolation figure
-        self.extrap_fig.extrap_plot_med_compare(compare_norm)
-        self.extrap_canvas.draw()
+            # Display data on extrapolation figure
+            self.extrap_fig.extrap_plot_med_compare(compare_norm)
+            self.extrap_canvas.draw()
 
     def cancel_extrap(self):
         """Rest extrapolation to settings that were inplace when the tab was opened.
@@ -10546,6 +10554,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if e.key() == QtCore.Qt.Key_F12:
                 self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
                 self.run_oursin = True
+
+        # Help
+        if e.key() == QtCore.Qt.Key_F1:
+            self.help()
 
         # Change displayed transect
         if self.current_tab != 'MovBedTst' and self.current_tab != 'SysTest':
