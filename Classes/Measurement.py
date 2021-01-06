@@ -98,7 +98,7 @@ class Measurement(object):
         self.uncertainty = None
         self.initial_settings = None
         self.qa = None
-        self.user_rating = None
+        self.user_rating = 'Not Rated'
         self.comments = []
         self.ext_temp_chk = {'user': np.nan, 'units': 'C', 'adcp': np.nan, 'user_orig': np.nan, 'adcp_orig': np.nan}
         self.checked_transect_idx = []

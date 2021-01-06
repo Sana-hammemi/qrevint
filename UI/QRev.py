@@ -1340,12 +1340,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.item(row, 0).setFont(self.font_bold)
 
         tbl.setSpan(row, 1, 1, 2)
-        if self.meas.user_rating is None or len(self.meas.user_rating) < 1:
-            item = 'Not rated'
-        else:
-            rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)',
-                      'Not Rated':'Not Rated'}
-            item = rating[self.meas.user_rating]
+        rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)',
+                  'Not Rated':'Not Rated'}
+        item = rating[self.meas.user_rating]
         tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
