@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 with open('README.md') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open('LICENSE.md') as f:
     license = f.read()
 
 setup(
@@ -59,6 +59,7 @@ setup(
 						"utm==0.5.0",
 						"wcwidth==0.1.7",
 						"xmltodict==0.12.0",
-						"zipp==0.6.0"
+						"zipp==0.6.0",
+                        "simplekml==1.3.1",
 					  ],
 )
