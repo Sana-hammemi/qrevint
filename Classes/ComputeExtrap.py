@@ -90,7 +90,7 @@ class ComputeExtrap(object):
             elif type(meas_struct.extrapFit.messages) is np.ndarray:
                 self.messages = meas_struct.extrapFit.messages.tolist()
 
-    def process_profiles(self, transects, data_type, use_weighted):
+    def process_profiles(self, transects, data_type, use_weighted=None):
         """Function that coordinates the fitting process.
 
         Parameters
@@ -100,8 +100,10 @@ class ComputeExtrap(object):
         data_type: str
             Type of data processing (q or v)
         """
-
-        self.use_weighted = use_weighted
+        if use_weighted is not None:
+            self.use_weighted = use_weighted
+        else:
+            self.use_weighted = self.norm_data[-1].use_weighted
 
         # Compute normalized data for each transect
         self.norm_data = []

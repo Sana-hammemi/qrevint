@@ -1341,7 +1341,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         tbl.setSpan(row, 1, 1, 2)
         rating = {'Excellent':'Excellent (<3%)', 'Good':'Good (3-5%)', 'Fair':'Fair (5-8%)', 'Poor':'Poor (>8%)',
-                  'Not Rated':'Not Rated'}
+                  'Not Rated':'Not Rated', '':'Not Rated'}
         item = rating[self.meas.user_rating]
         tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)

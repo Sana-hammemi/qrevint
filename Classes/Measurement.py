@@ -1192,6 +1192,8 @@ class Measurement(object):
         # interpolations because the TRDI approach for power/power
         # using the power curve and exponent to estimate invalid cells.
 
+        self.use_weighted = settings['UseWeighted']
+
         if len(self.checked_transect_idx) > 0:
             ref_transect = self.checked_transect_idx[0]
         else:
@@ -1377,7 +1379,7 @@ class Measurement(object):
             settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
             settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
 
-        # Use of self.use_weighted allows a QRev mat file to be loaded and intially processed with the settings from
+        # Use of self.use_weighted allows a QRev mat file to be loaded and initially processed with the settings from
         # the QRev file but upon reprocessing the self.use_weights will be set to the options setting for use_weights
         settings['UseWeighted'] = self.use_weighted
 
