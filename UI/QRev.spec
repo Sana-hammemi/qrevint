@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['QRev.py'],
-             pathex=['C:\\dsm\\dsm_documents\\QRevPy\\UI'],
+             pathex=['C:\\Users\\dave\\Documents\\QRevInt_Project\\QRevInt\\UI'],
              binaries=[],
              datas=[],
              hiddenimports=[],
