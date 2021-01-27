@@ -10233,15 +10233,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Convert lat and lon for decimal degrees to degrees and decimal minutes
-            if np.isnan(self.edi_results['lat'][row]):
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            else:
-                if type(self.edi_results['lat'][row]) is np.float64:
+            if type(self.edi_results['lat'][row]) is np.float64:
+                if not np.isnan(self.edi_results['lat'][row]):
                     latd = int(self.edi_results['lat'][row])
                     latm = np.abs((self.edi_results['lat'][row] - latd) * 60)
                     lond = int(self.edi_results['lon'][row])
@@ -10261,6 +10254,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col += 1
                     tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
                     tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+            else:
+                col += 1
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                col += 1
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
     def edi_compute(self):
         """Coordinates the computation of the EDI results.
