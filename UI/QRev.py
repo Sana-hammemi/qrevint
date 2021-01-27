@@ -10233,26 +10233,34 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Convert lat and lon for decimal degrees to degrees and decimal minutes
-            if type(self.edi_results['lat'][row]) is np.float64:
-                latd = int(self.edi_results['lat'][row])
-                latm = np.abs((self.edi_results['lat'][row] - latd) * 60)
-                lond = int(self.edi_results['lon'][row])
-                lonm = np.abs((self.edi_results['lon'][row] - lond) * 60)
+            if np.isnan(self.edi_results['lat'][row]):
                 col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.0f} {:3.7f}'.format(latd, latm)))
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.0f} {:3.7f}'.format(lond, lonm)))
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
             else:
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                if type(self.edi_results['lat'][row]) is np.float64:
+                    latd = int(self.edi_results['lat'][row])
+                    latm = np.abs((self.edi_results['lat'][row] - latd) * 60)
+                    lond = int(self.edi_results['lon'][row])
+                    lonm = np.abs((self.edi_results['lon'][row] - lond) * 60)
+                    col += 1
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.0f} {:3.7f}'.format(latd, latm)))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    col += 1
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.0f} {:3.7f}'.format(lond, lonm)))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                else:
+                    col += 1
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    col += 1
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
     def edi_compute(self):
         """Coordinates the computation of the EDI results.
