@@ -1,6 +1,6 @@
-# QRev 4
+# QRevInt
 
-**QRev** version 4 is a Python port of the Matlab code QRev developed by the USGS to to compute the discharge from a moving-boat ADCP measurement using data collected with any of the Teledyne RD Instrument (TRDI) or SonTek bottom tracking ADCPs. QRev improves the consistency and efficiency of processing streamflow measurements by providing:
+**QRevInt** is a fork created by Genesis HydroTech LLC of QRev version 4 developed by the USGS. Both QRevInt and QRev compute the discharge from a moving-boat ADCP measurement using data collected with any of the Teledyne RD Instrument (TRDI) or SonTek bottom tracking ADCPs. The software improves the consistency and efficiency of processing streamflow measurements by providing:
 
 * Automated data quality checks with feedback to the user
 * Automated data filtering
@@ -10,68 +10,88 @@
 * An estimated uncertainty to help guide the user in rating the measurement
 
 
-**For a full description and instructions on the use of QRev click** **[HERE](https://hydroacoustics.usgs.gov/movingboat/QRev.shtml)** **to view the QRev web page.**
+**Click** **[HERE](https://hydroacoustics.usgs.gov/movingboat/QRev.shtml)** **to view the USGS QRev web page.**
 
+## Download Windows Executables
+
+Currently there are no public releases of QRevInt available. If you would like to test a beta version contact <dave@genesishydrotech.com>.
 ***
 
 # Development
-**QRevPy** has been approved for release (IP-118174) and has been assigned a digital object identifier of 10.5066/P9OZ8QDL. Additional development of features in QRev are expected. Versions available in the master branch of this repository are currently in use by the USGS, however, no warranty, expressed or implied, is made by the USGS or the U.S. Government as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. If you would like to contribute, please use the pull request process to provide new or improved code. 
+Genesis HydroTech LLC is coordinating the modifications and enhancements for QRevInt with the guidance and contributions from the following agencies:  
+* The Norwegian Water Resources and Energy Directorate
+* Environment and Climate Change Canada
+* New Zealand Hydrological Society
+* Swedish Meteorological and Hydrological Institute
+* Groupe Doppler Hydrométrie
+* U.S. Geological Survey
+* UK Centre for Ecology & Hydrology
+* Queensland Government Department of Resources
+* Australian Hydrographers Association
 
-## Requirements and Dependencies
-### Source Code
-
-QRevPy is currently being developed using Python 3.6.6 and makes use of the following packages:
-
-PyInstaller==3.5	
-PyQt5==5.13.1
-PyQt5-sip==4.19.19
-PyQt5-stubs==5.13.1.3
-altgraph==0.16.1
-atomicwrites==1.3.0
-attrs==19.1.0
-colorama==0.4.1
-cycler==0.10.0
-future==0.17.1
-importlib-metadata==0.23
-kiwisolver==1.1.0
-macholib==1.11
-matplotlib==3.1.1
-more-itertools==7.2.0
-numpy==1.17.2
-packaging==19.2
-pandas==0.25.1
-patsy==0.5.1
-pefile==2019.4.18
-pip==20.1
-pluggy==0.13.0
-py==1.8.0
-pyparsing==2.4.2
-pyqt5-tools==5.12.1.1.5rc4
-pytest==5.1.3
-python-dateutil==2.8.0
-python-dotenv==0.10.3
-pytz==2019.2
-pywin32-ctypes==0.2.0
-scipy==1.3.1
-setuptools==41.2.0
-sip==4.19.8
-six==1.12.0
-utm==0.5.0
-wcwidth==0.1.7
-xmltodict==0.12.0
-zipp==0.6.0
-simplekml==1.3.1
-
+## Goal
+The goal of this project is to: a) improve and expand the features currently available in QRev, b) assist in the development of a standard processing software that is used internationally, and c) ensure long-term support of the open-source software.
 
 ## Bugs
 Please report all bugs with appropriate instructions and files to reproduce the issue and add this to the issues tracking feature in this repository.
 
+## Feature Requests
+Feature requests are welcome. But take a moment to find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Please provide as much detail and context as possible.
+
+## Contributions
+If you would like to contribute your expertise to this project you are encourage to email your proposed contributions to dave@genesishydrotech.com so that we can ensure the contributions are consistent with this project and save you from work that might not be accepted into QRevInt. Contributions could include research into improving or developing better methods, writing code, reviewing code, reviewing and updating manuals, etc. If your contributions involve writing code or updating manuals please refer to the CONTRIBUTORS_GUIDELINES.md in this repository. Adherence to these guidelines will facilitate efficient merging of your contributions into the project and keep the project style and documentation consistent.
+
+If you would like to contribute to this project finacially please contact dave@genesishydrotech.com.
+
+## Requirements and Dependencies
+QRevPy is currently being developed using Python 3.6.8 and makes use of the following packages:
+
+PyInstaller==3.5  	
+PyQt5==5.13.1  
+PyQt5-sip==4.19.19  
+PyQt5-stubs==5.13.1.3  
+altgraph==0.16.1  
+atomicwrites==1.3.0  
+attrs==19.1.0  
+click==7.1.2  
+colorama==0.4.1  
+cycler==0.10.0  
+future==0.17.1  
+importlib-metadata==0.23  
+kiwisolver==1.1.0  
+macholib==1.11  
+matplotlib==3.1.1  
+more-itertools==7.2.0  
+numpy==1.17.2  
+packaging==19.2  
+pandas==0.25.1  
+patsy==0.5.1  
+pefile==2019.4.18  
+pip==21.0  
+pluggy==0.13.0  
+py==1.8.0  
+pyparsing==2.4.2  
+pyqt5-tools==5.12.1.1.5rc4  
+pytest==5.1.3  
+python-dateutil==2.8.0  
+python-dotenv==0.10.3  
+pytz==2019.2  
+pywin32-ctypes==0.2.0  
+scipy==1.3.1  
+setuptools==41.2.0  
+simplekml==1.3.1  
+sip==4.19.8  
+six==1.12.0  
+utm==0.5.0  
+wcwidth==0.1.7  
+xmltodict==0.12.0  
+zipp==0.6.0  
+
 # Disclaimer
-This software has been approved for release by the U.S. Geological Survey (USGS), IP-118174. Although the software has been subjected to rigorous review, the USGS reserves the right to update the software as needed pursuant to further analysis and review. No warranty, expressed or implied, is made by the USGS or the U.S. Government as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. Furthermore, the software is released on condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from its authorized or unauthorized use.
+This software (QRevInt) is a fork of QRev that was originally approved for release by the U.S. Geological Survey (USGS), IP-118174. Genesis HydroTech LLC through funding from various international agencies is working to improve and expand the capabilities and features available in QRevInt. Although the software has been subjected to rigorous review, the software may be updated as needed pursuant to further analysis and review. No warranty, expressed or implied, is made by Genesis HydroTech LLC or any of the contributing agencies as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. Furthermore, the software is released on condition that neither Genesis HydroTech LLC nor any of the participating agencies shall be held liable for any damages resulting from its authorized or unauthorized use.
 
 # License
-
-Unless otherwise noted, This project is in the public domain in the United States because it contains materials that originally came from the United States Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits Additionally, we waive copyright and related rights in the work worldwide through the CC0 1.0 Universal public domain dedication.
+Unless otherwise noted, This project is in the public domain in the United States because it contains materials that originally came from the United States Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits Additionally, Genesis HydroTech LLC waives copyright and related rights in the work worldwide through the CC0 1.0 Universal public domain dedication.
 
 Copyright / License - CC0 1.0: The person who associated a work with this deed has dedicated the work to the public domain by waiving all of his or her rights to the work worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law. You can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission. 
 
@@ -85,14 +105,14 @@ Publicity or privacy: The use of a work free of known copyright restrictions may
 
 Endorsement: In some jurisdictions, wrongfully implying that an author, publisher or anyone else endorses your use of a work may be unlawful.
 
-3rd party code is covered by the copyright and license associated with those codes.
+3rd party code and libraries are covered by the copyright and license associated with those codes and libraries.
 
-# Suggested citation
+# Suggested citations
+Mueller, D.S., 2021, QRevInt, Version x.xx, Genesis HydroTech LLC, https://bitbucket.org/genesishydrotech/qrevint/src/master/.
 Mueller, D.S., 2020, QRev, U.S. Geological Survey software release, https://doi.org/10.5066/P9OZ8QDL.
 
 # Author
 David S Mueller  
-U.S. Geological Survey  
-9818 Bluegrass Parkway  
+Genesis HydroTech LLC 
 Louisville, KY  
-<dmueller@usgs.gov>
+<dave@genesishydrotech.com>
