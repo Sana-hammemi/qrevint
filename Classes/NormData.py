@@ -168,17 +168,25 @@ class NormData(object):
 
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
-
-            q_cum = np.nancumsum(q_ens)
+            # Adjust cumulative sum direction based on start bank so that cumsum is always from left to right
+            if transect.start_edge == 'Right':
+                q_ens_flipped = np.flip(q_ens)
+                q_cum = np.nancumsum(q_ens_flipped)
+                q_max = q_cum[-1]
+                q_cum = np.flip(q_cum)
+            else:
+                q_cum = np.nancumsum(q_ens)
+                q_max = q_cum[-1]
             # Adjust so total discharge is positive
-            if q_cum[-1] < 0:
+            if q_max < 0:
                 q_cum *= -1
+                q_max *= -1
 
             # Apply extents
-            unit_lower = q_cum[-1] * data_extent[0] / 100
-            unit_upper = q_cum[-1] * data_extent[1] / 100
-            idx_extent = np.where(np.logical_and(np.greater(q_cum, unit_lower),
-                                                 np.less(q_cum, unit_upper)))[0]
+            unit_left = q_max * data_extent[0] / 100
+            unit_right = q_max * data_extent[1] / 100
+            idx_extent = np.where(np.logical_and(np.greater(q_cum, unit_left),
+                                                 np.less(q_cum, unit_right)))[0]
             # if data_type.lower() == 'v':
             #     # Unit discharge is computed here because the unit norm could be based on velocity
             #     unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)

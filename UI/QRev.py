@@ -1845,13 +1845,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup table
         tbl = self.main_table_summary
         summary_header = [self.tr('Transect'), self.tr('Start'), self.tr('Bank'), self.tr('End'),
-                          self.tr('Duration') + self.tr('(sec)'),
+                          self.tr('Duration') + ' ' + self.tr('(sec)'),
                           self.tr('Total Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Top Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Meas Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Bottom Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Left Q') + ' ' + self.tr(self.units['label_Q']),
-                          self.tr('Right Q') + ' ' + self.tr(self.units['label_Q'])]
+                          self.tr('Right Q') + ' ' + self.tr(self.units['label_Q']),
+                          self.tr('Delta Q (%)')]
         ncols = len(summary_header)
         nrows = len(self.checked_transects_idx)
         tbl.setRowCount(nrows + 1)
@@ -1936,11 +1937,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                                         * self.units['Q'])))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+                # Percent difference from measurement mean
+                discharge = Measurement.mean_discharges(self.meas)
+                per_diff = ((self.meas.discharge[transect_id].total - discharge['total_mean']) /
+                            discharge['total_mean']) * 100
+                col += 1
+                tbl.setItem(row + 1, col,
+                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Add measurement summaries
 
             # Row label
             col = 0
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(self.tr('Measurement')))
+            item = self.tr('Measurement') + \
+                   ' (' + self.meas.transects[self.checked_transects_idx[0]].date_time.date + ')'
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Measurement start time
@@ -1996,7 +2008,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Bold Measurement row
-            for col in range(ncols):
+            for col in range(ncols-1):
                 tbl.item(0, col).setFont(self.font_bold)
 
             tbl.item(self.transect_row + 1, 0).setFont(self.font_bold)
