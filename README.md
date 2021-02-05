@@ -1,6 +1,6 @@
 # QRevInt
 
-**QRevInt** is a fork created by Genesis HydroTech LLC of QRev version 4 developed by the USGS. Both QRevInt and QRev compute the discharge from a moving-boat ADCP measurement using data collected with any of the Teledyne RD Instrument (TRDI) or SonTek bottom tracking ADCPs. The software improves the consistency and efficiency of processing streamflow measurements by providing:
+**QRevInt** is a fork, created by Genesis HydroTech LLC, of QRev version 4 developed by the USGS. Both QRevInt and QRev compute the discharge from a moving-boat ADCP measurement using data collected with any of the Teledyne RD Instrument (TRDI) or SonTek bottom tracking ADCPs. The software improves the consistency and efficiency of processing streamflow measurements by providing:
 
 * Automated data quality checks with feedback to the user
 * Automated data filtering
@@ -19,6 +19,7 @@ Currently there are no public releases of QRevInt available. If you would like t
 
 # Development
 Genesis HydroTech LLC is coordinating the modifications and enhancements for QRevInt with the guidance and contributions from the following agencies:  
+
 * The Norwegian Water Resources and Energy Directorate
 * Environment and Climate Change Canada
 * New Zealand Hydrological Society
@@ -30,16 +31,20 @@ Genesis HydroTech LLC is coordinating the modifications and enhancements for QRe
 * Australian Hydrographers Association
 
 ## Goal
-The goal of this project is to: a) improve and expand the features currently available in QRev, b) assist in the development of a standard processing software that is used internationally, and c) ensure long-term support of the open-source software.
+The goal of this project is to: 
+
+* improve and expand the features currently available in QRev, 
+* assist in the development of a standard processing software that is used internationally, and 
+* ensure long-term support of the open-source software.
 
 ## Bugs
-Please report all bugs with appropriate instructions and files to reproduce the issue and add this to the issues tracking feature in this repository.
+Please report all bugs with appropriate instructions and files to reproduce the issue and add this to the issues tracking feature in this repository or email (dave@genesishydrotech.com).
 
 ## Feature Requests
-Feature requests are welcome. But take a moment to find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Please provide as much detail and context as possible.
+Feature requests are welcome. But take a moment to find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Please provide as much detail and context as possible. Your proposed feature will be shared with the guidance group to ensure the contributions are consistent with this project and save you from work that might not be accepted into QRevInt. Be aware there is already a long list of proposed enhancement, so even if you request is accepted, there is no guarantee when if might be implemented, without associated resources.
 
 ## Contributions
-If you would like to contribute your expertise to this project you are encourage to email your proposed contributions to dave@genesishydrotech.com so that we can ensure the contributions are consistent with this project and save you from work that might not be accepted into QRevInt. Contributions could include research into improving or developing better methods, writing code, reviewing code, reviewing and updating manuals, etc. If your contributions involve writing code or updating manuals please refer to the CONTRIBUTORS_GUIDELINES.md in this repository. Adherence to these guidelines will facilitate efficient merging of your contributions into the project and keep the project style and documentation consistent.
+If you would like to contribute your expertise to this project you are encourage to email your proposed contributions to dave@genesishydrotech.com so that the guidance group can ensure the contributions are consistent with this project and save you from work that might not be accepted into QRevInt. Contributions could include research into improving or developing better methods, writing code, reviewing code, reviewing and updating manuals, etc. If your contributions involve writing code or updating manuals please refer to the [CONTRIBUTORS_GUIDELINES.md](https://bitbucket.org/genesishydrotech/qrevint/src/weighted_extrap/CONTRIBUTORS_GUIDELINES.md) in this repository. Adherence to these guidelines will facilitate efficient merging of your contributions into the project and keep the project style and documentation consistent.
 
 If you would like to contribute to this project finacially please contact dave@genesishydrotech.com.
 
