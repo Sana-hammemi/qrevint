@@ -359,9 +359,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt_Test 4.26'
+        self.QRev_version = 'QRevInt 4.26 Beta'
         self.setWindowTitle(self.QRev_version)
-        self.setWindowIcon(QtGui.QIcon('QRev.ico'))
+        self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
 
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
@@ -1100,7 +1100,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.addButton(self.tr('Cancel'), msg.ActionRole)
         # msg.setInformativeText('Select option:')
         msg.setWindowTitle("Help Documents")
-        msg.setWindowIcon(QtGui.QIcon('QRev.ico'))
+        msg.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         msg.exec_()
 
         help_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Help')

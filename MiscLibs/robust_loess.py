@@ -168,8 +168,12 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
 
     # Solve using least squares
     mask = ~np.isnan(weighted_x_matrix.T) & ~np.isnan(neighbors_y.T)
-    smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T[mask],
-                                               neighbors_y.T[mask], rcond=None)
+    try:
+        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T[mask],
+                                                   neighbors_y.T[mask], rcond=None)
+    except IndexError:
+        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T,
+                                                   neighbors_y.T, rcond=None)
 
     return smoothed_values[0]
 
