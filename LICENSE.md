@@ -2,7 +2,7 @@
 
 Unless otherwise noted, this project is in the public domain in the United States because it contains materials that originally came from the United States Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits. Additionally, Genesis HydroTech LLC waives copyright and related rights in the work worldwide through the CC0 1.0 Universal public domain dedication.
 
-3rd party code and libraries are covered by the copyright and license associated with those codes and libraries.
+3rd party code and libraries used in this code are covered by the copyright and license associated with those codes and libraries.
 
 Copyright / License - CC0 1.0: The person who associated a work with this deed has dedicated the work to the public domain by waiving all of his or her rights to the work worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law. You can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission. 
 

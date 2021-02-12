@@ -1,9 +1,9 @@
 [
   {
-    "name": "QRev",
-    "organization": "U.S. Geological Survey",
-    "description": "Python versions of QRev",
-    "version": "4.16",
+    "name": "QRevInt",
+    "organization": "Genesis HydroTech LLC",
+    "description": "International version of USGS QRev",
+    "version": "4.26",
     "status": "Development",
 
     "permissions": {
@@ -11,18 +11,16 @@
       "licenses": [
         {
           "name": "Public Domain, CC0-1.0",
-          "URL": "https://code.usgs.gov/QRev/QRevPy/-/blob/master/LICENSE.md"
+          "URL": "https://bitbucket.org/genesishydrotech/qrevint/src/master/LICENSE.md"
         }
       ]
     },
 
-    "homepageURL": "https://code.usgs.gov/QRev/QRevPy",
-    "downloadURL": "https://code.usgs.gov/QRev/QRevPy/-/archive/master/QRevPy-master.zip",
-    "disclaimerURL": "https://code.usgs.gov/QRev/QRevPy/-/blob/master/DISCLAIMER.md",
-    "repositoryURL": "https://code.usgs.gov/QRev/QRevPy.git",
+    "homepageURL": "https://www.genesishydrotech.com/qrevint",
+    "downloadURL": "https://drive.google.com/file/d/1Ibxgv85V4Pep2QdU1198m8sBLkfPsRDS/view",
+    "disclaimerURL": "https://bitbucket.org/genesishydrotech/qrevint/src/master/DISCLAIMER.md",
+    "repositoryURL": "https://bitbucket.org/genesishydrotech/qrevint/",
     "vcs": "git",
-
-    "laborHours": 2000,
 
     "tags": [
       "QRev",
@@ -37,11 +35,11 @@
 
     "contact": {
       "name": "David S Mueller",
-      "email": "dmueller@usgs.gov"
+      "email": "dave@genesishydrotech.com"
     },
 
     "date": {
-      "metadataLastUpdated": "2020-06-22"
+      "metadataLastUpdated": "2021-02-11"
     }
   }
 ]

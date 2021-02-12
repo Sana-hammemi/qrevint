@@ -96,9 +96,11 @@ zipp==0.6.0
 This software (QRevInt) is a fork of QRev that was originally approved for release by the U.S. Geological Survey (USGS), IP-118174. Genesis HydroTech LLC through funding from various international agencies is working to improve and expand the capabilities and features available in QRevInt. Although the software has been subjected to rigorous review, the software may be updated as needed pursuant to further analysis and review. No warranty, expressed or implied, is made by Genesis HydroTech LLC or any of the contributing agencies as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. Furthermore, the software is released on condition that neither Genesis HydroTech LLC nor any of the participating agencies shall be held liable for any damages resulting from its authorized or unauthorized use.
 
 # License
-Unless otherwise noted, This project is in the public domain in the United States because it contains materials that originally came from the United States Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits Additionally, Genesis HydroTech LLC waives copyright and related rights in the work worldwide through the CC0 1.0 Universal public domain dedication.
+Unless otherwise noted, this project is in the public domain in the United States because it contains materials that originally came from the United States Geological Survey, an agency of the United States Department of Interior. For more information, see the official USGS copyright policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits. Additionally, Genesis HydroTech LLC waives copyright and related rights in the work worldwide through the CC0 1.0 Universal public domain dedication.
 
-Copyright / License - CC0 1.0: The person who associated a work with this deed has dedicated the work to the public domain by waiving all of his or her rights to the work worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law. You can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission. 
+3rd party code and libraries used in this code are covered by the copyright and license associated with those codes and libraries.
+
+Copyright / License - CC0 1.0: The person who associated a work with this deed has dedicated the work to the public domain by waiving all of his or her rights to the work worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law. You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission. 
 
 In no way are the patent or trademark rights of any person affected by CC0, nor are the rights that other persons may have in the work or in how the work is used, such as publicity or privacy rights.
 
@@ -110,7 +112,6 @@ Publicity or privacy: The use of a work free of known copyright restrictions may
 
 Endorsement: In some jurisdictions, wrongfully implying that an author, publisher or anyone else endorses your use of a work may be unlawful.
 
-3rd party code and libraries are covered by the copyright and license associated with those codes and libraries.
 
 # Suggested citations
 Mueller, D.S., 2021, QRevInt, Version x.xx, Genesis HydroTech LLC, https://bitbucket.org/genesishydrotech/qrevint/src/master/.
