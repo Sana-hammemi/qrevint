@@ -14,8 +14,7 @@
 
 ## Download Windows Executables
 
-Currently there are no public releases of QRevInt available. If you would like to test a beta version contact <dave@genesishydrotech.com>.
-***
+Windows Executables can be downloaded from (https://www.genesishydrotech.com/qrevint)
 
 # Development
 Genesis HydroTech LLC is coordinating the modifications and enhancements for QRevInt with the guidance and contributions from the following agencies:  
