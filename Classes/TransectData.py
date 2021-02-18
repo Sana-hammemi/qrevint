@@ -268,7 +268,8 @@ class TransectData(object):
                                          surface_vel_in=pd0_data.Surface.vel_mps,
                                          surface_rssi_in=pd0_data.Surface.rssi,
                                          surface_corr_in=pd0_data.Surface.corr,
-                                         surface_num_cells_in=pd0_data.Surface.no_cells)
+                                         surface_num_cells_in=pd0_data.Surface.no_cells,
+                                         ping_type=pd0_data.Cfg.lag_near_bottom)
                 
             else:
                 # Process water velocities for non-RiverRay ADCPs
@@ -288,7 +289,8 @@ class TransectData(object):
                                          sl_cutoff_m=sl_cutoff_m,
                                          wm_in=pd0_data.Cfg.wm[0],
                                          blank_in=pd0_data.Cfg.wf_cm[0] / 100,
-                                         corr_in=pd0_data.Wt.corr)
+                                         corr_in=pd0_data.Wt.corr,
+                                         ping_type=pd0_data.Cfg.lag_near_bottom)
                 
             # Initialize boat vel
             self.boat_vel = BoatStructure()
@@ -812,6 +814,22 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
+        # Determine ping type
+        corr_exists = np.nansum(np.nansum(corr, axis=1), axis=0)
+        coherent = corr_exists > 0
+        ping_type = []
+        for n in range(len(coherent)):
+            if n:
+                if rsdata.WaterTrack.WT_Frequency[n] == 3000:
+                    ping_type.append(6)
+                else:
+                    ping_type.append(4)
+            else:
+                if rsdata.WaterTrack.WT_Frequency[n] == 3000:
+                    ping_type.append(5)
+                else:
+                    ping_type.append(3)
+
         # Create water velocity object
         self.w_vel = WaterData()
         self.w_vel.populate_data(vel_in=vel,
@@ -829,7 +847,8 @@ class TransectData(object):
                                  sl_cutoff_m=sl_cutoff_m,
                                  wm_in=wm,
                                  blank_in=excluded_distance,
-                                 corr_in=corr)
+                                 corr_in=corr,
+                                 ping_type=ping_type)
 
         # Bottom Track
         # ------------
