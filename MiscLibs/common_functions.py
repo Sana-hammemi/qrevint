@@ -114,7 +114,7 @@ def iqr(data):
 
     """
 
-    # If 2-D array use only 1st row
+    # If 2-D array flatten to 1-D array
     if len(data.shape) > 1:
         data_1d = data.flatten()
     else:

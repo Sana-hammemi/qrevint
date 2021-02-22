@@ -736,6 +736,32 @@ class Measurement(object):
         self.uncertainty.populate_from_qrev_mat(meas_struct)
         self.qa = QAData(self, mat_struct=meas_struct, compute=False)
 
+    def create_filter_composites(self):
+        # Create composite bt: d, w, wt: d, w, gga: alt
+        bt_d = np.array([])
+        bt_w = np.array([])
+        wt_d = {0: np.array([]), 1: np.array([]), 2: np.array([]),
+                3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
+        wt_w = {0: np.array([]), 1: np.array([]), 2: np.array([]),
+                3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
+        gga_alt = np.array([])
+        for transect in self.transects:
+            bt_d = np.hstack((bt_d, transect.boat_vel.bt_vel.d_mps[:]))
+            bt_w = np.hstack((bt_w, transect.boat_vel.bt_vel.w_mps[:]))
+            if transect.boat_vel.gga_vel is not None:
+                gga_alt = np.hstack((gga_alt, transect.gps.altitude_ens_m[:]))
+
+            # Identify the ping types used in the transect
+            p_types = np.unique(transect.w_vel.ping_type)
+            # Composite for each ping type
+            for p_type in p_types:
+                wt_d[p_type] = np.hstack(
+                    (wt_d[p_type], transect.w_vel.d_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                       transect.w_vel.cells_above_sl)]))
+                wt_w[p_type] = np.hstack(
+                    (wt_d[p_type], transect.w_vel.w_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                       transect.w_vel.cells_above_sl)]))
+
     @staticmethod
     def set_num_beam_wt_threshold_trdi(mmt_transect):
         """Get number of beams to use in processing for WT from mmt file
