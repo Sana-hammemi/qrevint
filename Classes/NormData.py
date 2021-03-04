@@ -40,6 +40,10 @@ class NormData(object):
         Discharge based weights for computing a weighted median
     use_weights: bool
         Specifies if discharge weighted medians are to be used in the extrapolation fit
+    sub_from_left: bool
+        Specifies if when subsectioning the subsection should start from left to right.
+    use_q: bool
+        Specifies to use the discharge rather than the xprod when subsectioning
     """
     
     def __init__(self):
@@ -57,8 +61,10 @@ class NormData(object):
         self.valid_data = np.array([])  # Index of median values with point count greater than threshold cutoff
         self.weights = np.array([])
         self.use_weighted = True
+        self.sub_from_left = False
+        self.use_q = False
         
-    def populate_data(self, transect, data_type, threshold, data_extent=None, use_weighted=True):
+    def populate_data(self, transect, data_type, threshold, data_extent=None, use_weighted=True, sub_from_left=True, use_q=True):
         """Computes the normalized values for a single transect.
 
         Parameters
@@ -73,11 +79,18 @@ class NormData(object):
             Defines percent of data from start of transect to use, default [0, 100]
         use_weighted: bool
             Specifies if discharge weighted medians are to be used in the extrapolation fit
+        sub_from_left: bool
+            Specifies if when subsectioning the subsection should start from left to right.
+        use_q: bool
+            Specifies to use the discharge rather than the xprod when subsectioning
         """
 
         # If the data extent is not defined set data_extent to zero to trigger all data to be used
         if data_extent is None:
             data_extent = [0, 100]
+
+        self.sub_from_left = sub_from_left
+        self.use_q = use_q
             
         # Get data copies to avoid changing original data
         filename = transect.file_name
@@ -168,14 +181,19 @@ class NormData(object):
 
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
-            # Adjust cumulative sum direction based on start bank so that cumsum is always from left to right
-            if transect.start_edge == 'Right':
-                q_ens_flipped = np.flip(q_ens)
-                q_cum = np.nancumsum(q_ens_flipped)
-                q_max = q_cum[-1]
-                q_cum = np.flip(q_cum)
+            if use_q:
+                # Adjust cumulative sum direction based on start bank so that cumsum is always from left to right
+                if transect.start_edge == 'Right' and sub_from_left:
+                    q_ens_flipped = np.flip(q_ens)
+                    q_cum = np.nancumsum(q_ens_flipped)
+                    q_max = q_cum[-1]
+                    q_cum = np.flip(q_cum)
+                else:
+                    q_cum = np.nancumsum(q_ens)
+                    q_max = q_cum[-1]
             else:
-                q_cum = np.nancumsum(q_ens)
+                unit_ens = np.nansum(unit, 0)
+                q_cum = np.nancumsum(unit_ens)
                 q_max = q_cum[-1]
             # Adjust so total discharge is positive
             if q_max < 0:
@@ -274,6 +292,10 @@ class NormData(object):
         else:
             self.use_weighted = False
             self.weights = None
+        if hasattr(mat_data, 'use_q'):
+            self.use_q = mat_data.use_q
+        if hasattr(mat_data, 'sub_from_left'):
+            self.sub_from_left = mat_data.sub_from_left
 
     def compute_stats(self, threshold):
         """Computes the statistics for the normalized data.
@@ -379,7 +401,10 @@ class NormData(object):
         # Determine number of cells and ensembles for each transect
         for data in norm_data:
             n_cells.append(data.unit_normalized.shape[0])
-            n_ens.append(data.unit_normalized.shape[1])
+            try:
+                n_ens.append(data.unit_normalized.shape[1])
+            except IndexError:
+                n_ens.append(1)
         max_cells = max(n_cells)
         sum_ens = np.cumsum(n_ens)
 

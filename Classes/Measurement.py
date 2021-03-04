@@ -172,9 +172,9 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
 
                 self.qa = QAData(self)
-                # if self.run_oursin:
-                #     self.oursin = Oursin()
-                #     self.oursin.compute_oursin(self)
+                if self.run_oursin:
+                    self.oursin = Oursin()
+                    self.oursin.compute_oursin(self)
                 #
                 # self.oursin_orig = Oursin_orig()
                 # self.oursin_orig.compute_oursin(self)
@@ -671,20 +671,13 @@ class Measurement(object):
         self.system_tst = PreMeasurement.sys_test_qrev_mat_in(meas_struct)
 
         # no compass cal compassCal is mat_struct with len(data) = 0
-        if type(meas_struct.compassCal) is np.ndarray:
+        try:
             self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        elif len(meas_struct.compassCal.data) > 0:
-            self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        else:
+        except AttributeError:
             self.compass_cal = []
 
         try:
-            if type(meas_struct.compassEval) is np.ndarray:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            elif len(meas_struct.compassEval.data) > 0:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            else:
-                self.compass_eval = []
+            self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
         except AttributeError:
             self.compass_eval = []
 
@@ -693,26 +686,29 @@ class Measurement(object):
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
-        # For compatibility with files saved prior to the implementation of the discharge weighted median option
-        if self.extrap_fit.norm_data[-1].weights is None:
-            # Compute normalized data for each transect to obtain the weights
-            for n, transect in enumerate(self.transects):
-                norm_data_temp = NormData()
-                norm_data_temp.populate_data(transect=transect,
-                                        data_type=self.extrap_fit.norm_data[n].data_type,
-                                        threshold=self.extrap_fit.threshold,
-                                        data_extent=self.extrap_fit.subsection,
-                                        use_weighted=self.extrap_fit.use_weighted)
-                # Update the norm_data with the newly computed weights
-                self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
-
-            # Compute composite normalized data
-            norm_data_temp = NormData()
-            norm_data_temp.create_composite(transects=self.transects,
-                                            norm_data=self.extrap_fit.norm_data[0:-1],
-                                            threshold=self.extrap_fit.threshold)
-            # Update the norm_data with newly computed weights
-            self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+        # # For compatibility with files saved prior to the implementation of the discharge weighted median option
+        # if self.extrap_fit.norm_data[-1].weights is None:
+        #     # Compute normalized data for each transect to obtain the weights
+        #     for n, transect in enumerate(self.transects):
+        #         norm_data_temp = NormData()
+        #         norm_data_temp.populate_data(transect=transect,
+        #                                 data_type=self.extrap_fit.norm_data[n].data_type,
+        #                                 threshold=self.extrap_fit.threshold,
+        #                                 data_extent=self.extrap_fit.subsection,
+        #                                 use_weighted=self.extrap_fit.use_weighted,
+        #                                 sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
+        #                                 use_q=self.extrap_fit.norm_data[n].use_q)
+        #         # Update the norm_data with the newly computed weights, however, the weights are not used until the
+        #         # user changes the option in the GUI
+        #         self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
+        #
+        #     # Compute composite normalized data to get the composite weights
+        #     norm_data_temp = NormData()
+        #     norm_data_temp.create_composite(transects=self.transects,
+        #                                     norm_data=self.extrap_fit.norm_data[0:-1],
+        #                                     threshold=self.extrap_fit.threshold)
+        #     # Update the norm_data with newly computed weights
+        #     self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
 
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
@@ -1192,6 +1188,30 @@ class Measurement(object):
         # interpolations because the TRDI approach for power/power
         # using the power curve and exponent to estimate invalid cells.
 
+        if settings['UseWeighted'] and not self.use_weighted:
+            if self.extrap_fit.norm_data[-1].weights is None:
+                # Compute normalized data for each transect to obtain the weights
+                self.extrap_fit.process_profiles(self.transects, self.extrap_fit.norm_data[-1].data_type,
+                                                 use_weighted=settings['UseWeighted'])
+            # self.extrap_fit.norm_data = []
+            # for n, transect in enumerate(self.transects):
+            #     self.extrap_fit.norm_data[n] = NormData()
+            #     self.extrap_fit.norm_data[n].populate_data(transect=transect,
+            #                             data_type=self.extrap_fit.norm_data[n].data_type,
+            #                             threshold=self.extrap_fit.threshold,
+            #                             data_extent=self.extrap_fit.subsection,
+            #                             use_weighted=self.extrap_fit.use_weighted,
+            #                             sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
+            #                             use_q=self.extrap_fit.norm_data[n].use_q)
+            #
+            # # Compute composite normalized data to get the composite weights
+            # norm_data_temp = NormData()
+            # norm_data_temp.create_composite(transects=self.transects,
+            #                                 norm_data=self.extrap_fit.norm_data[0:-1],
+            #                                 threshold=self.extrap_fit.threshold)
+            # # Update the norm_data with newly computed weights
+            # self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+
         self.use_weighted = settings['UseWeighted']
 
         if len(self.checked_transect_idx) > 0:
@@ -1609,8 +1629,9 @@ class Measurement(object):
         self.uncertainty = Uncertainty()
         self.uncertainty.compute_uncertainty(self)
         self.qa = QAData(self)
-        self.oursin = Oursin()
-        self.oursin.compute_oursin(self)
+        if self.run_oursin:
+            self.oursin = Oursin()
+            self.oursin.compute_oursin(self)
 
     def compute_discharge(self):
         """Computes the discharge for all transects in the measurement.
