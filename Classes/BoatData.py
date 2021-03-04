@@ -1509,7 +1509,7 @@ class BoatData(object):
             Change threshold
         """
 
-        if gps_data.hdop_ens is None:
+        if gps_data.hdop_ens is None or gps_data.hdop_ens.size == 0:
             self.valid_data[5, :self.valid_data.shape[1]] = True
         else:
             # New settings if provided

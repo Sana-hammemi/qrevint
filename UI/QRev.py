@@ -5815,6 +5815,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates shiptrack plot for data in transect.
         """
 
+        self.cb_gps_bt.blockSignals(True)
+        self.cb_gps_gga.blockSignals(True)
+        self.cb_gps_vtg.blockSignals(True)
+        self.cb_gps_vectors.blockSignals(True)
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.gps_shiptrack_canvas is None:
             # Create the canvas
@@ -5842,6 +5846,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Draw canvas
         self.gps_shiptrack_canvas.draw()
+
+        self.cb_gps_bt.blockSignals(False)
+        self.cb_gps_gga.blockSignals(False)
+        self.cb_gps_vtg.blockSignals(False)
+        self.cb_gps_vectors.blockSignals(False)
 
     def gps_boat_speed(self):
         """Creates boat speed plot for data in transect.
@@ -6369,6 +6378,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def gps_bt_shiptrack(self):
         """Creates shiptrack plot for data in transect.
         """
+        self.cb_gps_bt_2.blockSignals(True)
+        self.cb_gps_gga_2.blockSignals(True)
+        self.cb_gps_vtg_2.blockSignals(True)
+        self.cb_gps_vectors_2.blockSignals(True)
 
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.gps_bt_shiptrack_canvas is None:
@@ -6397,6 +6410,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Draw canvas
         self.gps_bt_shiptrack_canvas.draw()
+
+        self.cb_gps_bt_2.blockSignals(False)
+        self.cb_gps_gga_2.blockSignals(False)
+        self.cb_gps_vtg_2.blockSignals(False)
+        self.cb_gps_vectors_2.blockSignals(False)
 
     def gps_bt_boat_speed(self):
         """Creates boat speed plot for data in transect.
