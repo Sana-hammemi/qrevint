@@ -297,12 +297,17 @@ class ExtrapPlot(object):
             Object of class NormData
 
         """
-        cmap = cm.get_cmap('Blues')
-        # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
-        #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
-        idx = np.argsort(np.abs(np.nan_to_num(norm_data.weights)), axis=None)
-        self.fig.ax.scatter(norm_data.unit_normalized.flat[idx], 1 - norm_data.cell_depth_normalized.flat[idx],
-                            marker='o', s=10, c=norm_data.weights.flat[idx], cmap=cmap)
+
+        if norm_data.weights is not None:
+            # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
+            #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
+            cmap = cm.get_cmap('Blues')
+            idx = np.argsort(np.abs(np.nan_to_num(norm_data.weights)), axis=None)
+            self.fig.ax.scatter(norm_data.unit_normalized.flat[idx], 1 - norm_data.cell_depth_normalized.flat[idx],
+                                marker='o', s=10, c=norm_data.weights.flat[idx], cmap=cmap)
+        else:
+            self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
+                             color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
 
     def extrap_plot_surface(self, norm_data):
         """Highlights the depth cell data representing the topmost depth cell. These data will be either for a

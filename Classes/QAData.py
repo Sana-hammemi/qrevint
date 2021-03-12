@@ -132,7 +132,10 @@ class QAData(object):
             # Set default thresholds
             self.q_run_threshold_caution = meas_struct.qa.qRunThresholdCaution
             self.q_run_threshold_warning = meas_struct.qa.qRunThresholdWarning
-            self.q_total_threshold_caution = meas_struct.qa.qTotalThresholdCaution
+            if hasattr(meas_struct.qa, 'qTotalThresholdCaution'):
+                self.q_total_threshold_caution = meas_struct.qa.qTotalThresholdCaution
+            else:
+                self.q_total_threshold_caution = 10
             self.q_total_threshold_warning = meas_struct.qa.qTotalThresholdWarning
 
             # Initialize instance variables
@@ -150,8 +153,12 @@ class QAData(object):
             self.compass = dict()
             self.compass['messages'] = self.make_list(meas_struct.qa.compass.messages)
             self.compass['status'] = meas_struct.qa.compass.status
-            self.compass['status1'] = meas_struct.qa.compass.status1
-            self.compass['status2'] = meas_struct.qa.compass.status2
+            if hasattr(meas_struct.qa.compass, 'status1'):
+                self.compass['status1'] = meas_struct.qa.compass.status1
+                self.compass['status2'] = meas_struct.qa.compass.status2
+            else:
+                self.compass['status1'] = 'good'
+                self.compass['status2'] = 'good'
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'magvar'):
@@ -353,7 +360,10 @@ class QAData(object):
 
         qa_dict['q_max_run_caution'] = self.make_array(mat_data.qRunCaution, ndim).astype(bool)
         qa_dict['q_max_run_warning'] = self.make_array(mat_data.qRunWarning, ndim).astype(bool)
-        qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalCaution, ndim).astype(bool)
+        if hasattr(mat_data, 'qTotalCaution'):
+            qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalCaution, ndim).astype(bool)
+        else:
+            qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalWarning, ndim).astype(bool)
         qa_dict['q_total_warning'] = self.make_array(mat_data.qTotalWarning, ndim).astype(bool)
         qa_dict['status'] = mat_data.status
 

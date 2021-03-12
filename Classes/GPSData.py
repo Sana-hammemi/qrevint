@@ -296,12 +296,20 @@ class GPSData(object):
                 self.raw_vtg_speed_mps = transect.gps.rawVTGSpeed_mps
                 self.raw_vtg_delta_time = transect.gps.rawVTGDeltaTime
 
-                # Older versions of QRev and RSL Matlab files represented the VTG mode differently.
+                # Older versions of QRev Matlab files represented the VTG mode differently.
                 try:
                     if transect.gps.rawVTGModeIndicator.ndim == 2 and \
                             type(transect.gps.rawVTGModeIndicator[0][0]) is np.float64:
-                        self.raw_vtg_mode_indicator = \
-                            np.array([chr(x) for x in range(127)])[transect.gps.rawVTGModeIndicator.astype(int)]
+                        indicator = []
+                        for row in transect.gps.rawVTGModeIndicator.astype(int):
+                            row_indicator = []
+                            for value in row:
+                                if 127 > value > 0:
+                                    row_indicator.append(chr(value))
+                                else:
+                                    row_indicator. append('')
+                            indicator.append(row_indicator)
+                        self.raw_vtg_mode_indicator = np.array(indicator)
                     else:
                         raw_vtg_mode_indicator = transect.gps.rawVTGModeIndicator.tolist()
                         new_list = []

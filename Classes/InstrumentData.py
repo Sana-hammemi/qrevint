@@ -39,7 +39,7 @@ class InstrumentData(object):
         self.beam_angle_deg = None  # angle of beam from vertical
         self.beam_pattern = None  # pattern of beams
         self.t_matrix = None  # object of TransformationMatrix
-        self.configuration_commands = None  # configuration commands sent to ADCP
+        self.configuration_commands = np.array([])  # configuration commands sent to ADCP
         
     def populate_data(self, manufacturer, raw_data, mmt_transect=None, mmt=None):
         """Manages method calls for different manufacturers.
@@ -103,21 +103,21 @@ class InstrumentData(object):
         if model_switch == 10:
             self.model = 'Rio Grande'
             if 'Fixed_Commands' in mmt_config.keys():
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands, mmt_config['Fixed_Commands'])
 
         elif model_switch == 31:
             self.model = 'StreamPro'
             self.frequency_khz = 2000
             if 'Fixed_Commands_StreamPro' in mmt_config.keys():
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands,
                                                         mmt_config['Fixed_Commands_StreamPro'])
 
         elif model_switch == 44:
             self.model = 'RiverRay'
             if 'Fixed_Commands_RiverRay' in mmt_config.keys():
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands,
                                                         mmt_config['Fixed_Commands_RiverRay'])
 
@@ -130,17 +130,17 @@ class InstrumentData(object):
                         self.model = 'RioPro'
 
             if 'Fixed_Commands_RiverPro' in mmt_config.keys():
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands,
                                                         mmt_config['Fixed_Commands_RiverPro'])
             else:
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands, ' ')
 
         else:
             self.model = 'Unknown'
             if 'Fixed_Commands' in mmt_config.keys():
-                self.configuration_commands = np.array(['Fixed'], dtype=object)
+                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
                 self.configuration_commands = np.append(self.configuration_commands, mmt_config['Fixed_Commands'])
 
         if 'Wizard_Commands' in mmt_config.keys():

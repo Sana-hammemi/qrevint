@@ -14,6 +14,8 @@ from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.Uncertainty import Uncertainty
 from Classes.QAData import QAData
 from Classes.BoatStructure import BoatStructure
+from Classes.BoatData import  BoatData
+from Classes.WaterData import WaterData
 from Classes.NormData import  NormData
 from Classes.Oursin import Oursin
 # from Classes.Oursin_orig import Oursin_orig
@@ -62,7 +64,8 @@ class Measurement(object):
     """
 
     # @profile
-    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False):
+    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
+                 use_measurement_thresholds=False):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -115,6 +118,7 @@ class Measurement(object):
                 settings['WTEnsInterpolation'] = 'abba'
                 settings['WTCellInterpolation'] = 'abba'
                 settings['Processing'] = 'QRev'
+                settings['UseMeasurementThresholds'] = use_measurement_thresholds
                 self.apply_settings(settings)
 
         else:
@@ -152,6 +156,7 @@ class Measurement(object):
                     # Apply QRev default settings
                     settings = self.qrev_default_settings(check_user_excluded_dist=True, use_weighted=use_weighted)
                     settings['Processing'] = 'QRev'
+                    settings['UseMeasurementThresholds'] = use_measurement_thresholds
                     self.apply_settings(settings)
 
                 elif proc_type == 'None':
@@ -172,9 +177,9 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
 
                 self.qa = QAData(self)
-                # if self.run_oursin:
-                #     self.oursin = Oursin()
-                #     self.oursin.compute_oursin(self)
+                if self.run_oursin:
+                    self.oursin = Oursin()
+                    self.oursin.compute_oursin(self)
                 #
                 # self.oursin_orig = Oursin_orig()
                 # self.oursin_orig.compute_oursin(self)
@@ -671,20 +676,13 @@ class Measurement(object):
         self.system_tst = PreMeasurement.sys_test_qrev_mat_in(meas_struct)
 
         # no compass cal compassCal is mat_struct with len(data) = 0
-        if type(meas_struct.compassCal) is np.ndarray:
+        try:
             self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        elif len(meas_struct.compassCal.data) > 0:
-            self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        else:
+        except AttributeError:
             self.compass_cal = []
 
         try:
-            if type(meas_struct.compassEval) is np.ndarray:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            elif len(meas_struct.compassEval.data) > 0:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            else:
-                self.compass_eval = []
+            self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
         except AttributeError:
             self.compass_eval = []
 
@@ -693,26 +691,29 @@ class Measurement(object):
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
-        # For compatibility with files saved prior to the implementation of the discharge weighted median option
-        if self.extrap_fit.norm_data[-1].weights is None:
-            # Compute normalized data for each transect to obtain the weights
-            for n, transect in enumerate(self.transects):
-                norm_data_temp = NormData()
-                norm_data_temp.populate_data(transect=transect,
-                                        data_type=self.extrap_fit.norm_data[n].data_type,
-                                        threshold=self.extrap_fit.threshold,
-                                        data_extent=self.extrap_fit.subsection,
-                                        use_weighted=self.extrap_fit.use_weighted)
-                # Update the norm_data with the newly computed weights
-                self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
-
-            # Compute composite normalized data
-            norm_data_temp = NormData()
-            norm_data_temp.create_composite(transects=self.transects,
-                                            norm_data=self.extrap_fit.norm_data[0:-1],
-                                            threshold=self.extrap_fit.threshold)
-            # Update the norm_data with newly computed weights
-            self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+        # # For compatibility with files saved prior to the implementation of the discharge weighted median option
+        # if self.extrap_fit.norm_data[-1].weights is None:
+        #     # Compute normalized data for each transect to obtain the weights
+        #     for n, transect in enumerate(self.transects):
+        #         norm_data_temp = NormData()
+        #         norm_data_temp.populate_data(transect=transect,
+        #                                 data_type=self.extrap_fit.norm_data[n].data_type,
+        #                                 threshold=self.extrap_fit.threshold,
+        #                                 data_extent=self.extrap_fit.subsection,
+        #                                 use_weighted=self.extrap_fit.use_weighted,
+        #                                 sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
+        #                                 use_q=self.extrap_fit.norm_data[n].use_q)
+        #         # Update the norm_data with the newly computed weights, however, the weights are not used until the
+        #         # user changes the option in the GUI
+        #         self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
+        #
+        #     # Compute composite normalized data to get the composite weights
+        #     norm_data_temp = NormData()
+        #     norm_data_temp.create_composite(transects=self.transects,
+        #                                     norm_data=self.extrap_fit.norm_data[0:-1],
+        #                                     threshold=self.extrap_fit.threshold)
+        #     # Update the norm_data with newly computed weights
+        #     self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
 
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
@@ -737,31 +738,79 @@ class Measurement(object):
         self.qa = QAData(self, mat_struct=meas_struct, compute=False)
 
     def create_filter_composites(self):
-        # Create composite bt: d, w, wt: d, w, gga: alt
+        """Create composite for water and bottom track difference and vertical velocities and compute the thresholds
+        using these composites.
+
+        """
+
+        # Initialize arrays
         bt_d = np.array([])
         bt_w = np.array([])
-        wt_d = {0: np.array([]), 1: np.array([]), 2: np.array([]),
-                3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
-        wt_w = {0: np.array([]), 1: np.array([]), 2: np.array([]),
-                3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
-        gga_alt = np.array([])
+        # wt_d = {0: np.array([]), 1: np.array([]), 2: np.array([]),
+        #         3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
+        # wt_w = {0: np.array([]), 1: np.array([]), 2: np.array([]),
+        #         3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
+        wt_d = {}
+        wt_w = {}
+
+
+        # Create composite arrays for all checked transects
         for transect in self.transects:
-            bt_d = np.hstack((bt_d, transect.boat_vel.bt_vel.d_mps[:]))
-            bt_w = np.hstack((bt_w, transect.boat_vel.bt_vel.w_mps[:]))
-            if transect.boat_vel.gga_vel is not None:
-                gga_alt = np.hstack((gga_alt, transect.gps.altitude_ens_m[:]))
+            if transect.checked:
+                bt_d = np.hstack((bt_d, transect.boat_vel.bt_vel.d_mps[:]))
+                bt_w = np.hstack((bt_w, transect.boat_vel.bt_vel.w_mps[:]))
 
-            # Identify the ping types used in the transect
-            p_types = np.unique(transect.w_vel.ping_type)
-            # Composite for each ping type
-            for p_type in p_types:
-                wt_d[p_type] = np.hstack(
-                    (wt_d[p_type], transect.w_vel.d_mps[np.logical_and(transect.w_vel.ping_type == p_type,
-                                                                       transect.w_vel.cells_above_sl)]))
-                wt_w[p_type] = np.hstack(
-                    (wt_d[p_type], transect.w_vel.w_mps[np.logical_and(transect.w_vel.ping_type == p_type,
-                                                                       transect.w_vel.cells_above_sl)]))
+                if transect.w_vel.ping_type.size > 0:
+                    # Identify the ping types used in the transect
+                    p_types = np.unique(transect.w_vel.ping_type)
+                    # Composite for each ping type
+                    for p_type in p_types:
+                        if p_type in wt_d:
+                            wt_d[p_type] = np.hstack(
+                                (wt_d[p_type], transect.w_vel.d_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                                   transect.w_vel.cells_above_sl)]))
+                            wt_w[p_type] = np.hstack(
+                                (wt_d[p_type], transect.w_vel.w_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                                   transect.w_vel.cells_above_sl)]))
+                        else:
+                            wt_d[p_type] = transect.w_vel.d_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                               transect.w_vel.cells_above_sl)]
+                            wt_w[p_type] = transect.w_vel.w_mps[np.logical_and(transect.w_vel.ping_type == p_type,
+                                                                               transect.w_vel.cells_above_sl)]
+                else:
+                    p_types = np.array(['U'])
+                    for p_type in p_types:
+                        if p_type in wt_d:
+                            wt_d[p_type] = np.hstack((wt_d[p_type],
+                                                      transect.w_vel.d_mps[transect.w_vel.cells_above_sl]))
+                            wt_w[p_type] = np.hstack((wt_d[p_type],
+                                                      transect.w_vel.w_mps[transect.w_vel.cells_above_sl]))
+                        else:
+                            wt_d[p_type] = transect.w_vel.d_mps[transect.w_vel.cells_above_sl]
+                            wt_w[p_type] = transect.w_vel.w_mps[transect.w_vel.cells_above_sl]
 
+
+        # Compute thresholds based on composite arrays
+
+        # Water track
+        wt_d_meas_thresholds = {}
+        wt_w_meas_thresholds = {}
+        for p_type in wt_d.keys():
+            wt_d_meas_thresholds[p_type] = WaterData.meas_iqr_filter(wt_d[p_type], multiplier=5)
+            wt_w_meas_thresholds[p_type] = WaterData.meas_iqr_filter(wt_w[p_type], multiplier=5)
+
+        # Bottom track
+        bt_d_meas_threshold, _ = BoatData.iqr_filter(bt_d)
+        bt_w_meas_threshold, _ = BoatData.iqr_filter(bt_w)
+
+        # Assign threshold to each transect
+        for transect in self.transects:
+            transect.w_vel.d_meas_thresholds = wt_d_meas_thresholds
+            transect.w_vel.w_meas_thresholds = wt_w_meas_thresholds
+            transect.boat_vel.bt_vel.d_meas_threshold = bt_d_meas_threshold
+            transect.boat_vel.bt_vel.w_meas_threshold = bt_w_meas_threshold
+
+# stopped here need to finish modification of BoatData
     @staticmethod
     def set_num_beam_wt_threshold_trdi(mmt_transect):
         """Get number of beams to use in processing for WT from mmt file
@@ -1077,6 +1126,15 @@ class Measurement(object):
             Allows the above, below, before, after interpolation to be applied even when the data use another approach.
         """
 
+        # If SonTek data does not have ping type identified, determine ping types
+        if self.transects[0].w_vel.ping_type.size == 1 and self.transects[0].adcp.manufacturer == 'SonTek':
+            for transect in self.transects:
+                ping_type = TransectData.sontek_ping_type(transect.w_vel.corr, transect.w_vel.frequency)
+                transect.w_vel.ping_type = np.tile(np.array([ping_type]), (transect.w_vel.corr.shape[1], 1))
+        # If the measurement thresholds have not been computed, compute them
+        if not self.transects[0].w_vel.d_meas_thresholds:
+            self.create_filter_composites()
+
         for transect in self.transects:
 
             # Moving-boat ensembles
@@ -1117,6 +1175,9 @@ class Measurement(object):
 
             # Apply smooth filter
                 bt_kwargs['other'] = settings['BTsmoothFilter']
+
+            transect.boat_vel.bt_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
+
 
             # Apply BT settings
             transect.boat_filters(update=False, **bt_kwargs)
@@ -1207,6 +1268,11 @@ class Measurement(object):
                 settings['WTEnsInterpolation'] = 'abba'
                 settings['WTCellInterpolation'] = 'abba'
 
+            transect.w_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
+            if transect.w_vel.ping_type.size == 0 and transect.adcp.manufacturer == 'SonTek':
+                # Correlation and frequency can be used to determine ping type
+                self.ping_type = TransectData.sontek_ping_type(corr=self.corr, freq=self.frequency)
+
             transect.w_vel.apply_filter(transect=transect, **wt_kwargs)
 
             # Edge methods
@@ -1217,6 +1283,12 @@ class Measurement(object):
         # NOTE: Extrapolations should be determined prior to WT
         # interpolations because the TRDI approach for power/power
         # using the power curve and exponent to estimate invalid cells.
+
+        if settings['UseWeighted'] and not self.use_weighted:
+            if self.extrap_fit.norm_data[-1].weights is None:
+                # Compute normalized data for each transect to obtain the weights
+                self.extrap_fit.process_profiles(self.transects, self.extrap_fit.norm_data[-1].data_type,
+                                                 use_weighted=settings['UseWeighted'])
 
         self.use_weighted = settings['UseWeighted']
 
@@ -1286,6 +1358,7 @@ class Measurement(object):
         self.uncertainty = Uncertainty()
         self.uncertainty.compute_uncertainty(self)
         self.qa = QAData(self)
+
         if self.run_oursin:
             self.oursin = Oursin()
             self.oursin.compute_oursin(self)
@@ -1412,7 +1485,9 @@ class Measurement(object):
         # Edge Settings
         settings['edgeVelMethod'] = transect.edges.vel_method
         settings['edgeRecEdgeMethod'] = transect.edges.rec_edge_method
-        
+
+        settings['UseMeasurementThresholds'] = transect.w_vel.use_measurement_thresholds
+
         return settings
 
     def qrev_default_settings(self, check_user_excluded_dist=False, use_weighted=False):
@@ -1512,6 +1587,8 @@ class Measurement(object):
         settings['extrapBot'] = 'Power'
         settings['extrapExp'] = 0.1667
         settings['UseWeighted'] = use_weighted
+
+        settings['UseMeasurementThresholds'] = False
 
         return settings
 
@@ -1618,25 +1695,29 @@ class Measurement(object):
             else:
                 self.transects[n].checked = False
 
-        # Changes in the transects selected may cause a change in extrapolation.
-        self.extrap_fit = ComputeExtrap()
-        self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-        top = self.extrap_fit.sel_fit[-1].top_method
-        bot = self.extrap_fit.sel_fit[-1].bot_method
-        exp = self.extrap_fit.sel_fit[-1].exponent
-        self.change_extrapolation(self.extrap_fit.fit_method, top=top, bot=bot, exp=exp)
-
-        self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
-        self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
-                                                    extrap_fits=self.extrap_fit.sel_fit)
-
+        # # Changes in the transects selected may cause a change in extrapolation.
+        # self.extrap_fit = ComputeExtrap()
+        # self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
+        # top = self.extrap_fit.sel_fit[-1].top_method
+        # bot = self.extrap_fit.sel_fit[-1].bot_method
+        # exp = self.extrap_fit.sel_fit[-1].exponent
+        # self.change_extrapolation(self.extrap_fit.fit_method, top=top, bot=bot, exp=exp)
+        #
+        # self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
+        # self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
+        #                                             extrap_fits=self.extrap_fit.sel_fit)
         # Update computations
-        self.compute_discharge()
-        self.uncertainty = Uncertainty()
-        self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self)
-        self.oursin = Oursin()
-        self.oursin.compute_oursin(self)
+        self.create_filter_composites()
+        settings = self.current_settings()
+        self.apply_settings(settings=settings)
+        # else:
+        #     self.compute_discharge()
+        #     self.uncertainty = Uncertainty()
+        #     self.uncertainty.compute_uncertainty(self)
+        #     self.qa = QAData(self)
+        #     if self.run_oursin:
+        #         self.oursin = Oursin()
+        #         self.oursin.compute_oursin(self)
 
     def compute_discharge(self):
         """Computes the discharge for all transects in the measurement.

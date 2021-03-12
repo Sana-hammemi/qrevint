@@ -110,48 +110,58 @@ class WTFilters(object):
             min_y = np.nanmin(transect.w_vel.d_mps[cas]) * 1.1
             invalid_error_vel = np.logical_and(np.logical_not(transect.w_vel.valid_data[2, :, :]), cas)
 
-            # Data to plot
-            x_data = ensembles[cas]
-            y_data = transect.w_vel.d_mps[cas] * units['V']
 
-            # Setup ping type
-            ping_type = transect.w_vel.ping_type[cas]
-            p_type_color = {0:'b', 1:'#009933', 2: '#ffbf00', 3:'b', 4:'#009933', 5: '#ffbf00', 6:'#ff33cc'}
-            p_type_marker = {0:'.', 1:'+', 2:'x', 3:'.', 4:'*', 5:'+', 6:'x' }
-            p_types = np.unique(ping_type)
+            if transect.w_vel.ping_type.size > 1:
+                # Data to plot
+                x_data = ensembles[cas]
+                y_data = transect.w_vel.d_mps[cas] * units['V']
 
-            # Plot first ping type
-            self.error = self.fig.ax.plot(x_data[ping_type == p_types[0]],
-                                          y_data[ping_type == p_types[0]],
-                                          p_type_marker[p_types[0]],
-                                          mfc=p_type_color[p_types[0]],
-                                          mec=p_type_color[p_types[0]])
+                # Setup ping type
+                ping_type = transect.w_vel.ping_type[cas]
+                p_type_color = {'I':'b', 'C':'#009933', 'S': '#ffbf00', '1I':'b', '1C':'#009933', '3I': '#ffbf00',
+                                '3C':'#ff33cc'}
+                p_type_marker = {'I':'.', 'C':'+', 'S':'x', '1I':'.', '1C':'*', '3I':'+', '3C':'x' }
+                p_types = np.unique(ping_type)
 
-            # Plot remaining ping types
-            if len(p_types) > 0:
-                for p_type in p_types[1:]:
-                    self.error.append(self.fig.ax.plot(x_data[ping_type == p_type],
-                                                       y_data[ping_type == p_type],
-                                                       p_type_marker[p_type],
-                                                       mfc=p_type_color[p_type],
-                                                       mec=p_type_color[p_type])[0])
+                # Plot first ping type
+                self.error = self.fig.ax.plot(x_data[ping_type == p_types[0]],
+                                              y_data[ping_type == p_types[0]],
+                                              p_type_marker[p_types[0]],
+                                              mfc=p_type_color[p_types[0]],
+                                              mec=p_type_color[p_types[0]])
 
-            # Mark invalid data
-            self.error.append(self.fig.ax.plot(ensembles[invalid_error_vel],
-                                               transect.w_vel.d_mps[invalid_error_vel] * units['V'],
-                                               'ro', ms=8, markerfacecolor='none')[0])
+                # Plot remaining ping types
+                if len(p_types) > 0:
+                    for p_type in p_types[1:]:
+                        self.error.append(self.fig.ax.plot(x_data[ping_type == p_type],
+                                                           y_data[ping_type == p_type],
+                                                           p_type_marker[p_type],
+                                                           mfc=p_type_color[p_type],
+                                                           mec=p_type_color[p_type])[0])
+
+                # Mark invalid data
+                self.error.append(self.fig.ax.plot(ensembles[invalid_error_vel],
+                                                   transect.w_vel.d_mps[invalid_error_vel] * units['V'],
+                                                   'ro', ms=8, markerfacecolor='none')[0])
+                # Create legend
+                legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                               '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD'}
+                legend_txt = []
+                for p_type in p_types:
+                    legend_txt.append(legend_dict[p_type])
+                self.fig.ax.legend(legend_txt)
+
+            else:
+                self.error = self.fig.ax.plot(ensembles[cas], transect.w_vel.d_mps[cas] * units['V'], 'b.')
+                self.error.append(self.fig.ax.plot(ensembles[invalid_error_vel],
+                                                   transect.w_vel.d_mps[invalid_error_vel] * units['V'],
+                                                   'ro', markerfacecolor='none')[0])
 
             # Scale axes
             self.fig.ax.set_ylim(top=max_y * units['V'], bottom=min_y * units['V'])
             self.fig.ax.set_ylabel(self.canvas.tr('Error Velocity' + self.units['label_V']))
 
-            # Create legend
-            legend_dict = {0:'Incoherent', 1:'Coherent', 2:'Surface Cell',
-                           3:'1MHz Incoherent', 4:'1 MHz HD', 5:'3 MHz Incoherent', 6:'3 MHz HD'}
-            legend_txt = []
-            for p_type in p_types:
-                legend_txt.append(legend_dict[p_type])
-            self.fig.ax.legend(legend_txt)
+
 
         elif selected == 'vert':
             # Plot vertical velocity
@@ -159,48 +169,56 @@ class WTFilters(object):
             min_y = np.nanmin(transect.w_vel.w_mps[cas]) * 1.1
             invalid_vert_vel = np.logical_and(np.logical_not(transect.w_vel.valid_data[3, :, :]), cas)
 
-            # Data to plot
-            x_data = ensembles[cas]
-            y_data = transect.w_vel.w_mps[cas] * units['V']
+            if transect.w_vel.ping_type.size > 1:
+                # Data to plot
+                x_data = ensembles[cas]
+                y_data = transect.w_vel.w_mps[cas] * units['V']
 
-            # Setup ping types for plotting
-            ping_type = transect.w_vel.ping_type[cas]
-            p_type_color = {0:'b', 1:'#009933', 2: '#ffbf00', 3:'b', 4:'#009933', 5: '#ffbf00', 6:'#ff33cc'}
-            p_type_marker = {0:'.', 1:'+', 2:'x', 3:'.', 4:'*', 5:'+', 6:'x' }
-            p_types = np.unique(ping_type)
+                # Setup ping types for plotting
+                ping_type = transect.w_vel.ping_type[cas]
+                p_type_color = {'I':'b', 'C':'#009933', 'S': '#ffbf00', '1I':'b', '1C':'#009933', '3I': '#ffbf00',
+                                '3C':'#ff33cc'}
+                p_type_marker = {'I':'.', 'C':'+', 'S':'x', '1I':'.', '1C':'*', '3I':'+', '3C':'x' }
+                p_types = np.unique(ping_type)
 
-            # Plot first ping type
-            self.vert = self.fig.ax.plot(x_data[ping_type == p_types[0]],
-                                          y_data[ping_type == p_types[0]],
-                                          p_type_marker[p_types[0]],
-                                          mfc=p_type_color[p_types[0]],
-                                          mec=p_type_color[p_types[0]])
+                # Plot first ping type
+                self.vert = self.fig.ax.plot(x_data[ping_type == p_types[0]],
+                                              y_data[ping_type == p_types[0]],
+                                              p_type_marker[p_types[0]],
+                                              mfc=p_type_color[p_types[0]],
+                                              mec=p_type_color[p_types[0]])
 
-            # Plot remaining ping types
-            if len(p_types) > 0:
-                for p_type in p_types[1:]:
-                    self.vert.append(self.fig.ax.plot(x_data[ping_type == p_type],
-                                                       y_data[ping_type == p_type],
-                                                       p_type_marker[p_type],
-                                                       mfc=p_type_color[p_type],
-                                                       mec=p_type_color[p_type])[0])
+                # Plot remaining ping types
+                if len(p_types) > 0:
+                    for p_type in p_types[1:]:
+                        self.vert.append(self.fig.ax.plot(x_data[ping_type == p_type],
+                                                           y_data[ping_type == p_type],
+                                                           p_type_marker[p_type],
+                                                           mfc=p_type_color[p_type],
+                                                           mec=p_type_color[p_type])[0])
 
-            # Mark invalid data
-            self.vert.append(self.fig.ax.plot(ensembles[invalid_vert_vel],
-                                               transect.w_vel.w_mps[invalid_vert_vel] * units['V'],
-                                               'ro', ms=8, markerfacecolor='none')[0])
+                # Mark invalid data
+                self.vert.append(self.fig.ax.plot(ensembles[invalid_vert_vel],
+                                                   transect.w_vel.w_mps[invalid_vert_vel] * units['V'],
+                                                   'ro', ms=8, markerfacecolor='none')[0])
+
+                # Create legend
+                legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                               '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD'}
+                legend_txt = []
+                for p_type in p_types:
+                    legend_txt.append(legend_dict[p_type])
+                self.fig.ax.legend(legend_txt)
+
+            else:
+                self.vert = self.fig.ax.plot(ensembles[cas], transect.w_vel.w_mps[cas] * units['V'], 'b.')
+                self.vert.append(self.fig.ax.plot(ensembles[invalid_vert_vel],
+                                                  transect.w_vel.w_mps[invalid_vert_vel] * units['V'],
+                                                  'ro', markerfacecolor='none')[0])
 
             # Scale axes
             self.fig.ax.set_ylim(top=max_y * units['V'], bottom=min_y * units['V'])
             self.fig.ax.set_ylabel(self.canvas.tr('Vert. Velocity' + self.units['label_V']))
-
-            # Create legend
-            legend_dict = {0:'Incoherent', 1:'Coherent', 2:'Surface Cell',
-                           3:'1MHz Incoherent', 4:'1 MHz HD', 5:'3 MHz Incoherent', 6:'3 MHz HD'}
-            legend_txt = []
-            for p_type in p_types:
-                legend_txt.append(legend_dict[p_type])
-            self.fig.ax.legend(legend_txt)
 
         elif selected == 'snr':
             # Plot snr

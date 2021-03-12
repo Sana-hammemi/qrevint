@@ -239,7 +239,9 @@ class TransectData(object):
                 
             # Create water_data object
             # ------------------------
-            
+
+            ensemble_ping_type = self.trdi_ping_type(pd0_data)
+
             # Check for RiverRay and RiverPro data
             firmware = str(pd0_data.Inst.firm_ver[0])
             excluded_dist = 0
@@ -269,7 +271,7 @@ class TransectData(object):
                                          surface_rssi_in=pd0_data.Surface.rssi,
                                          surface_corr_in=pd0_data.Surface.corr,
                                          surface_num_cells_in=pd0_data.Surface.no_cells,
-                                         ping_type=pd0_data.Cfg.lag_near_bottom)
+                                         ping_type=ensemble_ping_type)
                 
             else:
                 # Process water velocities for non-RiverRay ADCPs
@@ -290,7 +292,7 @@ class TransectData(object):
                                          wm_in=pd0_data.Cfg.wm[0],
                                          blank_in=pd0_data.Cfg.wf_cm[0] / 100,
                                          corr_in=pd0_data.Wt.corr,
-                                         ping_type=pd0_data.Cfg.lag_near_bottom)
+                                         ping_type=ensemble_ping_type)
                 
             # Initialize boat vel
             self.boat_vel = BoatStructure()
@@ -677,6 +679,30 @@ class TransectData(object):
             self.adcp = InstrumentData()
             self.adcp.populate_data(manufacturer='TRDI', raw_data=pd0_data, mmt_transect=mmt_transect, mmt=mmt)
 
+    @staticmethod
+    def trdi_ping_type(pd0_data):
+        """Determines if the ping is coherent on incoherent based on the lag near bottom. A coherent ping will have
+        the lag near the bottom.
+
+        Parameters
+        ----------
+        pd0_data: Pd0TRDI
+            Raw data from pd0 file.
+
+        Returns
+        -------
+        ping_type = np.array(int)
+            Ping_type for each ensemble, 1 - coherent, 0 - incoherent
+        """
+        ping_type = np.array([])
+        if hasattr(pd0_data.Cfg, 'lag_near_bottom'):
+            ping_temp = pd0_data.Cfg.lag_near_bottom > 0
+            ping_type = ping_temp
+            ping_type[ping_temp == 0] = 'I'
+            ping_type[ping_temp == 1] = 'C'
+
+        return ping_type.astype(int)
+
     def sontek(self, rsdata, file_name):
         """Reads Matlab file produced by RiverSurveyor Live and populates the transect instance variables.
 
@@ -752,7 +778,10 @@ class TransectData(object):
         # Rearrange arrays for consistency with WaterData class
         vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
         snr = np.swapaxes(rsdata.System.SNR, 1, 0)
-        corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
+        if hasattr(rsdata.WaterTrack, 'Correlation'):
+            corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
+        else:
+            corr = np.array([])
 
         # Correct SonTek difference velocity for error in earlier transformation matrices.
         if abs(rsdata.Transformation_Matrices.Matrix[3, 0, 0]) < 0.5:
@@ -800,35 +829,24 @@ class TransectData(object):
                                                                     slc_type=sl_cutoff_type,
                                                                     value=1 - sl_cutoff_percent / 100)
         # Determine water mode
-        corr_nan = np.isnan(corr)
-        number_of_nan = np.count_nonzero(corr_nan)
-        if number_of_nan == 0:
-            wm = 'HD'
-        elif corr_nan.size == number_of_nan:
-            wm = 'IC'
+        if len(corr) > 0:
+            corr_nan = np.isnan(corr)
+            number_of_nan = np.count_nonzero(corr_nan)
+            if number_of_nan == 0:
+                wm = 'HD'
+            elif corr_nan.size == number_of_nan:
+                wm = 'IC'
+            else:
+                wm = 'Variable'
         else:
-            wm = 'Variable'
+            wm = 'Unknown'
 
         # Determine excluded distance (Similar to SonTek's screening distance)
         excluded_distance = rsdata.Setup.screeningDistance - rsdata.Setup.sensorDepth
         if excluded_distance < 0:
             excluded_distance = 0
 
-        # Determine ping type
-        corr_exists = np.nansum(np.nansum(corr, axis=1), axis=0)
-        coherent = corr_exists > 0
-        ping_type = []
-        for n in range(len(coherent)):
-            if n:
-                if rsdata.WaterTrack.WT_Frequency[n] == 3000:
-                    ping_type.append(6)
-                else:
-                    ping_type.append(4)
-            else:
-                if rsdata.WaterTrack.WT_Frequency[n] == 3000:
-                    ping_type.append(5)
-                else:
-                    ping_type.append(3)
+        ping_type = self.sontek_ping_type(corr=corr, freq=rsdata.WaterTrack.WT_Frequency)
 
         # Create water velocity object
         self.w_vel = WaterData()
@@ -999,8 +1017,8 @@ class TransectData(object):
 
         # Extrapolation
         # -------------
-        top = None
-        bottom = None
+        top = ''
+        bottom = ''
 
         # Top extrapolation
         if rsdata.Setup.extrapolation_Top_nFitType == 0:
@@ -1132,6 +1150,40 @@ class TransectData(object):
 
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
+
+    @staticmethod
+    def sontek_ping_type(corr, freq):
+        """Determines ping type based on the fact that HD has correlation but incoherent does not.
+
+        Parameters
+        ----------
+        corr: np.ndarray(int)
+            Water track correlation
+        freq:
+            Frequency of ping in Hz
+
+        Returns
+        -------
+        ping_type: np.array(int)
+            Ping_type for each ensemble, 3 - 1 MHz Incoherent, 4 - 1 MHz HD, 5 - 3 MHz Incoherent, 6 - 3 MHz HD
+        """
+        # Determine ping type
+        corr_exists = np.nansum(np.nansum(corr, axis=1), axis=0)
+        coherent = corr_exists > 0
+        ping_type = []
+        for n in range(len(coherent)):
+            if n:
+                if freq[n] == 3000:
+                    ping_type.append('3C')
+                else:
+                    ping_type.append('1C')
+            else:
+                if freq[n] == 3000:
+                    ping_type.append('3I')
+                else:
+                    ping_type.append('1I')
+
+        return np.array(ping_type)
 
     @staticmethod
     def qrev_mat_in(meas_struct):

@@ -201,31 +201,19 @@ class MovingBedTests(object):
         self.type = mat_data.type
         self.transect = TransectData()
         self.transect.populate_from_qrev_mat(mat_data.transect)
-        self.duration_sec = mat_data.duration_sec
-        self.percent_invalid_bt = mat_data.percentInvalidBT
 
-        # Handle situation for one or more tests
-        if type(mat_data.compassDiff_deg) is float:
-            self.compass_diff_deg = mat_data.compassDiff_deg
-        else:
-            self.compass_diff_deg = self.make_list(mat_data.compassDiff_deg)
+        # If QRev.mat may return and empty array instead of a float
+        self.duration_sec = self.return_float(mat_data.duration_sec)
+        self.percent_invalid_bt = self.return_float(mat_data.percentInvalidBT)
+        self.compass_diff_deg = self.return_float(mat_data.compassDiff_deg)
+        self.flow_dir = self.return_float(mat_data.flowDir_deg)
+        self.mb_dir = self.return_float(mat_data.mbDir_deg)
+        self.dist_us_m = self.return_float(mat_data.distUS_m)
+        self.flow_spd_mps = self.return_float(mat_data.flowSpd_mps)
+        self.mb_spd_mps = self.return_float(mat_data.mbSpd_mps)
+        self.percent_mb = self.return_float(mat_data.percentMB)
+        self.near_bed_speed_mps = self.return_float(mat_data.nearBedSpeed_mps)
 
-        # Handle situation for one or more tests
-        if type(mat_data.flowDir_deg) is float:
-            self.flow_dir = mat_data.flowDir_deg
-        else:
-            self.flow_dir = self.make_list(mat_data.flowDir_deg)
-
-        # Handle situation for one or more tests
-        if type(mat_data.mbDir_deg) is float:
-            self.mb_dir = mat_data.mbDir_deg
-        else:
-            self.mb_dir = self.make_list(mat_data.mbDir_deg)
-
-        self.dist_us_m = mat_data.distUS_m
-        self.flow_spd_mps = mat_data.flowSpd_mps
-        self.mb_spd_mps = mat_data.mbSpd_mps
-        self.percent_mb = mat_data.percentMB
         self.moving_bed = mat_data.movingBed
         self.user_valid = bool(mat_data.userValid)
         self.test_quality = mat_data.testQuality
@@ -238,27 +226,21 @@ class MovingBedTests(object):
         else:
             self.messages = [mat_data.messages]
 
-        # Handle situation for one or more tests
-        if type(mat_data.nearBedSpeed_mps) is np.ndarray:
-            self.near_bed_speed_mps = np.nan
-        else:
-            self.near_bed_speed_mps = mat_data.nearBedSpeed_mps
-
         self.stationary_us_track = mat_data.stationaryUSTrack
         self.stationary_cs_track = mat_data.stationaryCSTrack
         self.stationary_mb_vel = mat_data.stationaryMBVel
 
         # Feature that can use GPS for moving-bed tests
         if hasattr(mat_data, 'bt_percent_mb'):
-            self.bt_percent_mb = mat_data.bt_percent_mb
-            self.bt_dist_us_m = mat_data.bt_dist_us_m
-            self.bt_mb_dir = mat_data.bt_mb_dir
-            self.bt_mb_spd_mps = mat_data.bt_mb_spd_mps
-            self.bt_flow_spd_mps = mat_data.bt_flow_spd_mps
-            self.gps_percent_mb = mat_data.gps_percent_mb
-            self.gps_dist_us_m = mat_data.gps_dist_us_m
-            self.gps_mb_dir = mat_data.gps_mb_dir
-            self.gps_mb_spd_mps = mat_data.gps_mb_spd_mps
+            self.bt_percent_mb = self.return_float(mat_data.bt_percent_mb)
+            self.bt_dist_us_m = self.return_float(mat_data.bt_dist_us_m)
+            self.bt_mb_dir = self.return_float(mat_data.bt_mb_dir)
+            self.bt_mb_spd_mps = self.return_float(mat_data.bt_mb_spd_mps)
+            self.bt_flow_spd_mps = self.return_float(mat_data.bt_flow_spd_mps)
+            self.gps_percent_mb = self.return_float(mat_data.gps_percent_mb)
+            self.gps_dist_us_m = self.return_float(mat_data.gps_dist_us_m)
+            self.gps_mb_dir = self.return_float(mat_data.gps_mb_dir)
+            self.gps_mb_spd_mps = self.return_float(mat_data.gps_mb_spd_mps)
         else:
             self.bt_percent_mb = self.percent_mb
             self.bt_dist_us_m = self.dist_us_m
@@ -266,6 +248,25 @@ class MovingBedTests(object):
             self.bt_mb_spd_mps = self.mb_spd_mps
             self.bt_flow_spd_mps = self.flow_spd_mps
             self.compute_mb_gps()
+
+    @staticmethod
+    def return_float(data):
+        """Handles situation where the Matlab file is an empty array
+
+        Parameters
+        ----------
+        data: float or np.ndarray
+            Any variable
+        """
+        if type(data) is float:
+            return data
+        elif type(data) is np.ndarray:
+            if data.size == 0:
+                return np.nan
+            else:
+                return MovingBedTests.make_list(data)
+        else:
+            return np.nan
 
     @staticmethod
     def make_list(array_in):
