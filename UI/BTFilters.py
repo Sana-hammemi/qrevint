@@ -88,18 +88,18 @@ class BTFilters(object):
             bt_temp = copy.deepcopy(transect.boat_vel.bt_vel)
             bt_temp.filter_beam(4)
             valid_4beam = bt_temp.valid_data[5, :].astype(int)
-            beam_data = np.copy(valid_4beam).astype(int)
-            beam_data[valid_4beam == 1] = 4
-            beam_data[valid_4beam == 0] = 3
-            beam_data[np.logical_not(transect.boat_vel.bt_vel.valid_data[1, :])] = 0
+            y_data = np.copy(valid_4beam).astype(int)
+            y_data[valid_4beam == 1] = 4
+            y_data[valid_4beam == 0] = 3
+            y_data[np.logical_not(transect.boat_vel.bt_vel.valid_data[1, :])] = 0
 
             # Plot all data
-            self.beam = self.fig.ax.plot(ensembles, beam_data, 'b.')
+            self.beam = self.fig.ax.plot(ensembles, y_data, 'b.')
 
             # Circle invalid data
             invalid_beam = np.logical_not(transect.boat_vel.bt_vel.valid_data[5, :])
             self.beam.append(self.fig.ax.plot(ensembles[invalid_beam],
-                                              beam_data[invalid_beam], 'ro', markerfacecolor='none')[0])
+                                              y_data[invalid_beam], 'ro', markerfacecolor='none')[0])
 
             # Format axis
             self.fig.ax.set_ylim(top=4.5, bottom=-0.5)
@@ -107,26 +107,102 @@ class BTFilters(object):
 
         elif selected == 'error':
             # Plot error velocity
-            max_y = np.nanmax(transect.boat_vel.bt_vel.d_mps) * 1.1
-            min_y = np.nanmin(transect.boat_vel.bt_vel.d_mps) * 1.1
+            x_data = ensembles
+            y_data = transect.boat_vel.bt_vel.d_mps * units['V']
+            max_y = np.nanmax(y_data) * 1.1
+            min_y = np.nanmin(y_data) * 1.1
             invalid_error_vel = np.logical_not(transect.boat_vel.bt_vel.valid_data[2, :])
-            self.error = self.fig.ax.plot(ensembles, transect.boat_vel.bt_vel.d_mps * units['V'], 'b.')
-            self.error.append(self.fig.ax.plot(ensembles[invalid_error_vel],
-                                               transect.boat_vel.bt_vel.d_mps[invalid_error_vel] * units['V'],
-                                               'ro', markerfacecolor='none')[0])
-            self.fig.ax.set_ylim(top=max_y * units['V'], bottom=min_y * units['V'])
+
+            if np.all(np.isnan(transect.boat_vel.bt_vel.d_meas_threshold)):
+                self.error = self.fig.ax.plot(x_data, y_data, '.', mfc='b', mec='b')
+                # Mark invalid data
+                self.error.append(self.fig.ax.plot(x_data[invalid_error_vel],
+                                                   y_data[invalid_error_vel],
+                                                   'ro', ms=8, markerfacecolor='none')[0])
+            else:
+                freq_used = np.unique(transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+                freq_color = {'600': 'b', '1200':'b', '1000':'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+                freq_marker = {'600': '.', '1200':'.', '1000':'.', '2000': '.', '2400': '.', '3000': '+'}
+
+                freq_ensembles = transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+                # Plot first ping type
+                self.error = self.fig.ax.plot(x_data[freq_ensembles == freq_used[0]],
+                                              y_data[freq_ensembles == freq_used[0]],
+                                              freq_marker[freq_used[0]],
+                                              mfc=freq_color[freq_used[0]],
+                                              mec=freq_color[freq_used[0]])
+
+                # Plot remaining frequencies
+                if freq_used.size > 1:
+                    for freq in freq_used[1:]:
+                        self.error.append(self.fig.ax.plot(x_data[freq_ensembles == freq],
+                                                           y_data[freq_ensembles == freq],
+                                                           freq_marker[freq],
+                                                           mfc=freq_color[freq],
+                                                           mec=freq_color[freq])[0])
+
+                # Mark invalid data
+                self.error.append(self.fig.ax.plot(x_data[invalid_error_vel],
+                                                   y_data[invalid_error_vel],
+                                                   'ro', ms=8, markerfacecolor='none')[0])
+                # Create legend
+                legend_dict = {'600': '600 kHz', '1200':'1200 kHz', '1000':'1 MHz', '2000': '2 MHz',
+                               '2400': '2.4 MHz', '3000': '3 MHz'}
+                legend_txt = []
+                for freq in freq_used:
+                    legend_txt.append(legend_dict[freq])
+                self.fig.ax.legend(legend_txt)
+
+            self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('Error Velocity' + self.units['label_V']))
 
         elif selected == 'vert':
             # Plot vertical velocity
-            max_y = np.nanmax(transect.boat_vel.bt_vel.w_mps) * 1.1
-            min_y = np.nanmin(transect.boat_vel.bt_vel.w_mps) * 1.1
+            x_data = ensembles
+            y_data = transect.boat_vel.bt_vel.w_mps * units['V']
+            max_y = np.nanmax(y_data) * 1.1
+            min_y = np.nanmin(y_data) * 1.1
             invalid_vert_vel = np.logical_not(transect.boat_vel.bt_vel.valid_data[3, :])
-            self.vert = self.fig.ax.plot(ensembles, transect.boat_vel.bt_vel.w_mps * units['V'], 'b.')
-            self.vert.append(self.fig.ax.plot(ensembles[invalid_vert_vel],
-                                              transect.boat_vel.bt_vel.w_mps[invalid_vert_vel] * units['V'],
-                                              'ro', markerfacecolor='none')[0])
-            self.fig.ax.set_ylim(top=max_y * units['V'], bottom=min_y * units['V'])
+            if np.all(np.isnan(transect.boat_vel.bt_vel.w_meas_threshold)):
+                self.error = self.fig.ax.plot(x_data, y_data, '.', mfc='b', mec='b')
+                # Mark invalid data
+                self.error.append(self.fig.ax.plot(x_data[invalid_vert_vel],
+                                                   y_data[invalid_vert_vel],
+                                                   'ro', ms=8, markerfacecolor='none')[0])
+            else:
+                freq_used = np.unique(transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+                freq_color = {'600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+                freq_marker = {'600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+                freq_ensembles = transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+                # Plot first ping type
+                self.vert = self.fig.ax.plot(x_data[freq_ensembles == freq_used[0]],
+                                             y_data[freq_ensembles == freq_used[0]],
+                                             freq_marker[freq_used[0]],
+                                             mfc=freq_color[freq_used[0]],
+                                             mec=freq_color[freq_used[0]])
+
+                # Plot remaining frequencies
+                if freq_used.size > 1:
+                    for freq in freq_used[1:]:
+                        self.vert.append(self.fig.ax.plot(x_data[freq_ensembles == freq],
+                                                          y_data[freq_ensembles == freq],
+                                                          freq_marker[freq],
+                                                          mfc=freq_color[freq],
+                                                          mec=freq_color[freq])[0])
+
+                # Mark invalid data
+                self.vert.append(self.fig.ax.plot(x_data[invalid_vert_vel],
+                                                  y_data[invalid_vert_vel],
+                                                  'ro', ms=8, markerfacecolor='none')[0])
+                # Create legend
+                legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                               '2400': '2.4 MHz', '3000': '3 MHz'}
+                legend_txt = []
+                for freq in freq_used:
+                    legend_txt.append(legend_dict[freq])
+                self.fig.ax.legend(legend_txt)
+
+            self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('Vert. Velocity' + self.units['label_V']))
 
         elif selected == 'other':

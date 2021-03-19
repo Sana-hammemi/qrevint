@@ -794,6 +794,8 @@ class DepthData(object):
             
         # Determine number of beams
         n_beams = self.depth_beams_m.shape[0]
+        depth_mono = copy.deepcopy(self.depth_beams_m)
+        depth_new = copy.deepcopy(self.depth_beams_m)
         
 #       Create strict monotonic arrays for depth and track by identifying duplicate
 #       track values.  The first track value is used and the remaining duplicates
@@ -803,7 +805,7 @@ class DepthData(object):
 #       interpolation.   Only the interpolated data for invalid depths are added
 #       to the valid depth data to create depth_new
         
-        depth_mono = copy.deepcopy(self.depth_beams_m)
+
         x_mono = x
         
         idx0 = np.where(np.diff(x) == 0)[0]
@@ -828,7 +830,7 @@ class DepthData(object):
                 x[indices[1:]] = np.nan
                 
         # Interpolate each beam
-        depth_new = copy.deepcopy(self.depth_beams_m)
+
         for n in range(n_beams):
             # Determine ensembles with valid depth data
             valid_depth_mono = np.logical_not(np.isnan(depth_mono[n]))

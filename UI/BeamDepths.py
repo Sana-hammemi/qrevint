@@ -138,39 +138,39 @@ class BeamDepths(object):
             # Plot beams
             self.beam1 = self.fig.ax.plot(x * units['L'],
                                           beam_depths[0, :] * units['L'],
-                                          'r-')
+                                          linestyle='-', marker='o', color='k', markersize=4)
             self.beam1.append(self.fig.ax.plot(x[invalid_beams[0, :]] * units['L'],
                                                beam_depths[0, invalid_beams[0, :]] * units['L'],
                                                'r', linestyle='',
-                                               marker='$O$')[0])
+                                               marker='o', markersize=8, markerfacecolor='none')[0])
 
             self.beam2 = self.fig.ax.plot(x * units['L'],
                                           beam_depths[1, :] * units['L'],
-                                          color='#005500')
+                                          color='#005500',linestyle='-', marker='o', markersize=4)
             self.beam2.append(self.fig.ax.plot(x[invalid_beams[1, :]] * units['L'],
                                                beam_depths[1, invalid_beams[1, :]] * units['L'],
-                                               color='#005500',
+                                               color='r',
                                                linestyle='',
-                                               marker='$O$')[0])
+                                               marker='o', markersize=8, markerfacecolor='none')[0])
 
             self.beam3 = self.fig.ax.plot(x * units['L'],
                                           beam_depths[2, :] * units['L'],
-                                          'b-')
+                                          linestyle='-', marker='o', color='b', markersize=4)
             self.beam3.append(self.fig.ax.plot(x[invalid_beams[2, :]] * units['L'],
                                                beam_depths[2, invalid_beams[2, :]] * units['L'],
-                                               'b',
+                                               'r',
                                                linestyle='',
-                                               marker='$O$')[0])
+                                               marker='o', markersize=8, markerfacecolor='none')[0])
 
             self.beam4 = self.fig.ax.plot(x * units['L'],
                                           beam_depths[3, :] * units['L'],
                                           color='#aa5500',
-                                          linestyle='-')
+                                          linestyle='-', marker='o', markersize=4)
             self.beam4.append(self.fig.ax.plot(x[invalid_beams[3, :]] * units['L'],
                                                beam_depths[3, invalid_beams[3, :]] * units['L'],
-                                               color='#aa5500',
+                                               color='r',
                                                linestyle='',
-                                               marker='$O$')[0])
+                                               marker='o', markersize=8, markerfacecolor='none')[0])
             # Compute max depth from beams
             max_beams = np.nanmax(np.nanmax(transect.depths.bt_depths.depth_beams_m))
 
@@ -210,12 +210,12 @@ class BeamDepths(object):
                 self.vb = self.fig.ax.plot(x * units['L'],
                                            beam_depths * units['L'],
                                            color='#aa00ff',
-                                           linestyle='-')
+                                           linestyle='-', marker='o', markersize=4)
                 self.vb.append(self.fig.ax.plot(x[invalid_beams] * units['L'],
                                                 beam_depths[invalid_beams] * units['L'],
-                                                color='#aa00ff',
+                                                color='r',
                                                 linestyle='',
-                                                marker='$O$')[0])
+                                                marker='o', markersize=8, markerfacecolor='none')[0])
 
                 if cb_vert.checkState() == QtCore.Qt.Checked:
                     for item in self.vb:
@@ -232,12 +232,12 @@ class BeamDepths(object):
                 beam_depths = transect.depths.ds_depths.depth_beams_m[0, :]
                 self.ds = self.fig.ax.plot(x * units['L'],
                                            beam_depths * units['L'],
-                                           color='#00aaff')
+                                           color='#00aaff', linestyle='-', marker='o')
                 self.ds.append(self.fig.ax.plot(x[invalid_beams] * units['L'],
                                                 beam_depths[invalid_beams] * units['L'],
-                                                color='#00aaff',
+                                                color='r',
                                                 linestyle='',
-                                                marker='$O$')[0])
+                                                marker='x')[0])
 
                 if cb_ds.checkState() == QtCore.Qt.Checked:
                     for item in self.ds:

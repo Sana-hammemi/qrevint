@@ -420,6 +420,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.sticky_settings.new('UserRating', False)
             self.rating_prompt = False
 
+        try:
+            ss = self.sticky_settings.get('ColorMap')
+            self.color_map = ss
+        except KeyError:
+            self.sticky_settings.new('ColorMap', 'viridis')
+            self.color_map = 'viridis'
+
         # Set initial change switch to false
         self.change = False
 
@@ -1063,12 +1070,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.rb_filter_transect.setChecked(True)
 
+        if self.color_map == 'viridis':
+            options.rb_viridis.setChecked(True)
+        else:
+            options.rb_jet.setChecked(True)
+
         # Execute the options window
         rsp = options.exec_()
 
         with self.wait_cursor():
             # Apply settings from options window
             if rsp == QtWidgets.QDialog.Accepted:
+
                 # Units options
                 if options.rb_english.isChecked():
                     if self.units['ID'] == 'SI':
@@ -1080,6 +1093,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if self.units['ID'] == 'English':
                         self.units = units_conversion(units_id='SI')
                         self.sticky_settings.set('UnitsID', 'SI')
+                        self.update_main()
+                        self.change = True
+
+                # Color map
+                if options.rb_viridis.isChecked():
+                    if self.color_map != 'viridis':
+                        self.color_map = 'viridis'
+                        self.sticky_settings.set('ColorMap', 'viridis')
+                        self.update_main()
+                        self.change = True
+                else:
+                    if self.color_map != 'jet':
+                        self.color_map = 'jet'
+                        self.sticky_settings.set('ColorMap', 'jet')
                         self.update_main()
                         self.change = True
 
@@ -1731,7 +1758,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_wt_contour_fig = WTContour(canvas=self.main_wt_contour_canvas)
         # Create the figure with the specified data
         self.main_wt_contour_fig.create(transect=transect,
-                                        units=self.units)
+                                        units=self.units,
+                                        color_map=self.color_map)
         self.main_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0)
         # Draw canvas
         self.main_wt_contour_canvas.draw()
@@ -7641,7 +7669,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create the figure with the specified data
 
         self.wt_max_limit = self.wt_bottom_fig.create(transect=self.transect,
-                                                      units=self.units)
+                                                      units=self.units,
+                                                      color_map=self.color_map)
 
         # Draw canvas
         self.wt_bottom_canvas.draw()
@@ -7687,7 +7716,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.wt_top_fig.create(transect=self.transect,
                                        units=self.units,
                                        invalid_data=np.logical_not(self.transect.w_vel.valid_data[0, :, :]),
-                                       max_limit=self.wt_max_limit)
+                                       max_limit=self.wt_max_limit,
+                                       color_map=self.color_map)
             except AttributeError:
                 pass
         else:

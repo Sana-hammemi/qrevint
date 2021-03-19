@@ -44,7 +44,8 @@ class WTContour(object):
         self.cell_plt = None
         self.speed_plt = None
 
-    def create(self, transect, units, invalid_data=None, n_ensembles=None, edge_start=None, max_limit=0):
+    def create(self, transect, units, invalid_data=None, n_ensembles=None, edge_start=None, max_limit=0,
+               color_map='viridis'):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -99,7 +100,7 @@ class WTContour(object):
                     max_limit = 1
 
             # Create color map
-            cmap = cm.get_cmap('viridis')
+            cmap = cm.get_cmap(color_map)
             cmap.set_under('white')
 
             # Generate color contour

@@ -115,14 +115,15 @@ class CrossSection(object):
             # Plot Final
             self.final_cs = self.fig.ax.plot(x * units['L'],
                                              beam_depths * units['L'],
-                                             'k-')
+                                             linestyle='-', marker='o', color='k', markersize=4)
             max_final = np.nanmax(beam_depths)
 
             # Plot 4 beam average
             beam_depths = transect.depths.bt_depths.depth_processed_m
             self.beam_cs = self.fig.ax.plot(x * units['L'],
                                             beam_depths * units['L'],
-                                            'r-')
+                                            linestyle='-', marker='o', color='r', markersize=4)
+
             max_beam = np.nanmax(beam_depths)
 
             # Plot vertical beam
@@ -131,7 +132,7 @@ class CrossSection(object):
                 self.vb_cs = self.fig.ax.plot(x * units['L'],
                                               beam_depths * units['L'],
                                               color='#aa00ff',
-                                              linestyle='-')
+                                              linestyle='-', marker='o', markersize=4)
                 max_vb = np.nanmax(beam_depths)
 
             # Plot depth sounder
@@ -140,7 +141,7 @@ class CrossSection(object):
                 self.ds_cs = self.fig.ax.plot(x * units['L'],
                                               beam_depths * units['L'],
                                               color='#00aaff',
-                                              linestyle='-')
+                                              linestyle='-', marker='o', markersize=4)
                 max_ds = np.nanmax(beam_depths)
 
             # Based on checkbox control make cross sections visible or not

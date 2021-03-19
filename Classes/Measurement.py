@@ -461,9 +461,15 @@ class Measurement(object):
         # Site information pulled from last file
         if hasattr(rsdata, 'SiteInfo'):
             if hasattr(rsdata.SiteInfo, 'Site_Name'):
-                self.station_name = rsdata.SiteInfo.Site_Name
+                if len(rsdata.SiteInfo.Site_Name) > 0:
+                    self.station_name = rsdata.SiteInfo.Site_Name
+                else:
+                    self.station_name = ''
             if hasattr(rsdata.SiteInfo, 'Station_Number'):
-                self.station_number = rsdata.SiteInfo.Station_Number
+                if len(rsdata.SiteInfo.Station_Number) > 0:
+                    self.station_number = rsdata.SiteInfo.Station_Number
+                else:
+                    self.station_number = ''
 
         self.qaqc_sontek(pathname)
 
@@ -800,17 +806,16 @@ class Measurement(object):
             wt_w_meas_thresholds[p_type] = WaterData.meas_iqr_filter(wt_w[p_type], multiplier=5)
 
         # Bottom track
-        bt_d_meas_threshold, _ = BoatData.iqr_filter(bt_d)
-        bt_w_meas_threshold, _ = BoatData.iqr_filter(bt_w)
+        bt_d_max_ref, bt_d_min_ref = BoatData.iqr_filter(bt_d)
+        bt_w_max_ref, bt_w_min_ref = BoatData.iqr_filter(bt_w)
 
         # Assign threshold to each transect
         for transect in self.transects:
             transect.w_vel.d_meas_thresholds = wt_d_meas_thresholds
             transect.w_vel.w_meas_thresholds = wt_w_meas_thresholds
-            transect.boat_vel.bt_vel.d_meas_threshold = bt_d_meas_threshold
-            transect.boat_vel.bt_vel.w_meas_threshold = bt_w_meas_threshold
+            transect.boat_vel.bt_vel.d_meas_threshold = [bt_d_max_ref, bt_d_min_ref]
+            transect.boat_vel.bt_vel.w_meas_threshold = [bt_w_max_ref, bt_w_min_ref]
 
-# stopped here need to finish modification of BoatData
     @staticmethod
     def set_num_beam_wt_threshold_trdi(mmt_transect):
         """Get number of beams to use in processing for WT from mmt file

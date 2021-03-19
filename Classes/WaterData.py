@@ -274,8 +274,7 @@ class WaterData(object):
                 self.raw_vel_mps[:, :max_surf_cells, :] = surface_vel_in[:, :max_surf_cells, :]
                 self.rssi[:, :max_surf_cells, :] = surface_rssi_in[:, :max_surf_cells, :]
                 self.corr[:, :max_surf_cells, :] = surface_corr_in[:, :max_surf_cells, :]
-                self.ping_type[:max_surf_cells, :] = 'S' \
-                                                     ''
+                self.ping_type[:max_surf_cells, :] = 'S'
 
             for i_ens in range(num_ens):
                 self.raw_vel_mps[:,
@@ -297,6 +296,7 @@ class WaterData(object):
                 # No correlations input
                 self.corr = np.tile(np.nan, rssi_in.shape)
 
+        #TODO This doesn't seem correct. If raw data in beam coordinates this is not correct.
         self.u_mps = np.copy(self.raw_vel_mps)[0, :, :]
         self.v_mps = np.copy(self.raw_vel_mps)[1, :, :]
         self.w_mps = np.copy(self.raw_vel_mps)[2, :, :]
@@ -1167,6 +1167,9 @@ class WaterData(object):
         # Get difference data from object
         d_vel = copy.deepcopy(self.d_mps)
 
+        # NOTE: Versions prior to 1.01 did not apply this step to remove data below the side lobe cutoff
+        d_vel[np.logical_not(self.cells_above_sl)] = np.nan
+
         d_vel_min_ref = None
         d_vel_max_ref = None
 
@@ -1246,9 +1249,9 @@ class WaterData(object):
         # valid[np.isnan(self.d_mps)] = True
         self.valid_data[2, :, :] = valid
 
-        # Set threshold property
-        if np.ma.is_masked(d_vel_max_ref):
-            self.d_filter_threshold = np.nan
+        # # Set threshold property
+        # if np.ma.is_masked(d_vel_max_ref):
+        #     self.d_filter_threshold = np.nan
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
@@ -1274,39 +1277,50 @@ class WaterData(object):
             Maximum threshold
         """
 
-        # Initialize variables
-        data_orig = np.copy(data)
         data_max_ref = np.nan
         data_min_ref = np.nan
-        iqr_diff = 1
-        i = -1
-        # Loop until no additional data are removed
-        while iqr_diff != 0 and i < 1000:
-            i = i + 1
 
-            # Compute standard deviation
-            data_iqr = iqr(data)
+        # Check to make sure there are data to process
+        if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
 
-            # Compute maximum and minimum thresholds
-            data_max_ref = np.nanmedian(data) + multiplier * data_iqr
-            data_min_ref = np.nanmedian(data) - multiplier * data_iqr
+            # Initialize variables
+            data_orig = np.copy(data)
 
-            # Identify valid and invalid data
-            data_bad_rows, data_bad_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
-                                                                  np.less(data, data_min_ref)))
-            # Update filtered data array
-            data[data_bad_rows, data_bad_cols] = np.nan
+            iqr_diff = 1
+            i = -1
+            # Loop until no additional data are removed
+            while iqr_diff != 0 and i < 1000:
+                i = i + 1
 
-            # Determine differences due to last filter iteration
-            if len(data) > 0:
-                data_iqr2 = iqr(data)
-                iqr_diff = data_iqr2 - data_iqr
-            else:
-                iqr_diff = 0
+                # Compute standard deviation
+                data_iqr = iqr(data)
 
-        # Determine row and column index of invalid cells with invalid data
-        bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data_orig, data_max_ref),
-                                                            np.less(data_orig, data_min_ref)))
+                # Compute maximum and minimum thresholds
+                data_max_ref = np.nanmedian(data) + multiplier * data_iqr
+                data_min_ref = np.nanmedian(data) - multiplier * data_iqr
+
+                # Identify valid and invalid data
+                data_bad_rows, data_bad_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                      np.less(data, data_min_ref)))
+                # Update filtered data array
+                data[data_bad_rows, data_bad_cols] = np.nan
+
+                # Determine differences due to last filter iteration
+                if len(data) > 0:
+                    data_iqr2 = iqr(data)
+                    iqr_diff = data_iqr2 - data_iqr
+                else:
+                    iqr_diff = 0
+
+            # Determine row and column index of invalid cells with invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data_orig, data_max_ref),
+                                                                np.less(data_orig, data_min_ref)))
+        else:
+            # All data are invalid
+            # Determine row and column index of invalid cells with invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data, -1),
+                                                                np.less(data, 1)))
+
         threshold = [data_max_ref, data_min_ref]
 
         return bad_idx_rows, bad_idx_cols, threshold
@@ -1331,31 +1345,34 @@ class WaterData(object):
         # Initialize variables
         data_max_ref = np.nan
         data_min_ref = np.nan
-        iqr_diff = 1
-        i = -1
-        # Loop until no additional data are removed
-        while iqr_diff != 0 and i < 1000:
-            i = i + 1
 
-            # Compute standard deviation
-            data_iqr = iqr(data)
+        # Check to make sure there are data to process
+        if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
+            iqr_diff = 1
+            i = -1
+            # Loop until no additional data are removed
+            while iqr_diff != 0 and i < 1000:
+                i = i + 1
 
-            # Compute maximum and minimum thresholds
-            data_max_ref = np.nanmedian(data) + multiplier * data_iqr
-            data_min_ref = np.nanmedian(data) - multiplier * data_iqr
+                # Compute standard deviation
+                data_iqr = iqr(data)
 
-            # Identify valid and invalid data
-            bad_idx = np.where(np.logical_or(np.greater(data, data_max_ref),
-                                                                  np.less(data, data_min_ref)))
-            # Update filtered data array
-            data[bad_idx] = np.nan
+                # Compute maximum and minimum thresholds
+                data_max_ref = np.nanmedian(data) + multiplier * data_iqr
+                data_min_ref = np.nanmedian(data) - multiplier * data_iqr
 
-            # Determine differences due to last filter iteration
-            if len(data) > 0:
-                data_iqr2 = iqr(data)
-                iqr_diff = data_iqr2 - data_iqr
-            else:
-                iqr_diff = 0
+                # Identify valid and invalid data
+                bad_idx = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                      np.less(data, data_min_ref)))
+                # Update filtered data array
+                data[bad_idx] = np.nan
+
+                # Determine differences due to last filter iteration
+                if len(data) > 0:
+                    data_iqr2 = iqr(data)
+                    iqr_diff = data_iqr2 - data_iqr
+                else:
+                    iqr_diff = 0
 
         thresholds = [data_max_ref, data_min_ref]
 
@@ -1385,6 +1402,9 @@ class WaterData(object):
 
         # Get difference data from object
         w_vel = copy.deepcopy(self.w_mps)
+
+        # NOTE: Versions prior to 1.01 did not apply this step to remove data below the side lobe cutoff
+        w_vel[np.logical_not(self.cells_above_sl)] = np.nan
 
         w_vel_min_ref = None
         w_vel_max_ref = None

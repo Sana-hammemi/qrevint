@@ -144,7 +144,6 @@ class BoatData(object):
 
         self.use_measurement_thresholds = False
 
-
     def populate_data(self, source, vel_in, freq_in, coord_sys_in, nav_ref_in, beam_filter_in=3,
                       bottom_mode_in='Variable'):
         """Assigns data to instance variables.
@@ -318,13 +317,13 @@ class BoatData(object):
         if type(mat_data.dFilterThreshold) is np.ndarray:
             self.d_filter_threshold = None
         else:
-            self.d_filter_threshold = mat_data.dFilterThreshold
+            self.d_filter_threshold = self.struct_to_dict(mat_data.dFilterThreshold)
 
         # Vertical velocity filter
         if type(mat_data.wFilter) is np.ndarray:
             self.w_filter = None
         else:
-            self.w_filter = mat_data.wFilter
+            self.w_filter = self.struct_to_dict(mat_data.wFilter)
 
         # Vertical velocity threshold
         if type(mat_data.wFilterThreshold) is np.ndarray:
@@ -382,6 +381,30 @@ class BoatData(object):
             self.use_measurement_thresholds = False
             self.d_meas_threshold = np.nan
             self.w_meas_threshold = np.nan
+
+    @staticmethod
+    def struct_to_dict(struct):
+        """If input is a mat structure it converts it into a dictionary.
+
+        Parameters
+        ----------
+        struct: mat.struct or other
+            Data to be converted
+
+        Returns
+        -------
+        result: dict or other
+            Result of conversion
+        """
+
+        try:
+            keys = struct._fieldnames
+            result = {}
+            for key in keys:
+                result[key] = struct.__dict__[key]
+        except AttributeError:
+            result = struct
+        return result
 
     def change_coord_sys(self, new_coord_sys, sensors, adcp):
         """This function allows the coordinate system to be changed.
@@ -1102,31 +1125,40 @@ class BoatData(object):
         if self.d_filter == 'Manual':
             d_vel_max_ref = np.abs(self.d_filter_threshold)
             d_vel_min_ref = -1 * d_vel_max_ref
+            invalid_idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
+                                                 np.less(self.d_mps, d_vel_min_ref)))[0]
         elif self.d_filter == 'Off':
-            d_vel_max_ref = np.nanmax(self.d_mps) + 99
-            d_vel_min_ref = np.nanmin(self.d_mps) - 99
+            invalid_idx = np.array([])
+
         elif self.d_filter == 'Auto':
             if self.use_measurement_thresholds:
-                d_vel_max_ref = self.d_meas_threshold
-                d_vel_min_ref = -1 * self.d_meas_threshold
+                d_vel_max_ref = self.d_meas_threshold[0]
+                d_vel_min_ref = self.d_meas_threshold[1]
+                invalid_idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
+                                                     np.less(self.d_mps, d_vel_min_ref)))[0]
             else:
-                d_vel_max_ref, d_vel_min_ref = self.iqr_filter(self.d_mps)
+                freq_used = np.unique(self.frequency_khz).astype(int).astype(str)
+                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                self.d_filter_threshold = {}
+                invalid_idx = np.array([])
+                for freq in freq_used:
+                    filter_data = self.d_mps[freq_ensembles == freq]
+                    d_vel_max_ref, d_vel_min_ref = self.iqr_filter(filter_data)
+                    self.d_filter_threshold[freq] = [d_vel_max_ref, d_vel_min_ref]
+                    idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
+                                                 np.less(self.d_mps, d_vel_min_ref)))[0]
+                    if idx.size > 0:
+                        if invalid_idx.size > 0:
+                            invalid_idx = np.hstack((invalid_idx, idx))
+                        else:
+                            invalid_idx = idx
         else:
-            d_vel_max_ref = np.nanmax(self.d_mps) + 99
-            d_vel_min_ref = np.nanmin(self.d_mps) - 99
+            invalid_idx = np.array([])
 
         # Set valid data row 3 for difference velocity filter results
-        self.valid_data[2, ] = False
-        d_vel_less_idx = np.where(self.d_mps <= d_vel_max_ref)[0]
-        d_vel_greater_idx = np.where(self.d_mps >= d_vel_min_ref)[0]
-        d_vel_good_idx = list(np.intersect1d(d_vel_less_idx, d_vel_greater_idx))
-        self.valid_data[2, d_vel_good_idx] = True
-        self.valid_data[2, self.valid_data[1, :] == False] = True
-        self.valid_data[2, np.isnan(self.d_mps)] = True
-        if np.ma.is_masked(d_vel_max_ref):
-            self.d_filter_threshold = np.nan
-        else:
-            self.d_filter_threshold = d_vel_max_ref
+        self.valid_data[2, :] = True
+        if invalid_idx.size > 0:
+            self.valid_data[2, invalid_idx] = False
 
         # Combine all filter data to composite filter data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
@@ -1153,32 +1185,41 @@ class BoatData(object):
         if self.w_filter == 'Manual':
             w_vel_max_ref = np.abs(self.w_filter_threshold)
             w_vel_min_ref = -1 * w_vel_max_ref
+            invalid_idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
+                                                 np.less(self.w_mps, w_vel_min_ref)))[0]
 
         elif self.w_filter == 'Off':
-            w_vel_max_ref = np.nanmax(self.w_mps) + 1
-            w_vel_min_ref = np.nanmin(self.w_mps) - 1
+            invalid_idx = np.array([])
 
         elif self.w_filter == 'Auto':
             if self.use_measurement_thresholds:
-                w_vel_max_ref = self.w_meas_threshold
-                w_vel_min_ref = -1 * self.w_meas_threshold
+                w_vel_max_ref = self.w_meas_threshold[0]
+                w_vel_min_ref = self.w_meas_threshold[1]
+                invalid_idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
+                                                     np.less(self.w_mps, w_vel_min_ref)))[0]
             else:
-                w_vel_max_ref, w_vel_min_ref = self.iqr_filter(self.w_mps)
+                freq_used = np.unique(self.frequency_khz).astype(int).astype(str)
+                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                self.w_filter_threshold = {}
+                invalid_idx = np.array([])
+                for freq in freq_used:
+                    filter_data = self.w_mps[freq_ensembles == freq]
+                    w_vel_max_ref, w_vel_min_ref = self.iqr_filter(filter_data)
+                    self.w_filter_threshold[freq] = [w_vel_max_ref, w_vel_min_ref]
+                    idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
+                                                 np.less(self.w_mps, w_vel_min_ref)))[0]
+                    if idx.size > 0:
+                        if invalid_idx.size > 0:
+                            invalid_idx = np.hstack((invalid_idx, idx))
+                        else:
+                            invalid_idx = idx
         else:
-            w_vel_max_ref = np.nanmax(self.w_mps) + 99
-            w_vel_min_ref = np.nanmin(self.w_mps) - 99
+            invalid_idx = np.array([])
 
-        # Set valid data row 4 for difference velocity filter results
-        self.valid_data[3, :] = False
-        w_vel_less_idx = np.where(self.w_mps <= w_vel_max_ref)[0]
-        w_vel_greater_idx = np.where(self.w_mps >= w_vel_min_ref)[0]
-        w_vel_good_idx = list(np.intersect1d(w_vel_less_idx, w_vel_greater_idx))
-        self.valid_data[3, w_vel_good_idx] = True
-        self.valid_data[3, self.valid_data[1, :] == False] = True
-        if np.ma.is_masked(w_vel_max_ref):
-            self.w_filter_threshold = np.nan
-        else:
-            self.w_filter_threshold = w_vel_max_ref
+        # Set valid data row 3 for difference velocity filter results
+        self.valid_data[3, :] = True
+        if invalid_idx.size > 0:
+            self.valid_data[3, invalid_idx] = False
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
@@ -1204,41 +1245,44 @@ class BoatData(object):
         data_min_ref: float
             Minimum threshold
         """
-
-        # Initialize loop controllers
-        k = 0
-        iqr_diff = 1
         data_max_ref = np.nan
         data_min_ref = np.nan
 
-        # Loop until no additional data are removed
-        while iqr_diff != 0 and k < 1000:
-            k += 1
+        # Check to make sure there are data to process
+        if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
+            # Initialize loop controllers
+            k = 0
+            iqr_diff = 1
 
-            # Compute inner quartile range
-            data_iqr = iqr(data)
-            threshold_window = multiplier * data_iqr
-            if threshold_window < minimum_window:
-                threshold_window = minimum_window
 
-            # Compute maximum and minimum thresholds
-            data_max_ref = np.nanmedian(data) + threshold_window
-            data_min_ref = np.nanmedian(data) - threshold_window
+            # Loop until no additional data are removed
+            while iqr_diff != 0 and k < 1000:
+                k += 1
 
-            # Identify valid and invalid data
-            data_less_idx = np.where(data <= data_max_ref)[0]
-            data_greater_idx = np.where(data >= data_min_ref)[0]
-            data_good_idx = list(np.intersect1d(data_less_idx, data_greater_idx))
+                # Compute inner quartile range
+                data_iqr = iqr(data)
+                threshold_window = multiplier * data_iqr
+                if threshold_window < minimum_window:
+                    threshold_window = minimum_window
 
-            # Update filtered data array
-            data = copy.deepcopy(data[data_good_idx])
+                # Compute maximum and minimum thresholds
+                data_max_ref = np.nanmedian(data) + threshold_window
+                data_min_ref = np.nanmedian(data) - threshold_window
 
-            # Determine differences due to last filter iteration
-            if len(data) > 0:
-                data_iqr2 = iqr(data)
-                iqr_diff = data_iqr2 - data_iqr
-            else:
-                iqr_diff = 0
+                # Identify valid and invalid data
+                data_less_idx = np.where(data <= data_max_ref)[0]
+                data_greater_idx = np.where(data >= data_min_ref)[0]
+                data_good_idx = list(np.intersect1d(data_less_idx, data_greater_idx))
+
+                # Update filtered data array
+                data = copy.deepcopy(data[data_good_idx])
+
+                # Determine differences due to last filter iteration
+                if len(data) > 0:
+                    data_iqr2 = iqr(data)
+                    iqr_diff = data_iqr2 - data_iqr
+                else:
+                    iqr_diff = 0
 
         return data_max_ref, data_min_ref
 
