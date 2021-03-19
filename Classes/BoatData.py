@@ -1145,8 +1145,8 @@ class BoatData(object):
                     filter_data = self.d_mps[freq_ensembles == freq]
                     d_vel_max_ref, d_vel_min_ref = self.iqr_filter(filter_data)
                     self.d_filter_threshold[freq] = [d_vel_max_ref, d_vel_min_ref]
-                    idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
-                                                 np.less(self.d_mps, d_vel_min_ref)))[0]
+                    idx = np.where(np.logical_or(np.greater(filter_data, d_vel_max_ref),
+                                                 np.less(filter_data, d_vel_min_ref)))[0]
                     if idx.size > 0:
                         if invalid_idx.size > 0:
                             invalid_idx = np.hstack((invalid_idx, idx))
@@ -1206,8 +1206,8 @@ class BoatData(object):
                     filter_data = self.w_mps[freq_ensembles == freq]
                     w_vel_max_ref, w_vel_min_ref = self.iqr_filter(filter_data)
                     self.w_filter_threshold[freq] = [w_vel_max_ref, w_vel_min_ref]
-                    idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
-                                                 np.less(self.w_mps, w_vel_min_ref)))[0]
+                    idx = np.where(np.logical_or(np.greater(filter_data, w_vel_max_ref),
+                                                 np.less(filter_data, w_vel_min_ref)))[0]
                     if idx.size > 0:
                         if invalid_idx.size > 0:
                             invalid_idx = np.hstack((invalid_idx, idx))

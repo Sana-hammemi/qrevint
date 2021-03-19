@@ -1198,8 +1198,10 @@ class WaterData(object):
                 for p_type in self.d_meas_thresholds.keys():
                     data_max_ref = self.d_meas_thresholds[p_type][0]
                     data_min_ref = self.d_meas_thresholds[p_type][1]
-                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(self.d_mps, data_max_ref),
-                                                                                np.less(self.d_mps, data_min_ref)))
+                    data = np.copy(self.d_mps)
+                    data[self.ping_type!=p_type] = np.nan
+                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                                np.less(data, data_min_ref)))
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
                             bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
@@ -1434,8 +1436,10 @@ class WaterData(object):
                 for p_type in self.w_meas_thresholds.keys():
                     data_max_ref = self.w_meas_thresholds[p_type][0]
                     data_min_ref = self.w_meas_thresholds[p_type][1]
-                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(self.w_mps, data_max_ref),
-                                                                                np.less(self.w_mps, data_min_ref)))
+                    data = np.copy(self.w_mps)
+                    data[self.ping_type != p_type] = np.nan
+                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                                np.less(data, data_min_ref)))
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
                             bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))

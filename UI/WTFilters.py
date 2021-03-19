@@ -119,9 +119,9 @@ class WTFilters(object):
                 # Setup ping type
                 ping_type = transect.w_vel.ping_type[cas]
                 p_type_color = {'I':'b', 'C':'#009933', 'S': '#ffbf00', '1I':'b', '1C':'#009933', '3I': '#ffbf00',
-                                '3C':'#ff33cc', 'BB':'b', 'PC':'#009933', 'PC/BB': '#ffbf00'}
+                                '3C':'#ff33cc', 'BB':'b', 'PC':'#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
                 p_type_marker = {'I':'.', 'C':'+', 'S':'x', '1I':'.', '1C':'*', '3I':'+', '3C':'x',
-                                 'BB':'.', 'PC':'+', 'PC/BB':'x'}
+                                 'BB':'.', 'PC':'+', 'PC/BB':'x', 'U': '.'}
                 p_types = np.unique(ping_type)
 
                 # Plot first ping type
@@ -147,7 +147,7 @@ class WTFilters(object):
                 # Create legend
                 legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
                                '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
-                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB'}
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/U'}
                 legend_txt = []
                 for p_type in p_types:
                     legend_txt.append(legend_dict[p_type])
@@ -179,9 +179,9 @@ class WTFilters(object):
                 # Setup ping types for plotting
                 ping_type = transect.w_vel.ping_type[cas]
                 p_type_color = {'I':'b', 'C':'#009933', 'S': '#ffbf00', '1I':'b', '1C':'#009933', '3I': '#ffbf00',
-                                '3C':'#ff33cc', 'BB':'b', 'PC':'#009933', 'PC/BB': '#ffbf00'}
+                                '3C':'#ff33cc', 'BB':'b', 'PC':'#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
                 p_type_marker = {'I':'.', 'C':'+', 'S':'x', '1I':'.', '1C':'*', '3I':'+', '3C':'x',
-                                 'BB':'.', 'PC':'+', 'PC/BB':'x'}
+                                 'BB':'.', 'PC':'+', 'PC/BB':'x', 'U': '.'}
                 p_types = np.unique(ping_type)
 
                 # Plot first ping type
@@ -208,7 +208,7 @@ class WTFilters(object):
                 # Create legend
                 legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
                                '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
-                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB'}
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/U'}
                 legend_txt = []
                 for p_type in p_types:
                     legend_txt.append(legend_dict[p_type])

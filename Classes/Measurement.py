@@ -61,6 +61,8 @@ class Measurement(object):
         Dictionary of external temperature readings
     use_weighted: bool
         Indicates the setting for use_weighted to be used for reprocessing
+    use_ping_type: bool
+        Indicates if ping types should be used in BT and WT filters
     """
 
     # @profile
@@ -86,6 +88,8 @@ class Measurement(object):
         use_weighted: bool
             Specifies if discharge weighted medians are used for extrapolation
         """
+
+        self.use_ping_type = True
 
         self.run_oursin = run_oursin
         self.station_name = None
@@ -157,6 +161,7 @@ class Measurement(object):
                     settings = self.qrev_default_settings(check_user_excluded_dist=True, use_weighted=use_weighted)
                     settings['Processing'] = 'QRev'
                     settings['UseMeasurementThresholds'] = use_measurement_thresholds
+                    settings['UsePingType'] = self.use_ping_type
                     self.apply_settings(settings)
 
                 elif proc_type == 'None':
@@ -1131,6 +1136,8 @@ class Measurement(object):
             Allows the above, below, before, after interpolation to be applied even when the data use another approach.
         """
 
+        self.use_ping_type = settings['UsePingType']
+
         # If SonTek data does not have ping type identified, determine ping types
         if self.transects[0].w_vel.ping_type.size == 1 and self.transects[0].adcp.manufacturer == 'SonTek':
             for transect in self.transects:
@@ -1141,6 +1148,10 @@ class Measurement(object):
             self.create_filter_composites()
 
         for transect in self.transects:
+
+            if not settings['UsePingType']:
+                transect.w_vel.ping_type = np.tile('U', transect.w_vel.ping_type.shape)
+                transect.boat_vel.bt_vel.frequency_khz = np.tile(0, transect.boat_vel.bt_vel.frequency_khz.shape)
 
             # Moving-boat ensembles
             if 'Processing' in settings.keys():
@@ -1492,6 +1503,7 @@ class Measurement(object):
         settings['edgeRecEdgeMethod'] = transect.edges.rec_edge_method
 
         settings['UseMeasurementThresholds'] = transect.w_vel.use_measurement_thresholds
+        settings['UsePingType'] = self.use_ping_type
 
         return settings
 
@@ -1594,6 +1606,7 @@ class Measurement(object):
         settings['UseWeighted'] = use_weighted
 
         settings['UseMeasurementThresholds'] = False
+        settings['UsePingType'] = True
 
         return settings
 

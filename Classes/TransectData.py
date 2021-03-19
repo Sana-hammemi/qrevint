@@ -767,10 +767,15 @@ class TransectData(object):
         # Bottom Track
         # ------------
 
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
+            freq = rsdata.BottomTrack.BT_Frequency / 1000
+        else:
+            freq = rsdata.BottomTrack.BT_Frequency
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(source='SonTek',
                                       vel_in=np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0),
-                                      freq_in=rsdata.BottomTrack.BT_Frequency,
+                                      freq_in=freq,
                                       coord_sys_in=ref_coord,
                                       nav_ref_in='BT')
 
@@ -878,10 +883,16 @@ class TransectData(object):
         depth = rsdata.BottomTrack.BT_Beam_Depth.T
         depth[depth == 0] = np.nan
 
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
+            freq = rsdata.BottomTrack.BT_Frequency / 1000
+        else:
+            freq = rsdata.BottomTrack.BT_Frequency
+
         # Create depth object for bottom track beams
         self.depths.add_depth_object(depth_in=depth,
                                      source_in='BT',
-                                     freq_in=rsdata.BottomTrack.BT_Frequency,
+                                     freq_in=freq,
                                      draft_in=rsdata.Setup.sensorDepth,
                                      cell_depth_in=cell_depth,
                                      cell_size_in=cell_size_all)
@@ -907,6 +918,12 @@ class TransectData(object):
 
         # Water Velocity
         # --------------
+
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.WaterTrack.WT_Frequency) > 10000:
+            freq = rsdata.WaterTrack.WT_Frequency / 1000
+        else:
+            freq = rsdata.WaterTrack.WT_Frequency
 
         # Rearrange arrays for consistency with WaterData class
         vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
@@ -976,7 +993,7 @@ class TransectData(object):
         # Create water velocity object
         self.w_vel = WaterData()
         self.w_vel.populate_data(vel_in=vel,
-                                 freq_in=rsdata.WaterTrack.WT_Frequency,
+                                 freq_in=freq,
                                  coord_sys_in=ref_coord,
                                  nav_ref_in=ref_water,
                                  rssi_in=snr,

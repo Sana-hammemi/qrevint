@@ -121,8 +121,8 @@ class BTFilters(object):
                                                    'ro', ms=8, markerfacecolor='none')[0])
             else:
                 freq_used = np.unique(transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-                freq_color = {'600': 'b', '1200':'b', '1000':'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-                freq_marker = {'600': '.', '1200':'.', '1000':'.', '2000': '.', '2400': '.', '3000': '+'}
+                freq_color = {'0': 'b', '600': 'b', '1200':'b', '1000':'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+                freq_marker = {'0': '.', '600': '.', '1200':'.', '1000':'.', '2000': '.', '2400': '.', '3000': '+'}
 
                 freq_ensembles = transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
                 # Plot first ping type
@@ -147,7 +147,7 @@ class BTFilters(object):
                                                    'ro', ms=8, markerfacecolor='none')[0])
                 # Create legend
                 legend_dict = {'600': '600 kHz', '1200':'1200 kHz', '1000':'1 MHz', '2000': '2 MHz',
-                               '2400': '2.4 MHz', '3000': '3 MHz'}
+                               '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
                 legend_txt = []
                 for freq in freq_used:
                     legend_txt.append(legend_dict[freq])
@@ -171,8 +171,8 @@ class BTFilters(object):
                                                    'ro', ms=8, markerfacecolor='none')[0])
             else:
                 freq_used = np.unique(transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-                freq_color = {'600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-                freq_marker = {'600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+                freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+                freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
                 freq_ensembles = transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
                 # Plot first ping type
                 self.vert = self.fig.ax.plot(x_data[freq_ensembles == freq_used[0]],
@@ -196,7 +196,7 @@ class BTFilters(object):
                                                   'ro', ms=8, markerfacecolor='none')[0])
                 # Create legend
                 legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
-                               '2400': '2.4 MHz', '3000': '3 MHz'}
+                               '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
                 legend_txt = []
                 for freq in freq_used:
                     legend_txt.append(legend_dict[freq])
