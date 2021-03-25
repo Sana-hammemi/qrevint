@@ -163,6 +163,9 @@ class TransectData(object):
             self.adcp = InstrumentData()
             self.adcp.populate_data(manufacturer='TRDI', raw_data=pd0_data, mmt_transect=mmt_transect, mmt=mmt)
 
+            # Create valid frequency time series
+            freq_ts = self.valid_frequencies(pd0_data.Inst.freq)
+
             # Initialize boat vel
             self.boat_vel = BoatStructure()
             # Apply 3-beam setting from mmt file
@@ -172,7 +175,7 @@ class TransectData(object):
                 min_beams = 3
             self.boat_vel.add_boat_object(source='TRDI',
                                           vel_in=pd0_data.Bt.vel_mps,
-                                          freq_in=pd0_data.Inst.freq.T,
+                                          freq_in=freq_ts,
                                           coord_sys_in=pd0_data.Cfg.coord_sys[0],
                                           nav_ref_in='BT',
                                           min_beams=min_beams,
@@ -289,7 +292,7 @@ class TransectData(object):
             self.depths = DepthStructure()
             self.depths.add_depth_object(depth_in=temp_depth_bt,
                                          source_in='BT',
-                                         freq_in=pd0_data.Inst.freq,
+                                         freq_in=freq_ts,
                                          draft_in=mmt_config['Offsets_Transducer_Depth'],
                                          cell_depth_in=cell_depth_m,
                                          cell_size_in=cell_size_all_m)
@@ -317,7 +320,7 @@ class TransectData(object):
                 # Create depth data object for vertical beam
                 self.depths.add_depth_object(depth_in=temp_depth_vb,
                                              source_in='VB',
-                                             freq_in=pd0_data.Inst.freq,
+                                             freq_in=freq_ts,
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
@@ -353,7 +356,7 @@ class TransectData(object):
                 
                 self.depths.add_depth_object(depth_in=ds_depth,
                                              source_in='DS',
-                                             freq_in=pd0_data.Inst.freq,
+                                             freq_in=np.tile(np.nan,pd0_data.Inst.freq.shape),
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
@@ -427,7 +430,7 @@ class TransectData(object):
                 # Process water velocities for RiverRay and RiverPro
                 self.w_vel = WaterData()
                 self.w_vel.populate_data(vel_in=pd0_data.Wt.vel_mps,
-                                         freq_in=pd0_data.Inst.freq.T,
+                                         freq_in=freq_ts,
                                          coord_sys_in=pd0_data.Cfg.coord_sys,
                                          nav_ref_in='None',
                                          rssi_in=pd0_data.Wt.rssi,
@@ -452,7 +455,7 @@ class TransectData(object):
                 # Process water velocities for non-RiverRay ADCPs
                 self.w_vel = WaterData()
                 self.w_vel.populate_data(vel_in=pd0_data.Wt.vel_mps,
-                                         freq_in=pd0_data.Inst.freq.T,
+                                         freq_in=freq_ts,
                                          coord_sys_in=pd0_data.Cfg.coord_sys[0],
                                          nav_ref_in='None',
                                          rssi_in=pd0_data.Wt.rssi,
@@ -772,10 +775,14 @@ class TransectData(object):
             freq = rsdata.BottomTrack.BT_Frequency / 1000
         else:
             freq = rsdata.BottomTrack.BT_Frequency
+
+        # Create valid frequency time series
+        freq_ts = self.valid_frequencies(freq)
+
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(source='SonTek',
                                       vel_in=np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0),
-                                      freq_in=freq,
+                                      freq_in=freq_ts,
                                       coord_sys_in=ref_coord,
                                       nav_ref_in='BT')
 
@@ -892,7 +899,7 @@ class TransectData(object):
         # Create depth object for bottom track beams
         self.depths.add_depth_object(depth_in=depth,
                                      source_in='BT',
-                                     freq_in=freq,
+                                     freq_in=freq_ts,
                                      draft_in=rsdata.Setup.sensorDepth,
                                      cell_depth_in=cell_depth,
                                      cell_size_in=cell_size_all)
@@ -924,6 +931,9 @@ class TransectData(object):
             freq = rsdata.WaterTrack.WT_Frequency / 1000
         else:
             freq = rsdata.WaterTrack.WT_Frequency
+
+        # Create valid frequency time series
+        freq_ts = self.valid_frequencies(freq)
 
         # Rearrange arrays for consistency with WaterData class
         vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
@@ -993,7 +1003,7 @@ class TransectData(object):
         # Create water velocity object
         self.w_vel = WaterData()
         self.w_vel.populate_data(vel_in=vel,
-                                 freq_in=freq,
+                                 freq_in=freq_ts,
                                  coord_sys_in=ref_coord,
                                  nav_ref_in=ref_water,
                                  rssi_in=snr,
@@ -1308,6 +1318,38 @@ class TransectData(object):
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])
         else:
             self.in_transect_idx = transect.inTransectIdx - 1
+
+    @staticmethod
+    def valid_frequencies(frequency_in):
+        """Create frequency time series for BT and WT with all valid frequencies.
+
+        Parameters
+        ----------
+        frequency_in: nd.array()
+            Frequency time series from raw data
+
+        Returns
+        -------
+        frequency_out: nd.array()
+            Frequency times series with np.nan filled with valid frequencies
+        """
+
+        # Initialize output
+        frequency_out = np.copy(frequency_in)
+
+        # Check for any invalid data
+        invalid_freq = np.isnan(frequency_in)
+        if np.any(invalid_freq):
+            # Identify the first valid frequency
+            valid = frequency_in[np.logical_not(invalid_freq)][0]
+            # Forward fill for invalid frequencies beyond first valid, backfill until 1st valid
+            for n in range(frequency_in.size):
+                if invalid_freq[n]:
+                    frequency_out[n] = valid
+                else:
+                    valid = frequency_in[n]
+
+        return frequency_out
 
     @staticmethod
     def compute_cell_data(pd0):

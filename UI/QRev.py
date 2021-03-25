@@ -1077,6 +1077,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Execute the options window
         rsp = options.exec_()
+        old_discharge = None
 
         with self.wait_cursor():
             # Apply settings from options window
@@ -1143,6 +1144,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.change = False
                 # If change made with measurement loaded recompute measurement
                 elif self.meas is not None:
+                    old_discharge = self.meas.discharge
                     settings = self.meas.current_settings()
                     settings['UseWeighted'] = use_weighted
                     self.meas.apply_settings(settings)
@@ -1165,6 +1167,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.change = False
                 # If change made with measurement loaded recompute measurement
                 elif self.meas is not None:
+                    old_discharge = self.meas.discharge
                     settings = self.meas.current_settings()
                     settings['UseMeasurementThresholds'] = filter_meas
                     self.meas.apply_settings(settings)
@@ -1177,7 +1180,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.use_measurement_thresholds = filter_meas
 
                 # Update tabs
-                self.tab_manager()
+                if old_discharge is None:
+                    self.tab_manager()
+                else:
+                    self.tab_manager(old_discharge=old_discharge)
 
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA coordinates.

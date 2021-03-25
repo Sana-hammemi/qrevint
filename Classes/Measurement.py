@@ -67,7 +67,7 @@ class Measurement(object):
 
     # @profile
     def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
-                 use_measurement_thresholds=False):
+                 use_measurement_thresholds=False, use_ping_type=True):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -89,7 +89,7 @@ class Measurement(object):
             Specifies if discharge weighted medians are used for extrapolation
         """
 
-        self.use_ping_type = True
+        self.use_ping_type = use_ping_type
 
         self.run_oursin = run_oursin
         self.station_name = None
@@ -763,13 +763,22 @@ class Measurement(object):
         #         3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
         wt_d = {}
         wt_w = {}
+        bt_d = {}
+        bt_w = {}
 
 
         # Create composite arrays for all checked transects
         for transect in self.transects:
             if transect.checked:
-                bt_d = np.hstack((bt_d, transect.boat_vel.bt_vel.d_mps[:]))
-                bt_w = np.hstack((bt_w, transect.boat_vel.bt_vel.w_mps[:]))
+                bt_freq = transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+                freq = np.unique(bt_freq)
+                for f in freq:
+                    if f in bt_d:
+                        bt_d[f] = np.hstack((bt_d[f], transect.boat_vel.bt_vel.d_mps[bt_freq == f]))
+                        bt_w[f] = np.hstack((bt_w[f], transect.boat_vel.bt_vel.w_mps[bt_freq == f]))
+                    else:
+                        bt_d[f] = transect.boat_vel.bt_vel.d_mps[bt_freq == f]
+                        bt_w[f] = transect.boat_vel.bt_vel.w_mps[bt_freq == f]
 
                 if transect.w_vel.ping_type.size > 0:
                     # Identify the ping types used in the transect
@@ -811,15 +820,18 @@ class Measurement(object):
             wt_w_meas_thresholds[p_type] = WaterData.meas_iqr_filter(wt_w[p_type], multiplier=5)
 
         # Bottom track
-        bt_d_max_ref, bt_d_min_ref = BoatData.iqr_filter(bt_d)
-        bt_w_max_ref, bt_w_min_ref = BoatData.iqr_filter(bt_w)
+        bt_d_meas_thresholds = {}
+        bt_w_meas_thresholds = {}
+        for freq in bt_d.keys():
+            bt_d_meas_thresholds[freq] = BoatData.iqr_filter(bt_d[freq])
+            bt_w_meas_thresholds[freq] = BoatData.iqr_filter(bt_w[freq])
 
         # Assign threshold to each transect
         for transect in self.transects:
             transect.w_vel.d_meas_thresholds = wt_d_meas_thresholds
             transect.w_vel.w_meas_thresholds = wt_w_meas_thresholds
-            transect.boat_vel.bt_vel.d_meas_threshold = [bt_d_max_ref, bt_d_min_ref]
-            transect.boat_vel.bt_vel.w_meas_threshold = [bt_w_max_ref, bt_w_min_ref]
+            transect.boat_vel.bt_vel.d_meas_thresholds = bt_d_meas_thresholds
+            transect.boat_vel.bt_vel.w_meas_thresholds = bt_w_meas_thresholds
 
     @staticmethod
     def set_num_beam_wt_threshold_trdi(mmt_transect):
@@ -1402,9 +1414,9 @@ class Measurement(object):
         # Water track settings
         settings['WTbeamFilter'] = transect.w_vel.beam_filter
         settings['WTdFilter'] = transect.w_vel.d_filter
-        settings['WTdFilterThreshold'] = transect.w_vel.d_filter_threshold
+        settings['WTdFilterThreshold'] = transect.w_vel.d_filter_thresholds
         settings['WTwFilter'] = transect.w_vel.w_filter
-        settings['WTwFilterThreshold'] = transect.w_vel.w_filter_threshold
+        settings['WTwFilterThreshold'] = transect.w_vel.w_filter_thresholds
         settings['WTsmoothFilter'] = transect.w_vel.smooth_filter
         settings['WTsnrFilter'] = transect.w_vel.snr_filter
         settings['WTwtDepthFilter'] = transect.w_vel.wt_depth_filter
@@ -1415,9 +1427,9 @@ class Measurement(object):
         # Bottom track settings
         settings['BTbeamFilter'] = transect.boat_vel.bt_vel.beam_filter
         settings['BTdFilter'] = transect.boat_vel.bt_vel.d_filter
-        settings['BTdFilterThreshold'] = transect.boat_vel.bt_vel.d_filter_threshold
+        settings['BTdFilterThreshold'] = transect.boat_vel.bt_vel.d_filter_thresholds
         settings['BTwFilter'] = transect.boat_vel.bt_vel.w_filter
-        settings['BTwFilterThreshold'] = transect.boat_vel.bt_vel.w_filter_threshold
+        settings['BTwFilterThreshold'] = transect.boat_vel.bt_vel.w_filter_thresholds
         settings['BTsmoothFilter'] = transect.boat_vel.bt_vel.smooth_filter
         settings['BTInterpolation'] = transect.boat_vel.bt_vel.interpolate
         
@@ -2544,13 +2556,13 @@ class Measurement(object):
         # (4) ErrorVelocityFilter Node
         evf = nav_data.d_filter
         if evf == 'Manual':
-            evf = '{:.4f}'.format(nav_data.d_filter_threshold)
+            evf = '{:.4f}'.format(nav_data.d_filter_thresholds)
         ETree.SubElement(navigation, 'ErrorVelocityFilter', type='char', unitsCode='mps').text = evf
 
         # (4) VerticalVelocityFilter Node
         vvf = nav_data.w_filter
         if vvf == 'Manual':
-            vvf = '{:.4f}'.format(nav_data.w_filter_threshold)
+            vvf = '{:.4f}'.format(nav_data.w_filter_thresholds)
         ETree.SubElement(navigation, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = vvf
 
         # (4) OtherFilter Node
@@ -2659,13 +2671,13 @@ class Measurement(object):
         # (4) ErrorVelocityFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.d_filter
         if temp == 'Manual':
-            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.d_filter_threshold)
+            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.d_filter_thresholds)
         ETree.SubElement(water_track, 'ErrorVelocityFilter', type='char', unitsCode='mps').text = temp
 
         # (4) VerticalVelocityFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.w_filter
         if temp == 'Manual':
-            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.w_filter_threshold)
+            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.w_filter_thresholds)
         ETree.SubElement(water_track, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = temp
 
         # (4) OtherFilter Node

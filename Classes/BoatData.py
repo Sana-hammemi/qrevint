@@ -49,7 +49,7 @@ class BoatData(object):
     Settings variables
         d_filter: str
             Difference velocity filter "Manual", "Off", "Auto".
-        d_filter_threshold: float
+        d_filter_thresholds: float
             Threshold for difference velocity filter.
         w_filter: str
             Vertical velocity filter "Manual", "Off", "Auto".
@@ -121,9 +121,9 @@ class BoatData(object):
 
         # Filter and interpolation properties
         self.d_filter = None  # Difference velocity filter "Manual", "Off", "Auto"
-        self.d_filter_threshold = None  # Threshold for difference velocity filter
+        self.d_filter_thresholds = {}  # Threshold for difference velocity filter
         self.w_filter = None  # Vertical velocity filter "On", "Off"
-        self.w_filter_threshold = None  # Threshold for vertical velocity filter
+        self.w_filter_thresholds = {}  # Threshold for vertical velocity filter
         self.gps_diff_qual_filter = None  # Differential correction quality (1,2,4)
         self.gps_altitude_filter = None  # Change in altitude filter "Auto", "Manual", "Off"
         self.gps_altitude_filter_change = None  # Threshold from mean for altitude filter
@@ -139,8 +139,8 @@ class BoatData(object):
         self.valid_data = None  # Logical array of identifying valid and invalid data for each filter applied
 
         # Filter settings populated from Measurement.create_filter_composites
-        self.d_meas_threshold = np.nan
-        self.w_meas_threshold = np.nan
+        self.d_meas_thresholds = {}
+        self.w_meas_thresholds = {}
 
         self.use_measurement_thresholds = False
 
@@ -189,9 +189,9 @@ class BoatData(object):
 
             # Default filtering applied during initial construction of object
             self.d_filter = 'Off'
-            self.d_filter_threshold = 99
+            self.d_filter_thresholds = {}
             self.w_filter = 'Off'
-            self.w_filter_threshold = 99
+            self.w_filter_thresholds = {}
             self.smooth_filter = 'Off'
             self.interpolate = 'None'
 
@@ -315,9 +315,9 @@ class BoatData(object):
 
         # Error velocity threshold
         if type(mat_data.dFilterThreshold) is np.ndarray:
-            self.d_filter_threshold = None
+            self.d_filter_thresholds = {}
         else:
-            self.d_filter_threshold = self.struct_to_dict(mat_data.dFilterThreshold)
+            self.d_filter_thresholds = self.struct_to_dict(mat_data.dFilterThreshold)
 
         # Vertical velocity filter
         if type(mat_data.wFilter) is np.ndarray:
@@ -327,9 +327,9 @@ class BoatData(object):
 
         # Vertical velocity threshold
         if type(mat_data.wFilterThreshold) is np.ndarray:
-            self.w_filter_threshold = None
+            self.w_filter_thresholds = {}
         else:
-            self.w_filter_threshold = mat_data.wFilterThreshold
+            self.w_filter_thresholds = self.struct_to_dict(mat_data.wFilterThreshold)
 
         # GPS quality filter
         if type(mat_data.gpsDiffQualFilter) is np.ndarray:
@@ -987,8 +987,8 @@ class BoatData(object):
 
         else:
             self.filter_beam(setting=self.beam_filter)
-            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_threshold)
-            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_threshold)
+            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_thresholds)
+            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_thresholds)
             self.filter_smooth(setting=self.smooth_filter, transect=transect)
 
         # Apply previously specified interpolation method
@@ -1119,11 +1119,11 @@ class BoatData(object):
 
         self.d_filter = setting
         if setting == 'Manual':
-            self.d_filter_threshold = threshold
+            self.d_filter_thresholds = threshold
 
         # Apply selected method
         if self.d_filter == 'Manual':
-            d_vel_max_ref = np.abs(self.d_filter_threshold)
+            d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
             invalid_idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
                                                  np.less(self.d_mps, d_vel_min_ref)))[0]
@@ -1132,19 +1132,28 @@ class BoatData(object):
 
         elif self.d_filter == 'Auto':
             if self.use_measurement_thresholds:
-                d_vel_max_ref = self.d_meas_threshold[0]
-                d_vel_min_ref = self.d_meas_threshold[1]
-                invalid_idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
-                                                     np.less(self.d_mps, d_vel_min_ref)))[0]
+                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                invalid_idx = np.array([])
+                for freq in self.d_meas_thresholds.keys():
+                    filter_data = np.copy(self.d_mps)
+                    filter_data[freq_ensembles != freq] = np.nan
+                    idx = np.where(np.logical_or(np.greater(filter_data, self.d_meas_thresholds[freq][0]),
+                                                 np.less(filter_data, self.d_meas_thresholds[freq][1])))[0]
+                    if idx.size > 0:
+                        if invalid_idx.size > 0:
+                            invalid_idx = np.hstack((invalid_idx, idx))
+                        else:
+                            invalid_idx = idx
             else:
                 freq_used = np.unique(self.frequency_khz).astype(int).astype(str)
                 freq_ensembles = self.frequency_khz.astype(int).astype(str)
-                self.d_filter_threshold = {}
+                self.d_filter_thresholds = {}
                 invalid_idx = np.array([])
                 for freq in freq_used:
-                    filter_data = self.d_mps[freq_ensembles == freq]
+                    filter_data = np.copy(self.d_mps)
+                    filter_data[freq_ensembles != freq] = np.nan
                     d_vel_max_ref, d_vel_min_ref = self.iqr_filter(filter_data)
-                    self.d_filter_threshold[freq] = [d_vel_max_ref, d_vel_min_ref]
+                    self.d_filter_thresholds[freq] = [d_vel_max_ref, d_vel_min_ref]
                     idx = np.where(np.logical_or(np.greater(filter_data, d_vel_max_ref),
                                                  np.less(filter_data, d_vel_min_ref)))[0]
                     if idx.size > 0:
@@ -1179,11 +1188,11 @@ class BoatData(object):
         # Set vertical velocity filter properties
         self.w_filter = setting
         if setting == 'Manual':
-            self.w_filter_threshold = threshold
+            self.w_filter_thresholds = threshold
 
         # Apply selected method
         if self.w_filter == 'Manual':
-            w_vel_max_ref = np.abs(self.w_filter_threshold)
+            w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
             invalid_idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
                                                  np.less(self.w_mps, w_vel_min_ref)))[0]
@@ -1193,19 +1202,28 @@ class BoatData(object):
 
         elif self.w_filter == 'Auto':
             if self.use_measurement_thresholds:
-                w_vel_max_ref = self.w_meas_threshold[0]
-                w_vel_min_ref = self.w_meas_threshold[1]
-                invalid_idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
-                                                     np.less(self.w_mps, w_vel_min_ref)))[0]
+                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                invalid_idx = np.array([])
+                for freq in self.w_meas_thresholds.keys():
+                    filter_data = np.copy(self.w_mps)
+                    filter_data[freq_ensembles != freq] = np.nan
+                    idx = np.where(np.logical_or(np.greater(filter_data, self.w_meas_thresholds[freq][0]),
+                                                 np.less(filter_data, self.w_meas_thresholds[freq][1])))[0]
+                    if idx.size > 0:
+                        if invalid_idx.size > 0:
+                            invalid_idx = np.hstack((invalid_idx, idx))
+                        else:
+                            invalid_idx = idx
             else:
                 freq_used = np.unique(self.frequency_khz).astype(int).astype(str)
                 freq_ensembles = self.frequency_khz.astype(int).astype(str)
-                self.w_filter_threshold = {}
+                self.w_filter_thresholds = {}
                 invalid_idx = np.array([])
                 for freq in freq_used:
-                    filter_data = self.w_mps[freq_ensembles == freq]
+                    filter_data = np.copy(self.w_mps)
+                    filter_data[freq_ensembles != freq] = np.nan
                     w_vel_max_ref, w_vel_min_ref = self.iqr_filter(filter_data)
-                    self.w_filter_threshold[freq] = [w_vel_max_ref, w_vel_min_ref]
+                    self.w_filter_thresholds[freq] = [w_vel_max_ref, w_vel_min_ref]
                     idx = np.where(np.logical_or(np.greater(filter_data, w_vel_max_ref),
                                                  np.less(filter_data, w_vel_min_ref)))[0]
                     if idx.size > 0:

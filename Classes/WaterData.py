@@ -78,11 +78,11 @@ class WaterData(object):
             Set 3 for 3-beam solutions, 4 for 4-beam solutions.
         d_filter: str
             Set difference velocity filter "On", "Off".
-        d_filter_threshold: float, dict, tuple
+        d_filter_thresholds: float, dict, tuple
             Threshold(s) for difference velocity filter.
         w_filter: str
             Set vertical velocity filter "On", "Off".
-        w_filter_threshold: float, dict, tuple
+        w_filter_thresholds: float, dict, tuple
             Threshold(s) for vertical velocity filter.
         excluded_dist_m: float
             Distance below transucer for which data are excluded or marked invalid, in m.
@@ -161,9 +161,9 @@ class WaterData(object):
         # Settings
         self.beam_filter = None
         self.d_filter = None
-        self.d_filter_threshold = {}
+        self.d_filter_thresholds = {}
         self.w_filter = None
-        self.w_filter_threshold = {}
+        self.w_filter_thresholds = {}
         self.excluded_dist_m = None
         self.orig_excluded_dist_m = None
         self.smooth_filter = None
@@ -324,9 +324,9 @@ class WaterData(object):
         # Set filter defaults to no filtering and no interruption
         self.beam_filter = 3
         self.d_filter = 'Off'
-        self.d_filter_threshold = 99
+        self.d_filter_thresholds = {}
         self.w_filter = 'Off'
-        self.w_filter_threshold = 99
+        self.w_filter_thresholds = {}
         self.smooth_filter = False
         self.interpolate_ens = 'None'
         self.interpolate_cells = 'None'
@@ -467,9 +467,9 @@ class WaterData(object):
         # Settings
         self.beam_filter = transect.wVel.beamFilter
         self.d_filter = transect.wVel.dFilter
-        self.d_filter_threshold = self.struct_to_dict(transect.wVel.dFilterThreshold)
+        self.d_filter_thresholds = self.struct_to_dict(transect.wVel.dFilterThreshold)
         self.w_filter = transect.wVel.wFilter
-        self.w_filter_threshold = self.struct_to_dict(transect.wVel.wFilterThreshold)
+        self.w_filter_thresholds = self.struct_to_dict(transect.wVel.wFilterThreshold)
         self.excluded_dist_m = transect.wVel.excludedDist
         if hasattr(transect.wVel, 'orig_excludedDist'):
             self.orig_excluded_dist_m = transect.wVel.orig_excludedDist
@@ -937,8 +937,8 @@ class WaterData(object):
             if beam is not None:
                 self.filter_beam(setting=beam, transect=transect)
         else:
-            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_threshold)
-            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_threshold)
+            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_thresholds)
+            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_thresholds)
             self.filter_smooth(transect=transect, setting=self.smooth_filter)
             self.filter_excluded(transect=transect, setting=self.excluded_dist_m)
             self.filter_snr(setting=self.snr_filter)
@@ -1162,7 +1162,7 @@ class WaterData(object):
         # Set difference filter properties
         self.d_filter = setting
         if threshold is not None:
-            self.d_filter_threshold = threshold
+            self.d_filter_thresholds = threshold
 
         # Get difference data from object
         d_vel = copy.deepcopy(self.d_mps)
@@ -1178,7 +1178,7 @@ class WaterData(object):
 
         # Apply selected method
         if self.d_filter == 'Manual':
-            d_vel_max_ref = np.abs(self.d_filter_threshold)
+            d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
             # Set valid data row 2 for difference velocity filter results
             bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
@@ -1189,12 +1189,12 @@ class WaterData(object):
             # Set valid data row 2 for difference velocity filter results
             bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
                                                                 np.less(d_vel, d_vel_min_ref)))
-            self.d_filter_threshold = d_vel_max_ref
+            self.d_filter_thresholds = d_vel_max_ref
 
         elif self.d_filter == 'Auto':
             # Apply threshold from entire measurement processing to each transect
             if self.use_measurement_thresholds:
-                self.d_filter_threshold = self.d_meas_thresholds
+                self.d_filter_thresholds = self.d_meas_thresholds
                 for p_type in self.d_meas_thresholds.keys():
                     data_max_ref = self.d_meas_thresholds[p_type][0]
                     data_min_ref = self.d_meas_thresholds[p_type][1]
@@ -1235,13 +1235,13 @@ class WaterData(object):
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
                     thresholds[p_type] = threshold
-                self.d_filter_threshold = thresholds
+                self.d_filter_thresholds = thresholds
 
             # Compute unique threshold for each transect when no ping types are available
             else:
                 self.ping_type = np.array(['U'])
                 bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(d_vel)
-                self.d_filter_threshold = {'U': threshold}
+                self.d_filter_thresholds = {'U': threshold}
 
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
@@ -1250,10 +1250,6 @@ class WaterData(object):
         #  flagged as invalid however this is the way it was in Matlab. May change this in future.
         # valid[np.isnan(self.d_mps)] = True
         self.valid_data[2, :, :] = valid
-
-        # # Set threshold property
-        # if np.ma.is_masked(d_vel_max_ref):
-        #     self.d_filter_threshold = np.nan
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
@@ -1400,7 +1396,7 @@ class WaterData(object):
         # Set vertical velocity filter properties
         self.w_filter = setting
         if threshold is not None:
-            self.w_filter_threshold = threshold
+            self.w_filter_thresholds = threshold
 
         # Get difference data from object
         w_vel = copy.deepcopy(self.w_mps)
@@ -1416,7 +1412,7 @@ class WaterData(object):
 
         # Apply selected method
         if self.w_filter == 'Manual':
-            w_vel_max_ref = np.abs(self.w_filter_threshold)
+            w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
             # Identify valid and invalid data
             bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
@@ -1427,12 +1423,12 @@ class WaterData(object):
             # Identify valid and invalid data
             bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
                                                                     np.less(w_vel, w_vel_min_ref)))
-            self.w_filter_threshold = w_vel_max_ref
+            self.w_filter_thresholds = w_vel_max_ref
 
         elif self.w_filter == 'Auto':
             # Apply threshold from entire measurement processing to each transect
             if self.use_measurement_thresholds:
-                self.w_filter_threshold = self.w_meas_thresholds
+                self.w_filter_thresholds = self.w_meas_thresholds
                 for p_type in self.w_meas_thresholds.keys():
                     data_max_ref = self.w_meas_thresholds[p_type][0]
                     data_min_ref = self.w_meas_thresholds[p_type][1]
@@ -1473,12 +1469,12 @@ class WaterData(object):
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
                     thresholds[p_type] = threshold
-                self.w_filter_threshold = thresholds
+                self.w_filter_thresholds = thresholds
             # Compute unique threshold for each transect when no ping types are available
             else:
                 self.ping_type = np.array(['U'])
                 bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(w_vel)
-                self.w_filter_threshold = {'U': threshold}
+                self.w_filter_thresholds = {'U': threshold}
 
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
@@ -1487,7 +1483,7 @@ class WaterData(object):
 
         # Set threshold property
         if np.ma.is_masked(w_vel_max_ref):
-            self.w_filter_threshold = np.nan
+            self.w_filter_thresholds = np.nan
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
