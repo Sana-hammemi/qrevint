@@ -556,7 +556,7 @@ class Python2Matlab(object):
                          'magvar_idx': 'magvarIdx',
                          'mag_error_idx': 'magErrorIdx',
                          'invalid_transect_left_idx': 'invalidTransLeftIdx',
-                         'invalid_transect_right_idx': 'invalidTransLeftIdx',
+                         'invalid_transect_right_idx': 'invalidTransRightIdx',
                          }
         return py_2_mat_dict
 

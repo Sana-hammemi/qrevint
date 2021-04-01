@@ -194,7 +194,9 @@ class DepthData(object):
 
         self.valid_beams = self.valid_beams.astype(bool)
 
+        # Handle data with one ensemble and multiple cells or one cell and multiple ensembles
         if len(self.depth_beams_m.shape) == 1:
+            # One ensemble multiple cells
             self.depth_beams_m = self.depth_beams_m.reshape(self.depth_beams_m.shape[0], 1)
             self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(self.depth_cell_depth_m.shape[0], 1)
             self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(
@@ -208,6 +210,13 @@ class DepthData(object):
             self.smooth_upper_limit = self.smooth_upper_limit.reshape(self.smooth_upper_limit.shape[0], 1)
             self.valid_data = np.array([self.valid_data])
             self.depth_source_ens = np.array([mat_data.depthSourceEns])
+        elif len(self.depth_cell_depth_m.shape) == 1:
+            # One cell, multiple ensembles
+            self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(1, self.depth_cell_depth_m.shape[0])
+            self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(1,
+                self.depth_cell_depth_orig_m.shape[0])
+            self.depth_cell_size_m = self.depth_cell_size_m.reshape(1, self.depth_cell_size_m.shape[0])
+            self.depth_cell_size_orig_m = self.depth_cell_size_orig_m.reshape(1, self.depth_cell_size_orig_m.shape[0])
 
     def change_draft(self, draft):
         """Changes the draft for object

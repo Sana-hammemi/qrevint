@@ -159,8 +159,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 3
                 comp_depth[np.isnan(comp_depth)] = vb_filtered[np.isnan(comp_depth)]
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 2
-                # comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
                 
             elif ref == 'vb_depths':
@@ -170,8 +170,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 3
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(bt_filtered[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 1
-                # comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.vb_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.vb_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
                 
             elif ref == 'ds_depths':
@@ -181,8 +181,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 2
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(bt_filtered[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 1
-                # comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.ds_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.ds_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
 
             # Save composite depth to depth_processed of selected primary reference

@@ -163,7 +163,7 @@ class BTFilters(object):
             max_y = np.nanmax(y_data) * 1.1
             min_y = np.nanmin(y_data) * 1.1
             invalid_vert_vel = np.logical_not(transect.boat_vel.bt_vel.valid_data[3, :])
-            if transect.boat_vel.bt_vel.w_meas_thresholds:
+            if not transect.boat_vel.bt_vel.w_meas_thresholds:
                 self.error = self.fig.ax.plot(x_data, y_data, '.', mfc='b', mec='b')
                 # Mark invalid data
                 self.error.append(self.fig.ax.plot(x_data[invalid_vert_vel],

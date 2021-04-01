@@ -259,7 +259,7 @@ class BoatData(object):
         elif np.isnan(mat_data.frequency_hz):
             self.frequency_khz = None
         else:
-            self.frequency_khz = mat_data.frequency_hz
+            self.frequency_khz = np.array([mat_data.frequency_hz])
         self.orig_coord_sys = mat_data.origCoordSys
         self.nav_ref = mat_data.navRef
 
@@ -375,12 +375,12 @@ class BoatData(object):
         # Use measurement for filter
         if hasattr(mat_data, 'use_measurement_thresholds'):
             self.use_measurement_thresholds = mat_data.use_measurement_thresholds
-            self.d_meas_threshold = mat_data.d_meas_threshold
-            self.w_meas_threshold = mat_data.w_meas_threshold
+            self.d_meas_thresholds = self.struct_to_dict(mat_data.d_meas_thresholds)
+            self.w_meas_thresholds = self.struct_to_dict(mat_data.w_meas_thresholds)
         else:
             self.use_measurement_thresholds = False
-            self.d_meas_threshold = np.nan
-            self.w_meas_threshold = np.nan
+            self.d_meas_thresholds = {}
+            self.w_meas_thresholds = {}
 
     @staticmethod
     def struct_to_dict(struct):
@@ -1205,7 +1205,7 @@ class BoatData(object):
                 freq_ensembles = self.frequency_khz.astype(int).astype(str)
                 invalid_idx = np.array([])
                 for freq in self.w_meas_thresholds.keys():
-                    filter_data = np.copy(self.w_mps)
+                    filter_data = np.copy(self.w_mps.astype(float))
                     filter_data[freq_ensembles != freq] = np.nan
                     idx = np.where(np.logical_or(np.greater(filter_data, self.w_meas_thresholds[freq][0]),
                                                  np.less(filter_data, self.w_meas_thresholds[freq][1])))[0]

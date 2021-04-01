@@ -298,7 +298,7 @@ class ExtrapPlot(object):
 
         """
 
-        if norm_data.weights is not None:
+        if norm_data.weights is not None and norm_data.weights.size > 0:
             # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
             #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
             cmap = cm.get_cmap('Blues')

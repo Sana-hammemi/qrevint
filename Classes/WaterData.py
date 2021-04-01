@@ -193,7 +193,7 @@ class WaterData(object):
                       excluded_dist_in, cells_above_sl_in, sl_cutoff_per_in, sl_cutoff_num_in,
                       sl_cutoff_type_in, sl_lag_effect_in, wm_in, blank_in, corr_in=None,
                       surface_vel_in=None, surface_rssi_in=None, surface_corr_in=None, sl_cutoff_m=None,
-                      surface_num_cells_in=0, ping_type=0, use_measurement_thresholds=False):
+                      surface_num_cells_in=0, ping_type='U', use_measurement_thresholds=False):
         
         """Populates the variables with input, computed, or default values.
 
@@ -240,8 +240,8 @@ class WaterData(object):
             Number of surface cells in each ensemble for RiverRay, RiverPro, RioPro. Optional.
         sl_cutoff_m: np.array(float)
             Depth in meters of side lobe cutoff to center of cells.
-        ping_type: np.array(int)
-            Indicates if ping is incoherent (0) or coherent (1)
+        ping_type: np.array(str)
+            Indicates type of ping used for water tracking
         """
 
         # Set object properties from input data standard for all ADCPs
@@ -393,39 +393,90 @@ class WaterData(object):
             Matlab data structure obtained from sio.loadmat
         """
 
-        # Data requiring manipulation (special case for 1 ensemble)
+        # Data requiring manipulation (special case for 1 ensemble or 1 cell)
         if len(transect.wVel.rawVel_mps.shape) == 2:
-            self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
-            self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
-            self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
-            self.corr = self.corr.reshape(self.corr.shape[0], self.corr.shape[1], 1)
-            self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
-            self.rssi = self.rssi.reshape(self.rssi.shape[0], self.rssi.shape[1], 1)
-            self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
-            self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], self.valid_data.shape[1], 1)
-            self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
-            self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(self.u_earth_no_ref_mps.shape[0], 1)
-            self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
-            self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(self.v_earth_no_ref_mps.shape[0], 1)
-            self.u_mps = transect.wVel.u_mps
-            self.u_mps = self.u_mps.reshape(self.u_mps.shape[0], 1)
-            self.v_mps = transect.wVel.v_mps
-            self.v_mps = self.v_mps.reshape(self.v_mps.shape[0], 1)
-            self.u_processed_mps = transect.wVel.uProcessed_mps
-            self.u_processed_mps = self.u_processed_mps.reshape(self.u_processed_mps.shape[0], 1)
-            self.v_processed_mps = transect.wVel.vProcessed_mps
-            self.v_processed_mps = self.v_processed_mps.reshape(self.v_processed_mps.shape[0], 1)
-            self.w_mps = transect.wVel.w_mps
-            self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
-            self.d_mps = transect.wVel.d_mps
-            self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-            self.snr_rng = transect.wVel.snrRng
-            self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
-            self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
-            self.cells_above_sl = self.cells_above_sl.reshape(self.cells_above_sl.shape[0], 1)
-            self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
-            self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(self.cells_above_sl_bt.shape[0], 1)
-            self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+            if len(transect.boatVel.btVel.rawVel_mps.shape) > 1:
+                # Multiple ensembles with one cell
+                self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
+                self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], 1, self.raw_vel_mps.shape[1])
+                self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
+                self.corr = self.corr.reshape(self.corr.shape[0], 1, self.corr.shape[1])
+                self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
+                self.rssi = self.rssi.reshape(self.rssi.shape[0], 1, self.rssi.shape[1])
+                self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
+                self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], 1, self.valid_data.shape[1])
+                self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
+                self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(1, self.u_earth_no_ref_mps.shape[0])
+                self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
+                self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(1, self.v_earth_no_ref_mps.shape[0])
+                self.u_mps = transect.wVel.u_mps
+                self.u_mps = self.u_mps.reshape(1, self.u_mps.shape[0])
+                self.v_mps = transect.wVel.v_mps
+                self.v_mps = self.v_mps.reshape(1, self.v_mps.shape[0])
+                self.u_processed_mps = transect.wVel.uProcessed_mps
+                self.u_processed_mps = self.u_processed_mps.reshape(1, self.u_processed_mps.shape[0])
+                self.v_processed_mps = transect.wVel.vProcessed_mps
+                self.v_processed_mps = self.v_processed_mps.reshape(1, self.v_processed_mps.shape[0])
+                self.w_mps = transect.wVel.w_mps
+                self.w_mps = self.w_mps.reshape(1, self.w_mps.shape[0])
+                self.d_mps = transect.wVel.d_mps
+                self.d_mps = self.d_mps.reshape(1, self.d_mps.shape[0])
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
+                self.cells_above_sl = self.cells_above_sl.reshape(1, self.cells_above_sl.shape[0])
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
+                self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(1, self.cells_above_sl_bt.shape[0])
+                self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                # Ping type
+                if hasattr(transect.wVel, 'ping_type'):
+                    if type(transect.wVel.ping_type) == str:
+                        self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                    else:
+                        self.ping_type = transect.wVel.ping_type[np.newaxis, :]
+                else:
+                    self.ping_type = np.tile('U', self.d_mps.shape)
+            else:
+                # One ensemble with multiple cells
+                self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
+                self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
+                self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
+                self.corr = self.corr.reshape(self.corr.shape[0], self.corr.shape[1], 1)
+                self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
+                self.rssi = self.rssi.reshape(self.rssi.shape[0], self.rssi.shape[1], 1)
+                self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
+                self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], self.valid_data.shape[1], 1)
+                self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
+                self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(self.u_earth_no_ref_mps.shape[0], 1)
+                self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
+                self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(self.v_earth_no_ref_mps.shape[0], 1)
+                self.u_mps = transect.wVel.u_mps
+                self.u_mps = self.u_mps.reshape(self.u_mps.shape[0], 1)
+                self.v_mps = transect.wVel.v_mps
+                self.v_mps = self.v_mps.reshape(self.v_mps.shape[0], 1)
+                self.u_processed_mps = transect.wVel.uProcessed_mps
+                self.u_processed_mps = self.u_processed_mps.reshape(self.u_processed_mps.shape[0], 1)
+                self.v_processed_mps = transect.wVel.vProcessed_mps
+                self.v_processed_mps = self.v_processed_mps.reshape(self.v_processed_mps.shape[0], 1)
+                self.w_mps = transect.wVel.w_mps
+                self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
+                self.d_mps = transect.wVel.d_mps
+                self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
+                self.cells_above_sl = self.cells_above_sl.reshape(self.cells_above_sl.shape[0], 1)
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
+                self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(self.cells_above_sl_bt.shape[0], 1)
+                self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                # Ping type
+                if hasattr(transect.wVel, 'ping_type'):
+                    if type(transect.wVel.ping_type) == str:
+                        self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                    else:
+                        self.ping_type = transect.wVel.ping_type[:, np.newaxis]
+                else:
+                    self.ping_type = np.tile('U', self.d_mps.shape)
 
         else:
             self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 2, 0)
@@ -444,6 +495,14 @@ class WaterData(object):
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
+            # Ping type
+            if hasattr(transect.wVel, 'ping_type'):
+                if type(transect.wVel.ping_type) == str:
+                    self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                else:
+                    self.ping_type = transect.wVel.ping_type
+            else:
+                self.ping_type = np.tile('U', self.d_mps.shape)
 
         self.valid_data = self.valid_data.astype(bool)
         # Fix for moving-bed transects that did not have 3D array indices adjusted properly when saved
@@ -498,15 +557,6 @@ class WaterData(object):
             self.use_measurement_thresholds = False
             self.d_meas_thresholds = {}
             self.w_meas_thresholds = {}
-
-        # Ping type
-        if hasattr(transect.wVel, 'ping_type'):
-            if type(transect.wVel.ping_type) == str:
-                self.ping_type = np.array([transect.wVel.ping_type])
-            else:
-                self.ping_type = transect.wVel.ping_type
-        else:
-            self.ping_type = np.array(['U'])
 
     @staticmethod
     def struct_to_dict(struct):

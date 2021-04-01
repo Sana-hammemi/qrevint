@@ -349,7 +349,10 @@ class GPSData(object):
                     self.per_good_ens = transect.gps.perGoodEns
                 else:
                     self.per_good_ens = None
-                self.hdop_ens = transect.gps.hdopEns
+                if type(transect.gps.hdopEns) is np.ndarray:
+                    self.hdop_ens = transect.gps.hdopEns
+                else:
+                    self.hdop_ens = np.array([transect.gps.hdopEns])
                 self.num_sats_ens = transect.gps.numSatsEns
                 self.altitude_ens_m = transect.gps.altitudeEns_m
                 self.diff_qual_ens = transect.gps.diffQualEns

@@ -2565,6 +2565,14 @@ class Measurement(object):
             vvf = '{:.4f}'.format(nav_data.w_filter_thresholds)
         ETree.SubElement(navigation, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = vvf
 
+        # (4) Use measurement thresholds
+        temp = nav_data.use_measurement_thresholds
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(navigation, 'UseMeasurementThresholds', type='char').text = temp
+
         # (4) OtherFilter Node
         o_f = nav_data.smooth_filter
         ETree.SubElement(navigation, 'OtherFilter', type='char').text = o_f
@@ -2679,6 +2687,14 @@ class Measurement(object):
         if temp == 'Manual':
             temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.w_filter_thresholds)
         ETree.SubElement(water_track, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = temp
+
+        # (4) Use measurement thresholds
+        temp = self.transects[self.checked_transect_idx[0]].w_vel.use_measurement_thresholds
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(water_track, 'UseMeasurementThresholds', type='char').text = temp
 
         # (4) OtherFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.smooth_filter
