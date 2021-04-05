@@ -11193,15 +11193,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
                 self.actionGoogle_Earth.setEnabled(True)
-                self.sc_gga = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+G'), self)
-                self.sc_gga.activated.connect(self.set_ref_gga)
+                if not hasattr(self, 'sc_gga'):
+                    self.sc_gga = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+G'), self)
+                    self.sc_gga.activated.connect(self.set_ref_gga)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
                 self.actionVTG.setEnabled(True)
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
-                self.sc_vtg = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
-                self.sc_vtg.activated.connect(self.set_ref_vtg)
+                if not hasattr(self, 'sc_vtg'):
+                    self.sc_vtg = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
+                    self.sc_vtg.activated.connect(self.set_ref_vtg)
             if self.actionVTG.isEnabled() and self.actionGGA.isEnabled():
                 break
 
