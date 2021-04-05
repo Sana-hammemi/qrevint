@@ -362,7 +362,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.01'
+        self.QRev_version = 'QRevInt 1.02'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -661,6 +661,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.processed_transects = []
         else:
             self.actionSave.triggered.connect(self.save_measurement)
+            self.sc_open = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+F'), self)
+            self.sc_open.activated.connect(self.select_measurement)
+
+        # Setup shortcuts
+        self.sc_bt = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'), self)
+        self.sc_bt.activated.connect(self.set_ref_bt)
+        self.sc_weighted = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+W'), self)
+        self.sc_weighted.activated.connect(self.set_use_weighted)
+        self.sc_options = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+O'), self)
+        self.sc_options.activated.connect(self.qrev_options)
+        self.sc_comment = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+N'), self)
+        self.sc_comment.activated.connect(self.add_comment)
+        self.sc_select_transects = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'), self)
+        self.sc_select_transects.activated.connect(self.select_q_transects)
+        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
+        self.sc_save.activated.connect(self.save_measurement)
 
         # Remove uncertainty tab
         self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
@@ -893,99 +909,105 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def add_comment(self):
         """Add comment triggered by actionComment
         """
-        # Initialize comment dialog
-        tab_name = self.tab_all.tabText(self.tab_all.currentIndex())
-        comment = Comment(tab_name)
-        comment_entered = comment.exec_()
 
-        # If comment entered and measurement open, save comment, and update comments tab.
-        if comment_entered:
+        if self.meas is not None:
+            # Initialize comment dialog
+            tab_name = self.tab_all.tabText(self.tab_all.currentIndex())
+            comment = Comment(tab_name)
+            comment_entered = comment.exec_()
 
-            if self.meas is not None:
-                self.meas.comments.append(comment.text_edit_comment.toPlainText())
-            self.change = True
-            self.update_comments()
+            # If comment entered and measurement open, save comment, and update comments tab.
+            if comment_entered:
+
+                if self.meas is not None:
+                    self.meas.comments.append(comment.text_edit_comment.toPlainText())
+                self.change = True
+                self.update_comments()
 
     def select_q_transects(self):
         """Initializes a dialog to allow user to select or deselect transects to include in the measurement.
         """
 
-        # Open dialog
-        transects_2_use = Transects2Use(self)
-        transects_selected = transects_2_use.exec_()
-        selected_transects = []
+        if self.meas is not None:
+            # Open dialog
+            transects_2_use = Transects2Use(self)
+            transects_selected = transects_2_use.exec_()
+            selected_transects = []
 
-        # Identify currently selected transects
-        if transects_selected:
-            with self.wait_cursor():
-                for row in range(transects_2_use.tableSelect.rowCount()):
-                    if transects_2_use.tableSelect.item(row, 0).checkState() == QtCore.Qt.Checked:
-                        selected_transects.append(row)
+            # Identify currently selected transects
+            if transects_selected:
+                with self.wait_cursor():
+                    for row in range(transects_2_use.tableSelect.rowCount()):
+                        if transects_2_use.tableSelect.item(row, 0).checkState() == QtCore.Qt.Checked:
+                            selected_transects.append(row)
 
-                # Store selected transect indices
-                self.checked_transects_idx = selected_transects
-                if len(self.checked_transects_idx) > 0:
-                    # Update measurement based on the currently selected transects
-                    Measurement.selected_transects_changed(self.meas, self.checked_transects_idx)
+                    # Store selected transect indices
+                    self.checked_transects_idx = selected_transects
+                    if len(self.checked_transects_idx) > 0:
+                        # Update measurement based on the currently selected transects
+                        Measurement.selected_transects_changed(self.meas, self.checked_transects_idx)
 
-                    # Update the transect select icon on the toolbar
+                        # Update the transect select icon on the toolbar
+                        self.update_toolbar_trans_select()
+
+                        # Update display
+                        self.transect_row = 0
+                        self.config_gui()
+                        self.change = True
+                        self.tab_manager()
+
+                if len(self.checked_transects_idx) == 0:
+                    # Notify user
+                    QtWidgets.QMessageBox.warning(self, "Select", "No transects are selected. ")
                     self.update_toolbar_trans_select()
-
-                    # Update display
-                    self.transect_row = 0
-                    self.config_gui()
-                    self.change = True
-                    self.tab_manager()
-
-            if len(self.checked_transects_idx) == 0:
-                # Notify user
-                QtWidgets.QMessageBox.warning(self, "Select", "No transects are selected. ")
-                self.update_toolbar_trans_select()
 
     def set_ref_bt(self):
         """Changes the navigation reference to Bottom Track
         """
-        with self.wait_cursor():
-            # Get all current settings
-            settings = Measurement.current_settings(self.meas)
-            old_discharge = self.meas.discharge
-            # Change NavRef setting to selected value
-            settings['NavRef'] = 'BT'
-            # Update the measurement and GUI
-            Measurement.apply_settings(self.meas, settings)
-            self.update_toolbar_nav_ref()
-            self.change = True
-            self.tab_manager(old_discharge=old_discharge)
+        if self.meas is not None:
+            with self.wait_cursor():
+                # Get all current settings
+                settings = Measurement.current_settings(self.meas)
+                old_discharge = self.meas.discharge
+                # Change NavRef setting to selected value
+                settings['NavRef'] = 'BT'
+                # Update the measurement and GUI
+                Measurement.apply_settings(self.meas, settings)
+                self.update_toolbar_nav_ref()
+                self.change = True
+                self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_gga(self):
         """Changes the navigation reference to GPS GGA
         """
-        with self.wait_cursor():
-            # Get all current settings
-            settings = Measurement.current_settings(self.meas)
-            old_discharge = self.meas.discharge
-            # Change NavRef to selected setting
-            settings['NavRef'] = 'GGA'
-            # Update measurement and GUI
-            Measurement.apply_settings(self.meas, settings)
-            self.update_toolbar_nav_ref()
-            self.change = True
-            self.tab_manager(old_discharge=old_discharge)
+        if self.meas is not None:
+            with self.wait_cursor():
+                # Get all current settings
+                settings = Measurement.current_settings(self.meas)
+                old_discharge = self.meas.discharge
+                # Change NavRef to selected setting
+                settings['NavRef'] = 'GGA'
+                # Update measurement and GUI
+                Measurement.apply_settings(self.meas, settings)
+                self.update_toolbar_nav_ref()
+                self.change = True
+                self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_vtg(self):
         """Changes the navigation reference to GPS VTG
         """
-        with self.wait_cursor():
-            # Get all current settings
-            settings = Measurement.current_settings(self.meas)
-            old_discharge = self.meas.discharge
-            # Set NavRef to selected setting
-            settings['NavRef'] = 'VTG'
-            # Update measurement and GUI
-            Measurement.apply_settings(self.meas, settings)
-            self.update_toolbar_nav_ref()
-            self.change = True
-            self.tab_manager(old_discharge=old_discharge)
+        if self.meas is not None:
+            with self.wait_cursor():
+                # Get all current settings
+                settings = Measurement.current_settings(self.meas)
+                old_discharge = self.meas.discharge
+                # Set NavRef to selected setting
+                settings['NavRef'] = 'VTG'
+                # Update measurement and GUI
+                Measurement.apply_settings(self.meas, settings)
+                self.update_toolbar_nav_ref()
+                self.change = True
+                self.tab_manager(old_discharge=old_discharge)
 
     def comp_tracks_on(self):
         """Change composite tracks setting to On and update measurement and display.
@@ -1032,158 +1054,159 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def qrev_options(self):
         """Change options triggered by actionOptions
         """
-        # Initialize options dialog
-        options = Options()
-
-        # Set dialog to current settings
-        if self.units['ID'] == 'SI':
-            options.rb_si.setChecked(True)
-        else:
-            options.rb_english.setChecked(True)
-
-        if self.save_all:
-            options.rb_All.setChecked(True)
-        else:
-            options.rb_checked.setChecked(True)
-
-        if self.save_stylesheet:
-            options.cb_stylesheet.setChecked(True)
-        else:
-            options.cb_stylesheet.setChecked(False)
-
-        if self.use_weighted:
-            options.cb_weighted_extrap.setChecked(True)
-        else:
-            options.cb_weighted_extrap.setChecked(False)
-
-        if self.rating_prompt:
-            options.cb_rating.setChecked(True)
-        else:
-            options.cb_rating.setChecked(False)
-
         if self.meas is not None:
-            self.use_measurement_thresholds = \
-                self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
+            # Initialize options dialog
+            options = Options()
 
-        if self.use_measurement_thresholds:
-            options.rb_filter_meas.setChecked(True)
-        else:
-            options.rb_filter_transect.setChecked(True)
+            # Set dialog to current settings
+            if self.units['ID'] == 'SI':
+                options.rb_si.setChecked(True)
+            else:
+                options.rb_english.setChecked(True)
 
-        if self.color_map == 'viridis':
-            options.rb_viridis.setChecked(True)
-        else:
-            options.rb_jet.setChecked(True)
+            if self.save_all:
+                options.rb_All.setChecked(True)
+            else:
+                options.rb_checked.setChecked(True)
 
-        # Execute the options window
-        rsp = options.exec_()
-        old_discharge = None
+            if self.save_stylesheet:
+                options.cb_stylesheet.setChecked(True)
+            else:
+                options.cb_stylesheet.setChecked(False)
 
-        with self.wait_cursor():
-            # Apply settings from options window
-            if rsp == QtWidgets.QDialog.Accepted:
+            if self.use_weighted:
+                options.cb_weighted_extrap.setChecked(True)
+            else:
+                options.cb_weighted_extrap.setChecked(False)
 
-                # Units options
-                if options.rb_english.isChecked():
-                    if self.units['ID'] == 'SI':
-                        self.units = units_conversion(units_id='English')
-                        self.sticky_settings.set('UnitsID', 'English')
-                        self.update_main()
+            if self.rating_prompt:
+                options.cb_rating.setChecked(True)
+            else:
+                options.cb_rating.setChecked(False)
+
+            if self.meas is not None:
+                self.use_measurement_thresholds = \
+                    self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
+
+            if self.use_measurement_thresholds:
+                options.rb_filter_meas.setChecked(True)
+            else:
+                options.rb_filter_transect.setChecked(True)
+
+            if self.color_map == 'viridis':
+                options.rb_viridis.setChecked(True)
+            else:
+                options.rb_jet.setChecked(True)
+
+            # Execute the options window
+            rsp = options.exec_()
+            old_discharge = None
+
+            with self.wait_cursor():
+                # Apply settings from options window
+                if rsp == QtWidgets.QDialog.Accepted:
+
+                    # Units options
+                    if options.rb_english.isChecked():
+                        if self.units['ID'] == 'SI':
+                            self.units = units_conversion(units_id='English')
+                            self.sticky_settings.set('UnitsID', 'English')
+                            self.update_main()
+                            self.change = True
+                    else:
+                        if self.units['ID'] == 'English':
+                            self.units = units_conversion(units_id='SI')
+                            self.sticky_settings.set('UnitsID', 'SI')
+                            self.update_main()
+                            self.change = True
+
+                    # Color map
+                    if options.rb_viridis.isChecked():
+                        if self.color_map != 'viridis':
+                            self.color_map = 'viridis'
+                            self.sticky_settings.set('ColorMap', 'viridis')
+                            self.update_main()
+                            self.change = True
+                    else:
+                        if self.color_map != 'jet':
+                            self.color_map = 'jet'
+                            self.sticky_settings.set('ColorMap', 'jet')
+                            self.update_main()
+                            self.change = True
+
+                    # Save options
+                    if options.rb_All.isChecked():
+                        self.save_all = True
+                    else:
+                        self.save_all = False
+
+                    # Stylesheet option
+                    if options.cb_stylesheet.isChecked():
+                        self.save_stylesheet = True
+                        self.sticky_settings.set('StyleSheet', True)
+                    else:
+                        self.save_stylesheet = False
+                        self.sticky_settings.set('StyleSheet', False)
+
+                    # Prompt for user rating
+                    if options.cb_rating.isChecked():
+                        self.rating_prompt = True
+                        self.sticky_settings.set('UserRating', True)
+                    else:
+                        self.rating_prompt = False
+                        self.sticky_settings.set('UserRating', False)
+
+                    # Use of weighted medians for extrapolation fit
+                    if options.cb_weighted_extrap.isChecked():
+                        use_weighted = True
+                    else:
+                        use_weighted = False
+
+                    # Check for change
+                    if self.use_weighted == use_weighted:
+                        self.change = False
+                    # If change made with measurement loaded recompute measurement
+                    elif self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseWeighted'] = use_weighted
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseWeighted', use_weighted)
+                        self.use_weighted = use_weighted
                         self.change = True
-                else:
-                    if self.units['ID'] == 'English':
-                        self.units = units_conversion(units_id='SI')
-                        self.sticky_settings.set('UnitsID', 'SI')
-                        self.update_main()
+                    # If change made before measurement loaded, set value
+                    else:
+                        self.use_weighted = use_weighted
+                        self.sticky_settings.set('UseWeighted', use_weighted)
+
+                    # Filter measurement
+                    if options.rb_filter_meas.isChecked():
+                        filter_meas = True
+                    else:
+                        filter_meas = False
+
+                    # Check for change
+                    if self.use_measurement_thresholds == filter_meas:
+                        self.change = False
+                    # If change made with measurement loaded recompute measurement
+                    elif self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseMeasurementThresholds'] = filter_meas
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
+                        self.use_measurement_thresholds = filter_meas
                         self.change = True
+                    # If change made before measurement loaded, set value
+                    else:
+                        self.sticky_settings.set('FilterMeasurement', filter_meas)
+                        self.use_measurement_thresholds = filter_meas
 
-                # Color map
-                if options.rb_viridis.isChecked():
-                    if self.color_map != 'viridis':
-                        self.color_map = 'viridis'
-                        self.sticky_settings.set('ColorMap', 'viridis')
-                        self.update_main()
-                        self.change = True
-                else:
-                    if self.color_map != 'jet':
-                        self.color_map = 'jet'
-                        self.sticky_settings.set('ColorMap', 'jet')
-                        self.update_main()
-                        self.change = True
-
-                # Save options
-                if options.rb_All.isChecked():
-                    self.save_all = True
-                else:
-                    self.save_all = False
-
-                # Stylesheet option
-                if options.cb_stylesheet.isChecked():
-                    self.save_stylesheet = True
-                    self.sticky_settings.set('StyleSheet', True)
-                else:
-                    self.save_stylesheet = False
-                    self.sticky_settings.set('StyleSheet', False)
-
-                # Prompt for user rating
-                if options.cb_rating.isChecked():
-                    self.rating_prompt = True
-                    self.sticky_settings.set('UserRating', True)
-                else:
-                    self.rating_prompt = False
-                    self.sticky_settings.set('UserRating', False)
-
-                # Use of weighted medians for extrapolation fit
-                if options.cb_weighted_extrap.isChecked():
-                    use_weighted = True
-                else:
-                    use_weighted = False
-
-                # Check for change
-                if self.use_weighted == use_weighted:
-                    self.change = False
-                # If change made with measurement loaded recompute measurement
-                elif self.meas is not None:
-                    old_discharge = self.meas.discharge
-                    settings = self.meas.current_settings()
-                    settings['UseWeighted'] = use_weighted
-                    self.meas.apply_settings(settings)
-                    self.sticky_settings.set('UseWeighted', use_weighted)
-                    self.use_weighted = use_weighted
-                    self.change = True
-                # If change made before measurement loaded, set value
-                else:
-                    self.use_weighted = use_weighted
-                    self.sticky_settings.set('UseWeighted', use_weighted)
-
-                # Filter measurement
-                if options.rb_filter_meas.isChecked():
-                    filter_meas = True
-                else:
-                    filter_meas = False
-
-                # Check for change
-                if self.use_measurement_thresholds == filter_meas:
-                    self.change = False
-                # If change made with measurement loaded recompute measurement
-                elif self.meas is not None:
-                    old_discharge = self.meas.discharge
-                    settings = self.meas.current_settings()
-                    settings['UseMeasurementThresholds'] = filter_meas
-                    self.meas.apply_settings(settings)
-                    self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
-                    self.use_measurement_thresholds = filter_meas
-                    self.change = True
-                # If change made before measurement loaded, set value
-                else:
-                    self.sticky_settings.set('FilterMeasurement', filter_meas)
-                    self.use_measurement_thresholds = filter_meas
-
-                # Update tabs
-                if old_discharge is None:
-                    self.tab_manager()
-                else:
-                    self.tab_manager(old_discharge=old_discharge)
+                    # Update tabs
+                    if old_discharge is None:
+                        self.tab_manager()
+                    else:
+                        self.tab_manager(old_discharge=old_discharge)
 
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA coordinates.
@@ -1231,6 +1254,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         elif msg.clickedButton().text() == 'About':
             help_file = os.path.join(help_file, 'QRev_About.pdf')
             webbrowser.open('file:///' + help_file, new=2, autoraise=True)
+
+    def set_use_weighted(self):
+        """Call be shortcut key cntrl+w toggle between use weighted and unweighted cells for extrapolation.
+        """
+
+        if self.use_weighted == True:
+            use_weighted = False
+        elif self.use_weighted == False:
+            use_weighted = True
+        # If change made with measurement loaded recompute measurement
+        if self.meas is not None:
+            old_discharge = self.meas.discharge
+            settings = self.meas.current_settings()
+            settings['UseWeighted'] = use_weighted
+            self.meas.apply_settings(settings)
+            self.sticky_settings.set('UseWeighted', use_weighted)
+            self.use_weighted = use_weighted
+            self.change = True
+            self.tab_manager(old_discharge=old_discharge)
 
     # Main tab
     # ========
@@ -11119,6 +11161,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionOFF.setDisabled(True)
         self.actionON.setDisabled(True)
 
+        # # Setup shortcuts
+        # self.sc_bt = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'), self)
+        # self.sc_bt.activated.connect(self.set_ref_bt)
+        # self.sc_weighted = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+W'), self)
+        # self.sc_weighted.activated.connect(self.set_use_weighted)
+        # self.sc_options = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+O'), self)
+        # self.sc_options.activated.connect(self.qrev_options)
+        # self.sc_comment = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+N'), self)
+        # self.sc_comment.activated.connect(self.add_comment)
+        # self.sc_select_transects = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'), self)
+        # self.sc_select_transects.activated.connect(self.select_q_transects)
+
+
         # Set tab text and icons to default
         for tab_idx in range(self.tab_all.count() - 2):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
@@ -11138,11 +11193,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
                 self.actionGoogle_Earth.setEnabled(True)
+                self.sc_gga = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+G'), self)
+                self.sc_gga.activated.connect(self.set_ref_gga)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
                 self.actionVTG.setEnabled(True)
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
+                self.sc_vtg = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
+                self.sc_vtg.activated.connect(self.set_ref_vtg)
             if self.actionVTG.isEnabled() and self.actionGGA.isEnabled():
                 break
 
