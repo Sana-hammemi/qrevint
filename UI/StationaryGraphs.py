@@ -22,6 +22,8 @@ class StationaryGraphs(object):
         Annotation object for moving-bed time series data cursor
     annot_stud: Annotation
         Annotation object for upstream/downstream shiptrack data cursor
+    x_axis_type: str
+        Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -41,7 +43,7 @@ class StationaryGraphs(object):
         self.mb = None
         self.stud = None
 
-    def create(self, mb_test, units):
+    def create(self, mb_test, units, x_axis_type=None):
         """Generates a moving-bed time series and upstream/downstream bottom track plot from stationary moving-bed
         test data.
 
@@ -51,7 +53,14 @@ class StationaryGraphs(object):
             Object of MovingBedTest contain data to be plotted.
         units: dict
             Dictionary of unit conversions and labels.
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
+
+        # Set default axis
+        if x_axis_type is None:
+            x_axis_type = 'E'
+        self.x_axis_type = x_axis_type
 
         # Clear the plot
         self.fig.clear()
@@ -64,7 +73,6 @@ class StationaryGraphs(object):
 
         # Configure moving-bed time series graph
         self.fig.axmb = self.fig.add_subplot(gs[0, 0])
-        self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
         self.fig.axmb.set_ylabel(self.canvas.tr('BT Moving-bed speed' + units['label_V']))
         self.fig.axmb.grid()
         self.fig.axmb.xaxis.label.set_fontsize(12)
@@ -75,10 +83,30 @@ class StationaryGraphs(object):
         valid_data = mb_test.transect.boat_vel.bt_vel.valid_data[0, mb_test.transect.in_transect_idx]
         if np.any(valid_data):
             invalid_data = np.logical_not(valid_data)
-            ensembles = np.arange(1, len(valid_data) + 1)
-            self.mb = self.fig.axmb.plot(ensembles, mb_test.stationary_mb_vel * units['V'], 'b-')
-            self.mb.append(self.fig.axmb.plot(ensembles[invalid_data],
+            # Compute x axis data
+            x = None
+            if x_axis_type == 'L':
+                # Length doesn't make sense for this plot so default to ensembles
+                x = np.arange(1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
+            elif x_axis_type == 'E':
+                x = np.arange(1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
+            elif x_axis_type == 'T':
+                x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec)
+
+            self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel * units['V'], 'b-')
+            self.mb.append(self.fig.axmb.plot(x[invalid_data],
                                               mb_test.stationary_mb_vel[invalid_data] * units['V'], 'ro')[0])
+
+            # Label axis
+            if x_axis_type == 'L':
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
+            elif x_axis_type == 'E':
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
+            elif x_axis_type == 'T':
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlabel(self.canvas.tr('Duration (seconds)'))
 
             # Generate upstream/cross stream shiptrack
             self.fig.axstud = self.fig.add_subplot(gs[0, 1])

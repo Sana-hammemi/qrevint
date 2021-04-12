@@ -610,6 +610,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.uncertainty_measurement_fig = None
         self.uncertainty_measurement_toolbar = None
         self.mb_row = 0
+        self.x_axis_type = None
 
         # Tab initialization tracking setup
         self.main_initialized = False
@@ -677,6 +678,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_select_transects.activated.connect(self.select_q_transects)
         self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
         self.sc_save.activated.connect(self.save_measurement)
+        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'), self)
+        self.sc_save.activated.connect(self.x_axis_time)
+        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+L'), self)
+        self.sc_save.activated.connect(self.x_axis_length)
+        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+E'), self)
+        self.sc_save.activated.connect(self.x_axis_ensemble)
 
         # Remove uncertainty tab
         self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
@@ -1105,7 +1112,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             with self.wait_cursor():
                 # Apply settings from options window
                 if rsp == QtWidgets.QDialog.Accepted:
-
+                    self.change = False
                     # Units options
                     if options.rb_english.isChecked():
                         if self.units['ID'] == 'SI':
@@ -1163,17 +1170,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         use_weighted = False
 
                     # Check for change
-                    if self.use_weighted == use_weighted:
-                        self.change = False
-                    # If change made with measurement loaded recompute measurement
-                    elif self.meas is not None:
-                        old_discharge = self.meas.discharge
-                        settings = self.meas.current_settings()
-                        settings['UseWeighted'] = use_weighted
-                        self.meas.apply_settings(settings)
-                        self.sticky_settings.set('UseWeighted', use_weighted)
-                        self.use_weighted = use_weighted
+                    if self.use_weighted != use_weighted:
                         self.change = True
+                        # If change made with measurement loaded recompute measurement
+                        if self.meas is not None:
+                            old_discharge = self.meas.discharge
+                            settings = self.meas.current_settings()
+                            settings['UseWeighted'] = use_weighted
+                            self.meas.apply_settings(settings)
+                            self.sticky_settings.set('UseWeighted', use_weighted)
+                            self.use_weighted = use_weighted
+
                     # If change made before measurement loaded, set value
                     else:
                         self.use_weighted = use_weighted
@@ -1186,20 +1193,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         filter_meas = False
 
                     # Check for change
-                    if self.use_measurement_thresholds == filter_meas:
-                        self.change = False
-                    # If change made with measurement loaded recompute measurement
-                    elif self.meas is not None:
-                        old_discharge = self.meas.discharge
-                        settings = self.meas.current_settings()
-                        settings['UseMeasurementThresholds'] = filter_meas
-                        self.meas.apply_settings(settings)
-                        self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
-                        self.use_measurement_thresholds = filter_meas
+                    if self.use_measurement_thresholds != filter_meas:
                         self.change = True
+                        # If change made with measurement loaded recompute measurement
+                        if self.meas is not None:
+                            old_discharge = self.meas.discharge
+                            settings = self.meas.current_settings()
+                            settings['UseMeasurementThresholds'] = filter_meas
+                            self.meas.apply_settings(settings)
+                            self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
+                            self.use_measurement_thresholds = filter_meas
+
                     # If change made before measurement loaded, set value
                     else:
-                        self.sticky_settings.set('FilterMeasurement', filter_meas)
+                        self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
                         self.use_measurement_thresholds = filter_meas
 
                     # Update tabs
@@ -1807,7 +1814,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create the figure with the specified data
         self.main_wt_contour_fig.create(transect=transect,
                                         units=self.units,
-                                        color_map=self.color_map)
+                                        color_map=self.color_map,
+                                        x_axis_type=self.x_axis_type)
         self.main_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0)
         # Draw canvas
         self.main_wt_contour_canvas.draw()
@@ -3652,7 +3660,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 tbl=self.table_compass_pr,
                                 cb_internal=self.cb_adcp_compass,
                                 cb_external=self.cb_ext_compass,
-                                cb_merror=self.cb_mag_field)
+                                cb_merror=self.cb_mag_field,
+                                units=self.units,
+                                x_axis_type=self.x_axis_type)
         if len(self.figs) > 0:
             self.figs[0] = self.heading_fig
 
@@ -3687,7 +3697,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                            checked=self.checked_transects_idx,
                            tbl=self.table_compass_pr,
                            cb_pitch=self.cb_pitch,
-                           cb_roll=self.cb_roll)
+                           cb_roll=self.cb_roll,
+                           units=self.units,
+                           x_axis_type=self.x_axis_type)
 
         self.clear_zphd()
 
@@ -4670,7 +4682,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                               cb=True,
                               cb_bt=self.cb_mb_bt,
                               cb_gga=self.cb_mb_gga,
-                              cb_vtg=self.cb_mb_vtg)
+                              cb_vtg=self.cb_mb_vtg,
+                              x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.mb_ts_canvas.draw()
@@ -4701,7 +4714,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Initialize the stationary figure and assign to the canvas
         self.mb_ts_fig = StationaryGraphs(canvas=self.mb_ts_canvas)
         # Create the figure with the specified data
-        self.mb_ts_fig.create(mb_test=mb_test, units=self.units)
+        self.mb_ts_fig.create(mb_test=mb_test, units=self.units, x_axis_type=self.x_axis_type)
         # Draw canvas
         self.mb_ts_canvas.draw()
 
@@ -5198,7 +5211,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                   cb=True,
                                   cb_bt=self.cb_bt_bt,
                                   cb_gga=self.cb_bt_gga,
-                                  cb_vtg=self.cb_bt_vtg)
+                                  cb_vtg=self.cb_bt_vtg,
+                                  x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.bt_bottom_canvas.draw()
@@ -5226,19 +5240,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create the figure with the specified data
         if self.rb_bt_beam.isChecked():
             self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='beam')
+                                   units=self.units, selected='beam', x_axis_type=self.x_axis_type)
         elif self.rb_bt_error.isChecked():
             self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='error')
+                                   units=self.units, selected='error', x_axis_type=self.x_axis_type)
         elif self.rb_bt_vert.isChecked():
             self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='vert')
+                                   units=self.units, selected='vert', x_axis_type=self.x_axis_type)
         elif self.rb_bt_other.isChecked():
             self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='other')
+                                   units=self.units, selected='other', x_axis_type=self.x_axis_type)
         elif self.rb_bt_source.isChecked():
             self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='source')
+                                   units=self.units, selected='source', x_axis_type=self.x_axis_type)
 
         # Update list of figs
         self.figs = [self.bt_shiptrack_fig, self.bt_top_fig, self.bt_bottom_fig]
@@ -6003,7 +6017,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                    cb=True,
                                    cb_bt=self.cb_gps_bt,
                                    cb_gga=self.cb_gps_gga,
-                                   cb_vtg=self.cb_gps_vtg)
+                                   cb_vtg=self.cb_gps_vtg,
+                                   x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.gps_bottom_canvas.draw()
@@ -6040,22 +6055,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create the figure with the specified data
         if self.rb_gps_quality.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='quality')
+                                    units=self.units, selected='quality', x_axis_type=self.x_axis_type)
         elif self.rb_gps_altitude.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='altitude')
+                                    units=self.units, selected='altitude', x_axis_type=self.x_axis_type)
         elif self.rb_gps_hdop.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='hdop')
+                                    units=self.units, selected='hdop', x_axis_type=self.x_axis_type)
         elif self.rb_gps_other.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='other')
+                                    units=self.units, selected='other', x_axis_type=self.x_axis_type)
         elif self.rb_gps_sats.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='sats')
+                                    units=self.units, selected='sats', x_axis_type=self.x_axis_type)
         elif self.rb_gps_source.isChecked():
             self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='source')
+                                    units=self.units, selected='source', x_axis_type=self.x_axis_type)
 
         # Update list of figs
         self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig]
@@ -6996,7 +7011,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                   cb_beam3=self.cb_depth_beam3,
                                   cb_beam4=self.cb_depth_beam4,
                                   cb_vert=self.cb_depth_vert,
-                                  cb_ds=self.cb_depth_ds)
+                                  cb_ds=self.cb_depth_ds,
+                                  x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.depth_top_canvas.draw()
@@ -7027,7 +7043,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                      cb_beam_cs=self.cb_depth_4beam_cs,
                                      cb_vert_cs=self.cb_depth_vert_cs,
                                      cb_ds_cs=self.cb_depth_ds_cs,
-                                     cb_final_cs=self.cb_depth_final_cs)
+                                     cb_final_cs=self.cb_depth_final_cs,
+                                     x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.depth_bottom_canvas.draw()
@@ -7718,7 +7735,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.wt_max_limit = self.wt_bottom_fig.create(transect=self.transect,
                                                       units=self.units,
-                                                      color_map=self.color_map)
+                                                      color_map=self.color_map,
+                                                      x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.wt_bottom_canvas.draw()
@@ -7765,7 +7783,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                        units=self.units,
                                        invalid_data=np.logical_not(self.transect.w_vel.valid_data[0, :, :]),
                                        max_limit=self.wt_max_limit,
-                                       color_map=self.color_map)
+                                       color_map=self.color_map,
+                                       x_axis_type=self.x_axis_type)
             except AttributeError:
                 pass
         else:
@@ -7774,19 +7793,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Create the figure with the specified data
             if self.rb_wt_beam.isChecked():
                 self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='beam')
+                                       units=self.units, selected='beam', x_axis_type=self.x_axis_type)
             elif self.rb_wt_error.isChecked():
                 self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='error')
+                                       units=self.units, selected='error', x_axis_type=self.x_axis_type)
             elif self.rb_wt_vert.isChecked():
                 self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='vert')
+                                       units=self.units, selected='vert', x_axis_type=self.x_axis_type)
             elif self.rb_wt_speed.isChecked():
                 self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='speed')
+                                       units=self.units, selected='speed', x_axis_type=self.x_axis_type)
             elif self.rb_wt_snr.isChecked():
                 self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='snr')
+                                       units=self.units, selected='snr', x_axis_type=self.x_axis_type)
 
         # Draw canvas
         self.wt_top_canvas.draw()
@@ -9469,7 +9488,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                           units=self.units,
                                           invalid_data=np.logical_not(transect.w_vel.valid_data[0, :, :]),
                                           n_ensembles=n_ensembles,
-                                          edge_start=edge_start)
+                                          edge_start=edge_start,
+                                          color_map=self.color_map,
+                                          x_axis_type=self.x_axis_type)
 
         # Set margins and padding for figure
         self.left_edge_contour_canvas.fig.subplots_adjust(left=0.15, bottom=0.1, right=0.90, top=0.98, wspace=0.1,
@@ -9506,7 +9527,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                            units=self.units,
                                            invalid_data=np.logical_not(transect.w_vel.valid_data[0, :, :]),
                                            n_ensembles=n_ensembles,
-                                           edge_start=edge_start)
+                                           edge_start=edge_start,
+                                           color_map=self.color_map,
+                                           x_axis_type=self.x_axis_type)
 
         # Set margins and padding for figure
         self.right_edge_contour_canvas.fig.subplots_adjust(left=0.15, bottom=0.1, right=0.90, top=0.98, wspace=0.1,
@@ -10669,6 +10692,67 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionZoom.setChecked(False)
         self.actionData_Cursor.setChecked(False)
         self.data_cursor()
+
+    def change_x_axis(self):
+        """Manages the changing of the x axis type.
+        """
+
+        # Clear zoom, pan, home, data_cursor
+        self.clear_zphd()
+
+        # Determine the selected tab
+        tab_idx = self.current_tab
+
+        # Main tab
+        if tab_idx == 'Main':
+            self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
+
+        # Compass/PR tab
+        elif tab_idx == 'Compass/P/R':
+            self.compass_plot()
+            self.pr_plot()
+
+        # Moving-bed test tab
+        elif tab_idx == 'MovBedTst':
+            self.mb_plots(idx=self.mb_row)
+
+        # Bottom track tab
+        elif tab_idx == 'BT':
+            self.bt_plots()
+
+        # GPS tab
+        elif tab_idx == 'GPS':
+            self.gps_plots()
+
+        # Depth tab
+        elif tab_idx == 'Depth':
+            self.depth_plots()
+
+        # Water track tab
+        elif tab_idx == 'WT':
+            self.wt_plots()
+
+        # Edges tab
+        elif tab_idx == 'Edges':
+            self.edges_graphics()
+
+    def x_axis_time(self):
+        """Changes the x-axis type to time
+        """
+        self.x_axis_type = 'T'
+        self.change_x_axis()
+
+    def x_axis_ensemble(self):
+        """Changes the x-axis type to ensembles
+        """
+        self.x_axis_type = 'E'
+        self.change_x_axis()
+
+    def x_axis_length(self):
+        """Changes the x-axis type to length
+        """
+        self.x_axis_type = 'L'
+        self.change_x_axis()
 
     # Split functions
     # ==============

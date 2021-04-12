@@ -1,5 +1,7 @@
 import numpy as np
 from PyQt5 import QtCore
+from matplotlib.dates import DateFormatter, num2date
+from datetime import datetime
 
 
 class BeamDepths(object):
@@ -42,6 +44,8 @@ class BeamDepths(object):
         Index to data cursor connection
     annot: Annotation
         Annotation for data cursor
+    x_axis_type: str
+        Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -71,9 +75,10 @@ class BeamDepths(object):
         self.ds = None
         self.hover_connection = None
         self.annot = None
+        self.x_axis_type = 'L'
 
     def create(self, transect, units, cb_beam1=None, cb_beam2=None, cb_beam3=None, cb_beam4=None,
-               cb_vert=None, cb_ds=None):
+               cb_vert=None, cb_ds=None, x_axis_type=None):
 
         """Create the axes and lines for the figure.
 
@@ -95,7 +100,14 @@ class BeamDepths(object):
             Checkbox to plot vertical beam
         cb_ds: QCheckBox
             Checkbox to plot depth sounder
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
+
+        # Set default axis
+        if x_axis_type is None:
+            x_axis_type = 'L'
+        self.x_axis_type = x_axis_type
 
         # Assign and save parameters
         self.cb_beam1 = cb_beam1
@@ -115,7 +127,6 @@ class BeamDepths(object):
         self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0)
 
         # Configure axes
-        self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
         self.fig.ax.set_ylabel(self.canvas.tr('Depth' + units['label_L']))
         self.fig.ax.grid()
         self.fig.ax.xaxis.label.set_fontsize(12)
@@ -127,46 +138,57 @@ class BeamDepths(object):
         max_ds = np.nan
 
         # Compute x axis data
-        boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+        x = None
+        if x_axis_type == 'L':
+            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
+                x = boat_track['distance_m'] * units['L']
+        elif x_axis_type == 'E':
+            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+        elif x_axis_type == 'T':
+            timestamp =np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+            x = []
+            for stamp in timestamp:
+                x.append(datetime.utcfromtimestamp(stamp))
+            x = np.array(x)
 
-        # Check to make sure there is valib boat track data
-        if not np.alltrue(np.isnan(boat_track['track_x_m'])):
-            x = boat_track['distance_m']
+        # Check to make sure there is valid boat track data
+        if x is not None:
             invalid_beams = np.logical_not(transect.depths.bt_depths.valid_beams)
             beam_depths = transect.depths.bt_depths.depth_beams_m
 
             # Plot beams
-            self.beam1 = self.fig.ax.plot(x * units['L'],
+            self.beam1 = self.fig.ax.plot(x,
                                           beam_depths[0, :] * units['L'],
                                           linestyle='-', marker='o', color='k', markersize=4)
-            self.beam1.append(self.fig.ax.plot(x[invalid_beams[0, :]] * units['L'],
+            self.beam1.append(self.fig.ax.plot(x[invalid_beams[0, :]],
                                                beam_depths[0, invalid_beams[0, :]] * units['L'],
                                                'r', linestyle='',
                                                marker='o', markersize=8, markerfacecolor='none')[0])
 
-            self.beam2 = self.fig.ax.plot(x * units['L'],
+            self.beam2 = self.fig.ax.plot(x,
                                           beam_depths[1, :] * units['L'],
                                           color='#005500',linestyle='-', marker='o', markersize=4)
-            self.beam2.append(self.fig.ax.plot(x[invalid_beams[1, :]] * units['L'],
+            self.beam2.append(self.fig.ax.plot(x[invalid_beams[1, :]],
                                                beam_depths[1, invalid_beams[1, :]] * units['L'],
                                                color='r',
                                                linestyle='',
                                                marker='o', markersize=8, markerfacecolor='none')[0])
 
-            self.beam3 = self.fig.ax.plot(x * units['L'],
+            self.beam3 = self.fig.ax.plot(x,
                                           beam_depths[2, :] * units['L'],
                                           linestyle='-', marker='o', color='b', markersize=4)
-            self.beam3.append(self.fig.ax.plot(x[invalid_beams[2, :]] * units['L'],
+            self.beam3.append(self.fig.ax.plot(x[invalid_beams[2, :]],
                                                beam_depths[2, invalid_beams[2, :]] * units['L'],
                                                'r',
                                                linestyle='',
                                                marker='o', markersize=8, markerfacecolor='none')[0])
 
-            self.beam4 = self.fig.ax.plot(x * units['L'],
+            self.beam4 = self.fig.ax.plot(x,
                                           beam_depths[3, :] * units['L'],
                                           color='#aa5500',
                                           linestyle='-', marker='o', markersize=4)
-            self.beam4.append(self.fig.ax.plot(x[invalid_beams[3, :]] * units['L'],
+            self.beam4.append(self.fig.ax.plot(x[invalid_beams[3, :]],
                                                beam_depths[3, invalid_beams[3, :]] * units['L'],
                                                color='r',
                                                linestyle='',
@@ -207,11 +229,11 @@ class BeamDepths(object):
             if transect.depths.vb_depths is not None:
                 invalid_beams = np.logical_not(transect.depths.vb_depths.valid_beams[0, :])
                 beam_depths = transect.depths.vb_depths.depth_beams_m[0, :]
-                self.vb = self.fig.ax.plot(x * units['L'],
+                self.vb = self.fig.ax.plot(x,
                                            beam_depths * units['L'],
                                            color='#aa00ff',
                                            linestyle='-', marker='o', markersize=4)
-                self.vb.append(self.fig.ax.plot(x[invalid_beams] * units['L'],
+                self.vb.append(self.fig.ax.plot(x[invalid_beams],
                                                 beam_depths[invalid_beams] * units['L'],
                                                 color='r',
                                                 linestyle='',
@@ -230,7 +252,7 @@ class BeamDepths(object):
             if transect.depths.ds_depths is not None:
                 invalid_beams = np.logical_not(transect.depths.ds_depths.valid_beams[0, :])
                 beam_depths = transect.depths.ds_depths.depth_beams_m[0, :]
-                self.ds = self.fig.ax.plot(x * units['L'],
+                self.ds = self.fig.ax.plot(x,
                                            beam_depths * units['L'],
                                            color='#00aaff', linestyle='-', marker='o')
                 self.ds.append(self.fig.ax.plot(x[invalid_beams] * units['L'],
@@ -252,12 +274,33 @@ class BeamDepths(object):
             max_y = np.nanmax([max_beams, max_vert, max_ds]) * 1.1
             self.fig.ax.invert_yaxis()
             self.fig.ax.set_ylim(bottom=np.ceil(max_y * units['L']), top=0)
-            self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
 
-            # Plot all transects from left to right
-            if transect.start_edge == 'Right':
-                self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+            if x_axis_type == 'L':
+                if transect.start_edge == 'Right':
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+                else:
+                    self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
+                self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
+            elif x_axis_type == 'E':
+                if transect.start_edge == 'Right':
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(right=0, left=x[-1]+1)
+                else:
+                    self.fig.ax.set_xlim(left=0, right=x[-1]+1)
+                self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
+            elif x_axis_type == 'T':
+                axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
+                if transect.start_edge == 'Right':
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(timestamp[0]-axis_buffer),
+                                         left=datetime.utcfromtimestamp(timestamp[-1]+axis_buffer))
+                else:
+                    self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(timestamp[0]-axis_buffer),
+                                         right=datetime.utcfromtimestamp(timestamp[-1]+axis_buffer))
+                date_form = DateFormatter('%H:%M:%S')
+                self.fig.ax.xaxis.set_major_formatter(date_form)
+                self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
             self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
                                               bbox=dict(boxstyle="round", fc="w"),
@@ -363,7 +406,13 @@ class BeamDepths(object):
 
         # Create annotation box
         self.annot.xy = pos
-        text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
+
+        if self.x_axis_type == 'T':
+            x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
+            text = 'x: {}, {}: {:.2f}'.format(x_label, ref_label, pos[1])
+        else:
+            text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
+
         self.annot.set_text(text)
 
     def hover(self, event):
