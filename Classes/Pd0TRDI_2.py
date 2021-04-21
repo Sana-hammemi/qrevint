@@ -242,20 +242,22 @@ class Pd0TRDI(object):
                 # Adjust index for lost ensembles
                 if ensemble_number > 0:
                     n = n + data['variable_leader']['ensemble_number'] - ensemble_number
-
-                self.Hdr.populate_data(n, data)
-                self.Inst.populate_data(n, data)
-                self.Cfg.populate_data(n, data)
-                self.Sensor.populate_data(n, data)
-                self.Wt.populate_data(n, data, self)
-                self.Bt.populate_data(n, data)
-                # self.Gps.populate_data(n, data)
-                self.Gps2.populate_data(n, data)
-                self.Surface.populate_data(n, data, self)
-                self.AutoMode.populate_data(n, data)
-                self.Nmea.populate_data(n, data)
-                start_byte = start_byte + data['header']['number_of_bytes'] + 2
-                ensemble_number = data['variable_leader']['ensemble_number']
+                try:
+                    self.Hdr.populate_data(n, data)
+                    self.Inst.populate_data(n, data)
+                    self.Cfg.populate_data(n, data)
+                    self.Sensor.populate_data(n, data)
+                    self.Wt.populate_data(n, data, self)
+                    self.Bt.populate_data(n, data)
+                    # self.Gps.populate_data(n, data)
+                    self.Gps2.populate_data(n, data)
+                    self.Surface.populate_data(n, data, self)
+                    self.AutoMode.populate_data(n, data)
+                    self.Nmea.populate_data(n, data)
+                    start_byte = start_byte + data['header']['number_of_bytes'] + 2
+                    ensemble_number = data['variable_leader']['ensemble_number']
+                except ValueError:
+                    start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
             else:
                 start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
 

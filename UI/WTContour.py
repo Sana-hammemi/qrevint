@@ -18,8 +18,8 @@ class WTContour(object):
         Index to data cursor connection
     annot: Annotation
         Annotation object for data cursor
-    x_plt: int
-        Ensembles numbers for x axis
+    x_plt: np.ndarray()
+        Array of values used for x-axis
     cell_plt: np.ndarray(float)
         Cell depths to plot in user specified units
     speed_plt: np.ndarray(float)
@@ -191,7 +191,7 @@ class WTContour(object):
             # Label and limits for x axis
             if x_axis_type == 'L':
                 axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
-                if not edge_start:
+                if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(right=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
                                          left=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02)
@@ -200,7 +200,7 @@ class WTContour(object):
                                          right=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02)
                 self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
             elif x_axis_type == 'E':
-                if not edge_start:
+                if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(right=np.nanmin(x) - 1, left=np.nanmax(x) + 1)
                 else:
@@ -208,7 +208,7 @@ class WTContour(object):
                 self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
             elif x_axis_type == 'T':
                 axis_buffer = (x_plt[0, -1] - x_plt[0, 0]) * 0.02
-                if not edge_start:
+                if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(x_plt[0, 0] - axis_buffer),
                                          left=datetime.utcfromtimestamp(x_plt[0, -1] + axis_buffer))
@@ -217,6 +217,8 @@ class WTContour(object):
                                          right=datetime.utcfromtimestamp(x_plt[0, -1] + axis_buffer))
                 date_form = DateFormatter('%H:%M:%S')
                 self.fig.ax.xaxis.set_major_formatter(date_form)
+                self.fig.autofmt_xdate()
+                self.fig.subplots_adjust(left=0.08, bottom=0.3, right=1, top=0.97, wspace=0.1, hspace=0)
                 self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
             # Initialize annotation for data cursor

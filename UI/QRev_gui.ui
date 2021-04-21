@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1312</width>
-    <height>821</height>
+    <height>1019</height>
    </rect>
   </property>
   <property name="palette">
@@ -272,7 +272,7 @@
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>8</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -877,6 +877,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>ADCP Compass</string>
                     </property>
@@ -927,6 +932,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Ext. Compass</string>
                     </property>
@@ -936,6 +946,11 @@
                    <widget class="QCheckBox" name="cb_mag_field">
                     <property name="enabled">
                      <bool>false</bool>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
                     </property>
                     <property name="text">
                      <string>Mag. Field</string>
@@ -992,6 +1007,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Pitch</string>
                     </property>
@@ -1039,6 +1059,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Roll</string>
                     </property>
@@ -1066,6 +1091,11 @@
                <layout class="QVBoxLayout" name="verticalLayout_7">
                 <item>
                  <widget class="QGroupBox" name="groupBox_cal">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Compass Calibration</string>
                   </property>
@@ -1078,6 +1108,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="groupBox_eval">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Compass Evaluation</string>
                   </property>
@@ -2247,6 +2282,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_21">
                       <item>
                        <widget class="QComboBox" name="combo_bt_3beam">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2282,6 +2322,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_22">
                       <item>
                        <widget class="QComboBox" name="combo_bt_error_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2351,6 +2396,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_23">
                       <item>
                        <widget class="QComboBox" name="combo_bt_vert_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2420,6 +2470,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_24">
                       <item>
                        <widget class="QComboBox" name="combo_bt_other">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Off</string>
@@ -2907,6 +2962,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_39">
                       <item>
                        <widget class="QComboBox" name="combo_gps_qual">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <property name="currentIndex">
                          <number>1</number>
                         </property>
@@ -2945,6 +3005,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_40">
                       <item>
                        <widget class="QComboBox" name="combo_gps_altitude">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -3014,6 +3079,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_41">
                       <item>
                        <widget class="QComboBox" name="combo_gps_hdop">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -3083,6 +3153,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_42">
                       <item>
                        <widget class="QComboBox" name="combo_gps_other">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Off</string>
@@ -3467,6 +3542,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_depth_beams">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Individual Beams</string>
                   </property>
@@ -3777,6 +3857,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_depth_cs">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Cross Section</string>
                   </property>
@@ -3980,24 +4065,45 @@
                   <layout class="QVBoxLayout" name="verticalLayout_29">
                    <item>
                     <widget class="QGroupBox" name="gb_depth_ref">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>Depth Reference</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_30">
                       <item>
-                       <widget class="QComboBox" name="combo_depth_ref"/>
+                       <widget class="QComboBox" name="combo_depth_ref">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
+                       </widget>
                       </item>
                      </layout>
                     </widget>
                    </item>
                    <item>
                     <widget class="QGroupBox" name="gb_depth_averaging">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>BT Averaging Method</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_31">
                       <item>
                        <widget class="QComboBox" name="combo_depth_avg">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>IDW</string>
@@ -4015,12 +4121,22 @@
                    </item>
                    <item>
                     <widget class="QGroupBox" name="gb_depth_filter">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>Filter</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_32">
                       <item>
                        <widget class="QComboBox" name="combo_depth_filter">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <property name="currentText">
                          <string>Off</string>
                         </property>
@@ -4153,7 +4269,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_wt_2_data">
            <attribute name="title">
@@ -4582,6 +4698,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_53">
                       <item>
                        <widget class="QComboBox" name="combo_wt_3beam">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4617,6 +4738,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_54">
                       <item>
                        <widget class="QComboBox" name="combo_wt_error_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4686,6 +4812,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_55">
                       <item>
                        <widget class="QComboBox" name="combo_wt_vert_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4755,6 +4886,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_59">
                       <item>
                        <widget class="QComboBox" name="combo_wt_snr">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4859,18 +4995,31 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab">
+          <widget class="QWidget" name="tab_wt_advanced">
            <attribute name="title">
-            <string>Page</string>
+            <string>Advanced</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_51">
             <item row="0" column="0">
              <layout class="QHBoxLayout" name="horizontalLayout_75" stretch="8,2">
               <item>
-               <widget class="QWidget" name="graph_explore" native="true"/>
+               <layout class="QVBoxLayout" name="verticalLayout_72">
+                <item>
+                 <widget class="QComboBox" name="combo_wt_advanced_transect">
+                  <property name="font">
+                   <font>
+                    <pointsize>10</pointsize>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QWidget" name="graph_wt_advanced" native="true"/>
+                </item>
+               </layout>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_70">
+               <layout class="QVBoxLayout" name="verticalLayout_70" stretch="14,2,0,4">
                 <item>
                  <widget class="QGroupBox" name="gb_plot_type">
                   <property name="font">
@@ -4891,6 +5040,7 @@
                        <pointsize>11</pointsize>
                        <weight>75</weight>
                        <bold>true</bold>
+                       <underline>true</underline>
                       </font>
                      </property>
                      <property name="text">
@@ -5025,6 +5175,7 @@
                        <pointsize>11</pointsize>
                        <weight>75</weight>
                        <bold>true</bold>
+                       <underline>true</underline>
                       </font>
                      </property>
                      <property name="text">
@@ -5084,6 +5235,84 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="gb_projection">
+                  <property name="font">
+                   <font>
+                    <pointsize>12</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="title">
+                   <string>Projection Angle</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_74">
+                   <item>
+                    <widget class="QLabel" name="label_4">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Flow Direction </string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="ed_flow_direction">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="pb_auto_flow_direction">
+                     <property name="maximumSize">
+                      <size>
+                       <width>50</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Auto</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pb_create_wt_plots">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Create Plot</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QGroupBox" name="gb_x_axis">
                   <property name="font">
                    <font>
@@ -5129,76 +5358,6 @@
                      </property>
                      <property name="text">
                       <string>Length</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="gb_projection">
-                  <property name="font">
-                   <font>
-                    <pointsize>12</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Projection Angle</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_74">
-                   <item>
-                    <widget class="QLabel" name="label_4">
-                     <property name="font">
-                      <font>
-                       <pointsize>10</pointsize>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>Flow Direction </string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="ed_flow_direction">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>40</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <pointsize>10</pointsize>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string/>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="pb_auto_flow_direction">
-                     <property name="maximumSize">
-                      <size>
-                       <width>50</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <pointsize>10</pointsize>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>Auto</string>
                      </property>
                     </widget>
                    </item>
@@ -5443,6 +5602,11 @@
                  </item>
                  <item>
                   <widget class="QLabel" name="txt_start">
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Start Edge: </string>
                    </property>
@@ -5487,6 +5651,11 @@
                      </disabled>
                     </palette>
                    </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Left</string>
                    </property>
@@ -5530,6 +5699,11 @@
                       </colorrole>
                      </disabled>
                     </palette>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
                    </property>
                    <property name="text">
                     <string>Right</string>
@@ -6077,6 +6251,11 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pb_extrap_cancel">
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Reset to These Settings</string>
                    </property>
@@ -6219,6 +6398,11 @@
                <layout class="QHBoxLayout" name="horizontalLayout_61">
                 <item>
                  <widget class="QGroupBox" name="gb_left">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Left</string>
                   </property>
@@ -6238,6 +6422,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_right">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Right</string>
                   </property>
@@ -6535,6 +6724,11 @@
                <layout class="QHBoxLayout" name="horizontalLayout_69" stretch="3,7">
                 <item>
                  <widget class="QGroupBox" name="qb_contrib_meas_area">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Contributions to Meas. Q Uncertainty</string>
                   </property>
@@ -6547,6 +6741,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_contrib_measurement">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Contributions to Measurement Uncertainty</string>
                   </property>

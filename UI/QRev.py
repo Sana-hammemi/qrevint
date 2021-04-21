@@ -56,6 +56,7 @@ from UI.UMeasurement import UMeasurement
 from UI.UMeasQ import UMeasQ
 from UI.MplCanvas import MplCanvas
 from UI.Disclaimer import Disclaimer
+from UI.WTAdvanced import WTAdvanced
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
@@ -588,6 +589,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.wt_top_canvas = None
         self.wt_top_toolbar = None
         self.wt_top_fig = None
+        self.wt_advanced_canvas = None
+        self.wt_advanced_toolbar = None
+        self.wt_advanced_fig = None
         self.extrap_canvas = None
         self.extrap_toolbar = None
         self.extrap_fig = None
@@ -610,7 +614,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.uncertainty_measurement_fig = None
         self.uncertainty_measurement_toolbar = None
         self.mb_row = 0
-        self.x_axis_type = None
+        self.x_axis_type = 'E'
 
         # Tab initialization tracking setup
         self.main_initialized = False
@@ -678,12 +682,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_select_transects.activated.connect(self.select_q_transects)
         self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
         self.sc_save.activated.connect(self.save_measurement)
-        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'), self)
-        self.sc_save.activated.connect(self.x_axis_time)
-        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+L'), self)
-        self.sc_save.activated.connect(self.x_axis_length)
-        self.sc_save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+E'), self)
-        self.sc_save.activated.connect(self.x_axis_ensemble)
+        self.sc_x_time = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'), self)
+        self.sc_x_time.activated.connect(self.x_axis_time)
+        self.sc_x_length = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+L'), self)
+        self.sc_x_length.activated.connect(self.x_axis_length)
+        self.sc_x_ensembles = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+E'), self)
+        self.sc_x_ensembles.activated.connect(self.x_axis_ensemble)
 
         # Remove uncertainty tab
         self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
@@ -7370,6 +7374,34 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.combo_wt_snr.currentIndexChanged[str].connect(
                 self.change_wt_snr)
 
+            # Advanced tab setup
+            self.pb_create_wt_plots.clicked.connect(self.wt_advanced_plots)
+            self.combo_wt_advanced_transect.currentIndexChanged.connect(self.wt_advanced_transect_select)
+            self.rb_ensemble.toggled.connect(self.x_axis_ensemble)
+            self.rb_length.toggled.connect(self.x_axis_length)
+            self.rb_time.toggled.connect(self.x_axis_time)
+            self.pb_auto_flow_direction.clicked.connect(self.wt_auto_flow_direction)
+
+            # Configure dictionary of plot options
+            self.wt_advanced_types = [('cb_speed_filtered', self.cb_speed_filtered),
+                                      ('cb_speed_final', self.cb_speed_final),
+                                      ('cb_projected', self.cb_projected),
+                                      ('cb_vertical', self.cb_vertical),
+                                      ('cb_error', self.cb_error),
+                                      ('cb_direction', self.cb_direction),
+                                      ('cb_avg_corr', self.cb_avg_corr),
+                                      ('cb_corr_beam', self.cb_corr_beam),
+                                      ('cb_avg_rssi', self.cb_avg_rssi),
+                                      ('cb_rssi_beam', self.cb_rssi_beam),
+                                      ('cb_discharge', self.cb_discharge),
+                                      ('cb_discharge_percent', self.cb_discharge_percent),
+                                      ('cb_avg_speed', self.cb_avg_speed),
+                                      ('cb_projected_speed_ts', self.cb_projected_speed_ts)]
+
+            trans_prop = Measurement.compute_measurement_properties(self.meas)
+            direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
+            self.ed_flow_direction.setText('{:6.2f}'.format(direction))
+
             self.wt_initialized = True
 
         # Transect selected for display
@@ -7421,10 +7453,35 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.wt_plots()
         self.wt_comments_messages()
 
+        # Populate combo box
+        self.combo_wt_advanced_transect.blockSignals(True)
+        self.combo_wt_advanced_transect.clear()
+        for idx in self.checked_transects_idx:
+            self.combo_wt_advanced_transect.addItem(self.meas.transects[idx].file_name)
+
+        # Set selected
+        self.combo_wt_advanced_transect.setCurrentIndex(self.transect_row)
+        self.combo_wt_advanced_transect.blockSignals(False)
+
+        # Set x-axis radio button
+        self.rb_ensemble.blockSignals(True)
+        self.rb_length.blockSignals(True)
+        self.rb_time.blockSignals(True)
+        if self.x_axis_type == 'E':
+            self.rb_ensemble.setChecked(True)
+        elif self.x_axis_type == 'L':
+            self.rb_length.setChecked(True)
+        elif self.x_axis_type == 'T':
+            self.rb_time.setChecked(True)
+        self.rb_ensemble.blockSignals(False)
+        self.rb_length.blockSignals(False)
+        self.rb_time.blockSignals(False)
+
         # Setup list for use by graphics controls
-        self.canvases = [self.wt_shiptrack_canvas, self.wt_top_canvas, self.wt_bottom_canvas]
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
-        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar]
+        self.canvases = [self.wt_shiptrack_canvas, self.wt_top_canvas, self.wt_bottom_canvas, self.wt_advanced_canvas]
+        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
+        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar,
+                         self.wt_advanced_toolbar]
 
     def update_wt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
@@ -7668,7 +7725,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.wt_filter_plots()
 
             # Update list of figs
-            self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
+            self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -7811,7 +7868,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.wt_top_canvas.draw()
 
         # Update list of figs
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
+        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -8093,6 +8150,68 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             self.update_tab_icons()
             # self.setTabIcon('tab_wt', self.meas.qa.w_vel['status'])
+
+    def wt_advanced_transect_select(self):
+        self.transect_row = self.combo_wt_advanced_transect.currentIndex()
+        self.wt_advanced_plots()
+
+    def wt_advanced_plots(self):
+        """Creates advanced plots for data in transect.
+        """
+
+        # Determine which plot types the user has selected
+        selected_types = []
+        for item in self.wt_advanced_types:
+            if item[1].isChecked():
+                selected_types.append(item[0])
+
+        # Get flow direction
+        flow_direction = float(self.ed_flow_direction.text())
+
+        # Determine transect to plot
+        idx = self.checked_transects_idx[self.combo_wt_advanced_transect.currentIndex()]
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.wt_advanced_canvas is None:
+            # Create the canvas
+            self.wt_advanced_canvas = MplCanvas(parent=self.graph_wt_advanced, width=10, height=8, dpi=80)
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graph_wt_advanced)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(0, 0, 0, 0)
+            # Add the canvas
+            layout.addWidget(self.wt_advanced_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.wt_advanced_toolbar = NavigationToolbar(self.wt_advanced_canvas, self)
+            self.wt_advanced_toolbar.hide()
+
+        # Initialize the advanced figure and assign to the canvas
+        self.wt_advanced_fig = WTAdvanced(canvas=self.wt_advanced_canvas)
+        # Create the figure with the specified data
+        self.wt_advanced_fig.create(transect=self.meas.transects[idx],
+                                    discharge=self.meas.discharge[idx],
+                                    units=self.units,
+                                    selected_types=selected_types,
+                                    color_map=self.color_map,
+                                    x_axis_type=self.x_axis_type,
+                                    flow_direction=flow_direction)
+
+        # Draw canvas
+        self.wt_advanced_canvas.draw()
+
+        # Update list of figs
+        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
+        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar,
+                         self.wt_advanced_toolbar]
+        # Reset data cursor to work with new figure
+        if self.actionData_Cursor.isChecked():
+            self.data_cursor()
+        self.tab_wt_2_data.setFocus()
+
+    def wt_auto_flow_direction(self):
+        trans_prop = Measurement.compute_measurement_properties(self.meas)
+        direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
+        self.ed_flow_direction.setText('{:6.2f}'.format(direction))
 
     # Extrap Tab
     # ==========
@@ -10664,7 +10783,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if self.actionZoom.isChecked():
                     self.actionZoom.trigger()
                 self.actionData_Cursor.setChecked(True)
-                fig.set_hover_connection(True)
+                if fig is not None:
+                    fig.set_hover_connection(True)
         else:
             for fig in self.figs:
                 fig.set_hover_connection(False)

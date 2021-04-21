@@ -300,6 +300,7 @@ class BeamDepths(object):
                                          right=datetime.utcfromtimestamp(timestamp[-1]+axis_buffer))
                 date_form = DateFormatter('%H:%M:%S')
                 self.fig.ax.xaxis.set_major_formatter(date_form)
+                self.fig.autofmt_xdate()
                 self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
             self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
