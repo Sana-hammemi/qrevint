@@ -339,6 +339,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Indicates if the discharge weighted medians should be used to determine the extrapolation
     agreement: bool
         Indicates that the user has agreed to the disclaimer and license
+    show_below_sl: bool
+        Advanced plots show data below sidelobe cutoff if available.
     """
 
     handle_args_trigger = pyqtSignal()
@@ -615,6 +617,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.uncertainty_measurement_toolbar = None
         self.mb_row = 0
         self.x_axis_type = 'E'
+        self.show_below_sl = False
 
         # Tab initialization tracking setup
         self.main_initialized = False
@@ -688,6 +691,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_x_length.activated.connect(self.x_axis_length)
         self.sc_x_ensembles = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+E'), self)
         self.sc_x_ensembles.activated.connect(self.x_axis_ensemble)
+        self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'), self)
+        self.sc_advanced.activated.connect(self.wt_advanced_show_hide)
+        self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+A'), self)
+        self.sc_advanced.activated.connect(self.set_show_below_sl)
 
         # Remove uncertainty tab
         self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
@@ -7383,19 +7390,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.pb_auto_flow_direction.clicked.connect(self.wt_auto_flow_direction)
 
             # Configure dictionary of plot options
-            self.wt_advanced_types = [('cb_speed_filtered', self.cb_speed_filtered),
-                                      ('cb_speed_final', self.cb_speed_final),
-                                      ('cb_projected', self.cb_projected),
-                                      ('cb_vertical', self.cb_vertical),
-                                      ('cb_error', self.cb_error),
-                                      ('cb_direction', self.cb_direction),
-                                      ('cb_avg_corr', self.cb_avg_corr),
-                                      ('cb_corr_beam', self.cb_corr_beam),
-                                      ('cb_avg_rssi', self.cb_avg_rssi),
-                                      ('cb_rssi_beam', self.cb_rssi_beam),
-                                      ('cb_discharge', self.cb_discharge),
-                                      ('cb_discharge_percent', self.cb_discharge_percent),
-                                      ('cb_avg_speed', self.cb_avg_speed),
+            self.wt_advanced_types = [('cb_speed_filtered_cc', self.cb_speed_filtered),
+                                      ('cb_speed_final_cc', self.cb_speed_final),
+                                      ('cb_projected_cc', self.cb_projected),
+                                      ('cb_vertical_cc', self.cb_vertical),
+                                      ('cb_error_cc', self.cb_error),
+                                      ('cb_direction_cc', self.cb_direction),
+                                      ('cb_avg_corr_cc', self.cb_avg_corr),
+                                      ('cb_corr_beam_cc', self.cb_corr_beam),
+                                      ('cb_avg_rssi_cc', self.cb_avg_rssi),
+                                      ('cb_rssi_beam_cc', self.cb_rssi_beam),
+                                      ('cb_discharge_ts', self.cb_discharge),
+                                      ('cb_discharge_percent_ts', self.cb_discharge_percent),
+                                      ('cb_avg_speed_ts', self.cb_avg_speed),
                                       ('cb_projected_speed_ts', self.cb_projected_speed_ts)]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)
@@ -8194,7 +8201,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     selected_types=selected_types,
                                     color_map=self.color_map,
                                     x_axis_type=self.x_axis_type,
-                                    flow_direction=flow_direction)
+                                    flow_direction=flow_direction,
+                                    show_below_sl=self.show_below_sl)
 
         # Draw canvas
         self.wt_advanced_canvas.draw()
@@ -8209,9 +8217,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_wt_2_data.setFocus()
 
     def wt_auto_flow_direction(self):
+        """Computes the mean flow direction and populates the flow direction edit box.
+        """
         trans_prop = Measurement.compute_measurement_properties(self.meas)
         direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
         self.ed_flow_direction.setText('{:6.2f}'.format(direction))
+
+    def wt_advanced_show_hide(self):
+        """Controls the visibility of the plot controls and expands and contracts the layout holding the plots
+        and plot controls.
+        """
+
+        # Hide control and expand plots
+        if self.gb_plot_type.isVisible():
+            self.gb_plot_type.hide()
+            self.gb_projection.hide()
+            self.pb_create_wt_plots.hide()
+            self.gb_x_axis.hide()
+            self.horizontalLayout_75.setStretch(0, 10)
+            self.horizontalLayout_75.setStretch(1, 0)
+        # Show control and reduce plot area
+        else:
+            self.gb_plot_type.show()
+            self.gb_projection.show()
+            self.pb_create_wt_plots.show()
+            self.gb_x_axis.show()
+            self.horizontalLayout_75.setStretch(0, 8)
+            self.horizontalLayout_75.setStretch(1, 2)
 
     # Extrap Tab
     # ==========
@@ -10873,6 +10905,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         self.x_axis_type = 'L'
         self.change_x_axis()
+
+    def set_show_below_sl(self):
+        if self.show_below_sl:
+            self.show_below_sl = False
+        else:
+            self.show_below_sl = True
 
     # Split functions
     # ==============

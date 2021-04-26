@@ -23,7 +23,30 @@ class WTAdvanced(object):
         Annotation object for data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
-
+    fig_no: int
+        Figure number indicating location within subplots
+    color_map: str
+        Name of color map for color contour plots
+    x: np.ndarray()
+        Array of values for the x-axis
+    x_timestamp: np.ndarray()
+        Array of timestamps used for x-axis if time is selected
+    ax: list
+        List of subplots
+    flow_direction: float
+        Flow direction in degrees
+    n_subplots: int
+        Number of subplots
+    transect: TransectData
+        Transect for which data are to be plotted
+    discharge: QComp
+        Discharge data
+    data_plotted: list
+        List of dictionaries containing the type of plot an values of data plotted (x, y, z)
+    gs: gridspec
+        Grid specification for subplots
+    wt_advanced_type_methods: dict
+        Dictionary connecting to the plot type to the method to create the plot
     """
 
     def __init__(self, canvas):
@@ -51,36 +74,66 @@ class WTAdvanced(object):
         self.n_subplots = 0
         self.transect = None
         self.discharge = None
-        self.wt_advanced_type_methods = {'cb_avg_corr': self.avg_corr_contour,
-                                         'cb_avg_rssi': self.avg_rssi_contour,
-                                         'cb_avg_speed': self.avg_speed_ts,
-                                         'cb_corr_beam': self.corr_beam_contour,
-                                         'cb_direction': self.direction_contour,
-                                         'cb_discharge': self.discharge_ts,
-                                         'cb_discharge_percent': self.discharge_percent_ts,
-                                         'cb_error': self.error_contour,
-                                         'cb_projected': self.projected_contour,
-                                         'cb_projected_speed_ts': self.projected_speed_ts,
-                                         'cb_rssi_beam': self.rssi_beam_contour,
-                                         'cb_speed_filtered': self.speed_filtered_contour,
-                                         'cb_speed_final': self.speed_final_contour,
-                                         'cb_vertical': self.vertical_contour}
+        self.ax = []
+        self.annot = []
+        self.data_plotted = []
+        self.gs = None
+        self.wt_advanced_type_methods = {'cb_speed_filtered_cc': self.speed_filtered_contour,
+                                         'cb_speed_final_cc': self.speed_final_contour,
+                                         'cb_projected_cc': self.projected_contour,
+                                         'cb_vertical_cc': self.vertical_contour,
+                                         'cb_error_cc': self.error_contour,
+                                         'cb_direction_cc': self.direction_contour,
+                                         'cb_avg_corr_cc': self.avg_corr_contour,
+                                         'cb_corr_beam_cc': self.corr_beam_contour,
+                                         'cb_avg_rssi_cc': self.avg_rssi_contour,
+                                         'cb_rssi_beam_cc': self.rssi_beam_contour,
+                                         'cb_discharge_ts': self.discharge_ts,
+                                         'cb_discharge_percent_ts': self.discharge_percent_ts,
+                                         'cb_avg_speed_ts': self.avg_speed_ts,
+                                         'cb_projected_speed_ts': self.projected_speed_ts}
 
-    def create(self, transect, discharge, units, selected_types, flow_direction, color_map='viridis', x_axis_type=None):
+    def create(self, transect, discharge, units, selected_types, flow_direction, color_map='viridis', x_axis_type=None,
+               show_below_sl=False):
+        """Create selected plots for the specified transect.
 
+        Parameters
+        ----------
+        transect: TransectData
+            Transect for which plots are created
+        discharge: QComp
+            Discharge data
+        units: dict
+            Units selected
+        selected_types: list
+            List of selected plot types
+        flow_direction: float
+            Flow direction to be used for projected speed plots
+        color_map: str
+            Name of color map to be used for color contour plots
+        show_below_sl: bool
+            Indicates if data should be shown below sidelobe cutoff
+        x_axis_type: str
+            Specifies what variable (ensemble, length or time) to be used for the x-axis
+        """
+
+        # Make sure a selection was made
         if len(selected_types) > 0:
+
+            # Initialize data sources
             self.flow_direction = flow_direction
             self.transect = transect
             self.discharge = discharge
+
+            self.show_below_sl = show_below_sl
 
             # Set default axis
             if x_axis_type is None:
                 x_axis_type = 'E'
             self.x_axis_type = x_axis_type
 
+            # Set color map and units
             self.color_map = color_map
-
-            # Assign and save parameters
             self.units = units
 
             # Clear the plot
@@ -88,9 +141,9 @@ class WTAdvanced(object):
 
             # Determine number of subplots
             self.n_subplots = len(selected_types)
-            if 'cb_corr_beam' in selected_types:
+            if 'cb_corr_beam_cc' in selected_types:
                 self.n_subplots += 3
-            if 'cb_rssi_beam' in selected_types:
+            if 'cb_rssi_beam_cc' in selected_types:
                 self.n_subplots += 3
 
             # Compute x-axis variable
@@ -100,30 +153,44 @@ class WTAdvanced(object):
             self.ax = []
             self.annot = []
             self.data_plotted = []
+            share_y = False
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
             self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
             # Create first subplot
-            # self.ax.append(self.fig.add_subplot(self.n_subplots, 1, self.fig_no))
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
             self.wt_advanced_type_methods[selected_types[0]]()
+            # Share the y-axis between color contour plots
+            if selected_types[0][-3:] == '_cc':
+                share_y = True
 
-
-            # Create additional subplots as specified, sharing x axis
+            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
             if len(selected_types) > 1:
                 for n in range(1, len(selected_types)):
+                    # Figure number increased by two to account for the second column in the grid space for the colorbar
                     self.fig_no += 2
-                    # self.ax.append(self.fig.add_subplot(self.n_subplots, 1, self.fig_no, sharex=self.ax[0]))
-                    self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+                    if share_y and selected_types[n][-3:] == '_cc':
+                        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+                    else:
+                        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+                    # Call method based on link in dictionary
                     self.wt_advanced_type_methods[selected_types[n]]()
 
-            self.fig.subplots_adjust(left=0.04, bottom=0.04, right=0.95, top=0.95, wspace=0.02, hspace=0.08)
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.02, hspace=0.08)
 
-            if (len(self.ax) % 2) == 0:
+            # Apply the x-axis label to the bottom x-axis
+            if selected_types[-1][-3:] == '_cc':
                 idx = -2
             else:
                 idx = -1
 
-            # Set axis limits
             self.ax[idx].xaxis.label.set_fontsize(12)
+
+            # x-axis is length
             if self.x_axis_type == 'L':
                 if self.transect.start_edge == 'Right':
                     self.ax[idx].invert_xaxis()
@@ -131,6 +198,8 @@ class WTAdvanced(object):
                 else:
                     self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
                 self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+            # x-axis is ensembles
             elif self.x_axis_type == 'E':
                 if self.transect.start_edge == 'Right':
                     self.ax[idx].invert_xaxis()
@@ -138,15 +207,17 @@ class WTAdvanced(object):
                 else:
                     self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
                 self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+            # x-axis is time
             elif self.x_axis_type == 'T':
                 axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
                 if self.transect.start_edge == 'Right':
                     self.ax[idx].invert_xaxis()
                     self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
                 else:
                     self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
                 date_form = DateFormatter('%H:%M:%S')
                 self.ax[idx].xaxis.set_major_formatter(date_form)
                 self.ax[idx].set_xlabel(self.canvas.tr('Time'))
@@ -154,12 +225,24 @@ class WTAdvanced(object):
             self.canvas.draw()
 
     def avg_corr_contour(self):
+        """Creates average correlation contour plot.
+        """
+
+        # Compute average of correlation data for each cel
         data = np.nanmean(self.transect.w_vel.corr, axis=0)
+        if not self.show_below_sl:
+            data[self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot the data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -168,18 +251,32 @@ class WTAdvanced(object):
                          data_units=(1, 'Correlation \n (counts)'))
 
     def avg_rssi_contour(self):
+        """Creates average return signal strength or SNR contour plot.
+        """
+
+        # Compute mean signal strength for each cell
         data = np.nanmean(self.transect.w_vel.rssi, axis=0)
+        if not self.show_below_sl:
+            data[self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Create label based on manufacturer
         if self.transect.adcp.manufacturer == 'TRDI':
             data_label = 'Intensity \n (counts)'
         elif self.transect.adcp.manufacturer == 'SonTek':
             data_label = 'SNR (dB)'
         else:
             data_label = 'Intensity'
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -188,28 +285,49 @@ class WTAdvanced(object):
                          data_units=(1, data_label))
 
     def avg_speed_ts(self):
+        """Create average water speed time series plot.
+        """
 
+        # Compute mean water speed for each ensemble using a weighted average based on depth cell size
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
         weight = depth_selected.depth_cell_size_m[:, self.transect.in_transect_idx]
         avg_speed = np.nansum(water_speed * weight, axis=0) / np.nansum(weight, axis=0)
+
+        # Plot data
         data_units = (self.units['V'], 'Water speed \n' + self.units['label_V'])
         self.plt_timeseries(data=avg_speed,
-                            start_edge=self.transect.start_edge,
                             data_units=data_units,
                             ax=self.ax[-1])
 
     def corr_beam_contour(self):
+        """Create contour plots of the correlation in each beam.
+        """
 
-        data_limits = [np.nanmin(self.transect.w_vel.corr), np.nanmax(self.transect.w_vel.corr)]
-        data = self.transect.w_vel.corr[0, :, :]
+        # Create data to be plotted
+        data_all = np.copy(self.transect.w_vel.corr)
+        if not self.show_below_sl:
+            for n in range(data_all.shape[0]):
+                data_all[n, self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Compute the minimum and maximum limits based on all the correlations so each beam has the same color scale
+        data_limits = [np.nanmin(data_all), np.nanmax(data_all)]
+
+        # Get data for beam 1
+        data = data_all[0, :, :]
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -218,15 +336,21 @@ class WTAdvanced(object):
                          data_units=(1, 'Beam 1 Corr. \n (counts)'),
                          data_limits=data_limits)
 
+        # Prepare and plot beams 2-4
         for n in range(1, 4):
+            # Figure number increases by 2 to account for 2nd column in gridspec used for color bar
             self.fig_no += 2
+
+            # Add subplot
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
-            data = self.transect.w_vel.corr[n, :, :]
-            if self.x_axis_type == 'T':
-                x_1d = self.x_timestamp
-            else:
-                x_1d = self.x
+
+            # Get data for beam n+1
+            data = data_all[n, :, :]
+
+            # Compute data for contour plot
             x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+            # Plot data
             self.plt_contour(x_plt_in=x_plt,
                              cell_plt_in=cell_plt,
                              data_plt_in=data_plt,
@@ -236,16 +360,25 @@ class WTAdvanced(object):
                              data_limits=data_limits)
 
     def direction_contour(self):
+        """Create flow direction contour plot.
+        """
+
         # Compute flow direction using discharge weighting
         u_water = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         v_water = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         water_dir = np.arctan2(u_water, v_water) * 180 / np.pi
         water_dir[water_dir < 0] = water_dir[water_dir < 0] + 360
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, water_dir, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -254,7 +387,10 @@ class WTAdvanced(object):
                          data_units=(1, 'Water Direction \n (deg)'))
 
     def discharge_ts(self):
+        """Create cumulative discharge time series by ensemble.
+        """
 
+        # Prepare data so that data will plot from left bank to right bank
         if self.transect.start_edge == 'Right':
             q_ts = self.discharge.top_ens + self.discharge.middle_ens + self.discharge.bottom_ens
             q_ts = np.nancumsum(q_ts)
@@ -266,13 +402,17 @@ class WTAdvanced(object):
             q_ts[0] = q_ts[0] + self.discharge.left
             q_ts[-1] = q_ts[-1] + self.discharge.right
 
+        # Plot data
         data_units = (self.units['Q'], 'Discharge ' + self.units['label_Q'])
         self.plt_timeseries(data=q_ts,
-                            start_edge=self.transect.start_edge,
                             data_units=data_units,
                             ax=self.ax[-1])
 
     def discharge_percent_ts(self):
+        """Create plot of cumulative percent discharge by ensemble.
+        """
+
+        # Prepare data so that data will plot from left bank to right bank
         if self.transect.start_edge == 'Right':
             q_ts = self.discharge.top_ens + self.discharge.middle_ens + self.discharge.bottom_ens
             q_ts = np.nancumsum(q_ts)
@@ -284,21 +424,32 @@ class WTAdvanced(object):
             q_ts[0] = q_ts[0] + self.discharge.left
             q_ts[-1] = q_ts[-1] + self.discharge.right
 
+        # Compute percent of total
         q_ts_per = (q_ts / self.discharge.total) * 100
 
+        # Plot data
         data_units = (1, 'Discharge (%)')
         self.plt_timeseries(data=q_ts_per,
-                            start_edge=self.transect.start_edge,
                             data_units=data_units,
                             ax=self.ax[-1])
 
     def error_contour(self):
+        """Creat contour plot of error velocities.
+        """
+
+        # Get data
         data = self.transect.w_vel.d_mps
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -307,17 +458,25 @@ class WTAdvanced(object):
                          data_units=(self.units['V'], 'Error Velocity \n' + self.units['label_V']))
 
     def projected_contour(self):
+        """Create contour plot of water speed projected in flow direction.
+        """
 
+        # Compute projected water speed
         unit_vector = np.array([[sind(self.flow_direction)], [cosd(self.flow_direction)]])
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         projected_speed = unit_vector[0] * water_u + unit_vector[1] * water_v
 
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, projected_speed, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -326,35 +485,60 @@ class WTAdvanced(object):
                          data_units=(self.units['V'], 'Projected \n Speed' + self.units['label_V']))
 
     def projected_speed_ts(self):
+        """Create time series plot of projected water speed.
+        """
+
+        # Compute projected water speed for each cell
         unit_vector = np.array([[sind(self.flow_direction)], [cosd(self.flow_direction)]])
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         projected_speed = unit_vector[0] * water_u + unit_vector[1] * water_v
 
+        # Compute the mean projected speed in each ensemble using depth cell size weighting
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
         weight = depth_selected.depth_cell_size_m[:, self.transect.in_transect_idx]
         avg_speed = np.nansum(projected_speed * weight, axis=0) / np.nansum(weight, axis=0)
+
+        # Plot data
         data_units = (self.units['V'], 'Projected \n Speed ' + self.units['label_V'])
         self.plt_timeseries(data=avg_speed,
-                            start_edge=self.transect.start_edge,
                             data_units=data_units,
                             ax=self.ax[-1])
 
     def rssi_beam_contour(self):
+        """Create contour plot of the signal intensity for each beam.
+        """
 
+        # Set label and units based on data available by manufacturer
         if self.transect.adcp.manufacturer == 'TRDI':
-            data_label = 'Intensity \n (counts)'
+            data_label = '\n RSSI (counts)'
         elif self.transect.adcp.manufacturer == 'SonTek':
-            data_label = 'SNR (dB)'
+            data_label = '\n SNR (dB)'
         else:
-            data_label = 'Intensity'
-        data_limits = [np.nanmin(self.transect.w_vel.rssi), np.nanmax(self.transect.w_vel.rssi)]
-        data = self.transect.w_vel.rssi[0, :, :]
+            data_label = '\n Intensity'
+
+        # Create data to be plotted
+        data_all = np.copy(self.transect.w_vel.rssi)
+        if not self.show_below_sl:
+            for n in range(data_all.shape[0]):
+                data_all[n, self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Determine limits for all data so a common scale can be used for all 4 plots
+        data_limits = [np.nanmin(data_all), np.nanmax(data_all)]
+
+        # Get data for beam 1
+        data = data_all[0, :, :]
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -363,14 +547,11 @@ class WTAdvanced(object):
                          data_units=(1, 'Beam 1' + data_label),
                          data_limits=data_limits)
 
+        # Prepare and plot data for beams 2-4
         for n in range(1, 4):
             self.fig_no += 2
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
-            data = self.transect.w_vel.rssi[n, :, :]
-            if self.x_axis_type == 'T':
-                x_1d = self.x_timestamp
-            else:
-                x_1d = self.x
+            data = data_all[n, :, :]
             x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
             self.plt_contour(x_plt_in=x_plt,
                              cell_plt_in=cell_plt,
@@ -381,15 +562,25 @@ class WTAdvanced(object):
                              data_limits=data_limits)
 
     def speed_filtered_contour(self):
+        """Create contour of water speed with no interpolation for invalid water data.
+        """
+
+        # Compute water speed for each cell
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
         water_speed[np.logical_not(self.transect.w_vel.valid_data[0, :, :])] = np.nan
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, water_speed, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -398,14 +589,24 @@ class WTAdvanced(object):
                          data_units=(self.units['V'], 'Filtered \n Speed ' + self.units['label_V']))
 
     def speed_final_contour(self):
+        """Contour plot of water speed with interpolation for invalid data.
+        """
+
+        # Compute water speed for each cell
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, water_speed, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -414,12 +615,23 @@ class WTAdvanced(object):
                          data_units=(self.units['V'], 'Interpolated \n Speed ' + self.units['label_V']))
 
     def vertical_contour(self):
-        data = self.transect.w_vel.w_mps
+        """Create contour plot of vertical velocities.
+        """
+
+        # Get data
+        data = np.copy(self.transect.w_vel.w_mps)
+        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
+
+        # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot data
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -428,22 +640,33 @@ class WTAdvanced(object):
                          data_units=(self.units['V'], 'Vertical \n Velocity' + self.units['label_V']))
 
     def compute_x_axis(self):
-        # Compute x axis data
+        """Compute x axis data.
+        """
+
+        # Initialize x
         x = None
+
+        # x axis is length
         if self.x_axis_type == 'L':
             boat_track = self.transect.boat_vel.compute_boat_track(transect=self.transect)
             if not np.alltrue(np.isnan(boat_track['track_x_m'])):
                 x = boat_track['distance_m'] * self.units['L']
             self.x = x[self.transect.in_transect_idx]
+
+        # x axis is ensembles
         elif self.x_axis_type == 'E':
             x = np.arange(1, len(self.transect.depths.bt_depths.depth_processed_m) + 1)
             self.x = x[self.transect.in_transect_idx]
+
+        # x axis is time
         elif self.x_axis_type == 'T':
             timestamp = np.nancumsum(self.transect.date_time.ens_duration_sec) \
                         + self.transect.date_time.start_serial_time
             x = np.copy(timestamp)
+            # Timestamp is needed to create contour plots and  setting axis limits
             self.x_timestamp = x[self.transect.in_transect_idx]
             x = []
+            # datetime is needed to plot timeseries and x-axis labels
             for stamp in timestamp:
                 x.append(datetime.utcfromtimestamp(stamp))
             x = np.array(x)
@@ -476,8 +699,10 @@ class WTAdvanced(object):
         depth: np.array
             Depth data used to plot the cross section bottom
         """
+
         in_transect_idx = transect.in_transect_idx
 
+        # Set x_1d if not specified
         if x_1d is None:
             x_1d = in_transect_idx
 
@@ -556,10 +781,32 @@ class WTAdvanced(object):
         return x_plt, cell_plt, data_plt, ensembles, depth
 
     def plt_contour(self, x_plt_in, cell_plt_in, data_plt_in, x, depth, data_units, data_limits=None):
+        """Create contour plot.
 
+        Parameters
+        ----------
+        x_plt_in: np.ndarray()
+            x data used for contour plot
+        cell_plt_in: np.ndarray()
+            Cell depth data
+        data_plt_in: np.ndarray()
+            Primary data to plot
+        x: np.ndarray()
+            x data used for depth plot
+        depth: np.ndarray()
+            Depth data
+        data_units: tuple
+            Tuple of data multiplier and label
+        data_limits: list
+            Optional list of min max data limits
+        """
+
+        # Use last subplot
         ax = self.ax[-1]
 
+        # Create plot variables for input
         if self.x_axis_type == 'T':
+            # If x axis is time, create x_plt
             x_plt = np.zeros(x_plt_in.shape, dtype='object')
             for r in range(x_plt_in.shape[0]):
                 for c in range(x_plt_in.shape[1]):
@@ -588,16 +835,19 @@ class WTAdvanced(object):
         # Generate color contour
         c = ax.pcolormesh(x_plt, cell_plt, data_plt, cmap=cmap, vmin=min_limit, vmax=max_limit)
 
-        self.data_plotted.append({'type':'contour','x':x_plt, 'y':cell_plt, 'z':data_plt})
+        # Create data plotted for annotation use
+        self.data_plotted.append({'type': 'contour', 'x': x_plt, 'y': cell_plt, 'z': data_plt})
+
         # Initialize annotation for data cursor
         self.annot.append(ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
                                       bbox=dict(boxstyle="round", fc="w"),
                                       arrowprops=dict(arrowstyle="->")))
 
         self.annot[-1].set_visible(False)
-        # Add color bar and axis labels
+
+        # Add color bar and axis labels in separate subplot
         self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
-        self.data_plotted.append({'type':'colorbar'})
+        self.data_plotted.append({'type': 'colorbar'})
         self.annot.append('')
         cb = self.fig.colorbar(c, self.ax[-1])
         cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
@@ -608,39 +858,57 @@ class WTAdvanced(object):
         # Plot depth
         ax.plot(x, depth * self.units['L'], color='k')
 
+        depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
+
         # Plot side lobe cutoff if available
         if self.transect.w_vel.sl_cutoff_m is not None:
-            depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
             last_valid_cell = np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
             last_depth_cell_size = depth_obj.depth_cell_size_m[last_valid_cell,
                                                                np.arange(depth_obj.depth_cell_size_m.shape[1])]
             y_plt_sl = (self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)) * self.units['L']
-            y_plt_top = (depth_obj.depth_cell_depth_m[0, :]
-                         - (depth_obj.depth_cell_size_m[0, :] * 0.5)) * self.units['L']
-
             ax.plot(x, y_plt_sl, color='r', linewidth=0.5)
-            # Plot upper bound of measured depth cells
-            ax.plot(x, y_plt_top, color='r', linewidth=0.5)
+
+        # Plot upper bound of measured depth cells
+        y_plt_top = (depth_obj.depth_cell_depth_m[0, :]
+                     - (depth_obj.depth_cell_size_m[0, :] * 0.5)) * self.units['L']
+        ax.plot(x, y_plt_top, color='r', linewidth=0.5)
 
         # Label and limits for y axis
         ax.set_ylabel(self.canvas.tr('Depth ') + self.units['label_L'])
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
-        ax.set_ylim(top=0, bottom=np.ceil(np.nanmax(depth * self.units['L'])))
+        ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units['L']) * 1.05))
 
-    def plt_timeseries(self, data, start_edge, data_units, ax=None):
+    def plt_timeseries(self, data, data_units, ax=None):
+        """Create timeseries plot.
 
+        Parameters
+        ----------
+        data: np.ndarray()
+            1-D array of data to be plotted
+        data_units: tuple
+            Tuple of data multiplier and label
+        ax: subplot
+            Optional subplot
+        """
+
+        # Use last subplot if not defined
         if ax is None:
             ax = self.ax[-1]
 
+        # Setup plot
         ax.set_ylabel(self.canvas.tr(data_units[1]))
         ax.grid()
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
+        # Plot data
         ax.plot(self.x, data * data_units[0], 'b-')
+
+        # Create dictionary of data for use by annotation
         self.data_plotted.append({'type': 'ts', 'x': self.x, 'y': data})
-        # # Set axis limits
+
+        # Set axis limits
         max_y = (np.nanmax(data) + np.nanmax(data) * 0.1) * data_units[0]
         min_y = (np.nanmin(data) - np.nanmin(data) * 0.1) * data_units[0]
         ax.set_ylim(top=max_y, bottom=min_y)
@@ -668,37 +936,48 @@ class WTAdvanced(object):
         # Determine if mouse location references a data point in the plot and update the annotation.
         for n, item in enumerate(self.ax):
             if event.inaxes == item:
-                vis = self.annot[n].get_visible()
 
+                # Verify that location is associated with plotted data
                 cont_fig = False
                 if item is not None:
                     cont_fig, ind_fig = self.fig.contains(event)
 
+                value = None
                 if cont_fig and self.fig.get_visible():
+                    # Annotation for contour plot
                     if self.data_plotted[n]['type'] == 'contour':
+                        # Get plotted data
                         x_plt = self.data_plotted[n]['x']
                         y_plt = self.data_plotted[n]['y']
                         z_plt = self.data_plotted[n]['z']
+
+                        # Determine data column index
                         if self.x_axis_type == 'T':
                             col_idx = np.where(x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None))[0][-1]
                         elif self.x_axis_type == 'L':
                             col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
                         else:
                             col_idx = (int(round(abs(event.xdata - x_plt[0, 0]))) * 2) - 1
-                        v = None
+
+                        # Determine plotted value
                         for row_idx, cell in enumerate(y_plt[:, col_idx]):
                             if event.ydata < cell:
                                 value = z_plt[row_idx, col_idx]
                                 break
+
+                        # Create annotation
                         self.update_annot(ax_idx=n,
                                           x=event.xdata,
                                           y=event.ydata,
                                           v=value)
+
+                    # Annotation for time series data
                     elif self.data_plotted[n]['type'] == 'ts':
                         self.update_annot(ax_idx=n,
                                           x=event.xdata,
                                           y=event.ydata,
-                                          v=None)
+                                          v=value)
+
                     self.annot[n].set_visible(True)
                     self.canvas.draw_idle()
             else:
@@ -717,7 +996,6 @@ class WTAdvanced(object):
             Boolean to specify whether the connection for the mouse event is active or not.
         """
         if setting and self.hover_connection is None:
-            # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
             self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
@@ -732,13 +1010,17 @@ class WTAdvanced(object):
 
         Parameters
         ----------
+        ax_idx: int
+            Index of axis
         x: float
             x coordinate for annotation, ensemble
         y: float
             y coordinate for annotation, depth
-        v: float
+        v: float or None
             Speed for annotation
         """
+
+        # Set local variables
         pos = [x, y]
         plt_ref = self.ax[ax_idx]
         annot_ref = self.annot[ax_idx]
@@ -769,20 +1051,30 @@ class WTAdvanced(object):
             else:
                 annot_ref._y = -40
         annot_ref.xy = pos
+        text = ''
+
+        # Annotation of contour plot
         if v is not None and v > -999:
+            # Format for time axis
             if self.x_axis_type == 'T':
                 x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
                 text = 'x: {}, y: {:.2f}, \n v: {:.1f}'.format(x_label, y, v)
+            # Format for ensemble axis
             elif self.x_axis_type == 'E':
                 text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
+            # Format for length axis
             elif self.x_axis_type == 'L':
                 text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(x, y, v)
+        # Annotation for time series
         else:
+            # Format for time axis
             if self.x_axis_type == 'T':
                 x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
                 text = 'x: {}, y: {:.2f}'.format(x_label, y)
+            # Format for ensemble axis
             elif self.x_axis_type == 'E':
                 text = 'x: {:.2f}, y: {:.2f}'.format(int(round(x)), y)
+            # Format for length axis
             elif self.x_axis_type == 'L':
                 text = 'x: {:.2f}, y: {:.2f}'.format(x, y)
 
