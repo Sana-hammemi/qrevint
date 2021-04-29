@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from matplotlib import gridspec
 import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
@@ -91,7 +92,29 @@ class WTAdvanced(object):
                                          'cb_discharge_ts': self.discharge_ts,
                                          'cb_discharge_percent_ts': self.discharge_percent_ts,
                                          'cb_avg_speed_ts': self.avg_speed_ts,
-                                         'cb_projected_speed_ts': self.projected_speed_ts}
+                                         'cb_projected_speed_ts': self.projected_speed_ts,
+                                         'cb_bt_boat_speed_ts': self.bt_speed_ts,
+                                         'cb_bt_3beam_ts': self.bt_3beam_ts,
+                                         'cb_bt_error_ts': self.bt_error_ts,
+                                         'cb_bt_vertical_ts': self.bt_vertical_ts,
+                                         'cb_bt_source_ts': self.bt_source_ts,
+                                         'cb_gga_boat_speed_ts': self.gga_speed_ts,
+                                         'cb_vtg_boat_speed_ts': self.vtg_speed_ts,
+                                         'cb_gga_quality_ts': self.gga_quality_ts,
+                                         'cb_gga_hdop_ts': self.gga_hdop_ts,
+                                         'cb_gga_altitude_ts': self.gga_altitude_ts,
+                                         'cb_gga_sats_ts': self.gga_sats_ts,
+                                         'cb_gga_source_ts': self.gga_source_ts,
+                                         'cb_vtg_source_ts': self.vtg_source_ts,
+                                         'cb_adcp_heading_ts': self.heading_adcp_ts,
+                                         'cb_ext_heading_ts': self.heading_external_ts,
+                                         'cb_mag_error_ts': self.mag_error_ts,
+                                         'cb_pitch_ts': self.pitch_ts,
+                                         'cb_roll_ts': self.roll_ts,
+                                         'cb_beam_depths_ts': self.depths_beam_ts,
+                                         'cb_final_depths_ts': self.depths_final_ts,
+                                         'cb_depths_source_ts': self.depths_source_ts
+                                        }
 
     def create(self, transect, discharge, units, selected_types, flow_direction, color_map='viridis', x_axis_type=None,
                show_below_sl=False):
@@ -222,7 +245,11 @@ class WTAdvanced(object):
                 self.ax[idx].xaxis.set_major_formatter(date_form)
                 self.ax[idx].set_xlabel(self.canvas.tr('Time'))
 
-            self.canvas.draw()
+        else:
+            # Clear the plot
+            self.fig.clear()
+
+        self.canvas.draw()
 
     def avg_corr_contour(self):
         """Creates average correlation contour plot.
@@ -342,7 +369,7 @@ class WTAdvanced(object):
             self.fig_no += 2
 
             # Add subplot
-            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
 
             # Get data for beam n+1
             data = data_all[n, :, :]
@@ -439,6 +466,7 @@ class WTAdvanced(object):
 
         # Get data
         data = self.transect.w_vel.d_mps
+        data[self.transect.w_vel.cells_above_sl == False] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
@@ -550,7 +578,7 @@ class WTAdvanced(object):
         # Prepare and plot data for beams 2-4
         for n in range(1, 4):
             self.fig_no += 2
-            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
             data = data_all[n, :, :]
             x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
             self.plt_contour(x_plt_in=x_plt,
@@ -638,6 +666,470 @@ class WTAdvanced(object):
                          x=self.x,
                          depth=depth,
                          data_units=(self.units['V'], 'Vertical \n Velocity' + self.units['label_V']))
+
+    def bt_speed_ts(self):
+
+        data = np.sqrt(self.transect.boat_vel.bt_vel.u_processed_mps ** 2
+                        + self.transect.boat_vel.bt_vel.v_processed_mps ** 2)
+        invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data)
+        data_invalid = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
+                               + self.transect.boat_vel.bt_vel.v_mps ** 2)
+        fmt = [{'color': 'b', 'linestyle': '-' },
+               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$E$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$V$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$B$'}]
+
+        data_units = (self.units['V'], 'BT Speed ' + self.units['label_V'])
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=data_invalid,
+                            data_mask=invalid,
+                            fmt=fmt)
+
+    def bt_3beam_ts(self):
+
+        # Determine number of beams for each ensemble
+        bt_temp = copy.deepcopy(self.transect.boat_vel.bt_vel)
+        bt_temp.filter_beam(4)
+        valid_4beam = bt_temp.valid_data[5, :].astype(int)
+        data = np.copy(valid_4beam).astype(int)
+        data[valid_4beam == 1] = 4
+        data[valid_4beam == 0] = 3
+        data[np.logical_not(self.transect.boat_vel.bt_vel.valid_data[1, :])] = 0
+
+        # Configure plot settings
+        invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[5, :]).tolist()
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markerfacecolor': 'none'}]
+        data_units = (1, 'Number of Beams ')
+        data_mask = [[], invalid]
+
+        # Plot data
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_mask=data_mask,
+                            fmt=fmt)
+
+    def bt_error_ts(self):
+        # Plot error velocity
+        y_data = self.transect.boat_vel.bt_vel.d_mps
+        invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[2, :]).tolist()
+        data_units = (self.units['V'], 'BT Error Vel ' + self.units['label_V'])
+
+        if not self.transect.boat_vel.bt_vel.d_meas_thresholds:
+            fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
+                   {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+
+            self.plt_timeseries(data=y_data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_mask=invalid,
+                                fmt=fmt)
+        else:
+            freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+            freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+            freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+
+            freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+
+            data_mask = []
+            fmt = []
+            for freq in freq_used:
+                data_mask.append(freq_ensembles == freq)
+                fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
+                            'mec': freq_color[freq]})
+            data_mask.append(invalid)
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+
+            self.plt_timeseries(data=None,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+            # Create legend
+            legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                           '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+            legend_txt = []
+            for freq in freq_used:
+                legend_txt.append(legend_dict[freq])
+            self.ax[-1].legend(legend_txt)
+
+    def bt_vertical_ts(self):
+        y_data = self.transect.boat_vel.bt_vel.w_mps
+        invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[3, :]).tolist()
+        data_units = (self.units['V'], 'BT Vertical Vel ' + self.units['label_V'])
+
+        if not self.transect.boat_vel.bt_vel.w_meas_thresholds:
+            fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
+                   {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+
+            self.plt_timeseries(data=y_data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_mask=invalid,
+                                fmt=fmt)
+        else:
+            freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+            freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+            freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+
+            freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+
+            data_mask = []
+            fmt = []
+            for freq in freq_used:
+                data_mask.append(freq_ensembles == freq)
+                fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
+                            'mec': freq_color[freq]})
+            data_mask.append(invalid)
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+
+            self.plt_timeseries(data=None,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+            # Create legend
+            legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                           '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+            legend_txt = []
+            for freq in freq_used:
+                legend_txt.append(legend_dict[freq])
+            self.ax[-1].legend(legend_txt)
+
+    def bt_source_ts(self):
+
+        self.source_ts(self.transect.boat_vel.bt_vel, 'BT Source')
+
+    def gga_source_ts(self):
+
+        self.source_ts(self.transect.boat_vel.gga_vel, 'GGA Source')
+
+    def vtg_source_ts(self):
+
+        self.source_ts(self.transect.boat_vel.vtg_vel, 'VTG Source')
+
+    def source_ts(self, selected, axis_label):
+        # Handle situation where transect does not contain the selected source
+        if selected is None:
+            source = np.tile('INV', len(self.x))
+        else:
+            source = selected.processed_source
+
+        # Plot dummy data to establish consistent order of y axis
+        temp_hold = np.copy(self.x)
+        self.x = [-10, -10, -10, -10, -10]
+        data = ['INV', 'INT', 'BT', 'GGA', 'VTG']
+        fmt = [{'color': 'w', 'linestyle': '-'}]
+        data_units = (1, '')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+        self.x = np.copy(temp_hold)
+        data_units = (1, axis_label)
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        self.plt_timeseries(data=source,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+        self.ax[-1].set_yticks(['INV', 'INT', 'BT', 'GGA', 'VTG'])
+
+    def gga_quality_ts(self):
+        # GPS Quality
+        data = self.transect.gps.diff_qual_ens
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[2, :]).tolist()
+        data_mask = [[], invalid]
+        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+        data_units = (1, 'GGA Quality')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+        # Format axis
+        yint = range(0, int(np.ceil(np.nanmax(self.transect.gps.diff_qual_ens)) + 1))
+        self.ax[-1].set_ylim(top=np.nanmax(yint) + 0.5, bottom=np.nanmin(yint) - 0.5)
+        self.ax[-1].set_yticks(yint)
+
+    def gga_hdop_ts(self):
+
+        # Plot HDOP
+        data = self.transect.gps.hdop_ens
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[5, :]).tolist()
+        data_mask = [[], invalid]
+        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+        data_units = (1, 'GGA HDOP')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+        max_y = np.nanmax(self.transect.gps.hdop_ens) + 0.5
+        min_y = np.nanmin(self.transect.gps.hdop_ens) - 0.5
+        self.ax[-1].set_ylim(top=max_y, bottom=min_y)
+
+    def gga_altitude_ts(self):
+        data = self.transect.gps.altitude_ens_m
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[3, :]).tolist()
+        data_mask = [[], invalid]
+        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+        data_units = (self.units['L'], 'GGA Altitude ' + self.units['label_L'])
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def gga_sats_ts(self):
+
+        data = self.transect.gps.num_sats_ens
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        data_units = (1, 'No. of Sats')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+        try:
+            max_y = np.nanmax(self.transect.gps.num_sats_ens) + 0.5
+            min_y = np.nanmin(self.transect.gps.num_sats_ens) - 0.5
+            self.ax[-1].set_ylim(top=max_y, bottom=min_y)
+            yint = range(int(min_y), int(max_y) + 1)
+            self.ax[-1].set_yticks(yint)
+        except ValueError:
+            pass
+
+    def gga_speed_ts(self):
+
+        data = np.sqrt(self.transect.boat_vel.gga_vel.u_processed_mps ** 2
+                        + self.transect.boat_vel.gga_vel.v_processed_mps ** 2)
+        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data)
+        data_invalid = np.sqrt(self.transect.boat_vel.gga_vel.u_mps ** 2
+                               + self.transect.boat_vel.gga_vel.v_mps ** 2)
+        fmt = [{'color': 'b', 'linestyle': '-' },
+               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$Q$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$A$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
+
+        data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=data_invalid,
+                            data_mask=invalid,
+                            fmt=fmt)
+
+    def vtg_speed_ts(self):
+
+        data = np.sqrt(self.transect.boat_vel.vtg_vel.u_processed_mps ** 2
+                        + self.transect.boat_vel.vtg_vel.v_processed_mps ** 2)
+        invalid = np.logical_not(self.transect.boat_vel.vtg_vel.valid_data)
+        data_mask=[[], invalid[1], invalid[4], invalid[5]]
+        data_invalid = np.sqrt(self.transect.boat_vel.vtg_vel.u_mps ** 2
+                               + self.transect.boat_vel.vtg_vel.v_mps ** 2)
+        fmt = [{'color': 'b', 'linestyle': '-' },
+               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
+
+        data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=data_invalid,
+                            data_mask=data_mask,
+                            fmt=fmt)
+
+    def heading_adcp_ts(self):
+
+        data = self.transect.sensors.heading_deg.internal.data
+        fmt = [{'color': 'b', 'linestyle': '-'}]
+        data_units = (1, 'ADCP Heading (deg)')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def heading_external_ts(self):
+
+        data = self.transect.sensors.heading_deg.external.data
+        fmt = [{'color': 'b', 'linestyle': '-'}]
+        data_units = (1, 'Ext. Heading (deg)')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def mag_error_ts(self):
+
+        data = self.transect.sensors.heading_deg.internal.mag_error
+        fmt = [{'color': 'b', 'linestyle': '-'}]
+        data_units = (1, 'Mag Error')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def pitch_ts(self):
+
+        data = self.transect.sensors.pitch_deg.internal.data
+        fmt = [{'color': 'b', 'linestyle': '-'}]
+        data_units = (1, 'Pitch (deg)')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def roll_ts(self):
+
+        data = self.transect.sensors.roll_deg.internal.data
+        fmt = [{'color': 'b', 'linestyle': '-'}]
+        data_units = (1, 'Roll (deg)')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+    def depths_beam_ts(self):
+
+        invalid_beams = np.logical_not(self.transect.depths.bt_depths.valid_beams).tolist()
+        beam_depths = self.transect.depths.bt_depths.depth_beams_m
+        # Compute max depth from beams
+        max_depth = [np.nanmax(np.nanmax(beam_depths))]
+        data_mask = [[], invalid_beams[0]]
+        data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o',  'markersize': 4, 'label': 'B1'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+        self.plt_timeseries(data=beam_depths[0, :],
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=True)
+
+        data_mask = [[], invalid_beams[1]]
+        data_units = (self.units['L'], '')
+        fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+        self.plt_timeseries(data=beam_depths[1, :],
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        data_mask = [[], invalid_beams[2]]
+        data_units = (self.units['L'], '')
+        fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+        self.plt_timeseries(data=beam_depths[2, :],
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        data_mask = [[], invalid_beams[3]]
+        data_units = (self.units['L'], '')
+        fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+        self.plt_timeseries(data=beam_depths[3, :],
+                            data_units=data_units,
+                            data_mask=data_mask,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        if self.transect.depths.vb_depths is not None:
+            invalid_beams = np.logical_not(self.transect.depths.vb_depths.valid_beams[0, :]).tolist()
+            beam_depths = self.transect.depths.vb_depths.depth_beams_m[0, :]
+            data_mask = [[], invalid_beams]
+            data_units = (self.units['L'], '')
+            fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'VB'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                            set_annot=False)
+
+            max_depth.append(np.nanmax(beam_depths))
+
+        if self.transect.depths.ds_depths is not None:
+            invalid_beams = np.logical_not(self.transect.depths.ds_depths.valid_beams[0, :])
+            beam_depths = self.transect.depths.ds_depths.depth_beams_m[0, :]
+            data_mask = [[], invalid_beams]
+            data_units = (self.units['L'], '')
+            fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'DS'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                            set_annot=False)
+
+            max_depth.append(np.nanmax(beam_depths))
+
+        self.ax[-1].legend()
+        self.ax[-1].invert_yaxis()
+        self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(max_depth) * 1.1 * self.units['L']), top=0)
+
+    def depths_final_ts(self):
+
+        depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+        beam_depths = depth_selected.depth_processed_m
+
+        data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
+        self.plt_timeseries(data=beam_depths,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+        self.ax[-1].invert_yaxis()
+        self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units['L']), top=0)
+
+    def depths_source_ts(self):
+
+        # Handle situation where transect does not contain the selected source
+        depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+        source = depth_selected.depth_source_ens
+
+        # Plot dummy data to establish consistent order of y axis
+        temp_hold = np.copy(self.x)
+        self.x = [-10, -10, -10, -10, -10]
+        data = ['INV', 'INT', 'BT', 'VB', 'DS']
+        fmt = [{'color': 'w', 'linestyle': '-'}]
+        data_units = (1, '')
+        self.plt_timeseries(data=data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+
+        self.x = np.copy(temp_hold)
+        data_units = (1, 'Depth Source')
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+        self.plt_timeseries(data=source,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt)
+        self.ax[-1].set_yticks(['INV', 'INT', 'BT', 'VB', 'DS'])
 
     def compute_x_axis(self):
         """Compute x axis data.
@@ -879,7 +1371,7 @@ class WTAdvanced(object):
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
         ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units['L']) * 1.05))
 
-    def plt_timeseries(self, data, data_units, ax=None):
+    def plt_timeseries(self, data, data_units, ax=None, data_2=None, data_mask=None, fmt=None, set_annot=True):
         """Create timeseries plot.
 
         Parameters
@@ -903,22 +1395,52 @@ class WTAdvanced(object):
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
         # Plot data
-        ax.plot(self.x, data * data_units[0], 'b-')
+        if fmt is not None:
+            kwargs = fmt[0]
+        else:
+            kwargs = {'linestyle':'-', 'color':'b'}
+
+        if data is not None:
+            ax.plot(self.x, data * data_units[0], **kwargs)
+        else:
+            ax.plot(self.x[data_mask[0]], data_2[data_mask[0]], **kwargs)
+
+        all_data = data
+        if data_mask is not None:
+            if data_2 is None:
+                data_2 = data
+                all_data = data
+            elif data is None:
+                all_data = data_2
+            else:
+                all_data = np.concatenate([data, data_2])
+
+            for n in range(1, len(fmt)):
+                if fmt is None:
+                    kwargs = {'color':'r', 'marker':'o', 'ms':8, 'markerfacecolor':'none'}
+                else:
+                    kwargs = fmt[n]
+
+                ax.plot(self.x[data_mask[n]], data_2[data_mask[n]] * data_units[0], **kwargs)
 
         # Create dictionary of data for use by annotation
-        self.data_plotted.append({'type': 'ts', 'x': self.x, 'y': data})
+        self.data_plotted.append({'type': 'ts', 'x': self.x, 'y': all_data})
 
         # Set axis limits
-        max_y = (np.nanmax(data) + np.nanmax(data) * 0.1) * data_units[0]
-        min_y = (np.nanmin(data) - np.nanmin(data) * 0.1) * data_units[0]
-        ax.set_ylim(top=max_y, bottom=min_y)
+        try:
+            max_y = (np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.1)) * data_units[0]
+            min_y = (np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.1) * data_units[0]
+            ax.set_ylim(top=max_y, bottom=min_y)
+        except TypeError:
+            pass
 
         # Initialize annotation for data cursor
-        self.annot.append(ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                      bbox=dict(boxstyle="round", fc="w"),
-                                      arrowprops=dict(arrowstyle="->")))
+        if set_annot:
+            self.annot.append(ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                                          bbox=dict(boxstyle="round", fc="w"),
+                                          arrowprops=dict(arrowstyle="->")))
 
-        self.annot[-1].set_visible(False)
+            self.annot[-1].set_visible(False)
 
         self.canvas.draw()
 

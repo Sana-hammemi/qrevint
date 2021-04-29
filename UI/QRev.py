@@ -93,6 +93,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Indicates if tab UI have been initialized
     edges_initialized: bool
         Indicates if tab UI have been initialized
+    adv_graph_initialized: bool
+        Indicates if tab UI have been initialized
     transect_row: int
         Index of row currently selected for display
     change: bool
@@ -333,6 +335,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Uncertainty measurement figure
     uncertainty_measurement_toolbar: NavigationToolbar
         Uncertainty measurement toolbar
+    adv_graph_canvas: MplCanvas
+        Advanced graphics canvas
+    adv_graph_fig: WTAdvanced
+        Advanced graphics figure
+    adv_graph_toolbar: NavigationToolbar
+        Advanced graphics toolbar
     rating_prompt: bool
         Indicates that the user should be prompted to rate the measurement when saving
     use_weighted: bool
@@ -615,6 +623,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.uncertainty_measurement_canvas = None
         self.uncertainty_measurement_fig = None
         self.uncertainty_measurement_toolbar = None
+        self.adv_graph_canvas = None
+        self.adv_graph_fig = None
+        self.adv_graph_toolbar = None
+
         self.mb_row = 0
         self.x_axis_type = 'E'
         self.show_below_sl = False
@@ -633,6 +645,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.edges_initialized = False
         self.edi_initialized = False
         self.gps_bt_initialized = False
+        self.adv_graph_initialized = False
 
         # Special commands to ensure proper operation on Windows 10
         if QtCore.QSysInfo.windowsVersion() == QtCore.QSysInfo.WV_WINDOWS10:
@@ -10789,6 +10802,172 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             error_dialog = QtWidgets.QErrorMessage()
             error_dialog.showMessage('Invalid output filename. TopoQuad file not created.')
 
+    # Adv. Graph tab
+    def adv_graph_tab(self):
+        # Initialize connections
+        if not self.wt_initialized:
+
+            # Advanced tab setup
+            self.pb_adv_graph_create_plots.clicked.connect(self.adv_graph_plots)
+            self.pb_adv_graph_controls.clicked.connect(self.adv_graph_show_hide)
+            self.combo_adv_graph_transect.currentIndexChanged.connect(self.adv_graph_transect_select)
+            self.rb_adv_graph_ensemble.toggled.connect(self.x_axis_ensemble)
+            self.rb_adv_graph_length.toggled.connect(self.x_axis_length)
+            self.rb_adv_graph_time.toggled.connect(self.x_axis_time)
+            self.pb_adv_graph_auto_flow_direction.clicked.connect(self.wt_auto_flow_direction)
+
+            # Configure dictionary of plot options
+            self.adv_graph_types = [('cb_speed_filtered_cc', self.cb_adv_graph_speed_filtered),
+                                      ('cb_speed_final_cc', self.cb_adv_graph_speed_final),
+                                      ('cb_projected_cc', self.cb_adv_graph_projected),
+                                      ('cb_vertical_cc', self.cb_adv_graph_vertical),
+                                      ('cb_error_cc', self.cb_adv_graph_error),
+                                      ('cb_direction_cc', self.cb_adv_graph_direction),
+                                      ('cb_avg_corr_cc', self.cb_adv_graph_avg_corr),
+                                      ('cb_corr_beam_cc', self.cb_adv_graph_corr_beam),
+                                      ('cb_avg_rssi_cc', self.cb_adv_graph_avg_rssi),
+                                      ('cb_rssi_beam_cc', self.cb_adv_graph_rssi_beam),
+                                      ('cb_discharge_ts', self.cb_adv_graph_discharge),
+                                      ('cb_discharge_percent_ts', self.cb_adv_graph_discharge_percent),
+                                      ('cb_avg_speed_ts', self.cb_adv_graph_avg_speed),
+                                      ('cb_projected_speed_ts', self.cb_adv_graph_projected_speed_ts),
+                                      ('cb_bt_boat_speed_ts', self.cb_adv_graph_bt_boat_speed),
+                                      ('cb_bt_3beam_ts', self.cb_adv_graph_bt_3beam),
+                                      ('cb_bt_error_ts', self.cb_adv_graph_bt_error),
+                                      ('cb_bt_vertical_ts', self.cb_adv_graph_bt_vertical),
+                                      ('cb_bt_source_ts', self.cb_adv_graph_bt_source),
+                                      ('cb_bt_corr_ts', self.cb_adv_graph_bt_correlation),
+                                      ('cb_bt_rssi_ts', self.cb_adv_graph_bt_rssi),
+                                      ('cb_gga_boat_speed_ts', self.cb_adv_graph_gga_boat_speed),
+                                      ('cb_vtg_boat_speed_ts', self.cb_adv_graph_vtg_boat_speed),
+                                      ('cb_gga_quality_ts', self.cb_adv_graph_gga_quality),
+                                      ('cb_gga_hdop_ts', self.cb_adv_graph_gga_hdop),
+                                      ('cb_gga_altitude_ts', self.cb_adv_graph_gga_altitude),
+                                      ('cb_gga_sats_ts', self.cb_adv_graph_gga_satellites),
+                                      ('cb_gga_source_ts', self.cb_adv_graph_gga_source),
+                                      ('cb_vtg_source_ts', self.cb_adv_graph_vtg_source),
+                                      ('cb_adcp_heading_ts', self.cb_adv_graph_adcp_heading),
+                                      ('cb_ext_heading_ts', self.cb_adv_graph_ext_heading),
+                                      ('cb_mag_error_ts', self.cb_adv_graph_mag_error),
+                                      ('cb_pitch_ts', self.cb_adv_graph_pitch),
+                                      ('cb_roll_ts', self.cb_adv_graph_roll),
+                                      ('cb_beam_depths_ts', self.cb_adv_graph_beam_depths),
+                                      ('cb_final_depths_ts', self.cb_adv_graph_final_depths),
+                                      ('cb_depths_source_ts', self.cb_adv_graph_depth_source)
+                                      ]
+
+            trans_prop = Measurement.compute_measurement_properties(self.meas)
+            direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
+            self.ed_adv_graph_flow_dir.setText('{:6.2f}'.format(direction))
+
+            self.adv_graph_initialized = True
+
+        # Populate combo box
+        self.combo_adv_graph_transect.blockSignals(True)
+        self.combo_adv_graph_transect.clear()
+        for idx in self.checked_transects_idx:
+            self.combo_adv_graph_transect.addItem(self.meas.transects[idx].file_name)
+
+        # Set selected
+        self.combo_adv_graph_transect.setCurrentIndex(self.transect_row)
+        self.combo_adv_graph_transect.blockSignals(False)
+
+        # Set x-axis radio button
+        self.rb_adv_graph_ensemble.blockSignals(True)
+        self.rb_adv_graph_length.blockSignals(True)
+        self.rb_adv_graph_time.blockSignals(True)
+        if self.x_axis_type == 'E':
+            self.rb_adv_graph_ensemble.setChecked(True)
+        elif self.x_axis_type == 'L':
+            self.rb_adv_graph_length.setChecked(True)
+        elif self.x_axis_type == 'T':
+            self.rb_adv_graph_time.setChecked(True)
+        self.rb_adv_graph_ensemble.blockSignals(False)
+        self.rb_adv_graph_length.blockSignals(False)
+        self.rb_adv_graph_time.blockSignals(False)
+
+        self.adv_graph_plots()
+
+        # Setup list for use by graphics controls
+        self.canvases = [self.adv_graph_canvas]
+        self.figs = [self.adv_graph_fig]
+        self.toolbars = [self.adv_graph_toolbar]
+
+    def adv_graph_transect_select(self):
+        self.transect_row = self.combo_adv_graph_transect.currentIndex()
+        self.adv_graph_plots()
+
+    def adv_graph_plots(self):
+        """Creates advanced plots for data in transect.
+        """
+
+        # Determine which plot types the user has selected
+        selected_types = []
+        for item in self.adv_graph_types:
+            if item[1].isChecked():
+                selected_types.append(item[0])
+
+        # Get flow direction
+        flow_direction = float(self.ed_adv_graph_flow_dir.text())
+
+        # Determine transect to plot
+        idx = self.checked_transects_idx[self.combo_adv_graph_transect.currentIndex()]
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.adv_graph_canvas is None:
+            # Create the canvas
+            self.adv_graph_canvas = MplCanvas(parent=self.graph_adv_graph, width=10, height=8, dpi=80)
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graph_adv_graph)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(0, 0, 0, 0)
+            # Add the canvas
+            layout.addWidget(self.adv_graph_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.adv_graph_toolbar = NavigationToolbar(self.adv_graph_canvas, self)
+            self.adv_graph_toolbar.hide()
+
+        # Initialize the advanced figure and assign to the canvas
+        self.adv_graph_fig = WTAdvanced(canvas=self.adv_graph_canvas)
+        # Create the figure with the specified data
+        self.adv_graph_fig.create(transect=self.meas.transects[idx],
+                                    discharge=self.meas.discharge[idx],
+                                    units=self.units,
+                                    selected_types=selected_types,
+                                    color_map=self.color_map,
+                                    x_axis_type=self.x_axis_type,
+                                    flow_direction=flow_direction,
+                                    show_below_sl=self.show_below_sl)
+
+        # Draw canvas
+        self.adv_graph_canvas.draw()
+
+        # Update list of figs
+        self.figs = [self.adv_graph_fig]
+        self.toolbars = [self.adv_graph_toolbar]
+        # Reset data cursor to work with new figure
+        if self.actionData_Cursor.isChecked():
+            self.data_cursor()
+        self.tab_adv_graph.setFocus()
+
+    def adv_graph_show_hide(self):
+        """Controls the visibility of the plot controls and expands and contracts the layout holding the plots
+        and plot controls.
+        """
+
+        # Hide control and expand plots
+        if self.gb_adv_graph_controls.isVisible():
+            self.gb_adv_graph_controls.hide()
+            self.adv_graph_layout.setStretch(0, 10)
+            self.adv_graph_layout.setStretch(1, 0)
+            self.pb_adv_graph_controls.setText('Show Plot Controls')
+        # Show control and reduce plot area
+        else:
+            self.gb_adv_graph_controls.show()
+            self.adv_graph_layout.setStretch(0, 7)
+            self.adv_graph_layout.setStretch(1, 3)
+            self.pb_adv_graph_controls.setText('Hide Plot Controls')
+
     # Graphics controls
     # =================
     def clear_zphd(self):
@@ -11318,6 +11497,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # EDI tab
         elif tab_idx == 'EDI':
             self.edi_tab()
+
+        # Adv. Graph tab
+        elif tab_idx == 'Adv. Graph':
+            self.adv_graph_tab()
 
         self.set_tab_color()
 
