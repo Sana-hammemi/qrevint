@@ -115,7 +115,8 @@ class GPSFilters (object):
                 x.append(datetime.utcfromtimestamp(stamp))
             x = np.array(x)
 
-        if selected == 'quality' and transect.boat_vel.gga_vel is not None:
+        if selected == 'quality' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.diff_qual_ens))):
             # GPS Quality
             self.qual = self.fig.ax.plot(x, transect.gps.diff_qual_ens, 'b.')
 
@@ -130,7 +131,8 @@ class GPSFilters (object):
             self.fig.ax.set_ylim(top=np.nanmax(yint) + 0.5, bottom=np.nanmin(yint) - 0.5)
             self.fig.ax.set_yticks(yint)
 
-        elif selected == 'altitude' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'altitude' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.altitude_ens_m))):
             # Plot altitude
             invalid_altitude = np.logical_not(transect.boat_vel.gga_vel.valid_data[3, :])
             self.alt = self.fig.ax.plot(x, transect.gps.altitude_ens_m * units['L'], 'b.')
@@ -139,7 +141,8 @@ class GPSFilters (object):
                                              'ro', markerfacecolor='none')[0])
             self.fig.ax.set_ylabel(self.canvas.tr('Altitude' + self.units['label_L']))
 
-        elif selected == 'hdop' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'hdop' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.hdop_ens))):
             # Plot HDOP
             max_y = np.nanmax(transect.gps.hdop_ens) + 0.5
             min_y = np.nanmin(transect.gps.hdop_ens) - 0.5
@@ -151,7 +154,8 @@ class GPSFilters (object):
             self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('HDOP'))
 
-        elif selected == 'sats' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'sats' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.num_sats_ens))):
             # Plot number of satellites
             max_y = np.nanmax(transect.gps.num_sats_ens) + 0.5
             min_y = np.nanmin(transect.gps.num_sats_ens) - 0.5

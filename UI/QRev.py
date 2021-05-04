@@ -10886,6 +10886,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.rb_adv_graph_length.blockSignals(False)
         self.rb_adv_graph_time.blockSignals(False)
 
+        self.available_plot_types()
+
         self.adv_graph_plots()
 
         # Setup list for use by graphics controls
@@ -10895,7 +10897,73 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def adv_graph_transect_select(self):
         self.transect_row = self.combo_adv_graph_transect.currentIndex()
+        self.available_plot_types()
         self.adv_graph_plots()
+
+    def available_plot_types(self):
+        """Enable / disable plot types
+        """
+
+        # Mag Error
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].sensors.heading_deg.internal.mag_error \
+                is not None \
+                and np.logical_not(np.all(np.isnan(self.meas.transects[self.checked_transects_idx[self.transect_row]].
+                sensors.heading_deg.internal.mag_error))):
+            self.cb_adv_graph_mag_error.setEnabled(True)
+        else:
+            self.cb_adv_graph_mag_error.setEnabled(False)
+            self.cb_adv_graph_mag_error.setChecked(False)
+
+        # External Compass
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].sensors.heading_deg.external is not None:
+            self.cb_adv_graph_ext_heading.setEnabled(True)
+        else:
+            self.cb_adv_graph_ext_heading.setEnabled(False)
+            self.cb_adv_graph_ext_heading.setChecked(False)
+
+        # GGA data
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.gga_vel is not None:
+            self.cb_adv_graph_gga_boat_speed.setEnabled(True)
+            self.cb_adv_graph_gga_quality.setEnabled(True)
+            self.cb_adv_graph_gga_hdop.setEnabled(True)
+            self.cb_adv_graph_gga_altitude.setEnabled(True)
+            self.cb_adv_graph_gga_satellites.setEnabled(True)
+            self.cb_adv_graph_gga_source.setEnabled(True)
+        else:
+            self.cb_adv_graph_gga_boat_speed.setEnabled(False)
+            self.cb_adv_graph_gga_quality.setEnabled(False)
+            self.cb_adv_graph_gga_hdop.setEnabled(False)
+            self.cb_adv_graph_gga_altitude.setEnabled(False)
+            self.cb_adv_graph_gga_satellites.setEnabled(False)
+            self.cb_adv_graph_gga_source.setEnabled(False)
+            self.cb_adv_graph_gga_boat_speed.setChecked(False)
+            self.cb_adv_graph_gga_quality.setChecked(False)
+            self.cb_adv_graph_gga_hdop.setChecked(False)
+            self.cb_adv_graph_gga_altitude.setChecked(False)
+            self.cb_adv_graph_gga_satellites.setChecked(False)
+            self.cb_adv_graph_gga_source.setChecked(False)
+
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.vtg_vel is not None:
+            self.cb_adv_graph_vtg_boat_speed.setEnabled(True)
+            self.cb_adv_graph_vtg_source.setEnabled(True)
+        else:
+            self.cb_adv_graph_vtg_boat_speed.setEnabled(False)
+            self.cb_adv_graph_vtg_boat_speed.setChecked(False)
+            self.cb_adv_graph_vtg_source.setEnabled(False)
+            self.cb_adv_graph_vtg_source.setChecked(False)
+
+        # BT data
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.bt_vel.corr.size > 0:
+            self.cb_adv_graph_bt_correlation.setEnabled(True)
+        else:
+            self.cb_adv_graph_bt_correlation.setEnabled(False)
+            self.cb_adv_graph_bt_correlation.setChecked(False)
+
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.bt_vel.rssi.size > 0:
+            self.cb_adv_graph_bt_rssi.setEnabled(True)
+        else:
+            self.cb_adv_graph_bt_rssi.setEnabled(False)
+            self.cb_adv_graph_bt_rssi.setChecked(False)
 
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect.
@@ -11062,10 +11130,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Water track tab
         elif tab_idx == 'WT':
             self.wt_plots()
+            self.wt_advanced_plots()
 
         # Edges tab
         elif tab_idx == 'Edges':
             self.edges_graphics()
+
+        # Adv. Graph
+        elif tab_idx == 'Adv. Graph':
+            self. adv_graph_tab()
 
     def x_axis_time(self):
         """Changes the x-axis type to time

@@ -2310,6 +2310,7 @@ class Bt(object):
             self.corr[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['correlation']).T)
             self.eval_amp[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['amplitude']).T)
             self.pergd[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['percent_good']).T)
+            self.rssi[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['rssi']).T)
 
 
 class Cfg(object):

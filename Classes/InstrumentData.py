@@ -204,6 +204,8 @@ class InstrumentData(object):
         self.frequency_khz = rs.Transformation_Matrices.Frequency
         if self.frequency_khz[2] > 0:
             self.model = 'M9'
+        elif hasattr(rs.WaterTrack, 'Vel_Expected_StdDev'):
+            self.model = 'RS5'
         else:
             self.model = 'S5'
         if hasattr(rs, 'SystemHW'):

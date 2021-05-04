@@ -98,6 +98,8 @@ class WTAdvanced(object):
                                          'cb_bt_error_ts': self.bt_error_ts,
                                          'cb_bt_vertical_ts': self.bt_vertical_ts,
                                          'cb_bt_source_ts': self.bt_source_ts,
+                                         'cb_bt_corr_ts': self.bt_corr_ts,
+                                         'cb_bt_rssi_ts': self.bt_rssi_ts,
                                          'cb_gga_boat_speed_ts': self.gga_speed_ts,
                                          'cb_vtg_boat_speed_ts': self.vtg_speed_ts,
                                          'cb_gga_quality_ts': self.gga_quality_ts,
@@ -670,11 +672,11 @@ class WTAdvanced(object):
     def bt_speed_ts(self):
 
         data = np.sqrt(self.transect.boat_vel.bt_vel.u_processed_mps ** 2
-                        + self.transect.boat_vel.bt_vel.v_processed_mps ** 2)
+                       + self.transect.boat_vel.bt_vel.v_processed_mps ** 2)
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data)
         data_invalid = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
                                + self.transect.boat_vel.bt_vel.v_mps ** 2)
-        fmt = [{'color': 'b', 'linestyle': '-' },
+        fmt = [{'color': 'b', 'linestyle': '-'},
                {'color': 'r', 'linestyle': '', 'marker': '$O$'},
                {'color': 'r', 'linestyle': '', 'marker': '$E$'},
                {'color': 'r', 'linestyle': '', 'marker': '$V$'},
@@ -809,15 +811,135 @@ class WTAdvanced(object):
 
         self.source_ts(self.transect.boat_vel.bt_vel, 'BT Source')
 
+    def bt_corr_ts(self):
+        """Plot bottom track correlation.
+        """
+
+        data = self.transect.boat_vel.bt_vel.corr
+        data_units = (1, 'Corr. (cnts)')
+
+        # Compute max and min
+        max_data = np.nanmax(np.nanmax(data))
+        if np.isnan(max_data):
+            max_data = 255
+        min_data = np.nanmin(np.nanmin(data))
+        if np.isnan(min_data):
+            min_data = 0
+
+        # Plot beam 1 using mask to identify invalid data
+        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B1'}]
+        self.plt_timeseries(data=data[0, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=True)
+
+        # Plot beam 2 using mask to identify invalid data
+        fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'}]
+        self.plt_timeseries(data=data[1, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Plot beam 3 using mask to identify invalid data
+        fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'}]
+        self.plt_timeseries(data=data[2, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Plot beam 4 using mask to identify invalid data
+        fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'}]
+        self.plt_timeseries(data=data[3, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Show legend
+        self.ax[-1].legend()
+
+        # Configure y axis
+        self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
+
+    def bt_rssi_ts(self):
+        """Plot bottom track correlation.
+        """
+
+        data = self.transect.boat_vel.bt_vel.rssi
+        data_units = (1, 'RSSI (cnts)')
+
+        # Compute max and min
+        max_data = np.nanmax(np.nanmax(data))
+        if np.isnan(max_data):
+            max_data = 255
+        min_data = np.nanmin(np.nanmin(data))
+        if np.isnan(min_data):
+            min_data = 0
+
+        # Plot beam 1 using mask to identify invalid data
+        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B1'}]
+        self.plt_timeseries(data=data[0, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=True)
+
+        # Plot beam 2 using mask to identify invalid data
+        fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'}]
+        self.plt_timeseries(data=data[1, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Plot beam 3 using mask to identify invalid data
+        fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'}]
+        self.plt_timeseries(data=data[2, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Plot beam 4 using mask to identify invalid data
+        fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'}]
+        self.plt_timeseries(data=data[3, :],
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            fmt=fmt,
+                            set_annot=False)
+
+        # Show legend
+        self.ax[-1].legend()
+
+        # Configure y axis
+        self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
+
     def gga_source_ts(self):
+        """Plot source for GGA data.
+        """
 
         self.source_ts(self.transect.boat_vel.gga_vel, 'GGA Source')
 
     def vtg_source_ts(self):
+        """Plot source for VTG data.
+        """
 
         self.source_ts(self.transect.boat_vel.vtg_vel, 'VTG Source')
 
     def source_ts(self, selected, axis_label):
+        """Plot source of data.
+
+        Parameters
+        ----------
+        selected: BoatData
+            Boat velocity reference data
+        axis_label: str
+            Label for y axis
+        """
+
         # Handle situation where transect does not contain the selected source
         if selected is None:
             source = np.tile('INV', len(self.x))
@@ -835,6 +957,7 @@ class WTAdvanced(object):
                             ax=self.ax[-1],
                             fmt=fmt)
 
+        # Plot data
         self.x = np.copy(temp_hold)
         data_units = (1, axis_label)
         fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
@@ -842,84 +965,142 @@ class WTAdvanced(object):
                             data_units=data_units,
                             ax=self.ax[-1],
                             fmt=fmt)
+
+        # Format y axis
         self.ax[-1].set_yticks(['INV', 'INT', 'BT', 'GGA', 'VTG'])
 
     def gga_quality_ts(self):
-        # GPS Quality
-        data = self.transect.gps.diff_qual_ens
-        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
-        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[2, :]).tolist()
-        data_mask = [[], invalid]
-        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
-        data_units = (1, 'GGA Quality')
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt)
-        # Format axis
-        yint = range(0, int(np.ceil(np.nanmax(self.transect.gps.diff_qual_ens)) + 1))
-        self.ax[-1].set_ylim(top=np.nanmax(yint) + 0.5, bottom=np.nanmin(yint) - 0.5)
-        self.ax[-1].set_yticks(yint)
+        """Plots GPS differential quality reported in GGA sentence.
+        """
+
+        # Check to make sure there is data to plot
+        if self.transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(self.transect.gps.diff_qual_ens))):
+
+            # Get data
+            data = self.transect.gps.diff_qual_ens
+
+            # Set initial format
+            fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+            data_units = (1, 'GGA Quality')
+
+            # Create data mask and formats for invalid data
+            invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[2, :]).tolist()
+            data_mask = [[], invalid]
+            fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt)
+            # Format y axis
+            yint = range(0, int(np.ceil(np.nanmax(self.transect.gps.diff_qual_ens)) + 1))
+            self.ax[-1].set_ylim(top=np.nanmax(yint) + 0.5, bottom=np.nanmin(yint) - 0.5)
+            self.ax[-1].set_yticks(yint)
 
     def gga_hdop_ts(self):
+        """Plots HDOP reported in GGA sentence.
+        """
 
-        # Plot HDOP
-        data = self.transect.gps.hdop_ens
-        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
-        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[5, :]).tolist()
-        data_mask = [[], invalid]
-        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
-        data_units = (1, 'GGA HDOP')
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt)
+        # Check to make sure there is data to plot
+        if self.transect.boat_vel.gga_vel is not None and np.any(np.logical_not(np.isnan(self.transect.gps.hdop_ens))):
 
-        max_y = np.nanmax(self.transect.gps.hdop_ens) + 0.5
-        min_y = np.nanmin(self.transect.gps.hdop_ens) - 0.5
-        self.ax[-1].set_ylim(top=max_y, bottom=min_y)
+            # Get data
+            data = self.transect.gps.hdop_ens
+
+            # Set initial format
+            fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+            data_units = (1, 'GGA HDOP')
+
+            # Create data mask and formats for invalid data
+            invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[5, :]).tolist()
+            data_mask = [[], invalid]
+            fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt)
+
+            # Set y axis properties
+            max_y = np.nanmax(self.transect.gps.hdop_ens) + 0.5
+            min_y = np.nanmin(self.transect.gps.hdop_ens) - 0.5
+            self.ax[-1].set_ylim(top=max_y, bottom=min_y)
 
     def gga_altitude_ts(self):
-        data = self.transect.gps.altitude_ens_m
-        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
-        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[3, :]).tolist()
-        data_mask = [[], invalid]
-        fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
-        data_units = (self.units['L'], 'GGA Altitude ' + self.units['label_L'])
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt)
+        """Plots altitude reported in GGA sentence.
+        """
+
+        # Check to make sure there is data to plot
+        if self.transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(self.transect.gps.altitude_ens_m))):
+            # Get data
+            data = self.transect.gps.altitude_ens_m
+
+            # Set initial format
+            fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+            data_units = (self.units['L'], 'GGA Altitude ' + self.units['label_L'])
+
+            # Create data mask and formats for invalid data
+            invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data[3, :]).tolist()
+            data_mask = [[], invalid]
+            fmt.append({'color': 'r', 'marker': 'o', 'linestyle': '', 'mfc': 'none'})
+
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt)
 
     def gga_sats_ts(self):
+        """Plots number of satellites reported in GGA sentence.
+        """
 
-        data = self.transect.gps.num_sats_ens
-        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
-        data_units = (1, 'No. of Sats')
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            ax=self.ax[-1],
-                            fmt=fmt)
-        try:
-            max_y = np.nanmax(self.transect.gps.num_sats_ens) + 0.5
-            min_y = np.nanmin(self.transect.gps.num_sats_ens) - 0.5
-            self.ax[-1].set_ylim(top=max_y, bottom=min_y)
-            yint = range(int(min_y), int(max_y) + 1)
-            self.ax[-1].set_yticks(yint)
-        except ValueError:
-            pass
+        # Check to make sure there is data to plot
+        if self.transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(self.transect.gps.num_sats_ens))):
+
+            # Get data
+            data = self.transect.gps.num_sats_ens
+
+            # Set format
+            fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
+            data_units = (1, 'No. of Sats')
+
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                fmt=fmt)
+            try:
+                max_y = np.nanmax(self.transect.gps.num_sats_ens) + 0.5
+                min_y = np.nanmin(self.transect.gps.num_sats_ens) - 0.5
+                self.ax[-1].set_ylim(top=max_y, bottom=min_y)
+                yint = range(int(min_y), int(max_y) + 1)
+                self.ax[-1].set_yticks(yint)
+            except ValueError:
+                pass
 
     def gga_speed_ts(self):
+        """Plot boat speed using GGA reference.
+        """
 
+        # Compute speed from processed GGA data
         data = np.sqrt(self.transect.boat_vel.gga_vel.u_processed_mps ** 2
-                        + self.transect.boat_vel.gga_vel.v_processed_mps ** 2)
+                       + self.transect.boat_vel.gga_vel.v_processed_mps ** 2)
+
+        # Create data mask for invalid GGA data
         invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data)
         data_invalid = np.sqrt(self.transect.boat_vel.gga_vel.u_mps ** 2
                                + self.transect.boat_vel.gga_vel.v_mps ** 2)
-        fmt = [{'color': 'b', 'linestyle': '-' },
+
+        # Format for data and invalid identification
+        fmt = [{'color': 'b', 'linestyle': '-'},
                {'color': 'r', 'linestyle': '', 'marker': '$O$'},
                {'color': 'r', 'linestyle': '', 'marker': '$Q$'},
                {'color': 'r', 'linestyle': '', 'marker': '$A$'},
@@ -927,6 +1108,8 @@ class WTAdvanced(object):
                {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
 
         data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+
+        # Plot data
         self.plt_timeseries(data=data,
                             data_units=data_units,
                             ax=self.ax[-1],
@@ -935,19 +1118,29 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def vtg_speed_ts(self):
+        """Plot boat speed using VTG reference.
+        """
 
+        # Compute speed from processed VTG data
         data = np.sqrt(self.transect.boat_vel.vtg_vel.u_processed_mps ** 2
-                        + self.transect.boat_vel.vtg_vel.v_processed_mps ** 2)
+                       + self.transect.boat_vel.vtg_vel.v_processed_mps ** 2)
+
+        # Create data mask for invalid VTG data
         invalid = np.logical_not(self.transect.boat_vel.vtg_vel.valid_data)
-        data_mask=[[], invalid[1], invalid[4], invalid[5]]
+        data_mask = [[], invalid[1], invalid[4], invalid[5]]
+
+        # Use original unprocessed speed to plot invalid symbols
         data_invalid = np.sqrt(self.transect.boat_vel.vtg_vel.u_mps ** 2
                                + self.transect.boat_vel.vtg_vel.v_mps ** 2)
-        fmt = [{'color': 'b', 'linestyle': '-' },
+
+        # Format for data and invalid identification
+        fmt = [{'color': 'b', 'linestyle': '-'},
                {'color': 'r', 'linestyle': '', 'marker': '$O$'},
                {'color': 'r', 'linestyle': '', 'marker': '$S$'},
                {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
-
         data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+
+        # Plot data
         self.plt_timeseries(data=data,
                             data_units=data_units,
                             ax=self.ax[-1],
@@ -956,6 +1149,8 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def heading_adcp_ts(self):
+        """Plot heading from ADCP internal compass.
+        """
 
         data = self.transect.sensors.heading_deg.internal.data
         fmt = [{'color': 'b', 'linestyle': '-'}]
@@ -966,6 +1161,8 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def heading_external_ts(self):
+        """Plot external heading.
+        """
 
         data = self.transect.sensors.heading_deg.external.data
         fmt = [{'color': 'b', 'linestyle': '-'}]
@@ -976,6 +1173,8 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def mag_error_ts(self):
+        """Plot magnetic error.
+        """
 
         data = self.transect.sensors.heading_deg.internal.mag_error
         fmt = [{'color': 'b', 'linestyle': '-'}]
@@ -986,6 +1185,8 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def pitch_ts(self):
+        """Plot pitch data.
+        """
 
         data = self.transect.sensors.pitch_deg.internal.data
         fmt = [{'color': 'b', 'linestyle': '-'}]
@@ -996,6 +1197,8 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def roll_ts(self):
+        """Plot roll data.
+        """
 
         data = self.transect.sensors.roll_deg.internal.data
         fmt = [{'color': 'b', 'linestyle': '-'}]
@@ -1006,15 +1209,22 @@ class WTAdvanced(object):
                             fmt=fmt)
 
     def depths_beam_ts(self):
+        """Plot available beam depths including depth sounder on single plot.
+        """
 
+        # Slant beams
         invalid_beams = np.logical_not(self.transect.depths.bt_depths.valid_beams).tolist()
         beam_depths = self.transect.depths.bt_depths.depth_beams_m
-        # Compute max depth from beams
+
+        # Compute max depth from slant beams
         max_depth = [np.nanmax(np.nanmax(beam_depths))]
+
+        # Plot beam 1 using mask to identify invalid data
         data_mask = [[], invalid_beams[0]]
         data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
         fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o',  'markersize': 4, 'label': 'B1'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                'label': None}]
         self.plt_timeseries(data=beam_depths[0, :],
                             data_units=data_units,
                             data_mask=data_mask,
@@ -1022,10 +1232,12 @@ class WTAdvanced(object):
                             fmt=fmt,
                             set_annot=True)
 
+        # Plot beam 2 using mask to identify invalid data
         data_mask = [[], invalid_beams[1]]
         data_units = (self.units['L'], '')
         fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                'label': None}]
         self.plt_timeseries(data=beam_depths[1, :],
                             data_units=data_units,
                             data_mask=data_mask,
@@ -1033,10 +1245,12 @@ class WTAdvanced(object):
                             fmt=fmt,
                             set_annot=False)
 
+        # Plot beam 3 using mask to identify invalid data
         data_mask = [[], invalid_beams[2]]
         data_units = (self.units['L'], '')
         fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                'label': None}]
         self.plt_timeseries(data=beam_depths[2, :],
                             data_units=data_units,
                             data_mask=data_mask,
@@ -1044,10 +1258,12 @@ class WTAdvanced(object):
                             fmt=fmt,
                             set_annot=False)
 
+        # Plot beam 4 using mask to identify invalid data
         data_mask = [[], invalid_beams[3]]
         data_units = (self.units['L'], '')
         fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                'label': None}]
         self.plt_timeseries(data=beam_depths[3, :],
                             data_units=data_units,
                             data_mask=data_mask,
@@ -1055,63 +1271,79 @@ class WTAdvanced(object):
                             fmt=fmt,
                             set_annot=False)
 
+        # Plot vertical beam, if available
         if self.transect.depths.vb_depths is not None:
             invalid_beams = np.logical_not(self.transect.depths.vb_depths.valid_beams[0, :]).tolist()
             beam_depths = self.transect.depths.vb_depths.depth_beams_m[0, :]
             data_mask = [[], invalid_beams]
             data_units = (self.units['L'], '')
             fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'VB'},
-                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
             self.plt_timeseries(data=beam_depths,
                                 data_units=data_units,
                                 data_mask=data_mask,
                                 ax=self.ax[-1],
                                 fmt=fmt,
-                            set_annot=False)
-
+                                set_annot=False)
+            # Add max depth from vertical beam to list
             max_depth.append(np.nanmax(beam_depths))
 
+        # Plot depth sounder data, if available
         if self.transect.depths.ds_depths is not None:
             invalid_beams = np.logical_not(self.transect.depths.ds_depths.valid_beams[0, :])
             beam_depths = self.transect.depths.ds_depths.depth_beams_m[0, :]
             data_mask = [[], invalid_beams]
             data_units = (self.units['L'], '')
             fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'DS'},
-                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none', 'label': None}]
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
             self.plt_timeseries(data=beam_depths,
                                 data_units=data_units,
                                 data_mask=data_mask,
                                 ax=self.ax[-1],
                                 fmt=fmt,
-                            set_annot=False)
-
+                                set_annot=False)
+            # Add max depth from depth sounder to list
             max_depth.append(np.nanmax(beam_depths))
 
+        # Show legend
         self.ax[-1].legend()
+
+        # Configure y axis
         self.ax[-1].invert_yaxis()
         self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(max_depth) * 1.1 * self.units['L']), top=0)
 
     def depths_final_ts(self):
+        """Plot final cross section used to compute discharge.
+        """
 
+        # Get selected depth
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
         beam_depths = depth_selected.depth_processed_m
 
+        # Plot processed depth
         data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
         fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
         self.plt_timeseries(data=beam_depths,
                             data_units=data_units,
                             ax=self.ax[-1],
                             fmt=fmt)
+
+        # Format y axis
         self.ax[-1].invert_yaxis()
         self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units['L']), top=0)
 
     def depths_source_ts(self):
+        """Plot source of depth for final cross section.
+        """
 
-        # Handle situation where transect does not contain the selected source
+        # Use selected depth source
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
         source = depth_selected.depth_source_ens
 
         # Plot dummy data to establish consistent order of y axis
+        # self.x is passed through reference to self so it must be temporarily changed for the dummy data
         temp_hold = np.copy(self.x)
         self.x = [-10, -10, -10, -10, -10]
         data = ['INV', 'INT', 'BT', 'VB', 'DS']
@@ -1122,6 +1354,8 @@ class WTAdvanced(object):
                             ax=self.ax[-1],
                             fmt=fmt)
 
+        # Plot source data
+        # Restore self.x to original values
         self.x = np.copy(temp_hold)
         data_units = (1, 'Depth Source')
         fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'}]
@@ -1382,6 +1616,14 @@ class WTAdvanced(object):
             Tuple of data multiplier and label
         ax: subplot
             Optional subplot
+        data_2: np.ndarray()
+            Optional data that can be masked
+        data_mask: list
+            List of bool indicating what data should be plotted
+        fmt: list
+            List of dictionary providing plot format properties
+        set_annot: bool
+            Indicates if annotation should be associated.
         """
 
         # Use last subplot if not defined
@@ -1394,17 +1636,19 @@ class WTAdvanced(object):
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
-        # Plot data
+        # Get format for first call to plot
         if fmt is not None:
             kwargs = fmt[0]
         else:
-            kwargs = {'linestyle':'-', 'color':'b'}
+            kwargs = {'linestyle': '-', 'color': 'b'}
 
+        # First call to plot uses masked data if there is no primary data
         if data is not None:
             ax.plot(self.x, data * data_units[0], **kwargs)
         else:
             ax.plot(self.x[data_mask[0]], data_2[data_mask[0]], **kwargs)
 
+        # Compile all data from primary and masked data sets
         all_data = data
         if data_mask is not None:
             if data_2 is None:
@@ -1415,9 +1659,10 @@ class WTAdvanced(object):
             else:
                 all_data = np.concatenate([data, data_2])
 
+            # Plot calls for other masked data
             for n in range(1, len(fmt)):
                 if fmt is None:
-                    kwargs = {'color':'r', 'marker':'o', 'ms':8, 'markerfacecolor':'none'}
+                    kwargs = {'color': 'r', 'marker': 'o', 'ms': 8, 'markerfacecolor': 'none'}
                 else:
                     kwargs = fmt[n]
 
@@ -1431,10 +1676,11 @@ class WTAdvanced(object):
             max_y = (np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.1)) * data_units[0]
             min_y = (np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.1) * data_units[0]
             ax.set_ylim(top=max_y, bottom=min_y)
-        except TypeError:
+        except (TypeError, ValueError):
             pass
 
-        # Initialize annotation for data cursor
+        # Initialize annotation for data cursor. Annotation should only be associated with one call to
+        # plt_timeseries if figure makes multiple calls to create multiple lines on the same graph.
         if set_annot:
             self.annot.append(ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
                                           bbox=dict(boxstyle="round", fc="w"),

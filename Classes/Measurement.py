@@ -21,6 +21,7 @@ from Classes.Oursin import Oursin
 # from Classes.Oursin_orig import Oursin_orig
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile
+from Classes.Pd0TRDI_2 import Pd0TRDI
 
 class Measurement(object):
     """Class to hold all measurement details.
@@ -214,6 +215,7 @@ class Measurement(object):
 
         # Create transect objects for  TRDI data
         # TODO refactor allocate_transects
+
         self.transects = allocate_transects(mmt=mmt,
                                             transect_type=transect_type,
                                             checked=checked)

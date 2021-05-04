@@ -179,7 +179,9 @@ class TransectData(object):
                                           coord_sys_in=pd0_data.Cfg.coord_sys[0],
                                           nav_ref_in='BT',
                                           min_beams=min_beams,
-                                          bottom_mode=pd0_data.Cfg.bm[0])
+                                          bottom_mode=pd0_data.Cfg.bm[0],
+                                          corr_in = pd0_data.Bt.corr,
+                                          rssi_in = pd0_data.Bt.rssi)
 
             self.boat_vel.set_nav_reference('BT')
 

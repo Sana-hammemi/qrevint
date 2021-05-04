@@ -21,6 +21,10 @@ class BoatData(object):
             Defines the original raw data velocity Coordinate, "Beam", "Inst", "Ship", "Earth".
         nav_ref: str
             Defines the original raw data navigation reference, "None", "BT", "GGA" "VTG".
+        corr: np.array
+            Correlation values for bottom track
+        rssi: np.array
+            Returned signal strength for bottom track
 
     Coordinate transformed data
         coord_sys: str
@@ -104,6 +108,8 @@ class BoatData(object):
         self.frequency_khz = None  # Defines ADCP frequency used for velocity Measurement
         self.orig_coord_sys = None  # Defines the original raw data velocity Coordinate
         self.nav_ref = None  # Defines the original raw data navigation reference
+        self.corr = np.array([])
+        self.rssi = np.array([])
 
         # Coordinate transformed data
         self.coord_sys = None  # Defines the current coordinate system "Beam", "Inst", "Ship", "Earth"
@@ -145,7 +151,7 @@ class BoatData(object):
         self.use_measurement_thresholds = False
 
     def populate_data(self, source, vel_in, freq_in, coord_sys_in, nav_ref_in, beam_filter_in=3,
-                      bottom_mode_in='Variable'):
+                      bottom_mode_in='Variable', corr_in=None, rssi_in=None):
         """Assigns data to instance variables.
 
         Parameters
@@ -164,6 +170,10 @@ class BoatData(object):
             Minimum number of valid beams for valid data.
         bottom_mode_in: str
             Bottom mode for TRDI ADCP
+        corr: np.array
+            Correlation values for bottom track
+        rssi: np.array
+            Returned signal strength for bottom track
         """
 
         # Identify invalid ensembles for SonTek data.
@@ -178,6 +188,10 @@ class BoatData(object):
         self.nav_ref = nav_ref_in
         self.beam_filter = beam_filter_in
         self.bottom_mode = bottom_mode_in
+        if corr_in is not None:
+            self.corr = corr_in
+        if rssi_in is not None:
+            self.rssi = rssi_in
 
         if nav_ref_in == 'BT':
 
@@ -272,6 +286,10 @@ class BoatData(object):
             self.v_mps = np.array([mat_data.v_mps])
             self.w_mps = np.array([mat_data.w_mps])
             self.d_mps = np.array([mat_data.d_mps])
+            if hasattr(mat_data, 'corr'):
+                self.corr = mat_data.corr.reshape(mat_data.corr.shape[0], 1)
+            if hasattr(mat_data, 'rssi'):
+                self.rssi = mat_data.rssi.reshape(mat_data.rssi.shape[0], 1)
 
             # self.bottom_mode = np.array([mat_data.bottomMode])
 
@@ -293,6 +311,11 @@ class BoatData(object):
             self.v_mps = mat_data.v_mps
             self.w_mps = mat_data.w_mps
             self.d_mps = mat_data.d_mps
+
+            if hasattr(mat_data, 'corr'):
+                self.corr = mat_data.corr
+            if hasattr(mat_data, 'rssi'):
+                self.rssi = mat_data.rssi
 
             # self.bottom_mode = mat_data.bottomMode
 

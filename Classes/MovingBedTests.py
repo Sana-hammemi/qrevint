@@ -704,7 +704,7 @@ class MovingBedTests(object):
             # Quality check
             self.test_quality = 'Good'
             # Check duration
-            if self.duration_sec < 300:
+            if self.duration_sec < 299:
                 self.messages.append('WARNING - Duration of stationary test is less than 5 minutes')
                 self.test_quality = 'Warnings'
                 

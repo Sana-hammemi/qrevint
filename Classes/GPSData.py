@@ -375,9 +375,10 @@ class GPSData(object):
             v_setting = self.gga_velocity_method
             
         # Use only valid gga data
-        valid = np.copy(self.raw_gga_num_sats)
+        valid = np.copy(self.raw_gga_lat_deg)
+        valid[np.logical_not(np.isnan(valid))] = 1
         valid[np.isnan(valid)] = 0
-        valid[valid > 0] = 1
+        # valid[valid > 0] = 1
         gga_lat_deg = np.copy(self.raw_gga_lat_deg)
         gga_lat_deg[valid == False] = np.nan
         gga_lon_deg = np.copy(self.raw_gga_lon_deg)
