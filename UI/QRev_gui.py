@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1584, 1019)
+        MainWindow.resize(1584, 1051)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -4230,7 +4230,7 @@ class Ui_MainWindow(object):
         self.tab_gps_2.setCurrentIndex(0)
         self.combo_gps_qual.setCurrentIndex(1)
         self.tab_depth_2.setCurrentIndex(0)
-        self.tab_wt_2.setCurrentIndex(2)
+        self.tab_wt_2.setCurrentIndex(0)
         self.tab_extrap_2.setCurrentIndex(0)
         self.tab_edges_2.setCurrentIndex(0)
         self.tab_uncertainty_2.setCurrentIndex(0)

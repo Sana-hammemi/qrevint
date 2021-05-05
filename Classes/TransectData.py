@@ -775,6 +775,8 @@ class TransectData(object):
         # Convert frequency to kHz
         if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
             freq = rsdata.BottomTrack.BT_Frequency / 1000
+        elif np.nanmean(rsdata.BottomTrack.BT_Frequency) < 100:
+            freq = rsdata.BottomTrack.BT_Frequency * 1000
         else:
             freq = rsdata.BottomTrack.BT_Frequency
 

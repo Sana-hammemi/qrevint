@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1584</width>
-    <height>1019</height>
+    <height>1051</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -4275,7 +4275,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_wt_2_data">
            <attribute name="title">
