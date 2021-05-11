@@ -51,14 +51,14 @@ class SensorData(object):
             if type(mat_data.data) is np.ndarray:
                 self.data = mat_data.data.astype(float)
             else:
-                self.data = float(mat_data.data)
+                self.data = np.array([float(mat_data.data)])
         if np.isnan(mat_data.dataOrig).all():
             self.data_orig = np.array([])
         else:
             if type(mat_data.dataOrig) is np.ndarray:
                 self.data_orig = mat_data.dataOrig.astype(float)
             else:
-                self.data_orig = float(mat_data.dataOrig)
+                self.data_orig = np.array([float(mat_data.dataOrig)])
         self.source = mat_data.source
         
     def change_data(self, data_in):

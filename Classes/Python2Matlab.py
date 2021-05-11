@@ -44,6 +44,7 @@ class Python2Matlab(object):
             self.matlab_dict['stationNumber'] = ''
         self.matlab_dict['processing'] = meas_mat.processing
         self.matlab_dict['extTempChk'] = meas_mat.ext_temp_chk
+        self.matlab_dict['userRating'] = meas_mat.user_rating
         self.matlab_dict['initialSettings'] = meas_mat.initial_settings
         self.matlab_dict['comments'] = self.comment2struct(meas_mat.comments)
         self.matlab_dict['compassCal'] = self.listobj2struct(meas_mat.compass_cal, py_2_mat_dict)

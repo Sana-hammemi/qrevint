@@ -6,14 +6,47 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>742</width>
-    <height>167</height>
+    <width>620</width>
+    <height>265</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QGridLayout" name="gridLayout" columnstretch="15,30,20" columnminimumwidth="0,0,0">
+   <item row="0" column="2">
+    <widget class="QGroupBox" name="QGroupBox">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="title">
+      <string>Extrapolation</string>
+     </property>
+     <widget class="QCheckBox" name="cb_weighted_extrap">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>162</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Discharge weighted</string>
+      </property>
+     </widget>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="gb_units">
      <property name="font">
@@ -70,6 +103,21 @@
      </widget>
     </widget>
    </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="1">
     <widget class="QGroupBox" name="gb_save_options">
      <property name="font">
@@ -123,25 +171,56 @@
        <string>Only Checked Transects</string>
       </property>
      </widget>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="QGroupBox" name="gb_stylesheet">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="title">
-      <string>Style Sheet</string>
-     </property>
+     <widget class="QCheckBox" name="cb_rating">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>110</y>
+        <width>211</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Prompt for rating on save</string>
+      </property>
+     </widget>
+     <widget class="Line" name="line">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="line_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>140</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
      <widget class="QCheckBox" name="cb_stylesheet">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>40</y>
+        <y>170</y>
         <width>221</width>
         <height>17</height>
        </rect>
@@ -156,21 +235,6 @@
        <string>Save style sheet with data</string>
       </property>
      </widget>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
     </widget>
    </item>
   </layout>

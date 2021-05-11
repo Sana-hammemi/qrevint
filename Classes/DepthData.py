@@ -157,7 +157,10 @@ class DepthData(object):
         self.draft_use_m = mat_data.draftUse_m
         self.depth_cell_depth_orig_m = mat_data.depthCellDepthOrig_m
         self.depth_cell_depth_m = mat_data.depthCellDepth_m
-        self.depth_cell_size_orig_m = mat_data.depthCellSizeOrig_m
+        if hasattr(mat_data, "depthCellSizeOrig_m"):
+            self.depth_cell_size_orig_m = mat_data.depthCellSizeOrig_m
+        else:
+            self.depth_cell_size_orig_m =  mat_data.depthCellSize_m
         self.depth_cell_size_m = mat_data.depthCellSize_m
 
         # Configure arrays properly for VB and DS

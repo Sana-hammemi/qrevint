@@ -111,17 +111,28 @@ class HeadingData(object):
             self.align_correction_orig_deg = mat_data.alignCorrection_deg
 
         # Only available for SonTek G3 compass
-        if len(mat_data.magError) > 0:
-            self.mag_error = mat_data.magError
+        try:
+            if len(mat_data.magError) > 0:
+                self.mag_error = mat_data.magError
 
-        # Only available for SonTek G3 compass
-        if len(mat_data.pitchLimit) > 0:
-            self.pitch_limit = mat_data.pitchLimit
+            # Only available for SonTek G3 compass
+            if mat_data.pitchLimit.size > 0:
+                if mat_data.pitchLimit.size > 2:
+                    self.pitch_limit = mat_data.pitchLimit[0]
+                else:
+                    self.pitch_limit = mat_data.pitchLimit
 
-        # Only available for SonTek G3 compass
-        if len(mat_data.rollLimit) > 0:
-            self.roll_limit = mat_data.rollLimit
-            
+            # Only available for SonTek G3 compass
+            if mat_data.rollLimit.size > 0:
+                if mat_data.rollLimit.size > 2:
+                    self.roll_limit = mat_data.rollLimit[0]
+                else:
+                    self.roll_limit = mat_data.rollLimit
+        except AttributeError:
+            self.mag_error = None
+            self.pitch_limit = None
+            self.roll_limit = None
+
     def set_mag_var(self, mag_var, h_source):
         """Applies a new magvar to the object data.
 

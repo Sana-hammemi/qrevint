@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as sp
 from MiscLibs.common_functions import cart2pol, pol2cart
-
+from Classes.QComp import QComp
 
 class NormData(object):
     """Class creates normalized depth and unit discharge or velocity.
@@ -36,6 +36,14 @@ class NormData(object):
         Defines percent of data from start of transect to use, default [0, 100]
     valid_data: np.array(int)
         Index of median values with point count greater than threshold cutoff
+    weights: np.array(float)
+        Discharge based weights for computing a weighted median
+    use_weights: bool
+        Specifies if discharge weighted medians are to be used in the extrapolation fit
+    sub_from_left: bool
+        Specifies if when subsectioning the subsection should start from left to right.
+    use_q: bool
+        Specifies to use the discharge rather than the xprod when subsectioning
     """
     
     def __init__(self):
@@ -51,8 +59,12 @@ class NormData(object):
         self.data_type = 'q'  # Type of data (v, q, V, or Q)
         self.data_extent = None  # Defines percent of data from start of transect to use, default [0, 100]
         self.valid_data = np.array([])  # Index of median values with point count greater than threshold cutoff
+        self.weights = np.array([])
+        self.use_weighted = True
+        self.sub_from_left = False
+        self.use_q = False
         
-    def populate_data(self, transect, data_type, threshold, data_extent=None):
+    def populate_data(self, transect, data_type, threshold, data_extent=None, use_weighted=True, sub_from_left=True, use_q=True):
         """Computes the normalized values for a single transect.
 
         Parameters
@@ -65,11 +77,20 @@ class NormData(object):
             Number of data points in an increment for the increment to be valid.
         data_extent: list
             Defines percent of data from start of transect to use, default [0, 100]
+        use_weighted: bool
+            Specifies if discharge weighted medians are to be used in the extrapolation fit
+        sub_from_left: bool
+            Specifies if when subsectioning the subsection should start from left to right.
+        use_q: bool
+            Specifies to use the discharge rather than the xprod when subsectioning
         """
 
         # If the data extent is not defined set data_extent to zero to trigger all data to be used
         if data_extent is None:
             data_extent = [0, 100]
+
+        self.sub_from_left = sub_from_left
+        self.use_q = use_q
             
         # Get data copies to avoid changing original data
         filename = transect.file_name
@@ -87,7 +108,7 @@ class NormData(object):
         invalid_data = np.logical_not(transect.w_vel.valid_data[0, :, in_transect_idx]).T
         w_vel_x[invalid_data] = np.nan
         w_vel_y[invalid_data] = np.nan
-        
+
         boat_select = getattr(transect.boat_vel, transect.boat_vel.selected)
         if boat_select is not None:
             bt_vel_x = np.copy(boat_select.u_processed_mps[in_transect_idx])
@@ -95,7 +116,27 @@ class NormData(object):
         else:
             bt_vel_x = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps[in_transect_idx].shape)
             bt_vel_y = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps[in_transect_idx].shape)
-            
+
+        # Compute discharges
+        xprod = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+        cell_size = depths_selected.depth_cell_size_m
+        delta_t = transect.date_time.ens_duration_sec[in_transect_idx]
+        q = np.multiply(xprod[:, in_transect_idx] * cell_size[:, in_transect_idx], delta_t)
+        q_ens = np.nansum(q, 0)
+
+        # Ensure all elements of xprod can be used to compute q (have a delta_t), first ensemble has no delta_t
+        idx_invalid = np.where(np.isnan(delta_t))[0]
+        xprod[:, idx_invalid] = np.nan
+
+        if np.abs(np.nansum(abs(q_ens))) > 0:
+            # Compute ensemble weights
+            weight_ensemble = abs(q_ens) / np.nansum(abs(q_ens))
+
+            # Apply weights to cells
+            weights = np.tile(weight_ensemble, (cell_depth.shape[0], 1))
+        else:
+            weights = np.ones(w_vel_x.shape)
+
         # Compute normalized cell depth by average depth in each ensemble
         norm_cell_depth = np.divide(cell_depth, depth_ens)
         norm_cell_depth[norm_cell_depth < 0] = np.nan
@@ -103,8 +144,15 @@ class NormData(object):
         # If data type is discharge compute unit discharge for each cell
         if data_type.lower() == 'q':
             # Compute the cross product for each cell
-            unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+            unit = xprod
         else:
+            w_vel_x = np.copy(transect.w_vel.u_processed_mps[:, in_transect_idx])
+            w_vel_y = np.copy(transect.w_vel.v_processed_mps[:, in_transect_idx])
+
+            invalid_data = np.logical_not(transect.w_vel.valid_data[0, :, in_transect_idx]).T
+            w_vel_x[invalid_data] = np.nan
+            w_vel_y[invalid_data] = np.nan
+
             # Compute mean velocity components in each ensemble
             w_vel_mean_1 = np.nanmean(w_vel_x, 0)
             w_vel_mean_2 = np.nanmean(w_vel_y, 0)
@@ -119,36 +167,62 @@ class NormData(object):
             unit = np.tile([np.nan], w_vel_x.shape)
             for i in range(w_vel_x.shape[0]):
                 unit[i, :] = np.sum(np.vstack([w_vel_x[i, :], w_vel_y[i, :]]) * unit_vec, 0)
-                                       
-        # Compute Total
-        unit_total = np.nansum(np.nansum(unit), 0)
-        
+
+            # Discharge weighting of velocity data is not permitted
+            use_weighted = False
+
         # Adjust to positive value
+        unit_total = np.nansum(np.nansum(unit), 0)
         if unit_total < 0:
             unit *= -1
             
         # Compute normalize unit values
         unit_norm = np.divide(unit, np.abs(np.nanmean(unit, 0)))
-        
+
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
-            
-            # Unit discharge is computed here because the unit norm could be based on velocity
-            unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
-            unit_ens = np.nansum(unit, 0)
-            unit_total = np.nancumsum(unit_ens)
-            
+            if use_q:
+                # Adjust cumulative sum direction based on start bank so that cumsum is always from left to right
+                if transect.start_edge == 'Right' and sub_from_left:
+                    q_ens_flipped = np.flip(q_ens)
+                    q_cum = np.nancumsum(q_ens_flipped)
+                    q_max = q_cum[-1]
+                    q_cum = np.flip(q_cum)
+                else:
+                    q_cum = np.nancumsum(q_ens)
+                    q_max = q_cum[-1]
+            else:
+                unit_ens = np.nansum(unit, 0)
+                q_cum = np.nancumsum(unit_ens)
+                q_max = q_cum[-1]
             # Adjust so total discharge is positive
-            if unit_total[-1] < 0:
-                unit_total *= -1
-                
+            if q_max < 0:
+                q_cum *= -1
+                q_max *= -1
+
             # Apply extents
-            unit_lower = unit_total[-1] * data_extent[0] / 100
-            unit_upper = unit_total[-1] * data_extent[1] / 100
-            idx_extent = np.where(np.logical_and(np.greater(unit_total, unit_lower),
-                                                 np.less(unit_total, unit_upper)))[0]
+            unit_left = q_max * data_extent[0] / 100
+            unit_right = q_max * data_extent[1] / 100
+            idx_extent = np.where(np.logical_and(np.greater(q_cum, unit_left),
+                                                 np.less(q_cum, unit_right)))[0]
+            # if data_type.lower() == 'v':
+            #     # Unit discharge is computed here because the unit norm could be based on velocity
+            #     unit = np.multiply(w_vel_x, bt_vel_y) - np.multiply(w_vel_y, bt_vel_x)
+            #     unit_ens = np.nansum(unit, 0)
+            #     unit_total = np.nancumsum(unit_ens)
+            #
+            #     # Adjust so total discharge is positive
+            #     if unit_total[-1] < 0:
+            #         unit_total *= -1
+                
+            # # Apply extents
+            # unit_lower = unit_total[-1] * data_extent[0] / 100
+            # unit_upper = unit_total[-1] * data_extent[1] / 100
+            # idx_extent = np.where(np.logical_and(np.greater(unit_total, unit_lower),
+            #                                      np.less(unit_total, unit_upper)))[0]
             unit_norm = unit_norm[:, idx_extent]
             norm_cell_depth = norm_cell_depth[:, idx_extent]
+            weights = weights[:, idx_extent]
             
         # If whole profile is negative make positive
         idx_neg1 = np.tile([np.nan], [unit_norm.shape[1], 1])
@@ -165,6 +239,8 @@ class NormData(object):
         self.data_type = data_type
         self.cell_depth_normalized = norm_cell_depth
         self.unit_normalized = unit_norm
+        self.use_weighted = use_weighted
+        self.weights = weights
         self.compute_stats(threshold)
 
     @staticmethod
@@ -210,6 +286,16 @@ class NormData(object):
         self.data_type = mat_data.dataType
         self.data_extent = mat_data.dataExtent
         self.valid_data = mat_data.validData - 1
+        if hasattr(mat_data, 'use_weighted'):
+            self.use_weighted = mat_data.use_weighted
+            self.weights = mat_data.weights
+        else:
+            self.use_weighted = False
+            self.weights = None
+        if hasattr(mat_data, 'use_q'):
+            self.use_q = mat_data.use_q
+        if hasattr(mat_data, 'sub_from_left'):
+            self.sub_from_left = mat_data.sub_from_left
 
     def compute_stats(self, threshold):
         """Computes the statistics for the normalized data.
@@ -237,8 +323,17 @@ class NormData(object):
             condition_3 = np.logical_not(np.isnan(self.unit_normalized))
             condition_all = np.logical_and(np.logical_and(condition_1, condition_2), condition_3)
             if np.any(condition_all):
-                unit_25[i], unit_norm_med[i], unit_75[i] = sp.mstats.mquantiles(self.unit_normalized[condition_all],
-                                                                                alphap=0.5, betap=0.5)
+                if self.data_type.lower() == 'q' and self.use_weighted:
+                    results = self.weighted_quantile(self.unit_normalized[condition_all],
+                                                     quantiles=[0.25, 0.5, 0.75],
+                                                     sample_weight=self.weights[condition_all])
+                    unit_25[i] = results[0]
+                    unit_norm_med[i] = results[1]
+                    unit_75[i] = results[2]
+                else:
+                    unit_25[i], unit_norm_med[i], unit_75[i] = sp.mstats.mquantiles(self.unit_normalized[condition_all],
+                                                                                    alphap=0.5, betap=0.5)
+
                 unit_norm_med_no[i] = np.sum(np.isnan(self.unit_normalized[condition_all]) == False)
                 avgz[i] = 1 - np.nanmean(self.cell_depth_normalized[condition_all])
 
@@ -251,6 +346,40 @@ class NormData(object):
         self.unit_normalized_25 = unit_25
         self.unit_normalized_75 = unit_75
         self.unit_normalized_z = avgz
+
+    @staticmethod
+    def weighted_quantile(values, quantiles, sample_weight):
+        """ Very close to numpy.percentile, but supports weights.
+        NOTE: quantiles should be in [0, 1]!
+
+        Parameters
+        ----------
+        values: ndarray(float)
+            Array of normalized values
+        quantiles: list
+            List of quantiles to be computed
+        sample_weight: ndarray(float)
+            Weights for each value`
+
+        Returns
+        -------
+        results: list
+            List of values at specified quantiles
+
+        """
+
+        sorter = np.argsort(values)
+        values = values[sorter]
+        sample_weight = sample_weight[sorter]
+
+        weighted_quantiles = np.cumsum(sample_weight) - 0.5 * sample_weight
+        weighted_quantiles /= np.sum(sample_weight)
+
+        results = []
+        for quantile in quantiles:
+            results.append(np.interp(quantile, weighted_quantiles, values))
+
+        return results
 
     def create_composite(self, transects, norm_data, threshold):
         """Compute normalized data for measurement composite.
@@ -272,24 +401,31 @@ class NormData(object):
         # Determine number of cells and ensembles for each transect
         for data in norm_data:
             n_cells.append(data.unit_normalized.shape[0])
-            n_ens.append(data.unit_normalized.shape[1])
+            try:
+                n_ens.append(data.unit_normalized.shape[1])
+            except IndexError:
+                n_ens.append(1)
         max_cells = max(n_cells)
         sum_ens = np.cumsum(n_ens)
 
         # Initialize normalized variables
         self.unit_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
         self.cell_depth_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
+        self.weights = np.tile([np.nan], (max_cells, sum_ens[-1]))
 
         # Process each transect using data from only the checked transects
         for n in range(len(transects)):
             if transects[n].checked:
                 self.unit_normalized[:n_cells[n], np.arange(sum_ens[n], sum_ens[n + 1])] \
                     = norm_data[n].unit_normalized
+                self.weights[:n_cells[n], np.arange(sum_ens[n], sum_ens[n + 1])] \
+                    = norm_data[n].weights
                 self.cell_depth_normalized[:n_cells[n], np.arange(sum_ens[n], sum_ens[n + 1])] \
                     = norm_data[n].cell_depth_normalized
                 # if self.data_extent is None:
                 self.data_extent = norm_data[n].data_extent
                 self.data_type = norm_data[n].data_type
+                self.use_weighted = norm_data[n].use_weighted
 
         # Store data
         self.file_name = 'Measurement'

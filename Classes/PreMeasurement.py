@@ -169,15 +169,18 @@ class PreMeasurement(object):
            """
         system_tst = []
         if hasattr(meas_struct, 'sysTest'):
-            if type(meas_struct.sysTest) == np.ndarray:
-                for test in meas_struct.sysTest:
+            try:
+                if type(meas_struct.sysTest) == np.ndarray:
+                    for test in meas_struct.sysTest:
+                        tst = PreMeasurement()
+                        tst.sys_tst_populate_from_qrev_mat(test)
+                        system_tst.append(tst)
+                elif len(meas_struct.sysTest.data) > 0:
                     tst = PreMeasurement()
-                    tst.sys_tst_populate_from_qrev_mat(test)
+                    tst.sys_tst_populate_from_qrev_mat(meas_struct.sysTest)
                     system_tst.append(tst)
-            elif len(meas_struct.sysTest.data) > 0:
-                tst = PreMeasurement()
-                tst.sys_tst_populate_from_qrev_mat(meas_struct.sysTest)
-                system_tst.append(tst)
+            except AttributeError:
+                pass
         return system_tst
 
     def sys_tst_populate_from_qrev_mat(self, test_in):

@@ -707,7 +707,7 @@ class Oursin(object):
             Object of class Measurement
         """
 
-        self.u_contribution_meas = pd.DataFrame(columns=['boat', 'water', 'depths', 'dzi'])
+        self.u_contribution_meas = pd.DataFrame(columns=['boat', 'water', 'dzi'])
 
         # Set uncertainty of cell size
         if self.user_advanced_settings['dzi_prct_user'] is not None:
@@ -719,7 +719,7 @@ class Oursin(object):
         for transect_id in self.checked_idx:
             # Relative depth error due to vertical velocity of boat
             # TODO this does not belong in the measured area, only affects bottom and edges
-            relative_error_depth = self.depth_error_boat_motion(meas.transects[transect_id])
+            # relative_error_depth = self.depth_error_boat_motion(meas.transects[transect_id])
 
             # Relative standard deviation of error velocity (Water Track)
             std_ev_wt_ens = self.water_std_by_error_velocity(meas.transects[transect_id])
@@ -749,10 +749,10 @@ class Oursin(object):
             n_cell_ens = np.where(n_cell_ens == 0, np.nan, n_cell_ens)
 
             # Variance for each ensembles
-            u_2_meas = q_2_ens * (relative_error_depth ** 2 + u_boat ** 2 +
-                                  (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_dzi ** 2))
+            # u_2_meas = q_2_ens * (relative_error_depth ** 2 + u_boat ** 2 +
+            #                       (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_dzi ** 2))
             # TODO DSM I would have computed as follows
-            # u_2_meas = q_2_ens * (u_boat ** 2 + (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_prct_dzi ** 2))
+            u_2_meas = q_2_ens * (u_boat ** 2 + (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_dzi ** 2))
 
             u_2_prct_meas = np.nansum(u_2_meas) / q_2_tran
 
@@ -762,16 +762,19 @@ class Oursin(object):
 
             # Compute the contribution of all terms to u_meas (sum of a0 to g0 =1)
             u_contrib_boat = (np.nan_to_num(q_2_ens * (u_boat ** 2)).sum() / q_2_tran) / u_2_prct_meas
-            u_contrib_depth = (np.nan_to_num(q_2_ens * (relative_error_depth ** 2)).sum()
-                               / q_2_tran) / u_2_prct_meas
+            # u_contrib_depth = (np.nan_to_num(q_2_ens * (relative_error_depth ** 2)).sum()
+            #                    / q_2_tran) / u_2_prct_meas
             u_contrib_water = (np.nan_to_num(q_2_ens * ((1 / n_cell_ens) * (std_ev_wt_ens ** 2))).sum()
                                / q_2_tran) / u_2_prct_meas
             u_contrib_dzi = (np.nan_to_num(q_2_ens * ((1 / n_cell_ens) * (u_dzi ** 2))).sum()
                              / q_2_tran) / u_2_prct_meas
 
+            # self.u_contribution_meas.loc[len(self.u_contribution_meas)] = [u_contrib_boat,
+            #                                                                u_contrib_water,
+            #                                                                u_contrib_depth,
+            #                                                                u_contrib_dzi]
             self.u_contribution_meas.loc[len(self.u_contribution_meas)] = [u_contrib_boat,
                                                                            u_contrib_water,
-                                                                           u_contrib_depth,
                                                                            u_contrib_dzi]
 
         # Apply user specified uncertainty
@@ -1125,6 +1128,7 @@ class Oursin(object):
 
             for trans_id in self.checked_idx:
                 # Compute min values
+                #TODO if depth uncertianty were included a copy of transects[trans_id] would need to be made with the adjusted depth values
                 q.populate_data(data_in=meas.transects[trans_id],
                                 top_method='Constant',
                                 bot_method='No Slip',

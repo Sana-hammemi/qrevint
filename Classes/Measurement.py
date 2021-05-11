@@ -14,6 +14,7 @@ from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.Uncertainty import Uncertainty
 from Classes.QAData import QAData
 from Classes.BoatStructure import BoatStructure
+from Classes.NormData import  NormData
 from Classes.Oursin import Oursin
 # from Classes.Oursin_orig import Oursin_orig
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
@@ -56,10 +57,12 @@ class Measurement(object):
         List of all user supplied comments
     ext_temp_chk: dict
         Dictionary of external temperature readings
+    use_weighted: bool
+        Indicates the setting for use_weighted to be used for reprocessing
     """
 
     # @profile
-    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False):
+    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -77,6 +80,8 @@ class Measurement(object):
             TRDI data.
         run_oursin: bool
             Determines if the Oursin uncertainty model should be run
+        use_weighted: bool
+            Specifies if discharge weighted medians are used for extrapolation
         """
 
         self.run_oursin = run_oursin
@@ -93,11 +98,12 @@ class Measurement(object):
         self.uncertainty = None
         self.initial_settings = None
         self.qa = None
-        self.user_rating = None
+        self.user_rating = 'Not Rated'
         self.comments = []
         self.ext_temp_chk = {'user': np.nan, 'units': 'C', 'adcp': np.nan, 'user_orig': np.nan, 'adcp_orig': np.nan}
         self.checked_transect_idx = []
         self.oursin = None
+        self.use_weighted = use_weighted
 
         # Load data from selected source
         if source == 'QRev':
@@ -144,8 +150,7 @@ class Measurement(object):
                 # Set processing type
                 if proc_type == 'QRev':
                     # Apply QRev default settings
-                    settings = self.qrev_default_settings(check_user_excluded_dist=True)
-
+                    settings = self.qrev_default_settings(check_user_excluded_dist=True, use_weighted=use_weighted)
                     settings['Processing'] = 'QRev'
                     self.apply_settings(settings)
 
@@ -167,9 +172,9 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
 
                 self.qa = QAData(self)
-                # if self.run_oursin:
-                #     self.oursin = Oursin()
-                #     self.oursin.compute_oursin(self)
+                if self.run_oursin:
+                    self.oursin = Oursin()
+                    self.oursin.compute_oursin(self)
                 #
                 # self.oursin_orig = Oursin_orig()
                 # self.oursin_orig.compute_oursin(self)
@@ -451,9 +456,15 @@ class Measurement(object):
         # Site information pulled from last file
         if hasattr(rsdata, 'SiteInfo'):
             if hasattr(rsdata.SiteInfo, 'Site_Name'):
-                self.station_name = rsdata.SiteInfo.Site_Name
+                if len(rsdata.SiteInfo.Site_Name) > 0:
+                    self.station_name = rsdata.SiteInfo.Site_Name
+                else:
+                    self.station_name = ''
             if hasattr(rsdata.SiteInfo, 'Station_Number'):
-                self.station_number = rsdata.SiteInfo.Station_Number
+                if len(rsdata.SiteInfo.Station_Number) > 0:
+                    self.station_number = rsdata.SiteInfo.Station_Number
+                else:
+                    self.station_number = ''
 
         self.qaqc_sontek(pathname)
 
@@ -666,20 +677,13 @@ class Measurement(object):
         self.system_tst = PreMeasurement.sys_test_qrev_mat_in(meas_struct)
 
         # no compass cal compassCal is mat_struct with len(data) = 0
-        if type(meas_struct.compassCal) is np.ndarray:
+        try:
             self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        elif len(meas_struct.compassCal.data) > 0:
-            self.compass_cal = PreMeasurement.cc_qrev_mat_in(meas_struct)
-        else:
+        except AttributeError:
             self.compass_cal = []
 
         try:
-            if type(meas_struct.compassEval) is np.ndarray:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            elif len(meas_struct.compassEval.data) > 0:
-                self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
-            else:
-                self.compass_eval = []
+            self.compass_eval = PreMeasurement.ce_qrev_mat_in(meas_struct)
         except AttributeError:
             self.compass_eval = []
 
@@ -687,6 +691,31 @@ class Measurement(object):
         self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
+
+        # # For compatibility with files saved prior to the implementation of the discharge weighted median option
+        # if self.extrap_fit.norm_data[-1].weights is None:
+        #     # Compute normalized data for each transect to obtain the weights
+        #     for n, transect in enumerate(self.transects):
+        #         norm_data_temp = NormData()
+        #         norm_data_temp.populate_data(transect=transect,
+        #                                 data_type=self.extrap_fit.norm_data[n].data_type,
+        #                                 threshold=self.extrap_fit.threshold,
+        #                                 data_extent=self.extrap_fit.subsection,
+        #                                 use_weighted=self.extrap_fit.use_weighted,
+        #                                 sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
+        #                                 use_q=self.extrap_fit.norm_data[n].use_q)
+        #         # Update the norm_data with the newly computed weights, however, the weights are not used until the
+        #         # user changes the option in the GUI
+        #         self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
+        #
+        #     # Compute composite normalized data to get the composite weights
+        #     norm_data_temp = NormData()
+        #     norm_data_temp.create_composite(transects=self.transects,
+        #                                     norm_data=self.extrap_fit.norm_data[0:-1],
+        #                                     threshold=self.extrap_fit.threshold)
+        #     # Update the norm_data with newly computed weights
+        #     self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
         # For compatibility with older QRev.mat files that didn't have this feature
@@ -1165,6 +1194,32 @@ class Measurement(object):
         # interpolations because the TRDI approach for power/power
         # using the power curve and exponent to estimate invalid cells.
 
+        if settings['UseWeighted'] and not self.use_weighted:
+            if self.extrap_fit.norm_data[-1].weights is None:
+                # Compute normalized data for each transect to obtain the weights
+                self.extrap_fit.process_profiles(self.transects, self.extrap_fit.norm_data[-1].data_type,
+                                                 use_weighted=settings['UseWeighted'])
+            # self.extrap_fit.norm_data = []
+            # for n, transect in enumerate(self.transects):
+            #     self.extrap_fit.norm_data[n] = NormData()
+            #     self.extrap_fit.norm_data[n].populate_data(transect=transect,
+            #                             data_type=self.extrap_fit.norm_data[n].data_type,
+            #                             threshold=self.extrap_fit.threshold,
+            #                             data_extent=self.extrap_fit.subsection,
+            #                             use_weighted=self.extrap_fit.use_weighted,
+            #                             sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
+            #                             use_q=self.extrap_fit.norm_data[n].use_q)
+            #
+            # # Compute composite normalized data to get the composite weights
+            # norm_data_temp = NormData()
+            # norm_data_temp.create_composite(transects=self.transects,
+            #                                 norm_data=self.extrap_fit.norm_data[0:-1],
+            #                                 threshold=self.extrap_fit.threshold)
+            # # Update the norm_data with newly computed weights
+            # self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+
+        self.use_weighted = settings['UseWeighted']
+
         if len(self.checked_transect_idx) > 0:
             ref_transect = self.checked_transect_idx[0]
         else:
@@ -1173,10 +1228,13 @@ class Measurement(object):
         if self.transects[ref_transect].w_vel.interpolate_cells == 'TRDI':
             if self.extrap_fit is None:
                 self.extrap_fit = ComputeExtrap()
-                self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+                self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
+                                              use_weighted=settings['UseWeighted'])
+                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                          use_weighted=settings['UseWeighted'])
             elif self.extrap_fit.fit_method == 'Automatic':
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                          use_weighted=settings['UseWeighted'])
             else:
                 if 'extrapTop' not in settings.keys():
                     settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
@@ -1187,7 +1245,8 @@ class Measurement(object):
                                       top=settings['extrapTop'],
                                       bot=settings['extrapBot'],
                                       exp=settings['extrapExp'],
-                                      compute_q=False)
+                                      compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
 
         for transect in self.transects:
 
@@ -1198,10 +1257,13 @@ class Measurement(object):
 
         if self.extrap_fit is None:
             self.extrap_fit = ComputeExtrap()
-            self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+            self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
+                                          use_weighted=settings['UseWeighted'])
+            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
         elif self.extrap_fit.fit_method == 'Automatic':
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False)
+            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                                      use_weighted=settings['UseWeighted'])
         else:
             if 'extrapTop' not in settings.keys():
                 settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
@@ -1212,7 +1274,8 @@ class Measurement(object):
                                   top=settings['extrapTop'],
                                   bot=settings['extrapBot'],
                                   exp=settings['extrapExp'],
-                                  compute_q=False)
+                                  compute_q=False,
+                                  use_weighted=settings['UseWeighted'])
 
         self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
         self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
@@ -1341,14 +1404,18 @@ class Measurement(object):
             settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
             settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
             settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
-        
+
+        # Use of self.use_weighted allows a QRev mat file to be loaded and initially processed with the settings from
+        # the QRev file but upon reprocessing the self.use_weights will be set to the options setting for use_weights
+        settings['UseWeighted'] = self.use_weighted
+
         # Edge Settings
         settings['edgeVelMethod'] = transect.edges.vel_method
         settings['edgeRecEdgeMethod'] = transect.edges.rec_edge_method
         
         return settings
 
-    def qrev_default_settings(self, check_user_excluded_dist=False):
+    def qrev_default_settings(self, check_user_excluded_dist=False, use_weighted=False):
         """QRev default and filter settings for a measurement.
         """
 
@@ -1444,6 +1511,7 @@ class Measurement(object):
         settings['extrapTop'] = 'Power'
         settings['extrapBot'] = 'Power'
         settings['extrapExp'] = 0.1667
+        settings['UseWeighted'] = use_weighted
 
         return settings
 
@@ -1567,8 +1635,9 @@ class Measurement(object):
         self.uncertainty = Uncertainty()
         self.uncertainty.compute_uncertainty(self)
         self.qa = QAData(self)
-        self.oursin = Oursin()
-        self.oursin.compute_oursin(self)
+        if self.run_oursin:
+            self.oursin = Oursin()
+            self.oursin.compute_oursin(self)
 
     def compute_discharge(self):
         """Computes the discharge for all transects in the measurement.
@@ -1695,7 +1764,8 @@ class Measurement(object):
 
         return settings
 
-    def change_extrapolation(self, method, top=None, bot=None, exp=None, extents=None, threshold=None, compute_q=True):
+    def change_extrapolation(self, method, top=None, bot=None, exp=None, extents=None, threshold=None, compute_q=True,
+                             use_weighted=False):
         """Applies the selected extrapolation method to each transect.
 
         Parameters
@@ -1714,6 +1784,8 @@ class Measurement(object):
             Percent of discharge, does not account for transect direction
         compute_q: bool
             Specifies if the discharge should be computed
+        use_weighted: bool
+            Specifies is discharge weighting is used
         """
 
         if top is None:
@@ -1735,10 +1807,10 @@ class Measurement(object):
             self.extrap_fit.fit_method = 'Manual'
             for transect in self.transects:
                 transect.extrap.set_extrap_data(top=top, bot=bot, exp=exp)
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type)
+            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
         else:
             self.extrap_fit.fit_method = 'Automatic'
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type)
+            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
             for transect in self.transects:
                 transect.extrap.set_extrap_data(top=self.extrap_fit.sel_fit[-1].top_method,
                                                 bot=self.extrap_fit.sel_fit[-1].bot_method,
@@ -1790,15 +1862,15 @@ class Measurement(object):
                 int_cells_q.append(self.discharge[n].int_cells)
                 int_ensembles_q.append(self.discharge[n].int_ens)
 
-        discharge = {'total_mean': np.mean(total_q),
-                     'uncorrected_mean': np.mean(uncorrected_q),
-                     'top_mean': np.mean(top_q),
-                     'mid_mean': np.mean(mid_q),
-                     'bot_mean': np.mean(bot_q),
-                     'left_mean': np.mean(left_q),
-                     'right_mean': np.mean(right_q),
-                     'int_cells_mean': np.mean(int_cells_q),
-                     'int_ensembles_mean': np.mean(int_ensembles_q)}
+        discharge = {'total_mean': np.nanmean(total_q),
+                     'uncorrected_mean': np.nanmean(uncorrected_q),
+                     'top_mean': np.nanmean(top_q),
+                     'mid_mean': np.nanmean(mid_q),
+                     'bot_mean': np.nanmean(bot_q),
+                     'left_mean': np.nanmean(left_q),
+                     'right_mean': np.nanmean(right_q),
+                     'int_cells_mean': np.nanmean(int_cells_q),
+                     'int_ensembles_mean': np.nanmean(int_ensembles_q)}
 
         return discharge
 
@@ -2599,6 +2671,14 @@ class Measurement(object):
         # (4) Exponent Node
         temp = self.transects[self.checked_transect_idx[0]].extrap.exponent
         ETree.SubElement(extrap, 'Exponent', type='double').text = '{:.4f}'.format(temp)
+
+        # (4) Discharge weighted medians
+        temp = self.extrap_fit.use_weighted
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(extrap, 'UseWeighted', type='char').text = temp
 
         # (3) Sensor Node
         sensor = ETree.SubElement(processing, 'Sensor')
