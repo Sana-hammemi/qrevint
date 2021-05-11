@@ -11,7 +11,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, QRegExp
 from datetime import datetime
 from contextlib import contextmanager
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as\
+    NavigationToolbar
 from MiscLibs.common_functions import units_conversion, convert_temperature
 from Classes.stickysettings import StickySettings as SSet
 from Classes.Measurement import Measurement
@@ -55,10 +56,12 @@ from UI.EdgeEns import EdgeEns
 from UI.UMeasurement import UMeasurement
 from UI.UMeasQ import UMeasQ
 from UI.MplCanvas import MplCanvas
+from UI.Disclaimer import Disclaimer
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
-    """This the primary class controlling the user interface which then controls the computational code.
+    """This the primary class controlling the user interface which then
+    controls the computational code.
 
 
     Attributes
@@ -100,7 +103,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     sticky_settings: SSet
         Object of StickySettings class
     units: dict
-        Dictionary containing units coversions and labels for length, area, velocity, and discharge
+        Dictionary containing units coversions and labels for length, area,
+        velocity, and discharge
     save_stylesheet: bool
         Indicates whether to save a stylesheet with the measurement
     icon_caution: QtGui.QIcon
@@ -114,7 +118,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     icon_unChecked: QtGui.QIcon
         Unchecked icon
     save_all: bool
-        Indicates if all transects should be save (True) or only the checked transects (False)
+        Indicates if all transects should be save (True) or only the checked
+        transects (False)
     QRev_version: str
         QRev version number
     current_tab: str
@@ -142,11 +147,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     invalid_gps: np.array(bool)
         Array to facilitate sharing of invalid gps data among some methods
     invalid_wt: np.array(bool)
-        Array to facilitate sharing of invalid water track data among some methods
+        Array to facilitate sharing of invalid water track data among some
+        methods
     wt_max_limit: float
-        Maximum water speed to allow consistent scaling of color contour graphs on same tab
+        Maximum water speed to allow consistent scaling of color contour
+        graphs on same tab
     extrap_meas: Measurement
-        Copy of measurement to allow resetting of changes made on the extrap tab
+        Copy of measurement to allow resetting of changes made on the extrap
+        tab
     start_bank: str
         Start bank for selected transect used in graphics methods
     idx: int
@@ -331,7 +339,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Uncertainty measurement figure
     uncertainty_measurement_toolbar: NavigationToolbar
         Uncertainty measurement toolbar
+    rating_prompt: bool
+        Indicates that the user should be prompted to rate the measurement
+        when saving
+    use_weighted: bool
+        Indicates if the discharge weighted medians should be used to
+        determine the extrapolation
+    agreement: bool
+        Indicates that the user has agreed to the disclaimer and license
     """
+
     handle_args_trigger = pyqtSignal()
     gui_initialized = False
     command_arg = ""
@@ -344,7 +361,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         parent: QWidget
             Parent object
         groupings: list
-            List of lists containing the transect indices that make up individual measurements
+            List of lists containing the transect indices that make up
+            individual measurements
         data: Measurement
             Object of Measurement class
         caller: object
@@ -354,9 +372,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.23'
+        self.QRev_version = 'QRev 4.26'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
+        show_disclaimer = False
 
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
@@ -364,7 +383,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setting file for settings to carry over from one session to the next
         # (examples: Folder, UnitsID)
         self.settingsFile = 'QRev_Settings'
-        # Create settings object which contains the default values from previous use
+        # Create settings object which contains the default values from
+        # previous use
         self.sticky_settings = SSet(self.settingsFile)
 
         # Set units based on previous session or default to English
@@ -374,10 +394,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.sticky_settings.set('UnitsID', 'English')
         except KeyError:
             self.sticky_settings.new('UnitsID', 'English')
-        self.units = units_conversion(units_id=self.sticky_settings.get('UnitsID'))
+        self.units = units_conversion(units_id=self.sticky_settings.get(
+            'UnitsID'))
 
         # Save all transects by default
         self.save_all = True
+
+        # Use unweighted medians for extrapolation by default
+        # Commenting out for now so it always defaults to False.
+        try:
+            wght = self.sticky_settings.get('UseWeighted')
+        #    self.use_weighted = wght
+        except KeyError:
+            self.sticky_settings.new('UseWeighted', False)
+            self.use_weighted = False
+        self.use_weighted = False
 
         # Stylesheet setting
         try:
@@ -386,6 +417,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         except KeyError:
             self.sticky_settings.new('StyleSheet', False)
             self.save_stylesheet = False
+
+        # Prompt for user rating
+        try:
+            ss = self.sticky_settings.get('UserRating')
+            self.rating_prompt = ss
+        except KeyError:
+            self.sticky_settings.new('UserRating', False)
+            self.rating_prompt = False
 
         # Set initial change switch to false
         self.change = False
@@ -450,21 +489,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Setup indicator icons
         self.icon_caution = QtGui.QIcon()
-        self.icon_caution.addPixmap(QtGui.QPixmap(":/images/24x24/Warning.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.icon_caution.addPixmap(QtGui.QPixmap(
+            ":/images/24x24/Warning.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         self.icon_warning = QtGui.QIcon()
-        self.icon_warning.addPixmap(QtGui.QPixmap(":/images/24x24/Alert.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.icon_warning.addPixmap(QtGui.QPixmap(
+            ":/images/24x24/Alert.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         self.icon_good = QtGui.QIcon()
-        self.icon_good.addPixmap(QtGui.QPixmap(":/images/24x24/Yes.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.icon_good.addPixmap(QtGui.QPixmap(
+            ":/images/24x24/Yes.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         self.icon_allChecked = QtGui.QIcon()
-        self.icon_allChecked.addPixmap(QtGui.QPixmap(":/images/24x24/check-mark-green.png"),
-                                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.icon_allChecked.addPixmap(QtGui.QPixmap(
+            ":/images/24x24/check-mark-green.png"),
+            QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         self.icon_unChecked = QtGui.QIcon()
-        self.icon_unChecked.addPixmap(QtGui.QPixmap(":/images/24x24/check-mark-orange.png"),
-                                      QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.icon_unChecked.addPixmap(QtGui.QPixmap(
+            ":/images/24x24/check-mark-orange.png"),
+            QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         self.run_oursin = False
         self.checked_transects_idx = []
@@ -584,6 +628,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.extrap_initialized = False
         self.edges_initialized = False
         self.edi_initialized = False
+        self.gps_bt_initialized = False
 
         # Special commands to ensure proper operation on Windows 10
         if QtCore.QSysInfo.windowsVersion() == QtCore.QSysInfo.WV_WINDOWS10:
@@ -622,15 +667,35 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.actionSave.triggered.connect(self.save_measurement)
 
         # Remove uncertainty tab
-        self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+        self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(
+            QtWidgets.QWidget, 'tab_uncertainty')))
 
         # Show QRev maximized on the display
         self.showMaximized()
 
+        if show_disclaimer:
+            try:
+                self.agreement = self.sticky_settings.get('Agreement')
+                if not self.agreement:
+                    self.close()
+            except KeyError:
+                # Open disclaimer and license
+                disclaimer = Disclaimer(self)
+                disclaimer_exec = disclaimer.exec_()
+                if disclaimer_exec:
+                    self.sticky_settings.new('Agreement', True)
+                    self.agreement = True
+                else:
+                    self.agreement = False
+                    self.close()
+        else:
+            self.agreement = True
+
     # Toolbar functions
     # =================
     def select_measurement(self):
-        """Opens a dialog to allow the user to load measurement file(s) for viewing or processing.
+        """Opens a dialog to allow the user to load measurement file(s) for
+         viewing or processing.
         """
 
         # Open dialog
@@ -644,47 +709,55 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == 'SonTek':
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ': ' + select.pathName)
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.pathName)
                     # Create measurement object
                     try:
                         self.meas = Measurement(in_file=select.fullName,
                                                 source='SonTek',
                                                 proc_type='QRev',
-                                                run_oursin=self.run_oursin)
+                                                run_oursin=self.run_oursin,
+                                                use_weighted=self.use_weighted)
                     except CoordError as error:
                         self.popup_message(error.text)
             # Load and process Sontek data
             if select.type == 'Nortek':
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ': ' + select.pathName)
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.pathName)
                     # Create measurement object
                     self.meas = Measurement(in_file=select.fullName,
                                             source='Nortek',
                                             proc_type='QRev',
-                                            run_oursin=self.run_oursin)
+                                            run_oursin=self.run_oursin,
+                                            use_weighted=self.use_weighted)
 
             # Load and process TRDI data
             elif select.type == 'TRDI':
                 with self.wait_cursor():
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(self.QRev_version + ': ' + select.fullName[0])
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.fullName[0])
                     # Create measurement object
                     self.meas = Measurement(in_file=select.fullName[0],
                                             source='TRDI',
                                             proc_type='QRev',
                                             checked=select.checked,
-                                            run_oursin=self.run_oursin)
+                                            run_oursin=self.run_oursin,
+                                            use_weighted=self.use_weighted)
 
             # Load QRev data
             elif select.type == 'QRev':
                 # Show QRev filename in GUI header
-                self.setWindowTitle(self.QRev_version + ': ' + select.fullName[0])
+                self.setWindowTitle(self.QRev_version + ': ' +
+                                    select.fullName[0])
                 mat_data = sio.loadmat(select.fullName[0],
                                        struct_as_record=False,
                                        squeeze_me=True)
 
-                # Check QRev version and display message for update if appropriate
+                # Check QRev version and display message for update if
+                # appropriate
                 if not self.QRev_version == mat_data['version']:
                     message = 'QRev has been updated (version ' + self.QRev_version + \
                               ') since this file was saved (version ' + mat_data['version'] + \
@@ -705,69 +778,118 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.meas = Measurement(in_file=mat_data,
                                                     source='QRev',
                                                     proc_type='QRev',
-                                                    run_oursin=self.run_oursin)
+                                                    run_oursin=self.run_oursin,
+                                                    use_weighted=self.use_weighted)
                 else:
                     self.meas = Measurement(in_file=mat_data,
                                             source='QRev',
                                             proc_type='None',
-                                            run_oursin=self.run_oursin)
+                                            run_oursin=self.run_oursin,
+                                            use_weighted=self.use_weighted)
+                # Set use_weighted value in Measurement based on options setting. This setting will be applied
+                # the next time the measurement is recomputed. This allows the loaded setting to be used
+                # intially for QRev loaded files but applies the options setting on any reprocessing
+                self.meas.use_weighted = self.use_weighted
 
             if self.meas is not None:
-                with self.wait_cursor():
-                    # Identify transects to be used in discharge computation
-                    self.checked_transects_idx = Measurement.checked_transects(self.meas)
 
-                    # Determine if external heading is included in the data
-                    self.h_external_valid = Measurement.h_external_valid(self.meas)
+                # Identify transects to be used in discharge computation
+                self.checked_transects_idx = Measurement.checked_transects(self.meas)
+                if len(self.checked_transects_idx) > 0:
+                    with self.wait_cursor():
 
-                    # Initialize GUI
-                    self.tab_settings = {'tab_bt': 'Default',
-                                         'tab_wt': 'Default',
-                                         'tab_depth': 'Default',
-                                         'tab_extrap': 'Default',
-                                         'tab_tempsal': 'Default',
-                                         'tab_gps': 'Default'}
+                        # Determine if external heading is included in the data
+                        self.h_external_valid = Measurement.h_external_valid(self.meas)
+
+                        # Initialize GUI
+                        self.tab_settings = {'tab_bt': 'Default',
+                                             'tab_wt': 'Default',
+                                             'tab_depth': 'Default',
+                                             'tab_extrap': 'Default',
+                                             'tab_tempsal': 'Default',
+                                             'tab_gps': 'Default'}
+                        self.transect_row = 0
+                        self.config_gui()
+                        self.change = True
+                        self.tab_manager(tab_idx=0)
+                        # self.set_tab_color()
+                else:
                     self.transect_row = 0
                     self.config_gui()
                     self.change = True
-                    self.tab_manager(tab_idx='Main')
-                    # self.set_tab_color()
+                    self.tab_manager(tab_idx=0)
 
     def save_measurement(self):
         """Save measurement in Matlab format.
         """
-        # Create default file name
-        save_file = SaveMeasurementDialog(parent=self)
 
-        if len(save_file.full_Name) > 0:
-            # Add comment when saving file
-            time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            user_name = getpass.getuser()
-            discharge = Measurement.mean_discharges(self.meas)
-            text = '[' + time_stamp + ', ' + user_name + ']: File Saved Q = ' \
-                   + '{:8.2f}'.format(discharge['total_mean'] * self.units['Q']) + ' ' + self.units['label_Q'][1:-1]\
-                   + ' (Uncertainty: ' + '{:4.1f}'.format(self.meas.uncertainty.total_95_user) + '%)'
-            self.meas.comments.append(text)
-            self.comments_tab()
+        if len(self.checked_transects_idx) > 0:
+            if self.rating_prompt:
+                # Intialize dialog
+                rating_dialog = Rating(self)
+                rating_dialog.uncertainty_value.setText('{:4.1f}'.format(self.meas.uncertainty.total_95_user))
+                if self.meas.uncertainty.total_95_user < 3:
+                    rating_dialog.rb_excellent.setChecked(True)
+                elif self.meas.uncertainty.total_95_user < 5.01:
+                    rating_dialog.rb_good.setChecked(True)
+                elif self.meas.uncertainty.total_95_user < 8.01:
+                    rating_dialog.rb_fair.setChecked(True)
+                else:
+                    rating_dialog.rb_poor.setChecked(True)
+                rating_entered = rating_dialog.exec_()
 
-            # Save data in Matlab format
-            if self.save_all:
-                Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version)
-            else:
-                Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version,
-                                               checked=self.checked_transects_idx)
+                # If data entered.
+                with self.wait_cursor():
+                    if rating_entered:
+                        if rating_dialog.rb_excellent.isChecked():
+                            rating = 'Excellent'
+                        elif rating_dialog.rb_good.isChecked():
+                            rating = 'Good'
+                        elif rating_dialog.rb_fair.isChecked():
+                            rating = 'Fair'
+                        else:
+                            rating = 'Poor'
 
-            # Save xml file
-            self.meas.xml_output(self.QRev_version, save_file.full_Name[:-4] + '.xml')
+                # Create default file name
+                if rating_entered:
+                    self.meas.user_rating = rating
 
-            # Save stylesheet in measurement folder
-            if self.save_stylesheet:
-                stylesheet_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'QRevStylesheet.xsl')
-                meas_folder, _ = os.path.split(save_file.full_Name)
-                shutil.copy2(stylesheet_file, meas_folder)
+            save_file = SaveMeasurementDialog(parent=self)
 
+            if len(save_file.full_Name) > 0:
+                # Add comment when saving file
+                time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                user_name = getpass.getuser()
+                discharge = Measurement.mean_discharges(self.meas)
+                text = '[' + time_stamp + ', ' + user_name + ']: File Saved Q = ' \
+                       + '{:8.2f}'.format(discharge['total_mean'] * self.units['Q']) + ' ' + self.units['label_Q'][1:-1]\
+                       + ' (Uncertainty: ' + '{:4.1f}'.format(self.meas.uncertainty.total_95_user) + '%)'
+                self.meas.comments.append(text)
+                self.comments_tab()
+
+                # Save data in Matlab format
+                if self.save_all:
+                    Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version)
+                else:
+                    Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version,
+                                                   checked=self.checked_transects_idx)
+
+                # Save xml file
+                self.meas.xml_output(self.QRev_version, save_file.full_Name[:-4] + '.xml')
+
+                # Save stylesheet in measurement folder
+                if self.save_stylesheet:
+                    stylesheet_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'QRevStylesheet.xsl')
+                    meas_folder, _ = os.path.split(save_file.full_Name)
+                    shutil.copy2(stylesheet_file, meas_folder)
+
+                # Notify user save is complete
+                QtWidgets.QMessageBox.about(self, "Save", "Files (*_QRev.mat and *_QRev.xml) have been saved.")
+
+                self.uncertainty_table()
+        else:
             # Notify user save is complete
-            QtWidgets.QMessageBox.about(self, "Save", "Files (*_QRev.mat and *_QRev.xml) have been saved.")
+            QtWidgets.QMessageBox.warning(self, "Save", "No transects are selected. Save cancelled.")
 
     def add_comment(self):
         """Add comment triggered by actionComment
@@ -803,18 +925,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Store selected transect indices
                 self.checked_transects_idx = selected_transects
+                if len(self.checked_transects_idx) > 0:
+                    # Update measurement based on the currently selected transects
+                    Measurement.selected_transects_changed(self.meas, self.checked_transects_idx)
 
-                # Update measurement based on the currently selected transects
-                Measurement.selected_transects_changed(self.meas, self.checked_transects_idx)
+                    # Update the transect select icon on the toolbar
+                    self.update_toolbar_trans_select()
 
-                # Update the transect select icon on the toolbar
+                    # Update display
+                    self.transect_row = 0
+                    self.config_gui()
+                    self.change = True
+                    self.tab_manager()
+
+            if len(self.checked_transects_idx) == 0:
+                # Notify user
+                QtWidgets.QMessageBox.warning(self, "Select", "No transects are selected. ")
                 self.update_toolbar_trans_select()
-
-                # Update display
-                self.transect_row = 0
-                self.config_gui()
-                self.change = True
-                self.tab_manager()
 
     def set_ref_bt(self):
         """Changes the navigation reference to Bottom Track
@@ -925,6 +1052,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_stylesheet.setChecked(False)
 
+        if self.use_weighted:
+            options.cb_weighted_extrap.setChecked(True)
+        else:
+            options.cb_weighted_extrap.setChecked(False)
+
+        if self.rating_prompt:
+            options.cb_rating.setChecked(True)
+        else:
+            options.cb_rating.setChecked(False)
+
         # Execute the options window
         rsp = options.exec_()
 
@@ -958,6 +1095,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.save_stylesheet = False
                     self.sticky_settings.set('StyleSheet', False)
+
+                # Prompt for user rating
+                if options.cb_rating.isChecked():
+                    self.rating_prompt = True
+                    self.sticky_settings.set('UserRating', True)
+                else:
+                    self.rating_prompt = False
+                    self.sticky_settings.set('UserRating', False)
+
+                # Use of weighted medians for extrapolation fit
+                if options.cb_weighted_extrap.isChecked():
+                    use_weighted = True
+                else:
+                    use_weighted = False
+
+                # Check for change
+                if self.use_weighted == use_weighted:
+                    self.change = False
+                # If change made with measurement loaded recompute measurement
+                elif self.meas is not None:
+                    settings = self.meas.current_settings()
+                    settings['UseWeighted'] = use_weighted
+                    self.meas.apply_settings(settings)
+                    self.sticky_settings.set('UseWeighted', use_weighted)
+                    self.use_weighted = use_weighted
+                    self.change = True
+                # If change made before measurement loaded, set value
+                else:
+                    self.use_weighted = use_weighted
+                    self.sticky_settings.set('UseWeighted', use_weighted)
+
                 # Update tabs
                 self.tab_manager()
 
@@ -994,7 +1162,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.addButton(self.tr('Cancel'), msg.ActionRole)
         # msg.setInformativeText('Select option:')
         msg.setWindowTitle("Help Documents")
-        msg.setWindowIcon(QtGui.QIcon('QRev.ico'))
+        msg.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         msg.exec_()
 
         help_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Help')
@@ -1013,74 +1181,79 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_main(self):
         """Update Gui
         """
-        with self.wait_cursor():
-            # If this is the first time this tab is used setup interface connections
-            if not self.main_initialized:
-                self.main_table_summary.cellClicked.connect(self.select_transect)
-                self.main_table_details.cellClicked.connect(self.select_transect)
-                self.ed_site_name.editingFinished.connect(self.update_site_name)
-                self.ed_site_number.editingFinished.connect(self.update_site_number)
-                self.table_settings.cellClicked.connect(self.settings_table_row_adjust)
-                self.table_adcp.cellClicked.connect(self.refocus)
-                self.table_premeas.cellClicked.connect(self.refocus)
+        if len(self.checked_transects_idx) > 0:
+            with self.wait_cursor():
+                # If this is the first time this tab is used setup interface connections
+                if not self.main_initialized:
+                    self.main_table_summary.cellClicked.connect(self.select_transect)
+                    self.main_table_details.cellClicked.connect(self.select_transect)
+                    self.ed_site_name.editingFinished.connect(self.update_site_name)
+                    self.ed_site_number.editingFinished.connect(self.update_site_number)
+                    self.table_settings.cellClicked.connect(self.settings_table_row_adjust)
+                    self.table_adcp.cellClicked.connect(self.refocus)
+                    self.table_premeas.cellClicked.connect(self.refocus)
 
-                # Main tab has been initialized
-                self.main_initialized = True
+                    # Main tab has been initialized
+                    self.main_initialized = True
 
-            # Update the transect select icon on the toolbar
+                # Update the transect select icon on the toolbar
+                self.update_toolbar_trans_select()
+
+                # Set toolbar navigation reference
+                self.update_toolbar_nav_ref()
+
+                # Set toolbar composite tracks indicator
+                self.update_toolbar_composite_tracks()
+
+                # Setup and populate tables
+                self.main_summary_table()
+                self.uncertainty_table()
+                self.qa_table()
+                self.main_details_table()
+                self.main_premeasurement_table()
+                self.main_settings_table()
+                self.main_adcp_table()
+                self.messages_tab()
+                self.comments_tab()
+
+                # Setup and create graphs
+                if len(self.checked_transects_idx) > 0:
+                    self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
+                    self.main_extrap_plot()
+                    self.discharge_plot()
+                    self.figs = []
+
+                # If graphics have been created, update them
+                else:
+                    if self.main_extrap_canvas is not None:
+                        self.main_extrap_fig.fig.clear()
+                        self.main_extrap_canvas.draw()
+                    if self.main_wt_contour_canvas is not None:
+                        self.main_wt_contour_fig.fig.clear()
+                        self.main_wt_contour_canvas.draw()
+                    if self.main_discharge_canvas is not None:
+                        self.main_discharge_fig.fig.clear()
+                        self.main_discharge_canvas.draw()
+                    if self.main_shiptrack_canvas is not None:
+                        self.main_shiptrack_fig.fig.clear()
+                        self.main_shiptrack_canvas.draw()
+
+                # Setup list for use by graphics controls
+                self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
+                                 self.main_discharge_canvas]
+                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig, self.main_extrap_fig,
+                             self.main_discharge_fig]
+                self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
+                                 self.main_discharge_toolbar]
+
+                # Toggles changes indicating the main has been updated
+                self.change = False
+                self.tab_all.setFocus()
+                print('complete')
+        else:
+            # Notify user
+            QtWidgets.QMessageBox.warning(self, "Measurement", "No transects are selected.")
             self.update_toolbar_trans_select()
-
-            # Set toolbar navigation reference
-            self.update_toolbar_nav_ref()
-
-            # Set toolbar composite tracks indicator
-            self.update_toolbar_composite_tracks()
-
-            # Setup and populate tables
-            self.main_summary_table()
-            self.uncertainty_table()
-            self.qa_table()
-            self.main_details_table()
-            self.main_premeasurement_table()
-            self.main_settings_table()
-            self.main_adcp_table()
-            self.messages_tab()
-            self.comments_tab()
-
-            # Setup and create graphs
-            if len(self.checked_transects_idx) > 0:
-                self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
-                self.main_extrap_plot()
-                self.discharge_plot()
-                self.figs = []
-
-            # If graphics have been created, update them
-            else:
-                if self.main_extrap_canvas is not None:
-                    self.main_extrap_fig.fig.clear()
-                    self.main_extrap_canvas.draw()
-                if self.main_wt_contour_canvas is not None:
-                    self.main_wt_contour_fig.fig.clear()
-                    self.main_wt_contour_canvas.draw()
-                if self.main_discharge_canvas is not None:
-                    self.main_discharge_fig.fig.clear()
-                    self.main_discharge_canvas.draw()
-                if self.main_shiptrack_canvas is not None:
-                    self.main_shiptrack_fig.fig.clear()
-                    self.main_shiptrack_canvas.draw()
-
-            # Setup list for use by graphics controls
-            self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
-                             self.main_discharge_canvas]
-            self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig, self.main_extrap_fig,
-                         self.main_discharge_fig]
-            self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
-                             self.main_discharge_toolbar]
-
-            # Toggles changes indicating the main has been updated
-            self.change = False
-            self.tab_all.setFocus()
-            print('complete')
 
     def refocus(self):
         self.tab_all.setFocus()
@@ -1156,7 +1329,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.clear()
         col_header = [self.tr('Uncertainty'), self.tr('Auto'), self.tr('  User  ')]
         ncols = len(col_header)
-        nrows = 7
+        nrows = 8
         tbl.setRowCount(nrows)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(col_header)
@@ -1165,68 +1338,147 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.itemChanged.connect(self.recompute_uncertainty)
         tbl.itemChanged.disconnect()
 
-        # Add labels and data
-        row = 0
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Random 95%'))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.cov_95)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.cov_95_user)))
+        if self.meas.uncertainty is None:
+            # Add labels and data
+            row = 0
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Random 95%'))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Invalid Data 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Edge Q 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Extrapolation 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Moving-Bed 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Systematic 68%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Estimated 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 0).setFont(self.font_bold)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 1).setFont(self.font_bold)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem(''))
+            tbl.item(row, 2).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 2).setFont(self.font_bold)
+            tbl.resizeColumnsToContents()
+            tbl.resizeRowsToContents()
+        else:
+            # Add labels and data
+            row = 0
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Random 95%'))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty is None:
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+            else:
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.cov_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.cov_95_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Invalid Data 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.invalid_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.invalid_95_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Edge Q 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.edges_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.edges_95_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Extrapolation 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.extrapolation_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2,
+                            QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.extrapolation_95_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Moving-Bed 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.moving_bed_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.moving_bed_95_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Systematic 68%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.systematic)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            if self.meas.uncertainty.cov_95_user is not None:
+                tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.systematic_user)))
+
+            row = row + 1
+            tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Estimated 95%')))
+            tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 0).setFont(self.font_bold)
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.total_95)))
+            tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 1).setFont(self.font_bold)
+            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.total_95_user)))
+            tbl.item(row, 2).setFlags(QtCore.Qt.ItemIsEnabled)
+            tbl.item(row, 2).setFont(self.font_bold)
+            tbl.resizeColumnsToContents()
+            tbl.resizeRowsToContents()
 
         row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Invalid Data 95%')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.invalid_95)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.invalid_95_user)))
-
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Edge Q 95%')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.edges_95)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.edges_95_user)))
-
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Extrapolation 95%')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.extrapolation_95)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2,
-                        QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.extrapolation_95_user)))
-
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Moving-Bed 95%')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.moving_bed_95)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.moving_bed_95_user)))
-
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Systematic 68%')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.systematic)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.uncertainty.cov_95_user is not None:
-            tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.systematic_user)))
-
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Estimated 95%')))
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('User Rating')))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 0).setFont(self.font_bold)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.total_95)))
+
+        tbl.setSpan(row, 1, 1, 2)
+        rating = {'Excellent': 'Excellent (<3%)', 'Good': 'Good (3-5%)', 'Fair': 'Fair (5-8%)', 'Poor': 'Poor (>8%)',
+                  'Not Rated': 'Not Rated', '': 'Not Rated'}
+        if type(self.meas.user_rating) is np.ndarray:
+            if len(self.meas.user_rating) > 0:
+                item = rating[self.meas.user_rating[0:4]]
+            else:
+                item = 'Note Rated'
+        else:
+            item = rating[self.meas.user_rating.split('(')[0].strip()]
+        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.item(row, 1).setFont(self.font_bold)
-        tbl.setItem(row, 2, QtWidgets.QTableWidgetItem('{:8.1f}'.format(self.meas.uncertainty.total_95_user)))
-        tbl.item(row, 2).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.item(row, 2).setFont(self.font_bold)
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
+
 
         tbl.itemChanged.connect(self.recompute_uncertainty)
 
@@ -1291,7 +1543,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Q:')))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 0).setFont(self.font_bold)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(self.meas.uncertainty.cov)))
+        if self.meas.uncertainty is None:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+        else:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(self.meas.uncertainty.cov)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
         # Left and right edge % Q
@@ -1685,25 +1940,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates tab font to Blue if a setting was changed from the
         default settings."""
 
-        for tab in self.meas.qa.settings_dict:
+        if self.meas.qa is not None:
+            for tab in self.meas.qa.settings_dict:
 
-            if tab != "tab_gps":
+                if tab != "tab_gps":
 
-                if self.meas.qa.settings_dict[tab] == 'Custom':
-
-                    self.tab_all.tabBar().setTabTextColor(
-                        self.tab_all.indexOf(
-                            self.tab_all.findChild(QtWidgets.QWidget, tab)),
-                        QtGui.QColor(0, 0, 255))
-
-            else:
-                if self.tab_all.isTabEnabled(6) is True:
                     if self.meas.qa.settings_dict[tab] == 'Custom':
 
                         self.tab_all.tabBar().setTabTextColor(
                             self.tab_all.indexOf(
                                 self.tab_all.findChild(QtWidgets.QWidget, tab)),
                             QtGui.QColor(0, 0, 255))
+
+                else:
+                    if self.tab_all.isTabEnabled(6) is True:
+                        if self.meas.qa.settings_dict[tab] == 'Custom':
+
+                            self.tab_all.tabBar().setTabTextColor(
+                                self.tab_all.indexOf(
+                                    self.tab_all.findChild(QtWidgets.QWidget, tab)),
+                                QtGui.QColor(0, 0, 255))
 
     def comments_tab(self):
         """Display comments in comments tab.
@@ -1726,13 +1982,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup table
         tbl = self.main_table_summary
         summary_header = [self.tr('Transect'), self.tr('Start'), self.tr('Bank'), self.tr('End'),
-                          self.tr('Duration') + self.tr('(sec)'),
+                          self.tr('Duration') + ' ' + self.tr('(sec)'),
                           self.tr('Total Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Top Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Meas Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Bottom Q') + ' ' + self.tr(self.units['label_Q']),
                           self.tr('Left Q') + ' ' + self.tr(self.units['label_Q']),
-                          self.tr('Right Q') + ' ' + self.tr(self.units['label_Q'])]
+                          self.tr('Right Q') + ' ' + self.tr(self.units['label_Q']),
+                          self.tr('Delta Q (%)')]
         ncols = len(summary_header)
         nrows = len(self.checked_transects_idx)
         tbl.setRowCount(nrows + 1)
@@ -1817,11 +2074,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                                         * self.units['Q'])))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+                # Percent difference from measurement mean
+                discharge = Measurement.mean_discharges(self.meas)
+                per_diff = ((self.meas.discharge[transect_id].total - discharge['total_mean']) /
+                            discharge['total_mean']) * 100
+                col += 1
+                tbl.setItem(row + 1, col,
+                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Add measurement summaries
 
             # Row label
             col = 0
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(self.tr('Measurement')))
+            mdy = self.meas.transects[self.checked_transects_idx[0]].date_time.date.split('/')
+            meas_date = mdy[-1] + '.' + mdy[0] + '.' + mdy [1]
+            item = self.tr('Measurement') + ' (' + meas_date + ')'
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Measurement start time
@@ -1877,7 +2146,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Bold Measurement row
-            for col in range(ncols):
+            for col in range(ncols-1):
                 tbl.item(0, col).setFont(self.font_bold)
 
             tbl.item(self.transect_row + 1, 0).setFont(self.font_bold)
@@ -2569,24 +2838,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                         tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Pass'))
                                         tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
-
-                    # if self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer == 'TRDI':
-                    #     if any("PT3" in item[0] for item in self.meas.qa.system_tst['messages']):
-                    #         tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Failed'))
-                    #         tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
-                    #     else:
-                    #         tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Pass'))
-                    #         tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
-                    # else:
-                    #     tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
-                    #     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
-
-                # elif self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer == 'TRDI':
-                #     tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Pass'))
-                #     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
                 else:
                     tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Display selected test
@@ -4245,7 +4500,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.cb_mb_vtg.blockSignals(False)
         self.cb_mb_vectors.blockSignals(False)
 
-        self.tab_mtb_2
+        # self.tab_mtb_2
 
     def mb_shiptrack(self, transect):
         """Creates shiptrack plot for data in transect.
@@ -5586,6 +5841,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates shiptrack plot for data in transect.
         """
 
+        self.cb_gps_bt.blockSignals(True)
+        self.cb_gps_gga.blockSignals(True)
+        self.cb_gps_vtg.blockSignals(True)
+        self.cb_gps_vectors.blockSignals(True)
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.gps_shiptrack_canvas is None:
             # Create the canvas
@@ -5613,6 +5872,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Draw canvas
         self.gps_shiptrack_canvas.draw()
+
+        self.cb_gps_bt.blockSignals(False)
+        self.cb_gps_gga.blockSignals(False)
+        self.cb_gps_vtg.blockSignals(False)
+        self.cb_gps_vectors.blockSignals(False)
 
     def gps_boat_speed(self):
         """Creates boat speed plot for data in transect.
@@ -5713,13 +5977,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             Row clicked by user
         column: int
             Column clicked by user
+        caller: str
+            Identifies the tab from which the method is called
         """
 
         if column == 0:
             self.transect_row = row
             self.gps_plots()
             self.change = True
-        if caller == None:
+        if caller is None:
             self.gps_bt_table_clicked(row + 2, column, caller='gps')
         self.tab_gps_2_data.setFocus()
 
@@ -6089,13 +6355,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             Row clicked by user
         column: int
             Column clicked by user
+        caller: str
+            Identifies tab from which the method is called
         """
 
         if column == 0:
             self.transect_row = row - 2
             self.gps_bt_plots()
             self.change = True
-        if caller == None:
+        if caller is None:
             self.gps_table_clicked(row - 2, column, caller='gps_bt')
         self.tab_gps_2_gpsbt.setFocus()
 
@@ -6136,6 +6404,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def gps_bt_shiptrack(self):
         """Creates shiptrack plot for data in transect.
         """
+        self.cb_gps_bt_2.blockSignals(True)
+        self.cb_gps_gga_2.blockSignals(True)
+        self.cb_gps_vtg_2.blockSignals(True)
+        self.cb_gps_vectors_2.blockSignals(True)
 
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.gps_bt_shiptrack_canvas is None:
@@ -6164,6 +6436,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Draw canvas
         self.gps_bt_shiptrack_canvas.draw()
+
+        self.cb_gps_bt_2.blockSignals(False)
+        self.cb_gps_gga_2.blockSignals(False)
+        self.cb_gps_vtg_2.blockSignals(False)
+        self.cb_gps_vectors_2.blockSignals(False)
 
     def gps_bt_boat_speed(self):
         """Creates boat speed plot for data in transect.
@@ -6243,14 +6520,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.display_gps_messages.textCursor().insertText(message[0])
                 self.display_gps_messages.moveCursor(QtGui.QTextCursor.End)
                 self.display_gps_messages.textCursor().insertBlock()
-
-            # gga_status = self.meas.qa.gga_vel['status']
-            # vtg_status = self.meas.qa.vtg_vel['status']
-            # status = 'good'
-            # if gga_status == 'caution' or vtg_status == 'caution':
-            #     status = 'caution'
-            # if gga_status == 'warning' or vtg_status == 'warning':
-            #     status = 'warning'
 
             self.update_tab_icons()
 
@@ -7705,6 +7974,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.extrap_index(len(self.checked_transects_idx))
         self.start_bank = None
 
+        # ID Weighted Method
+        if self.meas.extrap_fit.norm_data[-1].use_weighted:
+            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+        else:
+            self.gb_fit.setTitle('Fit Parameters')
+
+        # Subsectioning
+        if self.meas.extrap_fit.sub_from_left:
+            self.txt_extrap_subsection.setText('Subsection (% L to R, x:x):')
+        else:
+            self.txt_extrap_subsection.setText('Subsection (st%:end%)')
+
         # Setup number of points data table
         tbl = self.table_extrap_n_points
         table_header = [self.tr('Z'),
@@ -7802,6 +8083,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             # Run qa to update messages for user data setting changes if other than Measurement selected
             self.meas.update_qa()
+
+        # ID Weighted Method
+        if self.meas.extrap_fit.norm_data[-1].use_weighted:
+            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+        else:
+            self.gb_fit.setTitle('Fit Parameters')
+
+        # Subsectioning
+        if self.meas.extrap_fit.sub_from_left:
+            self.txt_extrap_subsection.setText('Subsection (% L to R, x:x):')
+        else:
+            self.txt_extrap_subsection.setText('Subsection (st%:end%)')
 
         # Update tab
         self.n_points_table()
@@ -8244,16 +8537,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # If data entered.
         with self.wait_cursor():
             try:
+
+                use_q = True
+                sub_from_left = True
+                self.txt_extrap_subsection.setText('Subsection (% L to R, x:x):')
+
                 sub_list = self.ed_extrap_subsection.text().split(':')
                 subsection = [float(sub_list[0]), float(sub_list[1])]
                 # Because editingFinished is used if return is pressed and later focus is changed the method could get
                 # twice. This line checks to see if there was and actual change.
                 if np.abs(subsection[0] - self.meas.extrap_fit.subsection[0]) > 0.0001 \
-                        or np.abs(subsection[1] - self.meas.extrap_fit.subsection[1]) > 0.0001:
+                        or np.abs(subsection[1] - self.meas.extrap_fit.subsection[1]) > 0.0001 \
+                        or self.meas.extrap_fit.sub_from_left != sub_from_left:
                     if 0 <= subsection[0] <= 100 and subsection[0] < subsection[1] <= 100:
                         self.meas.extrap_fit.change_extents(transects=self.meas.transects,
                                                             data_type=self.meas.extrap_fit.sel_fit[-1].data_type,
-                                                            extents=subsection)
+                                                            extents=subsection,
+                                                            use_q=use_q,
+                                                            sub_from_left=sub_from_left)
                         self.extrap_update()
                     else:
                         self.ed_extrap_subsection.setText('{:3.0f}:{:3.0f}'.format(self.meas.extrap_fit.subsection[0],
@@ -8392,6 +8693,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                    exponent=exponent)
 
             self.extrap_update()
+
+    def compare_medians(self):
+        """This method computes and displays the median values for the measurement using an alternative method to allow
+        comparison. If weighted is used the unweighted are computed and display. If the unweighted are used
+        the method computes and displays the weighted. This method does not affect the computed discharge
+        only the extrapolation display."""
+
+        if self.meas.extrap_fit.norm_data[-1].data_type.lower() == 'q':
+            # Create a copy of the normalized values of the entire measurement
+            compare_norm = copy.deepcopy(self.meas.extrap_fit.norm_data[-1])
+            if self.meas.extrap_fit.use_weighted:
+                # Compute unweighted medians
+                compare_norm.use_weighted = False
+                compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+            else:
+                # Compute weighted medians
+                compare_norm.use_weighted = True
+                compare_norm.compute_stats(self.meas.extrap_fit.threshold)
+
+            # Display data on extrapolation figure
+            self.extrap_fig.extrap_plot_med_compare(compare_norm)
+            self.extrap_canvas.draw()
 
     def cancel_extrap(self):
         """Rest extrapolation to settings that were inplace when the tab was opened.
@@ -9266,7 +9589,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.itemChanged.connect(self.user_uncertainty_change)
         tbl.itemChanged.disconnect()
 
-
         if len(self.checked_transects_idx) > 0:
             # Build column labels using custom_header to create appropriate spans
             self.custom_header(tbl, 0, 0, 3, 1, self.tr('Transect'))
@@ -9826,7 +10148,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Set margins and padding for figure
         self.uncertainty_measurement_canvas.fig.subplots_adjust(left=0.05, bottom=0.1, right=0.88, top=0.98, wspace=0,
-                                                          hspace=0)
+                                                                hspace=0)
         # Draw canvas
         self.uncertainty_measurement_canvas.draw()
 
@@ -10099,7 +10421,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Convert lat and lon for decimal degrees to degrees and decimal minutes
-            if type(self.edi_results['lat'][row]) is np.float64:
+            try:
                 latd = int(self.edi_results['lat'][row])
                 latm = np.abs((self.edi_results['lat'][row] - latd) * 60)
                 lond = int(self.edi_results['lon'][row])
@@ -10112,7 +10434,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                     '{:3.0f} {:3.7f}'.format(lond, lonm)))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            else:
+
+            except ValueError:
+
                 col += 1
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -10307,7 +10631,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Intialize dialog
         rating_dialog = Rating(self)
-        rating_dialog.uncertainty_value.setText('{:4.1f}'.format(self.meas.uncertainty.total_95_user))
+        rating_dialog.uncertainty_value.setText('{:4.1f}'.format(
+            self.meas.uncertainty.total_95_user))
         if self.meas.uncertainty.total_95_user < 3:
             rating_dialog.rb_excellent.setChecked(True)
         elif self.meas.uncertainty.total_95_user < 5.01:
@@ -10332,19 +10657,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Create default file name
         if rating_entered:
+            self.meas.user_rating = rating
             save_file = SaveMeasurementDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
 
                 # Save data in Matlab format
                 if self.save_all:
-                    Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version)
+                    Python2Matlab.save_matlab_file(self.meas,
+                                                   save_file.full_Name,
+                                                   self.QRev_version)
                 else:
-                    Python2Matlab.save_matlab_file(self.meas, save_file.full_Name, self.QRev_version,
-                                                   checked=self.groupings[self.group_idx])
+                    Python2Matlab.save_matlab_file(
+                        self.meas, save_file.full_Name, self.QRev_version,
+                        checked=self.groupings[self.group_idx])
 
                 # Save xml file
-                self.meas.xml_output(self.QRev_version, save_file.full_Name[:-4] + '.xml')
+                self.meas.xml_output(
+                    self.QRev_version, save_file.full_Name[:-4] + '.xml')
 
                 # Notify user when save complete
                 QtWidgets.QMessageBox.about(self, "Save", "Group " +
@@ -10375,7 +10705,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Load next pairing
                 self.group_idx += 1
 
-                # If all pairings have been processed return control to the function initiating QRev.
+                # If all pairings have been processed return control to the
+                # function initiating QRev.
                 if self.group_idx > len(self.groupings) - 1:
                     self.caller.processed_meas = self.processed_data
                     self.caller.processed_transects = self.processed_transects
@@ -10417,6 +10748,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
                 self.run_oursin = True
 
+        # Help
+        if e.key() == QtCore.Qt.Key_F1:
+            self.help()
 
         # Change displayed transect
         if self.current_tab != 'MovBedTst' and self.current_tab != 'SysTest':
@@ -10456,6 +10790,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.mb_row += 1
 
             self.mb_table_clicked(self.mb_row, 3)
+
+        # Turn on or off display of alternate method medians to allow comparison
+        if self.current_tab == 'Extrap':
+            # Turn on comparison medians
+            if e.key() == QtCore.Qt.Key_F8:
+                self.compare_medians()
+            # Turn off comparison medians
+            if e.key() == QtCore.Qt.Key_F9:
+                self.extrap_plot()
 
     def change_selected_transect(self):
         """Coordinates changing the displayed transect when changing transects with the up/down arrow keys.
@@ -10500,11 +10843,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         ----------
         obj: QtWidget
             QtWidget user edit box.
+        block: bool
+            Block signals
 
         Returns
         -------
         out: float
             obj converted to float if possible
+
 
         """
         if block:
@@ -10555,7 +10901,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Determine the selected tab
         if tab_idx is None:
             tab_idx = self.current_tab
-        elif type(tab_idx) is int:
+        else:
+        # elif type(tab_idx) is int:
             tab_idx = self.tab_all.tabText(tab_idx)
 
         self.current_tab = tab_idx
@@ -10755,18 +11102,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         event: QCloseEvent
             Object of QCloseEvent
         """
-        if self.groupings is None:
-            close = QtWidgets.QMessageBox()
-            close.setIcon(QtWidgets.QMessageBox.Warning)
-            close.setWindowTitle("Close")
-            close.setText("If you haven't saved your data, changes will be lost. \n Are you sure you want to Close? ")
-            close.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
-            close = close.exec()
+        if event:
+            if self.groupings is None and self.meas is not None:
+                close = QtWidgets.QMessageBox()
+                close.setIcon(QtWidgets.QMessageBox.Warning)
+                close.setWindowTitle("Close")
+                close.setText("If you haven't saved your data, changes will be lost. \n Are you sure you want to Close? ")
+                close.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+                close = close.exec()
 
-            if close == QtWidgets.QMessageBox.Yes:
-                event.accept()
+                if close == QtWidgets.QMessageBox.Yes:
+                    event.accept()
+                else:
+                    event.ignore()
             else:
-                event.ignore()
+                event.accept()
         else:
             event.accept()
 
@@ -10801,8 +11151,11 @@ if __name__ == "__main__":
     #     window.set_command_arg(arg)
     #     t = threading.Thread(target=window.connect_and_emit_trigger)
     #     t.start()
-    window.show()
-    app.exec_()
+    if window.agreement:
+        window.show()
+        app.exec_()
+    else:
+        app.closeAllWindows()
 # elif __name__ == 'UI.MeasSplitter':
 #     app = QtWidgets.QApplication(sys.argv)
 #     window = QRev()

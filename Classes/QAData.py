@@ -132,7 +132,10 @@ class QAData(object):
             # Set default thresholds
             self.q_run_threshold_caution = meas_struct.qa.qRunThresholdCaution
             self.q_run_threshold_warning = meas_struct.qa.qRunThresholdWarning
-            self.q_total_threshold_caution = meas_struct.qa.qTotalThresholdCaution
+            if hasattr(meas_struct.qa, 'qTotalThresholdCaution'):
+                self.q_total_threshold_caution = meas_struct.qa.qTotalThresholdCaution
+            else:
+                self.q_total_threshold_caution = 10
             self.q_total_threshold_warning = meas_struct.qa.qTotalThresholdWarning
 
             # Initialize instance variables
@@ -150,8 +153,12 @@ class QAData(object):
             self.compass = dict()
             self.compass['messages'] = self.make_list(meas_struct.qa.compass.messages)
             self.compass['status'] = meas_struct.qa.compass.status
-            self.compass['status1'] = meas_struct.qa.compass.status1
-            self.compass['status2'] = meas_struct.qa.compass.status2
+            if hasattr(meas_struct.qa.compass, 'status1'):
+                self.compass['status1'] = meas_struct.qa.compass.status1
+                self.compass['status2'] = meas_struct.qa.compass.status2
+            else:
+                self.compass['status1'] = 'good'
+                self.compass['status2'] = 'good'
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'magvar'):
@@ -318,15 +325,68 @@ class QAData(object):
 
             if hasattr(meas_struct.qa, 'settings_dict'):
                 self.settings_dict = dict()
-                self.settings_dict['tab_compass'] = meas_struct.qa.settings_dict.tab_compass
-                self.settings_dict['tab_tempsal'] = meas_struct.qa.settings_dict.tab_tempsal
-                self.settings_dict['tab_mbt'] = meas_struct.qa.settings_dict.tab_mbt
-                self.settings_dict['tab_bt'] = meas_struct.qa.settings_dict.tab_bt
-                self.settings_dict['tab_gps'] = meas_struct.qa.settings_dict.tab_gps
-                self.settings_dict['tab_depth'] = meas_struct.qa.settings_dict.tab_depth
-                self.settings_dict['tab_wt'] = meas_struct.qa.settings_dict.tab_wt
-                self.settings_dict['tab_extrap'] = meas_struct.qa.settings_dict.tab_extrap
-                self.settings_dict['tab_edges'] = meas_struct.qa.settings_dict.tab_edges
+                try:
+                    self.settings_dict['tab_compass'] = \
+                        meas_struct.qa.settings_dict.tab_compass
+                except AttributeError:
+                    self.settings_dict['tab_compass'] = \
+                        new_qa.settings_dict['tab_compass']
+
+                try:
+                    self.settings_dict['tab_tempsal'] = \
+                        meas_struct.qa.settings_dict.tab_tempsal
+                except AttributeError:
+                    self.settings_dict['tab_tempsal'] = \
+                        new_qa.settings_dict['tab_tempsal']
+
+                try:
+                    self.settings_dict['tab_mbt'] = \
+                        meas_struct.qa.settings_dict.tab_mbt
+                except AttributeError:
+                    self.settings_dict['tab_mbt'] = \
+                        new_qa.settings_dict['tab_mbt']
+
+                try:
+                    self.settings_dict['tab_bt'] = \
+                        meas_struct.qa.settings_dict.tab_bt
+                except AttributeError:
+                    self.settings_dict['tab_bt'] = \
+                        new_qa.settings_dict['tab_bt']
+
+                try:
+                    self.settings_dict['tab_gps'] = \
+                        meas_struct.qa.settings_dict.tab_gps
+                except AttributeError:
+                    self.settings_dict['tab_gps'] = \
+                        new_qa.settings_dict['tab_gps']
+
+                try:
+                    self.settings_dict['tab_depth'] = \
+                        meas_struct.qa.settings_dict.tab_depth
+                except AttributeError:
+                    self.settings_dict['tab_depth'] = \
+                        new_qa.settings_dict['tab_depth']
+
+                try:
+                    self.settings_dict['tab_wt'] = \
+                        meas_struct.qa.settings_dict.tab_wt
+                except AttributeError:
+                    self.settings_dict['tab_wt'] = \
+                        new_qa.settings_dict['tab_wt']
+
+                try:
+                    self.settings_dict['tab_extrap'] = \
+                        meas_struct.qa.settings_dict.tab_extrap
+                except AttributeError:
+                    self.settings_dict['tab_extrap'] = \
+                        new_qa.settings_dict['tab_extrap']
+
+                try:
+                    self.settings_dict['tab_edges'] = \
+                        meas_struct.qa.settings_dict.tab_edges
+                except AttributeError:
+                    self.settings_dict['tab_edges'] = \
+                        new_qa.settings_dict['tab_edges']
 
     @staticmethod
     def create_qa_dict(self, mat_data, ndim=1):
@@ -353,7 +413,10 @@ class QAData(object):
 
         qa_dict['q_max_run_caution'] = self.make_array(mat_data.qRunCaution, ndim).astype(bool)
         qa_dict['q_max_run_warning'] = self.make_array(mat_data.qRunWarning, ndim).astype(bool)
-        qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalCaution, ndim).astype(bool)
+        if hasattr(mat_data, 'qTotalCaution'):
+            qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalCaution, ndim).astype(bool)
+        else:
+            qa_dict['q_total_caution'] = self.make_array(mat_data.qTotalWarning, ndim).astype(bool)
         qa_dict['q_total_warning'] = self.make_array(mat_data.qTotalWarning, ndim).astype(bool)
         qa_dict['status'] = mat_data.status
 
@@ -1606,6 +1669,12 @@ class QAData(object):
         """
 
         self.extrapolation['messages'] = []
+
+        if meas.use_weighted is True:
+
+            self.extrapolation['messages'].append(['Extrapolation: Discharge '
+                                                  'weighted extrapolation is '
+                                                  'True', 2, 12])
 
         checked = []
         discharges = []

@@ -260,14 +260,15 @@ class BoatData(object):
             self.w_mps = np.array([mat_data.w_mps])
             self.d_mps = np.array([mat_data.d_mps])
 
-            self.bottom_mode = np.array([mat_data.bottomMode])
+            # self.bottom_mode = np.array([mat_data.bottomMode])
 
             # Processed data
             self.u_processed_mps = np.array([mat_data.uProcessed_mps])
             self.v_processed_mps = np.array([mat_data.vProcessed_mps])
             self.processed_source = np.array([mat_data.processedSource])
             self.valid_data = np.array([ mat_data.validData]).astype(bool)
-            self.valid_data = self.valid_data.reshape(-1, 1)
+            if self.valid_data.shape[1] > 1:
+                self.valid_data = self.valid_data.reshape(-1, 1)
             self.smooth_speed = np.array([mat_data.smoothSpeed])
             self.smooth_upper_limit = np.array([mat_data.smoothUpperLimit])
             self.smooth_lower_limit = np.array([mat_data.smoothLowerLimit])
@@ -280,7 +281,7 @@ class BoatData(object):
             self.w_mps = mat_data.w_mps
             self.d_mps = mat_data.d_mps
 
-            self.bottom_mode = mat_data.bottomMode
+            # self.bottom_mode = mat_data.bottomMode
 
             # Processed data
             self.u_processed_mps = mat_data.uProcessed_mps
@@ -291,6 +292,7 @@ class BoatData(object):
             self.smooth_upper_limit = mat_data.smoothUpperLimit
             self.smooth_lower_limit = mat_data.smoothLowerLimit
 
+        self.bottom_mode = mat_data.bottomMode
         self.num_invalid = mat_data.numInvalid
         # Error velocity filter
         if type(mat_data.dFilter) is np.ndarray:
@@ -1470,7 +1472,13 @@ class BoatData(object):
             # Loop until no change in the number of valid ensembles
             while k < 100 and change > 0.1:
                 # Compute mean using valid ensembles
-                alt_mean = np.nanmean(gps_data.altitude_ens_m[self.valid_data[1, :]])
+                if self.valid_data.shape[1] == 1:
+                    if self.valid_data[1,0]:
+                        alt_mean = gps_data.altitude_ens_m
+                    else:
+                        alt_mean = np.nan
+                else:
+                    alt_mean = np.nanmean(gps_data.altitude_ens_m[self.valid_data[1, :]])
 
                 # Compute difference for each ensemble
                 diff = np.abs(gps_data.altitude_ens_m - alt_mean)
@@ -1501,7 +1509,7 @@ class BoatData(object):
             Change threshold
         """
 
-        if gps_data.hdop_ens is None:
+        if gps_data.hdop_ens is None or gps_data.hdop_ens.size == 0:
             self.valid_data[5, :self.valid_data.shape[1]] = True
         else:
             # New settings if provided
@@ -1534,7 +1542,13 @@ class BoatData(object):
                 while k < 100 and change > 0.1:
 
                     # Compute mean HDOP for all valid ensembles
-                    hdop_mean = np.nanmean(gps_data.hdop_ens[self.valid_data[5, :]])
+                    if self.valid_data.shape[1] == 1:
+                        if self.valid_data[5, 0]:
+                            hdop_mean = gps_data.hdop_ens
+                        else:
+                            hdop_mean = np.nan
+                    else:
+                        hdop_mean = np.nanmean(gps_data.hdop_ens[self.valid_data[5, :]])
 
                     # Compute the difference in HDOP and the mean for all ensembles
                     diff = np.abs(gps_data.hdop_ens - hdop_mean)

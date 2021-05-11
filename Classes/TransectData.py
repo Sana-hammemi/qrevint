@@ -750,7 +750,10 @@ class TransectData(object):
         # Rearrange arrays for consistency with WaterData class
         vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
         snr = np.swapaxes(rsdata.System.SNR, 1, 0)
-        corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
+        if hasattr(rsdata.WaterTrack, 'Correlation'):
+            corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
+        else:
+            corr = np.array([])
 
         # Correct SonTek difference velocity for error in earlier transformation matrices.
         if abs(rsdata.Transformation_Matrices.Matrix[3, 0, 0]) < 0.5:
@@ -798,14 +801,17 @@ class TransectData(object):
                                                                     slc_type=sl_cutoff_type,
                                                                     value=1 - sl_cutoff_percent / 100)
         # Determine water mode
-        corr_nan = np.isnan(corr)
-        number_of_nan = np.count_nonzero(corr_nan)
-        if number_of_nan == 0:
-            wm = 'HD'
-        elif corr_nan.size == number_of_nan:
-            wm = 'IC'
+        if len(corr) > 0:
+            corr_nan = np.isnan(corr)
+            number_of_nan = np.count_nonzero(corr_nan)
+            if number_of_nan == 0:
+                wm = 'HD'
+            elif corr_nan.size == number_of_nan:
+                wm = 'IC'
+            else:
+                wm = 'Variable'
         else:
-            wm = 'Variable'
+            wm = 'Unknown'
 
         # Determine excluded distance (Similar to SonTek's screening distance)
         excluded_distance = rsdata.Setup.screeningDistance - rsdata.Setup.sensorDepth
@@ -980,8 +986,8 @@ class TransectData(object):
 
         # Extrapolation
         # -------------
-        top = None
-        bottom = None
+        top = ''
+        bottom = ''
 
         # Top extrapolation
         if rsdata.Setup.extrapolation_Top_nFitType == 0:
@@ -1966,7 +1972,13 @@ class TransectData(object):
                 1 < np.sum(np.logical_not(np.isnan(transect.boat_vel.bt_vel.u_processed_mps))):
             # Data prep
             bt_track = BoatStructure.compute_boat_track(transect, ref='bt_vel')
-            bt_course, _ = cart2pol(bt_track['track_x_m'][-1], bt_track['track_y_m'][-1])
+
+            try:
+                bt_course, _ = cart2pol(bt_track['track_x_m'][-1],
+                                        bt_track['track_y_m'][-1])
+            except TypeError:
+                bt_course = float('NaN')
+
             bt_course = rad2azdeg(bt_course)
             gps_track = BoatStructure.compute_boat_track(transect, ref=gps_ref)
             gps_course, _ = cart2pol(gps_track['track_x_m'][-1], gps_track['track_y_m'][-1])
@@ -1978,13 +1990,31 @@ class TransectData(object):
                 gps_bt['course'] = gps_bt['course'] + 360
 
             # Compute ratio
-            gps_bt['ratio'] = bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
+            try:
+                gps_bt['ratio'] = \
+                    bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
+            except TypeError:
+                gps_bt['ratio'] = float('NaN')
 
             # Compute closure vector
-            x_diff = bt_track['track_x_m'][-1] - gps_track['track_x_m'][-1]
-            y_diff = bt_track['track_y_m'][-1] - gps_track['track_y_m'][-1]
-            gps_bt['dir'], gps_bt['mag'] = cart2pol(x_diff, y_diff)
-            gps_bt['dir'] = rad2azdeg(gps_bt['dir'])
+            try:
+                x_diff = bt_track['track_x_m'][-1] - gps_track['track_x_m'][-1]
+            except TypeError:
+                x_diff = float('NaN')
+            try:
+                y_diff = bt_track['track_y_m'][-1] - gps_track['track_y_m'][-1]
+            except TypeError:
+                y_diff = float('NaN')
+
+            try:
+                gps_bt['dir'], gps_bt['mag'] = cart2pol(x_diff, y_diff)
+            except TypeError:
+                gps_bt['dir'] = float('NaN')
+                gps_bt['mag'] = float('NaN')
+            try:
+                gps_bt['dir'] = rad2azdeg(gps_bt['dir'])
+            except TypeError:
+                gps_bt['dir'] = float('NaN')
 
         return gps_bt
 

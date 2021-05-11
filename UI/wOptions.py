@@ -2,18 +2,35 @@
 
 # Form implementation generated from reading ui file 'wOptions.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.13.1
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_Options(object):
     def setupUi(self, Options):
         Options.setObjectName("Options")
-        Options.resize(742, 167)
+        Options.resize(620, 265)
         self.gridLayout = QtWidgets.QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
+        self.QGroupBox = QtWidgets.QGroupBox(Options)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.QGroupBox.setFont(font)
+        self.QGroupBox.setObjectName("QGroupBox")
+        self.cb_weighted_extrap = QtWidgets.QCheckBox(self.QGroupBox)
+        self.cb_weighted_extrap.setGeometry(QtCore.QRect(10, 40, 162, 24))
+        font = QtGui.QFont()
+        font.setBold(False)
+        font.setWeight(50)
+        self.cb_weighted_extrap.setFont(font)
+        self.cb_weighted_extrap.setObjectName("cb_weighted_extrap")
+        self.gridLayout.addWidget(self.QGroupBox, 0, 2, 1, 1)
         self.gb_units = QtWidgets.QGroupBox(Options)
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -38,6 +55,14 @@ class Ui_Options(object):
         self.rb_si.setFont(font)
         self.rb_si.setObjectName("rb_si")
         self.gridLayout.addWidget(self.gb_units, 0, 0, 1, 1)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Options)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.buttonBox.setFont(font)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 3)
         self.gb_save_options = QtWidgets.QGroupBox(Options)
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -60,30 +85,34 @@ class Ui_Options(object):
         font.setWeight(50)
         self.rb_checked.setFont(font)
         self.rb_checked.setObjectName("rb_checked")
-        self.gridLayout.addWidget(self.gb_save_options, 0, 1, 1, 1)
-        self.gb_stylesheet = QtWidgets.QGroupBox(Options)
+        self.cb_rating = QtWidgets.QCheckBox(self.gb_save_options)
+        self.cb_rating.setGeometry(QtCore.QRect(10, 110, 211, 20))
         font = QtGui.QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        font.setWeight(75)
-        self.gb_stylesheet.setFont(font)
-        self.gb_stylesheet.setObjectName("gb_stylesheet")
-        self.cb_stylesheet = QtWidgets.QCheckBox(self.gb_stylesheet)
-        self.cb_stylesheet.setGeometry(QtCore.QRect(10, 40, 221, 17))
+        font.setBold(False)
+        font.setWeight(50)
+        self.cb_rating.setFont(font)
+        self.cb_rating.setObjectName("cb_rating")
+        self.line = QtWidgets.QFrame(self.gb_save_options)
+        self.line.setGeometry(QtCore.QRect(10, 80, 241, 20))
+        self.line.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line.setObjectName("line")
+        self.line_2 = QtWidgets.QFrame(self.gb_save_options)
+        self.line_2.setGeometry(QtCore.QRect(10, 140, 241, 20))
+        self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_2.setObjectName("line_2")
+        self.cb_stylesheet = QtWidgets.QCheckBox(self.gb_save_options)
+        self.cb_stylesheet.setGeometry(QtCore.QRect(10, 170, 221, 17))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
         self.cb_stylesheet.setFont(font)
         self.cb_stylesheet.setObjectName("cb_stylesheet")
-        self.gridLayout.addWidget(self.gb_stylesheet, 0, 2, 1, 1)
-        self.buttonBox = QtWidgets.QDialogButtonBox(Options)
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.buttonBox.setFont(font)
-        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 3)
+        self.gridLayout.addWidget(self.gb_save_options, 0, 1, 1, 1)
+        self.gridLayout.setColumnStretch(0, 15)
+        self.gridLayout.setColumnStretch(1, 30)
+        self.gridLayout.setColumnStretch(2, 20)
 
         self.retranslateUi(Options)
         self.buttonBox.accepted.connect(Options.accept)
@@ -93,13 +122,15 @@ class Ui_Options(object):
     def retranslateUi(self, Options):
         _translate = QtCore.QCoreApplication.translate
         Options.setWindowTitle(_translate("Options", "Dialog"))
+        self.QGroupBox.setTitle(_translate("Options", "Extrapolation"))
+        self.cb_weighted_extrap.setText(_translate("Options", "Discharge weighted"))
         self.gb_units.setTitle(_translate("Options", "Units"))
         self.rb_english.setText(_translate("Options", "English"))
         self.rb_si.setText(_translate("Options", "SI"))
         self.gb_save_options.setTitle(_translate("Options", "Save Options"))
         self.rb_All.setText(_translate("Options", "All Transects"))
         self.rb_checked.setText(_translate("Options", "Only Checked Transects"))
-        self.gb_stylesheet.setTitle(_translate("Options", "Style Sheet"))
+        self.cb_rating.setText(_translate("Options", "Prompt for rating on save"))
         self.cb_stylesheet.setText(_translate("Options", "Save style sheet with data"))
 
 
@@ -111,4 +142,3 @@ if __name__ == "__main__":
     ui.setupUi(Options)
     Options.show()
     sys.exit(app.exec_())
-

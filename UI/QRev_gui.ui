@@ -6,19 +6,46 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1228</width>
-    <height>674</height>
+    <width>1312</width>
+    <height>821</height>
    </rect>
   </property>
   <property name="palette">
    <palette>
     <active>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
      <colorrole role="Text">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>0</red>
         <green>0</green>
         <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
        </color>
       </brush>
      </colorrole>
@@ -33,12 +60,39 @@
      </colorrole>
     </active>
     <inactive>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
      <colorrole role="Text">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>0</red>
         <green>0</green>
         <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
        </color>
       </brush>
      </colorrole>
@@ -53,12 +107,39 @@
      </colorrole>
     </inactive>
     <disabled>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
      <colorrole role="Text">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>120</red>
         <green>120</green>
         <blue>120</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
        </color>
       </brush>
      </colorrole>
@@ -78,11 +159,14 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="QRev.ico">
+   <iconset theme="QRevInt.ico">
     <normaloff>.</normaloff>.</iconset>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow{background: solid rgb(0, 0, 175);}</string>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
@@ -422,7 +506,7 @@
               </layout>
              </widget>
             </widget>
-            <widget class="QWidget" name="">
+            <widget class="QWidget" name="layoutWidget">
              <layout class="QHBoxLayout" name="horizontalLayout" stretch="4,2">
               <property name="spacing">
                <number>2</number>
@@ -461,10 +545,15 @@
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="">
+            <widget class="QWidget" name="layoutWidget">
              <layout class="QHBoxLayout" name="horizontalLayout_bottom" stretch="4,2">
               <item>
                <widget class="QTabWidget" name="tab_mc">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
                 <property name="tabShape">
                  <enum>QTabWidget::Triangular</enum>
                 </property>
@@ -521,7 +610,7 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="25,40,35">
+           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="20,40,40">
             <item>
              <widget class="QTableWidget" name="table_qa"/>
             </item>
@@ -591,6 +680,7 @@
                <widget class="QGroupBox" name="box_systest_messages">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -603,6 +693,7 @@
                   <widget class="QPlainTextEdit" name="display_systest_messages">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -619,6 +710,7 @@
                <widget class="QGroupBox" name="box_systest_comments">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -631,6 +723,7 @@
                   <widget class="QPlainTextEdit" name="display_systest_comments">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -1005,6 +1098,7 @@
                <widget class="QGroupBox" name="box_compass_messages">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1017,6 +1111,7 @@
                   <widget class="QPlainTextEdit" name="display_compass_messages">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -1033,6 +1128,7 @@
                <widget class="QGroupBox" name="box_compass_comments">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1045,6 +1141,7 @@
                   <widget class="QPlainTextEdit" name="display_compass_comments">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -1092,6 +1189,7 @@
                <widget class="QGroupBox" name="gb_temp">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1123,6 +1221,7 @@
                         <widget class="QLabel" name="label_independent">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1139,6 +1238,7 @@
                         <widget class="QLineEdit" name="ed_user_temp">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1152,6 +1252,7 @@
                          </property>
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1165,6 +1266,7 @@
                         <widget class="QLabel" name="label_adcp">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1181,6 +1283,7 @@
                         <widget class="QLineEdit" name="ed_adcp_temp">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1194,6 +1297,7 @@
                          </property>
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1207,6 +1311,7 @@
                         <widget class="QLabel" name="label_adcp_avg">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1220,6 +1325,7 @@
                         <widget class="QLabel" name="txt_adcp_avg">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1250,6 +1356,7 @@
                         <widget class="QRadioButton" name="rb_f">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1263,6 +1370,7 @@
                         <widget class="QRadioButton" name="rb_c">
                          <property name="font">
                           <font>
+                           <pointsize>12</pointsize>
                            <weight>50</weight>
                            <bold>false</bold>
                           </font>
@@ -1315,6 +1423,7 @@
                <widget class="QGroupBox" name="box_compass_messages_2">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1327,6 +1436,7 @@
                   <widget class="QPlainTextEdit" name="display_tempsal_messages">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -1343,6 +1453,7 @@
                <widget class="QGroupBox" name="box_compass_comments_2">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1355,6 +1466,7 @@
                   <widget class="QPlainTextEdit" name="display_tempsal_comments">
                    <property name="font">
                     <font>
+                     <pointsize>12</pointsize>
                      <weight>50</weight>
                      <bold>false</bold>
                     </font>
@@ -1673,6 +1785,7 @@
              <widget class="QGroupBox" name="box_mb_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -1685,6 +1798,7 @@
                 <widget class="QPlainTextEdit" name="display_mb_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -1701,6 +1815,7 @@
              <widget class="QGroupBox" name="box_mb_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -1713,6 +1828,7 @@
                 <widget class="QPlainTextEdit" name="display_mb_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -2273,6 +2389,7 @@
                     <widget class="QGroupBox" name="gb_bt_other">
                      <property name="font">
                       <font>
+                       <pointsize>10</pointsize>
                        <weight>50</weight>
                        <bold>false</bold>
                       </font>
@@ -2316,6 +2433,7 @@
              <widget class="QGroupBox" name="box_bt_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -2328,6 +2446,7 @@
                 <widget class="QPlainTextEdit" name="display_bt_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -2344,6 +2463,7 @@
              <widget class="QGroupBox" name="box_bt_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -2356,6 +2476,7 @@
                 <widget class="QPlainTextEdit" name="display_bt_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -2926,6 +3047,7 @@
                     <widget class="QGroupBox" name="gb_gps_other">
                      <property name="font">
                       <font>
+                       <pointsize>10</pointsize>
                        <weight>50</weight>
                        <bold>false</bold>
                       </font>
@@ -3226,6 +3348,7 @@
              <widget class="QGroupBox" name="box_gps_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -3238,6 +3361,7 @@
                 <widget class="QPlainTextEdit" name="display_gps_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -3254,6 +3378,7 @@
              <widget class="QGroupBox" name="box_gps_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -3266,6 +3391,7 @@
                 <widget class="QPlainTextEdit" name="display_gps_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -3919,6 +4045,7 @@
              <widget class="QGroupBox" name="box_depth_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -3931,6 +4058,7 @@
                 <widget class="QPlainTextEdit" name="display_depth_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -3947,6 +4075,7 @@
              <widget class="QGroupBox" name="box_depth_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -3959,6 +4088,7 @@
                 <widget class="QPlainTextEdit" name="display_depth_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -4356,6 +4486,7 @@
                     <widget class="QGroupBox" name="gb_wt_excluded">
                      <property name="font">
                       <font>
+                       <pointsize>10</pointsize>
                        <weight>50</weight>
                        <bold>false</bold>
                       </font>
@@ -4578,6 +4709,7 @@
                     <widget class="QGroupBox" name="gb_snr">
                      <property name="font">
                       <font>
+                       <pointsize>10</pointsize>
                        <weight>50</weight>
                        <bold>false</bold>
                       </font>
@@ -4634,6 +4766,7 @@
              <widget class="QGroupBox" name="box_wt_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -4646,6 +4779,7 @@
                 <widget class="QPlainTextEdit" name="display_wt_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -4662,6 +4796,7 @@
              <widget class="QGroupBox" name="box_wt_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -4674,6 +4809,7 @@
                 <widget class="QPlainTextEdit" name="display_wt_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -4699,6 +4835,11 @@
        <layout class="QGridLayout" name="gridLayout_34">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_extrap_2">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -4714,6 +4855,7 @@
              <widget class="QGroupBox" name="gp_points">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>50</weight>
                 <bold>false</bold>
                </font>
@@ -4740,6 +4882,7 @@
              <widget class="QGroupBox" name="gb_profile">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>50</weight>
                 <bold>false</bold>
                </font>
@@ -5030,6 +5173,7 @@
                <widget class="QGroupBox" name="gb_fit">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -5237,6 +5381,7 @@
                <widget class="QGroupBox" name="gb_data">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -5336,7 +5481,7 @@
                       </font>
                      </property>
                      <property name="text">
-                      <string>Subsection (st%:end%):</string>
+                      <string>Subsection (% L to R, x:x):</string>
                      </property>
                      <property name="alignment">
                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -5418,6 +5563,7 @@
                <widget class="QGroupBox" name="gb_previous">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -5556,6 +5702,7 @@
                <widget class="QGroupBox" name="gb_q">
                 <property name="font">
                  <font>
+                  <pointsize>12</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -5591,6 +5738,7 @@
              <widget class="QGroupBox" name="box_extrap_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -5603,6 +5751,7 @@
                 <widget class="QPlainTextEdit" name="display_extrap_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -5619,6 +5768,7 @@
              <widget class="QGroupBox" name="box_extrap_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -5631,6 +5781,7 @@
                 <widget class="QPlainTextEdit" name="display_extrap_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -5727,6 +5878,7 @@
              <widget class="QGroupBox" name="box_extrap_messages_2">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -5739,6 +5891,7 @@
                 <widget class="QPlainTextEdit" name="display_edges_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -5755,6 +5908,7 @@
              <widget class="QGroupBox" name="box_extrap_comments_2">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -5767,6 +5921,7 @@
                 <widget class="QPlainTextEdit" name="display_edges_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -6030,6 +6185,7 @@
              <widget class="QGroupBox" name="box_uncertainty_messages">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -6042,6 +6198,7 @@
                 <widget class="QPlainTextEdit" name="display_uncertainty_messages">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -6058,6 +6215,7 @@
              <widget class="QGroupBox" name="box_uncertainty_comments">
               <property name="font">
                <font>
+                <pointsize>12</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -6070,6 +6228,7 @@
                 <widget class="QPlainTextEdit" name="display_uncertainty_comments">
                  <property name="font">
                   <font>
+                   <pointsize>12</pointsize>
                    <weight>50</weight>
                    <bold>false</bold>
                   </font>
@@ -6105,6 +6264,9 @@
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QToolBar{background: solid rgb(240, 240, 240);}</string>
    </property>
    <property name="movable">
     <bool>false</bool>
@@ -6215,7 +6377,7 @@
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset>
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">

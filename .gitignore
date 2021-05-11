@@ -3,6 +3,7 @@
 build/
 *.pyo
 *.pyc
+.spec
 qrevpy.egg-info/
 .idea/
 .installed.cfg

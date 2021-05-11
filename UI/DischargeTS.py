@@ -70,6 +70,7 @@ class DischargeTS(object):
         # Customize axis
         time_fmt = mdates.DateFormatter('%H:%M:%S')
         self.fig.ax.xaxis.set_major_formatter(time_fmt)
+        self.fig.autofmt_xdate()
         self.fig.ax.set_xlabel(self.canvas.tr('Time '))
         self.fig.ax.set_ylabel(self.canvas.tr('Discharge ') + units['label_Q'])
         self.fig.ax.xaxis.label.set_fontsize(10)
