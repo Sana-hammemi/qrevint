@@ -52,7 +52,9 @@ class UMeasurement(object):
         # Create dataframe to plot
         self.plot_df = oursin.u_contribution_measurement_user.drop(['total'], axis=1)
         self.plot_df = self.plot_df.append(oursin.u_contribution_user.drop(['total'], axis=1), ignore_index=True)
-        self.plot_df = self.plot_df * 100
+        self.plot_df = self.plot_df.mul(100)
+        self.plot_df = self.plot_df[['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_cov', 'u_top', 'u_bot',
+                                     'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water']]
 
         # Create dataframe to use for data cursor
         self.plot_df_cumsum = self.plot_df.cumsum(axis='columns')
@@ -63,11 +65,14 @@ class UMeasurement(object):
             x_tick_labels.append(str(n))
 
         # Create legend labels
-        custom_labels = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'Top Q', 'Bottom Q',
-                  'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water', 'COV']
+        custom_labels = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'COV', 'Top Q', 'Bottom Q',
+                  'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water']
+
+        custom_colors = ['#696969', '#808080', '#A9A9A9', '#0000FF', '#00BFFF', '#00FFFF', '#FF00FF', '#EE82EE',
+                         '#20B2AA', '#008B8B', '#FF6666', '#FF0000', '#CC0000']
 
         # Generate bar graph
-        self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax, legend=False)
+        self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax, legend=False, color=custom_colors)
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.01, bottom=0.01, right=0.95, top=0.99, wspace=0, hspace=0)

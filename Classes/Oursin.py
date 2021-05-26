@@ -1,8 +1,10 @@
 import pandas as pd
 import copy
-from Classes.BoatStructure import *
 from Classes.QComp import QComp
 from scipy.stats import t
+import numpy as np
+import math
+import scipy.stats
 # from profilehooks import profile
 from MiscLibs.common_functions import cosd, sind
 
@@ -421,7 +423,10 @@ class Oursin(object):
 
         # Prep data for computations
         self.data_prep(meas)
-        self.compute_measurement_cov(meas=meas)
+        self.compute_measurement_cov(meas=meas, method='Bayes')
+
+        # hh_cov = self.hh_random_meas(meas=meas)
+        # self.cov_68 = hh_cov
 
         # 1. Systematic terms + correction terms (moving bed)
         self.uncertainty_system()
@@ -445,8 +450,7 @@ class Oursin(object):
         self.uncertainty_invalid_water_data()
 
         # 6. Compute combined uncertainty
-        self.u, self.u_measurement, self.u_contribution, self.u_contribution_measurement, \
-            self.u_nocov, self.u_measurement_nocov = \
+        self.u, self.u_measurement, self.u_contribution, self.u_contribution_measurement = \
             self.compute_combined_uncertainty(u_syst=self.u_syst_list,
                                               u_compass=self.u_compass_list,
                                               u_movbed=self.u_movbed_list,
@@ -461,8 +465,7 @@ class Oursin(object):
                                               u_water=self.u_invalid_water_list,
                                               cov_68=self.cov_68)
 
-        self.u_user, self.u_measurement_user, self.u_contribution_user, self.u_contribution_measurement_user,\
-            self.u_nocov_user, self.u_measurement_nocov_user = \
+        self.u_user, self.u_measurement_user, self.u_contribution_user, self.u_contribution_measurement_user = \
             self.compute_combined_uncertainty(u_syst=self.u_syst_mean_user_list,
                                               u_compass=self.u_compass_user_list,
                                               u_movbed=self.u_movbed_user_list,
@@ -524,12 +527,6 @@ class Oursin(object):
         u_contribution_measurement: DataFrame
             DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
             u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
-        u_nocov: DataFrame
-            DataFrame containing standard deviations in percent for each transect, without COV: u_syst, u_compass,
-            u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, total, and total_95
-        u_measurement_nocov: DataFrame
-            DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
-            u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, and total
         """
 
         # Create a Dataframe with all computed uncertainty for each checked transect
@@ -551,37 +548,24 @@ class Oursin(object):
 
         n_transects = len(u_ens)
 
-        # Computations without use of cov
-        u_nocov = u.drop(['u_cov'], axis=1)
-        u2_nocov = u_nocov.pow(2)
-        u2_measurement_nocov = u2_nocov.mean(axis=0, skipna=False).to_frame().T
-        u_nocov['total'] = (u2_nocov.sum(axis=1, skipna=False) ** 0.5)
-        u_nocov['total_95'] = u_nocov['total'] * 2
-        u_nocov = u_nocov.mul(100)
-        u2_random_nocov = u2_measurement_nocov['u_meas']
-        u2_bias_nocov = u2_measurement_nocov.drop(['u_meas'], axis=1).sum(axis=1, skipna=False)
-
-        u2_measurement_nocov['total'] = (1 / n_transects) * u2_random_nocov + u2_bias_nocov[0]
-        u_measurement_nocov = u2_measurement_nocov ** 0.5
-        u_measurement_nocov['total_95'] = u_measurement_nocov['total'] * 2
-        u_measurement_nocov = u_measurement_nocov * 100
-
         # Convert uncertainty (68% level of confidence) into variance
         # Note that only variance is additive
         u2 = u.pow(2)
         u2_measurement = u2.mean(axis=0, skipna=False).to_frame().T
         # Combined uncertainty by transect
         # Sum of variance of each component, then sqrt, then multiply by 100 for percentage
+        # u['total'] = u2.drop(['u_cov'], axis=1).sum(axis=1, skipna=False) ** 0.5
         u['total'] = (u2.sum(axis=1, skipna=False) ** 0.5)
         u['total_95'] = u['total'] * 2
         u = u.mul(100)
 
         # Uncertainty for the measurement
-        # The only random source is from the measured area
-        u2_random = u2['u_meas'].mean(skipna=False)
-
+        # The random error is computed as a mean of the random error from the measured portion and the overall
+        # random error from the COV.
+        u2_random = np.mean([u2['u_meas'].mean(skipna=False), u2['u_cov'].mean(skipna=False)])
+        # u2_random = u2['u_meas'].mean(skipna=False)
         # All other sources are systematic (mostly due to computation method and values from user)
-        u2_bias = u2_measurement.drop(['u_meas'], axis=1).sum(axis=1, skipna=False)
+        u2_bias = u2_measurement.drop(['u_meas', 'u_cov'], axis=1).sum(axis=1, skipna=False)
 
         # Combined all uncertainty sources
         u2_measurement['total'] = (1 / n_transects) * u2_random + u2_bias[0]
@@ -591,15 +575,19 @@ class Oursin(object):
 
         # Compute relative contributions from each source
         u_contribution_measurement = u2_measurement.copy()
-        u_contribution_measurement['u_meas'] = u2_measurement['u_meas'] / (n_transects**2)
+        # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
+        u_contribution_measurement['u_meas'] = 0.5 * u2_measurement['u_meas'] / (n_transects)
+        u_contribution_measurement['u_cov'] = 0.5 * u2_measurement['u_cov'] / (n_transects)
         u_contribution_measurement = u_contribution_measurement.div(u_contribution_measurement['total'], axis=0)
 
         u_contribution = u2.copy()
-        u_contribution['u_meas'] = u2['u_meas'].div(n_transects**2, axis=0)
+        # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
+        u_contribution['u_meas'] = u2['u_meas'].mul(0.5).div(n_transects, axis=0)
+        u_contribution['u_cov'] = u2['u_cov'].mul(0.5).div(n_transects, axis=0)
         u_contribution['total'] = u_contribution.sum(axis=1)
         u_contribution = u_contribution.div(u_contribution['total'], axis=0)
 
-        return u, u_measurement, u_contribution, u_contribution_measurement, u_nocov, u_measurement_nocov
+        return u, u_measurement, u_contribution, u_contribution_measurement
 
     def data_prep(self, meas):
         """Determine checked transects and max and min exponents for power and no slip extrapolation.
@@ -717,9 +705,6 @@ class Oursin(object):
 
         # Compute the uncertainty due to the measured area
         for transect_id in self.checked_idx:
-            # Relative depth error due to vertical velocity of boat
-            # TODO this does not belong in the measured area, only affects bottom and edges
-            # relative_error_depth = self.depth_error_boat_motion(meas.transects[transect_id])
 
             # Relative standard deviation of error velocity (Water Track)
             std_ev_wt_ens = self.water_std_by_error_velocity(meas.transects[transect_id])
@@ -762,17 +747,11 @@ class Oursin(object):
 
             # Compute the contribution of all terms to u_meas (sum of a0 to g0 =1)
             u_contrib_boat = (np.nan_to_num(q_2_ens * (u_boat ** 2)).sum() / q_2_tran) / u_2_prct_meas
-            # u_contrib_depth = (np.nan_to_num(q_2_ens * (relative_error_depth ** 2)).sum()
-            #                    / q_2_tran) / u_2_prct_meas
             u_contrib_water = (np.nan_to_num(q_2_ens * ((1 / n_cell_ens) * (std_ev_wt_ens ** 2))).sum()
                                / q_2_tran) / u_2_prct_meas
             u_contrib_dzi = (np.nan_to_num(q_2_ens * ((1 / n_cell_ens) * (u_dzi ** 2))).sum()
                              / q_2_tran) / u_2_prct_meas
 
-            # self.u_contribution_meas.loc[len(self.u_contribution_meas)] = [u_contrib_boat,
-            #                                                                u_contrib_water,
-            #                                                                u_contrib_depth,
-            #                                                                u_contrib_dzi]
             self.u_contribution_meas.loc[len(self.u_contribution_meas)] = [u_contrib_boat,
                                                                            u_contrib_water,
                                                                            u_contrib_dzi]
@@ -1034,36 +1013,55 @@ class Oursin(object):
         else:
             self.u_invalid_water_user_list = self.u_invalid_water_list
 
-    def compute_measurement_cov(self, meas):
+    def compute_measurement_cov(self, meas, method='Bayes', cov_prior=0.02, cov_prior_u=0.2, nsim=20000):
         """Compute the coefficient of variation of the total transect discharges used in the measurement.
 
         Parameters
         ----------
         meas: MeasurementData
             Object of MeasurementData
+        method: str
+            Determines method to use (Bayes or QRev)
+        cov_prior: float
+            Estimated prior cov
+        cov_prior_u: float
+            Estimated uncertainty of prior cov
+        nsim: int
+            Number of simulations for Bayes method
         """
 
         self.cov_68 = np.nan
 
-        # Only compute for multiple transects
-        if self.nb_transects > 1:
-            total_q = []
-            for trans_id in self.checked_idx:
-                total_q.append(meas.discharge[trans_id].total)
+        if method == 'QRev':
 
-            # Compute coefficient of variation
-            cov = np.abs(np.nanstd(total_q, ddof=1) / np.nanmean(total_q))
+            # Only compute for multiple transects
+            if self.nb_transects > 1:
+                total_q = []
+                for trans_id in self.checked_idx:
+                    total_q.append(meas.discharge[trans_id].total)
 
-            # Inflate the cov to the 95% value
-            if len(total_q) == 2:
-                # Use the approximate method as taught in class to reduce the high coverage factor for 2 transects
-                # and account for prior knowledge related to 720 second duration analysis
-                cov_95 = cov * 3.3
-                self.cov_68 = cov_95 / 2
-            else:
-                # Use Student's t to inflate COV for n > 2
-                cov_95 = t.interval(0.95, len(total_q) - 1)[1] * cov / len(total_q) ** 0.5
-                self.cov_68 = cov_95 / 2
+                # Compute coefficient of variation
+                cov = np.abs(np.nanstd(total_q, ddof=1) / np.nanmean(total_q))
+
+                # Inflate the cov to the 95% value
+                if len(total_q) == 2:
+                    # Use the approximate method as taught in class to reduce the high coverage factor for 2 transects
+                    # and account for prior knowledge related to 720 second duration analysis
+                    cov_95 = cov * 3.3
+                    self.cov_68 = cov_95 / 2
+                else:
+                    # Use Student's t to inflate COV for n > 2
+                    cov_95 = t.interval(0.95, len(total_q) - 1)[1] * cov / len(total_q) ** 0.5
+                    self.cov_68 = cov_95 / 2
+        elif method == 'Bayes':
+            transects_total_q = []
+            for idx in meas.checked_transect_idx:
+                transects_total_q.append(meas.discharge[idx].total)
+
+            self.cov_68 = self.bayes_cov(transects_total_q=transects_total_q,
+                                         cov_prior=cov_prior,
+                                         cov_prior_u=cov_prior_u,
+                                         nsim=nsim)
 
         # if u_cov_68_user is not None:
         #     self.u_cov_68_user = u_cov_68_user * 0.01
@@ -1128,7 +1126,8 @@ class Oursin(object):
 
             for trans_id in self.checked_idx:
                 # Compute min values
-                #TODO if depth uncertianty were included a copy of transects[trans_id] would need to be made with the adjusted depth values
+                # TODO if depth uncertianty were included a copy of transects[trans_id] would need to be made with
+                #  the adjusted depth values
                 q.populate_data(data_in=meas.transects[trans_id],
                                 top_method='Constant',
                                 bot_method='No Slip',
@@ -1766,3 +1765,258 @@ class Oursin(object):
                   - vertical_stack.groupby(vertical_stack.index)[col_name].min()) / (2 * (3 ** 0.5))
 
         return u_rect
+
+    # Bayesian COV
+    # ============
+    @staticmethod
+    def bayes_cov(transects_total_q, cov_prior=0.02, cov_prior_u=0.2, nsim=20000):
+        """Computes the coefficient of variation using a Bayesian approach and an assumed posterior
+        log-normal distribution.
+
+        Parameters
+        ----------
+        transects_total_q: list
+            List of total discharge for each transect
+        cov_prior: float
+            Expected COV (68%) based on prior knowledge. Assumed to be 2% by default.
+        cov_prior_u: float
+            Uncertainty (68%) of cov_prior. Assumed to be 20%.
+        nsim: int
+            Number of simulations. 20000 was found to produce stable results.
+
+        Returns
+        -------
+        cov: float
+            Coefficient of variation
+        """
+
+        sav = Oursin.metropolis(theta0=[np.mean(transects_total_q), cov_prior],
+                                obs_data=transects_total_q,
+                                cov_prior=cov_prior,
+                                cov_prior_u=cov_prior_u,
+                                nsim=nsim,
+                                theta_std=np.abs([np.mean(transects_total_q), cov_prior])
+                                * cov_prior_u / np.sqrt(len(transects_total_q)))
+
+        n_burn = int(nsim / 2)
+
+        cov = np.mean(sav['sam'][n_burn:nsim, 1])
+
+        return cov
+
+    @staticmethod
+    def metropolis(theta0, obs_data, cov_prior, cov_prior_u, nsim=1000, theta_std=None):
+        """Implements the Metropolis_Hastings Markov chain Monte Carlo (MCMC) algorithm for sampling the
+        posterior distribution, assuming a log-normal posterior distribution.
+
+        Parameters
+        ----------
+        theta0: list
+            Starting value of parameters (mean and cov_prior)
+        obs_data: list
+            List of total discharge for each transect
+        cov_prior: float
+            Expected COV (68%) based on prior knowledge.
+        cov_prior_u: float
+            Uncertainty (68%) of cov_prior.
+        nsim: int
+            Number of simulations.
+        theta_std: float
+            Standard deviation for the gaussian Jump distribution. If blank a default value is computed.
+
+        Returns
+        -------
+        w: dict
+            Dictionary containing
+            sam: np.array(float)
+                Matrix containing the MCMC samples
+            obj_funk: np.array(float)
+                Vector containing the corresponding values of the objective function 
+                (i.e. of the unnormalized log-posterior)
+        """
+       
+        # Initialize
+        npar = len(theta0)
+        sam = np.zeros((nsim + 1, npar))  
+        obj_funk = np.zeros((nsim + 1, 1))  
+
+        # Parameters - used for automatic computation of starting stds of the Gaussian Jump distribution
+        if theta_std is None:
+            std_factor = 0.1
+            theta_std = std_factor * np.abs(theta0)
+
+        # Check if starting point is feasible - abandon otherwise
+        f_current = Oursin.log_post(param=theta0, measures=obs_data, cov_prior=cov_prior, cov_prior_u=cov_prior_u)
+
+        if not Oursin.is_feasible(f_current):
+            print('Metropolis:FATAL:unfeasible starting point')
+            w = {'sam': sam, 'obj_funk': obj_funk}
+            return w
+        else:
+            sam[0, :] = list(theta0)
+            obj_funk[0] = f_current
+
+            # MCMC loop
+            for i in range(nsim):
+                current = sam[i, :]
+                f_current = obj_funk[i]
+                # Propose a new candidate
+                candid = np.random.normal(loc=current, scale=theta_std)
+
+                # Evaluate objective function at candidate
+                f_candid = Oursin.log_post(param=candid,
+                                           measures=obs_data,
+                                           cov_prior=cov_prior,
+                                           cov_prior_u=cov_prior_u)
+
+                if not Oursin.is_feasible(f_candid):
+                    sam[i + 1, :] = current
+                    obj_funk[i + 1] = f_current
+                else:
+                    # Generate deviate ~U[0,1]
+                    u = np.random.uniform(0, 1)
+
+                    # Compute Metropolis acceptance ratio
+                    ratio = math.exp(min(max(-100, f_candid - f_current), 0))
+
+                    # Apply acceptance rule
+                    if u <= ratio:
+                        sam[i + 1, :] = candid
+                        obj_funk[i + 1] = f_candid
+                    else:
+                        sam[i + 1, :] = current
+                        obj_funk[i + 1] = f_current
+
+            w = {'sam': sam, 'obj_funk': obj_funk}
+            return w
+
+    @staticmethod
+    def log_post(param, measures, cov_prior, cov_prior_u):
+        """Define function returning the posterior log-pdf using the model measures ~ N(true_value,cov*true_value),
+        with a flat prior on true_value and a log-normal prior for cov (= coefficient of variation)
+        
+        Parameters
+        ----------
+        param: np.array(float)
+            Array containing the true value and COV
+        
+        measures: np.array(float)
+            Array of observations
+        cov_prior: float
+            Expected COV (68%) based on prior knowledge.
+        cov_prior_u: float
+            Uncertainty (68%) of cov_prior.
+            
+        Returns
+        -------
+        logp: 
+        """
+        # Check if any parameter is <=0
+        # since  both true_value and cov have to be positive - otherwise sigma = true_value*cov does not make sense
+        if any(item <= 0 for item in param):
+            return -math.inf
+
+        true_value = param[0]
+        cov = param[1]
+        sigma = cov * true_value  # standard deviation
+
+        # Compute log-likelihood under the model: measures ~ N(true_value,sigma)
+        # You can easily change this model (e.g. lognormal for a positive measurand?)
+        # OPTION 1 : the model follows a Normal distribution
+        log_likelihood = np.sum(scipy.stats.norm.logpdf(measures, loc=true_value, scale=sigma))
+
+        # Prior on true_value - flat prior used here but you may change this if you have prior knowledge
+        log_prior_1 = 0
+
+        # Prior on cov
+        # The lognormal prior used here can be roughly interpreted as:
+        # with cov_prior = 0.02 (coefficient of variation is 2%) and 
+        # cov_prior_u = 0.20 (uncertainty on the coeff of variation)
+        # "cov is equal to 0.02 with 20% standard uncertainty"
+        x = sigma
+        mu = np.log(cov_prior)
+        scale = cov_prior_u
+        pdf = np.exp(-(np.log(x) - mu) ** 2 / (2 * scale ** 2)) / (x * scale * np.sqrt(2 * np.pi))
+        log_prior_2 = np.log(pdf)
+
+        # Joint prior (prior independence)
+        log_prior = log_prior_1 + log_prior_2
+
+        # Return (unnormalized) log-posterior
+        logp = log_likelihood + log_prior
+        if np.isnan(logp):
+            logp = -math.inf  # returns -Inf rather than NaN's (required by the MCMC sampler used subsequently)
+        return logp
+
+    @staticmethod
+    def is_feasible(value):
+        """Checks that a value is a real value (not infinity or nan)
+        
+        Parameters
+        ----------
+        value: float or int
+        
+        Returns
+        -------
+        bool
+        """
+        if np.isinf(value) or np.isnan(value):
+            return False
+        else:
+            return True
+
+    # Hening Huang proposed method for random uncertainty
+    # ---------------------------------------------------
+    @staticmethod
+    def hh_random_meas(meas):
+        """Implements the semi-empirical method for computing the random uncertainty of an ADCP discharge transect,
+        as presented in Hening Huang (2018) Estimating uncertainty of streamflow measurements with
+        moving-boat acoustic Doppler current profilers, Hydrological Sciences Journal, 63:3, 353-368,
+        DOI:10.1080/02626667.2018.1433833
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+
+        Returns
+        -------
+            random_u: list
+                List of random uncertainty for each checked transect.
+        """
+        random_u = []
+        for idx in meas.checked_transect_idx:
+            # Get or compute base variables
+            q_m = meas.discharge[idx].middle
+            q_i = meas.discharge[idx].middle_ens
+            q_bar = np.nanmean(q_i[:])
+
+            # Compute r1
+            r1_numerator = []
+            r1_denominator = []
+            for n in range(len(q_i) - 1):
+                r1_numerator.append((q_i[n] - q_bar) * (q_i[n+1] - q_bar))
+                r1_denominator.append((q_i[n] - q_bar)**2)
+            r1_denominator.append((q_i[-1] - q_bar)**2)
+            r1 = np.nansum(r1_numerator) / np.nansum(r1_denominator)
+
+            # Compute g(r1)
+            g_r1 = 0.6 + (0.1 * np.exp(r1)) + (0.01 * (1 - np.exp((r1**0.6)-1)**-0.08))
+            if g_r1 < 1:
+                g_r1 = 1.0
+
+            # Compute (delta qi)**2
+            alpha = 1. / 3.
+            c1 = 0.5 * (1 - alpha)
+            delta_list = []
+            for n in range(1, len(q_i) - 1):
+                q_i_hat = c1 * q_i[n - 1] + alpha * q_i[n] + c1 * q_i[n + 1]
+                delta_list.append((q_i[n] - q_i_hat)**2)
+
+            # Compute unbiased residual sum of squares
+            urss = ((2. / 3.) * (1 / (1 - alpha))**2) * np.nansum(delta_list)
+
+            # Compute random uncertainty
+            random_u.append(g_r1 * np.sqrt(urss) / q_m)
+
+        return random_u

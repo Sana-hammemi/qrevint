@@ -517,7 +517,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.icon_unChecked.addPixmap(QtGui.QPixmap(":/images/24x24/check-mark-orange.png"),
                                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
-        self.run_oursin = False
+        self.run_oursin = True
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False
@@ -710,7 +710,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_advanced.activated.connect(self.set_show_below_sl)
 
         # Remove uncertainty tab
-        self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+        # self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
 
         # Show QRev maximized on the display
         self.showMaximized()
@@ -9882,7 +9882,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         n_transects = len(self.checked_transects_idx)
 
         tbl.setRowCount(n_transects + 5)
-        tbl.setColumnCount(18)
+        tbl.setColumnCount(17)
         tbl.horizontalHeader().hide()
         tbl.verticalHeader().hide()
         # tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -9911,8 +9911,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.custom_header(tbl, 0, 13, 3, 1, self.tr(' Adjusted \n Coefficient \n of Variation \n (percent)'))
             self.custom_header(tbl, 0, 14, 3, 1, self.tr(' Automatic \n Total 95% \n Uncertainty'))
             self.custom_header(tbl, 0, 15, 3, 1, self.tr(' User \n Total 95% \n Uncertainty'))
-            self.custom_header(tbl, 0, 16, 3, 1, self.tr(' No COV \n Total 95% \n Uncertainty'))
-            self.custom_header(tbl, 0, 17, 3, 1, self.tr(' Orig QRev \n Total 95% \n Uncertainty'))
+            self.custom_header(tbl, 0, 16, 3, 1, self.tr(' Orig QRev \n Total 95% \n Uncertainty'))
 
             # Add data
             for trans_row in range(n_transects):
@@ -9998,7 +9997,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # COV
                 col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                # tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                    '{:5.2f}'.format(self.meas.oursin.u.iloc[trans_row]['u_cov'])))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Auto 95
@@ -10011,12 +10012,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col += 1
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.u_user.iloc[trans_row]['total_95'])))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-
-                # No COV 95
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:5.2f}'.format(self.meas.oursin.u_nocov.iloc[trans_row]['total_95'])))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             row = 4
@@ -10137,8 +10132,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # COV
             col += 1
+            # tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            #     '{:5.2f}'.format(self.meas.oursin.cov_68 * 100)))
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.cov_68 * 100)))
+                '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_cov'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Auto 95
@@ -10151,12 +10148,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col += 1
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement_user.iloc[0]['total_95'])))
-            tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-
-            # No COV 95
-            col += 1
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.u_measurement_nocov.iloc[0]['total_95'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # QRev
@@ -10182,14 +10173,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(3, 15).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.setItem(3, 16, QtWidgets.QTableWidgetItem(''))
             tbl.item(3, 16).setFlags(QtCore.Qt.ItemIsEnabled)
-            tbl.setItem(3, 17, QtWidgets.QTableWidgetItem(''))
-            tbl.item(3, 17).setFlags(QtCore.Qt.ItemIsEnabled)
 
             tbl.item(3, 13).setBackground(QtGui.QColor(150, 150, 150))
             tbl.item(3, 14).setBackground(QtGui.QColor(150, 150, 150))
             tbl.item(3, 15).setBackground(QtGui.QColor(150, 150, 150))
             tbl.item(3, 16).setBackground(QtGui.QColor(150, 150, 150))
-            tbl.item(3, 17).setBackground(QtGui.QColor(150, 150, 150))
 
             tbl.resizeColumnsToContents()
 

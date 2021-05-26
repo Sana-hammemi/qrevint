@@ -2136,8 +2136,13 @@ class TransectData(object):
                 1 < np.sum(np.logical_not(np.isnan(transect.boat_vel.bt_vel.u_processed_mps))):
             # Data prep
             bt_track = BoatStructure.compute_boat_track(transect, ref='bt_vel')
-            bt_course, _ = cart2pol(bt_track['track_x_m'][-1], bt_track['track_y_m'][-1])
-            bt_course = rad2azdeg(bt_course)
+
+            try:
+                bt_course, _ = cart2pol(bt_track['track_x_m'][-1], bt_track['track_y_m'][-1])
+                bt_course = rad2azdeg(bt_course)
+            except TypeError:
+                bt_course = np.nan
+
             gps_track = BoatStructure.compute_boat_track(transect, ref=gps_ref)
             gps_course, _ = cart2pol(gps_track['track_x_m'][-1], gps_track['track_y_m'][-1])
             gps_course = rad2azdeg(gps_course)
@@ -2148,13 +2153,28 @@ class TransectData(object):
                 gps_bt['course'] = gps_bt['course'] + 360
 
             # Compute ratio
-            gps_bt['ratio'] = bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
+            try:
+                gps_bt['ratio'] = bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
+            except TypeError:
+                gps_bt['ratio'] = np.nan
 
             # Compute closure vector
-            x_diff = bt_track['track_x_m'][-1] - gps_track['track_x_m'][-1]
-            y_diff = bt_track['track_y_m'][-1] - gps_track['track_y_m'][-1]
-            gps_bt['dir'], gps_bt['mag'] = cart2pol(x_diff, y_diff)
-            gps_bt['dir'] = rad2azdeg(gps_bt['dir'])
+            try:
+                x_diff = bt_track['track_x_m'][-1] - gps_track['track_x_m'][-1]
+            except TypeError:
+                x_diff = np.nan
+
+            try:
+                y_diff = bt_track['track_y_m'][-1] - gps_track['track_y_m'][-1]
+            except TypeError:
+                y_diff = np.nan
+
+            try:
+                gps_bt['dir'], gps_bt['mag'] = cart2pol(x_diff, y_diff)
+                gps_bt['dir'] = rad2azdeg(gps_bt['dir'])
+            except TypeError:
+                gps_bt['dir'] = np.nan
+                gps_bt['mag'] = np.nan
 
         return gps_bt
 

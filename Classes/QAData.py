@@ -325,15 +325,68 @@ class QAData(object):
 
             if hasattr(meas_struct.qa, 'settings_dict'):
                 self.settings_dict = dict()
-                self.settings_dict['tab_compass'] = meas_struct.qa.settings_dict.tab_compass
-                self.settings_dict['tab_tempsal'] = meas_struct.qa.settings_dict.tab_tempsal
-                self.settings_dict['tab_mbt'] = meas_struct.qa.settings_dict.tab_mbt
-                self.settings_dict['tab_bt'] = meas_struct.qa.settings_dict.tab_bt
-                self.settings_dict['tab_gps'] = meas_struct.qa.settings_dict.tab_gps
-                self.settings_dict['tab_depth'] = meas_struct.qa.settings_dict.tab_depth
-                self.settings_dict['tab_wt'] = meas_struct.qa.settings_dict.tab_wt
-                self.settings_dict['tab_extrap'] = meas_struct.qa.settings_dict.tab_extrap
-                self.settings_dict['tab_edges'] = meas_struct.qa.settings_dict.tab_edges
+                try:
+                    self.settings_dict['tab_compass'] = \
+                        meas_struct.qa.settings_dict.tab_compass
+                except AttributeError:
+                    self.settings_dict['tab_compass'] = \
+                        new_qa.settings_dict['tab_compass']
+
+                try:
+                    self.settings_dict['tab_tempsal'] = \
+                        meas_struct.qa.settings_dict.tab_tempsal
+                except AttributeError:
+                    self.settings_dict['tab_tempsal'] = \
+                        new_qa.settings_dict['tab_tempsal']
+
+                try:
+                    self.settings_dict['tab_mbt'] = \
+                        meas_struct.qa.settings_dict.tab_mbt
+                except AttributeError:
+                    self.settings_dict['tab_mbt'] = \
+                        new_qa.settings_dict['tab_mbt']
+
+                try:
+                    self.settings_dict['tab_bt'] = \
+                        meas_struct.qa.settings_dict.tab_bt
+                except AttributeError:
+                    self.settings_dict['tab_bt'] = \
+                        new_qa.settings_dict['tab_bt']
+
+                try:
+                    self.settings_dict['tab_gps'] = \
+                        meas_struct.qa.settings_dict.tab_gps
+                except AttributeError:
+                    self.settings_dict['tab_gps'] = \
+                        new_qa.settings_dict['tab_gps']
+
+                try:
+                    self.settings_dict['tab_depth'] = \
+                        meas_struct.qa.settings_dict.tab_depth
+                except AttributeError:
+                    self.settings_dict['tab_depth'] = \
+                        new_qa.settings_dict['tab_depth']
+
+                try:
+                    self.settings_dict['tab_wt'] = \
+                        meas_struct.qa.settings_dict.tab_wt
+                except AttributeError:
+                    self.settings_dict['tab_wt'] = \
+                        new_qa.settings_dict['tab_wt']
+
+                try:
+                    self.settings_dict['tab_extrap'] = \
+                        meas_struct.qa.settings_dict.tab_extrap
+                except AttributeError:
+                    self.settings_dict['tab_extrap'] = \
+                        new_qa.settings_dict['tab_extrap']
+
+                try:
+                    self.settings_dict['tab_edges'] = \
+                        meas_struct.qa.settings_dict.tab_edges
+                except AttributeError:
+                    self.settings_dict['tab_edges'] = \
+                        new_qa.settings_dict['tab_edges']
 
     @staticmethod
     def create_qa_dict(self, mat_data, ndim=1):

@@ -1721,9 +1721,11 @@ class Measurement(object):
         """
 
         # Update transect settings
+        self.checked_transect_idx = []
         for n in range(len(self.transects)):
             if n in selected_transects_idx:
                 self.transects[n].checked = True
+                self.checked_transect_idx.append(n)
             else:
                 self.transects[n].checked = False
 
