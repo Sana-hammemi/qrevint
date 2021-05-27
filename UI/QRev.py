@@ -10196,8 +10196,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Setup table
         tbl = self.table_uncertainty_settings
-        tbl.setRowCount(11)
-        tbl.setColumnCount(1)
+        tbl.setRowCount(13)
+        tbl.setColumnCount(2)
         v_header = [self.tr('Draft (m)'),
                     self.tr('Left edge distance (%)'),
                     self.tr('Right edge distance (%)'),
@@ -10208,107 +10208,153 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tr('Extrap: no slip exponent maximum'),
                     self.tr('GGA boat speed (m/s)'),
                     self.tr('VTG boat speed (m/s'),
-                    self.tr('Compass error (deg')]
-        tbl.setHorizontalHeaderLabels([self.tr('Value')])
+                    self.tr('Compass error (deg'),
+                    self.tr('Bayesian COV Prior'),
+                    self.tr('Bayesian COV Prior Uncertainty')]
+        tbl.setHorizontalHeaderLabels([self.tr('Default'), self.tr('User')])
         tbl.setVerticalHeaderLabels(v_header)
+        tbl.horizontalHeader().setFont(self.font_bold)
+        tbl.verticalHeader().setFont(self.font_bold)
         # tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         tbl.itemChanged.connect(self.user_advanced_settings_change)
         tbl.itemChanged.disconnect()
 
-        col = 0
-
         # Draft
         row = 0
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['draft_error_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['draft_error_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Left edge
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['left_edge_dist_prct'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['left_edge_dist_prct'])))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Right edge
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['right_edge_dist_prct'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['right_edge_dist_prct_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['right_edge_dist_prct_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['right_edge_dist_prct'])))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Depth cell size
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['dzi_prct'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['dzi_prct_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['dzi_prct_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['dzi_prct'])))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Power minimum
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['exp_pp_min_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_pp_min_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Power maximum
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['exp_pp_max_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_pp_max_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # No slip minimum
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['exp_ns_min_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_ns_min_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # No slip maximum
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['exp_ns_max_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_ns_max_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # GGA
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['gga_boat_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['gga_boat_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Computed'))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # VTG
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+            '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['vtg_boat_mps'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['vtg_boat_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['vtg_boat_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['vtg_boat_mps'])))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         # Compass
         row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+            '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['compass_error_deg'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         if self.meas.oursin.user_advanced_settings['compass_error_user'] is not None:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['compass_error_user'])))
         else:
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['compass_error_deg'])))
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+
+        # Bayesian COV Prior
+        row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+            '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['cov_prior'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+        if self.meas.oursin.user_advanced_settings['cov_prior_user'] is not None:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['cov_prior_user'])))
+        else:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+
+        # Bayesian COV Prior Uncertainty
+        row += 1
+        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
+            '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['cov_prior_u'])))
+        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
+        if self.meas.oursin.user_advanced_settings['cov_prior_u_user'] is not None:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['cov_prior_u_user'])))
+        else:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
         tbl.itemChanged.connect(self.user_advanced_settings_change)
 
@@ -10400,6 +10446,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.meas.oursin.user_advanced_settings['vtg_boat_user'] = new_value
             elif row_index == 10:
                 self.meas.oursin.user_advanced_settings['compass_error_user'] = new_value
+            elif row_index == 11:
+                self.meas.oursin.user_advanced_settings['cov_prior_user'] = new_value
+            elif row_index == 12:
+                self.meas.oursin.user_advanced_settings['cov_prior_u_user'] = new_value
 
             # Compute new uncertainty values
             self.meas.oursin.compute_oursin(meas=self.meas)

@@ -255,7 +255,9 @@ class Oursin(object):
                                        'left_edge_dist_prct_user': None,
                                        'gga_boat_user': None,
                                        'vtg_boat_user': None,
-                                       'compass_error_user': None}
+                                       'compass_error_user': None,
+                                       'cov_prior_user': None,
+                                       'cov_prior_u_user': None}
 
         self.default_advanced_settings = {'exp_pp_min': 'computed',
                                           'exp_pp_max': 'computed',
@@ -267,7 +269,9 @@ class Oursin(object):
                                           'left_edge_dist_prct': 20,
                                           'gga_boat_mps': 'computed',
                                           'vtg_boat_mps': 0.05,
-                                          'compass_error_deg': 1}
+                                          'compass_error_deg': 1,
+                                          'cov_prior': 0.03,
+                                          'cov_prior_u': 0.20}
 
         self.user_specified_u = {'u_syst_mean_user': None,
                                  'u_movbed_user': None,
@@ -576,8 +580,8 @@ class Oursin(object):
         # Compute relative contributions from each source
         u_contribution_measurement = u2_measurement.copy()
         # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
-        u_contribution_measurement['u_meas'] = 0.5 * u2_measurement['u_meas'] / (n_transects)
-        u_contribution_measurement['u_cov'] = 0.5 * u2_measurement['u_cov'] / (n_transects)
+        u_contribution_measurement['u_meas'] = 0.5 * u2_measurement['u_meas'] / n_transects
+        u_contribution_measurement['u_cov'] = 0.5 * u2_measurement['u_cov'] / n_transects
         u_contribution_measurement = u_contribution_measurement.div(u_contribution_measurement['total'], axis=0)
 
         u_contribution = u2.copy()
@@ -1013,7 +1017,7 @@ class Oursin(object):
         else:
             self.u_invalid_water_user_list = self.u_invalid_water_list
 
-    def compute_measurement_cov(self, meas, method='Bayes', cov_prior=0.02, cov_prior_u=0.2, nsim=20000):
+    def compute_measurement_cov(self, meas, method='Bayes'):
         """Compute the coefficient of variation of the total transect discharges used in the measurement.
 
         Parameters
@@ -1022,12 +1026,6 @@ class Oursin(object):
             Object of MeasurementData
         method: str
             Determines method to use (Bayes or QRev)
-        cov_prior: float
-            Estimated prior cov
-        cov_prior_u: float
-            Estimated uncertainty of prior cov
-        nsim: int
-            Number of simulations for Bayes method
         """
 
         self.cov_68 = np.nan
@@ -1054,20 +1052,28 @@ class Oursin(object):
                     cov_95 = t.interval(0.95, len(total_q) - 1)[1] * cov / len(total_q) ** 0.5
                     self.cov_68 = cov_95 / 2
         elif method == 'Bayes':
+
+            # Set prior
+            if meas.oursin.user_advanced_settings['cov_prior_user'] is None:
+                cov_prior = meas.oursin.default_advanced_settings['cov_prior']
+            else:
+                cov_prior = meas.oursin.user_advanced_settings['cov_prior_user']
+
+            if meas.oursin.user_advanced_settings['cov_prior_u_user'] is None:
+                cov_prior_u = meas.oursin.default_advanced_settings['cov_prior_u']
+            else:
+                cov_prior_u = meas.oursin.user_advanced_settings['cov_prior_u_user']
+
+            # Create list of observations
             transects_total_q = []
             for idx in meas.checked_transect_idx:
                 transects_total_q.append(meas.discharge[idx].total)
 
+            # Compute COV
             self.cov_68 = self.bayes_cov(transects_total_q=transects_total_q,
                                          cov_prior=cov_prior,
                                          cov_prior_u=cov_prior_u,
-                                         nsim=nsim)
-
-        # if u_cov_68_user is not None:
-        #     self.u_cov_68_user = u_cov_68_user * 0.01
-        #     self.u_cov_68_user_value = self.u_cov_68_user
-        # else:
-        # self.u_cov_68_user_value = self.cov_68
+                                         nsim=20000)
 
     def sim_orig(self, meas):
         """Stores original measurement results in a data frame
@@ -1769,7 +1775,7 @@ class Oursin(object):
     # Bayesian COV
     # ============
     @staticmethod
-    def bayes_cov(transects_total_q, cov_prior=0.02, cov_prior_u=0.2, nsim=20000):
+    def bayes_cov(transects_total_q, cov_prior=0.03, cov_prior_u=0.2, nsim=20000):
         """Computes the coefficient of variation using a Bayesian approach and an assumed posterior
         log-normal distribution.
 
@@ -1778,7 +1784,7 @@ class Oursin(object):
         transects_total_q: list
             List of total discharge for each transect
         cov_prior: float
-            Expected COV (68%) based on prior knowledge. Assumed to be 2% by default.
+            Expected COV (68%) based on prior knowledge. Assumed to be 3% by default.
         cov_prior_u: float
             Uncertainty (68%) of cov_prior. Assumed to be 20%.
         nsim: int
@@ -1928,12 +1934,8 @@ class Oursin(object):
         # Prior on true_value - flat prior used here but you may change this if you have prior knowledge
         log_prior_1 = 0
 
-        # Prior on cov
-        # The lognormal prior used here can be roughly interpreted as:
-        # with cov_prior = 0.02 (coefficient of variation is 2%) and 
-        # cov_prior_u = 0.20 (uncertainty on the coeff of variation)
-        # "cov is equal to 0.02 with 20% standard uncertainty"
-        x = sigma
+        # Lognormal prior
+        x = cov
         mu = np.log(cov_prior)
         scale = cov_prior_u
         pdf = np.exp(-(np.log(x) - mu) ** 2 / (2 * scale ** 2)) / (x * scale * np.sqrt(2 * np.pi))

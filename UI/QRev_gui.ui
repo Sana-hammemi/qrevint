@@ -616,9 +616,12 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="20,40,40">
+           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="15,0,45,40">
             <item>
              <widget class="QTableWidget" name="table_qa"/>
+            </item>
+            <item>
+             <widget class="QWidget" name="uncertainty_lollipop" native="true"/>
             </item>
             <item>
              <widget class="QTableWidget" name="table_uncertainty"/>
