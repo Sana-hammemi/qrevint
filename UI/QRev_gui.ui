@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1584</width>
+    <width>1938</width>
     <height>1051</height>
    </rect>
   </property>
@@ -298,7 +298,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_49">
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_64" stretch="8,2">
+         <layout class="QHBoxLayout" name="horizontalLayout_76" stretch="8,2">
           <item>
            <widget class="QSplitter" name="splitter">
             <property name="orientation">
@@ -616,15 +616,81 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="15,0,45,40">
+           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="15,0,45,0,40">
             <item>
              <widget class="QTableWidget" name="table_qa"/>
             </item>
             <item>
-             <widget class="QWidget" name="uncertainty_lollipop" native="true"/>
+             <widget class="QWidget" name="uncertainty_lollipop" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QTableWidget" name="table_uncertainty"/>
+             <widget class="QTableWidget" name="table_uncertainty">
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustIgnored</enum>
+              </property>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>49</number>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_64">
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>User Rating:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cb_user_rating">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                 </font>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Not Rated</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Excellent (&lt;3%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Good (3-5%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Fair (5-8%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Poor (&gt;8%)</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QWidget" name="graphics_main_extrap" native="true">

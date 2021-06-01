@@ -20,6 +20,7 @@ from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
 from Classes.MovingBedTests import MovingBedTests
 from Classes.CoordError import CoordError
+from Classes.Oursin import Oursin
 import UI.QRev_gui as QRev_gui
 from UI.selectFile import SaveMeasurementDialog
 from UI.OpenMeasurementDialog import OpenMeasurementDialog
@@ -57,6 +58,7 @@ from UI.UMeasQ import UMeasQ
 from UI.MplCanvas import MplCanvas
 from UI.Disclaimer import Disclaimer
 from UI.WTAdvanced import WTAdvanced
+from UI.ULollipopPlot import ULollipopPlot
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
@@ -438,6 +440,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.sticky_settings.new('ColorMap', 'viridis')
             self.color_map = 'viridis'
 
+        try:
+            ss = self.sticky_settings.get('Oursin')
+            self.run_oursin = ss
+        except KeyError:
+            self.sticky_settings.new('Oursin', False)
+            self.run_oursin = False
+
+        if self.run_oursin:
+            self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
+        else:
+            self.tab_all.removeTab(
+                self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+
         # Set initial change switch to false
         self.change = False
 
@@ -517,7 +532,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.icon_unChecked.addPixmap(QtGui.QPixmap(":/images/24x24/check-mark-orange.png"),
                                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
-        self.run_oursin = True
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False
@@ -623,6 +637,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.uncertainty_measurement_canvas = None
         self.uncertainty_measurement_fig = None
         self.uncertainty_measurement_toolbar = None
+        self.uncertainty_lollipop_canvas = None
+        self.uncertainty_lollipop_fig = None
+        self.uncertainty_lollipop_toolbar = None
         self.adv_graph_canvas = None
         self.adv_graph_fig = None
         self.adv_graph_toolbar = None
@@ -708,9 +725,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_advanced.activated.connect(self.wt_advanced_show_hide)
         self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+A'), self)
         self.sc_advanced.activated.connect(self.set_show_below_sl)
-
-        # Remove uncertainty tab
-        # self.tab_all.removeTab(self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
 
         # Show QRev maximized on the display
         self.showMaximized()
@@ -1115,6 +1129,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 options.cb_rating.setChecked(False)
 
+            if self.run_oursin:
+                options.rb_oursin_u.setChecked(True)
+            else:
+                options.rb_qrev_u.setChecked(True)
+
             if self.meas is not None:
                 self.use_measurement_thresholds = \
                     self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
@@ -1193,7 +1212,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         use_weighted = False
 
-                    # Check for change
+                    # Check for change in extraplation weighting
                     if self.use_weighted != use_weighted:
                         self.change = True
                         # If change made with measurement loaded recompute measurement
@@ -1216,7 +1235,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         filter_meas = False
 
-                    # Check for change
+                    # Check for change in filter measurement
                     if self.use_measurement_thresholds != filter_meas:
                         self.change = True
                         # If change made with measurement loaded recompute measurement
@@ -1232,6 +1251,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
                         self.use_measurement_thresholds = filter_meas
+
+                    # Units options
+                    if options.rb_oursin_u.isChecked():
+                        use_oursin = True
+                    else:
+                        use_oursin = False
+
+                    # Check for change in filter measurement
+                    if self.run_oursin != use_oursin:
+                        self.run_oursin = use_oursin
+                        self.sticky_settings.set('Oursin', use_oursin)
+                        if self.run_oursin:
+                            # Uncertainty based on Oursin
+                            self.meas.run_oursin = True
+                            self.meas.oursin = Oursin()
+                            self.meas.oursin.compute_oursin(self.meas)
+                            self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
+                        else:
+                            # Uncertainty based on original QRev
+                            self.tab_all.removeTab(
+                                self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+
+                        # Change display of uncertainty on main tab depending on selection
+                        self.update_main_uncertainty()
+
+                    # If change made before measurement loaded, set value
+                    else:
+                        self.sticky_settings.set('Oursin', use_oursin)
+                        self.run_oursin = use_oursin
+
+
 
                     # Update tabs
                     if old_discharge is None:
@@ -1321,6 +1371,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.table_settings.cellClicked.connect(self.settings_table_row_adjust)
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
+                    self.cb_user_rating.currentIndexChanged.connect(self.rating_change)
 
                     # Main tab has been initialized
                     self.main_initialized = True
@@ -1350,6 +1401,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
                     self.main_extrap_plot()
                     self.discharge_plot()
+                    self.main_uncertainty_plot()
                     self.figs = []
 
                 # If graphics have been created, update them
@@ -1367,13 +1419,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_shiptrack_fig.fig.clear()
                         self.main_shiptrack_canvas.draw()
 
+                self.update_main_uncertainty()
+
                 # Setup list for use by graphics controls
                 self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
-                                 self.main_discharge_canvas]
+                                 self.main_discharge_canvas, self.uncertainty_lollipop_canvas]
                 self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig, self.main_extrap_fig,
-                             self.main_discharge_fig]
+                             self.main_discharge_fig, self.uncertainty_lollipop_fig]
                 self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
-                                 self.main_discharge_toolbar]
+                                 self.main_discharge_toolbar, self.uncertainty_lollipop_toolbar]
 
                 # Toggles changes indicating the main has been updated
                 self.change = False
@@ -1456,9 +1510,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup table
         tbl = self.table_uncertainty
         tbl.clear()
+
         col_header = [self.tr('Uncertainty'), self.tr('Auto'), self.tr('  User  ')]
         ncols = len(col_header)
-        nrows = 8
+        nrows = 7
         tbl.setRowCount(nrows)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(col_header)
@@ -1590,25 +1645,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.resizeColumnsToContents()
             tbl.resizeRowsToContents()
 
-        row = row + 1
-        tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('User Rating')))
-        tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        tbl.item(row, 0).setFont(self.font_bold)
-
-        tbl.setSpan(row, 1, 1, 2)
-        rating = {'Excellent': 'Excellent (<3%)', 'Good': 'Good (3-5%)', 'Fair': 'Fair (5-8%)', 'Poor': 'Poor (>8%)',
-                  'Not Rated': 'Not Rated', '': 'Not Rated'}
-        if type(self.meas.user_rating) is np.ndarray:
-            if len(self.meas.user_rating) > 0:
-                item = rating[self.meas.user_rating[0:4]]
-            else:
-                item = 'Note Rated'
-        else:
-            item = rating[self.meas.user_rating.split('(')[0].strip()]
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(self.tr(item)))
-        tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
-
-
         tbl.itemChanged.connect(self.recompute_uncertainty)
 
     def recompute_uncertainty(self):
@@ -1645,6 +1681,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if new_value is not None:
                 self.table_uncertainty.item(row_index, 2).setText('{:8.1f}'.format(new_value))
             self.table_uncertainty.item(6, 2).setText('{:8.1f}'.format(self.meas.uncertainty.total_95_user))
+
+    def rating_change(self):
+        self.meas.user_rating = self.cb_user_rating.currentText()
 
     def qa_table(self):
         """Create and popluate quality assurance table.
@@ -1870,6 +1909,47 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     auto=True)
 
         self.main_extrap_canvas.draw()
+
+    def main_uncertainty_plot(self):
+        """Creates a lollipop plot for the Oursin uncertainty model.
+        """
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.uncertainty_lollipop_canvas is None:
+            # Create the canvas
+            self.uncertainty_lollipop_canvas = MplCanvas(parent=self.uncertainty_lollipop, width=1, height=4, dpi=80)
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.uncertainty_lollipop)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(1, 1, 1, 1)
+            # Add the canvas
+            layout.addWidget(self.uncertainty_lollipop_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.uncertainty_lollipop_toolbar = NavigationToolbar(self.uncertainty_lollipop_canvas, self)
+            self.uncertainty_lollipop_toolbar.hide()
+
+        # Initialize the figure and assign to the canvas
+        self.uncertainty_lollipop_fig = ULollipopPlot(canvas=self.uncertainty_lollipop_canvas)
+        # Create the figure with the specified data
+        self.uncertainty_lollipop_fig.create(meas=self.meas)
+
+        self.uncertainty_lollipop_canvas.draw()
+
+    def update_main_uncertainty(self):
+        """Updates the main tab to show the appropriate display based on the uncertainty model selected.
+        """
+
+        if self.run_oursin:
+            self.main_uncertainty_plot()
+            self.uncertainty_lollipop.show()
+            self.table_uncertainty.hide()
+            self.verticalLayout_right.setStretch(1, 45)
+            self.verticalLayout_right.setStretch(2, 0)
+
+        else:
+            self.uncertainty_lollipop.hide()
+            self.table_uncertainty.show()
+            self.verticalLayout_right.setStretch(1, 0)
+            self.verticalLayout_right.setStretch(2, 45)
 
     def discharge_plot(self):
         """Generates discharge time series plot for the main tab.

@@ -218,12 +218,6 @@ class Oursin(object):
     u_contribution_measurement: DataFrame
         DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
         u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
-    u_nocov: DataFrame
-        DataFrame containing standard deviations in percent for each transect, without COV: u_syst, u_compass, u_movbed,
-        u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, total, and total_95
-    u_measurement_nocov: DataFrame
-        DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
-        u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, and total
     u_user: DataFrame
         DataFrame containing standard deviations in percent for each transect: u_syst, u_compass, u_movbed, u_ens,
         u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
@@ -233,12 +227,6 @@ class Oursin(object):
     u_contribution_measurement_user: DataFrame
         DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
         u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
-    u_nocov_user: DataFrame
-        DataFrame containing standard deviations in percent for each transect, without COV: u_syst, u_compass, u_movbed,
-        u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, total, and total_95
-    u_measurement_nocov_user: DataFrame
-        DataFrame containing uncertainty contribution in percent from: u_syst, u_compass, u_movbed,
-        u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, and total
     """
 
     def __init__(self):
@@ -376,11 +364,6 @@ class Oursin(object):
         self.u_contribution_measurement = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas',
                                                                 'u_top', 'u_bot', 'u_left', 'u_right', 'u_boat',
                                                                 'u_depth', 'u_water', 'u_cov', 'total'])
-        self.u_nocov = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top', 'u_bot',
-                                             'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water', 'total', 'total_95'])
-        self.u_measurement_nocov = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
-                                                         'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water',
-                                                         'total', 'total_95'])
         self.u_user = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top', 'u_bot',
                                             'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water', 'u_cov', 'total',
                                             'total_95'])
@@ -393,12 +376,6 @@ class Oursin(object):
         self.u_contribution_measurement_user = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens',
                                                                      'u_meas', 'u_top', 'u_bot', 'u_left', 'u_right',
                                                                      'u_boat', 'u_depth', 'u_water', 'u_cov', 'total'])
-        self.u_nocov_user = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
-                                                  'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water', 'total',
-                                                  'total_95'])
-        self.u_measurement_nocov_user = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas',
-                                                              'u_top', 'u_bot', 'u_left', 'u_right', 'u_boat',
-                                                              'u_depth', 'u_water', 'total', 'total_95'])
 
     # @profile
     def compute_oursin(self, meas):
