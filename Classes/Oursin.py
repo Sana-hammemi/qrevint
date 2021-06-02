@@ -233,19 +233,19 @@ class Oursin(object):
         """Initialize class and instance variables."""
 
         # User provided parameters
-        self.user_advanced_settings = {'exp_pp_min_user': None,
-                                       'exp_pp_max_user': None,
-                                       'exp_ns_min_user': None,
-                                       'exp_ns_max_user': None,
-                                       'draft_error_user': None,
-                                       'dzi_prct_user': None,
-                                       'right_edge_dist_prct_user': None,
-                                       'left_edge_dist_prct_user': None,
-                                       'gga_boat_user': None,
-                                       'vtg_boat_user': None,
-                                       'compass_error_user': None,
-                                       'cov_prior_user': None,
-                                       'cov_prior_u_user': None}
+        self.user_advanced_settings = {'exp_pp_min_user': np.nan,
+                                       'exp_pp_max_user': np.nan,
+                                       'exp_ns_min_user': np.nan,
+                                       'exp_ns_max_user': np.nan,
+                                       'draft_error_user': np.nan,
+                                       'dzi_prct_user': np.nan,
+                                       'right_edge_dist_prct_user': np.nan,
+                                       'left_edge_dist_prct_user': np.nan,
+                                       'gga_boat_user': np.nan,
+                                       'vtg_boat_user': np.nan,
+                                       'compass_error_user': np.nan,
+                                       'cov_prior_user': np.nan,
+                                       'cov_prior_u_user': np.nan}
 
         self.default_advanced_settings = {'exp_pp_min': 'computed',
                                           'exp_pp_max': 'computed',
@@ -261,18 +261,18 @@ class Oursin(object):
                                           'cov_prior': 0.03,
                                           'cov_prior_u': 0.20}
 
-        self.user_specified_u = {'u_syst_mean_user': None,
-                                 'u_movbed_user': None,
-                                 'u_compass_user': None,
-                                 'u_ens_user': None,
-                                 'u_meas_mean_user': None,
-                                 'u_top_mean_user': None,
-                                 'u_bot_mean_user': None,
-                                 'u_right_mean_user': None,
-                                 'u_left_mean_user': None,
-                                 'u_invalid_boat_user': None,
-                                 'u_invalid_depth_user': None,
-                                 'u_invalid_water_user': None}
+        self.user_specified_u = {'u_syst_mean_user': np.nan,
+                                 'u_movbed_user': np.nan,
+                                 'u_compass_user': np.nan,
+                                 'u_ens_user': np.nan,
+                                 'u_meas_mean_user': np.nan,
+                                 'u_top_mean_user': np.nan,
+                                 'u_bot_mean_user': np.nan,
+                                 'u_right_mean_user': np.nan,
+                                 'u_left_mean_user': np.nan,
+                                 'u_invalid_boat_user': np.nan,
+                                 'u_invalid_depth_user': np.nan,
+                                 'u_invalid_water_user': np.nan}
 
         # Extrap results
         self.bot_meth = []
@@ -282,10 +282,10 @@ class Oursin(object):
         self.ns_exp = []
 
         # Parameters used for computing the uncertainty
-        self.exp_pp_min = None
-        self.exp_pp_max = None
-        self.exp_ns_min = None
-        self.exp_ns_max = None
+        self.exp_pp_min = np.nan
+        self.exp_pp_max = np.nan
+        self.exp_ns_min = np.nan
+        self.exp_ns_max = np.nan
         self.d_right_error_min = []
         self.d_left_error_min = []
         self.d_right_error_max = []
@@ -320,9 +320,9 @@ class Oursin(object):
         self.u_invalid_water_user_list = []
 
         # Term computed for measurement
-        self.cov_68 = None
+        self.cov_68 = np.nan
 
-        self.nb_transects = None
+        self.nb_transects = np.nan
         self.checked_idx = []
 
         # --- Store results of all simulations in DataFrame
@@ -376,6 +376,195 @@ class Oursin(object):
         self.u_contribution_measurement_user = pd.DataFrame(columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens',
                                                                      'u_meas', 'u_top', 'u_bot', 'u_left', 'u_right',
                                                                      'u_boat', 'u_depth', 'u_water', 'u_cov', 'total'])
+
+    def populate_from_qrev_mat(self, meas_struct):
+        # User provided parameters
+        self.user_advanced_settings = {'exp_pp_min_user': meas_struct.oursin.user_advanced_settings.exp_pp_min_user,
+                                       'exp_pp_max_user': meas_struct.oursin.user_advanced_settings.exp_pp_max_user,
+                                       'exp_ns_min_user': meas_struct.oursin.user_advanced_settings.exp_ns_min_user,
+                                       'exp_ns_max_user': meas_struct.oursin.user_advanced_settings.exp_ns_max_user,
+                                       'draft_error_user': meas_struct.oursin.user_advanced_settings.draft_error_user,
+                                       'dzi_prct_user': meas_struct.oursin.user_advanced_settings.dzi_prct_user,
+                                       'right_edge_dist_prct_user':
+                                           meas_struct.oursin.user_advanced_settings.right_edge_dist_prct_user,
+                                       'left_edge_dist_prct_user':
+                                           meas_struct.oursin.user_advanced_settings.left_edge_dist_prct_user,
+                                       'gga_boat_user': meas_struct.oursin.user_advanced_settings.gga_boat_user,
+                                       'vtg_boat_user': meas_struct.oursin.user_advanced_settings.vtg_boat_user,
+                                       'compass_error_user':
+                                           meas_struct.oursin.user_advanced_settings.compass_error_user,
+                                       'cov_prior_user': meas_struct.oursin.user_advanced_settings.cov_prior_user,
+                                       'cov_prior_u_user': meas_struct.oursin.user_advanced_settings.cov_prior_u_user}
+
+        self.default_advanced_settings = {'exp_pp_min': 'computed',
+                                          'exp_pp_max': 'computed',
+                                          'exp_ns_min': 'computed',
+                                          'exp_ns_max': 'computed',
+                                          'draft_error_m': 'computed',
+                                          'dzi_prct': 0.5,
+                                          'right_edge_dist_prct': 20,
+                                          'left_edge_dist_prct': 20,
+                                          'gga_boat_mps': 'computed',
+                                          'vtg_boat_mps': 0.05,
+                                          'compass_error_deg': 1,
+                                          'cov_prior': 0.03,
+                                          'cov_prior_u': 0.20}
+
+        self.user_specified_u = {'u_syst_mean_user': meas_struct.oursin.user_specified_u.u_syst_mean_user,
+                                 'u_movbed_user': meas_struct.oursin.user_specified_u.u_movbed_user,
+                                 'u_compass_user': meas_struct.oursin.user_specified_u.u_compass_user,
+                                 'u_ens_user': meas_struct.oursin.user_specified_u.u_ens_user,
+                                 'u_meas_mean_user': meas_struct.oursin.user_specified_u.u_meas_mean_user,
+                                 'u_top_mean_user': meas_struct.oursin.user_specified_u.u_top_mean_user,
+                                 'u_bot_mean_user': meas_struct.oursin.user_specified_u.u_bot_mean_user,
+                                 'u_right_mean_user': meas_struct.oursin.user_specified_u.u_right_mean_user,
+                                 'u_left_mean_user': meas_struct.oursin.user_specified_u.u_left_mean_user,
+                                 'u_invalid_boat_user': meas_struct.oursin.user_specified_u.u_invalid_boat_user,
+                                 'u_invalid_depth_user': meas_struct.oursin.user_specified_u.u_invalid_depth_user,
+                                 'u_invalid_water_user': meas_struct.oursin.user_specified_u.u_invalid_water_user}
+
+        # Extrap results
+        self.bot_meth = meas_struct.oursin.bot_meth.tolist()
+        self.exp_95ic_min = meas_struct.oursin.exp_95ic_min.tolist()
+        self.exp_95ic_max = meas_struct.oursin.exp_95ic_max.tolist()
+        self.pp_exp = meas_struct.oursin.ppExponent.tolist()
+        self.ns_exp = meas_struct.oursin.nsExponent.tolist()
+
+        # Parameters used for computing the uncertainty
+        self.exp_pp_min = meas_struct.oursin.exp_pp_min
+        self.exp_pp_max = meas_struct.oursin.exp_pp_max
+        self.exp_ns_min = meas_struct.oursin.exp_ns_min
+        self.exp_ns_max = meas_struct.oursin.exp_ns_max
+        self.d_right_error_min = meas_struct.oursin.d_right_error_min.tolist()
+        self.d_left_error_min = meas_struct.oursin.d_left_error_min.tolist()
+        self.d_right_error_max = meas_struct.oursin.d_right_error_max.tolist()
+        self.d_left_error_max = meas_struct.oursin.d_left_error_max.tolist()
+        self.draft_error_list = meas_struct.oursin.draft_error_list.tolist()
+
+        # Terms computed by transect (list at 68% level)
+        self.u_syst_list = meas_struct.oursin.u_syst_list.tolist()
+        self.u_compass_list = meas_struct.oursin.u_compass_list.tolist()
+        self.u_meas_list = meas_struct.oursin.u_meas_list.tolist()
+        self.u_ens_list = meas_struct.oursin.u_ens_list.tolist()
+        self.u_movbed_list = meas_struct.oursin.u_movbed_list.tolist()
+        self.u_invalid_water_list = meas_struct.oursin.u_invalid_water_list.tolist()
+        self.u_invalid_boat_list = meas_struct.oursin.u_invalid_boat_list.tolist()
+        self.u_invalid_depth_list = meas_struct.oursin.u_invalid_depth_list.tolist()
+        self.u_top_list = meas_struct.oursin.u_top_list.tolist()
+        self.u_bot_list = meas_struct.oursin.u_bot_list.tolist()
+        self.u_left_list = meas_struct.oursin.u_left_list.tolist()
+        self.u_right_list = meas_struct.oursin.u_right_list.tolist()
+
+        self.u_syst_mean_user_list = meas_struct.oursin.u_syst_mean_user_list.tolist()
+        self.u_compass_user_list = meas_struct.oursin.u_compass_user_list.tolist()
+        self.u_movbed_user_list = meas_struct.oursin.u_movbed_user_list.tolist()
+        self.u_meas_mean_user_list = meas_struct.oursin.u_meas_mean_user_list.tolist()
+        self.u_ens_user_list = meas_struct.oursin.u_ens_user_list.tolist()
+        self.u_top_mean_user_list = meas_struct.oursin.u_top_mean_user_list.tolist()
+        self.u_bot_mean_user_list = meas_struct.oursin.u_bot_mean_user_list.tolist()
+        self.u_left_mean_user_list = meas_struct.oursin.u_left_mean_user_list.tolist()
+        self.u_right_mean_user_list = meas_struct.oursin.u_right_mean_user_list.tolist()
+        self.u_invalid_boat_user_list = meas_struct.oursin.u_invalid_boat_user_list.tolist()
+        self.u_invalid_depth_user_list = meas_struct.oursin.u_invalid_depth_user_list.tolist()
+        self.u_invalid_water_user_list = meas_struct.oursin.u_invalid_water_user_list.tolist()
+
+        # Term computed for measurement
+        self.cov_68 = meas_struct.oursin.cov_68
+
+        self.nb_transects = meas_struct.oursin.nb_transects
+        self.checked_idx = meas_struct.oursin.checked_idx
+
+        self.sim_original = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_original),
+                                         columns=['q_total', 'q_top', 'q_bot', 'q_left', 'q_right', 'q_middle'])
+        self.sim_extrap_pp_16 = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_pp_16),
+                                             columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_pp_opt = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_pp_opt),
+                                              columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_pp_min = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_pp_min),
+                                              columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_pp_max = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_pp_max),
+                                              columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_cns_16 = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_cns_16),
+                                              columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_cns_opt = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_cns_opt),
+                                               columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_cns_min = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_cns_min),
+                                               columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_cns_max = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_cns_max),
+                                               columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_3pns_16 = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_3pns_16),
+                                               columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_extrap_3pns_opt = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_3pns_opt),
+                                                columns=['q_total', 'q_top', 'q_bot'])
+        self.sim_edge_min = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_edge_min),
+                                         columns=['q_total', 'q_left', 'q_right'])
+        self.sim_edge_max = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_edge_max),
+                                         columns=['q_total', 'q_left', 'q_right'])
+        self.sim_draft_min = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_draft_min),
+                                          columns=['q_total', 'q_top', 'q_left', 'q_right'])
+        self.sim_draft_max = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_draft_max),
+                                          columns=['q_total', 'q_top', 'q_left', 'q_right'])
+        self.sim_cells_trdi = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_cells_trdi),
+                                           columns=['q_total', 'q_middle'])
+        self.sim_cells_above = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_cells_above),
+                                            columns=['q_total', 'q_middle'])
+        self.sim_cells_below = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_cells_below),
+                                            columns=['q_total', 'q_middle'])
+        self.sim_cells_before = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_cells_before),
+                                             columns=['q_total', 'q_middle'])
+        self.sim_cells_after = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_cells_after),
+                                            columns=['q_total', 'q_middle'])
+        self.sim_shallow = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_shallow),
+                                        columns=['q_total', 'q_middle'])
+        self.sim_depth_hold = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_depth_hold),
+                                           columns=['q_total', 'q_middle'])
+        self.sim_depth_next = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_depth_next),
+                                           columns=['q_total', 'q_middle'])
+        self.sim_boat_hold = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_boat_hold),
+                                          columns=['q_total', 'q_middle'])
+        self.sim_boat_next = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_boat_next),
+                                          columns=['q_total', 'q_middle'])
+        self.u_contribution_meas = pd.DataFrame(self.checkshape(meas_struct.oursin.u_contribution_meas),
+                                                columns=['boat', 'water', 'dzi'])
+        self.u = pd.DataFrame(self.checkshape(meas_struct.oursin.u),
+                              columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top', 'u_bot',
+                                       'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water', 'u_cov', 'total',
+                                       'total_95'])
+        self.u_measurement = pd.DataFrame(self.checkshape(meas_struct.oursin.u_measurement),
+                                          columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
+                                                   'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water',
+                                                   'u_cov', 'total', 'total_95'])
+        self.u_contribution = pd.DataFrame(self.checkshape(meas_struct.oursin.u_contribution),
+                                           columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
+                                                    'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water',
+                                                    'u_cov', 'total'])
+        self.u_contribution_measurement = pd.DataFrame(self.checkshape(meas_struct.oursin.u_contribution_measurement),
+                                                       columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas',
+                                                                'u_top', 'u_bot', 'u_left', 'u_right', 'u_boat',
+                                                                'u_depth', 'u_water', 'u_cov', 'total'])
+        self.u_user = pd.DataFrame(self.checkshape(meas_struct.oursin.u_user),
+                                   columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top', 'u_bot',
+                                            'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water', 'u_cov', 'total',
+                                            'total_95'])
+        self.u_measurement_user = pd.DataFrame(self.checkshape(meas_struct.oursin.u_measurement_user),
+                                               columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
+                                                        'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water',
+                                                        'u_cov', 'total', 'total_95'])
+        self.u_contribution_user = pd.DataFrame(self.checkshape(meas_struct.oursin.u_contribution_user),
+                                                columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_top',
+                                                         'u_bot', 'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water',
+                                                         'u_cov', 'total'])
+        self.u_contribution_measurement_user = pd.DataFrame(
+            self.checkshape(meas_struct.oursin.u_contribution_measurement_user),
+            columns=['u_syst', 'u_compass', 'u_movbed', 'u_ens',
+                     'u_meas', 'u_top', 'u_bot', 'u_left', 'u_right',
+                     'u_boat', 'u_depth', 'u_water', 'u_cov', 'total'])
+
+    @staticmethod
+    def checkshape(a):
+        if len(a.shape) < 2:
+            a = a.reshape(1,-1)
+        return a
 
     # @profile
     def compute_oursin(self, meas):
@@ -591,11 +780,11 @@ class Oursin(object):
                 # Store 95 percent bounds on power fit exponent for each transect if power selected
                 if meas.extrap_fit.sel_fit[n].bot_method_auto == "Power":
                     try:
-                        self.exp_95ic_min.append(meas.extrap_fit.sel_fit[n].exponent_95_ci[0][0])
+                        self.exp_95ic_min.append(meas.extrap_fit.sel_fit[n].exponent_95_ci[0])
                     except TypeError:
                         self.exp_95ic_min.append(np.nan)
                     try:
-                        self.exp_95ic_max.append(meas.extrap_fit.sel_fit[n].exponent_95_ci[1][0])
+                        self.exp_95ic_max.append(meas.extrap_fit.sel_fit[n].exponent_95_ci[1])
                     except TypeError:
                         self.exp_95ic_max.append(np.nan)
 
@@ -679,10 +868,10 @@ class Oursin(object):
         self.u_contribution_meas = pd.DataFrame(columns=['boat', 'water', 'dzi'])
 
         # Set uncertainty of cell size
-        if self.user_advanced_settings['dzi_prct_user'] is not None:
-            u_dzi = self.user_advanced_settings['dzi_prct_user'] * 0.01
-        else:
+        if np.isnan(self.user_advanced_settings['dzi_prct_user']):
             u_dzi = self.default_advanced_settings['dzi_prct'] * 0.01
+        else:
+            u_dzi = self.user_advanced_settings['dzi_prct_user'] * 0.01
 
         # Compute the uncertainty due to the measured area
         for transect_id in self.checked_idx:
@@ -695,14 +884,14 @@ class Oursin(object):
                 # Relative standard deviation of error velocity (Bottom Track)
                 u_boat = self.boat_std_by_error_velocity(meas.transects[transect_id])
             elif meas.transects[transect_id].boat_vel.selected == 'gga_vel':
-                if self.user_advanced_settings['gga_boat_user'] is None:
+                if np.isnan(self.user_advanced_settings['gga_boat_user']):
                     if meas.transects[transect_id].gps is not None:
                         u_boat = (np.nanstd(meas.transects[transect_id].gps.altitude_ens_m, ddof=1) / 3) / \
                                    np.nanmean(np.diff(meas.transects[transect_id].gps.gga_serial_time_ens))
                 else:
                     u_boat = self.user_advanced_settings['gga_boat_mps']
             elif meas.transects[transect_id].boat_vel.selected == 'vtg_vel':
-                if self.user_advanced_settings['vtg_boat_user'] is None:
+                if np.isnan(self.user_advanced_settings['vtg_boat_user']):
                     if meas.transects[transect_id].gps is not None:
                         u_boat = self.default_advanced_settings['vtg_boat_mps']
                 else:
@@ -738,10 +927,10 @@ class Oursin(object):
                                                                            u_contrib_dzi]
 
         # Apply user specified uncertainty
-        if self.user_specified_u['u_meas_mean_user'] is not None:
-            self.u_meas_mean_user_list = [0.01 * self.user_specified_u['u_meas_mean_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_meas_mean_user']):
             self.u_meas_mean_user_list = self.u_meas_list
+        else:
+            self.u_meas_mean_user_list = [0.01 * self.user_specified_u['u_meas_mean_user']] * self.nb_transects
 
     def uncertainty_moving_bed(self, meas):
         """Computes the moving-bed uncertainty
@@ -804,10 +993,10 @@ class Oursin(object):
         self.u_movbed_list = [0.01 * moving_bed_uncertainty / 2] * self.nb_transects
 
         # Apply user specified
-        if self.user_specified_u['u_movbed_user'] is not None:
-            self.u_movbed_user_list = [self.user_specified_u['u_movbed_user'] * 0.01] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_movbed_user']):
             self.u_movbed_user_list = self.u_movbed_list
+        else:
+            self.u_movbed_user_list = [self.user_specified_u['u_movbed_user'] * 0.01] * self.nb_transects
 
     def uncertainty_system(self):
         """Compute systematic uncertaint
@@ -815,10 +1004,10 @@ class Oursin(object):
 
         self.u_syst_list = [0.01 * 1.31] * self.nb_transects
 
-        if self.user_specified_u['u_syst_mean_user'] is not None:
-            self.u_syst_mean_user_list = [self.user_specified_u['u_syst_mean_user'] * 0.01] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_syst_mean_user']):
             self.u_syst_mean_user_list = self.u_syst_list
+        else:
+            self.u_syst_mean_user_list = [self.user_specified_u['u_syst_mean_user'] * 0.01] * self.nb_transects
 
     def uncertainty_number_ensembles(self, meas):
         """Computes the uncertainty due to the number of ensembles in a transect.
@@ -833,10 +1022,10 @@ class Oursin(object):
             # Compute uncertainty due to limited number of ensembles (ISO 748; Le Coz et al., 2012)
             self.u_ens_list.append(0.01 * 32 * len(meas.discharge[trans_id].middle_ens) ** (-0.88))
 
-        if self.user_specified_u['u_ens_user'] is not None:
-            self.u_ens_user_list = [0.01 * self.user_specified_u['u_ens_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_ens_user']):
             self.u_ens_user_list = self.u_ens_list
+        else:
+            self.u_ens_user_list = [0.01 * self.user_specified_u['u_ens_user']] * self.nb_transects
 
     def uncertainty_compass(self, meas):
         """Compute the potential bias in the measurement due to dynamic compass errors when using GPS as
@@ -852,16 +1041,16 @@ class Oursin(object):
         if meas.transects[self.checked_idx[0]].boat_vel.selected == 'bt_vel':
             self.u_compass_list = [0] * self.nb_transects
         else:
-            if self.user_advanced_settings['compass_error_user'] is not None:
-                compass_error = self.user_advanced_settings['compass_error_user']
-            else:
+            if np.isnan(self.user_advanced_settings['compass_error_user']):
                 compass_error = self.default_advanced_settings['compass_error_deg']
+            else:
+                compass_error = self.user_advanced_settings['compass_error_user']
 
             meas_stats = meas.compute_measurement_properties(meas)
             speed_ratio = meas_stats['avg_boat_speed'][self.checked_idx] / \
                 meas_stats['avg_water_speed'][self.checked_idx]
             self.u_compass_list = np.abs(1 - (cosd(compass_error) + 0.5 * speed_ratio * sind(compass_error)))
-        if self.user_specified_u['u_compass_user'] is None:
+        if np.isnan(self.user_specified_u['u_compass_user']):
             self.u_compass_user_list = self.u_compass_list
         else:
             self.u_compass_user_list = [self.user_specified_u['u_compass_user'] * 0.01] * self.nb_transects
@@ -870,129 +1059,130 @@ class Oursin(object):
         """Computes the uncertainty in the top discharge using simulations and rectangular law.
         """
 
-        self.u_top_list = Oursin.apply_u_rect(list_sims=[self.sim_original,
-                                                         self.sim_extrap_pp_opt,
-                                                         self.sim_extrap_pp_min,
-                                                         self.sim_extrap_pp_max,
-                                                         self.sim_extrap_cns_opt,
-                                                         self.sim_extrap_cns_min,
-                                                         self.sim_extrap_cns_max,
-                                                         self.sim_extrap_3pns_opt,
-                                                         self.sim_draft_max,
-                                                         self.sim_draft_min],
-                                              col_name='q_top') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_top_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
+                                                              self.sim_extrap_pp_opt,
+                                                              self.sim_extrap_pp_min,
+                                                              self.sim_extrap_pp_max,
+                                                              self.sim_extrap_cns_opt,
+                                                              self.sim_extrap_cns_min,
+                                                              self.sim_extrap_cns_max,
+                                                              self.sim_extrap_3pns_opt,
+                                                              self.sim_draft_max,
+                                                              self.sim_draft_min],
+                                                   col_name='q_top') \
+                               / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_top_mean_user'] is not None:
-            self.u_top_mean_user_list = [0.01 * self.user_specified_u['u_top_mean_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_top_mean_user']):
             self.u_top_mean_user_list = self.u_top_list
+        else:
+            self.u_top_mean_user_list = [0.01 * self.user_specified_u['u_top_mean_user']] * self.nb_transects
 
     def uncertainty_bottom_discharge(self):
         """Computes uncertainty of bottom discharge using simulations and rectangular law.
         """
 
-        self.u_bot_list = Oursin.apply_u_rect(list_sims=[self.sim_original,
-                                                         self.sim_extrap_pp_opt,
-                                                         self.sim_extrap_pp_min,
-                                                         self.sim_extrap_pp_max,
-                                                         self.sim_extrap_cns_opt,
-                                                         self.sim_extrap_cns_min,
-                                                         self.sim_extrap_cns_max,
-                                                         self.sim_extrap_3pns_opt],
-                                              col_name='q_bot') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_bot_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
+                                                              self.sim_extrap_pp_opt,
+                                                              self.sim_extrap_pp_min,
+                                                              self.sim_extrap_pp_max,
+                                                              self.sim_extrap_cns_opt,
+                                                              self.sim_extrap_cns_min,
+                                                              self.sim_extrap_cns_max,
+                                                              self.sim_extrap_3pns_opt],
+                                                   col_name='q_bot') \
+                               / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_bot_mean_user'] is not None:
-            self.u_bot_mean_user_list = [0.01 * self.user_specified_u['u_bot_mean_user']] * self.nb_transects
-        else:
+
+        if np.isnan(self.user_specified_u['u_bot_mean_user']):
             self.u_bot_mean_user_list = self.u_bot_list
+        else:
+            self.u_bot_mean_user_list = [0.01 * self.user_specified_u['u_bot_mean_user']] * self.nb_transects
 
     def uncertainty_left_discharge(self):
         """Computes the uncertianty of the left edge discharge using simulations and the rectangular law.
         """
 
-        self.u_left_list = Oursin.apply_u_rect(list_sims=[self.sim_original['q_left'],
-                                                          self.sim_edge_min,
-                                                          self.sim_edge_max,
-                                                          self.sim_draft_min,
-                                                          self.sim_draft_max],
-                                               col_name='q_left') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_left_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original['q_left'],
+                                                               self.sim_edge_min,
+                                                               self.sim_edge_max,
+                                                               self.sim_draft_min,
+                                                               self.sim_draft_max],
+                                                    col_name='q_left') \
+                                / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_left_mean_user'] is not None:
-            self.u_left_mean_user_list = [0.01 * self.user_specified_u['u_left_mean_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_left_mean_user']):
             self.u_left_mean_user_list = self.u_left_list
+        else:
+            self.u_left_mean_user_list = [0.01 * self.user_specified_u['u_left_mean_user']] * self.nb_transects
 
     def uncertainty_right_discharge(self):
         """Computes the uncertainty of the right edge discharge using simulations and the rectangular law.
         """
 
-        self.u_right_list = Oursin.apply_u_rect(list_sims=[self.sim_original['q_right'],
-                                                           self.sim_edge_min,
-                                                           self.sim_edge_max,
-                                                           self.sim_draft_min,
-                                                           self.sim_draft_max],
-                                                col_name='q_right') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_right_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original['q_right'],
+                                                                self.sim_edge_min,
+                                                                self.sim_edge_max,
+                                                                self.sim_draft_min,
+                                                                self.sim_draft_max],
+                                                     col_name='q_right') \
+                                 / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_right_mean_user'] is not None:
-            self.u_right_mean_user_list = [0.01 * self.user_specified_u['u_right_mean_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_right_mean_user']):
             self.u_right_mean_user_list = self.u_right_list
+        else:
+            self.u_right_mean_user_list = [0.01 * self.user_specified_u['u_right_mean_user']] * self.nb_transects
 
     def uncertainty_invalid_depth_data(self):
         """Computes the uncertainty due to invalid depth data using simulations and the retangular law.
         """
 
-        self.u_invalid_depth_list = Oursin.apply_u_rect(list_sims=[self.sim_original,
-                                                                   self.sim_depth_hold,
-                                                                   self.sim_depth_next],
-                                                        col_name='q_total') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_invalid_depth_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
+                                                                        self.sim_depth_hold,
+                                                                        self.sim_depth_next],
+                                                             col_name='q_total') \
+                                         / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_invalid_depth_user'] is not None:
+        if np.isnan(self.user_specified_u['u_invalid_depth_user']):
+            self.u_invalid_depth_user_list = self.u_invalid_depth_list
+        else:
             self.u_invalid_depth_user_list = [0.01 * self.user_specified_u[
                 'u_invalid_depth_user']] * self.nb_transects
-        else:
-            self.u_invalid_depth_user_list = self.u_invalid_depth_list
 
     def uncertainty_invalid_boat_data(self):
         """Computes the uncertainty due to invalid boat data using simulations and the rectangular law.
         """
 
-        self.u_invalid_boat_list = Oursin.apply_u_rect(list_sims=[self.sim_original,
-                                                                  self.sim_boat_hold,
-                                                                  self.sim_boat_next],
-                                                       col_name='q_total') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_invalid_boat_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
+                                                                       self.sim_boat_hold,
+                                                                       self.sim_boat_next],
+                                                            col_name='q_total') \
+                                        / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_invalid_boat_user'] is not None:
-            self.u_invalid_boat_user_list = [0.01 * self.user_specified_u['u_invalid_boat_user']] * self.nb_transects
-        else:
+        if np.isnan(self.user_specified_u['u_invalid_boat_user']):
             self.u_invalid_boat_user_list = self.u_invalid_boat_list
+        else:
+            self.u_invalid_boat_user_list = [0.01 * self.user_specified_u['u_invalid_boat_user']] * self.nb_transects
 
     def uncertainty_invalid_water_data(self):
         """Computes the uncertainty due to invalid water data assuming rectangular law.
         """
 
         # Uncertainty due to invalid cells and ensembles
-        self.u_invalid_water_list = Oursin.apply_u_rect(list_sims=[self.sim_original,
-                                                                   self.sim_cells_trdi,
-                                                                   self.sim_cells_above,
-                                                                   self.sim_cells_below,
-                                                                   self.sim_cells_before,
-                                                                   self.sim_cells_after,
-                                                                   self.sim_shallow],
-                                                        col_name='q_total') \
-            / np.abs(self.sim_original['q_total'])
+        self.u_invalid_water_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
+                                                                        self.sim_cells_trdi,
+                                                                        self.sim_cells_above,
+                                                                        self.sim_cells_below,
+                                                                        self.sim_cells_before,
+                                                                        self.sim_cells_after,
+                                                                        self.sim_shallow],
+                                                             col_name='q_total') \
+                                         / np.abs(self.sim_original['q_total']))
 
-        if self.user_specified_u['u_invalid_water_user'] is not None:
+        if np.isnan(self.user_specified_u['u_invalid_water_user']):
+            self.u_invalid_water_user_list = self.u_invalid_water_list
+        else:
             self.u_invalid_water_user_list = [0.01 * self.user_specified_u['u_invalid_water_user']] \
                                              * self.nb_transects
-        else:
-            self.u_invalid_water_user_list = self.u_invalid_water_list
 
     def compute_measurement_cov(self, meas, method='Bayes'):
         """Compute the coefficient of variation of the total transect discharges used in the measurement.
@@ -1031,12 +1221,12 @@ class Oursin(object):
         elif method == 'Bayes':
 
             # Set prior
-            if meas.oursin.user_advanced_settings['cov_prior_user'] is None:
+            if np.isnan(meas.oursin.user_advanced_settings['cov_prior_user']):
                 cov_prior = meas.oursin.default_advanced_settings['cov_prior']
             else:
                 cov_prior = meas.oursin.user_advanced_settings['cov_prior_user']
 
-            if meas.oursin.user_advanced_settings['cov_prior_u_user'] is None:
+            if np.isnan(meas.oursin.user_advanced_settings['cov_prior_u_user']):
                 cov_prior_u = meas.oursin.default_advanced_settings['cov_prior_u']
             else:
                 cov_prior_u = meas.oursin.user_advanced_settings['cov_prior_u_user']
@@ -1417,7 +1607,7 @@ class Oursin(object):
                                                                    meas_temp.discharge[trans_id].middle]
 
     @staticmethod
-    def compute_draft_max_min(transect, draft_error_user=None):
+    def compute_draft_max_min(transect, draft_error_user=np.nan):
         """Determine the max and min values of the ADCP draft.
 
         Parameters
@@ -1440,7 +1630,7 @@ class Oursin(object):
         depth_90 = np.quantile(depths, q=0.9)  # quantile 90% to avoid spikes
 
         # Determine draft error value
-        if draft_error_user is None:
+        if np.isnan(draft_error_user):
             if depth_90 < 2.50:
                 draft_error = 0.02
             else:
@@ -1466,12 +1656,12 @@ class Oursin(object):
         init_dist_left = transect.edges.left.distance_m
 
         # Select user percentage or default
-        if user_settings['right_edge_dist_prct_user'] is None:
+        if np.isnan(user_settings['right_edge_dist_prct_user']):
             d_right_error_prct = default_settings['right_edge_dist_prct']
         else:
             d_right_error_prct = user_settings['right_edge_dist_prct_user']
 
-        if user_settings['left_edge_dist_prct_user'] is None:
+        if np.isnan(user_settings['left_edge_dist_prct_user']):
             d_left_error_prct = default_settings['left_edge_dist_prct']
         else:
             d_left_error_prct = user_settings['left_edge_dist_prct_user']
@@ -1555,12 +1745,12 @@ class Oursin(object):
                 max_pp = 0.99
 
         # Set min-max exponents of user override
-        if exp_pp_min_user is None:
+        if np.isnan(exp_pp_min_user):
             exp_pp_min = min_pp
         else:
             exp_pp_min = exp_pp_min_user
 
-        if exp_pp_max_user is None:
+        if np.isnan(exp_pp_max_user):
             exp_pp_max = max_pp
         else:
             exp_pp_max = exp_pp_max_user
@@ -1568,7 +1758,7 @@ class Oursin(object):
         return skip_pp_min_max, exp_pp_max, exp_pp_min
 
     @staticmethod
-    def compute_ns_max_min(meas, ns_exp, exp_ns_min_user=None, exp_ns_max_user=None):
+    def compute_ns_max_min(meas, ns_exp, exp_ns_min_user=np.nan, exp_ns_max_user=np.nan):
         """Determine the max and min no slip exponents.
 
         Parameters
@@ -1618,12 +1808,12 @@ class Oursin(object):
                 max_ns = 0.99
 
         # Apply user overides
-        if exp_ns_min_user is None:
+        if np.isnan(exp_ns_min_user):
             exp_ns_min = min_ns
         else:
             exp_ns_min = exp_ns_min_user
 
-        if exp_ns_max_user is None:
+        if np.isnan(exp_ns_max_user):
             exp_ns_max = max_ns
         else:
             exp_ns_max = exp_ns_max_user
@@ -1788,7 +1978,7 @@ class Oursin(object):
         return cov
 
     @staticmethod
-    def metropolis(theta0, obs_data, cov_prior, cov_prior_u, nsim=1000, theta_std=None):
+    def metropolis(theta0, obs_data, cov_prior, cov_prior_u, nsim=1000, theta_std=np.nan):
         """Implements the Metropolis_Hastings Markov chain Monte Carlo (MCMC) algorithm for sampling the
         posterior distribution, assuming a log-normal posterior distribution.
 
@@ -1824,7 +2014,7 @@ class Oursin(object):
         obj_funk = np.zeros((nsim + 1, 1))  
 
         # Parameters - used for automatic computation of starting stds of the Gaussian Jump distribution
-        if theta_std is None:
+        if np.any(np.isnan(theta_std)):
             std_factor = 0.1
             theta_std = std_factor * np.abs(theta0)
 

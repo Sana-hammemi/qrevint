@@ -851,6 +851,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # initially for QRev loaded files but applies the options setting on any reprocessing
                 self.meas.use_weighted = self.use_weighted
 
+
             if self.meas is not None:
 
                 # Identify transects to be used in discharge computation
@@ -887,15 +888,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if self.rating_prompt:
                 # Intialize dialog
                 rating_dialog = Rating(self)
-                rating_dialog.uncertainty_value.setText('{:4.1f}'.format(self.meas.uncertainty.total_95_user))
-                if self.meas.uncertainty.total_95_user < 3:
-                    rating_dialog.rb_excellent.setChecked(True)
-                elif self.meas.uncertainty.total_95_user < 5.01:
-                    rating_dialog.rb_good.setChecked(True)
-                elif self.meas.uncertainty.total_95_user < 8.01:
-                    rating_dialog.rb_fair.setChecked(True)
+                if self.run_oursin:
+                    uncertainty = self.meas.oursin.u_measurement_user['total_95'][0]
                 else:
+                    uncertainty = self.meas.uncertainty.total_95_user
+
+                rating_dialog.uncertainty_value.setText('{:4.1f}'.format(uncertainty))
+
+                if self.meas.user_rating in ['Not Rated', '']:
+                    if uncertainty < 3:
+                        rating_dialog.rb_excellent.setChecked(True)
+                    elif uncertainty < 5.01:
+                        rating_dialog.rb_good.setChecked(True)
+                    elif uncertainty < 8.01:
+                        rating_dialog.rb_fair.setChecked(True)
+                    else:
+                        rating_dialog.rb_poor.setChecked(True)
+                    # rating_entered = rating_dialog.exec_()
+
+                elif 'Excellent' in self.meas.user_rating:
+                    rating_dialog.rb_excellent.setChecked(True)
+                elif 'Good' in self.meas.user_rating:
+                    rating_dialog.rb_good.setChecked(True)
+                elif 'Fair' in self.meas.user_rating:
+                    rating_dialog.rb_fair.setChecked(True)
+                elif 'Poor' in self.meas.user_rating:
                     rating_dialog.rb_poor.setChecked(True)
+
                 rating_entered = rating_dialog.exec_()
 
                 # If data entered.
@@ -913,6 +932,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Create default file name
                 if rating_entered:
                     self.meas.user_rating = rating
+                    self.set_user_rating()
 
             save_file = SaveMeasurementDialog(parent=self)
 
@@ -1420,6 +1440,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_shiptrack_canvas.draw()
 
                 self.update_main_uncertainty()
+                self.set_user_rating()
 
                 # Setup list for use by graphics controls
                 self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
@@ -1683,7 +1704,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.table_uncertainty.item(6, 2).setText('{:8.1f}'.format(self.meas.uncertainty.total_95_user))
 
     def rating_change(self):
+        """Stores the user selected rating.
+        """
         self.meas.user_rating = self.cb_user_rating.currentText()
+
+    def set_user_rating(self):
+        """Sets the user rating from stored data.
+        """
+        rating = {'Excellent': 'Excellent (<3%)', 'Good': 'Good (3-5%)', 'Fair': 'Fair (5-8%)',
+                  'Poor': 'Poor (>8%)', 'Not Rated': 'Not Rated', '': 'Not Rated', 'Not ': 'Not Rated',
+                  'Exce': 'Excellent (<3%)'}
+        if type(self.meas.user_rating) is np.ndarray:
+            if len(self.meas.user_rating) > 0:
+                item = rating[self.meas.user_rating[0:4]]
+            else:
+                item = 'Note Rated'
+        else:
+            item = rating[self.meas.user_rating.split('(')[0].strip()]
+        self.cb_user_rating.setCurrentText(item)
 
     def qa_table(self):
         """Create and popluate quality assurance table.
@@ -10107,7 +10145,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_syst'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_syst_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_syst_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_syst_mean_user'])))
 
@@ -10116,7 +10154,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_compass'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_compass_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_compass_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_compass_user'])))
 
@@ -10125,7 +10163,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_movbed'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_movbed_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_movbed_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_movbed_user'])))
 
@@ -10134,7 +10172,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_ens'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_ens_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_ens_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_ens_user'])))
 
@@ -10143,7 +10181,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_meas'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_meas_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_meas_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_meas_mean_user'])))
 
@@ -10152,7 +10190,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_top'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_top_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_top_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_top_mean_user'])))
 
@@ -10161,7 +10199,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_bot'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_bot_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_bot_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_bot_mean_user'])))
 
@@ -10170,7 +10208,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_left'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_left_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_left_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_left_mean_user'])))
 
@@ -10179,7 +10217,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_right'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_right_mean_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_right_mean_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_right_mean_user'])))
 
@@ -10188,7 +10226,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_boat'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_invalid_boat_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_invalid_boat_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_invalid_boat_user'])))
 
@@ -10197,7 +10235,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_depth'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_invalid_depth_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_invalid_depth_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_invalid_depth_user'])))
 
@@ -10206,7 +10244,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.u_measurement.iloc[0]['u_water'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-            if self.meas.oursin.user_specified_u['u_invalid_water_user'] is not None:
+            if not np.isnan(self.meas.oursin.user_specified_u['u_invalid_water_user']):
                 tbl.setItem(row_user, col, QtWidgets.QTableWidgetItem(
                     '{:5.2f}'.format(self.meas.oursin.user_specified_u['u_invalid_water_user'])))
 
@@ -10303,7 +10341,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row = 0
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['draft_error_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['draft_error_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['draft_error_user'])))
         else:
@@ -10314,7 +10352,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['left_edge_dist_prct'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user'])))
         else:
@@ -10325,7 +10363,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['right_edge_dist_prct'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['right_edge_dist_prct_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['right_edge_dist_prct_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['right_edge_dist_prct_user'])))
         else:
@@ -10336,7 +10374,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['dzi_prct'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['dzi_prct_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['dzi_prct_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['dzi_prct_user'])))
         else:
@@ -10346,7 +10384,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['exp_pp_min_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['exp_pp_min_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_pp_min_user'])))
         else:
@@ -10356,7 +10394,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['exp_pp_max_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['exp_pp_max_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_pp_max_user'])))
         else:
@@ -10366,7 +10404,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['exp_ns_min_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['exp_ns_min_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_ns_min_user'])))
         else:
@@ -10376,7 +10414,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['exp_ns_max_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['exp_ns_max_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['exp_ns_max_user'])))
         else:
@@ -10386,7 +10424,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['gga_boat_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['gga_boat_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['gga_boat_user'])))
         else:
@@ -10397,7 +10435,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['vtg_boat_mps'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['vtg_boat_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['vtg_boat_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['vtg_boat_user'])))
         else:
@@ -10408,7 +10446,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['compass_error_deg'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['compass_error_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['compass_error_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['compass_error_user'])))
         else:
@@ -10419,7 +10457,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['cov_prior'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['cov_prior_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['cov_prior_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['cov_prior_user'])))
         else:
@@ -10430,7 +10468,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['cov_prior_u'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if self.meas.oursin.user_advanced_settings['cov_prior_u_user'] is not None:
+        if not np.isnan(self.meas.oursin.user_advanced_settings['cov_prior_u_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
                 '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['cov_prior_u_user'])))
         else:
@@ -10450,6 +10488,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # else:
             #     new_value = float(new_value)
             new_value = self.check_numeric_input(obj=self.table_uncertainty_results.selectedItems()[0], block=False)
+            if new_value is None:
+                new_value = np.nan
+
 
             # Identify uncertainty variable that was edited.
             col_index = self.table_uncertainty_results.selectedItems()[0].column()
@@ -10496,11 +10537,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Get edited value from table
         with self.wait_cursor():
-            new_value = self.table_uncertainty_settings.selectedItems()[0].text()
-            if new_value == '':
-                new_value = None
-            else:
-                new_value = float(new_value)
+            new_value = self.check_numeric_input(obj=self.table_uncertainty_settings.selectedItems()[0], block=False)
+            if new_value is None:
+                new_value = np.nan
 
             # Identify uncertainty variable that was edited.
             row_index = self.table_uncertainty_settings.selectedItems()[0].row()
@@ -10921,6 +10960,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             error_dialog.showMessage('Invalid output filename. TopoQuad file not created.')
 
     # Adv. Graph tab
+    # ==============
     def adv_graph_tab(self):
         # Initialize connections
         if not self.wt_initialized:

@@ -749,6 +749,16 @@ class Measurement(object):
         self.uncertainty = Uncertainty()
         self.uncertainty.populate_from_qrev_mat(meas_struct)
         self.qa = QAData(self, mat_struct=meas_struct, compute=False)
+        if hasattr(meas_struct, 'run_oursin'):
+            self.run_oursin = meas_struct.run_oursin
+        else:
+            self.run_oursin = False
+        if hasattr(meas_struct, 'oursin'):
+            self.oursin = Oursin()
+            self.oursin.populate_from_qrev_mat(meas_struct=meas_struct)
+        else:
+            self.oursin = None
+
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and vertical velocities and compute the thresholds

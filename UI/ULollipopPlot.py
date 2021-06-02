@@ -52,4 +52,4 @@ class ULollipopPlot(object):
             self.fig.ax.xaxis.label.set_fontsize(12)
             self.fig.ax.tick_params(axis='both', which='major', labelsize=10)
             self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: ') +
-                              '%5.1f' % meas.oursin.u_measurement_user['total_95'], fontweight="bold")
+                              '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")

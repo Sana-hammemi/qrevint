@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 import copy as copy
 from Classes.PreMeasurement import PreMeasurement
@@ -70,6 +71,9 @@ class Python2Matlab(object):
 
         self.matlab_dict['uncertainty'] = self.listobj2struct([meas_mat.uncertainty], py_2_mat_dict)
         self.matlab_dict['qa'] = self.listobj2struct([meas_mat.qa], py_2_mat_dict)
+        self.matlab_dict['run_oursin'] = meas_mat.run_oursin
+        if meas_mat.oursin is not None:
+            self.matlab_dict['oursin'] = self.listobj2struct([meas_mat.oursin], py_2_mat_dict)
 
     @staticmethod
     def listobj2struct(list_in, new_key_dict=None):
@@ -113,6 +117,8 @@ class Python2Matlab(object):
                 if type(item) is list:
                     # If item is a list apply recursion
                     struct = Python2Matlab.listobj2struct(item, new_key_dict)
+                # elif type(item) is pd.DataFrame:
+                #
                 else:
                     # If item is not a list convert it to a dictionary
                     new_dict = Python2Matlab.obj2dict(item, new_key_dict)
@@ -194,13 +200,16 @@ class Python2Matlab(object):
             elif type(obj_dict[key]) is dict:
                 obj_dict[key] = Python2Matlab.change_dict_keys(obj_dict[key], new_key_dict)
 
+            elif type(obj_dict[key]) is pd.DataFrame:
+                obj_dict[key] = obj_dict[key].to_numpy()
+
             # If variable is None rename as necessary and convert None to empty list
             if obj_dict[key] is None:
                 if new_key_dict is not None and key in new_key_dict:
                     new_dict[new_key_dict[key]] = []
                 else:
                     new_dict[key] = []
-            # If varialbe is not None rename as necessary
+            # If variable is not None rename as necessary
             elif new_key_dict is not None and key in new_key_dict:
                 new_dict[new_key_dict[key]] = obj_dict[key]
             else:
