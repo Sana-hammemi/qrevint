@@ -134,12 +134,15 @@ class SelectFit(object):
             # than 7 cells the default power/power fit is selected due to lack of sufficient
             # data for a good analysis
             if len(self.residuals) > 6:
-                # Compute the difference between the top two cells of data and the optimized power fit
-                top2 = np.nansum(normalized.unit_normalized_med[valid_data[-2:]]
+                # DSM (6/4/2021) the top and bottom were mislabeled (even in Matlab). I corrected. The computations
+                # are unaffected as the top2 and bot2 are only used in the c_shape_condition equation
+                # c_shape_condition = (np.sign(bot2) * np.sign(top2) == np.sign(mid2) and np.abs(bot2 + top2) > 0.1)
+                # Compute the difference between the bottom two cells of data and the optimized power fit
+                bot2 = np.nansum(normalized.unit_normalized_med[valid_data[-2:]]
                                  - ppobj.coef * normalized.unit_normalized_z[valid_data[-2:]] ** ppobj.exponent)
 
-                # Compute the difference between the bottom two cells of data and the optimized power fit
-                bot2 = np.nansum(normalized.unit_normalized_med[valid_data[:2]]
+                # Compute the difference between the top two cells of data and the optimized power fit
+                top2 = np.nansum(normalized.unit_normalized_med[valid_data[:2]]
                                  - ppobj.coef * normalized.unit_normalized_z[valid_data[:2]] ** ppobj.exponent)
 
                 # Compute the difference between the middle two cells of data and the optimized power fit

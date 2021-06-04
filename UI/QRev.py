@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.02'
+        self.QRev_version = 'QRevInt 1.03'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -452,6 +452,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.tab_all.removeTab(
                 self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+
+        self.manual_computational_settings = {'run_oursin': self.run_oursin,
+                                              'use_measurement_thresholds': self.use_measurement_thresholds,
+                                              'use_weighted': self.use_weighted}
 
         # Set initial change switch to false
         self.change = False
@@ -721,8 +725,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_x_length.activated.connect(self.x_axis_length)
         self.sc_x_ensembles = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+E'), self)
         self.sc_x_ensembles.activated.connect(self.x_axis_ensemble)
-        self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'), self)
-        self.sc_advanced.activated.connect(self.wt_advanced_show_hide)
+        # self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'), self)
+        # self.sc_advanced.activated.connect(self.wt_advanced_show_hide)
         self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+A'), self)
         self.sc_advanced.activated.connect(self.set_show_below_sl)
 
@@ -762,6 +766,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # If a selection is made begin loading
         if len(select.type) > 0:
             self.tab_all.setEnabled(False)
+
+            # Reset computational settings
+            self.run_oursin = self.manual_computational_settings['run_oursin']
+            self.use_measurement_thresholds = self.manual_computational_settings['use_measurement_thresholds']
+            self.use_weighted = self.manual_computational_settings['use_weighted']
+
             # Load and process Sontek data
             if select.type == 'SonTek':
                 with self.wait_cursor():
@@ -813,44 +823,73 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                        squeeze_me=True)
 
                 # Check QRev version and display message for update if appropriate
-                if not self.QRev_version == mat_data['version']:
-                    message = 'QRev has been updated (' + self.QRev_version + ')<br>' + \
-                              'since this file was saved (' + mat_data['version'] + '). <br><br>' + \
-                              'You can view the file without reprocessing by pressing <b>No.</b><br><br> ' + \
-                              '<b>NOTE:</b> Any changes will reprocess the file using the QRev updates,<br> ' + \
-                              'however, identifying ping type from older QRev files cannot be done<br>' + \
-                              'for TRDI ADCPs. <I>To identify the ping type for TRDI data you must load<br> ' + \
-                              'the raw data files.</I><br><br>' + \
-                              'You can reprocess the file now by pressing <b>Yes</b>.'
+                # if not self.QRev_version == mat_data['version']:
+                    # message = 'QRev has been updated (' + self.QRev_version + ')<br>' + \
+                    #           'since this file was saved (' + mat_data['version'] + '). <br><br>' + \
+                    #           'You can view the file without reprocessing by pressing <b>No.</b><br><br> ' + \
+                    #           '<b>NOTE:</b> Any changes will reprocess the file using the QRev updates,<br> ' + \
+                    #           'however, identifying ping type from older QRev files cannot be done<br>' + \
+                    #           'for TRDI ADCPs. <I>To identify the ping type for TRDI data you must load<br> ' + \
+                    #           'the raw data files.</I><br><br>' + \
+                    #           'You can reprocess the file now by pressing <b>Yes</b>.'
+                    #
+                    # response = QtWidgets.QMessageBox.question(self, 'Reprocess', message,
+                    #                                           QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes,
+                    #                                           QtWidgets.QMessageBox.No)
 
-                    response = QtWidgets.QMessageBox.question(self, 'Reprocess', message,
-                                                              QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes,
-                                                              QtWidgets.QMessageBox.No)
-                    # Process QRev data
-                    with self.wait_cursor():
-                        if response == QtWidgets.QMessageBox.No:
-                            self.meas = Measurement(in_file=mat_data,
-                                                    source='QRev',
-                                                    proc_type='None',
-                                                    run_oursin=self.run_oursin)
-                        else:
-                            self.meas = Measurement(in_file=mat_data,
-                                                    source='QRev',
-                                                    proc_type='QRev',
-                                                    run_oursin=self.run_oursin,
-                                                    use_weighted=self.use_weighted,
-                                                    use_measurement_thresholds=self.use_measurement_thresholds)
-                else:
-                    self.meas = Measurement(in_file=mat_data,
-                                            source='QRev',
-                                            proc_type='None',
-                                            run_oursin=self.run_oursin,
-                                            use_weighted=self.use_weighted)
+                message = 'Would you like to: <br><br>' + \
+                          '<b>View</b> the measurement as saved <br><br>' + \
+                          '<b>Reprocess</b> the measurement using all the <br>' + \
+                          'current settings (extrapolation, filters,<br>'  + \
+                          'uncertianty model, and the latest algorithms)<br><br>' + \
+                          'NOTE: Any changes will reprocess the file  <br> ' + \
+                          'using the latest QRev algorithms, however,  <br>' + \
+                          'identifying ping type from older QRev files  <br>' + \
+                          'cannot be done for TRDI ADCPs. <br>' + \
+                          '<I>To identify the ping type for TRDI data you <br> ' + \
+                          'must load the raw data files.</I><<br><br>'
+                msgBox = QtWidgets.QMessageBox()
+                msgBox.setIcon(QtWidgets.QMessageBox.Question)
+                msgBox.setWindowTitle('View or Reprocess')
+                self.message_font = QtGui.QFont()
+                self.message_font.setPointSize(12)
+                msgBox.setFont(self.message_font)
+                msgBox.setText(message)
+                viewBtn = msgBox.addButton(self.tr('View'), QtWidgets.QMessageBox.NoRole)
+                reprocessBtn = msgBox.addButton(self.tr('Reprocess'), QtWidgets.QMessageBox.YesRole)
+
+                msgBox.exec_()
+                # Process QRev data
+                with self.wait_cursor():
+                    if msgBox.clickedButton() == viewBtn:
+                    # if response == QtWidgets.QMessageBox.No:
+                        self.meas = Measurement(in_file=mat_data,
+                                                source='QRev',
+                                                proc_type='None')
+                    elif msgBox.clickedButton() == reprocessBtn:
+                        self.meas = Measurement(in_file=mat_data,
+                                                source='QRev',
+                                                proc_type='QRev',
+                                                run_oursin=self.run_oursin,
+                                                use_weighted=self.use_weighted,
+                                                use_measurement_thresholds=self.use_measurement_thresholds)
+                # else:
+                #     self.meas = Measurement(in_file=mat_data,
+                #                             source='QRev',
+                #                             proc_type='None',
+                #                             run_oursin=self.run_oursin,
+                #                             use_weighted=self.use_weighted)
                 # Set use_weighted value in Measurement based on options setting. This setting will be applied
                 # the next time the measurement is recomputed. This allows the loaded setting to be used
                 # initially for QRev loaded files but applies the options setting on any reprocessing
-                self.meas.use_weighted = self.use_weighted
-
+                self.use_weighted = self.meas.use_weighted
+                self.run_oursin = self.meas.run_oursin
+                self.use_measurement_thresholds = self.meas.use_measurement_thresholds
+                if self.run_oursin:
+                    self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
+                else:
+                    self.tab_all.removeTab(
+                        self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
 
             if self.meas is not None:
 
@@ -1301,7 +1340,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.sticky_settings.set('Oursin', use_oursin)
                         self.run_oursin = use_oursin
 
-
+                    self.manual_computational_settings = {'run_oursin': self.run_oursin,
+                                                          'use_measurement_thresholds': self.use_measurement_thresholds,
+                                                          'use_weighted': self.use_weighted}
 
                     # Update tabs
                     if old_discharge is None:
@@ -7513,32 +7554,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.change_wt_snr)
 
             # Advanced tab setup
-            self.pb_create_wt_plots.clicked.connect(self.wt_advanced_plots)
-            self.combo_wt_advanced_transect.currentIndexChanged.connect(self.wt_advanced_transect_select)
-            self.rb_ensemble.toggled.connect(self.x_axis_ensemble)
-            self.rb_length.toggled.connect(self.x_axis_length)
-            self.rb_time.toggled.connect(self.x_axis_time)
-            self.pb_auto_flow_direction.clicked.connect(self.wt_auto_flow_direction)
+            # self.pb_create_wt_plots.clicked.connect(self.wt_advanced_plots)
+            # self.combo_wt_advanced_transect.currentIndexChanged.connect(self.wt_advanced_transect_select)
+            # self.rb_ensemble.toggled.connect(self.x_axis_ensemble)
+            # self.rb_length.toggled.connect(self.x_axis_length)
+            # self.rb_time.toggled.connect(self.x_axis_time)
+            # self.pb_auto_flow_direction.clicked.connect(self.wt_auto_flow_direction)
 
             # Configure dictionary of plot options
-            self.wt_advanced_types = [('cb_speed_filtered_cc', self.cb_speed_filtered),
-                                      ('cb_speed_final_cc', self.cb_speed_final),
-                                      ('cb_projected_cc', self.cb_projected),
-                                      ('cb_vertical_cc', self.cb_vertical),
-                                      ('cb_error_cc', self.cb_error),
-                                      ('cb_direction_cc', self.cb_direction),
-                                      ('cb_avg_corr_cc', self.cb_avg_corr),
-                                      ('cb_corr_beam_cc', self.cb_corr_beam),
-                                      ('cb_avg_rssi_cc', self.cb_avg_rssi),
-                                      ('cb_rssi_beam_cc', self.cb_rssi_beam),
-                                      ('cb_discharge_ts', self.cb_discharge),
-                                      ('cb_discharge_percent_ts', self.cb_discharge_percent),
-                                      ('cb_avg_speed_ts', self.cb_avg_speed),
-                                      ('cb_projected_speed_ts', self.cb_projected_speed_ts)]
+            # self.wt_advanced_types = [('cb_speed_filtered_cc', self.cb_speed_filtered),
+            #                           ('cb_speed_final_cc', self.cb_speed_final),
+            #                           ('cb_projected_cc', self.cb_projected),
+            #                           ('cb_vertical_cc', self.cb_vertical),
+            #                           ('cb_error_cc', self.cb_error),
+            #                           ('cb_direction_cc', self.cb_direction),
+            #                           ('cb_avg_corr_cc', self.cb_avg_corr),
+            #                           ('cb_corr_beam_cc', self.cb_corr_beam),
+            #                           ('cb_avg_rssi_cc', self.cb_avg_rssi),
+            #                           ('cb_rssi_beam_cc', self.cb_rssi_beam),
+            #                           ('cb_discharge_ts', self.cb_discharge),
+            #                           ('cb_discharge_percent_ts', self.cb_discharge_percent),
+            #                           ('cb_avg_speed_ts', self.cb_avg_speed),
+            #                           ('cb_projected_speed_ts', self.cb_projected_speed_ts)]
 
-            trans_prop = Measurement.compute_measurement_properties(self.meas)
-            direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
-            self.ed_flow_direction.setText('{:6.2f}'.format(direction))
+            # trans_prop = Measurement.compute_measurement_properties(self.meas)
+            # direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
+            # self.ed_flow_direction.setText('{:6.2f}'.format(direction))
 
             self.wt_initialized = True
 
@@ -7592,34 +7633,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.wt_comments_messages()
 
         # Populate combo box
-        self.combo_wt_advanced_transect.blockSignals(True)
-        self.combo_wt_advanced_transect.clear()
-        for idx in self.checked_transects_idx:
-            self.combo_wt_advanced_transect.addItem(self.meas.transects[idx].file_name)
-
-        # Set selected
-        self.combo_wt_advanced_transect.setCurrentIndex(self.transect_row)
-        self.combo_wt_advanced_transect.blockSignals(False)
-
-        # Set x-axis radio button
-        self.rb_ensemble.blockSignals(True)
-        self.rb_length.blockSignals(True)
-        self.rb_time.blockSignals(True)
-        if self.x_axis_type == 'E':
-            self.rb_ensemble.setChecked(True)
-        elif self.x_axis_type == 'L':
-            self.rb_length.setChecked(True)
-        elif self.x_axis_type == 'T':
-            self.rb_time.setChecked(True)
-        self.rb_ensemble.blockSignals(False)
-        self.rb_length.blockSignals(False)
-        self.rb_time.blockSignals(False)
+        # self.combo_wt_advanced_transect.blockSignals(True)
+        # self.combo_wt_advanced_transect.clear()
+        # for idx in self.checked_transects_idx:
+        #     self.combo_wt_advanced_transect.addItem(self.meas.transects[idx].file_name)
+        #
+        # # Set selected
+        # self.combo_wt_advanced_transect.setCurrentIndex(self.transect_row)
+        # self.combo_wt_advanced_transect.blockSignals(False)
+        #
+        # # Set x-axis radio button
+        # self.rb_ensemble.blockSignals(True)
+        # self.rb_length.blockSignals(True)
+        # self.rb_time.blockSignals(True)
+        # if self.x_axis_type == 'E':
+        #     self.rb_ensemble.setChecked(True)
+        # elif self.x_axis_type == 'L':
+        #     self.rb_length.setChecked(True)
+        # elif self.x_axis_type == 'T':
+        #     self.rb_time.setChecked(True)
+        # self.rb_ensemble.blockSignals(False)
+        # self.rb_length.blockSignals(False)
+        # self.rb_time.blockSignals(False)
 
         # Setup list for use by graphics controls
-        self.canvases = [self.wt_shiptrack_canvas, self.wt_top_canvas, self.wt_bottom_canvas, self.wt_advanced_canvas]
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
-        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar,
-                         self.wt_advanced_toolbar]
+        self.canvases = [self.wt_shiptrack_canvas, self.wt_top_canvas, self.wt_bottom_canvas]
+        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
+        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar]
 
     def update_wt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
@@ -8289,63 +8329,63 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.update_tab_icons()
             # self.setTabIcon('tab_wt', self.meas.qa.w_vel['status'])
 
-    def wt_advanced_transect_select(self):
-        self.transect_row = self.combo_wt_advanced_transect.currentIndex()
-        self.wt_advanced_plots()
+    # def wt_advanced_transect_select(self):
+    #     self.transect_row = self.combo_wt_advanced_transect.currentIndex()
+    #     self.wt_advanced_plots()
 
-    def wt_advanced_plots(self):
-        """Creates advanced plots for data in transect.
-        """
-
-        # Determine which plot types the user has selected
-        selected_types = []
-        for item in self.wt_advanced_types:
-            if item[1].isChecked():
-                selected_types.append(item[0])
-
-        # Get flow direction
-        flow_direction = float(self.ed_flow_direction.text())
-
-        # Determine transect to plot
-        idx = self.checked_transects_idx[self.combo_wt_advanced_transect.currentIndex()]
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.wt_advanced_canvas is None:
-            # Create the canvas
-            self.wt_advanced_canvas = MplCanvas(parent=self.graph_wt_advanced, width=10, height=8, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_wt_advanced)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(0, 0, 0, 0)
-            # Add the canvas
-            layout.addWidget(self.wt_advanced_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.wt_advanced_toolbar = NavigationToolbar(self.wt_advanced_canvas, self)
-            self.wt_advanced_toolbar.hide()
-
-        # Initialize the advanced figure and assign to the canvas
-        self.wt_advanced_fig = WTAdvanced(canvas=self.wt_advanced_canvas)
-        # Create the figure with the specified data
-        self.wt_advanced_fig.create(transect=self.meas.transects[idx],
-                                    discharge=self.meas.discharge[idx],
-                                    units=self.units,
-                                    selected_types=selected_types,
-                                    color_map=self.color_map,
-                                    x_axis_type=self.x_axis_type,
-                                    flow_direction=flow_direction,
-                                    show_below_sl=self.show_below_sl)
-
-        # Draw canvas
-        self.wt_advanced_canvas.draw()
-
-        # Update list of figs
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
-        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar,
-                         self.wt_advanced_toolbar]
-        # Reset data cursor to work with new figure
-        if self.actionData_Cursor.isChecked():
-            self.data_cursor()
-        self.tab_wt_2_data.setFocus()
+    # def wt_advanced_plots(self):
+    #     """Creates advanced plots for data in transect.
+    #     """
+    #
+    #     # Determine which plot types the user has selected
+    #     selected_types = []
+    #     for item in self.wt_advanced_types:
+    #         if item[1].isChecked():
+    #             selected_types.append(item[0])
+    #
+    #     # Get flow direction
+    #     flow_direction = float(self.ed_flow_direction.text())
+    #
+    #     # Determine transect to plot
+    #     idx = self.checked_transects_idx[self.combo_wt_advanced_transect.currentIndex()]
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.wt_advanced_canvas is None:
+    #         # Create the canvas
+    #         self.wt_advanced_canvas = MplCanvas(parent=self.graph_wt_advanced, width=10, height=8, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_wt_advanced)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(0, 0, 0, 0)
+    #         # Add the canvas
+    #         layout.addWidget(self.wt_advanced_canvas)
+    #         # Initialize hidden toolbar for use by graphics controls
+    #         self.wt_advanced_toolbar = NavigationToolbar(self.wt_advanced_canvas, self)
+    #         self.wt_advanced_toolbar.hide()
+    #
+    #     # Initialize the advanced figure and assign to the canvas
+    #     self.wt_advanced_fig = WTAdvanced(canvas=self.wt_advanced_canvas)
+    #     # Create the figure with the specified data
+    #     self.wt_advanced_fig.create(transect=self.meas.transects[idx],
+    #                                 discharge=self.meas.discharge[idx],
+    #                                 units=self.units,
+    #                                 selected_types=selected_types,
+    #                                 color_map=self.color_map,
+    #                                 x_axis_type=self.x_axis_type,
+    #                                 flow_direction=flow_direction,
+    #                                 show_below_sl=self.show_below_sl)
+    #
+    #     # Draw canvas
+    #     self.wt_advanced_canvas.draw()
+    #
+    #     # Update list of figs
+    #     self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
+    #     self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar, self.wt_bottom_toolbar,
+    #                      self.wt_advanced_toolbar]
+    #     # Reset data cursor to work with new figure
+    #     if self.actionData_Cursor.isChecked():
+    #         self.data_cursor()
+    #     self.tab_wt_2_data.setFocus()
 
     def wt_auto_flow_direction(self):
         """Computes the mean flow direction and populates the flow direction edit box.
@@ -8354,27 +8394,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         direction = trans_prop['avg_water_dir'][self.checked_transects_idx[self.transect_row]]
         self.ed_flow_direction.setText('{:6.2f}'.format(direction))
 
-    def wt_advanced_show_hide(self):
-        """Controls the visibility of the plot controls and expands and contracts the layout holding the plots
-        and plot controls.
-        """
-
-        # Hide control and expand plots
-        if self.gb_plot_type.isVisible():
-            self.gb_plot_type.hide()
-            self.gb_projection.hide()
-            self.pb_create_wt_plots.hide()
-            self.gb_x_axis.hide()
-            self.horizontalLayout_75.setStretch(0, 10)
-            self.horizontalLayout_75.setStretch(1, 0)
-        # Show control and reduce plot area
-        else:
-            self.gb_plot_type.show()
-            self.gb_projection.show()
-            self.pb_create_wt_plots.show()
-            self.gb_x_axis.show()
-            self.horizontalLayout_75.setStretch(0, 8)
-            self.horizontalLayout_75.setStretch(1, 2)
+    # def wt_advanced_show_hide(self):
+    #     """Controls the visibility of the plot controls and expands and contracts the layout holding the plots
+    #     and plot controls.
+    #     """
+    #
+    #     # Hide control and expand plots
+    #     if self.gb_plot_type.isVisible():
+    #         self.gb_plot_type.hide()
+    #         self.gb_projection.hide()
+    #         self.pb_create_wt_plots.hide()
+    #         self.gb_x_axis.hide()
+    #         self.horizontalLayout_75.setStretch(0, 10)
+    #         self.horizontalLayout_75.setStretch(1, 0)
+    #     # Show control and reduce plot area
+    #     else:
+    #         self.gb_plot_type.show()
+    #         self.gb_projection.show()
+    #         self.pb_create_wt_plots.show()
+    #         self.gb_x_axis.show()
+    #         self.horizontalLayout_75.setStretch(0, 8)
+    #         self.horizontalLayout_75.setStretch(1, 2)
 
     # Extrap Tab
     # ==========
@@ -10000,7 +10040,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         n_transects = len(self.checked_transects_idx)
 
         tbl.setRowCount(n_transects + 5)
-        tbl.setColumnCount(17)
+        tbl.setColumnCount(16)
         tbl.horizontalHeader().hide()
         tbl.verticalHeader().hide()
         # tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -10026,10 +10066,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.custom_header(tbl, 2, 10, 1, 1, self.tr('Boat'))
             self.custom_header(tbl, 2, 11, 1, 1, self.tr('Depth'))
             self.custom_header(tbl, 2, 12, 1, 1, self.tr('Water'))
-            self.custom_header(tbl, 0, 13, 3, 1, self.tr(' Adjusted \n Coefficient \n of Variation \n (percent)'))
+            self.custom_header(tbl, 0, 13, 3, 1, self.tr(' Bayesian \n Coefficient \n of Variation \n (percent)'))
             self.custom_header(tbl, 0, 14, 3, 1, self.tr(' Automatic \n Total 95% \n Uncertainty'))
             self.custom_header(tbl, 0, 15, 3, 1, self.tr(' User \n Total 95% \n Uncertainty'))
-            self.custom_header(tbl, 0, 16, 3, 1, self.tr(' Orig QRev \n Total 95% \n Uncertainty'))
+            # self.custom_header(tbl, 0, 16, 3, 1, self.tr(' Orig QRev \n Total 95% \n Uncertainty'))
 
             # Add data
             for trans_row in range(n_transects):
@@ -10269,10 +10309,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # QRev
-            col += 1
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.uncertainty.total_95)))
-            tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+            # col += 1
+            # tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+            #     '{:5.2f}'.format(self.meas.uncertainty.total_95)))
+            # tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Bold Measurement row
             for col in range(tbl.columnCount()):
@@ -10289,13 +10329,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(3, 14).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.setItem(3, 15, QtWidgets.QTableWidgetItem(''))
             tbl.item(3, 15).setFlags(QtCore.Qt.ItemIsEnabled)
-            tbl.setItem(3, 16, QtWidgets.QTableWidgetItem(''))
-            tbl.item(3, 16).setFlags(QtCore.Qt.ItemIsEnabled)
+            # tbl.setItem(3, 16, QtWidgets.QTableWidgetItem(''))
+            # tbl.item(3, 16).setFlags(QtCore.Qt.ItemIsEnabled)
 
             tbl.item(3, 13).setBackground(QtGui.QColor(150, 150, 150))
             tbl.item(3, 14).setBackground(QtGui.QColor(150, 150, 150))
             tbl.item(3, 15).setBackground(QtGui.QColor(150, 150, 150))
-            tbl.item(3, 16).setBackground(QtGui.QColor(150, 150, 150))
+            # tbl.item(3, 16).setBackground(QtGui.QColor(150, 150, 150))
 
             tbl.resizeColumnsToContents()
 
@@ -10341,9 +10381,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row = 0
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if not np.isnan(self.meas.oursin.user_advanced_settings['draft_error_user']):
+        if not np.isnan(self.meas.oursin.user_advanced_settings['draft_error_m_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['draft_error_user'])))
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['draft_error_m_user'])))
         else:
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
@@ -10424,9 +10464,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row += 1
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem('Computed'))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if not np.isnan(self.meas.oursin.user_advanced_settings['gga_boat_user']):
+        if not np.isnan(self.meas.oursin.user_advanced_settings['gga_boat_mps_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['gga_boat_user'])))
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['gga_boat_mps_user'])))
         else:
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
@@ -10435,9 +10475,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['vtg_boat_mps'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if not np.isnan(self.meas.oursin.user_advanced_settings['vtg_boat_user']):
+        if not np.isnan(self.meas.oursin.user_advanced_settings['vtg_boat_mps_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['vtg_boat_user'])))
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['vtg_boat_mps_user'])))
         else:
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
@@ -10446,9 +10486,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(
             '{:5.2f}'.format(self.meas.oursin.default_advanced_settings['compass_error_deg'])))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
-        if not np.isnan(self.meas.oursin.user_advanced_settings['compass_error_user']):
+        if not np.isnan(self.meas.oursin.user_advanced_settings['compass_error_deg_user']):
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(
-                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['compass_error_user'])))
+                '{:5.2f}'.format(self.meas.oursin.user_advanced_settings['compass_error_deg_user'])))
         else:
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
 
@@ -10544,7 +10584,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Identify uncertainty variable that was edited.
             row_index = self.table_uncertainty_settings.selectedItems()[0].row()
             if row_index == 0:
-                self.meas.oursin.user_advanced_settings['draft_error_user'] = new_value
+                self.meas.oursin.user_advanced_settings['draft_error_m_user'] = new_value
             elif row_index == 1:
                 self.meas.oursin.user_advanced_settings['left_edge_dist_prct_user'] = new_value
             elif row_index == 2:
@@ -10560,11 +10600,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif row_index == 7:
                 self.meas.oursin.user_advanced_settings['exp_ns_max_user'] = new_value
             elif row_index == 8:
-                self.meas.oursin.user_advanced_settings['gga_boat_user'] = new_value
+                self.meas.oursin.user_advanced_settings['gga_boat_mps_user'] = new_value
             elif row_index == 9:
-                self.meas.oursin.user_advanced_settings['vtg_boat_user'] = new_value
+                self.meas.oursin.user_advanced_settings['vtg_boat_mps_user'] = new_value
             elif row_index == 10:
-                self.meas.oursin.user_advanced_settings['compass_error_user'] = new_value
+                self.meas.oursin.user_advanced_settings['compass_error_deg_user'] = new_value
             elif row_index == 11:
                 self.meas.oursin.user_advanced_settings['cov_prior_user'] = new_value
             elif row_index == 12:
@@ -10963,7 +11003,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ==============
     def adv_graph_tab(self):
         # Initialize connections
-        if not self.wt_initialized:
+        if not self.adv_graph_initialized:
 
             # Advanced tab setup
             self.pb_adv_graph_create_plots.clicked.connect(self.adv_graph_plots)

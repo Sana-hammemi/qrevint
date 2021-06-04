@@ -64,6 +64,8 @@ class Measurement(object):
         Indicates the setting for use_weighted to be used for reprocessing
     use_ping_type: bool
         Indicates if ping types should be used in BT and WT filters
+    use_measurement_thresholds: bool
+        Indicates if the entire measurement should be used to set filter thresholds
     """
 
     # @profile
@@ -91,7 +93,7 @@ class Measurement(object):
         """
 
         self.use_ping_type = use_ping_type
-
+        self.use_measurement_thresholds = use_measurement_thresholds
         self.run_oursin = run_oursin
         self.station_name = None
         self.station_number = None
@@ -119,6 +121,9 @@ class Measurement(object):
             if proc_type == 'QRev':
                 # Apply QRev default settings
                 # settings = self.qrev_default_settings()
+                self.run_oursin = run_oursin
+                self.use_weighted = use_weighted
+                self.use_measurement_thresholds = use_measurement_thresholds
                 settings = self.current_settings()
                 settings['WTEnsInterpolation'] = 'abba'
                 settings['WTCellInterpolation'] = 'abba'
@@ -183,12 +188,6 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
 
                 self.qa = QAData(self)
-                if self.run_oursin:
-                    self.oursin = Oursin()
-                    self.oursin.compute_oursin(self)
-                #
-                # self.oursin_orig = Oursin_orig()
-                # self.oursin_orig.compute_oursin(self)
 
     def load_trdi(self, mmt_file, transect_type='Q', checked=False):
         """Method to load TRDI data.
@@ -759,6 +758,9 @@ class Measurement(object):
         else:
             self.oursin = None
 
+        self.use_weighted = self.extrap_fit.use_weighted
+        self.use_measurement_thresholds = \
+            self.transects[self.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and vertical velocities and compute the thresholds
@@ -1400,8 +1402,15 @@ class Measurement(object):
         self.qa = QAData(self)
 
         if self.run_oursin:
-            self.oursin = Oursin()
-            self.oursin.compute_oursin(self)
+            if self.oursin is None:
+                self.oursin = Oursin()
+            else:
+                user_advanced_settings = self.oursin.user_advanced_settings
+                u_measurement_user = self.oursin.u_measurement_user
+                self.oursin = Oursin()
+            self.oursin.compute_oursin(self,
+                                       user_advanced_settings=user_advanced_settings,
+                                       u_measurement_user= u_measurement_user)
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -3228,6 +3237,290 @@ class Measurement(object):
         temp = uncertainty.total_95_user
         if not np.isnan(temp):
             ETree.SubElement(s_u, 'Total', type='double').text = '{:.1f}'.format(temp)
+
+        if self.oursin is not None:
+            # (3) Uncertainty Node
+            s_ou = ETree.SubElement(summary, 'OursinUncertainty')
+            oursin = self.oursin
+
+            # (4) System Node
+            temp = oursin.u_measurement['u_syst'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'System', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Node
+            temp = oursin.u_measurement['u_compass'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Compass', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Moving-bed Node
+            temp = oursin.u_measurement['u_movbed'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MovingBed', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Ensembles Node
+            temp = oursin.u_measurement['u_ens'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Ensembles', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Measured Node
+            temp = oursin.u_measurement['u_meas'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Measured', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Top Node
+            temp = oursin.u_measurement['u_top'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Top', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement['u_bot'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Bottom', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left Node
+            temp = oursin.u_measurement['u_left'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Left', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement['u_right'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Right', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Boat Node
+            temp = oursin.u_measurement['u_boat'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidBoat', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Depth Node
+            temp = oursin.u_measurement['u_depth'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidDepth', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Water Node
+            temp = oursin.u_measurement['u_water'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidWater', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) COV Node
+            temp = oursin.u_measurement['u_cov'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'COV', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Auto Total 95% Node
+            temp = oursin.u_measurement['total_95'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'AutoTotal95', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Minimum
+            temp = oursin.default_advanced_settings['exp_pp_min']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapPPMin', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapPPMin', type='char').text = temp
+
+            # (4) Extrapolation Power/Power Maximum
+            temp = oursin.default_advanced_settings['exp_pp_max']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapPPMax', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapPPMax', type='char').text = temp
+
+            # (4) Extrapolation No Slip Minimum
+            temp = oursin.default_advanced_settings['exp_ns_min']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapNSMin', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapNSMin', type='char').text = temp
+
+            # (4) Extrapolation No Slip Maximum
+            temp = oursin.default_advanced_settings['exp_ns_max']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapNSMax', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapNSMax', type='char').text = temp
+
+            # (4) Draft error in m
+            temp = oursin.default_advanced_settings['draft_error_m']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'DraftErrorm', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'DraftErrorm', type='char').text = temp
+
+            # (4) Bin size error in percent
+            temp = oursin.default_advanced_settings['dzi_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BinErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Right edge distance error in percent
+            temp = oursin.default_advanced_settings['right_edge_dist_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'REdgeDistErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left edge distance error in percent
+            temp = oursin.default_advanced_settings['left_edge_dist_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LEdgeDistErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) GGA Boat Velocity Error in mps
+            temp = oursin.default_advanced_settings['gga_boat_mps']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'GGABoatVelErrormps', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'GGABoatVelErrormps', type='char').text = temp
+
+            # (4) VTG Boat Velocity Error in mps
+            temp = oursin.default_advanced_settings['vtg_boat_mps']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'VTGBoatVelErrormps', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Error in deg
+            temp = oursin.default_advanced_settings['compass_error_deg']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassErrordeg', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior in percent
+            temp = oursin.default_advanced_settings['cov_prior']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorper', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior uncertaint in percent
+            temp = oursin.default_advanced_settings['cov_prior_u']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorUncertaintyper', type='double').text = '{:.2f}'.format(temp)
+
+            # User
+
+            # (4) System Node
+            temp = oursin.u_measurement_user['u_syst'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'SystemUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Node
+            temp = oursin.u_measurement_user['u_compass'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Moving-bed Node
+            temp = oursin.u_measurement_user['u_movbed'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MovingBedUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Ensembles Node
+            temp = oursin.u_measurement_user['u_ens'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'EnsemblesUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Measured Node
+            temp = oursin.u_measurement_user['u_meas'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MeasuredUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Top Node
+            temp = oursin.u_measurement_user['u_top'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'TopUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement_user['u_bot'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BottomUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left Node
+            temp = oursin.u_measurement_user['u_left'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LeftUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement_user['u_right'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'RightUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Boat Node
+            temp = oursin.u_measurement_user['u_boat'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidBoatUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Depth Node
+            temp = oursin.u_measurement_user['u_depth'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidDepthUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Water Node
+            temp = oursin.u_measurement_user['u_water'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidWaterUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Auto Total 95% Node
+            temp = oursin.u_measurement_user['total_95'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'AutoTotal95User', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Minimum
+            temp = oursin.user_advanced_settings['exp_pp_min_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapPPMinUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Maximum
+            temp = oursin.user_advanced_settings['exp_pp_max_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapPPMaxUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation No Slip Minimum
+            temp = oursin.user_advanced_settings['exp_ns_min_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapNSMinUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation No Slip Maximum
+            temp = oursin.user_advanced_settings['exp_ns_max_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapNSMaxUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Draft error in m
+            temp = oursin.user_advanced_settings['draft_error_m_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'DraftErrormUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bin size error in percent
+            temp = oursin.user_advanced_settings['dzi_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BinErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Right edge distance error in percent
+            temp = oursin.user_advanced_settings['right_edge_dist_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'REdgeDistErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left edge distance error in percent
+            temp = oursin.user_advanced_settings['left_edge_dist_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LEdgeDistErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) GGA Boat Velocity Error in mps
+            temp = oursin.user_advanced_settings['gga_boat_mps_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'GGABoatVelErrormpsUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) VTG Boat Velocity Error in mps
+            temp = oursin.user_advanced_settings['vtg_boat_mps_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'VTGBoatVelErrormpsUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Error in deg
+            temp = oursin.user_advanced_settings['compass_error_deg_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassErrordegUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior in percent
+            temp = oursin.user_advanced_settings['cov_prior_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior uncertaint in percent
+            temp = oursin.user_advanced_settings['cov_prior_u_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorUncertaintyperUser', type='double').text = '{:.2f}'.format(temp)
 
         # (3) Other Node
         s_o = ETree.SubElement(summary, 'Other')

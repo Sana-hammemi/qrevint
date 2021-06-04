@@ -53,3 +53,106 @@ class ULollipopPlot(object):
             self.fig.ax.tick_params(axis='both', which='major', labelsize=10)
             self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: ') +
                               '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")
+
+            self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                                              bbox=dict(boxstyle="round", fc="w"),
+                                              arrowprops=dict(arrowstyle="->"))
+
+            self.annot.set_visible(False)
+
+            self.canvas.draw()
+
+    def update_annot(self, name, u_value, event):
+        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+
+        Parameters
+        ----------
+        col_name: str
+            Column name in data frame
+        u_value: float
+            Uncertainty percent
+        event: MouseEvent
+            Triggered when mouse button is pressed.
+        """
+
+        # Get selected data coordinates
+        pos = [event.xdata, event.ydata]
+
+        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
+        # direction of x increasing.
+        if self.fig.ax.viewLim.intervalx[0] < self.fig.ax.viewLim.intervalx[1]:
+            if pos[0] < (self.fig.ax.viewLim.intervalx[0] + self.fig.ax.viewLim.intervalx[1]) / 2:
+                self.annot._x = -20
+            else:
+                self.annot._x = -80
+        else:
+            if pos[0] < (self.fig.ax.axes.viewLim.intervalx[0] + self.fig.ax.viewLim.intervalx[1]) / 2:
+                self.annot._x = -80
+            else:
+                self.annot._x = -20
+
+        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
+        # direction of y increasing.
+        if self.fig.ax.viewLim.intervaly[0] < self.fig.ax.viewLim.intervaly[1]:
+            if pos[1] > (self.fig.ax.viewLim.intervaly[0] + self.fig.ax.viewLim.intervaly[1]) / 2:
+                self.annot._y = -40
+            else:
+                self.annot._y = 20
+        else:
+            if pos[1] > (self.fig.ax.viewLim.intervaly[0] + self.fig.ax.viewLim.intervaly[1]) / 2:
+                self.annot._y = 20
+            else:
+                self.annot._y = -40
+
+        self.annot.xy = pos
+
+        # Format and display text
+        text =  '{}: {:2.2f}%'.format(name, u_value)
+        self.annot.set_text(text)
+
+    def hover(self, event):
+        """Determines if the user has selected a location with data and makes
+        annotation visible and calls method to update the text of the annotation. If the
+        location is not valid the existing annotation is hidden.
+
+        Parameters
+        ----------
+        event: MouseEvent
+            Triggered when mouse button is pressed.
+        """
+
+        # Set annotation to visible
+        vis = self.annot.get_visible()
+
+        # Determine if mouse location references a data point in the plot and update the annotation.
+        if event.inaxes == self.fig.ax:
+            row = int(round(event.ydata))
+            name =list(self.plot_df.index)[row]
+            u_value = self.plot_df.loc[name, 'Percent']
+
+            self.update_annot(name, u_value, event)
+            self.annot.set_visible(True)
+            self.canvas.draw_idle()
+
+        else:
+            # If the cursor location is not associated with the plotted data hide the annotation.
+            if vis:
+                self.annot.set_visible(False)
+                self.canvas.draw_idle()
+
+    def set_hover_connection(self, setting):
+        """Turns the connection to the mouse event on or off.
+
+        Parameters
+        ----------
+        setting: bool
+            Boolean to specify whether the connection for the mouse event is active or not.
+        """
+
+        if setting and self.hover_connection is None:
+            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+        elif not setting:
+            self.canvas.mpl_disconnect(self.hover_connection)
+            self.hover_connection = None
+            self.annot.set_visible(False)
+            self.canvas.draw_idle()

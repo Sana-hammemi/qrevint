@@ -237,13 +237,13 @@ class Oursin(object):
                                        'exp_pp_max_user': np.nan,
                                        'exp_ns_min_user': np.nan,
                                        'exp_ns_max_user': np.nan,
-                                       'draft_error_user': np.nan,
+                                       'draft_error_m_user': np.nan,
                                        'dzi_prct_user': np.nan,
                                        'right_edge_dist_prct_user': np.nan,
                                        'left_edge_dist_prct_user': np.nan,
-                                       'gga_boat_user': np.nan,
-                                       'vtg_boat_user': np.nan,
-                                       'compass_error_user': np.nan,
+                                       'gga_boat_mps_user': np.nan,
+                                       'vtg_boat_mps_user': np.nan,
+                                       'compass_error_deg_user': np.nan,
                                        'cov_prior_user': np.nan,
                                        'cov_prior_u_user': np.nan}
 
@@ -383,16 +383,17 @@ class Oursin(object):
                                        'exp_pp_max_user': meas_struct.oursin.user_advanced_settings.exp_pp_max_user,
                                        'exp_ns_min_user': meas_struct.oursin.user_advanced_settings.exp_ns_min_user,
                                        'exp_ns_max_user': meas_struct.oursin.user_advanced_settings.exp_ns_max_user,
-                                       'draft_error_user': meas_struct.oursin.user_advanced_settings.draft_error_user,
+                                       'draft_error_m_user':
+                                           meas_struct.oursin.user_advanced_settings.draft_error_m_user,
                                        'dzi_prct_user': meas_struct.oursin.user_advanced_settings.dzi_prct_user,
                                        'right_edge_dist_prct_user':
                                            meas_struct.oursin.user_advanced_settings.right_edge_dist_prct_user,
                                        'left_edge_dist_prct_user':
                                            meas_struct.oursin.user_advanced_settings.left_edge_dist_prct_user,
-                                       'gga_boat_user': meas_struct.oursin.user_advanced_settings.gga_boat_user,
-                                       'vtg_boat_user': meas_struct.oursin.user_advanced_settings.vtg_boat_user,
-                                       'compass_error_user':
-                                           meas_struct.oursin.user_advanced_settings.compass_error_user,
+                                       'gga_boat_mps_user': meas_struct.oursin.user_advanced_settings.gga_boat_mps_user,
+                                       'vtg_boat_mps_user': meas_struct.oursin.user_advanced_settings.vtg_boat_mps_user,
+                                       'compass_error_deg_user':
+                                           meas_struct.oursin.user_advanced_settings.compass_error_deg_user,
                                        'cov_prior_user': meas_struct.oursin.user_advanced_settings.cov_prior_user,
                                        'cov_prior_u_user': meas_struct.oursin.user_advanced_settings.cov_prior_u_user}
 
@@ -425,10 +426,26 @@ class Oursin(object):
 
         # Extrap results
         self.bot_meth = meas_struct.oursin.bot_meth.tolist()
-        self.exp_95ic_min = meas_struct.oursin.exp_95ic_min.tolist()
-        self.exp_95ic_max = meas_struct.oursin.exp_95ic_max.tolist()
-        self.pp_exp = meas_struct.oursin.ppExponent.tolist()
-        self.ns_exp = meas_struct.oursin.nsExponent.tolist()
+
+        if type(meas_struct.oursin.exp_95ic_min) is float:
+            self.exp_95ic_min = meas_struct.oursin.exp_95ic_min
+        else:
+            self.exp_95ic_min = meas_struct.oursin.exp_95ic_min.tolist()
+
+        if type(meas_struct.oursin.exp_95ic_max) is float:
+            self.exp_95ic_max = meas_struct.oursin.exp_95ic_max
+        else:
+            self.exp_95ic_max = meas_struct.oursin.exp_95ic_max.tolist()
+
+        if type(meas_struct.oursin.ppExponent) is float:
+            self.pp_exp = meas_struct.oursin.ppExponent
+        else:
+            self.pp_exp = meas_struct.oursin.ppExponent.tolist()
+
+        if type(meas_struct.oursin.nsExponent) is float:
+            self.ns_exp = meas_struct.oursin.nsExponent
+        else:
+            self.ns_exp = meas_struct.oursin.nsExponent.tolist()
 
         # Parameters used for computing the uncertainty
         self.exp_pp_min = meas_struct.oursin.exp_pp_min
@@ -567,7 +584,7 @@ class Oursin(object):
         return a
 
     # @profile
-    def compute_oursin(self, meas):
+    def compute_oursin(self, meas, user_advanced_settings=None, u_measurement_user=None):
         """Computes the uncertainty for the components of the discharge measurement
         using measurement data or user provided values.
 
@@ -576,6 +593,12 @@ class Oursin(object):
         meas: Measurement
             Object of class Measurement
         """
+
+        if user_advanced_settings is not None:
+            self.user_advanced_settings = user_advanced_settings
+
+        if u_measurement_user is not None:
+            self.u_measurement_user = u_measurement_user
 
         # Initialize lists
         self.checked_idx = []
@@ -732,7 +755,7 @@ class Oursin(object):
         # Uncertainty for the measurement
         # The random error is computed as a mean of the random error from the measured portion and the overall
         # random error from the COV.
-        u2_random = np.mean([u2['u_meas'].mean(skipna=False), u2['u_cov'].mean(skipna=False)])
+        u2_random = u2['u_meas'].mean(skipna=False) + u2['u_cov'].mean(skipna=False)
         # u2_random = u2['u_meas'].mean(skipna=False)
         # All other sources are systematic (mostly due to computation method and values from user)
         u2_bias = u2_measurement.drop(['u_meas', 'u_cov'], axis=1).sum(axis=1, skipna=False)
@@ -746,8 +769,8 @@ class Oursin(object):
         # Compute relative contributions from each source
         u_contribution_measurement = u2_measurement.copy()
         # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
-        u_contribution_measurement['u_meas'] = 0.5 * u2_measurement['u_meas'] / n_transects
-        u_contribution_measurement['u_cov'] = 0.5 * u2_measurement['u_cov'] / n_transects
+        u_contribution_measurement['u_meas'] = u2_measurement['u_meas'] / n_transects
+        u_contribution_measurement['u_cov'] = u2_measurement['u_cov'] / n_transects
         u_contribution_measurement = u_contribution_measurement.div(u_contribution_measurement['total'], axis=0)
 
         u_contribution = u2.copy()
@@ -770,6 +793,13 @@ class Oursin(object):
 
         # Use only checked transects
         # Extract data that are used later on (PP and NS exponents)
+        self.checked_idx = []
+        self.bot_meth = []
+        self.exp_95ic_min = []
+        self.exp_95ic_max = []
+        self.pp_exp = []
+        self.ns_exp = []
+
         for n in range(len(meas.transects)):
             if meas.transects[n].checked:
                 self.checked_idx.append(n)
@@ -884,18 +914,18 @@ class Oursin(object):
                 # Relative standard deviation of error velocity (Bottom Track)
                 u_boat = self.boat_std_by_error_velocity(meas.transects[transect_id])
             elif meas.transects[transect_id].boat_vel.selected == 'gga_vel':
-                if np.isnan(self.user_advanced_settings['gga_boat_user']):
+                if np.isnan(self.user_advanced_settings['gga_boat_mps_user']):
                     if meas.transects[transect_id].gps is not None:
                         u_boat = (np.nanstd(meas.transects[transect_id].gps.altitude_ens_m, ddof=1) / 3) / \
                                    np.nanmean(np.diff(meas.transects[transect_id].gps.gga_serial_time_ens))
                 else:
                     u_boat = self.user_advanced_settings['gga_boat_mps']
             elif meas.transects[transect_id].boat_vel.selected == 'vtg_vel':
-                if np.isnan(self.user_advanced_settings['vtg_boat_user']):
+                if np.isnan(self.user_advanced_settings['vtg_boat_mps_user']):
                     if meas.transects[transect_id].gps is not None:
                         u_boat = self.default_advanced_settings['vtg_boat_mps']
                 else:
-                    u_boat = self.user_advanced_settings['vtg_boat_user']
+                    u_boat = self.user_advanced_settings['vtg_boat_mps_user']
 
             # Computation of u_meas
             q_2_tran = meas.discharge[transect_id].total ** 2
@@ -1041,10 +1071,10 @@ class Oursin(object):
         if meas.transects[self.checked_idx[0]].boat_vel.selected == 'bt_vel':
             self.u_compass_list = [0] * self.nb_transects
         else:
-            if np.isnan(self.user_advanced_settings['compass_error_user']):
+            if np.isnan(self.user_advanced_settings['compass_error_deg_user']):
                 compass_error = self.default_advanced_settings['compass_error_deg']
             else:
-                compass_error = self.user_advanced_settings['compass_error_user']
+                compass_error = self.user_advanced_settings['compass_error_deg_user']
 
             meas_stats = meas.compute_measurement_properties(meas)
             speed_ratio = meas_stats['avg_boat_speed'][self.checked_idx] / \
@@ -1250,6 +1280,7 @@ class Oursin(object):
         meas: MeasurementData
             Object of MeasurementData
         """
+        self.sim_original = self.sim_original.iloc[0:0]
         transect_q = dict()
         for trans_id in self.checked_idx:
             transect_q['q_total'] = meas.discharge[trans_id].total
@@ -1446,7 +1477,7 @@ class Oursin(object):
             # Compute max and min draft
             draft_max, draft_min, draft_error = \
                 self.compute_draft_max_min(transect=meas.transects[trans_id],
-                                           draft_error_user=self.user_advanced_settings['draft_error_user'])
+                                           draft_error_m_user=self.user_advanced_settings['draft_error_m_user'])
             self.draft_error_list.append(draft_error)
 
             # Compute discharge for draft min
@@ -1607,14 +1638,14 @@ class Oursin(object):
                                                                    meas_temp.discharge[trans_id].middle]
 
     @staticmethod
-    def compute_draft_max_min(transect, draft_error_user=np.nan):
+    def compute_draft_max_min(transect, draft_error_m_user=np.nan):
         """Determine the max and min values of the ADCP draft.
 
         Parameters
         ----------
         transect: TransectData
             Object of transect data
-        draft_error_user: float
+        draft_error_m_user: float
             User specified draft error in m
 
         Returns
@@ -1630,13 +1661,13 @@ class Oursin(object):
         depth_90 = np.quantile(depths, q=0.9)  # quantile 90% to avoid spikes
 
         # Determine draft error value
-        if np.isnan(draft_error_user):
+        if np.isnan(draft_error_m_user):
             if depth_90 < 2.50:
                 draft_error = 0.02
             else:
                 draft_error = 0.05
         else:
-            draft_error = draft_error_user
+            draft_error = draft_error_m_user
 
         # Compute draft max and min
         draft_min = transect.depths.bt_depths.draft_orig_m - draft_error
