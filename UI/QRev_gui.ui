@@ -1636,13 +1636,25 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_22">
             <item row="0" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout_14" stretch="1,0,2">
+             <layout class="QVBoxLayout" name="verticalLayout_14" stretch="1,0,0,2">
               <item>
                <widget class="QTableWidget" name="table_moving_bed">
                 <property name="font">
                  <font>
                   <pointsize>10</pointsize>
                  </font>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="cb_mb_observed_no">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>User certifies that they have visually observed the streambed and that there is not moving-bed condition.</string>
                 </property>
                </widget>
               </item>

@@ -1,5 +1,3 @@
-import pandas as pd
-
 class ULollipopPlot(object):
     """Class to generate lollipop plot of Oursin uncertainty results.
     """
@@ -19,6 +17,7 @@ class ULollipopPlot(object):
         self.units = None
         self.hover_connection = None
         self.annot = None
+        self.plot_df = None
 
     def create(self, meas):
         """Generates the lollipop plot.
@@ -38,22 +37,25 @@ class ULollipopPlot(object):
             # Set margins and padding for figure
             self.fig.subplots_adjust(left=0.2, bottom=0.15, right=0.98, top=0.95, wspace=0.1, hspace=0)
 
+            # Configure plot dataframe
             self.plot_df = meas.oursin.u_contribution_measurement_user.drop(['total'], axis=1)
             self.plot_df = self.plot_df.mul(100)
             self.plot_df.index = ['Percent']
             self.plot_df.columns = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'Top Q', 'Bottom Q',
-                      'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water', 'COV']
+                                    'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water', 'COV']
             self.plot_df = self.plot_df.transpose()
             self.plot_df = self.plot_df.sort_values(by='Percent')
 
+            # Generate plot
             self.fig.ax.hlines(y=self.plot_df.index, xmin=0, xmax=self.plot_df['Percent'])
             self.fig.ax.plot(self.plot_df['Percent'], self.plot_df.index, 'o', markersize=11)
             self.fig.ax.set_xlabel(self.canvas.tr("Percent of Total"))
             self.fig.ax.xaxis.label.set_fontsize(12)
             self.fig.ax.tick_params(axis='both', which='major', labelsize=10)
             self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: ') +
-                              '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")
+                                  '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")
 
+            # Setup annotation features
             self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
                                               bbox=dict(boxstyle="round", fc="w"),
                                               arrowprops=dict(arrowstyle="->"))
@@ -67,8 +69,8 @@ class ULollipopPlot(object):
 
         Parameters
         ----------
-        col_name: str
-            Column name in data frame
+        name: str
+            Name of uncertainty type
         u_value: float
             Uncertainty percent
         event: MouseEvent
@@ -107,7 +109,7 @@ class ULollipopPlot(object):
         self.annot.xy = pos
 
         # Format and display text
-        text =  '{}: {:2.2f}%'.format(name, u_value)
+        text = '{}: {:2.2f}%'.format(name, u_value)
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -127,7 +129,7 @@ class ULollipopPlot(object):
         # Determine if mouse location references a data point in the plot and update the annotation.
         if event.inaxes == self.fig.ax:
             row = int(round(event.ydata))
-            name =list(self.plot_df.index)[row]
+            name = list(self.plot_df.index)[row]
             u_value = self.plot_df.loc[name, 'Percent']
 
             self.update_annot(name, u_value, event)

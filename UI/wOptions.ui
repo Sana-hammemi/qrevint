@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>317</width>
-    <height>673</height>
+    <width>323</width>
+    <height>748</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,10 @@
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="3,3,4,2,3,3">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="gb_units">
          <property name="font">
@@ -78,7 +81,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="gb_color_map">
          <property name="font">
           <font>
            <pointsize>12</pointsize>
@@ -232,7 +235,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="QGroupBox">
+        <widget class="QGroupBox" name="gb_extrap_weighted">
          <property name="font">
           <font>
            <pointsize>12</pointsize>
@@ -340,13 +343,13 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <property name="spacing">
-           <number>5</number>
+           <number>0</number>
           </property>
           <property name="topMargin">
-           <number>5</number>
+           <number>0</number>
           </property>
           <property name="bottomMargin">
-           <number>5</number>
+           <number>0</number>
           </property>
           <item>
            <widget class="QRadioButton" name="rb_qrev_u">
@@ -376,6 +379,36 @@
             </property>
             <property name="text">
              <string>Oursin</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gb_moving_bed_option">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>Moving Bed</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
+          <item>
+           <widget class="QCheckBox" name="cb_allow_manual_no_mb">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Allow observed no moving-bed</string>
             </property>
            </widget>
           </item>

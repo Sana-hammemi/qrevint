@@ -69,11 +69,14 @@ class Python2Matlab(object):
 
         self.matlab_dict['mbTests'] = mb_tests
 
+        self.matlab_dict['observed_no_moving_bed'] = meas_mat.observed_no_moving_bed
+
         self.matlab_dict['uncertainty'] = self.listobj2struct([meas_mat.uncertainty], py_2_mat_dict)
         self.matlab_dict['qa'] = self.listobj2struct([meas_mat.qa], py_2_mat_dict)
         self.matlab_dict['run_oursin'] = meas_mat.run_oursin
         if meas_mat.oursin is not None:
             self.matlab_dict['oursin'] = self.listobj2struct([meas_mat.oursin], py_2_mat_dict)
+
 
     @staticmethod
     def listobj2struct(list_in, new_key_dict=None):
@@ -117,8 +120,6 @@ class Python2Matlab(object):
                 if type(item) is list:
                     # If item is a list apply recursion
                     struct = Python2Matlab.listobj2struct(item, new_key_dict)
-                # elif type(item) is pd.DataFrame:
-                #
                 else:
                     # If item is not a list convert it to a dictionary
                     new_dict = Python2Matlab.obj2dict(item, new_key_dict)
@@ -714,6 +715,6 @@ class Python2Matlab(object):
         seconds_day = 86400
         time_correction = 719529.0000000003
         transect.date_time.start_serial_time = (transect.date_time.start_serial_time / seconds_day) \
-                                               + time_correction
+            + time_correction
         transect.date_time.end_serial_time = (transect.date_time.end_serial_time / seconds_day) + time_correction
         return transect

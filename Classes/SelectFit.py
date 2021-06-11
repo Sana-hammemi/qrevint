@@ -158,7 +158,6 @@ class SelectFit(object):
                 # Evaluate difference in data and power fit at water surface using a linear fit through the top 4
                 # median cells and save results
                 y = normalized.unit_normalized_med[valid_data[:4]]
-                #             x = sm.add_constant(x)
                 x = normalized.unit_normalized_z[valid_data[:4]]
 
                 coeffs = np.polyfit(x, y, 1)

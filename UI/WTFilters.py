@@ -252,11 +252,58 @@ class WTFilters(object):
             # Plot snr
             max_y = np.nanmax(transect.w_vel.snr_rng) * 1.1
             min_y = np.nanmin(transect.w_vel.snr_rng) * 1.1
-            invalid_snr = np.logical_not(transect.w_vel.valid_data[7, 0, :])
-            self.snr = self.fig.ax.plot(x[0, :], transect.w_vel.snr_rng, 'b.')
-            self.snr.append(self.fig.ax.plot(x[0, invalid_snr],
-                                             transect.w_vel.snr_rng[invalid_snr],
-                                             'ro', markerfacecolor='none')[0])
+            invalid_snr = np.logical_and(np.logical_not(transect.w_vel.valid_data[7, 0, :]), cas)[0, :]
+
+            if transect.w_vel.ping_type.size > 1:
+                # Data to plot
+                x_data = x[0, cas[0, :]]
+                y_data = transect.w_vel.snr_rng[cas[0, :]]
+
+                # Setup ping types for plotting
+                ping_type = transect.w_vel.ping_type[0, cas[0, :]]
+                p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
+                                '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
+                p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
+                                 'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+                p_types = np.unique(ping_type)
+
+                # Plot first ping type
+                self.snr = self.fig.ax.plot(x_data[ping_type == p_types[0]],
+                                            y_data[ping_type == p_types[0]],
+                                            p_type_marker[p_types[0]],
+                                            mfc=p_type_color[p_types[0]],
+                                            mec=p_type_color[p_types[0]])
+
+                # Plot remaining ping types
+                if len(p_types) > 0:
+                    for p_type in p_types[1:]:
+                        self.snr.append(self.fig.ax.plot(x_data[ping_type == p_type],
+                                                          y_data[ping_type == p_type],
+                                                          p_type_marker[p_type],
+                                                          mfc=p_type_color[p_type],
+                                                          mec=p_type_color[p_type])[0])
+
+                # Mark invalid data
+                self.snr.append(self.fig.ax.plot(x[0, invalid_snr],
+                                                  transect.w_vel.snr_rng[invalid_snr],
+                                                  'ro', ms=8, markerfacecolor='none')[0])
+
+                # Create legend
+                legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                               '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/U'}
+                legend_txt = []
+                for p_type in p_types:
+                    legend_txt.append(legend_dict[p_type])
+                self.fig.ax.legend(legend_txt)
+
+            else:
+                self.snr = self.fig.ax.plot(x[0, :], transect.w_vel.snr_rng, 'b.')
+                self.snr.append(self.fig.ax.plot(x[0, invalid_snr],
+                                                 transect.w_vel.snr_rng[invalid_snr],
+                                                 'ro', markerfacecolor='none')[0])
+
+            # Scale axes
             self.fig.ax.set_ylim(top=max_y , bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('SNR Range (dB)'))
 

@@ -378,6 +378,7 @@ class Oursin(object):
                                                                      'u_boat', 'u_depth', 'u_water', 'u_cov', 'total'])
 
     def populate_from_qrev_mat(self, meas_struct):
+
         # User provided parameters
         self.user_advanced_settings = {'exp_pp_min_user': meas_struct.oursin.user_advanced_settings.exp_pp_min_user,
                                        'exp_pp_max_user': meas_struct.oursin.user_advanced_settings.exp_pp_max_user,
@@ -396,20 +397,6 @@ class Oursin(object):
                                            meas_struct.oursin.user_advanced_settings.compass_error_deg_user,
                                        'cov_prior_user': meas_struct.oursin.user_advanced_settings.cov_prior_user,
                                        'cov_prior_u_user': meas_struct.oursin.user_advanced_settings.cov_prior_u_user}
-
-        self.default_advanced_settings = {'exp_pp_min': 'computed',
-                                          'exp_pp_max': 'computed',
-                                          'exp_ns_min': 'computed',
-                                          'exp_ns_max': 'computed',
-                                          'draft_error_m': 'computed',
-                                          'dzi_prct': 0.5,
-                                          'right_edge_dist_prct': 20,
-                                          'left_edge_dist_prct': 20,
-                                          'gga_boat_mps': 'computed',
-                                          'vtg_boat_mps': 0.05,
-                                          'compass_error_deg': 1,
-                                          'cov_prior': 0.03,
-                                          'cov_prior_u': 0.20}
 
         self.user_specified_u = {'u_syst_mean_user': meas_struct.oursin.user_specified_u.u_syst_mean_user,
                                  'u_movbed_user': meas_struct.oursin.user_specified_u.u_movbed_user,
@@ -485,12 +472,13 @@ class Oursin(object):
         self.u_invalid_depth_user_list = meas_struct.oursin.u_invalid_depth_user_list.tolist()
         self.u_invalid_water_user_list = meas_struct.oursin.u_invalid_water_user_list.tolist()
 
-        # Term computed for measurement
+        # COV
         self.cov_68 = meas_struct.oursin.cov_68
 
         self.nb_transects = meas_struct.oursin.nb_transects
         self.checked_idx = meas_struct.oursin.checked_idx
 
+        # Reconstruct data frames from Matlab arrays
         self.sim_original = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_original),
                                          columns=['q_total', 'q_top', 'q_bot', 'q_left', 'q_right', 'q_middle'])
         self.sim_extrap_pp_16 = pd.DataFrame(self.checkshape(meas_struct.oursin.sim_extrap_pp_16),
@@ -580,7 +568,7 @@ class Oursin(object):
     @staticmethod
     def checkshape(a):
         if len(a.shape) < 2:
-            a = a.reshape(1,-1)
+            a = a.reshape(1, -1)
         return a
 
     # @profile
@@ -592,6 +580,10 @@ class Oursin(object):
         ----------
         meas: Measurement
             Object of class Measurement
+        user_advanced_settings: dict
+            Dictionary of user input on advanced settings
+        u_measurement_user: dict
+            Dictionary of user estimates of uncertainty, standard deviation in percent, for each component
         """
 
         if user_advanced_settings is not None:
@@ -617,9 +609,6 @@ class Oursin(object):
         # Prep data for computations
         self.data_prep(meas)
         self.compute_measurement_cov(meas=meas, method='Bayes')
-
-        # hh_cov = self.hh_random_meas(meas=meas)
-        # self.cov_68 = hh_cov
 
         # 1. Systematic terms + correction terms (moving bed)
         self.uncertainty_system()
@@ -745,6 +734,7 @@ class Oursin(object):
         # Note that only variance is additive
         u2 = u.pow(2)
         u2_measurement = u2.mean(axis=0, skipna=False).to_frame().T
+
         # Combined uncertainty by transect
         # Sum of variance of each component, then sqrt, then multiply by 100 for percentage
         # u['total'] = u2.drop(['u_cov'], axis=1).sum(axis=1, skipna=False) ** 0.5
@@ -756,7 +746,7 @@ class Oursin(object):
         # The random error is computed as a mean of the random error from the measured portion and the overall
         # random error from the COV.
         u2_random = u2['u_meas'].mean(skipna=False) + u2['u_cov'].mean(skipna=False)
-        # u2_random = u2['u_meas'].mean(skipna=False)
+
         # All other sources are systematic (mostly due to computation method and values from user)
         u2_bias = u2_measurement.drop(['u_meas', 'u_cov'], axis=1).sum(axis=1, skipna=False)
 
@@ -768,15 +758,16 @@ class Oursin(object):
 
         # Compute relative contributions from each source
         u_contribution_measurement = u2_measurement.copy()
-        # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
+
+        # Adjust contribution of u_meas and u_cov to account for number of transects
         u_contribution_measurement['u_meas'] = u2_measurement['u_meas'] / n_transects
         u_contribution_measurement['u_cov'] = u2_measurement['u_cov'] / n_transects
         u_contribution_measurement = u_contribution_measurement.div(u_contribution_measurement['total'], axis=0)
 
+        # Adjust contribution of u_meas and u_cov to accoutn for number of transects
         u_contribution = u2.copy()
-        # Adjust contribution of u_meas and u_cov since they were averaged to obtain the random error
-        u_contribution['u_meas'] = u2['u_meas'].mul(0.5).div(n_transects, axis=0)
-        u_contribution['u_cov'] = u2['u_cov'].mul(0.5).div(n_transects, axis=0)
+        u_contribution['u_meas'] = u2['u_meas'].div(n_transects, axis=0)
+        u_contribution['u_cov'] = u2['u_cov'].div(n_transects, axis=0)
         u_contribution['total'] = u_contribution.sum(axis=1)
         u_contribution = u_contribution.div(u_contribution['total'], axis=0)
 
@@ -913,13 +904,17 @@ class Oursin(object):
             if meas.transects[transect_id].boat_vel.selected == 'bt_vel':
                 # Relative standard deviation of error velocity (Bottom Track)
                 u_boat = self.boat_std_by_error_velocity(meas.transects[transect_id])
+
             elif meas.transects[transect_id].boat_vel.selected == 'gga_vel':
                 if np.isnan(self.user_advanced_settings['gga_boat_mps_user']):
                     if meas.transects[transect_id].gps is not None:
+                        # Estimate the uncertainty in gga boat velocity as 1/3 of the standard deviation of
+                        # the elevation (estimate of horizontal position uncertainty) divided by time
                         u_boat = (np.nanstd(meas.transects[transect_id].gps.altitude_ens_m, ddof=1) / 3) / \
                                    np.nanmean(np.diff(meas.transects[transect_id].gps.gga_serial_time_ens))
                 else:
                     u_boat = self.user_advanced_settings['gga_boat_mps']
+
             elif meas.transects[transect_id].boat_vel.selected == 'vtg_vel':
                 if np.isnan(self.user_advanced_settings['vtg_boat_mps_user']):
                     if meas.transects[transect_id].gps is not None:
@@ -934,9 +929,6 @@ class Oursin(object):
             n_cell_ens = np.where(n_cell_ens == 0, np.nan, n_cell_ens)
 
             # Variance for each ensembles
-            # u_2_meas = q_2_ens * (relative_error_depth ** 2 + u_boat ** 2 +
-            #                       (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_dzi ** 2))
-            # TODO DSM I would have computed as follows
             u_2_meas = q_2_ens * (u_boat ** 2 + (1 / n_cell_ens) * (std_ev_wt_ens ** 2 + u_dzi ** 2))
 
             u_2_prct_meas = np.nansum(u_2_meas) / q_2_tran
@@ -1012,6 +1004,8 @@ class Oursin(object):
                         moving_bed_uncertainty = 1
                 else:
                     moving_bed_uncertainty = 3
+            elif meas.observed_no_moving_bed:
+                moving_bed_uncertainty = 1
             else:
                 # No moving bed tests
                 moving_bed_uncertainty = 3
@@ -1029,11 +1023,13 @@ class Oursin(object):
             self.u_movbed_user_list = [self.user_specified_u['u_movbed_user'] * 0.01] * self.nb_transects
 
     def uncertainty_system(self):
-        """Compute systematic uncertaint
+        """Compute systematic uncertainty
         """
 
+        # Assume 1.31% systematic bias at 68%
         self.u_syst_list = [0.01 * 1.31] * self.nb_transects
 
+        # Override with user specification if available
         if np.isnan(self.user_specified_u['u_syst_mean_user']):
             self.u_syst_mean_user_list = self.u_syst_list
         else:
@@ -1068,18 +1064,23 @@ class Oursin(object):
             Object of MeasurementData
         """
 
+        # No compass error component for bottom track referenced discharges
         if meas.transects[self.checked_idx[0]].boat_vel.selected == 'bt_vel':
             self.u_compass_list = [0] * self.nb_transects
         else:
+            # Assume a default compass error unless one is provided by the user
             if np.isnan(self.user_advanced_settings['compass_error_deg_user']):
                 compass_error = self.default_advanced_settings['compass_error_deg']
             else:
                 compass_error = self.user_advanced_settings['compass_error_deg_user']
 
+            # Compute discharge bias based on compass error and boat speed
             meas_stats = meas.compute_measurement_properties(meas)
             speed_ratio = meas_stats['avg_boat_speed'][self.checked_idx] / \
                 meas_stats['avg_water_speed'][self.checked_idx]
             self.u_compass_list = np.abs(1 - (cosd(compass_error) + 0.5 * speed_ratio * sind(compass_error)))
+
+        # Override if user provides uncertainty due to compass
         if np.isnan(self.user_specified_u['u_compass_user']):
             self.u_compass_user_list = self.u_compass_list
         else:
@@ -1099,7 +1100,7 @@ class Oursin(object):
                                                               self.sim_extrap_3pns_opt,
                                                               self.sim_draft_max,
                                                               self.sim_draft_min],
-                                                   col_name='q_top') \
+                                                   col_name='q_top')
                                / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_top_mean_user']):
@@ -1119,9 +1120,8 @@ class Oursin(object):
                                                               self.sim_extrap_cns_min,
                                                               self.sim_extrap_cns_max,
                                                               self.sim_extrap_3pns_opt],
-                                                   col_name='q_bot') \
+                                                   col_name='q_bot')
                                / np.abs(self.sim_original['q_total']))
-
 
         if np.isnan(self.user_specified_u['u_bot_mean_user']):
             self.u_bot_mean_user_list = self.u_bot_list
@@ -1137,7 +1137,7 @@ class Oursin(object):
                                                                self.sim_edge_max,
                                                                self.sim_draft_min,
                                                                self.sim_draft_max],
-                                                    col_name='q_left') \
+                                                    col_name='q_left')
                                 / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_left_mean_user']):
@@ -1154,7 +1154,7 @@ class Oursin(object):
                                                                 self.sim_edge_max,
                                                                 self.sim_draft_min,
                                                                 self.sim_draft_max],
-                                                     col_name='q_right') \
+                                                     col_name='q_right')
                                  / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_right_mean_user']):
@@ -1169,7 +1169,7 @@ class Oursin(object):
         self.u_invalid_depth_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
                                                                         self.sim_depth_hold,
                                                                         self.sim_depth_next],
-                                                             col_name='q_total') \
+                                                             col_name='q_total')
                                          / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_invalid_depth_user']):
@@ -1185,7 +1185,7 @@ class Oursin(object):
         self.u_invalid_boat_list = list(Oursin.apply_u_rect(list_sims=[self.sim_original,
                                                                        self.sim_boat_hold,
                                                                        self.sim_boat_next],
-                                                            col_name='q_total') \
+                                                            col_name='q_total')
                                         / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_invalid_boat_user']):
@@ -1205,7 +1205,7 @@ class Oursin(object):
                                                                         self.sim_cells_before,
                                                                         self.sim_cells_after,
                                                                         self.sim_shallow],
-                                                             col_name='q_total') \
+                                                             col_name='q_total')
                                          / np.abs(self.sim_original['q_total']))
 
         if np.isnan(self.user_specified_u['u_invalid_water_user']):
@@ -1330,8 +1330,6 @@ class Oursin(object):
 
             for trans_id in self.checked_idx:
                 # Compute min values
-                # TODO if depth uncertianty were included a copy of transects[trans_id] would need to be made with
-                #  the adjusted depth values
                 q.populate_data(data_in=meas.transects[trans_id],
                                 top_method='Constant',
                                 bot_method='No Slip',
@@ -2165,7 +2163,7 @@ class Oursin(object):
         else:
             return True
 
-    # Hening Huang proposed method for random uncertainty
+    # Hening Huang proposed method for random uncertainty (not used)
     # ---------------------------------------------------
     @staticmethod
     def hh_random_meas(meas):

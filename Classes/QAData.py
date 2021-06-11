@@ -1056,10 +1056,15 @@ class QAData(object):
 
         # Are there moving-bed tests?
         if len(meas.mb_tests) < 1:
-            # No moving-bed test
-            self.movingbed['messages'].append(['MOVING-BED TEST: No moving bed test;', 1, 6])
-            self.movingbed['status'] = 'warning'
-            self.movingbed['code'] = 3
+            if meas.observed_no_moving_bed:
+                self.movingbed['messages'].append(['Moving-Bed Test: Visually observed no moving bed;', 2, 6])
+                self.movingbed['status'] = 'caution'
+                self.movingbed['code'] = 2
+            else:
+                # No moving-bed test
+                self.movingbed['messages'].append(['MOVING-BED TEST: No moving bed test;', 1, 6])
+                self.movingbed['status'] = 'warning'
+                self.movingbed['code'] = 3
 
         else:
             # Moving-bed tests available
@@ -2382,6 +2387,9 @@ class QAData(object):
                 self.movingbed['messages'].append(['Moving-Bed Test: '
                                                    'User modified '
                                                    'use to correct settings.', 3, 6])
+
+        if meas.observed_no_moving_bed:
+            self.settings_dict['tab_mbt'] = 'Custom'
 
     def check_compass_settings(self, meas):
         """Checks the compass settings for changes.

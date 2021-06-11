@@ -1251,7 +1251,6 @@ class TransectData(object):
 
         return ping_type
 
-
     @staticmethod
     def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of TransectData objects containing transect

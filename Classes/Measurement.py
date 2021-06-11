@@ -14,14 +14,12 @@ from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.Uncertainty import Uncertainty
 from Classes.QAData import QAData
 from Classes.BoatStructure import BoatStructure
-from Classes.BoatData import  BoatData
+from Classes.BoatData import BoatData
 from Classes.WaterData import WaterData
-from Classes.NormData import  NormData
 from Classes.Oursin import Oursin
-# from Classes.Oursin_orig import Oursin_orig
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile
-from Classes.Pd0TRDI_2 import Pd0TRDI
+
 
 class Measurement(object):
     """Class to hold all measurement details.
@@ -90,6 +88,10 @@ class Measurement(object):
             Determines if the Oursin uncertainty model should be run
         use_weighted: bool
             Specifies if discharge weighted medians are used for extrapolation
+        use_measurement_thresholds: bool
+            Specifies if filters are based on a transect or whole measurement
+        use_ping_type: bool
+            Specifies if filters are based on ping type and frequency
         """
 
         self.use_ping_type = use_ping_type
@@ -114,13 +116,13 @@ class Measurement(object):
         self.checked_transect_idx = []
         self.oursin = None
         self.use_weighted = use_weighted
+        self.observed_no_moving_bed = False
 
         # Load data from selected source
         if source == 'QRev':
             self.load_qrev_mat(mat_data=in_file)
             if proc_type == 'QRev':
                 # Apply QRev default settings
-                # settings = self.qrev_default_settings()
                 self.run_oursin = run_oursin
                 self.use_weighted = use_weighted
                 self.use_measurement_thresholds = use_measurement_thresholds
@@ -247,7 +249,7 @@ class Measurement(object):
         threshold_settings['bt_settings'] = {}
         threshold_settings['depth_settings'] = {}
 
-		# Select reference transect use first checked or if none then first transect
+        # Select reference transect use first checked or if none then first transect
         if len(self.checked_transect_idx) > 0:
             ref_transect = self.checked_transect_idx[0]
         else:
@@ -367,9 +369,6 @@ class Measurement(object):
                 cc.populate_data(mmt.qaqc['Compass_Calibration_TimeStamp'][n],
                                  mmt.qaqc['Compass_Calibration'][n], 'TCC')
                 self.compass_cal.append(cc)
-        # else:
-        #     cc = PreMeasurement()
-        #     self.compass_cal.append(cc)
             
         # Compass evaluation
         if 'Compass_Evaluation' in mmt.qaqc:
@@ -378,9 +377,6 @@ class Measurement(object):
                 ce.populate_data(mmt.qaqc['Compass_Evaluation_TimeStamp'][n],
                                  mmt.qaqc['Compass_Evaluation'][n], 'TCC')
                 self.compass_eval.append(ce)
-        # else:
-        #     ce = PreMeasurement()
-        #     self.compass_cal.append(ce)
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
@@ -515,9 +511,6 @@ class Measurement(object):
         pathname: str
             Path to discharge transect files.
         """
-        # Compass Evaluation
-        # ce = PreMeasurement()
-        # self.compass_eval.append(ce)
 
         # Compass Calibration
         compass_cal_folder = os.path.join(pathname, 'CompassCal')
@@ -537,7 +530,6 @@ class Measurement(object):
                     time_stamp = prefix.split('l')[1]
                     valid_file = True
 
-            # for file in compass_cal_files:
                 if valid_file:
                     with open(os.path.join(compass_cal_folder, file)) as f:
                         cal_data = f.read()
@@ -703,30 +695,6 @@ class Measurement(object):
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
-        # # For compatibility with files saved prior to the implementation of the discharge weighted median option
-        # if self.extrap_fit.norm_data[-1].weights is None:
-        #     # Compute normalized data for each transect to obtain the weights
-        #     for n, transect in enumerate(self.transects):
-        #         norm_data_temp = NormData()
-        #         norm_data_temp.populate_data(transect=transect,
-        #                                 data_type=self.extrap_fit.norm_data[n].data_type,
-        #                                 threshold=self.extrap_fit.threshold,
-        #                                 data_extent=self.extrap_fit.subsection,
-        #                                 use_weighted=self.extrap_fit.use_weighted,
-        #                                 sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
-        #                                 use_q=self.extrap_fit.norm_data[n].use_q)
-        #         # Update the norm_data with the newly computed weights, however, the weights are not used until the
-        #         # user changes the option in the GUI
-        #         self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
-        #
-        #     # Compute composite normalized data to get the composite weights
-        #     norm_data_temp = NormData()
-        #     norm_data_temp.create_composite(transects=self.transects,
-        #                                     norm_data=self.extrap_fit.norm_data[0:-1],
-        #                                     threshold=self.extrap_fit.threshold)
-        #     # Update the norm_data with newly computed weights
-        #     self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
-
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
         # For compatibility with older QRev.mat files that didn't have this feature
@@ -745,6 +713,11 @@ class Measurement(object):
         # Identify checked transects
         self.checked_transect_idx = self.checked_transects(self)
 
+        if hasattr(meas_struct, 'observed_no_moving_bed'):
+            self.observed_no_moving_bed = meas_struct.observed_no_moving_bed
+        else:
+            self.observed_no_moving_bed = False
+
         self.uncertainty = Uncertainty()
         self.uncertainty.populate_from_qrev_mat(meas_struct)
         self.qa = QAData(self, mat_struct=meas_struct, compute=False)
@@ -762,24 +735,18 @@ class Measurement(object):
         self.use_measurement_thresholds = \
             self.transects[self.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
 
+
+
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and vertical velocities and compute the thresholds
         using these composites.
-
         """
 
-        # Initialize arrays
-        bt_d = np.array([])
-        bt_w = np.array([])
-        # wt_d = {0: np.array([]), 1: np.array([]), 2: np.array([]),
-        #         3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
-        # wt_w = {0: np.array([]), 1: np.array([]), 2: np.array([]),
-        #         3: np.array([]), 4: np.array([]), 5: np.array([]), 6: np.array([])}
+        # Initialize dictionaries
         wt_d = {}
         wt_w = {}
         bt_d = {}
         bt_w = {}
-
 
         # Create composite arrays for all checked transects
         for transect in self.transects:
@@ -822,7 +789,6 @@ class Measurement(object):
                         else:
                             wt_d[p_type] = transect.w_vel.d_mps[transect.w_vel.cells_above_sl]
                             wt_w[p_type] = transect.w_vel.w_mps[transect.w_vel.cells_above_sl]
-
 
         # Compute thresholds based on composite arrays
 
@@ -1169,6 +1135,7 @@ class Measurement(object):
             for transect in self.transects:
                 ping_type = TransectData.sontek_ping_type(transect.w_vel.corr, transect.w_vel.frequency)
                 transect.w_vel.ping_type = np.tile(np.array([ping_type]), (transect.w_vel.corr.shape[1], 1))
+
         # If the measurement thresholds have not been computed, compute them
         if not self.transects[0].w_vel.d_meas_thresholds:
             self.create_filter_composites()
@@ -1219,7 +1186,6 @@ class Measurement(object):
                 bt_kwargs['other'] = settings['BTsmoothFilter']
 
             transect.boat_vel.bt_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
-
 
             # Apply BT settings
             transect.boat_filters(update=False, **bt_kwargs)
@@ -1397,20 +1363,7 @@ class Measurement(object):
 
         self.compute_discharge()
 
-        self.uncertainty = Uncertainty()
-        self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self)
-
-        if self.run_oursin:
-            if self.oursin is None:
-                self.oursin = Oursin()
-            else:
-                user_advanced_settings = self.oursin.user_advanced_settings
-                u_measurement_user = self.oursin.u_measurement_user
-                self.oursin = Oursin()
-            self.oursin.compute_oursin(self,
-                                       user_advanced_settings=user_advanced_settings,
-                                       u_measurement_user= u_measurement_user)
+        self.compute_uncertainty()
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -1748,29 +1701,10 @@ class Measurement(object):
             else:
                 self.transects[n].checked = False
 
-        # # Changes in the transects selected may cause a change in extrapolation.
-        # self.extrap_fit = ComputeExtrap()
-        # self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-        # top = self.extrap_fit.sel_fit[-1].top_method
-        # bot = self.extrap_fit.sel_fit[-1].bot_method
-        # exp = self.extrap_fit.sel_fit[-1].exponent
-        # self.change_extrapolation(self.extrap_fit.fit_method, top=top, bot=bot, exp=exp)
-        #
-        # self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
-        # self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
-        #                                             extrap_fits=self.extrap_fit.sel_fit)
         # Update computations
         self.create_filter_composites()
         settings = self.current_settings()
         self.apply_settings(settings=settings)
-        # else:
-        #     self.compute_discharge()
-        #     self.uncertainty = Uncertainty()
-        #     self.uncertainty.compute_uncertainty(self)
-        #     self.qa = QAData(self)
-        #     if self.run_oursin:
-        #         self.oursin = Oursin()
-        #         self.oursin.compute_oursin(self)
 
     def compute_discharge(self):
         """Computes the discharge for all transects in the measurement.
@@ -1781,6 +1715,27 @@ class Measurement(object):
             q = QComp()
             q.populate_data(data_in=transect, moving_bed_data=self.mb_tests)
             self.discharge.append(q)
+
+    def compute_uncertainty(self):
+        """Computes uncertainty using QRev model and Oursin model if selected.
+        """
+
+        self.uncertainty = Uncertainty()
+        self.uncertainty.compute_uncertainty(self)
+        self.qa = QAData(self)
+
+        if self.run_oursin:
+            if self.oursin is None:
+                self.oursin = Oursin()
+                user_advanced_settings = None
+                u_measurement_user = None
+            else:
+                user_advanced_settings = self.oursin.user_advanced_settings
+                u_measurement_user = self.oursin.u_measurement_user
+                self.oursin = Oursin()
+            self.oursin.compute_oursin(self,
+                                       user_advanced_settings=user_advanced_settings,
+                                       u_measurement_user=u_measurement_user)
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):

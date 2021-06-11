@@ -27,10 +27,10 @@ class UMeasurement(object):
         self.fig = canvas.fig
         self.hover_connection = None
         self.annot = None
-        self.col_labels = {'u_syst':'System', 'u_compass':'Compass', 'u_movbed':'Moving-bed', 'u_ens':'# Ensembles',
-                           'u_meas':'Meas. Q', 'u_top':'Top Q', 'u_bot':'Bottom Q',
-                           'u_left':'Left Q', 'u_right':'Right Q', 'u_boat':'Inv. Boat', 'u_depth':'Inv. Depth',
-                           'u_water':'Inv. Water', 'u_cov':'COV'}
+        self.col_labels = {'u_syst': 'System', 'u_compass': 'Compass', 'u_movbed': 'Moving-bed', 'u_ens': '# Ensembles',
+                           'u_meas': 'Meas. Q', 'u_top': 'Top Q', 'u_bot': 'Bottom Q',
+                           'u_left': 'Left Q', 'u_right': 'Right Q', 'u_boat': 'Inv. Boat', 'u_depth': 'Inv. Depth',
+                           'u_water': 'Inv. Water', 'u_cov': 'COV'}
         self.plot_df_cumsum = None
         self.plot_df = None
 
@@ -66,7 +66,7 @@ class UMeasurement(object):
 
         # Create legend labels
         custom_labels = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'COV', 'Top Q', 'Bottom Q',
-                  'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water']
+                         'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water']
 
         custom_colors = ['#696969', '#808080', '#A9A9A9', '#0000FF', '#00BFFF', '#00FFFF', '#FF00FF', '#EE82EE',
                          '#20B2AA', '#008B8B', '#FF6666', '#FF0000', '#CC0000']
@@ -88,9 +88,10 @@ class UMeasurement(object):
         self.fig.ax.legend(reversed(handles), reversed(custom_labels), fontsize=12, loc='center left',
                            bbox_to_anchor=(1, 0.5))
 
+        # Setup annotation features
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                              bbox=dict(boxstyle="round", fc="w"),
-                                              arrowprops=dict(arrowstyle="->"))
+                                          bbox=dict(boxstyle="round", fc="w"),
+                                          arrowprops=dict(arrowstyle="->"))
 
         self.annot.set_visible(False)
 
@@ -141,7 +142,7 @@ class UMeasurement(object):
         self.annot.xy = pos
 
         # Format and display text
-        text =  '{}: {:2.2f}'.format(self.col_labels[col_name], u_value)
+        text = '{}: {:2.2f}'.format(self.col_labels[col_name], u_value)
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -162,7 +163,7 @@ class UMeasurement(object):
         if event.inaxes == self.fig.ax:
             row = int(round(event.xdata))
             df_row = self.plot_df_cumsum.iloc[row, :]
-            col_name =df_row[df_row.gt(event.ydata)].index[0]
+            col_name = df_row[df_row.gt(event.ydata)].index[0]
             u_value = self.plot_df.loc[row, col_name]
 
             self.update_annot(col_name, u_value, event)
