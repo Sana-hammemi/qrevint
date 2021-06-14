@@ -3772,28 +3772,35 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Heading Source
         elif column == 3:
-            if self.h_external_valid:
-                # Initialize dialog
-                h_source_dialog = HSource(self)
-                h_source_entered = h_source_dialog.exec_()
-                # If data entered.
-                with self.wait_cursor():
-                    if h_source_entered:
-                        old_discharge = copy.deepcopy(self.meas.discharge)
-                        if h_source_dialog.rb_internal.isChecked():
-                            h_source = 'internal'
-                        else:
-                            h_source = 'external'
+            # if self.h_external_valid:
+            # Initialize dialog
+            h_source_dialog = HSource(self)
+            if not self.h_external_valid:
+                h_source_dialog.rb_external.setEnabled(False)
+            else:
+                h_source_dialog.rb_external.setEnabled(True)
 
-                        # Apply change to selected or all transects
-                        if h_source_dialog.rb_all.isChecked():
-                            self.meas.change_h_source(h_source=h_source)
-                        else:
-                            self.meas.change_h_source(h_source=h_source, transect_idx=self.checked_transects_idx[row])
+            h_source_entered = h_source_dialog.exec_()
+            # If data entered.
+            with self.wait_cursor():
+                if h_source_entered:
+                    old_discharge = copy.deepcopy(self.meas.discharge)
+                    if h_source_dialog.rb_internal.isChecked():
+                        h_source = 'internal'
+                    elif h_source_dialog.rb_external.isChecked():
+                        h_source = 'external'
+                    elif h_source_dialog.rb_no_compass.isChecked():
+                        h_source = 'user'
 
-                        # Update compass tab
-                        self.update_compass_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
-                        self.change = True
+                    # Apply change to selected or all transects
+                    if h_source_dialog.rb_all.isChecked():
+                        self.meas.change_h_source(h_source=h_source)
+                    else:
+                        self.meas.change_h_source(h_source=h_source, transect_idx=self.checked_transects_idx[row])
+
+                    # Update compass tab
+                    self.update_compass_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
+                    self.change = True
         self.tab_compass_2_data.setFocus()
 
     def select_calibration(self, row, column):

@@ -1524,10 +1524,25 @@ class TransectData(object):
         Parameters
         ----------
         h_source: str
-            Heading source (internal or external)
+            Heading source (internal or external or user)
         """
 
+
+
+        # If source is user, check to see if it was created, if not create it
+        if h_source == 'user':
+            if self.sensors.heading_deg.user is None:
+                self.sensors.heading_deg.user = HeadingData()
+                self.sensors.heading_deg.user.populate_data(data_in=np.zeros(
+                    self.boat_vel.bt_vel.u_processed_mps.shape),
+                                                                source_in='user',
+                                                                magvar=0,
+                                                                align=0)
+
+        # Get new heading object
         new_heading_selection = getattr(self.sensors.heading_deg, h_source)
+
+        # Change source to that requested
         if h_source is not None:
             old_heading_selection = getattr(self.sensors.heading_deg, self.sensors.heading_deg.selected)
             old_heading = old_heading_selection.data
@@ -1536,6 +1551,7 @@ class TransectData(object):
             self.sensors.heading_deg.set_selected(h_source)
             self.boat_vel.bt_vel.change_heading(heading_change)
             self.w_vel.change_heading(self.boat_vel, heading_change)
+
             
         self.update_water()
             

@@ -105,7 +105,10 @@ class HeadingTS(object):
                 self.row_index.append(row)
                 if cb_internal.isChecked():
                     # Get ADCP heading
-                    heading = np.copy(meas.transects[checked[row]].sensors.heading_deg.internal.data)
+                    if meas.transects[checked[row]].sensors.heading_deg.selected == 'user':
+                        heading = np.copy(meas.transects[checked[row]].sensors.heading_deg.user.data)
+                    else:
+                        heading = np.copy(meas.transects[checked[row]].sensors.heading_deg.internal.data)
                     # Arrange data left to right
                     flip = False
                     if meas.transects[checked[row]].start_edge == 'Right':
