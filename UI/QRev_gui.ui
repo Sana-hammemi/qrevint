@@ -7386,6 +7386,14 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>50</weight>
+     <italic>false</italic>
+     <bold>false</bold>
+    </font>
+   </property>
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -7393,7 +7401,8 @@
     <enum>Qt::LeftToRight</enum>
    </property>
    <property name="styleSheet">
-    <string notr="true">QToolBar{background: solid rgb(240, 240, 240);}</string>
+    <string notr="true">QToolBar{background: solid rgb(240, 240, 240); font: 12pt}
+font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    </property>
    <property name="movable">
     <bool>false</bool>

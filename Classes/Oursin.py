@@ -1588,12 +1588,14 @@ class Oursin(object):
             depths = getattr(meas_temp.transects[trans_id].depths, meas_temp.transects[trans_id].depths.selected)
             # Hold last
             depths.interpolate_hold_last()
+            meas_temp.transects[trans_id].w_vel.adjust_side_lobe(meas_temp.transects[trans_id])
             meas_temp.discharge[trans_id].populate_data(data_in=meas_temp.transects[trans_id],
                                                         moving_bed_data=meas_temp.mb_tests)
             self.sim_depth_hold.loc[len(self.sim_depth_hold)] = [meas_temp.discharge[trans_id].total,
                                                                  meas_temp.discharge[trans_id].middle]
             # Fill with next
             depths.interpolate_next()
+            meas_temp.transects[trans_id].w_vel.adjust_side_lobe(meas_temp.transects[trans_id])
             meas_temp.discharge[trans_id].populate_data(data_in=meas_temp.transects[trans_id],
                                                         moving_bed_data=meas_temp.mb_tests)
             self.sim_depth_next.loc[len(self.sim_depth_next)] = [meas_temp.discharge[trans_id].total,

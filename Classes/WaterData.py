@@ -1038,8 +1038,10 @@ class WaterData(object):
             cells_above_sl = cells_above_slbt
 
         # Compute cutoff from interpolated depths
+        n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
+
         # Find ensembles with no valid beam depths
-        idx = np.where(np.nansum(depth_selected.valid_beams, 0) == 0)[0]
+        idx = np.where(n_valid_beams == 0)[0]
 
         # Determine side lobe cutoff for ensembles with no valid beam depths
         if len(idx) > 0:
@@ -1055,7 +1057,8 @@ class WaterData(object):
                 cells_above_sl[:, idx[i]] = np.less(depth_selected.depth_cell_depth_m[:, idx[i]], sl_cutoff_int[i])
             
         # Find ensembles with at least 1 invalid beam depth
-        idx = np.where(np.nansum(depth_selected.valid_beams, 0) < 4)[0]
+
+        idx = np.where(np.logical_and(n_valid_beams < 4, n_valid_beams > 0))[0]
         if len(idx) > 0:
             if len(self.sl_lag_effect_m) > 1:
                 sl_lag_effect_m = self.sl_lag_effect_m[idx]

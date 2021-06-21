@@ -176,7 +176,8 @@ class BTFilters(object):
                     legend_txt.append(legend_dict[freq])
                 self.fig.ax.legend(legend_txt)
 
-            self.fig.ax.set_ylim(top=max_y, bottom=min_y)
+            if not np.isnan(max_y):
+                self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('Error Velocity' + self.units['label_V']))
 
         elif selected == 'vert':
@@ -224,8 +225,8 @@ class BTFilters(object):
                 for freq in freq_used:
                     legend_txt.append(legend_dict[freq])
                 self.fig.ax.legend(legend_txt)
-
-            self.fig.ax.set_ylim(top=max_y, bottom=min_y)
+            if not np.isnan(max_y):
+                self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('Vert. Velocity' + self.units['label_V']))
 
         elif selected == 'other':

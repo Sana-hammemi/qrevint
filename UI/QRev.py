@@ -536,6 +536,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Disable all tabs until data are loaded
         self.tab_all.setEnabled(False)
 
+        # Set tooltips for toolbar icons
+        self.actionOpen.setToolTip(self.tr('Open measurement'))
+        self.actionComment.setToolTip(self.tr('Add comment'))
+        self.actionCheck.setToolTip(self.tr('Select transects'))
+        self.actionBT.setToolTip(self.tr('Set BT as reference'))
+        self.actionGGA.setToolTip(self.tr('Set GGA as reference'))
+        self.actionVTG.setToolTip(self.tr('Set VGT as reference'))
+        self.actionOFF.setToolTip(self.tr('Composite tracks off'))
+        self.actionON.setToolTip(self.tr('Composite tracks on'))
+        self.actionOptions.setToolTip(self.tr('Options'))
+        self.actionData_Cursor.setToolTip(self.tr('Data cursor'))
+        self.actionHome.setToolTip(self.tr('Reset graphs'))
+        self.actionZoom.setToolTip(self.tr('Zoom'))
+        self.actionPan.setToolTip(self.tr('Pan'))
+        self.actionGoogle_Earth.setToolTip(self.tr('Plot transects in Google Earth'))
+        self.actionHelp.setToolTip(self.tr('Open help documents.'))
+
         # Disable toolbar icons until data are loaded
         self.actionSave.setDisabled(True)
         self.actionComment.setDisabled(True)
@@ -707,6 +724,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.edi_initialized = False
         self.gps_bt_initialized = False
         self.adv_graph_initialized = False
+
+        self.setMouseTracking(True)
 
         # Special commands to ensure proper operation on Windows 10
         if QtCore.QSysInfo.windowsVersion() == QtCore.QSysInfo.WV_WINDOWS10:
@@ -2616,16 +2635,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ed_site_name.setText(self.meas.station_name)
         if self.meas.qa.user['sta_name']:
             self.label_site_name.setStyleSheet('background: #ffcc00')
+            self.label_site_name.setStyleSheet("QToolTip{font: 12pt}")
+            self.label_site_name.setToolTip(self.tr('Missing site name.'))
         else:
             self.label_site_name.setStyleSheet('background: white')
+            self.label_site_name.setToolTip('')
         try:
             self.ed_site_number.setText(self.meas.station_number)
         except TypeError:
             self.ed_site_number.setText('')
         if self.meas.qa.user['sta_number']:
             self.label_site_number.setStyleSheet('background: #ffcc00')
+            self.label_site_number.setStyleSheet("QToolTip{font: 12pt}")
+            self.label_site_number.setToolTip(self.tr('Missing site name.'))
         else:
             self.label_site_number.setStyleSheet('background: white')
+            self.label_site_number.setToolTip('')
 
         # Setup table
         tbl = self.table_premeas
@@ -3102,6 +3127,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
         self.display_systest.clear()
 
         # Add system tests
@@ -3131,14 +3157,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 QtWidgets.QTableWidgetItem('N/A'))
                     tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+                    tbl.item(row, col).setToolTip(self.tr('No system test.'))
                 else:
                     tbl.setItem(row, col,
                                 QtWidgets.QTableWidgetItem('{:2.0f}'.format(test.result['sysTest']['n_failed'])))
                     tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                     if test.result['sysTest']['n_failed'] > 0:
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                        tbl.item(row, col).setToolTip(
+                            self.tr('One or more system test sets have at least one test that failed'))
                     else:
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+                        tbl.item(row, col).setToolTip(
+                            self.tr('All system test sets have at least one test that failed'))
 
                 # Status of PT3 tests
                 col += 1
@@ -3159,6 +3190,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     if np.sum(np.sum(all_lag_check)) + np.sum(lag_7_check) > 1:
                                         tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Failed'))
                                         tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                                        tbl.item(row, col).setToolTip(
+                                            self.tr('One or more PT3 tests in the system test indicate potential EMI'))
                                     else:
                                         tbl.setItem(row, col, QtWidgets.QTableWidgetItem('Pass'))
                                         tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
@@ -3270,6 +3303,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         if not self.compass_pr_initialized:
             # Connect table
@@ -3471,6 +3505,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.compass['mag_error_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Change in mag field exceeds 2%'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -3482,11 +3517,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Inconsistent magvar
                 if self.meas.qa.compass['magvar'] == 1:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Magnetic variation is not consistent among transects'))
 
                 # Magvar is zero
                 elif self.meas.qa.compass['magvar'] == 2:
                     if transect_id in self.meas.qa.compass['magvar_idx']:
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                        tbl.item(row, col).setToolTip(self.tr('Magnetic variation is 0 and GPS data are present'))
 
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
@@ -3515,8 +3552,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.compass['pitch_mean_warning_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Mean pitch is greater than 8 deg'))
                 elif transect_id in self.meas.qa.compass['pitch_mean_caution_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Mean pitch is greater than 4 deg'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -3530,6 +3569,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.compass['pitch_std_caution_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Pitch standard deviation is greater than 5 deg'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -3545,8 +3585,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.compass['roll_mean_warning_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Mean roll is greater than 8 deg'))
                 elif transect_id in self.meas.qa.compass['roll_mean_caution_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Mean roll is greater than 4 deg'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -3560,6 +3602,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.compass['roll_std_caution_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Roll standard deviation is greater than 5 deg'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -4095,7 +4138,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if np.isnan(self.meas.ext_temp_chk['user']):
                 self.ed_user_temp.setText('')
                 self.pb_ind_temp_apply.setEnabled(False)
-                self.label_independent.setStyleSheet('background: #ffcc00; font: 12pt MS Shell Dlg 2')
+                self.label_independent.setStyleSheet('background: #ffcc00; font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
+                self.label_independent.setToolTip(self.tr('No user supplied temperature.'))
             else:
                 temp = float(self.meas.ext_temp_chk['user'])
                 if self.rb_f.isChecked():
@@ -4341,7 +4385,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         discharge but could change the automatic QA/QC messages.
         """
 
-        # Set cursor focus onto the table to avoid multiple calls the the adcp_temp_changed funtion
+        # Set cursor focus onto the table to avoid multiple calls the the adcp_temp_changed function
         self.table_tempsal.setFocus()
 
         # If data has been entered, convert the data to Celsius if necessary
@@ -4361,6 +4405,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.meas.qa.check_tempsal_settings(self.meas)
 
         # Update GUI
+        try:
+            if np.isnan(self.meas.ext_temp_chk['user']):
+                self.ed_user_temp.setText('')
+                self.pb_ind_temp_apply.setEnabled(False)
+                self.label_independent.setStyleSheet('background: #ffcc00; font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
+                self.label_independent.setToolTip(self.tr('No user supplied temperature.'))
+            else:
+                temp = float(self.meas.ext_temp_chk['user'])
+                if self.rb_f.isChecked():
+                    temp = convert_temperature(self.meas.ext_temp_chk['user'], units_in='C', units_out='F')
+                self.ed_user_temp.setText('{:3.1f}'.format(temp))
+                self.pb_ind_temp_apply.setEnabled(False)
+                self.label_independent.setStyleSheet('background: white; font: 12pt MS Shell Dlg 2')
+        except (ValueError, TypeError):
+            self.ed_user_temp.setText('')
+            self.pb_ind_temp_apply.setEnabled(False)
         self.tempsal_comments_messages()
         self.pb_ind_temp_apply.setEnabled(False)
         self.change = True
@@ -4652,141 +4712,142 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_moving_bed
         reprocess_measurement = True
         tbl.blockSignals(True)
-
-        # User valid
-        if column == 0:
-            if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
-                self.meas.mb_tests[row].user_valid = False
-                self.add_comment()
-            else:
-                self.meas.mb_tests[row].user_valid = True
-                self.add_comment()
-
-            self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                moving_bed_tests=self.meas.mb_tests,
-                boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
-
-        # Use to correct, manual override
-        if column == 1:
-            if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
-                quality = tbl.item(row, 15).text()
-                # Identify a moving-bed condition
-
-                moving_bed_idx = []
-                for n, test in enumerate(self.meas.mb_tests):
-                    if test.selected:
-                        if test.moving_bed == 'Yes':
-                            moving_bed_idx.append(n)
-
-                if quality == 'Manual':
-                    # Cancel Manual
-                    self.meas.mb_tests[row].use_2_correct = False
-                    self.meas.mb_tests[row].moving_bed = 'Unknown'
-                    self.meas.mb_tests[row].selected = False
-                    self.meas.mb_tests[row].test_quality = "Errors"
-                    self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                        moving_bed_tests=self.meas.mb_tests,
-                        boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
-
-                elif quality == 'Errors':
-                    # Manual override
-                    # Warn user and force acknowledgement before proceeding
-                    user_warning = QtWidgets.QMessageBox.question(self, 'Moving-Bed Test Manual Override',
-                                                                  'QRev has determined this moving-bed test has '
-                                                                  'critical errors and does not recommend using it '
-                                                                  'for correction. If you choose to use the test '
-                                                                  'anyway you will be required to justify its use.',
-                                                                  QtWidgets.QMessageBox.Ok |
-                                                                  QtWidgets.QMessageBox.Cancel,
-                                                                  QtWidgets.QMessageBox.Cancel)
-                    if user_warning == QtWidgets.QMessageBox.Ok:
-                        # Apply manual override
-                        self.add_comment()
-                        self.meas.mb_tests[row].use_2_correct = True
-                        self.meas.mb_tests[row].moving_bed = 'Yes'
-                        self.meas.mb_tests[row].selected = True
-                        self.meas.mb_tests[row].test_quality = "Manual"
-                    else:
-                        reprocess_measurement = False
-
-                elif len(moving_bed_idx) > 0:
-                    if row in moving_bed_idx:
-                        if tbl.item(row, 1).checkState() == QtCore.Qt.Checked:
-                            self.meas.mb_tests[row].use_2_correct = False
-                            self.add_comment()
-                        else:
-                            # Apply setting
-                            self.meas.mb_tests[row].use_2_correct = True
-
-                            # Check to make sure the selected test are of the same type
-                            test_type = []
-                            test_quality = []
-                            for test in self.meas.mb_tests:
-                                if test.selected:
-                                    test_type.append(test.type)
-                                    test_quality = test.test_quality
-                            unique_types = set(test_type)
-                            if len(unique_types) == 1:
-
-                                # Check for errors
-                                if 'Errors' not in test_quality:
-
-                                    # Multiple loops not allowed
-                                    if test_type == 'Loop' and len(test_type) > 1:
-                                        self.meas.mb_tests[row].use_2_correct = False
-                                        reprocess_measurement = False
-                                        self.popup_message('Only one loop can be applied. Select the best loop.')
-
-                            else:
-                                # Mixing of stationary and loop tests are not allowed
-                                self.meas.mb_tests[row].use_2_correct = False
-                                reprocess_measurement = False
-                                self.popup_message('Application of mixed moving-bed test types is not allowed.' +
-                                                   'Select only one loop or one or more stationary tests.')
-                    else:
-                        self.popup_message('This moving-bed test is not being used. ' +
-                                           'Only those tests with Bold file names can be used.')
-
+        with self.wait_cursor():
+            # User valid
+            if column == 0:
+                if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
+                    self.meas.mb_tests[row].user_valid = False
+                    self.add_comment()
                 else:
-                    # No moving-bed, so no moving-bed correction is applied
-                    reprocess_measurement = False
-                    self.popup_message('There is no moving-bed. Correction cannot be applied.')
-            else:
-                self.popup_message('Bottom track is not the selected reference. A moving-bed correction cannot' +
-                                   ' be applied.')
+                    self.meas.mb_tests[row].user_valid = True
+                    self.add_comment()
 
-        # Use GPS for Test
-        elif column == 2:
-            # Determine if selected test has been processed using GPS
-            if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
-                tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
-                reprocess_measurement = False
-                self.change = False
-            else:
-                if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
-                    self.meas.mb_tests[row].change_ref(ref='GPS')
-                else:
-                    self.meas.mb_tests[row].change_ref(ref='BT')
                 self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
                     moving_bed_tests=self.meas.mb_tests,
                     boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-        # Data to plot
-        elif column == 3:
-            self.mb_plots(idx=row)
-            self.mb_row = row
-            reprocess_measurement = False
-            self.change = False
+            # Use to correct, manual override
+            if column == 1:
+                if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
+                    quality = tbl.item(row, 15).text()
+                    # Identify a moving-bed condition
 
-        # If changes were made reprocess the measurement
-        if reprocess_measurement:
-            self.meas.compute_discharge()
-            self.meas.compute_uncertainty()
-            self.meas.qa.moving_bed_qa(self.meas)
-            self.change = True
+                    moving_bed_idx = []
+                    for n, test in enumerate(self.meas.mb_tests):
+                        if test.selected:
+                            if test.moving_bed == 'Yes':
+                                moving_bed_idx.append(n)
 
-        self.update_mb_table()
-        self.mb_comments_messages()
+                    if quality == 'Manual':
+                        # Cancel Manual
+                        self.meas.mb_tests[row].use_2_correct = False
+                        self.meas.mb_tests[row].moving_bed = 'Unknown'
+                        self.meas.mb_tests[row].selected = False
+                        self.meas.mb_tests[row].test_quality = "Errors"
+                        self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                            moving_bed_tests=self.meas.mb_tests,
+                            boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
+
+                    elif quality == 'Errors':
+                        # Manual override
+                        # Warn user and force acknowledgement before proceeding
+                        user_warning = QtWidgets.QMessageBox.question(self, 'Moving-Bed Test Manual Override',
+                                                                      'QRev has determined this moving-bed test has '
+                                                                      'critical errors and does not recommend using it '
+                                                                      'for correction. If you choose to use the test '
+                                                                      'anyway you will be required to justify its use.',
+                                                                      QtWidgets.QMessageBox.Ok |
+                                                                      QtWidgets.QMessageBox.Cancel,
+                                                                      QtWidgets.QMessageBox.Cancel)
+                        if user_warning == QtWidgets.QMessageBox.Ok:
+                            # Apply manual override
+                            self.add_comment()
+                            self.meas.mb_tests[row].use_2_correct = True
+                            self.meas.mb_tests[row].moving_bed = 'Yes'
+                            self.meas.mb_tests[row].selected = True
+                            self.meas.mb_tests[row].test_quality = "Manual"
+                        else:
+                            reprocess_measurement = False
+
+                    elif len(moving_bed_idx) > 0:
+                        if row in moving_bed_idx:
+                            if tbl.item(row, 1).checkState() == QtCore.Qt.Checked:
+                                self.meas.mb_tests[row].use_2_correct = False
+                                self.add_comment()
+                            else:
+                                # Apply setting
+                                self.meas.mb_tests[row].use_2_correct = True
+
+                                # Check to make sure the selected test are of the same type
+                                test_type = []
+                                test_quality = []
+                                for test in self.meas.mb_tests:
+                                    if test.selected:
+                                        test_type.append(test.type)
+                                        test_quality = test.test_quality
+                                unique_types = set(test_type)
+                                if len(unique_types) == 1:
+
+                                    # Check for errors
+                                    if 'Errors' not in test_quality:
+
+                                        # Multiple loops not allowed
+                                        if test_type == 'Loop' and len(test_type) > 1:
+                                            self.meas.mb_tests[row].use_2_correct = False
+                                            reprocess_measurement = False
+                                            self.popup_message('Only one loop can be applied. Select the best loop.')
+
+                                else:
+                                    # Mixing of stationary and loop tests are not allowed
+                                    self.meas.mb_tests[row].use_2_correct = False
+                                    reprocess_measurement = False
+                                    self.popup_message('Application of mixed moving-bed test types is not allowed.' +
+                                                       'Select only one loop or one or more stationary tests.')
+                        else:
+                            self.popup_message('This moving-bed test is not being used. ' +
+                                               'Only those tests with Bold file names can be used.')
+
+                    else:
+                        # No moving-bed, so no moving-bed correction is applied
+                        reprocess_measurement = False
+                        self.popup_message('There is no moving-bed. Correction cannot be applied.')
+                else:
+                    self.popup_message('Bottom track is not the selected reference. A moving-bed correction cannot' +
+                                       ' be applied.')
+
+            # Use GPS for Test
+            elif column == 2:
+                # Determine if selected test has been processed using GPS
+                if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
+                    tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
+                    reprocess_measurement = False
+                    self.change = False
+                else:
+                    if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
+                        self.meas.mb_tests[row].change_ref(ref='GPS')
+                    else:
+                        self.meas.mb_tests[row].change_ref(ref='BT')
+                    self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                        moving_bed_tests=self.meas.mb_tests,
+                        boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
+
+            # Data to plot
+            elif column == 3:
+                self.mb_plots(idx=row)
+                self.mb_row = row
+                reprocess_measurement = False
+                self.change = False
+
+            # If changes were made reprocess the measurement
+            if reprocess_measurement:
+                self.meas.compute_discharge()
+                self.meas.compute_uncertainty()
+                self.meas.qa.moving_bed_qa(self.meas)
+                self.change = True
+
+            self.update_mb_table()
+            self.mb_comments_messages()
+
         tbl.blockSignals(False)
         self.tab_mbt_2_data.setFocus()
 
@@ -5057,6 +5118,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         # Automatically resize rows and columns
         tbl.resizeColumnsToContents()
@@ -5232,6 +5294,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Total number of ensembles
                 col += 1
                 item = '{:5d}'.format(num_ensembles)
@@ -5254,13 +5318,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Invalid original data
                 col += 1
-                item = '{:3.2f}'.format((num_orig_invalid / num_ensembles) * 100.)
+                percent_invalid = (num_orig_invalid / num_ensembles) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.bt_vel['q_total_warning'][transect_id, 1] or \
-                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 1]:
+                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 1] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -5272,13 +5340,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Invalid 3 beam
                 col += 1
-                item = '{:3.2f}'.format((num_beam_invalid / num_ensembles) * 100.)
+                percent_invalid = (num_beam_invalid / num_ensembles) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.bt_vel['q_total_warning'][transect_id, 5] or \
-                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 5]:
+                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 5] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -5290,13 +5365,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Error velocity invalid
                 col += 1
-                item = '{:3.2f}'.format((num_error_invalid / num_ensembles) * 100.)
+                percent_invalid = (num_error_invalid / num_ensembles) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.bt_vel['q_total_warning'][transect_id, 2] or \
-                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 2]:
+                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 2] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -5308,13 +5390,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Vertical velocity invalid
                 col += 1
-                item = '{:3.2f}'.format((num_vert_invalid / num_ensembles) * 100.)
+                percent_invalid = (num_vert_invalid / num_ensembles) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.bt_vel['q_total_warning'][transect_id, 3] or \
-                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 3]:
+                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 3] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -5326,13 +5415,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
+
                 # Other
                 col += 1
-                item = '{:3.2f}'.format((num_other_invalid / num_ensembles) * 100.)
+                percent_invalid = (num_other_invalid / num_ensembles) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.bt_vel['q_total_warning'][transect_id, 4] or \
-                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 4]:
+                        self.meas.qa.bt_vel['q_max_run_warning'][transect_id, 4] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -5343,6 +5439,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.bt_create_tooltip(self, row, col)))
 
                 # Discharge before changes
                 col += 1
@@ -5371,6 +5472,40 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.resizeRowsToContents()
 
             self.bt_comments_messages()
+
+    @staticmethod
+    def bt_create_tooltip(self, row, column):
+
+        # Identify transect associated with the row
+        transect_id = self.checked_transects_idx[row]
+
+        cat_idx = None
+        tt = ''
+
+        if column == 0:
+            cat_idx=0
+        elif column == 3:
+            cat_idx = 0
+        elif column == 4:
+            cat_idx=1
+        elif column == 5:
+            cat_idx=5
+        elif column == 6:
+            cat_idx=2
+        elif column == 7:
+            cat_idx=3
+        elif column == 8:
+            cat_idx=4
+
+        if cat_idx is not None:
+            tt = ''.join(self.q_qa_message(qa_data=self.meas.qa.bt_vel,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+        return tt
 
     def bt_plots(self):
         """Creates graphics for BT tab.
@@ -5568,6 +5703,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update table
         self.update_bt_table(old_discharge=old_discharge, new_discharge=self.meas.discharge)
+        self.bt_comments_messages()
 
         # Update plots
         self.bt_plots()
@@ -5694,8 +5830,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Coordinates application of a user specified error velocity threshold.
         """
 
+        self.ed_bt_error_vel_threshold.blockSignals(True)
         with self.wait_cursor():
-            self.ed_bt_error_vel_threshold.blockSignals(True)
 
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_bt_error_vel_threshold)
@@ -5706,7 +5842,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and later focus is changed the method could get
                 # twice. This line checks to see if there was and actual change.
-                if np.abs(threshold - s['BTdFilterThreshold']) > 0.0001:
+                compute = False
+                if type(s['BTdFilterThreshold']) is dict:
+                    compute = True
+                else:
+                    if np.abs(threshold - s['BTdFilterThreshold']) > 0.0001:
+                        compute = True
+                if compute:
                     # Change settings to manual and the associated threshold
                     s['BTdFilter'] = 'Manual'
                     s['BTdFilterThreshold'] = threshold
@@ -5714,15 +5856,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
-            self.ed_bt_error_vel_threshold.blockSignals(False)
+                # self.tab_bt_2_data.setFocus()
+        self.ed_bt_error_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
     def change_vert_vel_threshold(self):
         """Coordinates application of a user specified vertical velocity threshold.
         """
-
+        self.ed_bt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
-            self.ed_bt_vert_vel_threshold.blockSignals(True)
+
 
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_bt_vert_vel_threshold)
@@ -5733,7 +5876,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and later focus is changed the method could get
                 # twice. This line checks to see if there was and actual change.
-                if np.abs(threshold - s['BTwFilterThreshold']) > 0.0001:
+                compute = False
+                if type(s['BTwFilterThreshold']) is dict:
+                    compute = True
+                else:
+                    if np.abs(threshold - s['BTwFilterThreshold']) > 0.0001:
+                        compute = True
+                if compute:
                     # Change settings to manual and the associated threshold
                     s['BTwFilter'] = 'Manual'
                     s['BTwFilterThreshold'] = threshold
@@ -5741,7 +5890,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
-            self.ed_bt_vert_vel_threshold.blockSignals(False)
+        self.ed_bt_vert_vel_threshold.blockSignals(False)
 
     def bt_comments_messages(self):
         """Displays comments and messages associated with bottom track filters in Messages tab.
@@ -5804,6 +5953,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         # Automatically resize rows and columns
         tbl.resizeColumnsToContents()
@@ -6011,6 +6161,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.gps_create_tooltip(self, row, col))
+
                 # Percent of ensembles with invalid vtg
                 col += 1
                 if num_invalid_vtg >= 0:
@@ -6033,16 +6185,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.gps_create_tooltip(self, row, col))
+
                 # Percent of ensembles with invalid quality
                 col += 1
+                percent_invalid = 0
                 if num_quality_invalid >= 0:
-                    item = '{:3.2f}'.format((num_quality_invalid / num_ensembles) * 100.)
+                    percent_invalid = (num_quality_invalid / num_ensembles) * 100.
+                    item = '{:3.2f}'.format(percent_invalid)
                 else:
                     item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.gga_vel['q_total_warning'][transect_id, 2] or \
-                        self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 2]:
+                        self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 2] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -6054,16 +6211,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.gps_create_tooltip(self, row, col)))
+
                 # Percent ensembles with invalid altitude
                 col += 1
+                percent_invalid = 0
                 if num_altitude_invalid >= 0:
-                    item = '{:3.2f}'.format((num_altitude_invalid / num_ensembles) * 100.)
+                    percent_invalid = (num_altitude_invalid / num_ensembles) * 100.
+                    item = '{:3.2f}'.format(percent_invalid)
                 else:
                     item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.gga_vel['q_total_warning'][transect_id, 3] or \
-                        self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 3]:
+                        self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 3] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -6075,10 +6240,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.gps_create_tooltip(self, row, col)))
+
                 # Percent ensembles with invalid HDOP
                 col += 1
+                percent_invalid = 0
                 if num_hdop_invalid >= 0:
-                    item = '{:3.2f}'.format((num_hdop_invalid / num_ensembles) * 100.)
+                    percent_invalid = (num_hdop_invalid / num_ensembles) * 100.
+                    item = '{:3.2f}'.format(percent_invalid)
                 else:
                     item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -6086,7 +6258,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if self.meas.qa.gga_vel['q_total_warning'][transect_id, 5] or \
                         self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 5] or \
                         self.meas.qa.vtg_vel['q_total_warning'][transect_id, 5] or \
-                        self.meas.qa.vtg_vel['q_max_run_warning'][transect_id, 5]:
+                        self.meas.qa.vtg_vel['q_max_run_warning'][transect_id, 5] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -6100,6 +6273,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.gps_create_tooltip(self, row, col)))
+
+
                 # Percent of ensembles with satellite changes
                 col += 1
                 if num_sat_changes >= 0:
@@ -6111,8 +6290,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent other filter
                 col += 1
+                percent_invalid = 0
                 if num_other_invalid >= 0:
-                    item = '{:3.2f}'.format((num_other_invalid / num_ensembles) * 100.)
+                    percent_invalid = (num_other_invalid / num_ensembles) * 100.
+                    item = '{:3.2f}'.format(percent_invalid)
                 else:
                     item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -6120,7 +6301,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if self.meas.qa.gga_vel['q_total_warning'][transect_id, 4] or \
                         self.meas.qa.gga_vel['q_max_run_warning'][transect_id, 4] or \
                         self.meas.qa.vtg_vel['q_total_warning'][transect_id, 4] or \
-                        self.meas.qa.vtg_vel['q_max_run_warning'][transect_id, 4]:
+                        self.meas.qa.vtg_vel['q_max_run_warning'][transect_id, 4] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -6133,6 +6315,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.gps_create_tooltip(self, row, col)))
 
                 # Discharge before changes
                 col += 1
@@ -6163,6 +6350,111 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.scrollToItem(tbl.item(self.transect_row, 0))
 
             self.gps_comments_messages()
+
+    @staticmethod
+    def gps_create_tooltip(self, row, column):
+
+        # Identify transect associated with the row
+        transect_id = self.checked_transects_idx[row]
+
+        cat_idx = None
+        tt = ''
+        qa_data = None
+
+        if column == 2:
+            cat_idx = 1
+            qa_data = self.meas.qa.gga_vel
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            cat_idx = 0
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+        elif column == 3:
+            cat_idx = 1
+            qa_data = self.meas.qa.vtg_vel
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            cat_idx = 0
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+
+        elif column == 4:
+            cat_idx = 2
+            qa_data = self.meas.qa.gga_vel
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+
+        elif column == 5:
+            cat_idx = 3
+            qa_data = self.meas.qa.gga_vel
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+
+        elif column == 6:
+            cat_idx = 5
+            if self.meas.transects[self.meas.checked_transect_idx[row]].boat_vel.gga_vel is not None:
+                qa_data = self.meas.qa.gga_vel
+            elif self.meas.transects[self.meas.checked_transect_idx[row]].boat_vel.vtg_vel is not None:
+                qa_data = self.meas.qa.vtg_vel
+            tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+
+        elif column == 8:
+            cat_idx = 4
+            if self.meas.transects[self.meas.checked_transect_idx[row]].boat_vel.gga_vel is not None:
+                qa_data = self.meas.qa.gga_vel
+                tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                               cat_idx=cat_idx,
+                                               transect_id=transect_id,
+                                               total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                               total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                               run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                               run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            if self.meas.transects[self.meas.checked_transect_idx[row]].boat_vel.vtg_vel is not None:
+                qa_data = self.meas.qa.vtg_vel
+                tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                               cat_idx=cat_idx,
+                                               transect_id=transect_id,
+                                               total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                               total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                               run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                               run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+        return tt
 
     def gps_plots(self):
         """Creates graphics for GPS tab.
@@ -6561,6 +6853,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().hide()
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         if len(self.checked_transects_idx) > 0:
             # Build column labels using custom_header to create appropriate spans
@@ -6917,6 +7210,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         # Automatically resize rows and columns
         tbl.resizeColumnsToContents()
@@ -7114,6 +7408,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.depth_create_tooltip(self, row, col))
+
                 # Draft
                 col += 1
                 item = '{:5.2f}'.format(transect.depths.bt_depths.draft_use_m * self.units['L'])
@@ -7125,6 +7421,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
+                tbl.item(row, col).setToolTip(self.depth_create_tooltip(self, row, col))
 
                 # Total number of ensembles
                 col += 1
@@ -7200,6 +7498,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.scrollToItem(tbl.item(self.transect_row, 0))
             tbl.resizeColumnsToContents()
             tbl.resizeRowsToContents()
+
+    @staticmethod
+    def depth_create_tooltip(self, row, column):
+
+        # Identify transect associated with the row
+        transect_id = self.checked_transects_idx[row]
+        tt = ''
+        if column == 0:
+            cat_idx = 0
+            tt = ''.join(self.q_qa_message(qa_data=self.meas.qa.depths,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            tt = ''.join(tt)
+
+        elif column == 1:
+            if self.meas.qa.depths['draft'] == 1:
+                tt = 'Transducer depth is not consistent among transects.'
+            elif self.meas.qa.depths['draft'] == 2:
+                tt = 'Transducer depth is too shallow, likely 0.'
+        return tt
 
     def depth_plots(self):
         """Creates graphics for depth tab.
@@ -7535,6 +7857,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         # Automatically resize rows and columns
         tbl.resizeColumnsToContents()
@@ -7745,13 +8068,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
+
                 # Invalid original data
                 col += 1
-                item = '{:3.2f}'.format((num_orig_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_orig_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'][transect_id, 1] or \
-                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 1]:
+                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 1] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7763,13 +8091,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
                 # Invalid 3 beam
                 col += 1
-                item = '{:3.2f}'.format((num_beam_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_beam_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'][transect_id, 5] or \
-                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 5]:
+                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 5] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7781,13 +8116,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
                 # Error velocity invalid
                 col += 1
-                item = '{:3.2f}'.format((num_error_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_error_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'][transect_id, 2] or \
-                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 2]:
+                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 2] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7799,13 +8141,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
                 # Vertical velocity invalid
                 col += 1
-                item = '{:3.2f}'.format((num_vert_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_vert_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'][transect_id, 3] or \
-                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 3]:
+                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 3] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7817,13 +8166,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
                 # Other
                 col += 1
-                item = '{:3.2f}'.format((num_other_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_other_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'][transect_id, 4] or \
-                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 4]:
+                        self.meas.qa.w_vel['q_max_run_warning'][transect_id, 4] or \
+                        percent_invalid == 100:
 
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7835,14 +8191,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
+                if percent_invalid == 100:
+                    tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                else:
+                    tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
+
                 # SNR
                 col += 1
-                item = '{:3.2f}'.format((num_snr_invalid / num_useable_cells) * 100.)
+                percent_invalid = (num_snr_invalid / num_useable_cells) * 100.
+                item = '{:3.2f}'.format(percent_invalid)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.qa.w_vel['q_total_warning'].shape[1] > 7:
                     if self.meas.qa.w_vel['q_total_warning'][transect_id, 7] or \
-                            self.meas.qa.w_vel['q_max_run_warning'][transect_id, 7]:
+                            self.meas.qa.w_vel['q_max_run_warning'][transect_id, 7] or \
+                            percent_invalid == 100:
 
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
@@ -7853,6 +8216,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                     else:
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
+                    if percent_invalid == 100:
+                        tbl.item(row, col).setToolTip(self.tr('All data are invalid.'))
+                    else:
+                        tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -8079,6 +8447,40 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.wt_plots()
             self.change = True
         self.tab_wt_2_data.setFocus()
+
+    @staticmethod
+    def wt_create_tooltip(self, row, column):
+
+        # Identify transect associated with the row
+        transect_id = self.checked_transects_idx[row]
+
+        cat_idx = None
+        tt = ''
+
+        if column == 3:
+            cat_idx=0
+        elif column == 4:
+            cat_idx=1
+        elif column == 5:
+            cat_idx=5
+        elif column == 6:
+            cat_idx=2
+        elif column == 7:
+            cat_idx=3
+        elif column == 8:
+            cat_idx=4
+        elif column == 9:
+            cat_idx=7
+
+        if cat_idx is not None:
+            tt = ''.join(self.q_qa_message(qa_data=self.meas.qa.w_vel,
+                                           cat_idx=cat_idx,
+                                           transect_id=transect_id,
+                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+        return tt
 
     @QtCore.pyqtSlot()
     def wt_plot_change(self):
@@ -9161,6 +9563,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.horizontalHeader().setFont(self.font_bold)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        tbl.setStyleSheet("QToolTip{font: 12pt}")
 
         # Automatically resize rows and columns
         tbl.resizeColumnsToContents()
@@ -9217,6 +9620,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Format cell
                 if self.meas.qa.edges['left_type'] == 2:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Type is not consistent.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9244,6 +9648,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Format cell
                 if transect_id in self.meas.qa.edges['left_dist_moved_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip('Excessive boat movement.')
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9275,6 +9680,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 if transect_id in self.meas.qa.edges['invalid_transect_left_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('The percent of invalid ensembles exceeds 25%.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9286,8 +9692,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Format cell
                 if transect_id in self.meas.qa.edges['left_zero_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Edge has zero Q.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
+
                 # Left edge discharge %
                 col += 1
                 item = '{:2.2f}'.format((self.meas.discharge[transect_id].left / self.meas.discharge[transect_id].total)
@@ -9296,6 +9704,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['left_q_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Edge Q is greater than 5% of the mean discharge.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9307,6 +9716,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Format cell
                 if self.meas.qa.edges['right_type'] == 2:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Type is not consistent.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9334,6 +9744,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Format cell
                 if transect_id in self.meas.qa.edges['right_dist_moved_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip('Excessive boat movement.')
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9365,6 +9776,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 if transect_id in self.meas.qa.edges['invalid_transect_right_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('The percent of invalid ensembles exceeds 25%.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9375,6 +9787,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['right_zero_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
+                    tbl.item(row, col).setToolTip(self.tr('Edge has zero Q.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -9387,6 +9800,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['right_q_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr('Edge Q is greater than 5% of the mean discharge.'))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -11437,6 +11851,56 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     # Support functions
     # =================
+    @staticmethod
+    def q_qa_message(qa_data, cat_idx, transect_id, total_threshold_warning, total_threshold_caution,
+                     run_threshold_warning, run_threshold_caution):
+
+        text = []
+        if cat_idx == 0:
+            if qa_data['all_invalid'][transect_id]:
+                text.append('No valid data. \n')
+
+        try:
+            qa_check = qa_data['q_total_warning'][transect_id, cat_idx]
+        except IndexError:
+            qa_check = qa_data['q_total_warning'][transect_id]
+
+        if qa_check:
+            text.append('Interpolated Q for invalid cells and ensembles in a transect exceeds '
+                        + '%3.0f' % total_threshold_warning
+                        + '%;\n')
+
+        try:
+            qa_check = qa_data['q_max_run_warning'][transect_id, cat_idx]
+        except IndexError:
+            qa_check = qa_data['q_max_run_warning'][transect_id]
+
+        if qa_check:
+            text.append('Interpolated Q for consecutive invalid ensembles exceeds '
+                        + '%3.0f' % run_threshold_warning
+                        + '%;\n')
+
+        try:
+            qa_check = qa_data['q_total_caution'][transect_id, cat_idx]
+        except IndexError:
+            qa_check = qa_data['q_total_caution'][transect_id]
+
+        if qa_check:
+            text.append('Interpolated Q for invalid cells and ensembles in a transect exceeds '
+                        + '%3.0f' % total_threshold_caution
+                        + '%;\n')
+
+        try:
+            qa_check = qa_data['q_max_run_caution'][transect_id, cat_idx]
+        except IndexError:
+            qa_check = qa_data['q_max_run_caution'][transect_id]
+
+        if qa_check:
+            text.append('Interpolated Q for consecutive invalid ensembles exceeds '
+                        + '%3.0f' % run_threshold_caution
+                        + '%;\n')
+        return text
+
     @staticmethod
     def popup_message(text):
         """Display a message box with messages specified in text.
