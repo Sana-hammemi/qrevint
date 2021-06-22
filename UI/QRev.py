@@ -6,6 +6,7 @@ import simplekml
 import webbrowser
 import getpass
 import numpy as np
+import multiprocessing as mp
 import scipy.io as sio
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, QRegExp
@@ -12314,6 +12315,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 # Main
 # ====
 if __name__ == "__main__":
+    mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     window = QRev()
     if window.agreement:

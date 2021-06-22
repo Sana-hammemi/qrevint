@@ -1,10 +1,13 @@
 import os
 import datetime
+import time
+import concurrent.futures
 import numpy as np
+import itertools as it
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
 from Classes.MMT_TRDI import MMTtrdi
-from Classes.TransectData import TransectData, allocate_transects
+from Classes.TransectData import TransectData
 from Classes.PreMeasurement import PreMeasurement
 from Classes.MovingBedTests import MovingBedTests
 from Classes.QComp import QComp
@@ -17,6 +20,7 @@ from Classes.BoatStructure import BoatStructure
 from Classes.BoatData import BoatData
 from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
+from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile
 
@@ -217,9 +221,9 @@ class Measurement(object):
         # Create transect objects for  TRDI data
         # TODO refactor allocate_transects
 
-        self.transects = allocate_transects(mmt=mmt,
-                                            transect_type=transect_type,
-                                            checked=checked)
+        self.transects = self.allocate_transects(mmt=mmt,
+                                                 transect_type=transect_type,
+                                                 checked=checked)
 
         self.checked_transect_idx = self.checked_transects(self)
 
@@ -382,7 +386,7 @@ class Measurement(object):
         if len(mmt.mbt_transects) > 0:
             
             # Create transect objects
-            transects = allocate_transects(mmt, transect_type='MB')
+            transects = self.allocate_transects(mmt, transect_type='MB')
 
             # Process moving-bed tests
             if len(transects) > 0:
@@ -3754,6 +3758,87 @@ class Measurement(object):
             # Write file
             xml_file.write(xml_out)
 
+    @staticmethod
+    def add_transect(mmt, filename, index, type):
+        pd0_data = Pd0TRDI(filename)
+
+        if type == 'MB':
+            mmt_transect = mmt.mbt_transects[index]
+        else:
+            mmt_transect = mmt.transects[index]
+
+        transect = TransectData()
+        transect.trdi(mmt=mmt,
+                      mmt_transect=mmt_transect,
+                      pd0_data=pd0_data)
+        return transect
+
+    def allocate_transects(self, mmt, transect_type='Q', checked=False):
+        """Method to load transect data. Changed from Matlab approach by Greg to allow possibility
+        of multi-thread approach.
+
+        Parameters
+        ----------
+        mmt: MMT_TRDI
+            Object of MMT_TRDI
+        transect_type: str
+            Type of transect (Q: discharge or MB: moving-bed test)
+        checked: bool
+            Determines if all files are loaded (False) or only checked files (True)
+        """
+
+        file_names = []
+        file_idx = []
+
+        # Setup processing for discharge or moving-bed transects
+        if transect_type == 'Q':
+            # Identify discharge transect files to load
+            if checked:
+                for idx, transect in enumerate(mmt.transects):
+                    if transect.Checked == 1:
+                        file_names.append(transect.Files[0])
+                        file_idx.append(idx)
+
+            else:
+                file_names = [transect.Files[0] for transect in mmt.transects]
+                file_idx = list(range(0, len(file_names)))
+
+        elif transect_type == 'MB':
+            file_names = [transect.Files[0] for transect in mmt.mbt_transects]
+            file_idx = list(range(0, len(file_names)))
+
+        # Determine if any files are missing
+        valid_files = []
+        valid_indices = []
+        for index, name in enumerate(file_names):
+            fullname = os.path.join(mmt.path, name)
+            if os.path.exists(fullname):
+                valid_files.append(fullname)
+                valid_indices.append(file_idx[index])
+
+
+        # start = time.perf_counter()
+        transects = []
+        num = len(valid_indices)
+        # num = 2
+        multi_process = False
+        if multi_process:
+
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                # results = [executor.submit(self.add_transect, mmt, valid_files[k], valid_indices[k], transect_type) for k in range(num)]
+                results = executor.map(self.add_transect, it.repeat(mmt), valid_files, valid_indices, it.repeat(transect_type))
+            # for f in concurrent.futures.as_completed(results):
+            #     transects.append(f.result())
+
+            for result in results:
+                transects.append(result)
+        else:
+            for k in range(num):
+                transects.append(self.add_transect(mmt, valid_files[k], valid_indices[k], transect_type))
+
+        # finish = time.perf_counter()
+        # print(f'Finished in {finish - start}')
+        return transects
 
 if __name__ == '__main__':
     pass

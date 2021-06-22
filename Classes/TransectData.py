@@ -1,4 +1,6 @@
 import os
+import time
+import concurrent.futures
 import numpy as np
 from datetime import datetime
 from datetime import timezone
@@ -180,8 +182,8 @@ class TransectData(object):
                                           nav_ref_in='BT',
                                           min_beams=min_beams,
                                           bottom_mode=pd0_data.Cfg.bm[0],
-                                          corr_in = pd0_data.Bt.corr,
-                                          rssi_in = pd0_data.Bt.rssi)
+                                          corr_in=pd0_data.Bt.corr,
+                                          rssi_in=pd0_data.Bt.rssi)
 
             self.boat_vel.set_nav_reference('BT')
 
@@ -282,14 +284,14 @@ class TransectData(object):
 
             # Add draft
             temp_depth_bt += mmt_config['Offsets_Transducer_Depth']
-            
+
             # Get instrument cell data
             cell_size_all_m, cell_depth_m, sl_cutoff_per, sl_lag_effect_m = \
                 TransectData.compute_cell_data(pd0_data)
-            
+
             # Adjust cell depth of draft
             cell_depth_m = np.add(mmt_config['Offsets_Transducer_Depth'], cell_depth_m)
-            
+
             # Create depth data object for BT
             self.depths = DepthStructure()
             self.depths.add_depth_object(depth_in=temp_depth_bt,
@@ -298,7 +300,7 @@ class TransectData(object):
                                          draft_in=mmt_config['Offsets_Transducer_Depth'],
                                          cell_depth_in=cell_depth_m,
                                          cell_size_in=cell_size_all_m)
-            
+
             # Compute cells above side lobe
             cells_above_sl, sl_cutoff_m = \
                 TransectData.side_lobe_cutoff(depths=self.depths.bt_depths.depth_orig_m,
@@ -306,19 +308,19 @@ class TransectData(object):
                                               cell_depth=self.depths.bt_depths.depth_cell_depth_m,
                                               sl_lag_effect=sl_lag_effect_m,
                                               slc_type='Percent',
-                                              value=1-sl_cutoff_per / 100)
-            
+                                              value=1 - sl_cutoff_per / 100)
+
             # Check for the presence of vertical beam data
             if np.nanmax(np.nanmax(pd0_data.Sensor.vert_beam_status)) > 0:
                 temp_depth_vb = np.tile(np.nan, (1, cell_depth_m.shape[1]))
                 temp_depth_vb[0, :] = pd0_data.Sensor.vert_beam_range_m
-                
+
                 # Screen out invalid depths
                 temp_depth_vb[temp_depth_vb < 0.01] = np.nan
-                
+
                 # Add draft
                 temp_depth_vb = temp_depth_vb + mmt_config['Offsets_Transducer_Depth']
-                
+
                 # Create depth data object for vertical beam
                 self.depths.add_depth_object(depth_in=temp_depth_vb,
                                              source_in='VB',
@@ -326,17 +328,17 @@ class TransectData(object):
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
-                                   
+
             # Check for the presence of depth sounder
             if np.nansum(np.nansum(pd0_data.Gps2.depth_m)) > 1e-5:
                 temp_depth_ds = pd0_data.Gps2.depth_m
-                
+
                 # Screen out invalid data
                 temp_depth_ds[temp_depth_ds < 0.01] = np.nan
-                
+
                 # Use the last valid depth for each ensemble
-                last_depth_col_idx = np.sum(np.isnan(temp_depth_ds) == False, axis=1)-1
-                last_depth_col_idx[last_depth_col_idx == -1] = 0               
+                last_depth_col_idx = np.sum(np.isnan(temp_depth_ds) == False, axis=1) - 1
+                last_depth_col_idx[last_depth_col_idx == -1] = 0
                 row_index = np.arange(len(temp_depth_ds))
                 last_depth = nans(row_index.size)
                 for row in row_index:
@@ -347,22 +349,22 @@ class TransectData(object):
                     scale_factor = mmt_config['DS_Scale_Factor']
                 else:
                     scale_factor = pd0_data.Sensor.sos_mps / 1500.
-                    
+
                 # Apply scale factor, offset, and draft
                 # Note: Only the ADCP draft is stored.  The transducer
                 # draft or scaling for depth sounder data cannot be changed in QRev
                 ds_depth = np.tile(np.nan, (1, cell_depth_m.shape[1]))
                 ds_depth[0, :] = (last_depth * scale_factor) \
-                    + mmt_config['DS_Transducer_Depth']\
-                    + mmt_config['DS_Transducer_Offset']
-                
+                                 + mmt_config['DS_Transducer_Depth'] \
+                                 + mmt_config['DS_Transducer_Offset']
+
                 self.depths.add_depth_object(depth_in=ds_depth,
                                              source_in='DS',
-                                             freq_in=np.tile(np.nan,pd0_data.Inst.freq.shape),
+                                             freq_in=np.tile(np.nan, pd0_data.Inst.freq.shape),
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
-                
+
             # Set depth reference to value from mmt file
             if 'Proc_River_Depth_Source' in mmt_config:
                 if mmt_config['Proc_River_Depth_Source'] == 0:
@@ -416,7 +418,7 @@ class TransectData(object):
                 else:
                     self.depths.selected = 'bt_depths'
                 self.depths.composite_depths(transect=self, setting='Off')
-                
+
             # Create water_data object
             # ------------------------
 
@@ -427,7 +429,7 @@ class TransectData(object):
             excluded_dist = 0
             if (firmware[:2] == '56') and (np.nanmax(pd0_data.Sensor.vert_beam_status) < 0.9):
                 excluded_dist = 0.25
-                
+
             if (firmware[:2] == '44') or (firmware[:2] == '56'):
                 # Process water velocities for RiverRay and RiverPro
                 self.w_vel = WaterData()
@@ -452,7 +454,7 @@ class TransectData(object):
                                          surface_corr_in=pd0_data.Surface.corr,
                                          surface_num_cells_in=pd0_data.Surface.no_cells,
                                          ping_type=ensemble_ping_type)
-                
+
             else:
                 # Process water velocities for non-RiverRay ADCPs
                 self.w_vel = WaterData()
@@ -473,21 +475,19 @@ class TransectData(object):
                                          blank_in=pd0_data.Cfg.wf_cm[0] / 100,
                                          corr_in=pd0_data.Wt.corr,
                                          ping_type=ensemble_ping_type)
-                
-
 
             # Create Edges Object
             self.edges = Edges()
             self.edges.populate_data(rec_edge_method='Fixed', vel_method='MeasMag')
-                
+
             # Determine number of ensembles to average
             n_ens_left = mmt_config['Q_Shore_Pings_Avg']
             # TRDI uses same number on left and right edges
             n_ens_right = n_ens_left
-            
+
             # Set indices for ensembles in the moving-boat portion of the transect
             self.in_transect_idx = np.arange(0, pd0_data.Bt.vel_mps.shape[1])
-            
+
             # Determine left and right edge distances
             if mmt_config['Edge_Begin_Left_Bank']:
                 dist_left = float(mmt_config['Edge_Begin_Shore_Distance'])
@@ -519,7 +519,7 @@ class TransectData(object):
                     edge_method_right = 'Yes'
                 self.start_edge = 'Right'
                 self.orig_start_edge = 'Right'
-                
+
             # Create left edge
             if edge_method_left == 'NO':
                 self.edges.left.populate_data(edge_type='User Q',
@@ -546,7 +546,6 @@ class TransectData(object):
                                               coefficient=mmt_config['Q_Left_Edge_Coeff'],
                                               user_discharge=user_discharge_left)
 
-                
             # Create right edge
             if edge_method_right == 'NO':
                 self.edges.right.populate_data(edge_type='User Q',
@@ -571,7 +570,7 @@ class TransectData(object):
                                                number_ensembles=n_ens_right,
                                                coefficient=mmt_config['Q_Right_Edge_Coeff'],
                                                user_discharge=user_discharge_right)
-                
+
             # Create extrap object
             # --------------------
             # Determine top method
@@ -580,20 +579,20 @@ class TransectData(object):
                 top = 'Constant'
             elif mmt_config['Q_Top_Method'] == 2:
                 top = '3-Point'
-                
+
             # Determine bottom method
             bot = 'Power'
             if mmt_config['Q_Bottom_Method'] == 2:
                 bot = 'No Slip'
-                
+
             self.extrap = ExtrapData()
             self.extrap.populate_data(top=top, bot=bot, exp=mmt_config['Q_Power_Curve_Coeff'])
-            
+
             # Sensor Data
-            self.sensors = Sensors() 
-            
+            self.sensors = Sensors()
+
             # Heading
-            
+
             # Internal Heading
             self.sensors.heading_deg.internal = HeadingData()
             self.sensors.heading_deg.internal.populate_data(data_in=pd0_data.Sensor.heading_deg.T,
@@ -613,14 +612,14 @@ class TransectData(object):
                 use = np.tile([np.nan], d_time.shape)
                 for nd_time in range(len(d_time_min)):
                     use[nd_time, :] = np.abs(d_time[nd_time, :]) == d_time_min[nd_time]
-                    
+
                 ext_heading_deg = np.tile([np.nan], (len(d_time_min)))
                 for nh in range(len(d_time_min)):
                     idx = np.where(use[nh, :])[0]
                     if len(idx) > 0:
                         idx = idx[0]
                         ext_heading_deg[nh] = pd0_data.Gps2.heading_deg[nh, idx]
-                        
+
                 # Create external heading sensor
                 self.sensors.heading_deg.external = HeadingData()
                 self.sensors.heading_deg.external.populate_data(data_in=ext_heading_deg,
@@ -638,34 +637,34 @@ class TransectData(object):
             # Pitch
             pitch = arctand(tand(pd0_data.Sensor.pitch_deg) * cosd(pd0_data.Sensor.roll_deg))
             pitch_src = pd0_data.Cfg.pitch_src[0]
-            
+
             # Create pitch sensor
             self.sensors.pitch_deg.internal = SensorData()
             self.sensors.pitch_deg.internal.populate_data(data_in=pitch, source_in=pitch_src)
             self.sensors.pitch_deg.selected = 'internal'
-            
+
             # Roll
             roll = pd0_data.Sensor.roll_deg.T
             roll_src = pd0_data.Cfg.roll_src[0]
-            
+
             # Create Roll sensor
             self.sensors.roll_deg.internal = SensorData()
             self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in=roll_src)
             self.sensors.roll_deg.selected = 'internal'
-            
+
             # Temperature
             temperature = pd0_data.Sensor.temperature_deg_c.T
             temperature_src = pd0_data.Cfg.temp_src[0]
-            
+
             # Create temperature sensor
             self.sensors.temperature_deg_c.internal = SensorData()
             self.sensors.temperature_deg_c.internal.populate_data(data_in=temperature, source_in=temperature_src)
             self.sensors.temperature_deg_c.selected = 'internal'
-            
+
             # Salinity
             pd0_salinity = pd0_data.Sensor.salinity_ppt.T
             pd0_salinity_src = pd0_data.Cfg.sal_src[0]
-            
+
             # Create salinity sensor from pd0 data
             self.sensors.salinity_ppt.internal = SensorData()
             self.sensors.salinity_ppt.internal.populate_data(data_in=pd0_salinity, source_in=pd0_salinity_src)
@@ -677,13 +676,13 @@ class TransectData(object):
 
             # Set selected salinity
             self.sensors.salinity_ppt.selected = 'internal'
-            
+
             # Speed of Sound
             speed_of_sound = pd0_data.Sensor.sos_mps.T
             speed_of_sound_src = pd0_data.Cfg.sos_src[0]
             self.sensors.speed_of_sound_mps.internal = SensorData()
             self.sensors.speed_of_sound_mps.internal.populate_data(data_in=speed_of_sound, source_in=speed_of_sound_src)
-            
+
             # The raw data are referenced to the internal SOS
             self.sensors.speed_of_sound_mps.selected = 'internal'
 
@@ -887,7 +886,7 @@ class TransectData(object):
         cell_size = rsdata.System.Cell_Size.reshape(1, num_ens)
         cell_size_all = np.tile(cell_size, (max_cells, 1))
         top_of_cells = rsdata.System.Cell_Start.reshape(1, num_ens)
-        cell_depth = ((np.tile(np.arange(1, max_cells+1, 1).reshape(max_cells, 1), (1, num_ens)) - 0.5)
+        cell_depth = ((np.tile(np.arange(1, max_cells + 1, 1).reshape(max_cells, 1), (1, num_ens)) - 0.5)
                       * cell_size_all) + np.tile(top_of_cells, (max_cells, 1))
 
         # Prepare bottom track depth variable
@@ -952,7 +951,7 @@ class TransectData(object):
             vel[3, :, :] = vel[3, :, :] * 2
 
         # Apply TRDI scaling to SonTek difference velocity to convert to a TRDI compatible error velocity
-        vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
+        vel[3, :, :] = vel[3, :, :] / ((2 ** 0.5) * np.tan(np.deg2rad(25)))
 
         # Convert velocity reference from what was used in RiverSurveyor Live to None by adding the boat velocity
         # to the reported water velocity
@@ -1023,8 +1022,6 @@ class TransectData(object):
                                  blank_in=excluded_distance,
                                  corr_in=corr,
                                  ping_type=ping_type)
-
-
 
         # Edges
         # -----
@@ -1193,7 +1190,6 @@ class TransectData(object):
         # Set selected salinity
         self.sensors.speed_of_sound_mps.selected = 'internal'
 
-
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
 
@@ -1356,7 +1352,7 @@ class TransectData(object):
 
     @staticmethod
     def compute_cell_data(pd0):
-        
+
         # Number of ensembles
         num_ens = np.array(pd0.Wt.vel_mps).shape[-1]
 
@@ -1365,7 +1361,7 @@ class TransectData(object):
         reg_cell_size[reg_cell_size == 0] = np.nan
         dist_cell_1_m = pd0.Cfg.dist_bin1_cm / 100
         num_reg_cells = pd0.Wt.vel_mps.shape[1]
-        
+
         # Surf data are to accommodate RiverRay and RiverPro.  pd0_read sets these
         # values to nan when reading Rio Grande or StreamPro data
         no_surf_cells = pd0.Surface.no_cells
@@ -1373,10 +1369,10 @@ class TransectData(object):
         max_surf_cells = np.nanmax(no_surf_cells)
         surf_cell_size = pd0.Surface.cell_size_cm / 100
         surf_cell_dist = pd0.Surface.dist_bin1_cm / 100
-        
+
         # Compute maximum number of cells
         max_cells = int(max_surf_cells + num_reg_cells)
-        
+
         # Combine cell size and cell range from transducer for both
         # surface and regular cells
         cell_depth = np.tile(np.nan, (max_cells, num_ens))
@@ -1384,7 +1380,7 @@ class TransectData(object):
         for i in range(num_ens):
             # Determine number of cells to be treated as regular cells
             if np.nanmax(no_surf_cells) > 0:
-                
+
                 num_reg_cells = max_cells - no_surf_cells[i]
             else:
                 num_reg_cells = max_cells
@@ -1392,11 +1388,12 @@ class TransectData(object):
             # Compute cell depth
             if no_surf_cells[i] > 1e-5:
                 cell_depth[:int(no_surf_cells[i]), i] = surf_cell_dist[i] + \
-                                                        np.arange(0, (no_surf_cells[i]-1) * surf_cell_size[i]+0.001,
+                                                        np.arange(0, (no_surf_cells[i] - 1) * surf_cell_size[i] + 0.001,
                                                                   surf_cell_size[i])
-                cell_depth[int(no_surf_cells[i]):, i] = cell_depth[int(no_surf_cells[i]-1), i] \
-                    + (.5 * surf_cell_size[i] + 0.5 * reg_cell_size[i]) \
-                    + np.arange(0, (num_reg_cells-1) * reg_cell_size[i]+0.001, reg_cell_size[i])
+                cell_depth[int(no_surf_cells[i]):, i] = cell_depth[int(no_surf_cells[i] - 1), i] \
+                                                        + (.5 * surf_cell_size[i] + 0.5 * reg_cell_size[i]) \
+                                                        + np.arange(0, (num_reg_cells - 1) * reg_cell_size[i] + 0.001,
+                                                                    reg_cell_size[i])
                 cell_size_all[0:int(no_surf_cells[i]), i] = np.repeat(surf_cell_size[i], int(no_surf_cells[i]))
                 cell_size_all[int(no_surf_cells[i]):, i] = np.repeat(reg_cell_size[i], int(num_reg_cells))
             else:
@@ -1407,46 +1404,48 @@ class TransectData(object):
 
         # Firmware is used to ID RiverRay data with variable modes and lags
         firmware = str(pd0.Inst.firm_ver[0])
-            
+
         # Compute sl_lag_effect
         lag = pd0.Cfg.lag_cm / 100
         if firmware[0:2] == '44' or firmware[0:2] == '56':
             lag_near_bottom = np.array(pd0.Cfg.lag_near_bottom)
             lag_near_bottom[lag_near_bottom == np.nan] = 0
             lag[lag_near_bottom != 0] = 0
-            
+
         pulse_len = pd0.Cfg.xmit_pulse_cm / 100
         sl_lag_effect_m = (lag + pulse_len + reg_cell_size) / 2
         sl_cutoff_per = (1 - (cosd(pd0.Inst.beam_ang[0]))) * 100
-            
+
         return cell_size_all, cell_depth, sl_cutoff_per, sl_lag_effect_m
 
     def change_q_ensembles(self, proc_method):
         """Sets in_transect_idx to all ensembles, except in the case of SonTek data
         where RSL processing is applied.
-        
+
         Parameters
         ----------
         proc_method: str
             Processing method (WR2, RSL, QRev)
         """
-        
+
         if proc_method == 'RSL':
             num_ens = self.boat_vel.bt_vel.u_processed_mps.shape[1]
             # Determine number of ensembles for each edge
             if self.start_edge == 'Right':
-                self.in_transect_idx = np.arange(self.edges.right.num_ens_2_avg, num_ens-self.edges.left.num_ens_2_avg)
+                self.in_transect_idx = np.arange(self.edges.right.num_ens_2_avg,
+                                                 num_ens - self.edges.left.num_ens_2_avg)
             else:
-                self.in_transect_idx = np.arange(self.edges.left.num_ens_2_avg, num_ens-self.edges.right.num_ens_2_avg)
+                self.in_transect_idx = np.arange(self.edges.left.num_ens_2_avg,
+                                                 num_ens - self.edges.right.num_ens_2_avg)
         else:
             self.in_transect_idx = np.arange(0, self.boat_vel.bt_vel.u_processed_mps.shape[0])
-        
+
     def change_coord_sys(self, new_coord_sys):
         """Changes the coordinate system of the water and boat data.
 
         Current implementation only allows changes for original to higher order coordinate
         systems: Beam - Inst - Ship - Earth.
-        
+
         Parameters
         ----------
         new_coord_sys: str
@@ -1454,10 +1453,10 @@ class TransectData(object):
         """
         self.w_vel.change_coord_sys(new_coord_sys, self.sensors, self.adcp)
         self.boat_vel.change_coord_sys(new_coord_sys, self.sensors, self.adcp)
-        
+
     def change_nav_reference(self, update, new_nav_ref):
         """Method to set the navigation reference for the water data.
-        
+
         Parameters
         ----------
         update: bool
@@ -1465,25 +1464,25 @@ class TransectData(object):
         new_nav_ref: str
             New navigation reference (bt_vel, gga_vel, vtg_vel)
         """
-        
+
         self.boat_vel.change_nav_reference(reference=new_nav_ref, transect=self)
-        
+
         if update:
             self.update_water()
-            
+
     def change_mag_var(self, magvar):
         """Change magnetic variation.
-        
+
         Parameters
         ----------
         magvar: float
             Magnetic variation in degrees.
         """
-        
+
         # Update object
         if self.sensors.heading_deg.external is not None:
             self.sensors.heading_deg.external.set_mag_var(magvar, 'external')
-        
+
         if self.sensors.heading_deg.selected == 'internal':
             heading_selected = getattr(self.sensors.heading_deg, self.sensors.heading_deg.selected)
             old_magvar = heading_selected.mag_var_deg
@@ -1493,19 +1492,19 @@ class TransectData(object):
             self.w_vel.change_heading(self.boat_vel, magvar_change)
         else:
             self.sensors.heading_deg.internal.set_mag_var(magvar, 'internal')
-        
+
         # self.update_water()
-        
+
     def change_offset(self, h_offset):
         """Change the heading offset (alignment correction). Only affects external heading.
-        
+
         Parameters
         ----------
         h_offset: float
             Heading offset in degrees
         """
         self.sensors.heading_deg.internal.set_align_correction(h_offset, 'internal')
-        
+
         if self.sensors.heading_deg.selected == 'external':
             old = getattr(self.sensors.heading_deg, self.sensors.heading_deg.selected)
             old_offset = old.align_correction_deg
@@ -1515,9 +1514,9 @@ class TransectData(object):
 
         if self.sensors.heading_deg.external is not None:
             self.sensors.heading_deg.external.set_align_correction(h_offset, 'external')
-        
+
         self.update_water()
-        
+
     def change_heading_source(self, h_source):
         """Changes heading source (internal or external).
 
@@ -1527,17 +1526,15 @@ class TransectData(object):
             Heading source (internal or external or user)
         """
 
-
-
         # If source is user, check to see if it was created, if not create it
         if h_source == 'user':
             if self.sensors.heading_deg.user is None:
                 self.sensors.heading_deg.user = HeadingData()
                 self.sensors.heading_deg.user.populate_data(data_in=np.zeros(
                     self.boat_vel.bt_vel.u_processed_mps.shape),
-                                                                source_in='user',
-                                                                magvar=0,
-                                                                align=0)
+                    source_in='user',
+                    magvar=0,
+                    align=0)
 
         # Get new heading object
         new_heading_selection = getattr(self.sensors.heading_deg, h_source)
@@ -1552,15 +1549,14 @@ class TransectData(object):
             self.boat_vel.bt_vel.change_heading(heading_change)
             self.w_vel.change_heading(self.boat_vel, heading_change)
 
-            
         self.update_water()
-            
+
     def update_water(self):
         """Method called from set_nav_reference, boat_interpolation and boat filters
         to ensure that changes in boatvel are reflected in the water data"""
 
         self.w_vel.set_nav_reference(self.boat_vel)
-        
+
         # Reapply water filters and interpolations
         # Note wt_filters calls apply_filter which automatically calls
         # apply_interpolation so both filters and interpolations
@@ -1595,27 +1591,27 @@ class TransectData(object):
 
         # Compute minimum depths for each ensemble
         min_depths = np.nanmin(depths, 0)
-        
+
         # Compute range from transducer
         range_from_xducer = min_depths - draft
-        
+
         # Adjust for transducer angle
         coeff = None
         if slc_type == 'Percent':
             coeff = value
         elif slc_type == 'Angle':
             coeff = np.cos(np.deg2rad(value))
-        
+
         # Compute sidelobe cutoff to centerline
         cutoff = np.array(range_from_xducer * coeff - sl_lag_effect + draft)
-        
+
         # Compute boolean side lobe cutoff matrix
         cells_above_sl = np.less(cell_depth, cutoff)
         return cells_above_sl, cutoff
-        
+
     def boat_interpolations(self, update, target, method=None):
         """Coordinates boat velocity interpolations.
-        
+
         Parameters
         ----------
         update: bool
@@ -1629,7 +1625,7 @@ class TransectData(object):
         # Interpolate bottom track data
         if target == 'BT':
             self.boat_vel.bt_vel.apply_interpolation(transect=self, interpolation_method=method)
-            
+
         if target == 'GPS':
             # Interpolate GGA data
             vel = getattr(self.boat_vel, 'gga_vel')
@@ -1642,14 +1638,14 @@ class TransectData(object):
 
         # Apply composite tracks setting
         self.composite_tracks(update=False)
-        
+
         # Update water to reflect changes in boat_vel
         if update:
             self.update_water()
-            
+
     def composite_tracks(self, update, setting=None):
         """Coordinate application of composite tracks.
-        
+
         Parameters
         ----------
         update: bool
@@ -1657,7 +1653,7 @@ class TransectData(object):
         setting: str
             Sets composite tracks ("On" or "Off").
         """
-        
+
         # Determine if setting is specified
         if setting is None:
             # Process transect using saved setting
@@ -1665,14 +1661,14 @@ class TransectData(object):
         else:
             # Process transect usin new setting
             self.boat_vel.composite_tracks(transect=self, setting=setting)
-            
+
         # Update water data to reflect changes in boatvel
         if update:
             self.update_water()
-            
+
     def boat_filters(self, update, **kwargs):
         """Coordinates application of boat filters to bottom track data
-        
+
         Parameters
         ----------
         update: bool
@@ -1691,16 +1687,16 @@ class TransectData(object):
             other: bool
                 Setting to other filter
         """
-        
+
         # Apply filter to transect
         self.boat_vel.bt_vel.apply_filter(self, **kwargs)
-        
+
         if self.boat_vel.selected == 'bt_vel' and update:
             self.update_water()
-            
+
     def gps_filters(self, update, **kwargs):
         """Coordinate filters for GPS based boat velocities
-        
+
         Parameters
         ----------
         update: bool
@@ -1721,18 +1717,18 @@ class TransectData(object):
             other: bool
                 Other filter typically a smooth.
         """
-        
+
         if self.boat_vel.gga_vel is not None:
             self.boat_vel.gga_vel.apply_gps_filter(self, **kwargs)
         if self.boat_vel.vtg_vel is not None:
             self.boat_vel.vtg_vel.apply_gps_filter(self, **kwargs)
-            
+
         if (self.boat_vel.selected == 'VTG' or self.boat_vel.selected == 'GGA') and update == True:
             self.update_water()
-            
+
     def set_depth_reference(self, update, setting):
         """Coordinates setting the depth reference.
-        
+
         Parameters
         ----------
         update: bool
@@ -1740,30 +1736,30 @@ class TransectData(object):
         setting: str
             Depth reference (bt_depths, vb_depths, ds_depths)
         """
-        
+
         self.depths.selected = setting
 
         if update:
             self.process_depths(update)
             self.w_vel.adjust_side_lobe(self)
-            
+
     def apply_averaging_method(self, setting):
         """Method to apply the selected averaging method to the BT team depths to achieve a single
         average depth.  It is only applicable to the multiple beams used for BT, not VB or DS.
-        
+
         Input:
         setting: averaging method (IDW, Simple)
         """
-        
+
         self.depths.bt_depths.compute_avg_bt_depth(setting)
-        
+
         self.process_depths(update=False)
-            
+
     def process_depths(self, update=False, filter_method=None, interpolation_method=None, composite_setting=None,
                        avg_method=None, valid_method=None):
         """Method applies filter, composite, and interpolation settings to  depth objects
         so that all are updated using the same filter and interpolation settings.
-        
+
         Parameters
         ----------
         update: bool
@@ -1779,7 +1775,7 @@ class TransectData(object):
         valid_method:
             Defines method to determine if depth is valid (QRev or TRDI).
         """
-        
+
         # Get current settings
         depth_data = getattr(self.depths, self.depths.selected)
         if filter_method is None:
@@ -1803,7 +1799,7 @@ class TransectData(object):
         self.depths.depth_interpolation(transect=self, method=interpolation_method)
         self.depths.composite_depths(transect=self, setting=composite_setting)
         self.w_vel.adjust_side_lobe(transect=self)
-        
+
         if update:
             self.update_water()
 
@@ -1815,7 +1811,7 @@ class TransectData(object):
         draft_in: float
             New draft value in m
         """
-        
+
         if self.depths.vb_depths is not None:
             self.depths.vb_depths.change_draft(draft_in)
         if self.depths.bt_depths is not None:
@@ -2049,22 +2045,22 @@ class TransectData(object):
 
         # Compute lag for gga, if available
         if transect.boat_vel.gga_vel is not None:
-            gga_speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps**2
-                             + transect.boat_vel.gga_vel.v_processed_mps**2)
+            gga_speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps ** 2
+                                + transect.boat_vel.gga_vel.v_processed_mps ** 2)
 
             # Compute lag if both bottom track and gga have valid data
             valid_data = np.all(np.logical_not(np.isnan(np.vstack((bt_speed, gga_speed)))), axis=0)
             if np.sometrue(valid_data):
                 # Compute lag
                 lag_gga = (np.count_nonzero(valid_data)
-                          - np.argmax(signal.correlate(bt_speed[valid_data], gga_speed[valid_data])) - 1) * avg_ens_dur
+                           - np.argmax(signal.correlate(bt_speed[valid_data], gga_speed[valid_data])) - 1) * avg_ens_dur
             else:
                 lag_gga = None
 
         # Compute lag for vtg, if available
         if transect.boat_vel.vtg_vel is not None:
-            vtg_speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps**2
-                             + transect.boat_vel.vtg_vel.v_processed_mps**2)
+            vtg_speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps ** 2
+                                + transect.boat_vel.vtg_vel.v_processed_mps ** 2)
 
             # Compute lag if both bottom track and gga have valid data
             valid_data = np.all(np.logical_not(np.isnan(np.vstack((bt_speed, vtg_speed)))), axis=0)
@@ -2101,17 +2097,17 @@ class TransectData(object):
 
         avg_ens_dur = np.nanmean(transect.date_time.ens_duration_sec)
         if transect.boat_vel.gga_vel is not None:
-            gga_speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps**2
-                             + transect.boat_vel.gga_vel.v_processed_mps**2)
+            gga_speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps ** 2
+                                + transect.boat_vel.gga_vel.v_processed_mps ** 2)
             valid_data = np.all(np.logical_not(np.isnan(np.vstack((bt_speed, gga_speed)))), axis=0)
             b = fftpack.fft(bt_speed[valid_data])
             g = fftpack.fft(gga_speed[valid_data])
             br = -b.conjugat()
-            lag_gga = np.argmax(np.abs(fftpack.ifft(br*g)))
+            lag_gga = np.argmax(np.abs(fftpack.ifft(br * g)))
 
         if transect.boat_vel.vtg_vel is not None:
-            vtg_speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps**2
-                             + transect.boat_vel.vtg_vel.v_processed_mps**2)
+            vtg_speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps ** 2
+                                + transect.boat_vel.vtg_vel.v_processed_mps ** 2)
             valid_data = np.all(np.logical_not(np.isnan(np.vstack((bt_speed, vtg_speed)))), axis=0)
             b = fftpack.fft(bt_speed[valid_data])
             g = fftpack.fft(vtg_speed[valid_data])
@@ -2193,6 +2189,7 @@ class TransectData(object):
 
         return gps_bt
 
+
 # ========================================================================
 # Begin multithread function included in module but not TransectData class
 # Currently this is coded only for TRDI data
@@ -2201,137 +2198,170 @@ class TransectData(object):
 
 # DSM changed 1/23/2018 def allocate_transects(source, mmt, kargs)
 # TODO This needs a complete rewrite from what Greg did. However it works with no multi-threading for now
-def allocate_transects(mmt, transect_type='Q', checked=False):
-    """Method to load transect data. Changed from Matlab approach by Greg to allow possibility
-    of multi-thread approach.
 
-    Parameters
-    ----------
-    mmt: MMT_TRDI
-        Object of MMT_TRDI
-    transect_type: str
-        Type of transect (Q: discharge or MB: moving-bed test)
-    checked: bool
-        Determines if all files are loaded (False) or only checked files (True)
-    """
-
-    # DEBUG, set threaded to false to get manual serial commands
-    multi_threaded = False
-
-    file_names = []
-    file_idx = []
-
-    # Setup processing for discharge or moving-bed transects
-    if transect_type == 'Q':
-        # Identify discharge transect files to load
-        if checked:
-            for idx, transect in enumerate(mmt.transects):
-                if transect.Checked == 1:
-                    file_names.append(transect.Files[0])
-                    file_idx.append(idx)
-            # file_names = [transect.Files[0] for transect in mmt.transects if transect.Checked == 1]
-        else:
-            file_names = [transect.Files[0] for transect in mmt.transects]
-            file_idx = list(range(0, len(file_names)))
-    elif transect_type == 'MB':
-        file_names = [transect.Files[0] for transect in mmt.mbt_transects]
-        file_idx = list(range(0, len(file_names)))
-
-    # Determine if any files are missing
-    valid_files = []
-    valid_indices = []
-    for index, name in enumerate(file_names):
-        fullname = os.path.join(mmt.path, name)
-        if os.path.exists(fullname):
-            valid_files.append(fullname)
-            valid_indices.append(file_idx[index])
-
-    # Multi-thread for Pd0 files
-    # -------------------------
-    # Seems like this section belongs in Pd0TRDI.py
-    # Initialize thread variables
-    pd0_data = []
-    pd0_threads = []
-    thread_id = 0
-
-    # DSM 1/24/2018 could this be moved to Pd0TRDI.py as a method
-    def add_pd0(file_name):
-        pd0_data.append(Pd0TRDI(file_name))
-        
-    if multi_threaded:
-        # TODO this belongs in the pd0 class
-        for file in valid_files:
-            pd0_thread = MultiThread(thread_id=thread_id, function=add_pd0, args={'file_name': file})
-            thread_id += 1
-            pd0_thread.start()
-            pd0_threads.append(pd0_thread)
-    else:
-        for file in valid_files:
-            pd0_data.append(Pd0TRDI(file))
-
-    for thrd in pd0_threads:
-        thrd.join()
-
-    # Multi-thread for transect data
-
-    # Initialize thread variables
-    processed_transects = []
-    transect_threads = []
-    thread_id = 0
-
-    # DSM 1/24/2018 couldn't this be added to the TransectData class
-    def add_transect(transect_data, mmt_transect, mt_pd0_data, mt_mmt):
-        transect_data.trdi(mmt=mt_mmt,
-                           mmt_transect=mmt_transect,
-                           pd0_data=mt_pd0_data)
-        processed_transects.append(transect_data)
-
-    # Process each transect
-    for k in range(len(pd0_data)):
-        transect = TransectData()
-        if pd0_data[k].Wt is not None:
-            if transect_type == 'MB':
-                # Process moving-bed transect
-                if multi_threaded:
-                    t_thread = MultiThread(thread_id=thread_id,
-                                           function=add_transect,
-                                           args={'transect': transect,
-                                                 'mmt_transect': mmt.mbt_transects[valid_indices[k]],
-                                                 'mt_pd0_data': pd0_data[k],
-                                                 'mt_mmt': mmt})
-                    t_thread.start()
-                    transect_threads.append(t_thread)
-
-                else:
-                    transect = TransectData()
-                    add_transect(transect_data=transect,
-                                 mmt_transect=mmt.mbt_transects[valid_indices[k]],
-                                 mt_pd0_data=pd0_data[k],
-                                 mt_mmt=mmt)
-
-            else:
-                # Process discharge transects
-                if multi_threaded:
-                    t_thread = MultiThread(thread_id=thread_id,
-                                           function=add_transect,
-                                           args={'transect': transect,
-                                                 'mmt_transect': mmt.transects[valid_indices[k]],
-                                                 'mt_pd0_data': pd0_data[k],
-                                                 'mt_mmt': mmt})
-                    t_thread.start()
-                    transect_threads.append(t_thread)
-
-                else:
-                    add_transect(transect_data=transect,
-                                 mmt_transect=mmt.transects[valid_indices[k]],
-                                 mt_pd0_data=pd0_data[k],
-                                 mt_mmt=mmt)
-
-    if multi_threaded:
-        for x in transect_threads:
-            x.join()
-                
-    return processed_transects   
+# def add_transect(mmt, filename, index, type):
+#     pd0_data = Pd0TRDI(filename)
+#
+#     if type == 'MB':
+#         mmt_transect = mmt.mbt_transects[index]
+#     else:
+#         mmt_transect = mmt.transects[index]
+#
+#     transect = TransectData()
+#     transect.trdi(mmt=mmt,
+#                   mmt_transect=mmt_transect,
+#                   pd0_data=pd0_data)
+#     return transect
+#
+#
+# def allocate_transects(mmt, transect_type='Q', checked=False):
+#     """Method to load transect data. Changed from Matlab approach by Greg to allow possibility
+#     of multi-thread approach.
+#
+#     Parameters
+#     ----------
+#     mmt: MMT_TRDI
+#         Object of MMT_TRDI
+#     transect_type: str
+#         Type of transect (Q: discharge or MB: moving-bed test)
+#     checked: bool
+#         Determines if all files are loaded (False) or only checked files (True)
+#     """
+#
+#     # DEBUG, set threaded to false to get manual serial commands
+#     multi_threaded = False
+#
+#     file_names = []
+#     file_idx = []
+#
+#     # Setup processing for discharge or moving-bed transects
+#     if transect_type == 'Q':
+#         # Identify discharge transect files to load
+#         if checked:
+#             for idx, transect in enumerate(mmt.transects):
+#                 if transect.Checked == 1:
+#                     file_names.append(transect.Files[0])
+#                     file_idx.append(idx)
+#             # file_names = [transect.Files[0] for transect in mmt.transects if transect.Checked == 1]
+#         else:
+#             file_names = [transect.Files[0] for transect in mmt.transects]
+#             file_idx = list(range(0, len(file_names)))
+#     elif transect_type == 'MB':
+#         file_names = [transect.Files[0] for transect in mmt.mbt_transects]
+#         file_idx = list(range(0, len(file_names)))
+#
+#     # Determine if any files are missing
+#     valid_files = []
+#     valid_indices = []
+#     for index, name in enumerate(file_names):
+#         fullname = os.path.join(mmt.path, name)
+#         if os.path.exists(fullname):
+#             valid_files.append(fullname)
+#             valid_indices.append(file_idx[index])
+#
+#
+#     start = time.perf_counter()
+#     transects = []
+#     num = len(valid_indices)
+#     # num = 1
+#     multi_process = True
+#     if multi_process:
+#         with concurrent.futures.ProcessPoolExecutor() as executor:
+#             results = [executor.submit(add_transect, mmt, valid_files[k], valid_indices[k], transect_type) for k in range(num)]
+#
+#         for f in concurrent.futures.as_completed(results):
+#             transects.append(f.result())
+#     else:
+#         for k in range(num):
+#             transects.append(add_transect(mmt, valid_files[k], valid_indices[k], transect_type))
+#
+#     # # Multi-thread for Pd0 files
+#     # # -------------------------
+#     # # Seems like this section belongs in Pd0TRDI.py
+#     # # Initialize thread variables
+#     # pd0_data = []
+#     # pd0_threads = []
+#     # thread_id = 0
+#     #
+#     # # DSM 1/24/2018 could this be moved to Pd0TRDI.py as a method
+#     # def add_pd0(file_name):
+#     #     pd0_data.append(Pd0TRDI(file_name))
+#     #
+#     # if multi_threaded:
+#     #     # TODO this belongs in the pd0 class
+#     #     for file in valid_files:
+#     #         pd0_thread = MultiThread(thread_id=thread_id, function=add_pd0, args={'file_name': file})
+#     #         thread_id += 1
+#     #         pd0_thread.start()
+#     #         pd0_threads.append(pd0_thread)
+#     # else:
+#     #     for file in valid_files:
+#     #         pd0_data.append(Pd0TRDI(file))
+#     #
+#     # for thrd in pd0_threads:
+#     #     thrd.join()
+#     #
+#     # # Multi-thread for transect data
+#     #
+#     # # Initialize thread variables
+#     # processed_transects = []
+#     # transect_threads = []
+#     # thread_id = 0
+#     #
+#     # # DSM 1/24/2018 couldn't this be added to the TransectData class
+#     # def add_transect(transect_data, mmt_transect, mt_pd0_data, mt_mmt):
+#     #     transect_data.trdi(mmt=mt_mmt,
+#     #                        mmt_transect=mmt_transect,
+#     #                        pd0_data=mt_pd0_data)
+#     #     processed_transects.append(transect_data)
+#     #
+#     # # Process each transect
+#     # for k in range(len(pd0_data)):
+#     #     transect = TransectData()
+#     #     if pd0_data[k].Wt is not None:
+#     #         if transect_type == 'MB':
+#     #             # Process moving-bed transect
+#     #             if multi_threaded:
+#     #                 t_thread = MultiThread(thread_id=thread_id,
+#     #                                        function=add_transect,
+#     #                                        args={'transect': transect,
+#     #                                              'mmt_transect': mmt.mbt_transects[valid_indices[k]],
+#     #                                              'mt_pd0_data': pd0_data[k],
+#     #                                              'mt_mmt': mmt})
+#     #                 t_thread.start()
+#     #                 transect_threads.append(t_thread)
+#     #
+#     #             else:
+#     #                 transect = TransectData()
+#     #                 add_transect(transect_data=transect,
+#     #                              mmt_transect=mmt.mbt_transects[valid_indices[k]],
+#     #                              mt_pd0_data=pd0_data[k],
+#     #                              mt_mmt=mmt)
+#     #
+#     #         else:
+#     #             # Process discharge transects
+#     #             if multi_threaded:
+#     #                 t_thread = MultiThread(thread_id=thread_id,
+#     #                                        function=add_transect,
+#     #                                        args={'transect': transect,
+#     #                                              'mmt_transect': mmt.transects[valid_indices[k]],
+#     #                                              'mt_pd0_data': pd0_data[k],
+#     #                                              'mt_mmt': mmt})
+#     #                 t_thread.start()
+#     #                 transect_threads.append(t_thread)
+#     #
+#     #             else:
+#     #                 add_transect(transect_data=transect,
+#     #                              mmt_transect=mmt.transects[valid_indices[k]],
+#     #                              mt_pd0_data=pd0_data[k],
+#     #                              mt_mmt=mmt)
+#     #
+#     # if multi_threaded:
+#     #     for x in transect_threads:
+#     #         x.join()
+#     finish = time.perf_counter()
+#     print(f'Finished in {finish - start}')
+#     return processed_transects
 
 
 def adjusted_ensemble_duration(transect, trans_type=None):
@@ -2349,7 +2379,7 @@ def adjusted_ensemble_duration(transect, trans_type=None):
     delta_t: np.array(float)
         Array of delta time in seconds for each ensemble.
     """
-        
+
     if transect.adcp.manufacturer == 'TRDI':
         if trans_type is None:
             # Determine valid data from water track
@@ -2358,7 +2388,7 @@ def adjusted_ensemble_duration(transect, trans_type=None):
         else:
             # Determine valid data from bottom track
             valid_sum = np.isnan(transect.boat_vel.bt_vel.u_processed_mps) == False
-            
+
         valid_ens = valid_sum > 0
         n_ens = len(valid_ens)
         ens_dur = transect.date_time.ens_duration_sec
@@ -2371,5 +2401,5 @@ def adjusted_ensemble_duration(transect, trans_type=None):
                 cum_dur = 0
     else:
         delta_t = transect.date_time.ens_duration_sec
-        
+
     return delta_t
