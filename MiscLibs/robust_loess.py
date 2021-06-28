@@ -12,6 +12,7 @@ from MiscLibs.matlab_rloess import rloess
 smooth_fit = rloess(x, y, span)
 """
 import numpy as np
+from MiscLibs.common_functions import nan_less
 
 # Set constants used in multiple functions
 eps = np.finfo('float').eps
@@ -94,7 +95,7 @@ def bisquare(data):
 
     """
     weights = np.zeros(data.shape)
-    idx = np.abs(data) < 1
+    idx = nan_less(np.abs(data), 1)
     weights[idx] = np.abs(1 - data[idx] ** 2)
     return weights
 

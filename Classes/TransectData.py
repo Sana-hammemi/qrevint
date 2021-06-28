@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 import concurrent.futures
 import numpy as np
 from datetime import datetime
@@ -20,7 +21,7 @@ from Classes.DateTime import DateTime
 from Classes.InstrumentData import InstrumentData
 from Classes.MultiThread import MultiThread
 from Classes.CoordError import CoordError
-from MiscLibs.common_functions import nandiff, cosd, arctand, tand, nans, cart2pol, rad2azdeg
+from MiscLibs.common_functions import nandiff, cosd, arctand, tand, nans, cart2pol, rad2azdeg, nan_less
 
 
 class TransectData(object):
@@ -109,7 +110,7 @@ class TransectData(object):
             ens_delta_time[idx_time[1:]] = nandiff(ens_time_sec[idx_time])
 
             # Adjust for transects tha last past midnight
-            idx_24hr = np.where(np.less(ens_delta_time, 0))[0]
+            idx_24hr = np.where(nan_less(ens_delta_time, 0))[0]
             ens_delta_time[idx_24hr] = 24 * 3600 + ens_delta_time[idx_24hr]
             ens_delta_time = ens_delta_time.T
 
@@ -1590,7 +1591,9 @@ class TransectData(object):
         """
 
         # Compute minimum depths for each ensemble
-        min_depths = np.nanmin(depths, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            min_depths = np.nanmin(depths, 0)
 
         # Compute range from transducer
         range_from_xducer = min_depths - draft
@@ -1606,7 +1609,7 @@ class TransectData(object):
         cutoff = np.array(range_from_xducer * coeff - sl_lag_effect + draft)
 
         # Compute boolean side lobe cutoff matrix
-        cells_above_sl = np.less(cell_depth, cutoff)
+        cells_above_sl = nan_less(cell_depth, cutoff)
         return cells_above_sl, cutoff
 
     def boat_interpolations(self, update, target, method=None):

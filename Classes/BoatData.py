@@ -1,7 +1,8 @@
 import copy
 import numpy as np
 from numpy.matlib import repmat
-from MiscLibs.common_functions import cosd, sind, cart2pol, iqr, pol2cart
+from MiscLibs.common_functions import cosd, sind, cart2pol, iqr, pol2cart, nan_less_equal, \
+    nan_greater_equal, nan_greater, nan_less
 from MiscLibs.robust_loess import rloess
 
 
@@ -1148,8 +1149,8 @@ class BoatData(object):
         if self.d_filter == 'Manual':
             d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
-            invalid_idx = np.where(np.logical_or(np.greater(self.d_mps, d_vel_max_ref),
-                                                 np.less(self.d_mps, d_vel_min_ref)))[0]
+            invalid_idx = np.where(np.logical_or(nan_greater(self.d_mps, d_vel_max_ref),
+                                                 nan_less(self.d_mps, d_vel_min_ref)))[0]
         elif self.d_filter == 'Off':
             invalid_idx = np.array([])
 
@@ -1177,8 +1178,8 @@ class BoatData(object):
                     filter_data[freq_ensembles != freq] = np.nan
                     d_vel_max_ref, d_vel_min_ref = self.iqr_filter(filter_data)
                     self.d_filter_thresholds[freq] = [d_vel_max_ref, d_vel_min_ref]
-                    idx = np.where(np.logical_or(np.greater(filter_data, d_vel_max_ref),
-                                                 np.less(filter_data, d_vel_min_ref)))[0]
+                    idx = np.where(np.logical_or(nan_greater(filter_data, d_vel_max_ref),
+                                                 nan_less(filter_data, d_vel_min_ref)))[0]
                     if idx.size > 0:
                         if invalid_idx.size > 0:
                             invalid_idx = np.hstack((invalid_idx, idx))
@@ -1217,8 +1218,8 @@ class BoatData(object):
         if self.w_filter == 'Manual':
             w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
-            invalid_idx = np.where(np.logical_or(np.greater(self.w_mps, w_vel_max_ref),
-                                                 np.less(self.w_mps, w_vel_min_ref)))[0]
+            invalid_idx = np.where(np.logical_or(nan_greater(self.w_mps, w_vel_max_ref),
+                                                 nan_less(self.w_mps, w_vel_min_ref)))[0]
 
         elif self.w_filter == 'Off':
             invalid_idx = np.array([])
@@ -1247,8 +1248,8 @@ class BoatData(object):
                     filter_data[freq_ensembles != freq] = np.nan
                     w_vel_max_ref, w_vel_min_ref = self.iqr_filter(filter_data)
                     self.w_filter_thresholds[freq] = [w_vel_max_ref, w_vel_min_ref]
-                    idx = np.where(np.logical_or(np.greater(filter_data, w_vel_max_ref),
-                                                 np.less(filter_data, w_vel_min_ref)))[0]
+                    idx = np.where(np.logical_or(nan_greater(filter_data, w_vel_max_ref),
+                                                 nan_less(filter_data, w_vel_min_ref)))[0]
                     if idx.size > 0:
                         if invalid_idx.size > 0:
                             invalid_idx = np.hstack((invalid_idx, idx))
@@ -1311,8 +1312,8 @@ class BoatData(object):
                 data_min_ref = np.nanmedian(data) - threshold_window
 
                 # Identify valid and invalid data
-                data_less_idx = np.where(data <= data_max_ref)[0]
-                data_greater_idx = np.where(data >= data_min_ref)[0]
+                data_less_idx = np.where(nan_less_equal(data, data_max_ref))[0]
+                data_greater_idx = np.where(nan_greater_equal(data, data_min_ref))[0]
                 data_good_idx = list(np.intersect1d(data_less_idx, data_greater_idx))
 
                 # Update filtered data array

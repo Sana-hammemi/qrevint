@@ -4,6 +4,7 @@ import time
 import concurrent.futures
 import numpy as np
 import itertools as it
+import multiprocessing as mp
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
 from Classes.MMT_TRDI import MMTtrdi
@@ -22,7 +23,7 @@ from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-# from profilehooks import profile
+from profilehooks import profile
 
 
 class Measurement(object):
@@ -70,7 +71,7 @@ class Measurement(object):
         Indicates if the entire measurement should be used to set filter thresholds
     """
 
-    # @profile
+    @profile
     def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
                  use_measurement_thresholds=False, use_ping_type=True):
         """Initialize instance variables and initiate processing of measurement
@@ -1154,8 +1155,32 @@ class Measurement(object):
         if len(self.mb_tests) > 0:
             self.apply_settings_to_movingbed(settings, force_abba=True)
 
+        # multi_processing = True
+        # if multi_processing:
+        # start = time.perf_counter()
+        # with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        #     results = executor.map(self.apply_settings_part1, self.transects, it.repeat(settings), it.repeat(force_abba))
+        # self.transects = []
+        # for result in results:
+        #     self.transects.append(result)
+        # stop = time.perf_counter()
+        # print ('Multiprocessing time:', (stop - start))
+
+        # start = time.perf_counter()
+        # with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        #     results = executor.map(self.apply_settings_part1, self.transects, it.repeat(settings), it.repeat(force_abba))
+        #     self.transects = []
+        #     for result in results:
+        #         self.transects.append(result)
+        # stop = time.perf_counter()
+        # print ('Multithreading time:', (stop - start))
+
+        start = time.perf_counter()
         # Apply settings to discharge transects
         for transect in self.transects:
+        #     transect = self.apply_settings_part1(transect, settings, force_abba)
+        # stop = time.perf_counter()
+        # print('Part 1:', (stop - start))
 
             if not settings['UsePingType']:
                 transect.w_vel.ping_type = np.tile('U', transect.w_vel.ping_type.shape)
@@ -1303,11 +1328,13 @@ class Measurement(object):
             transect.edges.rec_edge_method = settings['edgeRecEdgeMethod']
             transect.edges.vel_method = settings['edgeVelMethod']
 
-        # Recompute extrapolations
-        # NOTE: Extrapolations should be determined prior to WT
-        # interpolations because the TRDI approach for power/power
-        # using the power curve and exponent to estimate invalid cells.
-
+        stop = time.perf_counter()
+        print('Part 1:', (stop - start))
+            # Recompute extrapolations
+            # NOTE: Extrapolations should be determined prior to WT
+            # interpolations because the TRDI approach for power/power
+            # using the power curve and exponent to estimate invalid cells.
+        start = time.perf_counter()
         if settings['UseWeighted'] and not self.use_weighted:
             if self.extrap_fit.norm_data[-1].weights is None:
                 # Compute normalized data for each transect to obtain the weights
@@ -1377,9 +1404,163 @@ class Measurement(object):
         self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
                                                     extrap_fits=self.extrap_fit.sel_fit)
 
+        stop = time.perf_counter()
+        print('Part 2:', (stop - start))
+
         self.compute_discharge()
 
         self.compute_uncertainty()
+
+    def apply_settings_part1 (self, transect, settings, force_abba=True):
+
+        if not settings['UsePingType']:
+            transect.w_vel.ping_type = np.tile('U', transect.w_vel.ping_type.shape)
+            transect.boat_vel.bt_vel.frequency_khz = np.tile(0, transect.boat_vel.bt_vel.frequency_khz.shape)
+
+        # Moving-boat ensembles
+        if 'Processing' in settings.keys():
+            transect.change_q_ensembles(proc_method=settings['Processing'])
+            self.processing = settings['Processing']
+
+        # Navigation reference
+        if transect.boat_vel.selected != settings['NavRef']:
+            transect.change_nav_reference(update=False, new_nav_ref=settings['NavRef'])
+            if len(self.mb_tests) > 0:
+                self.mb_tests = MovingBedTests.auto_use_2_correct(
+                    moving_bed_tests=self.mb_tests,
+                    boat_ref=settings['NavRef'])
+
+        # Changing the nav reference applies the current setting for
+        # Composite tracks, check to see if a change is needed
+        if transect.boat_vel.composite != settings['CompTracks']:
+            transect.composite_tracks(update=False, setting=settings['CompTracks'])
+
+        # Set difference velocity BT filter
+        bt_kwargs = {}
+        if settings['BTdFilter'] == 'Manual':
+            bt_kwargs['difference'] = settings['BTdFilter']
+            bt_kwargs['difference_threshold'] = settings['BTdFilterThreshold']
+        else:
+            bt_kwargs['difference'] = settings['BTdFilter']
+
+        # Set vertical velocity BT filter
+        if settings['BTwFilter'] == 'Manual':
+            bt_kwargs['vertical'] = settings['BTwFilter']
+            bt_kwargs['vertical_threshold'] = settings['BTwFilterThreshold']
+        else:
+            bt_kwargs['vertical'] = settings['BTwFilter']
+
+            # Apply beam filter
+            bt_kwargs['beam'] = settings['BTbeamFilter']
+
+            # Apply smooth filter
+            bt_kwargs['other'] = settings['BTsmoothFilter']
+
+        transect.boat_vel.bt_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
+
+        # Apply BT settings
+        transect.boat_filters(update=False, **bt_kwargs)
+
+        # BT Interpolation
+        transect.boat_interpolations(update=False,
+                                     target='BT',
+                                     method=settings['BTInterpolation'])
+
+        # GPS filter settings
+        if transect.gps is not None:
+            gga_kwargs = {}
+            if transect.boat_vel.gga_vel is not None:
+                # GGA
+                gga_kwargs['differential'] = settings['ggaDiffQualFilter']
+                if settings['ggaAltitudeFilter'] == 'Manual':
+                    gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
+                    gga_kwargs['altitude_threshold'] = settings['ggaAltitudeFilterChange']
+                else:
+                    gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
+
+                # Set GGA HDOP Filter
+                if settings['GPSHDOPFilter'] == 'Manual':
+                    gga_kwargs['hdop'] = settings['GPSHDOPFilter']
+                    gga_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
+                    gga_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
+                else:
+                    gga_kwargs['hdop'] = settings['GPSHDOPFilter']
+
+                gga_kwargs['other'] = settings['GPSSmoothFilter']
+                # Apply GGA filters
+                transect.gps_filters(update=False, **gga_kwargs)
+
+            if transect.boat_vel.vtg_vel is not None:
+                vtg_kwargs = {}
+                if settings['GPSHDOPFilter'] == 'Manual':
+                    vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
+                    vtg_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
+                    vtg_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
+                    vtg_kwargs['other'] = settings['GPSSmoothFilter']
+                else:
+                    vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
+                    vtg_kwargs['other'] = settings['GPSSmoothFilter']
+
+                # Apply VTG filters
+                transect.gps_filters(update=False, **vtg_kwargs)
+
+            transect.boat_interpolations(update=False,
+                                         target='GPS',
+                                         method=settings['GPSInterpolation'])
+
+        # Set depth reference
+        transect.set_depth_reference(update=False, setting=settings['depthReference'])
+
+        transect.process_depths(update=True,
+                                filter_method=settings['depthFilterType'],
+                                interpolation_method=settings['depthInterpolation'],
+                                composite_setting=settings['depthComposite'],
+                                avg_method=settings['depthAvgMethod'],
+                                valid_method=settings['depthValidMethod'])
+
+        # Set WT difference velocity filter
+        wt_kwargs = {}
+        if settings['WTdFilter'] == 'Manual':
+            wt_kwargs['difference'] = settings['WTdFilter']
+            wt_kwargs['difference_threshold'] = settings['WTdFilterThreshold']
+        else:
+            wt_kwargs['difference'] = settings['WTdFilter']
+
+        # Set WT vertical velocity filter
+        if settings['WTwFilter'] == 'Manual':
+            wt_kwargs['vertical'] = settings['WTwFilter']
+            wt_kwargs['vertical_threshold'] = settings['WTwFilterThreshold']
+        else:
+            wt_kwargs['vertical'] = settings['WTwFilter']
+
+        wt_kwargs['beam'] = settings['WTbeamFilter']
+        wt_kwargs['other'] = settings['WTsmoothFilter']
+        wt_kwargs['snr'] = settings['WTsnrFilter']
+        wt_kwargs['wt_depth'] = settings['WTwtDepthFilter']
+        wt_kwargs['excluded'] = settings['WTExcludedDistance']
+
+        # Data loaded from old QRev.mat files will be set to use this new interpolation method. When reprocessing
+        # any data the interpolation method should be 'abba'
+        if force_abba:
+            transect.w_vel.interpolate_cells = 'abba'
+            transect.w_vel.interpolate_ens = 'abba'
+            settings['WTEnsInterpolation'] = 'abba'
+            settings['WTCellInterpolation'] = 'abba'
+
+        transect.w_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
+        if transect.w_vel.ping_type.size == 0 and transect.adcp.manufacturer == 'SonTek':
+            # Correlation and frequency can be used to determine ping type
+            transect.w_vel.ping_type = TransectData.sontek_ping_type(corr=transect.w_vel.corr,
+                                                                     freq=transect.w_vel.frequency)
+
+        transect.w_vel.apply_filter(transect=transect, **wt_kwargs)
+
+        # Edge methods
+        transect.edges.rec_edge_method = settings['edgeRecEdgeMethod']
+        transect.edges.vel_method = settings['edgeVelMethod']
+
+        return transect
+
 
     def apply_settings_to_movingbed (self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -3821,7 +4002,7 @@ class Measurement(object):
         transects = []
         num = len(valid_indices)
         # num = 2
-        multi_process = False
+        multi_process = True
         if multi_process:
 
             with concurrent.futures.ProcessPoolExecutor() as executor:

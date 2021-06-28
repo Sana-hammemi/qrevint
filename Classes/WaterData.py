@@ -3,7 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from Classes.BoatData import BoatData
-from MiscLibs.common_functions import cart2pol, pol2cart, iqr
+from MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
 from MiscLibs.robust_loess import rloess
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -1234,14 +1234,14 @@ class WaterData(object):
             d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
             # Set valid data row 2 for difference velocity filter results
-            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
-                                                                np.less(d_vel, d_vel_min_ref)))
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(nan_greater(d_vel, d_vel_max_ref),
+                                                                nan_less(d_vel, d_vel_min_ref)))
         elif self.d_filter == 'Off':
             d_vel_max_ref = np.nanmax(np.nanmax(d_vel)) + 1
             d_vel_min_ref = np.nanmin(np.nanmin(d_vel)) - 1
             # Set valid data row 2 for difference velocity filter results
-            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
-                                                                np.less(d_vel, d_vel_min_ref)))
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(nan_greater(d_vel, d_vel_max_ref),
+                                                                nan_less(d_vel, d_vel_min_ref)))
             self.d_filter_thresholds = d_vel_max_ref
 
         elif self.d_filter == 'Auto':
@@ -1351,8 +1351,8 @@ class WaterData(object):
                 data_min_ref = np.nanmedian(data) - multiplier * data_iqr
 
                 # Identify valid and invalid data
-                data_bad_rows, data_bad_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
-                                                                      np.less(data, data_min_ref)))
+                data_bad_rows, data_bad_cols = np.where(np.logical_or(nan_greater(data, data_max_ref),
+                                                                      nan_less(data, data_min_ref)))
                 # Update filtered data array
                 data[data_bad_rows, data_bad_cols] = np.nan
 
@@ -1364,8 +1364,8 @@ class WaterData(object):
                     iqr_diff = 0
 
             # Determine row and column index of invalid cells with invalid data
-            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data_orig, data_max_ref),
-                                                                np.less(data_orig, data_min_ref)))
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(nan_greater(data_orig, data_max_ref),
+                                                                nan_less(data_orig, data_min_ref)))
         else:
             # All data are invalid
             # Determine row and column index of invalid cells with invalid data
@@ -1413,8 +1413,8 @@ class WaterData(object):
                 data_min_ref = np.nanmedian(data) - multiplier * data_iqr
 
                 # Identify valid and invalid data
-                bad_idx = np.where(np.logical_or(np.greater(data, data_max_ref),
-                                                                      np.less(data, data_min_ref)))
+                bad_idx = np.where(np.logical_or(nan_greater(data, data_max_ref),
+                                                                      nan_less(data, data_min_ref)))
                 # Update filtered data array
                 data[bad_idx] = np.nan
 
@@ -1468,14 +1468,14 @@ class WaterData(object):
             w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
             # Identify valid and invalid data
-            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
-                                                                    np.less(w_vel, w_vel_min_ref)))
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(nan_greater(w_vel, w_vel_max_ref),
+                                                                    nan_less(w_vel, w_vel_min_ref)))
         elif self.w_filter == 'Off':
             w_vel_max_ref = np.nanmax(np.nanmax(w_vel)) + 1
             w_vel_min_ref = np.nanmin(np.nanmin(w_vel)) - 1
             # Identify valid and invalid data
-            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
-                                                                    np.less(w_vel, w_vel_min_ref)))
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(nan_greater(w_vel, w_vel_max_ref),
+                                                                    nan_less(w_vel, w_vel_min_ref)))
             self.w_filter_thresholds = w_vel_max_ref
 
         elif self.w_filter == 'Auto':
@@ -2105,7 +2105,7 @@ class WaterData(object):
                     if bot_method == 'Power':
                         # Compute interpolated u-velocities
                         z2 = z[:, n] - (0.5 * cell_size[:, n])
-                        z2[z2 < 0] = np.nan
+                        z2[nan_less(z2, 0)] = np.nan
                         coef = ((exponent + 1) * np.nansum(self.u_processed_mps[:, n] * cell_size[:, n], 0)) / \
                             np.nansum(((z[:, n] + 0.5 * cell_size[:, n]) ** (exponent + 1)) - (z2 ** (exponent + 1)), 0)
 

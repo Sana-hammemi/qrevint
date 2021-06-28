@@ -1,6 +1,7 @@
+import warnings
 import numpy as np
 import scipy.stats as sp
-from MiscLibs.common_functions import cart2pol, pol2cart
+from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_less_equal, nan_greater
 from Classes.QComp import QComp
 
 class NormData(object):
@@ -139,7 +140,7 @@ class NormData(object):
 
         # Compute normalized cell depth by average depth in each ensemble
         norm_cell_depth = np.divide(cell_depth, depth_ens)
-        norm_cell_depth[norm_cell_depth < 0] = np.nan
+        norm_cell_depth[nan_less(norm_cell_depth, 0)] = np.nan
 
         # If data type is discharge compute unit discharge for each cell
         if data_type.lower() == 'q':
@@ -177,7 +178,9 @@ class NormData(object):
             unit *= -1
             
         # Compute normalize unit values
-        unit_norm = np.divide(unit, np.abs(np.nanmean(unit, 0)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            unit_norm = np.divide(unit, np.abs(np.nanmean(unit, 0)))
 
         # Apply extents if they have been specified
         if data_extent[0] != 0 or data_extent[1] != 100:
@@ -228,7 +231,7 @@ class NormData(object):
         idx_neg1 = np.tile([np.nan], [unit_norm.shape[1], 1])
         idx_neg2 = np.tile([np.nan], [unit_norm.shape[1], 1])
         for c in range(unit_norm.shape[1]):
-            idx_neg1[c] = len(np.where(unit_norm[:, c] < 0)[0])
+            idx_neg1[c] = len(np.where(nan_less(unit_norm[:, c], 0))[0])
             idx_neg2[c] = len(np.where(np.isnan(unit_norm[:, c]) == False)[0])
         idx_neg = np.squeeze(idx_neg1) == np.squeeze(idx_neg2)
         unit_norm[:, idx_neg] = unit_norm[:, idx_neg] * -1
@@ -318,8 +321,8 @@ class NormData(object):
 
         # Process each normalized increment
         for i in range(len(avg_interval) - 1):
-            condition_1 = np.greater(self.cell_depth_normalized, avg_interval[i])
-            condition_2 = np.less_equal(self.cell_depth_normalized, avg_interval[i + 1])
+            condition_1 = nan_greater(self.cell_depth_normalized, avg_interval[i])
+            condition_2 = nan_less_equal(self.cell_depth_normalized, avg_interval[i + 1])
             condition_3 = np.logical_not(np.isnan(self.unit_normalized))
             condition_all = np.logical_and(np.logical_and(condition_1, condition_2), condition_3)
             if np.any(condition_all):
@@ -338,8 +341,8 @@ class NormData(object):
                 avgz[i] = 1 - np.nanmean(self.cell_depth_normalized[condition_all])
 
         # Mark increments invalid if they do not have sufficient data
-        cutoff = np.nanmedian(unit_norm_med_no[unit_norm_med_no > 0]) * (threshold / 100)
-        self.valid_data = np.where(unit_norm_med_no > cutoff)[0]
+        cutoff = np.nanmedian(unit_norm_med_no[nan_greater(unit_norm_med_no, 0)]) * (threshold / 100)
+        self.valid_data = np.where(nan_greater(unit_norm_med_no, cutoff))[0]
 
         self.unit_normalized_med = unit_norm_med
         self.unit_normalized_no = unit_norm_med_no

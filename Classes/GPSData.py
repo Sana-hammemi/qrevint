@@ -1,6 +1,6 @@
 import utm
 import numpy as np
-from MiscLibs.common_functions import azdeg2rad, pol2cart, nans
+from MiscLibs.common_functions import azdeg2rad, pol2cart, nans, nan_less
 
 
 class GPSData(object):
@@ -207,13 +207,14 @@ class GPSData(object):
         else:
             self.raw_gga_utc = raw_gga_utc
             self.raw_gga_serial_time = np.floor(raw_gga_utc / 10000) * 3600 \
-                + np.floor(np.mod(raw_gga_utc, 10000) / 100) * 60 + np.mod(raw_gga_utc, 100)
+                + np.floor(np.mod(raw_gga_utc, 10000, where=~np.isnan(raw_gga_utc)) / 100) \
+                                       * 60 + np.mod(raw_gga_utc, 100, where=~np.isnan(raw_gga_utc))
 
         self.raw_gga_lat_deg = raw_gga_lat
         self.raw_gga_lon_deg = raw_gga_lon
         self.raw_gga_lat_deg[np.where(np.logical_and((self.raw_gga_lat_deg == 0),
                                                      (self.raw_gga_lon_deg == 0)))] = np.nan
-        self.raw_gga_lat_deg[raw_gga_diff < 1] = np.nan
+        self.raw_gga_lat_deg[nan_less(raw_gga_diff, 1)] = np.nan
         self.raw_gga_lon_deg[np.isnan(self.raw_gga_lat_deg)] = np.nan
         self.raw_gga_altitude_m = raw_gga_alt
         self.raw_gga_altitude_m[np.isnan(self.raw_gga_lat_deg)] = np.nan

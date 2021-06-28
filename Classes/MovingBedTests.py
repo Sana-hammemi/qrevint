@@ -4,7 +4,7 @@ from Classes.TransectData import adjusted_ensemble_duration
 from Classes.TransectData import TransectData
 from Classes.QComp import QComp
 from Classes.MatSonTek import MatSonTek
-from MiscLibs.common_functions import cart2pol, sind, pol2cart, rad2azdeg
+from MiscLibs.common_functions import cart2pol, sind, pol2cart, rad2azdeg, nan_less, nan_greater
 
 
 class MovingBedTests(object):
@@ -457,9 +457,9 @@ class MovingBedTests(object):
 
             # Compute difference from mean and correct to +/- 180
             v_dir_corr = flow_dir_cell - flow_dir1
-            v_dir_idx = v_dir_corr > 180
+            v_dir_idx = nan_greater(v_dir_corr, 180)
             v_dir_corr[v_dir_idx] = 360-v_dir_corr[v_dir_idx]
-            v_dir_idx = v_dir_corr < -180
+            v_dir_idx = nan_less(v_dir_corr, -180)
             v_dir_corr[v_dir_idx] = 360 + v_dir_corr[v_dir_idx]
 
             # Number of invalid weights
@@ -485,9 +485,9 @@ class MovingBedTests(object):
 
             # Compute difference from mean and correct to +/- 180
             v_dir_corr = flow_dir_cell - flow_dir2
-            v_dir_idx = v_dir_corr > 180
+            v_dir_idx = nan_greater(v_dir_corr, 180)
             v_dir_corr[v_dir_idx] = 360 - v_dir_corr[v_dir_idx]
-            v_dir_idx = v_dir_corr < -180
+            v_dir_idx = nan_less(v_dir_corr, -180)
             v_dir_corr[v_dir_idx] = 360 + v_dir_corr[v_dir_idx]
 
             # Number of valid weights

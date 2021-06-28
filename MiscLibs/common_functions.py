@@ -208,7 +208,7 @@ def rad2azdeg(angle):
         # Multiple values
         deg = np.rad2deg(angle)
         deg = 90 - deg
-        sub_zero = np.where(deg < 0)
+        sub_zero = np.where(nan_less(deg, 0))
         deg[sub_zero] = deg[sub_zero] + 360
         
         return deg
@@ -379,3 +379,83 @@ def convert_temperature(temp_in, units_in, units_out):
             temp_out = (temp_in * (9./5.)) + 32
 
     return temp_out
+
+def nan_less_equal(data1, data2):
+    """Computes data1 <= data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data2 - data1
+    d3[np.isnan(d3)] = -999
+    return d3 >= 0
+
+def nan_less (data1, data2):
+    """Computes data1 < data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data2 - data1
+    d3[np.isnan(d3)] = -999
+    return d3 > 0
+
+def nan_greater_equal(data1, data2):
+    """Computes data1 >= data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data1 - data2
+    d3[np.isnan(d3)] = -999
+    return d3 >= 0
+
+def nan_greater(data1, data2):
+    """Computes data1 < data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data1 - data2
+    d3[np.isnan(d3)] = -999
+    return d3 > 0

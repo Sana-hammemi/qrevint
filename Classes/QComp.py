@@ -1,7 +1,7 @@
 import numpy as np
 from Classes.TransectData import TransectData
 from Classes.BoatStructure import BoatStructure
-from MiscLibs.common_functions import cart2pol, pol2cart
+from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_greater
 
 
 class QComp(object):
@@ -547,9 +547,9 @@ class QComp(object):
 
         # Top power extrapolation
         if top_method == 'Power':
-            coef = ((exponent + 1) * np.nansum(component * cell_size, 0)) / \
-                    np.nansum(((z + 0.5 * cell_size)**(exponent+1))
-                              - ((z - 0.5 * cell_size)**(exponent+1)), 0)
+            numerator = ((exponent + 1) * np.nansum(component * cell_size, 0))
+            denominator = np.nansum(((z + 0.5 * cell_size)**(exponent+1)) - ((z - 0.5 * cell_size)**(exponent+1)), 0)
+            coef = np.divide(numerator, denominator, where=denominator!=0)
             top_value = delta_t * (coef / (exponent + 1)) * \
                 (depth_ens**(exponent + 1) - (depth_ens-top_rng)**(exponent + 1))
 
@@ -688,7 +688,7 @@ class QComp(object):
         z = np.subtract(depth_ens, cell_depth)
         valid_data = np.isnan(xprod) == False
         z[valid_data == False] = np.nan
-        z[z < 0] = np.nan
+        z[nan_less(z, 0)] = np.nan
         cell_size[valid_data == False] = np.nan
         cell_depth[valid_data == False] = np.nan
         # Compute bottom discharge
@@ -736,16 +736,16 @@ class QComp(object):
 
         # Bottom power extrapolation
         if bot_method == 'Power':
-            coef = ((exponent+1) * np.nansum(component * cell_size, 0)) / \
-                np.nansum(((z + 0.5 * cell_size)**(exponent + 1))
-                          - (z - 0.5 * cell_size)**(exponent + 1), 0)
+            numerator = ((exponent+1) * np.nansum(component * cell_size, 0))
+            denominator = np.nansum(((z + 0.5 * cell_size)**(exponent + 1)) - (z - 0.5 * cell_size)**(exponent + 1), 0)
+            coef = np.divide(numerator, denominator, where=denominator!=0)
 
         # Bottom no slip extrapolation
         elif bot_method == 'No Slip':
             # Valid data in the lower 20% of the water column or
             # the last valid depth cell are used to compute the no slip power fit
             cutoff_depth = 0.8 * depth_ens
-            depth_ok = (cell_depth > np.tile(cutoff_depth, (cell_depth.shape[0], 1)))
+            depth_ok = (nan_greater(cell_depth, np.tile(cutoff_depth, (cell_depth.shape[0], 1))))
             component_ok = np.isnan(component) == False
             use_ns = depth_ok * component_ok
             for j in range(len(delta_t)):
@@ -758,9 +758,10 @@ class QComp(object):
             component_ns[use_ns == False] = np.nan
             z_ns = np.copy(z)
             z_ns[use_ns == False] = np.nan
-            coef = ((exponent + 1) * np.nansum(component_ns * cell_size, 0)) / \
-                np.nansum(((z_ns + 0.5 * cell_size) ** (exponent + 1))
-                          - ((z_ns - 0.5 * cell_size) ** (exponent + 1)), 0)
+            numerator = ((exponent + 1) * np.nansum(component_ns * cell_size, 0))
+            denominator = np.nansum(((z_ns + 0.5 * cell_size) ** (exponent + 1))
+                                    - ((z_ns - 0.5 * cell_size) ** (exponent + 1)), 0)
+            coef = np.divide(numerator, denominator, where=denominator!=0)
 
         # Compute the bottom discharge of each profile
         bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng**(exponent + 1))
