@@ -5,7 +5,7 @@ import numpy as np
 import itertools as it
 from numpy.matlib import repmat
 from MiscLibs.common_functions import iqr, nan_less, nan_greater
-from MiscLibs.robust_loess import rloess
+from MiscLibs.robust_loess_compiled import rloess
 from MiscLibs.non_uniform_savgol import non_uniform_savgol
 
 
@@ -491,7 +491,7 @@ class DepthData(object):
             else:
                 x = np.nancumsum(transect.date_time.ens_duration_sec)
 
-            multi_processing = True
+            multi_processing = False
             start = time.perf_counter()
             if multi_processing:
                 with concurrent.futures.ProcessPoolExecutor() as executor:

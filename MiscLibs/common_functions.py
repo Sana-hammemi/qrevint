@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as sp
+from numba import njit
 
 
 def cosd(angle):
@@ -156,7 +157,7 @@ def iqr_2d(data):
     return sp_iqr
 
 
-def azdeg2rad(angle):
+def azdeg2rad(angle) -> float:
     """Converts an azimuth angle in degrees to radians.
 
     Parameters
@@ -183,7 +184,7 @@ def azdeg2rad(angle):
     return direction
 
 
-def rad2azdeg(angle):
+def rad2azdeg(angle) -> float:
     """Converts an angle in radians to an azimuth in degrees.
 
     Parameters
@@ -244,7 +245,7 @@ def nandiff(values):
     return np.array(final_values)
 
 
-def valid_number(data_in):
+def valid_number(data_in) -> float:
     """Check to see if data_in can be converted to float.
 
     Parameters
@@ -307,7 +308,7 @@ def checked_idx(transects):
     return checked
 
 
-def units_conversion(units_id='SI'):
+def units_conversion(units_id='SI') -> float:
     """Computes the units conversion from SI units used internally to the
     desired display units.
 
@@ -347,7 +348,7 @@ def units_conversion(units_id='SI'):
     return units
 
 
-def convert_temperature(temp_in, units_in, units_out):
+def convert_temperature(temp_in, units_in, units_out) -> float:
     """Converts temperature from F to C or C to F.
 
     Parameters
@@ -380,7 +381,9 @@ def convert_temperature(temp_in, units_in, units_out):
 
     return temp_out
 
-def nan_less_equal(data1, data2):
+
+# @njit
+def nan_less_equal(data1, data2) -> bool:
     """Computes data1 <= data2 and sets all np.nan comparisons to False.
 
     Parameters
@@ -397,10 +400,12 @@ def nan_less_equal(data1, data2):
     """
 
     d3 = data2 - data1
-    d3[np.isnan(d3)] = -999
+    d3[np.isnan(d3)] = -999.
     return d3 >= 0
 
-def nan_less (data1, data2):
+
+# @njit
+def nan_less (data1, data2) -> bool:
     """Computes data1 < data2 and sets all np.nan comparisons to False.
 
     Parameters
@@ -417,10 +422,12 @@ def nan_less (data1, data2):
     """
 
     d3 = data2 - data1
-    d3[np.isnan(d3)] = -999
+    d3[np.isnan(d3)] = -999.
     return d3 > 0
 
-def nan_greater_equal(data1, data2):
+
+# @njit
+def nan_greater_equal(data1, data2) -> bool:
     """Computes data1 >= data2 and sets all np.nan comparisons to False.
 
     Parameters
@@ -437,10 +444,12 @@ def nan_greater_equal(data1, data2):
     """
 
     d3 = data1 - data2
-    d3[np.isnan(d3)] = -999
+    d3[np.isnan(d3)] = -999.
     return d3 >= 0
 
-def nan_greater(data1, data2):
+
+# @njit
+def nan_greater(data1, data2) -> bool:
     """Computes data1 < data2 and sets all np.nan comparisons to False.
 
     Parameters
@@ -457,5 +466,5 @@ def nan_greater(data1, data2):
     """
 
     d3 = data1 - data2
-    d3[np.isnan(d3)] = -999
+    d3[np.isnan(d3)] = -999.
     return d3 > 0

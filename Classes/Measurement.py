@@ -23,7 +23,7 @@ from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-from profilehooks import profile
+from profilehooks import profile, timecall
 
 
 class Measurement(object):
@@ -210,8 +210,10 @@ class Measurement(object):
         """
 
         # Read mmt file
+        print (time.perf_counter())
+        start = time.perf_counter()
         mmt = MMTtrdi(mmt_file)
-
+        print('MMT Read:', (time.perf_counter() - start))
         # Get properties if they exist, otherwise set them as blank strings
         self.station_name = str(mmt.site_info['Name'])
         self.station_number = str(mmt.site_info['Number'])
@@ -221,11 +223,13 @@ class Measurement(object):
 
         # Create transect objects for  TRDI data
         # TODO refactor allocate_transects
-
+        print ('Start transects:', time.perf_counter())
+        start = time.perf_counter()
         self.transects = self.allocate_transects(mmt=mmt,
                                                  transect_type=transect_type,
                                                  checked=checked)
-
+        print('Transects:', (time.perf_counter()-start))
+        print('End transects:', time.perf_counter())
         self.checked_transect_idx = self.checked_transects(self)
 
         # Create object for pre-measurement tests
@@ -305,6 +309,7 @@ class Measurement(object):
                     reference = 'BT'
 
         # Convert to earth coordinates
+        print('Start earth coordinates:', time.perf_counter())
         for transect_idx, transect in enumerate(self.transects):
             # Convert to earth coordinates
             transect.change_coord_sys(new_coord_sys='Earth')
@@ -313,27 +318,27 @@ class Measurement(object):
             transect.change_nav_reference(update=False, new_nav_ref=reference)
 
             # Apply WR2 thresholds
-            self.thresholds_trdi(transect, threshold_settings)
+            # self.thresholds_trdi(transect, threshold_settings)
 
-            # Apply boat interpolations
-            transect.boat_interpolations(update=False,
-                                         target='BT',
-                                         method='None')
-            if transect.gps is not None:
-                transect.boat_interpolations(update=False,
-                                             target='GPS',
-                                             method='HoldLast')
-
-            # Update water data for changes in boat velocity
-            transect.update_water()
-
-            # Filter water data
-            transect.w_vel.apply_filter(transect=transect, wt_depth=True)
-
-            # Interpolate water data
-            transect.w_vel.apply_interpolation(transect=transect,
-                                               ens_interp='None',
-                                               cells_interp='None')
+            # # Apply boat interpolations
+            # transect.boat_interpolations(update=False,
+            #                              target='BT',
+            #                              method='None')
+            # if transect.gps is not None:
+            #     transect.boat_interpolations(update=False,
+            #                                  target='GPS',
+            #                                  method='HoldLast')
+            #
+            # # Update water data for changes in boat velocity
+            # transect.update_water()
+            #
+            # # Filter water data
+            # transect.w_vel.apply_filter(transect=transect, wt_depth=True)
+            #
+            # # Interpolate water data
+            # transect.w_vel.apply_interpolation(transect=transect,
+            #                                    ens_interp='None',
+            #                                    cells_interp='None')
 
             # Apply speed of sound computations as required
             mmt_sos_method = mmt.transects[transect_idx].active_config[
@@ -349,6 +354,7 @@ class Measurement(object):
                 transect.change_sos(parameter='sosSrc',
                                     selected='user',
                                     speed=speed)
+        print('End earth coordinates', time.perf_counter())
 
     def qaqc_trdi(self, mmt):
         """Processes qaqc test, calibrations, and evaluations
@@ -360,6 +366,7 @@ class Measurement(object):
         """
 
         # ADCP Test
+        print('Start pre:', time.perf_counter())
         if 'RG_Test' in mmt.qaqc:
             for n in range(len(mmt.qaqc['RG_Test'])):
                 p_m = PreMeasurement()
@@ -382,13 +389,15 @@ class Measurement(object):
                 ce.populate_data(mmt.qaqc['Compass_Evaluation_TimeStamp'][n],
                                  mmt.qaqc['Compass_Evaluation'][n], 'TCC')
                 self.compass_eval.append(ce)
+        print('Start mbtests:', time.perf_counter())
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
             
             # Create transect objects
+            print('Start mb transects:', time.perf_counter())
             transects = self.allocate_transects(mmt, transect_type='MB')
-
+            print('End mb transects:', time.perf_counter())
             # Process moving-bed tests
             if len(transects) > 0:
                 self.mb_tests = []
@@ -407,7 +416,7 @@ class Measurement(object):
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
-
+        print('finish pre:', time.perf_counter())
     @staticmethod
     def thresholds_trdi(transect, settings):
         """Retrieve and apply manual filter settings from mmt file
@@ -1561,7 +1570,6 @@ class Measurement(object):
 
         return transect
 
-
     def apply_settings_to_movingbed (self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
 
@@ -1572,7 +1580,7 @@ class Measurement(object):
         force_abba: bool
             Allows the above, below, before, after interpolation to be applied even when the data use another approach.
         """
-
+        print('Start apply mb:', time.perf_counter())
         self.use_ping_type = settings['UsePingType']
         # If SonTek data does not have ping type identified, determine ping types
         if self.mb_tests[0].transect.w_vel.ping_type.size == 1 and self.transects[0].adcp.manufacturer == 'SonTek':
@@ -1672,14 +1680,14 @@ class Measurement(object):
 
             # Set depth reference
             transect.set_depth_reference(update=False, setting=settings['depthReference'])
-
+            print('Start process depths:', time.perf_counter())
             transect.process_depths(update=True,
                                     filter_method=settings['depthFilterType'],
                                     interpolation_method=settings['depthInterpolation'],
                                     composite_setting=settings['depthComposite'],
                                     avg_method=settings['depthAvgMethod'],
                                     valid_method=settings['depthValidMethod'])
-
+            print('End process depths:', time.perf_counter())
             # Set WT difference velocity filter
             wt_kwargs = {}
             if settings['WTdFilter'] == 'Manual':
@@ -1722,6 +1730,7 @@ class Measurement(object):
                                                cells_interp=settings['WTCellInterpolation'])
 
             test.process_mb_test(source=self.transects[0].adcp.manufacturer)
+        print('End mb apply:', time.perf_counter())
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -3941,7 +3950,9 @@ class Measurement(object):
 
     @staticmethod
     def add_transect(mmt, filename, index, type):
+        start = time.perf_counter()
         pd0_data = Pd0TRDI(filename)
+        print('pd0 read:', (time.perf_counter() - start))
 
         if type == 'MB':
             mmt_transect = mmt.mbt_transects[index]
@@ -4001,8 +4012,12 @@ class Measurement(object):
         # start = time.perf_counter()
         transects = []
         num = len(valid_indices)
+        if num < 3:
+            multi_process = False
+        else:
+            multi_process = True
         # num = 2
-        multi_process = True
+
         if multi_process:
 
             with concurrent.futures.ProcessPoolExecutor() as executor:
