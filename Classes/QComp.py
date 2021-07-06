@@ -550,6 +550,7 @@ class QComp(object):
             numerator = ((exponent + 1) * np.nansum(component * cell_size, 0))
             denominator = np.nansum(((z + 0.5 * cell_size)**(exponent+1)) - ((z - 0.5 * cell_size)**(exponent+1)), 0)
             coef = np.divide(numerator, denominator, where=denominator!=0)
+            coef[denominator==0] = np.nan
             top_value = delta_t * (coef / (exponent + 1)) * \
                 (depth_ens**(exponent + 1) - (depth_ens-top_rng)**(exponent + 1))
 
@@ -739,6 +740,7 @@ class QComp(object):
             numerator = ((exponent+1) * np.nansum(component * cell_size, 0))
             denominator = np.nansum(((z + 0.5 * cell_size)**(exponent + 1)) - (z - 0.5 * cell_size)**(exponent + 1), 0)
             coef = np.divide(numerator, denominator, where=denominator!=0)
+            coef[denominator == 0] = np.nan
 
         # Bottom no slip extrapolation
         elif bot_method == 'No Slip':
@@ -762,6 +764,7 @@ class QComp(object):
             denominator = np.nansum(((z_ns + 0.5 * cell_size) ** (exponent + 1))
                                     - ((z_ns - 0.5 * cell_size) ** (exponent + 1)), 0)
             coef = np.divide(numerator, denominator, where=denominator!=0)
+            coef[denominator == 0] = np.nan
 
         # Compute the bottom discharge of each profile
         bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng**(exponent + 1))

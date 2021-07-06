@@ -318,27 +318,27 @@ class Measurement(object):
             transect.change_nav_reference(update=False, new_nav_ref=reference)
 
             # Apply WR2 thresholds
-            # self.thresholds_trdi(transect, threshold_settings)
+            self.thresholds_trdi(transect, threshold_settings)
 
-            # # Apply boat interpolations
-            # transect.boat_interpolations(update=False,
-            #                              target='BT',
-            #                              method='None')
-            # if transect.gps is not None:
-            #     transect.boat_interpolations(update=False,
-            #                                  target='GPS',
-            #                                  method='HoldLast')
-            #
-            # # Update water data for changes in boat velocity
-            # transect.update_water()
-            #
-            # # Filter water data
-            # transect.w_vel.apply_filter(transect=transect, wt_depth=True)
-            #
-            # # Interpolate water data
-            # transect.w_vel.apply_interpolation(transect=transect,
-            #                                    ens_interp='None',
-            #                                    cells_interp='None')
+            # Apply boat interpolations
+            transect.boat_interpolations(update=False,
+                                         target='BT',
+                                         method='None')
+            if transect.gps is not None:
+                transect.boat_interpolations(update=False,
+                                             target='GPS',
+                                             method='HoldLast')
+
+            # Update water data for changes in boat velocity
+            transect.update_water()
+
+            # Filter water data
+            transect.w_vel.apply_filter(transect=transect, wt_depth=True)
+
+            # Interpolate water data
+            transect.w_vel.apply_interpolation(transect=transect,
+                                               ens_interp='None',
+                                               cells_interp='None')
 
             # Apply speed of sound computations as required
             mmt_sos_method = mmt.transects[transect_idx].active_config[

@@ -172,7 +172,7 @@ class WaterData(object):
         self.smooth_lower_limit = None
         self.snr_filter = 'Off'
         self.snr_rng = []
-        self.wt_depth_filter = None
+        self.wt_depth_filter = True
         self.interpolate_ens = None
         self.interpolate_cells = None
         self.coord_sys = None

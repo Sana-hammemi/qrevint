@@ -7,6 +7,7 @@ from numpy.matlib import repmat
 from MiscLibs.common_functions import iqr, nan_less, nan_greater
 from MiscLibs.robust_loess_compiled import rloess
 from MiscLibs.non_uniform_savgol import non_uniform_savgol
+from MiscLibs.run_iqr import run_iqr
 
 
 class DepthData(object):
@@ -616,7 +617,8 @@ class DepthData(object):
             for n in range(cycles - 1):
 
                 # Compute inner quartile range
-                fill_array = DepthData.run_iqr(half_width, depth_res)
+                # fill_array = DepthData.run_iqr(half_width, depth_res)
+                fill_array = run_iqr(half_width, depth_res)
 
                 # Compute filter criteria and apply appropriate
                 criteria = multiplier * fill_array
@@ -722,8 +724,8 @@ class DepthData(object):
                     for n in range(cycles - 1):
 
                         # Compute inner quartile range
-                        fill_array = DepthData.run_iqr(half_width, depth_res[j, :])
-
+                        # fill_array = DepthData.run_iqr(half_width, depth_res[j, :])
+                        fill_array = run_iqr(half_width, depth_res[j, :])
                         # Compute filter criteria
                         criteria = multiplier * fill_array
 
