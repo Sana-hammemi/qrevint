@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import copy
 from Classes.QComp import QComp
@@ -5,8 +7,9 @@ from scipy.stats import t
 import numpy as np
 import math
 import scipy.stats
-# from profilehooks import profile
+from profilehooks import profile
 from MiscLibs.common_functions import cosd, sind
+from MiscLibs.bayes_cov_compiled import bayes_cov
 
 
 class Oursin(object):
@@ -571,7 +574,7 @@ class Oursin(object):
             a = a.reshape(1, -1)
         return a
 
-    # @profile
+    @profile
     def compute_oursin(self, meas, user_advanced_settings=None, u_measurement_user=None):
         """Computes the uncertainty for the components of the discharge measurement
         using measurement data or user provided values.
@@ -1267,10 +1270,15 @@ class Oursin(object):
                 transects_total_q.append(meas.discharge[idx].total)
 
             # Compute COV
+            start_time = time.perf_counter()
             self.cov_68 = self.bayes_cov(transects_total_q=transects_total_q,
                                          cov_prior=cov_prior,
                                          cov_prior_u=cov_prior_u,
                                          nsim=20000)
+            print('Old Bayes:', time.perf_counter() - start_time, self.cov_68)
+            start_time = time.perf_counter()
+            cov_68_new = bayes_cov(np.array(transects_total_q), cov_prior, cov_prior_u, 20000)
+            print('New Bayes:', time.perf_counter() - start_time, cov_68_new)
 
     def sim_orig(self, meas):
         """Stores original measurement results in a data frame
@@ -1999,8 +2007,8 @@ class Oursin(object):
                                 cov_prior=cov_prior,
                                 cov_prior_u=cov_prior_u,
                                 nsim=nsim,
-                                theta_std=np.abs([np.mean(transects_total_q), cov_prior])
-                                * cov_prior_u / np.sqrt(len(transects_total_q)))
+                                theta_std=np.abs(np.array([np.mean(transects_total_q), cov_prior]))* cov_prior_u / np.sqrt(len(transects_total_q)))
+
 
         n_burn = int(nsim / 2)
 
@@ -2061,12 +2069,15 @@ class Oursin(object):
             obj_funk[0] = f_current
 
             # MCMC loop
+            candid = np.array([np.nan, np.nan])
             for i in range(nsim):
                 current = sam[i, :]
                 f_current = obj_funk[i]
                 # Propose a new candidate
                 candid = np.random.normal(loc=current, scale=theta_std)
-
+                # Change for use in Numba
+                # candid[0] = np.random.normal(loc=current[0], scale=theta_std[0])
+                # candid[1] = np.random.normal(loc=current[1], scale=theta_std[1])
                 # Evaluate objective function at candidate
                 f_candid = Oursin.log_post(param=candid,
                                            measures=obs_data,
@@ -2081,7 +2092,9 @@ class Oursin(object):
                     u = np.random.uniform(0, 1)
 
                     # Compute Metropolis acceptance ratio
+                    # Changed for use in Numba
                     ratio = math.exp(min(max(-100, f_candid - f_current), 0))
+                    # ratio = np.exp(min(((np.max(np.hstack((float(-100), f_candid - f_current))), float(0)))))
 
                     # Apply acceptance rule
                     if u <= ratio:
@@ -2128,6 +2141,9 @@ class Oursin(object):
         # You can easily change this model (e.g. lognormal for a positive measurand?)
         # OPTION 1 : the model follows a Normal distribution
         log_likelihood = np.sum(scipy.stats.norm.logpdf(measures, loc=true_value, scale=sigma))
+        # Change for Numba
+        # log_likelihood = np.sum(np.log(np.exp(-(((measures - true_value) / sigma) ** 2) / 2)
+        #                                / (np.sqrt(2 * np.pi) * sigma)))
 
         # Prior on true_value - flat prior used here but you may change this if you have prior knowledge
         log_prior_1 = 0

@@ -19,7 +19,7 @@ packaging==19.2
 pandas==0.25.1
 patsy==0.5.1
 pefile==2019.4.18
-pip==20.1
+pip~=21.0
 pluggy==0.13.0
 py==1.8.0
 pyparsing==2.4.2
@@ -38,3 +38,6 @@ utm==0.5.0
 wcwidth==0.1.7
 xmltodict==0.12.0
 zipp==0.6.0
+profilehooks~=1.12.0
+numba~=0.53.1
+XlsxWriter~=1.3.7

@@ -71,7 +71,7 @@ class Measurement(object):
         Indicates if the entire measurement should be used to set filter thresholds
     """
 
-    @profile
+    # @profile
     def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
                  use_measurement_thresholds=False, use_ping_type=True):
         """Initialize instance variables and initiate processing of measurement

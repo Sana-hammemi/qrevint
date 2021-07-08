@@ -449,13 +449,13 @@ class DepthData(object):
         """
 
         # If the smoothed depth has not been computed
-        if self.smooth_depth is None:
+        if self.smooth_depth is None or len(self.smooth_depth) == 0:
             
             # Set filter characteristics
             self.filter_type = 'Smooth'
-            cycles = 3
-            half_width = 10
-            multiplier = 15
+            # cycles = 3
+            # half_width = 10
+            # multiplier = 15
             
             # Determine number of beams
             if len(self.depth_orig_m.shape) > 1:
@@ -471,7 +471,7 @@ class DepthData(object):
 
             # Arrays initialized
             depth_smooth = repmat([np.nan], n_beams, n_ensembles)
-            depth_res = repmat([np.nan], n_beams, n_ensembles)
+            # depth_res = repmat([np.nan], n_beams, n_ensembles)
             upper_limit = repmat([np.nan], n_beams, n_ensembles)
             lower_limit = repmat([np.nan], n_beams, n_ensembles)
             depth_filtered = depth
