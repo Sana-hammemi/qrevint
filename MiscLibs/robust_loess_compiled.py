@@ -1,4 +1,4 @@
-"""robust_loess
+"""robust_loess_compiled
 This module computes a robust loess smooth using a quadratic model as defined by
 W.S.Cleveland, (1979) "Robust Locally Weighted Regression and Smoothing Scatterplots",
 Journal of the American Statistical Association, Vol 74, No. 368, pp. 829-836.
@@ -7,18 +7,17 @@ Both x and y values are required and are assumed to be 1D arrays (n,).
 Example
 -------
 
-from MiscLibs.matlab_rloess import rloess
+from MiscLibs.robust_loess_compiled import rloess
 
 smooth_fit = rloess(x, y, span)
 """
 import numpy as np
 from numba.pycc import CC
 from numba import njit
-import numba
 
 cc = CC('robust_loess_compiled')
-# cc.verbose = True
 
+# Set constants
 eps = np.finfo('float').eps
 seps = np.sqrt(eps)
 
@@ -33,23 +32,18 @@ def nearest_neighbors(num_neighbors, idx, x, valid_x):
         Number of neighbors to find
     idx: int
         Index for the target x value
-    x: np.array
+    x: np.array(float)
         1D array of the independent variable
-    valid_x: bool
+    valid_x: np.array(bool)
         Boolean array indicating valid x data.
 
     Returns
     -------
-    neighbors_idx: int
+    neighbors_idx: np.array(int)
         Indices for neighbors in x array
     """
 
     # Find neighbors
-    # num_true = 0
-    # for idx in range(len(valid_x)):
-    #     if valid_x[idx]:
-    #         num_true += 1
-    # # num_true = np.count_nonzero(valid_x)
     if np.nansum(valid_x) <= num_neighbors:
         # If there are k points or fewer, then they are all neighbors
         neighbors_idx = np.where(np.equal(valid_x, np.repeat(True, len(valid_x))))[0]
@@ -60,7 +54,6 @@ def nearest_neighbors(num_neighbors, idx, x, valid_x):
         distance_neighbors = distance_sorted[num_neighbors - 1]
 
         # Find all points that are as close as or closer than the num_neighbors closest points
-        # close = np.array(distance <= distance_neighbors)
         close = np.less_equal(distance, distance_neighbors)
 
         # Find the indices of x that are both close and valid
@@ -76,12 +69,12 @@ def tricube_weights(distance):
 
     Parameters
     ----------
-    distance: np.array
+    distance: np.array(float)
         1D array of distances
 
     Returns
     -------
-    weights: np.array
+    weights: np.array(float)
         1D array of weights
     """
 
@@ -98,20 +91,22 @@ def bisquare(data):
 
     Parameters
     ----------
-    data: np.array
+    data: np.array(float)
         1D array of data used to compute weight
 
     Returns
     -------
-    weights: np.array
+    weights: np.array(float)
         Computed weight
 
     """
     weights = np.zeros(data.shape)
+
+    # Code to compute less than with nan's and no runtime warnings
     d3 = 1 - np.abs(data)
     d3[np.isnan(d3)] = -999.
     idx = d3 > 0
-    # idx = nan_less(np.abs(data), 1)
+
     weights[idx] = np.abs(1 - data[idx] ** 2)
     return weights
 
@@ -122,14 +117,14 @@ def robust_weights(residuals, max_eps):
 
     Parameters
     ----------
-    residuals: np.array
+    residuals: np.array(float)
         1D array of residuals from previous fit
     max_eps: float
         Smallest value to be represented
 
     Returns
     -------
-    weights: np.array
+    weights: np.array(float)
         1D array of computed weights
     """
 
@@ -154,7 +149,7 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
         1D array of independent variable
     y: np.array(float)
         1D array of dependent variable
-    neighbors_idx: np.array(int)
+    neighbors_idx: np.array(int8)
         1D array of indices of x defining neighbors
     idx: int
         Index of x defining target
@@ -166,9 +161,6 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
     smoothed_value: float
         Computed smoothed value for target
     """
-
-    # eps = np.finfo('float').eps
-    # seps = np.sqrt(eps)
 
     if len(neighbors_idx) > 0:
         # Center around current point to improve conditioning
@@ -212,15 +204,13 @@ def rloess(x, y, span):
 
     Parameters
     ----------
-    x: np.array
+    x: np.array(float)
         1D array of independent variable
-    y: np.array
+    y: np.array(float)
         1D array of dependent variable
     span: int
         Number of neighbors to use in the regression
     """
-
-    # eps = np.finfo('float').eps
 
     # Number of cycles of the robust fit
     cycles = 5
@@ -240,8 +230,6 @@ def rloess(x, y, span):
         # Pre-allocate space for lower and upper indices for each fit
         lower_bound = np.repeat(0, n_points)
         upper_bound = np.repeat(0, n_points)
-        # lower_bound = np.zeros(n_points).astype(int)
-        # upper_bound = np.zeros(n_points).astype(int)
 
         # Compute the non-robust smooth
         for n in range(n_points):

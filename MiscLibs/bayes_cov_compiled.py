@@ -1,3 +1,15 @@
+"""bayes_cov_compiled
+Computes the coefficient of variation using a Bayesian approach and an assumed posterior
+log-normal distribution..
+
+Example
+-------
+
+from MiscLibs.bayes_cov_compiled import bayes_cov
+
+cov_68 = bayes_cov(transects, cov_prior, cov_prior_u, nsim)
+"""
+
 import numpy as np
 from numba.pycc import CC
 from numba import njit
@@ -14,7 +26,7 @@ def bayes_cov(transects_total_q, cov_prior=0.03, cov_prior_u=0.2, nsim=20000):
 
     Parameters
     ----------
-    transects_total_q: list
+    transects_total_q: np.array(float)
         List of total discharge for each transect
     cov_prior: float
         Expected COV (68%) based on prior knowledge. Assumed to be 3% by default.
@@ -28,8 +40,10 @@ def bayes_cov(transects_total_q, cov_prior=0.03, cov_prior_u=0.2, nsim=20000):
     cov: float
         Coefficient of variation
     """
+
     theta_std = np.abs(np.array([np.mean(transects_total_q), cov_prior])) * cov_prior_u \
         / np.sqrt(len(transects_total_q))
+
     # Modified for compatibility with Numba
     sam, obj_funk = metropolis(theta0=np.array([np.mean(transects_total_q), cov_prior]),
                                obs_data=transects_total_q,
@@ -63,7 +77,7 @@ def metropolis(theta0, obs_data, cov_prior, cov_prior_u, nsim, theta_std):
         Uncertainty (68%) of cov_prior.
     nsim: int
         Number of simulations.
-    theta_std: float
+    theta_std: np.array(float)
         Standard deviation for the gaussian Jump distribution. If blank a default value is computed.
 
     Returns
@@ -90,13 +104,13 @@ def metropolis(theta0, obs_data, cov_prior, cov_prior_u, nsim, theta_std):
 
     if not is_feasible(f_current):
         print('Metropolis:FATAL:unfeasible starting point')
-        # w = {'sam': sam, 'obj_funk': obj_funk}
         return sam, obj_funk
     else:
         sam[0, :] = list(theta0)
         obj_funk[0] = f_current
 
         # MCMC loop
+        np.random.seed(0)
         candid = np.array([np.nan, np.nan])
         for i in range(nsim):
             current = sam[i, :]
@@ -155,7 +169,8 @@ def log_post(param, measures, cov_prior, cov_prior_u):
 
     Returns
     -------
-    logp:
+    logp: float
+        Unnormalized log-posterior
     """
     # Check if any parameter is <=0
     # since  both true_value and cov have to be positive - otherwise sigma = true_value*cov does not make sense
@@ -204,7 +219,7 @@ def is_feasible(value):
 
     Parameters
     ----------
-    value: float or int
+    value: float
 
     Returns
     -------
