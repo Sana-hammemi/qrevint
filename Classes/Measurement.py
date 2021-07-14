@@ -1137,6 +1137,7 @@ class Measurement(object):
                 break
         return external
 
+    @profile
     def apply_settings(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
         

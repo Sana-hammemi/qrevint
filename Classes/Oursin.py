@@ -574,7 +574,7 @@ class Oursin(object):
             a = a.reshape(1, -1)
         return a
 
-    @profile
+    # @profile
     def compute_oursin(self, meas, user_advanced_settings=None, u_measurement_user=None):
         """Computes the uncertainty for the components of the discharge measurement
         using measurement data or user provided values.
@@ -1270,15 +1270,7 @@ class Oursin(object):
                 transects_total_q.append(meas.discharge[idx].total)
 
             # Compute COV
-            start_time = time.perf_counter()
-            self.cov_68 = self.bayes_cov(transects_total_q=transects_total_q,
-                                         cov_prior=cov_prior,
-                                         cov_prior_u=cov_prior_u,
-                                         nsim=20000)
-            print('Old Bayes:', time.perf_counter() - start_time, self.cov_68)
-            start_time = time.perf_counter()
-            cov_68_new = bayes_cov(np.array(transects_total_q), cov_prior, cov_prior_u, 20000)
-            print('New Bayes:', time.perf_counter() - start_time, cov_68_new)
+            self.cov_68 = bayes_cov(np.array(transects_total_q), cov_prior, cov_prior_u, 20000)
 
     def sim_orig(self, meas):
         """Stores original measurement results in a data frame
@@ -2069,7 +2061,8 @@ class Oursin(object):
             obj_funk[0] = f_current
 
             # MCMC loop
-            candid = np.array([np.nan, np.nan])
+            # candid = np.array([np.nan, np.nan])
+            np.random.seed(0)
             for i in range(nsim):
                 current = sam[i, :]
                 f_current = obj_funk[i]
