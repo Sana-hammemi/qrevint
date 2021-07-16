@@ -714,8 +714,6 @@ class WTAdvanced(object):
                          ping_name=ping_name,
                          n_names=len(p_types))
 
-
-
     def bt_speed_ts(self):
 
         data = np.sqrt(self.transect.boat_vel.bt_vel.u_processed_mps ** 2
@@ -1597,7 +1595,9 @@ class WTAdvanced(object):
             min_limit = data_limits[0]
         elif np.sum(np.abs(data_plt_in[data_plt_in > -900])) > 0:
             max_limit = np.percentile(data_plt_in[data_plt_in > -900] * data_units[0], 99)
-            min_limit = np.percentile(data_plt_in[data_plt_in > -900] * data_units[0], 1)
+            min_limit = np.min(data_plt_in[data_plt_in > -900] * data_units[0])
+            if min_limit < 0.1:
+                min_limit = 0
         else:
             max_limit = 1
             min_limit = 0
@@ -1631,6 +1631,7 @@ class WTAdvanced(object):
         cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
         cb.ax.yaxis.label.set_fontsize(12)
         cb.ax.tick_params(labelsize=12)
+        cb.ax.set_ylim([min_limit, max_limit])
         ax.invert_yaxis()
         if ping_name is not None:
             tick_list = list(range(n_names))
@@ -1639,6 +1640,7 @@ class WTAdvanced(object):
                 label_list.append(ping_name[tick])
             cb.set_ticks(tick_list)
             cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment='center')
+
 
         # Plot depth
         ax.plot(x, depth * self.units['L'], color='k')
