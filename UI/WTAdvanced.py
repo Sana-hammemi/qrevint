@@ -3,6 +3,7 @@ import copy
 from matplotlib import gridspec
 import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
+from matplotlib.colors import Colormap
 from datetime import datetime
 from MiscLibs.common_functions import sind, cosd
 
@@ -89,6 +90,7 @@ class WTAdvanced(object):
                                          'cb_corr_beam_cc': self.corr_beam_contour,
                                          'cb_avg_rssi_cc': self.avg_rssi_contour,
                                          'cb_rssi_beam_cc': self.rssi_beam_contour,
+                                         'cb_ping_type_cc': self.wt_ping_type,
                                          'cb_discharge_ts': self.discharge_ts,
                                          'cb_discharge_percent_ts': self.discharge_percent_ts,
                                          'cb_avg_speed_ts': self.avg_speed_ts,
@@ -668,6 +670,51 @@ class WTAdvanced(object):
                          x=self.x,
                          depth=depth,
                          data_units=(self.units['V'], 'Vertical \n Velocity' + self.units['label_V']))
+
+    def wt_ping_type(self):
+
+        # Get data
+        data = np.copy(self.transect.w_vel.w_mps)
+        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
+        if self.x_axis_type == 'T':
+            x_1d = self.x_timestamp
+        else:
+            x_1d = self.x
+        ping_type_long_name = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface', '1I': '1 MHz Inc',
+                               '1C': '1 MHz Coh', '3I': '3 MHz Inc', '3C': '3 MHz Coh',
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
+                               'U': 'Unspecified'}
+        ping_type = self.transect.w_vel.ping_type
+        p_types = np.unique(ping_type)
+        ping_code = {}
+        ping_name = {}
+        n = 0
+        for type in p_types:
+            ping_code[type] = n
+            ping_name[n] = ping_type_long_name[type]
+            data[ping_type==type] = n
+            n = n + 1
+
+        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+
+        # Compute data for contour plot
+        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
+
+        # Plot data
+        cmap = self.color_map
+        self.plt_contour(x_plt_in=x_plt,
+                         cell_plt_in=cell_plt,
+                         data_plt_in=data_plt,
+                         x=self.x,
+                         depth=depth,
+                         data_units=(1, 'WT Ping Type'),
+                         cmap_in = cmap,
+                         ping_name=ping_name,
+                         n_names=len(p_types))
+
+
 
     def bt_speed_ts(self):
 
@@ -1506,7 +1553,8 @@ class WTAdvanced(object):
 
         return x_plt, cell_plt, data_plt, ensembles, depth
 
-    def plt_contour(self, x_plt_in, cell_plt_in, data_plt_in, x, depth, data_units, data_limits=None):
+    def plt_contour(self, x_plt_in, cell_plt_in, data_plt_in, x, depth, data_units, data_limits=None,
+                    cmap_in=None, ping_name=None, n_names=None):
         """Create contour plot.
 
         Parameters
@@ -1555,7 +1603,11 @@ class WTAdvanced(object):
             min_limit = 0
 
         # Create color map
-        cmap = cm.get_cmap(self.color_map)
+        if cmap_in is None:
+            cmap = cm.get_cmap(self.color_map)
+        else:
+            cmap = cm.get_cmap(cmap_in)
+
         cmap.set_under('white')
 
         # Generate color contour
@@ -1580,6 +1632,13 @@ class WTAdvanced(object):
         cb.ax.yaxis.label.set_fontsize(12)
         cb.ax.tick_params(labelsize=12)
         ax.invert_yaxis()
+        if ping_name is not None:
+            tick_list = list(range(n_names))
+            label_list = []
+            for tick in tick_list:
+                label_list.append(ping_name[tick])
+            cb.set_ticks(tick_list)
+            cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment='center')
 
         # Plot depth
         ax.plot(x, depth * self.units['L'], color='k')

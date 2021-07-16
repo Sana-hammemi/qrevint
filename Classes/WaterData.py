@@ -274,7 +274,6 @@ class WaterData(object):
                 self.raw_vel_mps[:, :max_surf_cells, :] = surface_vel_in[:, :max_surf_cells, :]
                 self.rssi[:, :max_surf_cells, :] = surface_rssi_in[:, :max_surf_cells, :]
                 self.corr[:, :max_surf_cells, :] = surface_corr_in[:, :max_surf_cells, :]
-                self.ping_type[:max_surf_cells, :] = 'S'
 
             for i_ens in range(num_ens):
                 self.raw_vel_mps[:,
@@ -286,6 +285,7 @@ class WaterData(object):
                 self.corr[:,
                           int(surface_num_cells_in[i_ens]):int(surface_num_cells_in[i_ens])
                           + num_reg_cells, i_ens] = corr_in[:, :num_reg_cells, i_ens]
+                self.ping_type[:int(surface_num_cells_in[i_ens]), i_ens] = 'S'
         else:
             # No surface cells
             self.raw_vel_mps = vel_in

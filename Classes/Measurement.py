@@ -71,7 +71,7 @@ class Measurement(object):
         Indicates if the entire measurement should be used to set filter thresholds
     """
 
-    # @profile
+    @profile
     def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
                  use_measurement_thresholds=False, use_ping_type=True):
         """Initialize instance variables and initiate processing of measurement
@@ -210,10 +210,10 @@ class Measurement(object):
         """
 
         # Read mmt file
-        print (time.perf_counter())
-        start = time.perf_counter()
+        # print (time.perf_counter())
+        # start = time.perf_counter()
         mmt = MMTtrdi(mmt_file)
-        print('MMT Read:', (time.perf_counter() - start))
+        # print('MMT Read:', (time.perf_counter() - start))
         # Get properties if they exist, otherwise set them as blank strings
         self.station_name = str(mmt.site_info['Name'])
         self.station_number = str(mmt.site_info['Number'])
@@ -223,13 +223,13 @@ class Measurement(object):
 
         # Create transect objects for  TRDI data
         # TODO refactor allocate_transects
-        print ('Start transects:', time.perf_counter())
+        # print ('Start transects:', time.perf_counter())
         start = time.perf_counter()
         self.transects = self.allocate_transects(mmt=mmt,
                                                  transect_type=transect_type,
                                                  checked=checked)
-        print('Transects:', (time.perf_counter()-start))
-        print('End transects:', time.perf_counter())
+        # print('Transects:', (time.perf_counter()-start))
+        # print('End transects:', time.perf_counter())
         self.checked_transect_idx = self.checked_transects(self)
 
         # Create object for pre-measurement tests
@@ -309,7 +309,7 @@ class Measurement(object):
                     reference = 'BT'
 
         # Convert to earth coordinates
-        print('Start earth coordinates:', time.perf_counter())
+        # print('Start earth coordinates:', time.perf_counter())
         for transect_idx, transect in enumerate(self.transects):
             # Convert to earth coordinates
             transect.change_coord_sys(new_coord_sys='Earth')
@@ -354,7 +354,7 @@ class Measurement(object):
                 transect.change_sos(parameter='sosSrc',
                                     selected='user',
                                     speed=speed)
-        print('End earth coordinates', time.perf_counter())
+        # print('End earth coordinates', time.perf_counter())
 
     def qaqc_trdi(self, mmt):
         """Processes qaqc test, calibrations, and evaluations
@@ -366,7 +366,7 @@ class Measurement(object):
         """
 
         # ADCP Test
-        print('Start pre:', time.perf_counter())
+        # print('Start pre:', time.perf_counter())
         if 'RG_Test' in mmt.qaqc:
             for n in range(len(mmt.qaqc['RG_Test'])):
                 p_m = PreMeasurement()
@@ -389,15 +389,15 @@ class Measurement(object):
                 ce.populate_data(mmt.qaqc['Compass_Evaluation_TimeStamp'][n],
                                  mmt.qaqc['Compass_Evaluation'][n], 'TCC')
                 self.compass_eval.append(ce)
-        print('Start mbtests:', time.perf_counter())
+        # print('Start mbtests:', time.perf_counter())
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
             
             # Create transect objects
-            print('Start mb transects:', time.perf_counter())
+            # print('Start mb transects:', time.perf_counter())
             transects = self.allocate_transects(mmt, transect_type='MB')
-            print('End mb transects:', time.perf_counter())
+            # print('End mb transects:', time.perf_counter())
             # Process moving-bed tests
             if len(transects) > 0:
                 self.mb_tests = []
@@ -416,7 +416,8 @@ class Measurement(object):
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
-        print('finish pre:', time.perf_counter())
+        # print('finish pre:', time.perf_counter())
+
     @staticmethod
     def thresholds_trdi(transect, settings):
         """Retrieve and apply manual filter settings from mmt file
@@ -1137,7 +1138,7 @@ class Measurement(object):
                 break
         return external
 
-    @profile
+    # @profile
     def apply_settings(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
         
@@ -1165,32 +1166,8 @@ class Measurement(object):
         if len(self.mb_tests) > 0:
             self.apply_settings_to_movingbed(settings, force_abba=True)
 
-        # multi_processing = True
-        # if multi_processing:
-        # start = time.perf_counter()
-        # with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
-        #     results = executor.map(self.apply_settings_part1, self.transects, it.repeat(settings), it.repeat(force_abba))
-        # self.transects = []
-        # for result in results:
-        #     self.transects.append(result)
-        # stop = time.perf_counter()
-        # print ('Multiprocessing time:', (stop - start))
-
-        # start = time.perf_counter()
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        #     results = executor.map(self.apply_settings_part1, self.transects, it.repeat(settings), it.repeat(force_abba))
-        #     self.transects = []
-        #     for result in results:
-        #         self.transects.append(result)
-        # stop = time.perf_counter()
-        # print ('Multithreading time:', (stop - start))
-
-        start = time.perf_counter()
         # Apply settings to discharge transects
         for transect in self.transects:
-        #     transect = self.apply_settings_part1(transect, settings, force_abba)
-        # stop = time.perf_counter()
-        # print('Part 1:', (stop - start))
 
             if not settings['UsePingType']:
                 transect.w_vel.ping_type = np.tile('U', transect.w_vel.ping_type.shape)
@@ -1338,13 +1315,6 @@ class Measurement(object):
             transect.edges.rec_edge_method = settings['edgeRecEdgeMethod']
             transect.edges.vel_method = settings['edgeVelMethod']
 
-        stop = time.perf_counter()
-        print('Part 1:', (stop - start))
-            # Recompute extrapolations
-            # NOTE: Extrapolations should be determined prior to WT
-            # interpolations because the TRDI approach for power/power
-            # using the power curve and exponent to estimate invalid cells.
-        start = time.perf_counter()
         if settings['UseWeighted'] and not self.use_weighted:
             if self.extrap_fit.norm_data[-1].weights is None:
                 # Compute normalized data for each transect to obtain the weights
@@ -1413,9 +1383,6 @@ class Measurement(object):
         self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
         self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
                                                     extrap_fits=self.extrap_fit.sel_fit)
-
-        stop = time.perf_counter()
-        print('Part 2:', (stop - start))
 
         self.compute_discharge()
 
@@ -1581,7 +1548,7 @@ class Measurement(object):
         force_abba: bool
             Allows the above, below, before, after interpolation to be applied even when the data use another approach.
         """
-        print('Start apply mb:', time.perf_counter())
+        # print('Start apply mb:', time.perf_counter())
         self.use_ping_type = settings['UsePingType']
         # If SonTek data does not have ping type identified, determine ping types
         if self.mb_tests[0].transect.w_vel.ping_type.size == 1 and self.transects[0].adcp.manufacturer == 'SonTek':
@@ -1681,14 +1648,14 @@ class Measurement(object):
 
             # Set depth reference
             transect.set_depth_reference(update=False, setting=settings['depthReference'])
-            print('Start process depths:', time.perf_counter())
+            # print('Start process depths:', time.perf_counter())
             transect.process_depths(update=True,
                                     filter_method=settings['depthFilterType'],
                                     interpolation_method=settings['depthInterpolation'],
                                     composite_setting=settings['depthComposite'],
                                     avg_method=settings['depthAvgMethod'],
                                     valid_method=settings['depthValidMethod'])
-            print('End process depths:', time.perf_counter())
+            # print('End process depths:', time.perf_counter())
             # Set WT difference velocity filter
             wt_kwargs = {}
             if settings['WTdFilter'] == 'Manual':
@@ -1731,7 +1698,7 @@ class Measurement(object):
                                                cells_interp=settings['WTCellInterpolation'])
 
             test.process_mb_test(source=self.transects[0].adcp.manufacturer)
-        print('End mb apply:', time.perf_counter())
+        # print('End mb apply:', time.perf_counter())
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -3951,9 +3918,9 @@ class Measurement(object):
 
     @staticmethod
     def add_transect(mmt, filename, index, type):
-        start = time.perf_counter()
+        # start = time.perf_counter()
         pd0_data = Pd0TRDI(filename)
-        print('pd0 read:', (time.perf_counter() - start))
+        # print('pd0 read:', (time.perf_counter() - start))
 
         if type == 'MB':
             mmt_transect = mmt.mbt_transects[index]
@@ -4017,7 +3984,6 @@ class Measurement(object):
             multi_process = False
         else:
             multi_process = True
-        # num = 2
 
         if multi_process:
 
@@ -4028,10 +3994,13 @@ class Measurement(object):
             #     transects.append(f.result())
 
             for result in results:
-                transects.append(result)
+                if result.w_vel is not None:
+                    transects.append(result)
         else:
             for k in range(num):
-                transects.append(self.add_transect(mmt, valid_files[k], valid_indices[k], transect_type))
+                temp = self.add_transect(mmt, valid_files[k], valid_indices[k], transect_type)
+                if temp.w_vel is not None:
+                    transects.append(temp)
 
         # finish = time.perf_counter()
         # print(f'Finished in {finish - start}')

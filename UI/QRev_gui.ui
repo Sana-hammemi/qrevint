@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1938</width>
-    <height>1051</height>
+    <height>1055</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -7242,6 +7242,18 @@
                       </property>
                       <property name="text">
                        <string>RSSI or SNR by Beam</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_ping_type">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Ping Type</string>
                       </property>
                      </widget>
                     </item>

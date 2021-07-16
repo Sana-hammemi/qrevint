@@ -8282,7 +8282,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.wt_filter_plots()
 
             # Update list of figs
-            self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
+            self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -8425,7 +8425,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.wt_top_canvas.draw()
 
         # Update list of figs
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig, self.wt_advanced_fig]
+        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig, self.wt_bottom_fig]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -11335,6 +11335,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     ('cb_corr_beam_cc', self.cb_adv_graph_corr_beam),
                                     ('cb_avg_rssi_cc', self.cb_adv_graph_avg_rssi),
                                     ('cb_rssi_beam_cc', self.cb_adv_graph_rssi_beam),
+                                    ('cb_ping_type_cc', self.cb_adv_graph_ping_type),
                                     ('cb_discharge_ts', self.cb_adv_graph_discharge),
                                     ('cb_discharge_percent_ts', self.cb_adv_graph_discharge_percent),
                                     ('cb_avg_speed_ts', self.cb_adv_graph_avg_speed),

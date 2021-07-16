@@ -206,7 +206,7 @@ class QComp(object):
         self.total_uncorrected = self.left + self.right + self.middle + self.bottom + self.top
 
         # Compute final discharge using correction if applicable
-        if self.correction_factor is None or self.correction_factor == 1:
+        if self.correction_factor is None or self.correction_factor == 1 or np.isnan(self.correction_factor):
             self.total = self.total_uncorrected
         else:
             self.total = self.left + self.right + (self.middle + self.bottom + self.top) * self.correction_factor
@@ -1167,40 +1167,56 @@ class QComp(object):
         # Compute uncorrected discharge excluding the edges
         q_orig = top_q + middle_q + bottom_q
 
-        # Compute near-bed velocities
-        nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(u, v, depth, depth_cell_depth)
-        nb_speed = np.sqrt(nb_u**2 + nb_v**2)
-        nb_u_mean = np.nanmean(nb_u)
-        nb_v_mean = np.nanmean(nb_v)
-        nb_speed_mean = np.sqrt(nb_u_mean**2 + nb_v_mean**2)
-        moving_bed_speed_ens = moving_bed_speed * (nb_speed / nb_speed_mean)
-        u_mb = moving_bed_speed_ens * unit_nb_u
-        v_mb = moving_bed_speed_ens * unit_nb_v
+        if q_orig != 0:
+            # Compute near-bed velocities
+            nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(u, v, depth, depth_cell_depth)
+            nb_speed = np.sqrt(nb_u**2 + nb_v**2)
+            nb_u_mean = np.nanmean(nb_u)
+            nb_v_mean = np.nanmean(nb_v)
+            nb_speed_mean = np.sqrt(nb_u_mean**2 + nb_v_mean**2)
+            moving_bed_speed_ens = moving_bed_speed * (nb_speed / nb_speed_mean)
+            u_mb = moving_bed_speed_ens * unit_nb_u
+            v_mb = moving_bed_speed_ens * unit_nb_v
 
-        # Correct water velocities
-        u_adj = u + u_mb
-        v_adj = v + v_mb
+            # Correct water velocities
+            u_adj = u + u_mb
+            v_adj = v + v_mb
 
-        bt_u_adj = bt_u + u_mb
-        bt_v_adj = bt_v + v_mb
+            bt_u_adj = bt_u + u_mb
+            bt_v_adj = bt_v + v_mb
 
-        # Compute corrected cross product
-        xprod = QComp.cross_product(transect=trans_data)
-        xprod_in = QComp.cross_product(w_vel_x=u_adj,
-                                       w_vel_y=v_adj,
-                                       b_vel_x=bt_u_adj,
-                                       b_vel_y=bt_v_adj,
-                                       start_edge=trans_data.start_edge)
-        xprod[:, in_transect_idx] = xprod_in
+            # Compute corrected cross product
+            xprod = QComp.cross_product(transect=trans_data)
+            xprod_in = QComp.cross_product(w_vel_x=u_adj,
+                                           w_vel_y=v_adj,
+                                           b_vel_x=bt_u_adj,
+                                           b_vel_y=bt_v_adj,
+                                           start_edge=trans_data.start_edge)
+            xprod[:, in_transect_idx] = xprod_in
 
-        # Compute corrected discharges
-        q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
-        q_top = QComp.extrapolate_top(xprod=xprod, transect=trans_data, delta_t=delta_t)
-        q_bot = QComp.extrapolate_bot(xprod=xprod, transect=trans_data, delta_t=delta_t)
-        q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
+            # Compute corrected discharges
+            q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
+            trans_select = getattr(trans_data.depths, trans_data.depths.selected)
+            num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
+            q_top = extrapolate_top(xprod, trans_data.w_vel.valid_data[0, :, :],
+                                    num_top_method[trans_data.extrap.top_method],
+                                    trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                    trans_select.depth_cell_size_m,
+                                    trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                                    -1, 0.1667)
+            num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
+            q_bot = extrapolate_bot(xprod, trans_data.w_vel.valid_data[0, :, :],
+                                    num_bot_method[trans_data.extrap.bot_method],
+                                    trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                    trans_select.depth_cell_size_m,
+                                    trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                                    -1, 0.1667)
+            q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
 
-        # Compute correction factor
-        correction_factor = q_adj / q_orig
+            # Compute correction factor
+            correction_factor = q_adj / q_orig
+        else:
+            correction_factor = 1.0
 
         return correction_factor
         
@@ -1272,25 +1288,40 @@ class QComp(object):
 
             # Compute uncorrected discharge excluding the edges
             q_orig = top_q + middle_q + bottom_q
+            if q_orig != 0:
+                # Compute corrected discharge excluding edges
+                # Compute corrected cross product
+                xprod = QComp.cross_product(transect=trans_data)
+                xprod_in = QComp.cross_product(w_vel_x=u_adj,
+                                               w_vel_y=v_adj,
+                                               b_vel_x=bt_u_adj,
+                                               b_vel_y=bt_v_adj,
+                                               start_edge=trans_data.start_edge)
+                xprod[:, in_transect_idx] = xprod_in
 
-            # Compute corrected discharge excluding edges
-            # Compute corrected cross product
-            xprod = QComp.cross_product(transect=trans_data)
-            xprod_in = QComp.cross_product(w_vel_x=u_adj,
-                                           w_vel_y=v_adj,
-                                           b_vel_x=bt_u_adj,
-                                           b_vel_y=bt_v_adj,
-                                           start_edge=trans_data.start_edge)
-            xprod[:, in_transect_idx] = xprod_in
+                # Compute corrected discharges
+                q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
+                trans_select = getattr(trans_data.depths, trans_data.depths.selected)
+                num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
+                q_top = extrapolate_top(xprod, trans_data.w_vel.valid_data[0, :, :],
+                                               num_top_method[trans_data.extrap.top_method],
+                                               trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                               trans_select.depth_cell_size_m,
+                                               trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                                        -1, 0.1667)
+                num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
+                q_bot = extrapolate_bot(xprod, trans_data.w_vel.valid_data[0, :, :],
+                                                  num_bot_method[trans_data.extrap.bot_method],
+                                                  trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                                  trans_select.depth_cell_size_m,
+                                                  trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                                        -1, 0.1667)
+                q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
 
-            # Compute corrected discharges
-            q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
-            q_top = QComp.extrapolate_top(xprod=xprod, transect=trans_data, delta_t=delta_t)
-            q_bot = QComp.extrapolate_bot(xprod=xprod, transect=trans_data, delta_t=delta_t)
-            q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
-
-            # Compute correction factor
-            correction_factor = q_adj / q_orig
+                # Compute correction factor
+                correction_factor = q_adj / q_orig
+            else:
+                correction_factor = 1.0
 
             return correction_factor
 
