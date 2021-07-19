@@ -703,12 +703,35 @@ class TransectData(object):
             Ping_type for each ensemble, C - coherent, I - incoherent
         """
         ping_type = np.array([])
-        if hasattr(pd0_data.Cfg, 'lag_near_bottom'):
-            ping_temp = pd0_data.Cfg.lag_near_bottom > 0
-            ping_type = np.tile(['U'], ping_temp.shape)
-            ping_type[ping_temp == 0] = 'I'
-            ping_type[ping_temp == 1] = 'C'
 
+        firmware = str(pd0_data.Inst.firm_ver[0])
+        # RiverRay, RiverPro, and RioPro
+        if (firmware[:2] == '44') or (firmware[:2] == '56'):
+            if hasattr(pd0_data.Cfg, 'lag_near_bottom'):
+                ping_temp = pd0_data.Cfg.lag_near_bottom > 0
+                ping_type = np.tile(['U'], ping_temp.shape)
+                ping_type[ping_temp == 0] = 'I'
+                ping_type[ping_temp == 1] = 'C'
+
+        # StreamPro
+        elif firmware[:2] == '31':
+            if pd0_data.Cfg.wm[0] == 12:
+                ping_type = np.tile(['I'], pd0_data.Wt.vel_mps.shape[2])
+            elif pd0_data.Cfg.wm[0] == 13:
+                ping_type = np.tile(['C'], pd0_data.Wt.vel_mps.shape[2])
+            else:
+                ping_type = np.tile(['U'], pd0_data.Wt.vel_mps.shape[2])
+
+        # Rio Grande
+        elif firmware[:2] == '10':
+            if pd0_data.Cfg.wm[0] == 1 or pd0_data.Cfg.wm[0] == 12:
+                ping_type = np.tile(['I'], pd0_data.Wt.vel_mps.shape[2])
+            elif pd0_data.Cfg.wm[0] == 5 or pd0_data.Cfg.wm[0] == 8:
+                ping_type = np.tile(['C'], pd0_data.Wt.vel_mps.shape[2])
+            else:
+                ping_type = np.tile(['U'], pd0_data.Wt.vel_mps.shape[2])
+        else:
+            ping_type = np.tile(['U'], pd0_data.Wt.vel_mps.shape[2])
         return ping_type
 
     def sontek(self, rsdata, file_name):
