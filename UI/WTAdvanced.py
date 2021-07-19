@@ -49,6 +49,8 @@ class WTAdvanced(object):
         Grid specification for subplots
     wt_advanced_type_methods: dict
         Dictionary connecting to the plot type to the method to create the plot
+    ping_name: dict
+        Name of ping type for labeling colorbar and data cursor
     """
 
     def __init__(self, canvas):
@@ -80,6 +82,7 @@ class WTAdvanced(object):
         self.annot = []
         self.data_plotted = []
         self.gs = None
+        self.ping_name = None
         self.wt_advanced_type_methods = {'cb_speed_filtered_cc': self.speed_filtered_contour,
                                          'cb_speed_final_cc': self.speed_final_contour,
                                          'cb_projected_cc': self.projected_contour,
@@ -704,6 +707,7 @@ class WTAdvanced(object):
 
         # Plot data
         cmap = self.color_map
+        self.ping_name = ping_name
         self.plt_contour(x_plt_in=x_plt,
                          cell_plt_in=cell_plt,
                          data_plt_in=data_plt,
@@ -1798,7 +1802,8 @@ class WTAdvanced(object):
                         self.update_annot(ax_idx=n,
                                           x=event.xdata,
                                           y=event.ydata,
-                                          v=value)
+                                          v=value,
+                                          v_dict=self.ping_name)
 
                     # Annotation for time series data
                     elif self.data_plotted[n]['type'] == 'ts':
@@ -1834,7 +1839,7 @@ class WTAdvanced(object):
                     item.set_visible(False)
             self.canvas.draw_idle()
 
-    def update_annot(self, ax_idx, x, y, v=None):
+    def update_annot(self, ax_idx, x, y, v=None, v_dict=None):
         """Updates the location and text and makes visible the previously initialized and hidden annotation.
 
         Parameters
@@ -1887,13 +1892,22 @@ class WTAdvanced(object):
             # Format for time axis
             if self.x_axis_type == 'T':
                 x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
-                text = 'x: {}, y: {:.2f}, \n v: {:.1f}'.format(x_label, y, v)
+                if v_dict is None:
+                    text = 'x: {}, y: {:.2f}, \n v: {:.1f}'.format(x_label, y, v)
+                else:
+                    text = 'x: {}, y: {:.2f}, \n {}'.format(x_label, y, v_dict[v])
             # Format for ensemble axis
             elif self.x_axis_type == 'E':
-                text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
+                if v_dict is None:
+                    text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
+                else:
+                    text = 'x: {}, y: {:.2f}, \n {}'.format(int(round(x)), y, v_dict[v])
             # Format for length axis
             elif self.x_axis_type == 'L':
-                text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(x, y, v)
+                if v_dict is None:
+                    text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(x, y, v)
+                else:
+                    text = 'x: {}, y: {:.2f}, \n {}'.format(x, y, v_dict[v])
         # Annotation for time series
         else:
             # Format for time axis
