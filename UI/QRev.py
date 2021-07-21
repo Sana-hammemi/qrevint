@@ -4713,141 +4713,142 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_moving_bed
         reprocess_measurement = True
         tbl.blockSignals(True)
-        with self.wait_cursor():
-            # User valid
-            if column == 0:
-                if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
-                    self.meas.mb_tests[row].user_valid = False
-                    self.add_comment()
-                else:
-                    self.meas.mb_tests[row].user_valid = True
-                    self.add_comment()
 
-                self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                    moving_bed_tests=self.meas.mb_tests,
-                    boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
+        # User valid
+        if column == 0:
+            if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
+                self.meas.mb_tests[row].user_valid = False
+                self.add_comment()
+            else:
+                self.meas.mb_tests[row].user_valid = True
+                self.add_comment()
 
-            # Use to correct, manual override
-            if column == 1:
-                if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
-                    quality = tbl.item(row, 15).text()
-                    # Identify a moving-bed condition
+            self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                moving_bed_tests=self.meas.mb_tests,
+                boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-                    moving_bed_idx = []
-                    for n, test in enumerate(self.meas.mb_tests):
-                        if test.selected:
-                            if test.moving_bed == 'Yes':
-                                moving_bed_idx.append(n)
+        # Use to correct, manual override
+        if column == 1:
+            if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
+                quality = tbl.item(row, 15).text()
+                # Identify a moving-bed condition
 
-                    if quality == 'Manual':
-                        # Cancel Manual
-                        self.meas.mb_tests[row].use_2_correct = False
-                        self.meas.mb_tests[row].moving_bed = 'Unknown'
-                        self.meas.mb_tests[row].selected = False
-                        self.meas.mb_tests[row].test_quality = "Errors"
-                        self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                            moving_bed_tests=self.meas.mb_tests,
-                            boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
+                moving_bed_idx = []
+                for n, test in enumerate(self.meas.mb_tests):
+                    if test.selected:
+                        if test.moving_bed == 'Yes':
+                            moving_bed_idx.append(n)
 
-                    elif quality == 'Errors':
-                        # Manual override
-                        # Warn user and force acknowledgement before proceeding
-                        user_warning = QtWidgets.QMessageBox.question(self, 'Moving-Bed Test Manual Override',
-                                                                      'QRev has determined this moving-bed test has '
-                                                                      'critical errors and does not recommend using it '
-                                                                      'for correction. If you choose to use the test '
-                                                                      'anyway you will be required to justify its use.',
-                                                                      QtWidgets.QMessageBox.Ok |
-                                                                      QtWidgets.QMessageBox.Cancel,
-                                                                      QtWidgets.QMessageBox.Cancel)
-                        if user_warning == QtWidgets.QMessageBox.Ok:
-                            # Apply manual override
-                            self.add_comment()
-                            self.meas.mb_tests[row].use_2_correct = True
-                            self.meas.mb_tests[row].moving_bed = 'Yes'
-                            self.meas.mb_tests[row].selected = True
-                            self.meas.mb_tests[row].test_quality = "Manual"
-                        else:
-                            reprocess_measurement = False
-
-                    elif len(moving_bed_idx) > 0:
-                        if row in moving_bed_idx:
-                            if tbl.item(row, 1).checkState() == QtCore.Qt.Checked:
-                                self.meas.mb_tests[row].use_2_correct = False
-                                self.add_comment()
-                            else:
-                                # Apply setting
-                                self.meas.mb_tests[row].use_2_correct = True
-
-                                # Check to make sure the selected test are of the same type
-                                test_type = []
-                                test_quality = []
-                                for test in self.meas.mb_tests:
-                                    if test.selected:
-                                        test_type.append(test.type)
-                                        test_quality = test.test_quality
-                                unique_types = set(test_type)
-                                if len(unique_types) == 1:
-
-                                    # Check for errors
-                                    if 'Errors' not in test_quality:
-
-                                        # Multiple loops not allowed
-                                        if test_type == 'Loop' and len(test_type) > 1:
-                                            self.meas.mb_tests[row].use_2_correct = False
-                                            reprocess_measurement = False
-                                            self.popup_message('Only one loop can be applied. Select the best loop.')
-
-                                else:
-                                    # Mixing of stationary and loop tests are not allowed
-                                    self.meas.mb_tests[row].use_2_correct = False
-                                    reprocess_measurement = False
-                                    self.popup_message('Application of mixed moving-bed test types is not allowed.' +
-                                                       'Select only one loop or one or more stationary tests.')
-                        else:
-                            self.popup_message('This moving-bed test is not being used. ' +
-                                               'Only those tests with Bold file names can be used.')
-
-                    else:
-                        # No moving-bed, so no moving-bed correction is applied
-                        reprocess_measurement = False
-                        self.popup_message('There is no moving-bed. Correction cannot be applied.')
-                else:
-                    self.popup_message('Bottom track is not the selected reference. A moving-bed correction cannot' +
-                                       ' be applied.')
-
-            # Use GPS for Test
-            elif column == 2:
-                # Determine if selected test has been processed using GPS
-                if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
-                    tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
-                    reprocess_measurement = False
-                    self.change = False
-                else:
-                    if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
-                        self.meas.mb_tests[row].change_ref(ref='GPS')
-                    else:
-                        self.meas.mb_tests[row].change_ref(ref='BT')
+                if quality == 'Manual':
+                    # Cancel Manual
+                    self.meas.mb_tests[row].use_2_correct = False
+                    self.meas.mb_tests[row].moving_bed = 'Unknown'
+                    self.meas.mb_tests[row].selected = False
+                    self.meas.mb_tests[row].test_quality = "Errors"
                     self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
                         moving_bed_tests=self.meas.mb_tests,
                         boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-            # Data to plot
-            elif column == 3:
-                self.mb_plots(idx=row)
-                self.mb_row = row
+                elif quality == 'Errors':
+                    # Manual override
+                    # Warn user and force acknowledgement before proceeding
+                    user_warning = QtWidgets.QMessageBox.question(self, 'Moving-Bed Test Manual Override',
+                                                                  'QRev has determined this moving-bed test has '
+                                                                  'critical errors and does not recommend using it '
+                                                                  'for correction. If you choose to use the test '
+                                                                  'anyway you will be required to justify its use.',
+                                                                  QtWidgets.QMessageBox.Ok |
+                                                                  QtWidgets.QMessageBox.Cancel,
+                                                                  QtWidgets.QMessageBox.Cancel)
+                    if user_warning == QtWidgets.QMessageBox.Ok:
+                        # Apply manual override
+                        self.add_comment()
+                        self.meas.mb_tests[row].use_2_correct = True
+                        self.meas.mb_tests[row].moving_bed = 'Yes'
+                        self.meas.mb_tests[row].selected = True
+                        self.meas.mb_tests[row].test_quality = "Manual"
+                    else:
+                        reprocess_measurement = False
+
+                elif len(moving_bed_idx) > 0:
+                    if row in moving_bed_idx:
+                        if tbl.item(row, 1).checkState() == QtCore.Qt.Checked:
+                            self.meas.mb_tests[row].use_2_correct = False
+                            self.add_comment()
+                        else:
+                            # Apply setting
+                            self.meas.mb_tests[row].use_2_correct = True
+
+                            # Check to make sure the selected test are of the same type
+                            test_type = []
+                            test_quality = []
+                            for test in self.meas.mb_tests:
+                                if test.selected:
+                                    test_type.append(test.type)
+                                    test_quality = test.test_quality
+                            unique_types = set(test_type)
+                            if len(unique_types) == 1:
+
+                                # Check for errors
+                                if 'Errors' not in test_quality:
+
+                                    # Multiple loops not allowed
+                                    if test_type == 'Loop' and len(test_type) > 1:
+                                        self.meas.mb_tests[row].use_2_correct = False
+                                        reprocess_measurement = False
+                                        self.popup_message('Only one loop can be applied. Select the best loop.')
+
+                            else:
+                                # Mixing of stationary and loop tests are not allowed
+                                self.meas.mb_tests[row].use_2_correct = False
+                                reprocess_measurement = False
+                                self.popup_message('Application of mixed moving-bed test types is not allowed.' +
+                                                   'Select only one loop or one or more stationary tests.')
+                    else:
+                        self.popup_message('This moving-bed test is not being used. ' +
+                                           'Only those tests with Bold file names can be used.')
+
+                else:
+                    # No moving-bed, so no moving-bed correction is applied
+                    reprocess_measurement = False
+                    self.popup_message('There is no moving-bed. Correction cannot be applied.')
+            else:
+                self.popup_message('Bottom track is not the selected reference. A moving-bed correction cannot' +
+                                   ' be applied.')
+
+        # Use GPS for Test
+        elif column == 2:
+            # Determine if selected test has been processed using GPS
+            if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
+                tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
                 reprocess_measurement = False
                 self.change = False
+            else:
+                if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
+                    self.meas.mb_tests[row].change_ref(ref='GPS')
+                else:
+                    self.meas.mb_tests[row].change_ref(ref='BT')
+                self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                    moving_bed_tests=self.meas.mb_tests,
+                    boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-            # If changes were made reprocess the measurement
-            if reprocess_measurement:
+        # Data to plot
+        elif column == 3:
+            self.mb_plots(idx=row)
+            self.mb_row = row
+            reprocess_measurement = False
+            self.change = False
+
+        # If changes were made reprocess the measurement
+        if reprocess_measurement:
+            with self.wait_cursor():
                 self.meas.compute_discharge()
                 self.meas.compute_uncertainty()
                 self.meas.qa.moving_bed_qa(self.meas)
                 self.change = True
 
-            self.update_mb_table()
-            self.mb_comments_messages()
+        self.update_mb_table()
+        self.mb_comments_messages()
 
         tbl.blockSignals(False)
         self.tab_mbt_2_data.setFocus()

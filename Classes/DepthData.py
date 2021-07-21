@@ -493,7 +493,7 @@ class DepthData(object):
                 x = np.nancumsum(transect.date_time.ens_duration_sec)
 
             multi_processing = False
-            start = time.perf_counter()
+            # start = time.perf_counter()
             if multi_processing:
                 with concurrent.futures.ProcessPoolExecutor() as executor:
                     results = executor.map(self.compute_smooth, depth, depth_filtered, it.repeat(x))
@@ -579,7 +579,7 @@ class DepthData(object):
         
         # Apply filter
         for j in range(n_beams):
-            if np.nansum(self.smooth_upper_limit[j]) > 0:
+            if np.nansum(self.smooth_upper_limit[j, :]) > 0:
                 bad_idx = np.where(
                     np.logical_or(nan_greater(depth[j], self.smooth_upper_limit[j]),
                                   nan_less(depth[j], self.smooth_lower_limit[j])))[0]
@@ -618,6 +618,7 @@ class DepthData(object):
 
                 # Compute inner quartile range
                 # fill_array = DepthData.run_iqr(half_width, depth_res)
+                half_width = np.floor(len(depth) / 2)
                 fill_array = run_iqr(half_width, depth_res)
 
                 # Compute filter criteria and apply appropriate
@@ -630,7 +631,7 @@ class DepthData(object):
                 # Compute limits
                 upper_limit = depth_smooth + criteria
                 lower_limit = depth_smooth - criteria
-
+                
                 bad_idx = np.where(
                     np.logical_or(nan_greater(depth, upper_limit), nan_less(depth, lower_limit)))[0]
                 # Update depth matrix
