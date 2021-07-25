@@ -618,7 +618,6 @@ class DepthData(object):
 
                 # Compute inner quartile range
                 # fill_array = DepthData.run_iqr(half_width, depth_res)
-                half_width = np.floor(len(depth) / 2)
                 fill_array = run_iqr(half_width, depth_res)
 
                 # Compute filter criteria and apply appropriate
@@ -631,7 +630,7 @@ class DepthData(object):
                 # Compute limits
                 upper_limit = depth_smooth + criteria
                 lower_limit = depth_smooth - criteria
-                
+
                 bad_idx = np.where(
                     np.logical_or(nan_greater(depth, upper_limit), nan_less(depth, lower_limit)))[0]
                 # Update depth matrix
@@ -1031,3 +1030,4 @@ class DepthData(object):
             exceeded = depth_ratio > 1.75
             exceeded_ens = np.nansum(exceeded, 0)
             self.valid_beams[n, exceeded_ens > 0] = False
+

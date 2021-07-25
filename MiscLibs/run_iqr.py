@@ -11,7 +11,7 @@ def run_iqr(half_width, data):
     points for computing the Innerquartile Range are selected before and
     after the target data point, but no including the target data point.
     Near the ends of the series the number of points before or after are reduced.
-    Nan in the data are counted as points.  The IQR is computed on the slected
+    Nan in the data are counted as points.  The IQR is computed on the selected
     subset of points.  The process occurs for each point in the provided column vector.
     A column vector with the computed IQR at each point is returned.
 
@@ -49,10 +49,6 @@ def run_iqr(half_width, data):
         else:
             sample = np.hstack((data[n - half_width:n], data[n + 1:n + half_width + 1]))
 
-            while len(sample) < 4:
-                width = half_width + 1
-                sample = np.hstack((data[n - width:n], data[n + 1:n + width + 1]))
-
         iqr_array.append(iqr(sample))
 
     return np.array(iqr_array)
@@ -77,13 +73,13 @@ def iqr(data_1d):
     # Remove nan elements
     idx = np.where(np.logical_not(np.isnan(data_1d)))[0]
     data_1d = data_1d[idx]
-    if len(data_1d) < 2:
-        sp_iqr = np.nan
-    else:
-        # Compute statistics
-        q25 = compute_quantile(data_1d, 0.25)
-        q75 = compute_quantile(data_1d, 0.75)
-        sp_iqr = q75 - q25
+    # if len(data_1d) < 2:
+    #     sp_iqr = np.nan
+    # else:
+    # Compute statistics
+    q25 = compute_quantile(data_1d, 0.25)
+    q75 = compute_quantile(data_1d, 0.75)
+    sp_iqr = q75 - q25
 
     return sp_iqr
 

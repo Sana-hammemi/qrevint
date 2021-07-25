@@ -5,6 +5,7 @@ import shutil
 import simplekml
 import webbrowser
 import getpass
+import json
 import numpy as np
 import multiprocessing as mp
 import scipy.io as sio
@@ -409,6 +410,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
 
+        # Get agency optional settings
+        options_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'QRev_Options.json')
+        if os.path.isfile(options_file):
+            # Read json into dictionary
+            with open(options_file, 'r') as f:
+                self.agency_options = json.load(f)
+
         # Setting file for settings to carry over from one session to the next
         # (examples: Folder, UnitsID)
         self.settingsFile = 'QRev_Settings'
@@ -418,11 +426,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Set units based on previous session or default to English
         try:
-            units_id = self.sticky_settings.get('UnitsID')
+            if self.agency_options['Units']['show']:
+                units_id = self.sticky_settings.get('UnitsID')
+            else:
+                units_id = self.agency_options['Units']['default']
             if not units_id:
-                self.sticky_settings.set('UnitsID', 'English')
+                self.sticky_settings.set('UnitsID', self.agency_options['Units']['default'])
         except KeyError:
-            self.sticky_settings.new('UnitsID', 'English')
+            self.sticky_settings.new('UnitsID', self.agency_options['Units']['default'])
         self.units = units_conversion(units_id=self.sticky_settings.get('UnitsID'))
 
         # Save all transects by default
@@ -430,51 +441,75 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Use unweighted medians for extrapolation by default
         try:
-            wght = self.sticky_settings.get('UseWeighted')
+            if self.agency_options['ExtrapWeighting']['show']:
+                wght = self.sticky_settings.get('UseWeighted')
+            else:
+                wght = self.agency_options['ExtrapWeighting']['default']
             self.use_weighted = wght
         except KeyError:
-            self.sticky_settings.new('UseWeighted', False)
-            self.use_weighted = False
+            self.sticky_settings.new('UseWeighted', self.agency_options['ExtrapWeighting']['default'])
+            self.use_weighted = self.agency_options['ExtrapWeighting']['default']
 
         # Use whole measurement or transects for error and vertical velocity filters
         try:
-            use_meas = self.sticky_settings.get('UseMeasurementThresholds')
+            if self.agency_options['FilterUsingMeasurement']['show']:
+                use_meas = self.sticky_settings.get('UseMeasurementThresholds')
+            else:
+                use_meas = self.agency_options['FilterUsingMeasurement']['default']
             self.use_measurement_thresholds = use_meas
         except KeyError:
-            self.sticky_settings.new('UseMeasurementThresholds', False)
-            self.use_measurement_thresholds = False
+            self.sticky_settings.new('UseMeasurementThresholds', self.agency_options['FilterUsingMeasurement']['default'])
+            self.use_measurement_thresholds = self.agency_options['FilterUsingMeasurement']['default']
 
         # Stylesheet setting
         try:
-            ss = self.sticky_settings.get('StyleSheet')
-            self.save_stylesheet = ss
+            if self.agency_options['SaveStyleSheet']['show']:
+                ss = self.sticky_settings.get('StyleSheet')
+                self.save_stylesheet = ss
+            else:
+                self.save_stylesheet = self.agency_options['SaveStyleSheet']['default']
         except KeyError:
-            self.sticky_settings.new('StyleSheet', False)
-            self.save_stylesheet = False
+            self.sticky_settings.new('StyleSheet', self.agency_options['SaveStyleSheet']['default'])
+            self.save_stylesheet = self.agency_options['SaveStyleSheet']['default']
 
         # Prompt for user rating
         try:
-            ss = self.sticky_settings.get('UserRating')
-            self.rating_prompt = ss
+            if self.agency_options['RatingPrompt']['show']:
+                ss = self.sticky_settings.get('UserRating')
+                self.rating_prompt = ss
+            else:
+                self.rating_prompt = self.agency_options['RatingPrompt']['default']
         except KeyError:
-            self.sticky_settings.new('UserRating', False)
-            self.rating_prompt = False
+            self.sticky_settings.new('UserRating', self.agency_options['RatingPrompt']['default'])
+            self.rating_prompt = self.agency_options['RatingPrompt']['default']
 
         # Color map
         try:
-            ss = self.sticky_settings.get('ColorMap')
-            self.color_map = ss
+            if self.agency_options['ColorMap']['show']:
+                ss = self.sticky_settings.get('ColorMap')
+                self.color_map = ss
+            else:
+                self.color_map = self.agency_options['ColorMap']['default']
         except KeyError:
-            self.sticky_settings.new('ColorMap', 'viridis')
-            self.color_map = 'viridis'
+            self.sticky_settings.new('ColorMap', self.agency_options['ColorMap']['default'])
+            self.color_map = self.agency_options['ColorMap']['default']
 
         # Uncertainty model
         try:
-            ss = self.sticky_settings.get('Oursin')
-            self.run_oursin = ss
+            if self.agency_options['Uncertainty']['show']:
+                ss = self.sticky_settings.get('Oursin')
+                self.run_oursin = ss
+            elif self.agency_options['Uncertainty']['default'] == 'Oursin':
+                self.run_oursin = True
+            else:
+                self.run_oursin = False
+
         except KeyError:
-            self.sticky_settings.new('Oursin', False)
-            self.run_oursin = False
+            if self.agency_options['Uncertainty']['default'] == 'Oursin':
+                self.run_oursin = True
+            else:
+                self.run_oursin = False
+            self.sticky_settings.new('Oursin', self.run_oursin)
 
         if self.run_oursin:
             self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
@@ -484,11 +519,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Observed no moving-bed
         try:
-            ss = self.sticky_settings.get('AllowNoMB')
-            self.allow_observed_no_moving_bed = ss
+            if self.agency_options['MovingBedObservation']['show']:
+                ss = self.sticky_settings.get('AllowNoMB')
+                self.allow_observed_no_moving_bed = ss
+            else:
+                self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
         except KeyError:
-            self.sticky_settings.new('AllowNoMB', False)
-            self.allow_observed_no_moving_bed = False
+            self.sticky_settings.new('AllowNoMB', self.agency_options['MovingBedObservation']['default'])
+            self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
 
         self.manual_computational_settings = {'run_oursin': self.run_oursin,
                                               'use_measurement_thresholds': self.use_measurement_thresholds,
@@ -1203,6 +1241,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             options = Options()
 
             # Set dialog to current settings
+            if not self.agency_options['Units']['show']:
+                options.gb_units.hide()
             if self.units['ID'] == 'SI':
                 options.rb_si.setChecked(True)
             else:
@@ -1213,21 +1253,29 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 options.rb_checked.setChecked(True)
 
+            if not self.agency_options['SaveStyleSheet']['show']:
+                options.cb_stylesheet.hide()
             if self.save_stylesheet:
                 options.cb_stylesheet.setChecked(True)
             else:
                 options.cb_stylesheet.setChecked(False)
 
+            if not self.agency_options['ExtrapWeighting']['show']:
+                options.gb_extrap_weighted.hide()
             if self.use_weighted:
                 options.cb_weighted_extrap.setChecked(True)
             else:
                 options.cb_weighted_extrap.setChecked(False)
 
+            if not self.agency_options['RatingPrompt']['show']:
+                options.cb_rating.hide()
             if self.rating_prompt:
                 options.cb_rating.setChecked(True)
             else:
                 options.cb_rating.setChecked(False)
 
+            if not self.agency_options['Uncertainty']['show']:
+                options.gb_uncertainty.hide()
             if self.run_oursin:
                 options.rb_oursin_u.setChecked(True)
             else:
@@ -1237,16 +1285,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.use_measurement_thresholds = \
                     self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
 
+            if not self.agency_options['FilterUsingMeasurement']['show']:
+                options.gb_filters.hide()
             if self.use_measurement_thresholds:
                 options.rb_filter_meas.setChecked(True)
             else:
                 options.rb_filter_transect.setChecked(True)
 
+            if not self.agency_options['ColorMap']['show']:
+                options.gb_color_map.hide()
             if self.color_map == 'viridis':
                 options.rb_viridis.setChecked(True)
             else:
                 options.rb_jet.setChecked(True)
 
+            if not self.agency_options['MovingBedObservation']['show']:
+                options.gb_moving_bed_option.hide()
             if self.allow_observed_no_moving_bed:
                 options.cb_allow_manual_no_mb.setChecked(True)
             else:
