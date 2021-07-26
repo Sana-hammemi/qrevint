@@ -2,10 +2,10 @@ import numpy as np
 from Classes.TransectData import TransectData
 from Classes.BoatStructure import BoatStructure
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_greater
-from profilehooks import profile
+# from profilehooks import profile
 from DischargeFunctions.top_discharge_extrapolation import extrapolate_top
 from DischargeFunctions.bottom_discharge_extrapolation import extrapolate_bot
-import time
+
 
 class QComp(object):
     """Computes the discharge for each transect.
@@ -108,7 +108,7 @@ class QComp(object):
             # associated code is required to maintain compatibility with WinRiver II discharge computations.
             
             # Determine valid ensembles
-            valid_ens = np.any(np.isnan(x_prod) == False) 
+            valid_ens = np.any(np.logical_not(np.isnan(x_prod)))
             valid_ens = valid_ens[in_transect_idx]
             
             # Compute the ensemble duration using TRDI approach of expanding delta time to compensate
@@ -145,11 +145,16 @@ class QComp(object):
 
         # Compute the bottom discharge
         num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
-        self.bottom_ens = extrapolate_bot(x_prod, data_in.w_vel.valid_data[0, :, :],
-                                         num_bot_method[data_in.extrap.bot_method],
-                                         data_in.extrap.exponent, data_in.in_transect_idx, trans_select.depth_cell_size_m,
-                                         trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                         num_bot_method[bot_method], exponent)
+        self.bottom_ens = extrapolate_bot(x_prod,
+                                          data_in.w_vel.valid_data[0, :, :],
+                                          num_bot_method[data_in.extrap.bot_method],
+                                          data_in.extrap.exponent,
+                                          data_in.in_transect_idx,
+                                          trans_select.depth_cell_size_m,
+                                          trans_select.depth_cell_depth_m,
+                                          trans_select.depth_processed_m, delta_t,
+                                          num_bot_method[bot_method],
+                                          exponent)
         self.bottom = np.nansum(self.bottom_ens)
 
         # Compute interpolated cell and ensemble discharge from computed
@@ -177,6 +182,7 @@ class QComp(object):
         # way the meas object is created.
 
         # Moving-bed corrections are only applied to bottom track referenced computations
+        mb_type = None
         if data_in.boat_vel.selected == 'bt_vel':
             if moving_bed_data is not None:
 
@@ -311,7 +317,7 @@ class QComp(object):
 
         # Compute the discharge in each ensemble
         q_ensemble = self.top_ens + self.middle_ens + self.bottom_ens
-        valid_ens = np.where(np.isnan(q_ensemble) == False)[0]
+        valid_ens = np.where(np.logical_not(np.isnan(q_ensemble)))[0]
         if len(valid_ens) > 1:
             idx = np.where(np.isnan(q_ensemble))[0]
 
@@ -338,8 +344,8 @@ class QComp(object):
                         q_mono[dup[1::]] = np.nan
                         x_mono[dup[1::]] = np.nan
 
-                valid_q_mono = np.isnan(q_mono) == False
-                valid_x_mono = np.isnan(x_mono) == False
+                valid_q_mono = np.logical_not(np.isnan(q_mono))
+                valid_x_mono = np.logical_not(np.isnan(x_mono))
                 valid = np.all(np.vstack([valid_q_mono, valid_x_mono]), 0)
 
                 # Interpolate unit q
@@ -548,9 +554,9 @@ class QComp(object):
             if num_edge_ens > len(valid_ens):
                 num_edge_ens = len(valid_ens)
             if edge_loc.lower() == transect.start_edge.lower():
-                edge_idx = np.where(valid_ens == True)[0][0:num_edge_ens]
+                edge_idx = np.where(valid_ens)[0][0:num_edge_ens]
             else:
-                edge_idx = np.where(valid_ens == True)[0][-num_edge_ens::]
+                edge_idx = np.where(valid_ens)[0][-num_edge_ens::]
 
         # Sontek Method
         else:
@@ -766,7 +772,7 @@ class QComp(object):
             y_profile = np.nanmean(y_vel[:, valid], 1)
 
             # Find first valid cell in profile
-            idx = np.where(np.isnan(x_profile) == False)[0]
+            idx = np.where(np.logical_not(np.isnan(x_profile)))[0]
             if len(idx) > 0:
                 idx_first_valid_cell = idx[0]
 
@@ -812,7 +818,7 @@ class QComp(object):
 
                 # Compute the number of cells above the side lobe cutoff
                 # remaining_depth = sl_depth - cell_depth_edge[idx_first_valid_cell]
-                idx = np.where(np.isnan(cell_size) == False)[0]
+                idx = np.where(np.logical_not(np.isnan(cell_size)))[0]
                 # TODO this is not consistent with Matlab code
                 n_cells = 0
                 if len(idx) > 0:
@@ -826,13 +832,13 @@ class QComp(object):
                     x_profile[not valid_idx] = np.nan
                     y_profile[not valid_idx] = np.nan
                 else:
-                    idx_last_valid_cell = np.where(np.isnan(x_profile[:idx_last_valid_cell] == False))[0][0]
+                    idx_last_valid_cell = np.where(np.logical_not(np.isnan(x_profile[:idx_last_valid_cell])))[0][0]
                     # Mark the cells in the profile below the sidelobe invalid
                     x_profile[(idx_last_valid_cell+1):] = np.nan
                     y_profile[(idx_last_valid_cell + 1):] = np.nan
 
                 # Find the top most 3 valid cells
-                idx_first_3_valid_cells = np.where(np.isnan(x_profile) == False)[0][:3]
+                idx_first_3_valid_cells = np.where(np.logical_not(np.isnan(x_profile)))[0][:3]
 
                 # Compute the mean measured velocity components for the edge profile
                 x_profile_mean = np.nanmean(x_profile)
@@ -854,7 +860,7 @@ class QComp(object):
                 z_edge = depth_avg - cell_depth_edge
                 z_edge[idx_last_valid_cell+1:] = np.nan
                 z_edge[z_edge > 0] = np.nan
-                idx_last_valid_cell = np.where(np.isnan(z_edge) == False)[0][-1]
+                idx_last_valid_cell = np.where(np.logical_not(np.isnan(z_edge)))[0][-1]
                 bot_rng_edge = depth_avg - cell_depth_edge[idx_last_valid_cell] - 0.5 * \
                     cell_size_edge[idx_last_valid_cell]
 
@@ -997,8 +1003,8 @@ class QComp(object):
                 depth_cell_size = transect.depths.bt_depths.depth_cell_size_m[:, selected_ensemble]
                 depth_cell_depth = transect.depths.bt_depths.depth_cell_depth_m[:, selected_ensemble]
                 depth = transect.depths.bt_depths.depth_processed_m[:, selected_ensemble]
-                depth_cell_size[np.isnan(v_x) == True] = np.nan
-                depth_cell_depth[np.isnan(v_x) == True] = np.nan
+                depth_cell_size[np.isnan(v_x)] = np.nan
+                depth_cell_depth[np.isnan(v_x)] = np.nan
 
                 # Compute projected velocity profile for an ensemble
                 v_x_avg = np.nansum(v_x * depth_cell_size) / np.nansum(depth_cell_size)
@@ -1009,7 +1015,7 @@ class QComp(object):
 
                 # Compute z value for each cell
                 z = (depth - depth_cell_depth)
-                z[np.isnan(v_projected_mag) == True] = np.nan
+                z[np.isnan(v_projected_mag)] = np.nan
 
                 # Compute coefficient for 1/6th power curve
                 b = 1.0 / 6.0
@@ -1303,18 +1309,20 @@ class QComp(object):
                 q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
                 trans_select = getattr(trans_data.depths, trans_data.depths.selected)
                 num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
-                q_top = extrapolate_top(xprod, trans_data.w_vel.valid_data[0, :, :],
-                                               num_top_method[trans_data.extrap.top_method],
-                                               trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                               trans_select.depth_cell_size_m,
-                                               trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                q_top = extrapolate_top(xprod,
+                                        trans_data.w_vel.valid_data[0, :, :],
+                                        num_top_method[trans_data.extrap.top_method],
+                                        trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                        trans_select.depth_cell_size_m,
+                                        trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
                                         -1, 0.1667)
                 num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
-                q_bot = extrapolate_bot(xprod, trans_data.w_vel.valid_data[0, :, :],
-                                                  num_bot_method[trans_data.extrap.bot_method],
-                                                  trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                                  trans_select.depth_cell_size_m,
-                                                  trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                q_bot = extrapolate_bot(xprod,
+                                        trans_data.w_vel.valid_data[0, :, :],
+                                        num_bot_method[trans_data.extrap.bot_method],
+                                        trans_data.extrap.exponent, trans_data.in_transect_idx,
+                                        trans_select.depth_cell_size_m,
+                                        trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
                                         -1, 0.1667)
                 q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
 
@@ -1366,7 +1374,7 @@ class QComp(object):
         v_mean = np.tile([np.nan], n_ensembles)
         speed_near_bed = np.tile([np.nan], n_ensembles)
         for n in range(n_ensembles):
-            idx = np.where(np.isnan(u[:, n]) == False)[0]
+            idx = np.where(np.logical_not(np.isnan(u[:, n])))[0]
             if len(idx) > 0:
                 idx = idx[-2:]
 
@@ -1585,10 +1593,10 @@ class QComp(object):
         z = np.subtract(depth_ens, cell_depth)
 
         # Use only valid data
-        valid_data = np.isnan(xprod[:, in_transect_idx]) == False
-        z[valid_data == False] = np.nan
-        cell_size[valid_data == False] = np.nan
-        cell_depth[valid_data == False] = np.nan
+        valid_data = np.logical_not(np.isnan(xprod[:, in_transect_idx]))
+        z[np.logical_not(valid_data)] = np.nan
+        cell_size[np.logical_not(valid_data)] = np.nan
+        cell_depth[np.logical_not(valid_data)] = np.nan
 
         # Compute top discharge
         q_top = QComp.discharge_top(top_method, exponent, idx_top, idx_top3, top_rng,
@@ -1639,8 +1647,8 @@ class QComp(object):
         if top_method == 'Power':
             numerator = ((exponent + 1) * np.nansum(component * cell_size, 0))
             denominator = np.nansum(((z + 0.5 * cell_size)**(exponent+1)) - ((z - 0.5 * cell_size)**(exponent+1)), 0)
-            coef = np.divide(numerator, denominator, where=denominator!=0)
-            coef[denominator==0] = np.nan
+            coef = np.divide(numerator, denominator, where=denominator != 0)
+            coef[denominator == 0] = np.nan
             top_value = delta_t * (coef / (exponent + 1)) * \
                 (depth_ens**(exponent + 1) - (depth_ens-top_rng)**(exponent + 1))
 
@@ -1655,7 +1663,7 @@ class QComp(object):
         # Top 3-point extrapolation
         elif top_method == '3-Point':
             # Determine number of bins available in each profile
-            valid_data = np.isnan(component) == False
+            valid_data = np.logical_not(np.isnan(component))
             n_bins = np.nansum(valid_data, 0)
             # Determine number of ensembles
             n_ensembles = len(delta_t)
@@ -1706,7 +1714,7 @@ class QComp(object):
 
         # Get data from transect object
         valid_data1 = np.copy(transect.w_vel.valid_data[0, :, :])
-        valid_data2 = np.isnan(xprod) == False
+        valid_data2 = np.logical_not(np.isnan(xprod))
         valid_data = valid_data1 * valid_data2
         trans_select = getattr(transect.depths, transect.depths.selected)
         cell_size = trans_select.depth_cell_size_m
@@ -1721,7 +1729,7 @@ class QComp(object):
         # Loop through ensembles
         for n in range(n_ensembles):
             # Identify topmost 1 and 3 valid cells
-            idx_temp = np.where(np.isnan(xprod[:, n]) == False)[0]
+            idx_temp = np.where(np.logical_not(np.isnan(xprod[:, n])))[0]
             if len(idx_temp) > 0:
                 idx_top[n] = idx_temp[0]
                 if len(idx_temp) > 2:
@@ -1777,11 +1785,11 @@ class QComp(object):
 
         # Compute z
         z = np.subtract(depth_ens, cell_depth)
-        valid_data = np.isnan(xprod) == False
-        z[valid_data == False] = np.nan
+        valid_data = np.logical_not(np.isnan(xprod))
+        z[np.logical_not(valid_data)] = np.nan
         z[nan_less(z, 0)] = np.nan
-        cell_size[valid_data == False] = np.nan
-        cell_depth[valid_data == False] = np.nan
+        cell_size[np.logical_not(valid_data)] = np.nan
+        cell_depth[np.logical_not(valid_data)] = np.nan
         # Compute bottom discharge
         q_bot = QComp.discharge_bot(bot_method, exponent, idx_bot, bot_rng, xprod,
                                     cell_size, cell_depth, depth_ens, delta_t, z)
@@ -1829,7 +1837,7 @@ class QComp(object):
         if bot_method == 'Power':
             numerator = ((exponent+1) * np.nansum(component * cell_size, 0))
             denominator = np.nansum(((z + 0.5 * cell_size)**(exponent + 1)) - (z - 0.5 * cell_size)**(exponent + 1), 0)
-            coef = np.divide(numerator, denominator, where=denominator!=0)
+            coef = np.divide(numerator, denominator, where=denominator != 0)
             coef[denominator == 0] = np.nan
 
         # Bottom no slip extrapolation
@@ -1838,7 +1846,7 @@ class QComp(object):
             # the last valid depth cell are used to compute the no slip power fit
             cutoff_depth = 0.8 * depth_ens
             depth_ok = (nan_greater(cell_depth, np.tile(cutoff_depth, (cell_depth.shape[0], 1))))
-            component_ok = np.isnan(component) == False
+            component_ok = np.logical_not(np.isnan(component))
             use_ns = depth_ok * component_ok
             for j in range(len(delta_t)):
                 if idx_bot[j] >= 0:
@@ -1847,13 +1855,13 @@ class QComp(object):
             # Create cross product and z arrays for the data to be used in
             # no slip computations
             component_ns = np.copy(component)
-            component_ns[use_ns == False] = np.nan
+            component_ns[np.logical_not(use_ns)] = np.nan
             z_ns = np.copy(z)
-            z_ns[use_ns == False] = np.nan
+            z_ns[np.logical_not(use_ns)] = np.nan
             numerator = ((exponent + 1) * np.nansum(component_ns * cell_size, 0))
             denominator = np.nansum(((z_ns + 0.5 * cell_size) ** (exponent + 1))
                                     - ((z_ns - 0.5 * cell_size) ** (exponent + 1)), 0)
-            coef = np.divide(numerator, denominator, where=denominator!=0)
+            coef = np.divide(numerator, denominator, where=denominator != 0)
             coef[denominator == 0] = np.nan
 
         # Compute the bottom discharge of each profile
@@ -1884,7 +1892,7 @@ class QComp(object):
         # Identify valid data
         in_transect_idx = transect.in_transect_idx
         valid_data1 = np.copy(transect.w_vel.valid_data[0, :, in_transect_idx].T)
-        valid_data2 = np.isnan(x_prod) == False
+        valid_data2 = np.logical_not(np.isnan(x_prod))
         valid_data = valid_data1 * valid_data2
 
         # Assign transect properties to local variables

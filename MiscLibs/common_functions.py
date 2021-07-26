@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.stats as sp
-from numba import njit
 
 
 def cosd(angle):
@@ -56,9 +55,9 @@ def cart2pol(x, y):
 
     Parameters
     ----------
-    x: float
+    x: np.array(float)
         x coordinate
-    y: float
+    y: np.array(float)
         y coordinate
 
     Returns
@@ -80,9 +79,9 @@ def pol2cart(phi, rho):
 
         Parameters
         ----------
-        phi: float
+        phi: np.array(float)
             Angle in radians
-        rho: float
+        rho: np.array(float)
             Magnitude
 
         Returns
@@ -122,7 +121,7 @@ def iqr(data):
         data_1d = data
 
     # Remove nan elements
-    idx = np.where(np.isnan(data_1d) == False)[0]
+    idx = np.where(np.logical_not(np.isnan(data_1d)))[0]
     data_1d = data_1d[idx]
 
     # Compute statistics
@@ -130,6 +129,7 @@ def iqr(data):
     sp_iqr = q75 - q25
 
     return sp_iqr
+
 
 def iqr_2d(data):
     """This function computes the iqr consistent with Matlab
@@ -148,7 +148,7 @@ def iqr_2d(data):
 
     # Remove nan elements
     data = np.array(data)
-    idx = np.where(np.isnan(data) == False)[0]
+    idx = np.where(np.logical_not(np.isnan(data)))[0]
     data = data[idx]
 
     # Compute statistics
@@ -308,7 +308,7 @@ def checked_idx(transects):
     return checked
 
 
-def units_conversion(units_id='SI') -> float:
+def units_conversion(units_id='SI'):
     """Computes the units conversion from SI units used internally to the
     desired display units.
 
@@ -382,7 +382,6 @@ def convert_temperature(temp_in, units_in, units_out) -> float:
     return temp_out
 
 
-# @njit
 def nan_less_equal(data1, data2) -> bool:
     """Computes data1 <= data2 and sets all np.nan comparisons to False.
 
@@ -404,8 +403,7 @@ def nan_less_equal(data1, data2) -> bool:
     return d3 >= 0
 
 
-# @njit
-def nan_less (data1, data2) -> bool:
+def nan_less(data1, data2) -> bool:
     """Computes data1 < data2 and sets all np.nan comparisons to False.
 
     Parameters
@@ -426,7 +424,6 @@ def nan_less (data1, data2) -> bool:
     return d3 > 0
 
 
-# @njit
 def nan_greater_equal(data1, data2) -> bool:
     """Computes data1 >= data2 and sets all np.nan comparisons to False.
 
@@ -448,7 +445,6 @@ def nan_greater_equal(data1, data2) -> bool:
     return d3 >= 0
 
 
-# @njit
 def nan_greater(data1, data2) -> bool:
     """Computes data1 < data2 and sets all np.nan comparisons to False.
 

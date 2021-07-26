@@ -1,10 +1,6 @@
 import os
 import datetime
-import time
-import concurrent.futures
 import numpy as np
-import itertools as it
-import multiprocessing as mp
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
 from Classes.MMT_TRDI import MMTtrdi
@@ -23,7 +19,7 @@ from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-from profilehooks import profile, timecall
+# from profilehooks import profile, timecall
 
 
 class Measurement(object):
@@ -210,10 +206,8 @@ class Measurement(object):
         """
 
         # Read mmt file
-        # print (time.perf_counter())
-        # start = time.perf_counter()
         mmt = MMTtrdi(mmt_file)
-        # print('MMT Read:', (time.perf_counter() - start))
+
         # Get properties if they exist, otherwise set them as blank strings
         self.station_name = str(mmt.site_info['Name'])
         self.station_number = str(mmt.site_info['Number'])
@@ -222,14 +216,10 @@ class Measurement(object):
         self.processing = 'WR2'
 
         # Create transect objects for  TRDI data
-        # TODO refactor allocate_transects
-        # print ('Start transects:', time.perf_counter())
-        start = time.perf_counter()
         self.transects = self.allocate_transects(mmt=mmt,
                                                  transect_type=transect_type,
                                                  checked=checked)
-        # print('Transects:', (time.perf_counter()-start))
-        # print('End transects:', time.perf_counter())
+
         self.checked_transect_idx = self.checked_transects(self)
 
         # Create object for pre-measurement tests
@@ -309,7 +299,6 @@ class Measurement(object):
                     reference = 'BT'
 
         # Convert to earth coordinates
-        # print('Start earth coordinates:', time.perf_counter())
         for transect_idx, transect in enumerate(self.transects):
             # Convert to earth coordinates
             transect.change_coord_sys(new_coord_sys='Earth')
@@ -354,7 +343,6 @@ class Measurement(object):
                 transect.change_sos(parameter='sosSrc',
                                     selected='user',
                                     speed=speed)
-        # print('End earth coordinates', time.perf_counter())
 
     def qaqc_trdi(self, mmt):
         """Processes qaqc test, calibrations, and evaluations
@@ -366,7 +354,6 @@ class Measurement(object):
         """
 
         # ADCP Test
-        # print('Start pre:', time.perf_counter())
         if 'RG_Test' in mmt.qaqc:
             for n in range(len(mmt.qaqc['RG_Test'])):
                 p_m = PreMeasurement()
@@ -389,15 +376,13 @@ class Measurement(object):
                 ce.populate_data(mmt.qaqc['Compass_Evaluation_TimeStamp'][n],
                                  mmt.qaqc['Compass_Evaluation'][n], 'TCC')
                 self.compass_eval.append(ce)
-        # print('Start mbtests:', time.perf_counter())
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
             
             # Create transect objects
-            # print('Start mb transects:', time.perf_counter())
             transects = self.allocate_transects(mmt, transect_type='MB')
-            # print('End mb transects:', time.perf_counter())
+
             # Process moving-bed tests
             if len(transects) > 0:
                 self.mb_tests = []
@@ -416,7 +401,6 @@ class Measurement(object):
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
-        # print('finish pre:', time.perf_counter())
 
     @staticmethod
     def thresholds_trdi(transect, settings):
@@ -984,7 +968,7 @@ class Measurement(object):
         n = 0
 
         # If the internal compass is used the recompute is necessary
-        while n < n_transects and recompute == False:
+        while n < n_transects and recompute is False:
             if self.transects[n].sensors.heading_deg.selected == 'internal':
                 recompute = True
             n += 1
@@ -1031,7 +1015,7 @@ class Measurement(object):
         n = 0
 
         # If external compass is used then a recompute is necessary
-        while n < n_transects and recompute == False:
+        while n < n_transects and recompute is False:
             if self.transects[n].sensors.heading_deg.selected == 'external':
                 recompute = True
             n += 1
@@ -1388,157 +1372,7 @@ class Measurement(object):
 
         self.compute_uncertainty()
 
-    def apply_settings_part1 (self, transect, settings, force_abba=True):
-
-        if not settings['UsePingType']:
-            transect.w_vel.ping_type = np.tile('U', transect.w_vel.ping_type.shape)
-            transect.boat_vel.bt_vel.frequency_khz = np.tile(0, transect.boat_vel.bt_vel.frequency_khz.shape)
-
-        # Moving-boat ensembles
-        if 'Processing' in settings.keys():
-            transect.change_q_ensembles(proc_method=settings['Processing'])
-            self.processing = settings['Processing']
-
-        # Navigation reference
-        if transect.boat_vel.selected != settings['NavRef']:
-            transect.change_nav_reference(update=False, new_nav_ref=settings['NavRef'])
-            if len(self.mb_tests) > 0:
-                self.mb_tests = MovingBedTests.auto_use_2_correct(
-                    moving_bed_tests=self.mb_tests,
-                    boat_ref=settings['NavRef'])
-
-        # Changing the nav reference applies the current setting for
-        # Composite tracks, check to see if a change is needed
-        if transect.boat_vel.composite != settings['CompTracks']:
-            transect.composite_tracks(update=False, setting=settings['CompTracks'])
-
-        # Set difference velocity BT filter
-        bt_kwargs = {}
-        if settings['BTdFilter'] == 'Manual':
-            bt_kwargs['difference'] = settings['BTdFilter']
-            bt_kwargs['difference_threshold'] = settings['BTdFilterThreshold']
-        else:
-            bt_kwargs['difference'] = settings['BTdFilter']
-
-        # Set vertical velocity BT filter
-        if settings['BTwFilter'] == 'Manual':
-            bt_kwargs['vertical'] = settings['BTwFilter']
-            bt_kwargs['vertical_threshold'] = settings['BTwFilterThreshold']
-        else:
-            bt_kwargs['vertical'] = settings['BTwFilter']
-
-            # Apply beam filter
-            bt_kwargs['beam'] = settings['BTbeamFilter']
-
-            # Apply smooth filter
-            bt_kwargs['other'] = settings['BTsmoothFilter']
-
-        transect.boat_vel.bt_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
-
-        # Apply BT settings
-        transect.boat_filters(update=False, **bt_kwargs)
-
-        # BT Interpolation
-        transect.boat_interpolations(update=False,
-                                     target='BT',
-                                     method=settings['BTInterpolation'])
-
-        # GPS filter settings
-        if transect.gps is not None:
-            gga_kwargs = {}
-            if transect.boat_vel.gga_vel is not None:
-                # GGA
-                gga_kwargs['differential'] = settings['ggaDiffQualFilter']
-                if settings['ggaAltitudeFilter'] == 'Manual':
-                    gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
-                    gga_kwargs['altitude_threshold'] = settings['ggaAltitudeFilterChange']
-                else:
-                    gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
-
-                # Set GGA HDOP Filter
-                if settings['GPSHDOPFilter'] == 'Manual':
-                    gga_kwargs['hdop'] = settings['GPSHDOPFilter']
-                    gga_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
-                    gga_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
-                else:
-                    gga_kwargs['hdop'] = settings['GPSHDOPFilter']
-
-                gga_kwargs['other'] = settings['GPSSmoothFilter']
-                # Apply GGA filters
-                transect.gps_filters(update=False, **gga_kwargs)
-
-            if transect.boat_vel.vtg_vel is not None:
-                vtg_kwargs = {}
-                if settings['GPSHDOPFilter'] == 'Manual':
-                    vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
-                    vtg_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
-                    vtg_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
-                    vtg_kwargs['other'] = settings['GPSSmoothFilter']
-                else:
-                    vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
-                    vtg_kwargs['other'] = settings['GPSSmoothFilter']
-
-                # Apply VTG filters
-                transect.gps_filters(update=False, **vtg_kwargs)
-
-            transect.boat_interpolations(update=False,
-                                         target='GPS',
-                                         method=settings['GPSInterpolation'])
-
-        # Set depth reference
-        transect.set_depth_reference(update=False, setting=settings['depthReference'])
-
-        transect.process_depths(update=True,
-                                filter_method=settings['depthFilterType'],
-                                interpolation_method=settings['depthInterpolation'],
-                                composite_setting=settings['depthComposite'],
-                                avg_method=settings['depthAvgMethod'],
-                                valid_method=settings['depthValidMethod'])
-
-        # Set WT difference velocity filter
-        wt_kwargs = {}
-        if settings['WTdFilter'] == 'Manual':
-            wt_kwargs['difference'] = settings['WTdFilter']
-            wt_kwargs['difference_threshold'] = settings['WTdFilterThreshold']
-        else:
-            wt_kwargs['difference'] = settings['WTdFilter']
-
-        # Set WT vertical velocity filter
-        if settings['WTwFilter'] == 'Manual':
-            wt_kwargs['vertical'] = settings['WTwFilter']
-            wt_kwargs['vertical_threshold'] = settings['WTwFilterThreshold']
-        else:
-            wt_kwargs['vertical'] = settings['WTwFilter']
-
-        wt_kwargs['beam'] = settings['WTbeamFilter']
-        wt_kwargs['other'] = settings['WTsmoothFilter']
-        wt_kwargs['snr'] = settings['WTsnrFilter']
-        wt_kwargs['wt_depth'] = settings['WTwtDepthFilter']
-        wt_kwargs['excluded'] = settings['WTExcludedDistance']
-
-        # Data loaded from old QRev.mat files will be set to use this new interpolation method. When reprocessing
-        # any data the interpolation method should be 'abba'
-        if force_abba:
-            transect.w_vel.interpolate_cells = 'abba'
-            transect.w_vel.interpolate_ens = 'abba'
-            settings['WTEnsInterpolation'] = 'abba'
-            settings['WTCellInterpolation'] = 'abba'
-
-        transect.w_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
-        if transect.w_vel.ping_type.size == 0 and transect.adcp.manufacturer == 'SonTek':
-            # Correlation and frequency can be used to determine ping type
-            transect.w_vel.ping_type = TransectData.sontek_ping_type(corr=transect.w_vel.corr,
-                                                                     freq=transect.w_vel.frequency)
-
-        transect.w_vel.apply_filter(transect=transect, **wt_kwargs)
-
-        # Edge methods
-        transect.edges.rec_edge_method = settings['edgeRecEdgeMethod']
-        transect.edges.vel_method = settings['edgeVelMethod']
-
-        return transect
-
-    def apply_settings_to_movingbed (self, settings, force_abba=True):
+    def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
 
         Parameters
@@ -1548,7 +1382,7 @@ class Measurement(object):
         force_abba: bool
             Allows the above, below, before, after interpolation to be applied even when the data use another approach.
         """
-        # print('Start apply mb:', time.perf_counter())
+
         self.use_ping_type = settings['UsePingType']
         # If SonTek data does not have ping type identified, determine ping types
         if self.mb_tests[0].transect.w_vel.ping_type.size == 1 and self.transects[0].adcp.manufacturer == 'SonTek':
@@ -1648,14 +1482,13 @@ class Measurement(object):
 
             # Set depth reference
             transect.set_depth_reference(update=False, setting=settings['depthReference'])
-            # print('Start process depths:', time.perf_counter())
             transect.process_depths(update=True,
                                     filter_method=settings['depthFilterType'],
                                     interpolation_method=settings['depthInterpolation'],
                                     composite_setting=settings['depthComposite'],
                                     avg_method=settings['depthAvgMethod'],
                                     valid_method=settings['depthValidMethod'])
-            # print('End process depths:', time.perf_counter())
+
             # Set WT difference velocity filter
             wt_kwargs = {}
             if settings['WTdFilter'] == 'Manual':
@@ -1698,7 +1531,6 @@ class Measurement(object):
                                                cells_interp=settings['WTCellInterpolation'])
 
             test.process_mb_test(source=self.transects[0].adcp.manufacturer)
-        # print('End mb apply:', time.perf_counter())
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -3917,12 +3749,28 @@ class Measurement(object):
             xml_file.write(xml_out)
 
     @staticmethod
-    def add_transect(mmt, filename, index, type):
-        # start = time.perf_counter()
-        pd0_data = Pd0TRDI(filename)
-        # print('pd0 read:', (time.perf_counter() - start))
+    def add_transect(mmt, filename, index, transect_type):
+        """Processes a pd0 file into a TransectData object.
 
-        if type == 'MB':
+        Parameters
+        ----------
+        mmt: MMTtrdi
+            Object of MMTtrdi
+        filename: str
+            Pd0 filename to be processed
+        index: int
+            Index to file in the mmt
+        transect_type: str
+            Indicates type of transect discharge (Q), or moving_bed (MB)
+
+        Returns
+        -------
+        transect: TransectData
+            Object of TransectData
+        """
+        pd0_data = Pd0TRDI(filename)
+
+        if transect_type == 'MB':
             mmt_transect = mmt.mbt_transects[index]
         else:
             mmt_transect = mmt.transects[index]
@@ -3976,35 +3824,16 @@ class Measurement(object):
                 valid_files.append(fullname)
                 valid_indices.append(file_idx[index])
 
-
-        # start = time.perf_counter()
         transects = []
         num = len(valid_indices)
-        if num < 3:
-            multi_process = False
-        else:
-            multi_process = False
 
-        if multi_process:
+        for k in range(num):
+            temp = self.add_transect(mmt, valid_files[k], valid_indices[k], transect_type)
+            if temp.w_vel is not None:
+                transects.append(temp)
 
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                # results = [executor.submit(self.add_transect, mmt, valid_files[k], valid_indices[k], transect_type) for k in range(num)]
-                results = executor.map(self.add_transect, it.repeat(mmt), valid_files, valid_indices, it.repeat(transect_type))
-            # for f in concurrent.futures.as_completed(results):
-            #     transects.append(f.result())
-
-            for result in results:
-                if result.w_vel is not None:
-                    transects.append(result)
-        else:
-            for k in range(num):
-                temp = self.add_transect(mmt, valid_files[k], valid_indices[k], transect_type)
-                if temp.w_vel is not None:
-                    transects.append(temp)
-
-        # finish = time.perf_counter()
-        # print(f'Finished in {finish - start}')
         return transects
+
 
 if __name__ == '__main__':
     pass

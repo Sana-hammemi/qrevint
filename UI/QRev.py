@@ -411,11 +411,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.toolBar.toggleViewAction().setEnabled(False)
 
         # Get agency optional settings
-        options_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'QRev_Options.json')
-        if os.path.isfile(options_file):
-            # Read json into dictionary
-            with open(options_file, 'r') as f:
-                self.agency_options = json.load(f)
+        options_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'QRev.cfg')
+        if os.path.exists(options_file):
+            if os.path.isfile(options_file):
+                # Read json into dictionary
+                try:
+                    with open(options_file, 'r') as f:
+                        self.agency_options = json.load(f)
+                except json.decoder.JSONDecodeError:
+                    self.popup_message('QRev.cfg could not be read due a formatting error. QRev cannot continue.')
+                    sys.exit()
+        else:
+            self.popup_message('QRev.cfg could not be found. QRev cannot continue.')
+            sys.exit()
 
         # Setting file for settings to carry over from one session to the next
         # (examples: Folder, UnitsID)
@@ -458,7 +466,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 use_meas = self.agency_options['FilterUsingMeasurement']['default']
             self.use_measurement_thresholds = use_meas
         except KeyError:
-            self.sticky_settings.new('UseMeasurementThresholds', self.agency_options['FilterUsingMeasurement']['default'])
+            self.sticky_settings.new('UseMeasurementThresholds',
+                                     self.agency_options['FilterUsingMeasurement']['default'])
             self.use_measurement_thresholds = self.agency_options['FilterUsingMeasurement']['default']
 
         # Stylesheet setting
@@ -4193,7 +4202,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if np.isnan(self.meas.ext_temp_chk['user']):
                 self.ed_user_temp.setText('')
                 self.pb_ind_temp_apply.setEnabled(False)
-                self.label_independent.setStyleSheet('background: #ffcc00; font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
+                self.label_independent.setStyleSheet('background: #ffcc00; '
+                                                     'font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
                 self.label_independent.setToolTip(self.tr('No user supplied temperature.'))
             else:
                 temp = float(self.meas.ext_temp_chk['user'])
@@ -4464,7 +4474,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if np.isnan(self.meas.ext_temp_chk['user']):
                 self.ed_user_temp.setText('')
                 self.pb_ind_temp_apply.setEnabled(False)
-                self.label_independent.setStyleSheet('background: #ffcc00; font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
+                self.label_independent.setStyleSheet('background: #ffcc00; '
+                                                     'font: 12pt MS Shell Dlg 2;QToolTip{font: 12pt}')
                 self.label_independent.setToolTip(self.tr('No user supplied temperature.'))
             else:
                 temp = float(self.meas.ext_temp_chk['user'])
@@ -5539,19 +5550,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tt = ''
 
         if column == 0:
-            cat_idx=0
+            cat_idx = 0
         elif column == 3:
             cat_idx = 0
         elif column == 4:
-            cat_idx=1
+            cat_idx = 1
         elif column == 5:
-            cat_idx=5
+            cat_idx = 5
         elif column == 6:
-            cat_idx=2
+            cat_idx = 2
         elif column == 7:
-            cat_idx=3
+            cat_idx = 3
         elif column == 8:
-            cat_idx=4
+            cat_idx = 4
 
         if cat_idx is not None:
             tt = ''.join(self.q_qa_message(qa_data=self.meas.qa.bt_vel,
@@ -5921,7 +5932,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         self.ed_bt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
-
 
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_bt_vert_vel_threshold)
@@ -6334,7 +6344,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     tbl.item(row, col).setToolTip(self.tr(self.gps_create_tooltip(self, row, col)))
 
-
                 # Percent of ensembles with satellite changes
                 col += 1
                 if num_sat_changes >= 0:
@@ -6413,7 +6422,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
 
-        cat_idx = None
         tt = ''
         qa_data = None
 
@@ -8126,7 +8134,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 tbl.item(row, col).setToolTip(self.tr(self.wt_create_tooltip(self, row, col)))
 
-
                 # Invalid original data
                 col += 1
                 percent_invalid = (num_orig_invalid / num_useable_cells) * 100.
@@ -8514,19 +8521,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tt = ''
 
         if column == 3:
-            cat_idx=0
+            cat_idx = 0
         elif column == 4:
-            cat_idx=1
+            cat_idx = 1
         elif column == 5:
-            cat_idx=5
+            cat_idx = 5
         elif column == 6:
-            cat_idx=2
+            cat_idx = 2
         elif column == 7:
-            cat_idx=3
+            cat_idx = 3
         elif column == 8:
-            cat_idx=4
+            cat_idx = 4
         elif column == 9:
-            cat_idx=7
+            cat_idx = 7
 
         if cat_idx is not None:
             tt = ''.join(self.q_qa_message(qa_data=self.meas.qa.w_vel,
