@@ -73,13 +73,13 @@ def iqr(data_1d):
     # Remove nan elements
     idx = np.where(np.logical_not(np.isnan(data_1d)))[0]
     data_1d = data_1d[idx]
-    # if len(data_1d) < 2:
-    #     sp_iqr = np.nan
-    # else:
-    # Compute statistics
-    q25 = compute_quantile(data_1d, 0.25)
-    q75 = compute_quantile(data_1d, 0.75)
-    sp_iqr = q75 - q25
+    if len(data_1d) < 2:
+        sp_iqr = np.nan
+    else:
+        # Compute statistics
+        q25 = compute_quantile(data_1d, 0.25)
+        q75 = compute_quantile(data_1d, 0.75)
+        sp_iqr = q75 - q25
 
     return sp_iqr
 

@@ -6,7 +6,7 @@ from numpy.matlib import repmat
 from MiscLibs.common_functions import iqr, nan_less, nan_greater
 from MiscLibs.robust_loess_compiled import rloess
 from MiscLibs.non_uniform_savgol import non_uniform_savgol
-from MiscLibs.run_iqr import run_iqr
+from MiscLibs.run_iqr import run_iqr, compute_quantile
 
 
 class DepthData(object):
@@ -268,7 +268,7 @@ class DepthData(object):
 
         # Get valid depths
         depth = np.copy(self.depth_beams_m)
-        depth[self.valid_beams == False] = np.nan
+        depth[np.logical_not(self.valid_beams)] = np.nan
 
         # Compute average depths
         self.depth_processed_m = DepthData.average_depth(depth, self.draft_use_m, self.avg_method)
@@ -347,10 +347,10 @@ class DepthData(object):
             self.interpolate_linear(transect=transect)
             
         # Identify ensembles with interpolated depths
-        idx = np.where(self.valid_data[:] == False)
+        idx = np.where(np.logical_not(self.valid_data[:]))
         if len(idx[0]) > 0:
             idx = idx[0]
-            idx2 = np.where(np.isnan(self.depth_processed_m[idx]) == False)
+            idx2 = np.where(np.logical_not(np.isnan(self.depth_processed_m[idx])))
             if len(idx2) > 0:
                 idx2 = idx2[0]
                 self.depth_source_ens[idx[idx2]] = 'IN'
@@ -555,46 +555,54 @@ class DepthData(object):
         half_width = 10
         multiplier = 15
 
-        depth_smooth = np.nan
         upper_limit = np.nan
         lower_limit = np.nan
 
         # At least 50% of the data in a beam must be valid to apply the smooth
-        if np.nansum((np.isnan(depth_filtered) == False) / len(depth_filtered)) > .5:
-            # Compute residuals based on robust loess smooth
-            if len(x) > 1:
-                # Fit smooth
-                try:
-                    smooth_fit = rloess(x, depth_filtered, 20)
-                    depth_smooth = smooth_fit
-                except ValueError:
-                    depth_smooth = depth_filtered
-            else:
+        # if np.nansum((np.isnan(depth_filtered) == False) / len(depth_filtered)) > .5:
+        # Compute residuals based on robust loess smooth
+        if len(x) > 1:
+            # Fit smooth
+            try:
+                smooth_fit = rloess(x, depth_filtered, 20)
+                depth_smooth = smooth_fit
+            except ValueError:
                 depth_smooth = depth_filtered
+        else:
+            depth_smooth = depth_filtered
 
-            depth_res = depth - depth_smooth
+        depth_res = depth - depth_smooth
 
-            # Run the filter multiple times
-            for n in range(cycles - 1):
+        # Run the filter multiple times
+        for n in range(cycles - 1):
+            max_upper_limit = 9999
+            idx = np.where(np.logical_not(np.isnan(depth_filtered)))[0]
+            if len(idx) > 0:
+                max_upper_limit = compute_quantile(depth_filtered[idx], 0.75) * 2
 
-                # Compute inner quartile range
-                fill_array = DepthData.dsm_run_iqr(half_width, depth_res)
+            # Compute inner quartile range
+            fill_array = run_iqr(half_width, depth_res)
 
-                # Compute filter criteria and apply appropriate
-                criteria = multiplier * fill_array
-                idx = np.where(nan_less(criteria, np.max(np.vstack((depth * .05,
-                                                                    np.ones(depth.shape) / 10)), 0)))[0]
-                if len(idx) > 0:
-                    criteria[idx] = np.max(np.vstack((depth[idx] * .05, np.ones(idx.shape) / 10)), 0)
+            # Compute filter criteria and apply appropriate
+            criteria = multiplier * fill_array
+            idx = np.where(nan_less(criteria, np.max(np.vstack((depth * .05,
+                                                                np.ones(depth.shape) / 10)), 0)))[0]
+            if len(idx) > 0:
+                criteria[idx] = np.max(np.vstack((depth[idx] * .05, np.ones(idx.shape) / 10)), 0)
 
-                # Compute limits
-                upper_limit = depth_smooth + criteria
-                lower_limit = depth_smooth - criteria
+            # Compute limits
+            upper_limit = depth_smooth + criteria
+            idx = np.where(np.logical_or(np.greater(upper_limit, max_upper_limit), np.isnan(upper_limit)))[0]
+            if len(idx) > 0:
+                upper_limit[idx] = max_upper_limit
+            lower_limit = depth_smooth - criteria
+            idx = np.where(np.less(lower_limit, 0))[0]
+            lower_limit[idx] = 0
 
-                bad_idx = np.where(
-                    np.logical_or(nan_greater(depth, upper_limit), nan_less(depth, lower_limit)))[0]
-                # Update depth matrix
-                depth_res[bad_idx] = np.nan
+            bad_idx = np.where(
+                np.logical_or(nan_greater(depth, upper_limit), nan_less(depth, lower_limit)))[0]
+            # Update depth matrix
+            depth_res[bad_idx] = np.nan
 
         return depth_smooth, upper_limit, lower_limit
 
@@ -662,48 +670,43 @@ class DepthData(object):
             # Loop for each beam, smooth is applied to each beam
             for j in range(n_beams):
                 # At least 50% of the data in a beam must be valid to apply the smooth
-                if np.nansum((np.isnan(depth[j, :]) == False) / depth.shape[0]) > .5:
+                # if np.nansum((np.isnan(depth[j, :]) == False) / depth.shape[0]) > .5:
 
-                    # Compute residuals based on non-uniform Savitzky-Golay
-                    try:
-                        valid_depth_idx = np.logical_not(np.isnan(depth[j, :]))
-                        x_fit = x[valid_depth_idx]
-                        y_fit = depth[j, valid_depth_idx]
-                        smooth_fit = non_uniform_savgol(x_fit, y_fit, 15, 3)
-                        depth_smooth[j, valid_depth_idx] = smooth_fit
-                    except ValueError:
-                        depth_smooth[j, :] = depth[j, :]
+                # Compute residuals based on non-uniform Savitzky-Golay
+                try:
+                    valid_depth_idx = np.logical_not(np.isnan(depth[j, :]))
+                    x_fit = x[valid_depth_idx]
+                    y_fit = depth[j, valid_depth_idx]
+                    smooth_fit = non_uniform_savgol(x_fit, y_fit, 15, 3)
+                    depth_smooth[j, valid_depth_idx] = smooth_fit
+                except ValueError:
+                    depth_smooth[j, :] = depth[j, :]
 
-                    depth_res[j, :] = depth[j, :] - depth_smooth[j, :]
+                depth_res[j, :] = depth[j, :] - depth_smooth[j, :]
 
-                    # Run the filter multiple times
-                    for n in range(cycles - 1):
+                # Run the filter multiple times
+                for n in range(cycles - 1):
 
-                        # Compute inner quartile range
-                        # fill_array = DepthData.run_iqr(half_width, depth_res[j, :])
-                        fill_array = run_iqr(half_width, depth_res[j, :])
-                        # Compute filter criteria
-                        criteria = multiplier * fill_array
+                    # Compute inner quartile range
+                    # fill_array = DepthData.run_iqr(half_width, depth_res[j, :])
+                    fill_array = run_iqr(half_width, depth_res[j, :])
+                    # Compute filter criteria
+                    criteria = multiplier * fill_array
 
-                        # Adjust criteria so that it is never less than 5% of depth or 0.1 m which ever is greater
-                        idx = np.where(criteria < np.max(np.vstack((depth[j, :] * .05,
-                                                                    np.ones(depth.shape) / 10)), 0))[0]
-                        if len(idx) > 0:
-                            criteria[idx] = np.max(np.vstack((depth[j, idx] * .05, np.ones(idx.shape) / 10)), 0)
+                    # Adjust criteria so that it is never less than 5% of depth or 0.1 m which ever is greater
+                    idx = np.where(criteria < np.max(np.vstack((depth[j, :] * .05,
+                                                                np.ones(depth.shape) / 10)), 0))[0]
+                    if len(idx) > 0:
+                        criteria[idx] = np.max(np.vstack((depth[j, idx] * .05, np.ones(idx.shape) / 10)), 0)
 
-                        # Compute limits
-                        upper_limit[j] = depth_smooth[j, :] + criteria
-                        lower_limit[j] = depth_smooth[j, :] - criteria
+                    # Compute limits
+                    upper_limit[j] = depth_smooth[j, :] + criteria
+                    lower_limit[j] = depth_smooth[j, :] - criteria
 
-                        bad_idx = np.where(np.logical_or(np.greater(depth[j], upper_limit[j]),
-                                                         np.less(depth[j], lower_limit[j])))[0]
-                        # Update residual matrix
-                        depth_res[j, bad_idx] = np.nan
-
-                else:
-                    depth_smooth[j] = np.nan
-                    upper_limit[j] = np.nan
-                    lower_limit[j] = np.nan
+                    bad_idx = np.where(np.logical_or(np.greater(depth[j], upper_limit[j]),
+                                                     np.less(depth[j], lower_limit[j])))[0]
+                    # Update residual matrix
+                    depth_res[j, bad_idx] = np.nan
 
             # Save smooth results to avoid recomputing them if needed later
             self.smooth_depth = depth_smooth
@@ -992,96 +995,3 @@ class DepthData(object):
             iqr_array.append(iqr(sample))
 
         return np.array(iqr_array)
-
-
-
-    def dsm_run_iqr(half_width, data):
-        """Computes a running Innerquartile Range
-        The routine accepts a column vector as input.  "halfWidth" number of data
-        points for computing the Innerquartile Range are selected before and
-        after the target data point, but no including the target data point.
-        Near the ends of the series the number of points before or after are reduced.
-        Nan in the data are counted as points.  The IQR is computed on the selected
-        subset of points.  The process occurs for each point in the provided column vector.
-        A column vector with the computed IQR at each point is returned.
-
-        Parameters
-        ----------
-        half_width: int
-            Number of ensembles before and after current ensemble which are used to compute the IQR
-        data: np.array(float)
-            Data for which the IQR is computed
-        """
-        npts = len(data)
-        half_width = int(half_width)
-
-        if npts < 20:
-            half_width = int(np.floor(npts / 2))
-
-        iqr_array = []
-
-        # Compute IQR for each point
-        for n in range(npts):
-
-            # Sample selection for 1st point
-            if n == 0:
-                sample = data[1:1 + half_width]
-
-            # Sample selection a end of data set
-            elif n + half_width > npts:
-                sample = np.hstack((data[n - half_width - 1:n - 1], data[n:npts]))
-
-            # Sample selection at beginning of data set
-            elif half_width >= n + 1:
-                sample = np.hstack((data[0:n], data[n + 1:n + half_width + 1]))
-
-            # Sample selection in body of data set
-            else:
-                sample = np.hstack((data[n - half_width:n], data[n + 1:n + half_width + 1]))
-
-            iqr_array.append(DepthData.dsm_iqr(sample))
-
-        return np.array(iqr_array)
-
-
-    def dsm_iqr(data_1d):
-        """This function computes the iqr consistent with Matlab
-
-        Parameters
-        ----------
-        data: np.ndarray
-            Data for which the statistic is required
-
-        Returns
-        -------
-        sp_iqr: float
-            Inner quartile range
-
-        """
-
-        # Remove nan elements
-        idx = np.where(np.logical_not(np.isnan(data_1d)))[0]
-        data_1d = data_1d[idx]
-        # if len(data_1d) < 2:
-        #     sp_iqr = np.nan
-        # else:
-        # Compute statistics
-        q25 = DepthData.dsm_compute_quantile(data_1d, 0.25)
-        q75 = DepthData.dsm_compute_quantile(data_1d, 0.75)
-        sp_iqr = q75 - q25
-
-        return sp_iqr
-
-
-    def dsm_compute_quantile(data_1d, q):
-
-        sorted_data = np.sort(data_1d)
-        n_samples = len(sorted_data)
-        sample_idx = q * (n_samples) - 0.5
-        x1 = int(np.floor(sample_idx))
-        x2 = int(np.ceil(sample_idx))
-        if x1 != x2:
-            result = (sample_idx - x1) * (sorted_data[x2] - sorted_data[x1]) + sorted_data[x1]
-        else:
-            result = sorted_data[x1]
-        return result
