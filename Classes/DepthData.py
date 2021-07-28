@@ -578,7 +578,7 @@ class DepthData(object):
             max_upper_limit = 9999
             idx = np.where(np.logical_not(np.isnan(depth_filtered)))[0]
             if len(idx) > 0:
-                max_upper_limit = compute_quantile(depth_filtered[idx], 0.75) * 2
+                max_upper_limit = compute_quantile(depth_filtered[idx], 0.90) * 3
 
             # Compute inner quartile range
             fill_array = run_iqr(half_width, depth_res)
@@ -602,7 +602,19 @@ class DepthData(object):
             bad_idx = np.where(
                 np.logical_or(nan_greater(depth, upper_limit), nan_less(depth, lower_limit)))[0]
             # Update depth matrix
-            depth_res[bad_idx] = np.nan
+            # depth_res[bad_idx] = np.nan
+            if len(bad_idx) == 0:
+                break
+            else:
+                depth_filtered[bad_idx] = np.nan
+                # Fit smooth
+                try:
+                    smooth_fit = rloess(x, depth_filtered, 20)
+                    depth_smooth = smooth_fit
+                except ValueError:
+                    depth_smooth = depth_filtered
+
+                depth_res = depth - depth_smooth
 
         return depth_smooth, upper_limit, lower_limit
 
