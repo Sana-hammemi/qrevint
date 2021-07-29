@@ -69,7 +69,7 @@ class Measurement(object):
 
     # @profile
     def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
-                 use_measurement_thresholds=False, use_ping_type=True):
+                 use_measurement_thresholds=False, use_ping_type=True, min_transects=2, min_duration=720):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -93,11 +93,17 @@ class Measurement(object):
             Specifies if filters are based on a transect or whole measurement
         use_ping_type: bool
             Specifies if filters are based on ping type and frequency
+        min_transects: int
+            Minimum number of transects required to pass QA
+        min_duration: float
+            Minimum duration in seconds of all transects to pass QA
         """
 
         self.use_ping_type = use_ping_type
         self.use_measurement_thresholds = use_measurement_thresholds
         self.run_oursin = run_oursin
+        self.min_transects = min_transects
+        self.min_duration = min_duration
         self.station_name = None
         self.station_number = None
         self.transects = []

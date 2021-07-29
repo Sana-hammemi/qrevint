@@ -892,7 +892,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                 proc_type='QRev',
                                                 run_oursin=self.run_oursin,
                                                 use_weighted=self.use_weighted,
-                                                use_measurement_thresholds=self.use_measurement_thresholds)
+                                                use_measurement_thresholds=self.use_measurement_thresholds,
+                                                min_transects=self.agency_options['QA']['MinTransects'],
+                                                min_duration=self.agency_options['QA']['MinDuration'])
                     except CoordError as error:
                         self.popup_message(error.text)
 
@@ -907,7 +909,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                             proc_type='QRev',
                                             run_oursin=self.run_oursin,
                                             use_weighted=self.use_weighted,
-                                            use_measurement_thresholds=self.use_measurement_thresholds)
+                                            use_measurement_thresholds=self.use_measurement_thresholds,
+                                            min_transects=self.agency_options['QA']['MinTransects'],
+                                            min_duration=self.agency_options['QA']['MinDuration'])
 
             # Load and process TRDI data
             elif select.type == 'TRDI':
@@ -921,7 +925,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                             checked=select.checked,
                                             run_oursin=self.run_oursin,
                                             use_weighted=self.use_weighted,
-                                            use_measurement_thresholds=self.use_measurement_thresholds)
+                                            use_measurement_thresholds=self.use_measurement_thresholds,
+                                            min_transects=self.agency_options['QA']['MinTransects'],
+                                            min_duration=self.agency_options['QA']['MinDuration'])
 
             # Load QRev data
             elif select.type == 'QRev':
@@ -963,7 +969,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                 proc_type='QRev',
                                                 run_oursin=self.run_oursin,
                                                 use_weighted=self.use_weighted,
-                                                use_measurement_thresholds=self.use_measurement_thresholds)
+                                                use_measurement_thresholds=self.use_measurement_thresholds,
+                                                min_transects=self.agency_options['QA']['MinTransects'],
+                                                min_duration=self.agency_options['QA']['MinDuration'])
 
                 # Settings based on measurement settings
                 self.use_weighted = self.meas.use_weighted

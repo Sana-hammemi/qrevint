@@ -399,6 +399,8 @@ class QAData(object):
             Object of QAData
         mat_data: mat_struct
             Matlab data from QRev file
+        ndim: int
+            Number of dimensions in data
         """
 
         # Initialize dictionary
@@ -528,10 +530,10 @@ class QAData(object):
                     total_duration += transect.date_time.transect_duration_sec
 
         # Check duration against USGS policy
-        if total_duration < 720:
+        if total_duration < meas.min_duration:
             self.transects['status'] = 'caution'
-            self.transects['messages'].append(
-                ['Transects: Duration of selected transects is less than 720 seconds;', 2, 0])
+            text = 'Transects: Duration of selected transects is less than ' + str(meas.min_duration) + ' seconds;'
+            self.transects['messages'].append([text, 2, 0])
             self.transects['duration'] = 1
 
         # Check transects for missing ensembles
@@ -552,7 +554,7 @@ class QAData(object):
                         num_missing = 0
                 else:
                     # Determine number of lost ensembles for TRDI data
-                    idx_missing = np.where(np.isnan(transect.date_time.ens_duration_sec) == True)[0]
+                    idx_missing = np.where(np.isnan(transect.date_time.ens_duration_sec))[0]
                     num_missing = len(idx_missing) - 1
 
                 # Save caution message
@@ -582,6 +584,12 @@ class QAData(object):
                     self.transects['status'] = 'caution'
                     self.transects['messages'].append(
                         ['Transects: Uncertainty would be reduced by additional transects;', 2, 0])
+
+            if num_checked < meas.min_transects:
+                self.transects['status'] = 'caution'
+                text = 'Transects: Number of transects is below the required minimum of ' \
+                       + str(meas.min_transects) + ';'
+                self.transects['messages'].append([text, 2, 0])
 
             # Check for consistent sign
             q_positive = []
