@@ -12311,7 +12311,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionON.setDisabled(True)
 
         # Set tab text and icons to default
-        for tab_idx in range(self.tab_all.count() - 2):
+        for tab_idx in range(self.tab_all.count() - 3):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
             self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
 
