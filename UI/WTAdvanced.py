@@ -3,8 +3,10 @@ import copy
 from matplotlib import gridspec
 import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
+from PyQt5 import QtWidgets, QtCore
+from contextlib import contextmanager
 from matplotlib.colors import Colormap
-from datetime import datetime
+from datetime import datetime, timedelta
 from MiscLibs.common_functions import sind, cosd
 
 
@@ -150,107 +152,108 @@ class WTAdvanced(object):
         # Make sure a selection was made
         if len(selected_types) > 0:
 
-            # Initialize data sources
-            self.flow_direction = flow_direction
-            self.transect = transect
-            self.discharge = discharge
+            with self.wait_cursor():
+                # Initialize data sources
+                self.flow_direction = flow_direction
+                self.transect = transect
+                self.discharge = discharge
 
-            self.show_below_sl = show_below_sl
+                self.show_below_sl = show_below_sl
 
-            # Set default axis
-            if x_axis_type is None:
-                x_axis_type = 'E'
-            self.x_axis_type = x_axis_type
+                # Set default axis
+                if x_axis_type is None:
+                    x_axis_type = 'E'
+                self.x_axis_type = x_axis_type
 
-            # Set color map and units
-            self.color_map = color_map
-            self.units = units
+                # Set color map and units
+                self.color_map = color_map
+                self.units = units
 
-            # Clear the plot
-            self.fig.clear()
+                # Clear the plot
+                self.fig.clear()
 
-            # Determine number of subplots
-            self.n_subplots = len(selected_types)
-            if 'cb_corr_beam_cc' in selected_types:
-                self.n_subplots += 3
-            if 'cb_rssi_beam_cc' in selected_types:
-                self.n_subplots += 3
+                # Determine number of subplots
+                self.n_subplots = len(selected_types)
+                if 'cb_corr_beam_cc' in selected_types:
+                    self.n_subplots += 3
+                if 'cb_rssi_beam_cc' in selected_types:
+                    self.n_subplots += 3
 
-            # Compute x-axis variable
-            self.compute_x_axis()
+                # Compute x-axis variable
+                self.compute_x_axis()
 
-            # Initialize variable for subplots
-            self.ax = []
-            self.annot = []
-            self.data_plotted = []
-            share_y = False
+                # Initialize variable for subplots
+                self.ax = []
+                self.annot = []
+                self.data_plotted = []
+                share_y = False
 
-            # Create grid specification
-            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
-            # plots to allow the sharing of the x-axis between all plots
-            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+                # Create grid specification
+                # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+                # plots to allow the sharing of the x-axis between all plots
+                self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
-            # Create first subplot
-            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
-            self.wt_advanced_type_methods[selected_types[0]]()
-            # Share the y-axis between color contour plots
-            if selected_types[0][-3:] == '_cc':
-                share_y = True
+                # Create first subplot
+                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+                self.wt_advanced_type_methods[selected_types[0]]()
+                # Share the y-axis between color contour plots
+                if selected_types[0][-3:] == '_cc':
+                    share_y = True
 
-            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
-            if len(selected_types) > 1:
-                for n in range(1, len(selected_types)):
-                    # Figure number increased by two to account for the second column in the grid space for the colorbar
-                    self.fig_no += 2
-                    if share_y and selected_types[n][-3:] == '_cc':
-                        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+                # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+                if len(selected_types) > 1:
+                    for n in range(1, len(selected_types)):
+                        # Figure number increased by two to account for the second column in the grid space for the colorbar
+                        self.fig_no += 2
+                        if share_y and selected_types[n][-3:] == '_cc':
+                            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+                        else:
+                            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+                        # Call method based on link in dictionary
+                        self.wt_advanced_type_methods[selected_types[n]]()
+
+                # Adjust the spacing of the subplots
+                self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.02, hspace=0.08)
+
+                # Apply the x-axis label to the bottom x-axis
+                if selected_types[-1][-3:] == '_cc':
+                    idx = -2
+                else:
+                    idx = -1
+
+                self.ax[idx].xaxis.label.set_fontsize(12)
+
+                # x-axis is length
+                if self.x_axis_type == 'L':
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
                     else:
-                        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
-                    # Call method based on link in dictionary
-                    self.wt_advanced_type_methods[selected_types[n]]()
+                        self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
 
-            # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.02, hspace=0.08)
+                # x-axis is ensembles
+                elif self.x_axis_type == 'E':
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                    else:
+                        self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
 
-            # Apply the x-axis label to the bottom x-axis
-            if selected_types[-1][-3:] == '_cc':
-                idx = -2
-            else:
-                idx = -1
-
-            self.ax[idx].xaxis.label.set_fontsize(12)
-
-            # x-axis is length
-            if self.x_axis_type == 'L':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                else:
-                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
-
-            # x-axis is ensembles
-            elif self.x_axis_type == 'E':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                else:
-                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-            # x-axis is time
-            elif self.x_axis_type == 'T':
-                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                else:
-                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                date_form = DateFormatter('%H:%M:%S')
-                self.ax[idx].xaxis.set_major_formatter(date_form)
-                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+                # x-axis is time
+                elif self.x_axis_type == 'T':
+                    axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                              left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                    else:
+                        self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                              right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                    date_form = DateFormatter('%H:%M:%S')
+                    self.ax[idx].xaxis.set_major_formatter(date_form)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Time'))
 
         else:
             # Clear the plot
@@ -997,7 +1000,11 @@ class WTAdvanced(object):
 
         # Plot dummy data to establish consistent order of y axis
         temp_hold = np.copy(self.x)
-        self.x = [-10, -10, -10, -10, -10]
+        if isinstance(temp_hold[0], datetime):
+            dummy_time = temp_hold[0] - timedelta(days=1)
+            self.x = [dummy_time, dummy_time, dummy_time, dummy_time, dummy_time]
+        else:
+            self.x = [-10, -10, -10, -10, -10]
         data = ['INV', 'INT', 'BT', 'GGA', 'VTG']
         fmt = [{'color': 'w', 'linestyle': '-'}]
         data_units = (1, '')
@@ -1394,7 +1401,11 @@ class WTAdvanced(object):
         # Plot dummy data to establish consistent order of y axis
         # self.x is passed through reference to self so it must be temporarily changed for the dummy data
         temp_hold = np.copy(self.x)
-        self.x = [-10, -10, -10, -10, -10]
+        if isinstance(temp_hold[0], datetime):
+            dummy_time = temp_hold[0] - timedelta(days=1)
+            self.x = [dummy_time, dummy_time, dummy_time, dummy_time, dummy_time]
+        else:
+            self.x = [-10, -10, -10, -10, -10]
         data = ['INV', 'INT', 'BT', 'VB', 'DS']
         fmt = [{'color': 'w', 'linestyle': '-'}]
         data_units = (1, '')
@@ -1600,7 +1611,7 @@ class WTAdvanced(object):
         elif np.sum(np.abs(data_plt_in[data_plt_in > -900])) > 0:
             max_limit = np.percentile(data_plt_in[data_plt_in > -900] * data_units[0], 99)
             min_limit = np.min(data_plt_in[data_plt_in > -900] * data_units[0])
-            if min_limit < 0.1:
+            if 0 < min_limit < 0.1:
                 min_limit = 0
         else:
             max_limit = 1
@@ -1922,3 +1933,13 @@ class WTAdvanced(object):
                 text = 'x: {:.2f}, y: {:.2f}'.format(x, y)
 
         annot_ref.set_text(text)
+
+    @contextmanager
+    def wait_cursor(self):
+        """Provide a busy cursor to the user while the code is processing.
+        """
+        try:
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            yield
+        finally:
+            QtWidgets.QApplication.restoreOverrideCursor()

@@ -4127,7 +4127,7 @@ class Ui_MainWindow(object):
         self.box_compass_comments_2.setTitle(_translate("MainWindow", "Comments"))
         self.tab_tempsal_2.setTabText(self.tab_tempsal_2.indexOf(self.tab_tempsal_2_messages), _translate("MainWindow", "Messages"))
         self.tab_all.setTabText(self.tab_all.indexOf(self.tab_tempsal), _translate("MainWindow", "Temp/Sal"))
-        self.cb_mb_observed_no.setText(_translate("MainWindow", "User certifies that they have visually observed the streambed and that there is not moving-bed condition."))
+        self.cb_mb_observed_no.setText(_translate("MainWindow", "User certifies that they have visually observed the streambed and that there is no moving-bed condition."))
         self.cb_mb_bt.setText(_translate("MainWindow", "BT"))
         self.cb_mb_gga.setText(_translate("MainWindow", "GGA"))
         self.cb_mb_vtg.setText(_translate("MainWindow", "VTG"))

@@ -11691,48 +11691,49 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Manages the changing of the x axis type.
         """
 
-        # Clear zoom, pan, home, data_cursor
-        self.clear_zphd()
+        with self.wait_cursor():
+            # Clear zoom, pan, home, data_cursor
+            self.clear_zphd()
 
-        # Determine the selected tab
-        tab_idx = self.current_tab
+            # Determine the selected tab
+            tab_idx = self.current_tab
 
-        # Main tab
-        if tab_idx == 'Main':
-            self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
+            # Main tab
+            if tab_idx == 'Main':
+                self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
 
-        # Compass/PR tab
-        elif tab_idx == 'Compass/P/R':
-            self.compass_plot()
-            self.pr_plot()
+            # Compass/PR tab
+            elif tab_idx == 'Compass/P/R':
+                self.compass_plot()
+                self.pr_plot()
 
-        # Moving-bed test tab
-        elif tab_idx == 'MovBedTst':
-            self.mb_plots(idx=self.mb_row)
+            # Moving-bed test tab
+            elif tab_idx == 'MovBedTst':
+                self.mb_plots(idx=self.mb_row)
 
-        # Bottom track tab
-        elif tab_idx == 'BT':
-            self.bt_plots()
+            # Bottom track tab
+            elif tab_idx == 'BT':
+                self.bt_plots()
 
-        # GPS tab
-        elif tab_idx == 'GPS':
-            self.gps_plots()
+            # GPS tab
+            elif tab_idx == 'GPS':
+                self.gps_plots()
 
-        # Depth tab
-        elif tab_idx == 'Depth':
-            self.depth_plots()
+            # Depth tab
+            elif tab_idx == 'Depth':
+                self.depth_plots()
 
-        # Water track tab
-        elif tab_idx == 'WT':
-            self.wt_plots()
+            # Water track tab
+            elif tab_idx == 'WT':
+                self.wt_plots()
 
-        # Edges tab
-        elif tab_idx == 'Edges':
-            self.edges_graphics()
+            # Edges tab
+            elif tab_idx == 'Edges':
+                self.edges_graphics()
 
-        # Adv. Graph
-        elif tab_idx == 'Adv. Graph':
-            self. adv_graph_tab()
+            # Adv. Graph
+            elif tab_idx == 'Adv. Graph':
+                self. adv_graph_tab()
 
     def x_axis_time(self):
         """Changes the x-axis type to time

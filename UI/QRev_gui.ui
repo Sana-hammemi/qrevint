@@ -1654,7 +1654,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>User certifies that they have visually observed the streambed and that there is not moving-bed condition.</string>
+                 <string>User certifies that they have visually observed the streambed and that there is no moving-bed condition.</string>
                 </property>
                </widget>
               </item>
