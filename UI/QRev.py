@@ -10763,8 +10763,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tr('Extrap: no slip exponent minimum'),
                     self.tr('Extrap: no slip exponent maximum'),
                     self.tr('GGA boat speed (m/s)'),
-                    self.tr('VTG boat speed (m/s'),
-                    self.tr('Compass error (deg'),
+                    self.tr('VTG boat speed (m/s)'),
+                    self.tr('Compass error (deg)'),
                     self.tr('Bayesian COV Prior'),
                     self.tr('Bayesian COV Prior Uncertainty')]
         tbl.setHorizontalHeaderLabels([self.tr('Default'), self.tr('User')])
