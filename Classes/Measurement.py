@@ -31,6 +31,10 @@ class Measurement(object):
         Station name
     station_number: str
         Station number
+    meas_number: str
+        Measurement number
+    persons: str
+        Persons collecting and/or processing the measurement
     transects: list
         List of transect objects of TransectData
     mb_tests: list
@@ -106,6 +110,8 @@ class Measurement(object):
         self.min_duration = min_duration
         self.station_name = None
         self.station_number = None
+        self.persons = ''
+        self.meas_number = ''
         self.transects = []
         self.mb_tests = []
         self.system_tst = []
@@ -217,6 +223,8 @@ class Measurement(object):
         # Get properties if they exist, otherwise set them as blank strings
         self.station_name = str(mmt.site_info['Name'])
         self.station_number = str(mmt.site_info['Number'])
+        self.persons = str(mmt.site_info['Party'])
+        self.meas_number = str(mmt.site_info['MeasurementNmb'])
 
         # Initialize processing variable
         self.processing = 'WR2'
@@ -477,7 +485,10 @@ class Measurement(object):
                     self.station_number = rsdata.SiteInfo.Station_Number
                 else:
                     self.station_number = ''
-
+            if hasattr(rsdata.SiteInfo, 'Meas_Number'):
+                self.meas_number = rsdata.SiteInfo.Meas_Number
+            if hasattr(rsdata.SiteInfo, 'Party'):
+                self.persons = rsdata.SiteInfo.Party
         self.qaqc_sontek(pathname)
 
         for transect in self.transects:
@@ -606,6 +617,10 @@ class Measurement(object):
             self.station_name = meas_struct.stationName
         if len(meas_struct.stationNumber) > 0:
             self.station_number = meas_struct.stationNumber
+        if hasattr(meas_struct, 'meas_number'):
+            self.meas_number = meas_struct.meas_number
+        if hasattr(meas_struct, 'persons'):
+            self.persons = meas_struct.persons
         self.processing = meas_struct.processing
         if type(meas_struct.comments) == np.ndarray:
             self.comments = meas_struct.comments.tolist()
@@ -2365,6 +2380,12 @@ class Measurement(object):
                 ETree.SubElement(site_info, 'SiteID', type='char').text = self.station_number
             else:
                 ETree.SubElement(site_info, 'SiteID', type='char').text = str(self.station_number)
+
+            # (3) Persons
+            ETree.SubElement(site_info, 'Persons', type='char').text = self.persons
+
+            # (3) Measurement Number
+            ETree.SubElement(site_info, 'MeasurementNumber', type='char').text = self.meas_number
 
         # (2) QA Node
         qa = ETree.SubElement(channel, 'QA')

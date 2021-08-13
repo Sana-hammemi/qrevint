@@ -43,6 +43,8 @@ class Python2Matlab(object):
         self.matlab_dict['stationNumber'] = meas_mat.station_number
         if self.matlab_dict['stationNumber'] is None:
             self.matlab_dict['stationNumber'] = ''
+        self.matlab_dict['persons'] = meas_mat.persons
+        self.matlab_dict['meas_number'] = meas_mat.meas_number
         self.matlab_dict['processing'] = meas_mat.processing
         self.matlab_dict['extTempChk'] = meas_mat.ext_temp_chk
         self.matlab_dict['userRating'] = meas_mat.user_rating

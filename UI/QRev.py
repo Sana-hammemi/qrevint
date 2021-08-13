@@ -1554,6 +1554,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.main_table_details.cellClicked.connect(self.select_transect)
                     self.ed_site_name.editingFinished.connect(self.update_site_name)
                     self.ed_site_number.editingFinished.connect(self.update_site_number)
+                    self.ed_persons.editingFinished.connect(self.update_persons)
+                    self.ed_meas_num.editingFinished.connect(self.update_meas_number)
                     self.table_settings.cellClicked.connect(self.settings_table_row_adjust)
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
@@ -1916,8 +1918,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Q:')))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 0).setFont(self.font_bold)
-        if self.meas.uncertainty is None:
-            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+        if self.meas.uncertainty is None or np.isnan(self.meas.uncertainty.cov):
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('N/A'))
         else:
             tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(self.meas.uncertainty.cov)))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -1928,7 +1930,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.item(row, 2).setFont(self.font_bold)
         left = (discharge['left_mean'] / discharge['total_mean']) * 100
         right = (discharge['right_mean'] / discharge['total_mean']) * 100
-        tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f} / {:5.2f}'.format(left, right)))
+        if np.isnan(left) or np.isnan(right):
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('N/A'))
+        else:
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f} / {:5.2f}'.format(left, right)))
         tbl.item(row, 3).setFlags(QtCore.Qt.ItemIsEnabled)
 
         row = row + 1
@@ -1936,7 +1941,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Width:')))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 0).setFont(self.font_bold)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(trans_prop['width_cov'][-1])))
+        if np.isnan(trans_prop['width_cov'][-1]):
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('N/A'))
+        else:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(trans_prop['width_cov'][-1])))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
         # Invalid cells
@@ -1944,7 +1952,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.item(row, 2).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 2).setFont(self.font_bold)
         value = (discharge['int_cells_mean'] / discharge['total_mean']) * 100
-        tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f}'.format(value)))
+        if np.isnan(value):
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('N/A'))
+        else:
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f}'.format(value)))
         tbl.item(row, 3).setFlags(QtCore.Qt.ItemIsEnabled)
 
         row = row + 1
@@ -1952,7 +1963,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(self.tr('Area:')))
         tbl.item(row, 0).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 0).setFont(self.font_bold)
-        tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(trans_prop['area_cov'][-1])))
+        if np.isnan(trans_prop['area_cov'][-1]):
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('N/A'))
+        else:
+            tbl.setItem(row, 1, QtWidgets.QTableWidgetItem('{:5.2f}'.format(trans_prop['area_cov'][-1])))
         tbl.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
         # Invalid ensembles
@@ -1960,7 +1974,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.item(row, 2).setFlags(QtCore.Qt.ItemIsEnabled)
         tbl.item(row, 2).setFont(self.font_bold)
         value = (discharge['int_ensembles_mean'] / discharge['total_mean']) * 100
-        tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f}'.format(value)))
+        if np.isnan(value):
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('N/A'))
+        else:
+            tbl.setItem(row, 3, QtWidgets.QTableWidgetItem('{:5.2f}'.format(value)))
         tbl.item(row, 3).setFlags(QtCore.Qt.ItemIsEnabled)
 
         tbl.resizeColumnsToContents()
@@ -2513,8 +2530,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 per_diff = ((self.meas.discharge[transect_id].total - discharge['total_mean']) /
                             discharge['total_mean']) * 100
                 col += 1
-                tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+                if np.isnan(per_diff):
+                    tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem('N/A'))
+                else:
+                    tbl.setItem(row + 1, col,
+                                QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Add measurement summaries
@@ -2742,6 +2762,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.label_site_number.setStyleSheet('background: white')
             self.label_site_number.setToolTip('')
 
+        self.ed_persons.setText(self.meas.persons)
+        self.ed_meas_num.setText(self.meas.meas_number)
+
         # Setup table
         tbl = self.table_premeas
         ncols = 4
@@ -2899,6 +2922,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.label_site_number.setStyleSheet('background: white')
         self.meas.qa.user_qa(self.meas)
         self.messages_tab()
+        self.main_premeasurement_table()
+
+    def update_persons(self):
+        """Sets the person(s) to the information entered by the user.
+        """
+        self.meas.persons = self.ed_persons.text()
+        self.main_premeasurement_table()
+
+    def update_meas_number(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        self.meas.meas_number = self.ed_meas_num.text()
         self.main_premeasurement_table()
 
     def main_settings_table(self):

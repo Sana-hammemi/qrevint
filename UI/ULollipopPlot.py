@@ -1,3 +1,5 @@
+import numpy as np
+
 class ULollipopPlot(object):
     """Class to generate lollipop plot of Oursin uncertainty results.
     """
@@ -52,8 +54,11 @@ class ULollipopPlot(object):
             self.fig.ax.set_xlabel(self.canvas.tr("Percent of Total"))
             self.fig.ax.xaxis.label.set_fontsize(12)
             self.fig.ax.tick_params(axis='both', which='major', labelsize=10)
-            self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: ') +
-                                  '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")
+            if np.isnan(meas.oursin.u_measurement_user['total_95'][0]):
+                self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: N/A'))
+            else:
+                self.fig.ax.set_title(self.canvas.tr('95% Total Uncertainty: ') +
+                                      '%5.1f' % meas.oursin.u_measurement_user['total_95'][0], fontweight="bold")
 
             # Setup annotation features
             self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",

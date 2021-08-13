@@ -415,7 +415,10 @@ class Oursin(object):
                                  'u_invalid_water_user': meas_struct.oursin.user_specified_u.u_invalid_water_user}
 
         # Extrap results
-        self.bot_meth = meas_struct.oursin.bot_meth.tolist()
+        if type(meas_struct.oursin.bot_meth) is str:
+            self.bot_meth = [meas_struct.oursin.bot_meth]
+        else:
+            self.bot_meth = meas_struct.oursin.bot_meth.tolist()
 
         if type(meas_struct.oursin.exp_95ic_min) is float:
             self.exp_95ic_min = meas_struct.oursin.exp_95ic_min
@@ -429,12 +432,9 @@ class Oursin(object):
 
         if type(meas_struct.oursin.ppExponent) is float:
             self.pp_exp = meas_struct.oursin.ppExponent
-        else:
-            self.pp_exp = meas_struct.oursin.ppExponent.tolist()
-
-        if type(meas_struct.oursin.nsExponent) is float:
             self.ns_exp = meas_struct.oursin.nsExponent
         else:
+            self.pp_exp = meas_struct.oursin.ppExponent.tolist()
             self.ns_exp = meas_struct.oursin.nsExponent.tolist()
 
         # Parameters used for computing the uncertainty
@@ -442,38 +442,72 @@ class Oursin(object):
         self.exp_pp_max = meas_struct.oursin.exp_pp_max
         self.exp_ns_min = meas_struct.oursin.exp_ns_min
         self.exp_ns_max = meas_struct.oursin.exp_ns_max
-        self.d_right_error_min = meas_struct.oursin.d_right_error_min.tolist()
-        self.d_left_error_min = meas_struct.oursin.d_left_error_min.tolist()
-        self.d_right_error_max = meas_struct.oursin.d_right_error_max.tolist()
-        self.d_left_error_max = meas_struct.oursin.d_left_error_max.tolist()
-        self.draft_error_list = meas_struct.oursin.draft_error_list.tolist()
+
+        if type(meas_struct.oursin.d_right_error_min) is float:
+            self.d_right_error_min = meas_struct.oursin.d_right_error_min
+            self.d_left_error_min = meas_struct.oursin.d_left_error_min
+            self.d_right_error_max = meas_struct.oursin.d_right_error_max
+            self.d_left_error_max = meas_struct.oursin.d_left_error_max
+            self.draft_error_list = meas_struct.oursin.draft_error_list
+        else:
+            self.d_right_error_min = meas_struct.oursin.d_right_error_min.tolist()
+            self.d_left_error_min = meas_struct.oursin.d_left_error_min.tolist()
+            self.d_right_error_max = meas_struct.oursin.d_right_error_max.tolist()
+            self.d_left_error_max = meas_struct.oursin.d_left_error_max.tolist()
+            self.draft_error_list = meas_struct.oursin.draft_error_list.tolist()
 
         # Terms computed by transect (list at 68% level)
-        self.u_syst_list = meas_struct.oursin.u_syst_list.tolist()
-        self.u_compass_list = meas_struct.oursin.u_compass_list.tolist()
-        self.u_meas_list = meas_struct.oursin.u_meas_list.tolist()
-        self.u_ens_list = meas_struct.oursin.u_ens_list.tolist()
-        self.u_movbed_list = meas_struct.oursin.u_movbed_list.tolist()
-        self.u_invalid_water_list = meas_struct.oursin.u_invalid_water_list.tolist()
-        self.u_invalid_boat_list = meas_struct.oursin.u_invalid_boat_list.tolist()
-        self.u_invalid_depth_list = meas_struct.oursin.u_invalid_depth_list.tolist()
-        self.u_top_list = meas_struct.oursin.u_top_list.tolist()
-        self.u_bot_list = meas_struct.oursin.u_bot_list.tolist()
-        self.u_left_list = meas_struct.oursin.u_left_list.tolist()
-        self.u_right_list = meas_struct.oursin.u_right_list.tolist()
+        if type(meas_struct.oursin.u_syst_mean_user_list) is float:
+            self.u_syst_list = [meas_struct.oursin.u_syst_list]
+            self.u_compass_list = [meas_struct.oursin.u_compass_list]
+            self.u_meas_list = [meas_struct.oursin.u_meas_list]
+            self.u_ens_list = [meas_struct.oursin.u_ens_list]
+            self.u_movbed_list = [meas_struct.oursin.u_movbed_list]
+            self.u_invalid_water_list = [meas_struct.oursin.u_invalid_water_list]
+            self.u_invalid_boat_list = [meas_struct.oursin.u_invalid_boat_list]
+            self.u_invalid_depth_list = [meas_struct.oursin.u_invalid_depth_list]
+            self.u_top_list = [meas_struct.oursin.u_top_list]
+            self.u_bot_list = [meas_struct.oursin.u_bot_list]
+            self.u_left_list = [meas_struct.oursin.u_left_list]
+            self.u_right_list = [meas_struct.oursin.u_right_list]
 
-        self.u_syst_mean_user_list = meas_struct.oursin.u_syst_mean_user_list.tolist()
-        self.u_compass_user_list = meas_struct.oursin.u_compass_user_list.tolist()
-        self.u_movbed_user_list = meas_struct.oursin.u_movbed_user_list.tolist()
-        self.u_meas_mean_user_list = meas_struct.oursin.u_meas_mean_user_list.tolist()
-        self.u_ens_user_list = meas_struct.oursin.u_ens_user_list.tolist()
-        self.u_top_mean_user_list = meas_struct.oursin.u_top_mean_user_list.tolist()
-        self.u_bot_mean_user_list = meas_struct.oursin.u_bot_mean_user_list.tolist()
-        self.u_left_mean_user_list = meas_struct.oursin.u_left_mean_user_list.tolist()
-        self.u_right_mean_user_list = meas_struct.oursin.u_right_mean_user_list.tolist()
-        self.u_invalid_boat_user_list = meas_struct.oursin.u_invalid_boat_user_list.tolist()
-        self.u_invalid_depth_user_list = meas_struct.oursin.u_invalid_depth_user_list.tolist()
-        self.u_invalid_water_user_list = meas_struct.oursin.u_invalid_water_user_list.tolist()
+            self.u_syst_mean_user_list = [meas_struct.oursin.u_syst_mean_user_list]
+            self.u_compass_user_list = [meas_struct.oursin.u_compass_user_list]
+            self.u_movbed_user_list = [meas_struct.oursin.u_movbed_user_list]
+            self.u_meas_mean_user_list = [meas_struct.oursin.u_meas_mean_user_list]
+            self.u_ens_user_list = [meas_struct.oursin.u_ens_user_list]
+            self.u_top_mean_user_list = [meas_struct.oursin.u_top_mean_user_list]
+            self.u_bot_mean_user_list = [meas_struct.oursin.u_bot_mean_user_list]
+            self.u_left_mean_user_list = [meas_struct.oursin.u_left_mean_user_list]
+            self.u_invalid_boat_user_list = [meas_struct.oursin.u_invalid_boat_user_list]
+            self.u_invalid_depth_user_list = [meas_struct.oursin.u_invalid_depth_user_list]
+            self.u_invalid_water_user_list = [meas_struct.oursin.u_invalid_water_user_list]
+        else:
+            self.u_syst_list = meas_struct.oursin.u_syst_list.tolist()
+            self.u_compass_list = meas_struct.oursin.u_compass_list.tolist()
+            self.u_meas_list = meas_struct.oursin.u_meas_list.tolist()
+            self.u_ens_list = meas_struct.oursin.u_ens_list.tolist()
+            self.u_movbed_list = meas_struct.oursin.u_movbed_list.tolist()
+            self.u_invalid_water_list = meas_struct.oursin.u_invalid_water_list.tolist()
+            self.u_invalid_boat_list = meas_struct.oursin.u_invalid_boat_list.tolist()
+            self.u_invalid_depth_list = meas_struct.oursin.u_invalid_depth_list.tolist()
+            self.u_top_list = meas_struct.oursin.u_top_list.tolist()
+            self.u_bot_list = meas_struct.oursin.u_bot_list.tolist()
+            self.u_left_list = meas_struct.oursin.u_left_list.tolist()
+            self.u_right_list = meas_struct.oursin.u_right_list.tolist()
+
+            self.u_syst_mean_user_list = meas_struct.oursin.u_syst_mean_user_list.tolist()
+            self.u_compass_user_list = meas_struct.oursin.u_compass_user_list.tolist()
+            self.u_movbed_user_list = meas_struct.oursin.u_movbed_user_list.tolist()
+            self.u_meas_mean_user_list = meas_struct.oursin.u_meas_mean_user_list.tolist()
+            self.u_ens_user_list = meas_struct.oursin.u_ens_user_list.tolist()
+            self.u_top_mean_user_list = meas_struct.oursin.u_top_mean_user_list.tolist()
+            self.u_bot_mean_user_list = meas_struct.oursin.u_bot_mean_user_list.tolist()
+            self.u_left_mean_user_list = meas_struct.oursin.u_left_mean_user_list.tolist()
+            self.u_right_mean_user_list = meas_struct.oursin.u_right_mean_user_list.tolist()
+            self.u_invalid_boat_user_list = meas_struct.oursin.u_invalid_boat_user_list.tolist()
+            self.u_invalid_depth_user_list = meas_struct.oursin.u_invalid_depth_user_list.tolist()
+            self.u_invalid_water_user_list = meas_struct.oursin.u_invalid_water_user_list.tolist()
 
         # COV
         self.cov_68 = meas_struct.oursin.cov_68
