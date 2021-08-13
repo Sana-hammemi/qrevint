@@ -1244,7 +1244,7 @@ class TransectData(object):
                 coherent = np.tile([False], freq.size)
             ping_type = []
             for n in range(len(coherent)):
-                if n:
+                if coherent[n]:
                     if freq[n] == 3000:
                         ping_type.append('3C')
                     else:
@@ -1340,7 +1340,7 @@ class TransectData(object):
         if type(transect.inTransectIdx) is int:
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])
         else:
-            self.in_transect_idx = transect.inTransectIdx - 1
+            self.in_transect_idx = transect.inTransectIdx.astype(int) - 1
 
     @staticmethod
     def valid_frequencies(frequency_in):

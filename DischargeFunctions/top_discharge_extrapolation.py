@@ -25,8 +25,8 @@ cc = CC('top_discharge_extrapolation')
 
 # Top Discharge Extrapolation with Numba
 # ======================================
-@cc.export('extrapolate_top', 'f8[:](f8[:, :], b1[:, :], i4, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
-                              'optional(i4), optional(f8))')
+@cc.export('extrapolate_top', 'f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
+                              'optional(i8), optional(f8))')
 def extrapolate_top(xprod,
                     w_valid_data,
                     transect_top_method,
@@ -107,7 +107,7 @@ def extrapolate_top(xprod,
 
 
 @njit
-@cc.export('discharge_top', 'f8[:](i4, f8, i4[:], i4[:, :], f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], '
+@cc.export('discharge_top', 'f8[:](i8, f8, i4[:], i4[:, :], f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], '
                             'f8[:], f8[:, :])')
 def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, cell_size, cell_depth,
                   depth_ens, delta_t, z):

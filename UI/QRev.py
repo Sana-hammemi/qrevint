@@ -2254,6 +2254,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         for key in qa_check_keys:
             qa_type = getattr(qa, key)
             self.set_icon(key, qa_type['status'])
+
         self.set_tab_color()
 
     def set_icon(self, key, status):
@@ -2367,6 +2368,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.tab_all.indexOf(
                                 self.tab_all.findChild(QtWidgets.QWidget, tab)),
                             QtGui.QColor(0, 0, 255))
+                        if tab == 'tab_uncertainty_2_advanced':
+                            self.tab_uncertainty_2.tabBar().setTabTextColor(
+                                self.tab_uncertainty_2.indexOf(
+                                    self.tab_uncertainty_2.findChild(QtWidgets.QWidget, tab)),
+                                QtGui.QColor(0, 0, 255))
+
+                    elif tab == 'tab_uncertainty':
+                        self.tab_all.tabBar().setTabTextColor(
+                            self.tab_all.indexOf(
+                                self.tab_all.findChild(QtWidgets.QWidget, tab)),
+                            QtGui.QColor(0, 0, 0))
+
+                    elif tab == 'tab_uncertainty_2_advanced':
+                        self.tab_uncertainty_2.tabBar().setTabTextColor(
+                            self.tab_uncertainty_2.indexOf(
+                                self.tab_uncertainty_2.findChild(QtWidgets.QWidget, tab)),
+                            QtGui.QColor(0, 0, 0))
 
                 else:
                     if self.tab_all.isTabEnabled(6) is True:
@@ -10031,7 +10049,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.update_edges_table()
 
         # Left number of ensembles
-        elif col == 5:
+        elif col == 6:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -10146,7 +10164,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.update_edges_table()
 
         # Right number of ensembles
-        elif col == 12:
+        elif col == 13:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -11083,6 +11101,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_uncertainty_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_uncertainty_comments.textCursor().insertBlock()
 
+            self.meas.qa.check_oursin(self.meas)
             self.update_tab_icons()
 
     # EDI tab

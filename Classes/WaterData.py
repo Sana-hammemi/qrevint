@@ -597,7 +597,7 @@ class WaterData(object):
         adcp: InstrumentData
             Object of instrument data
         """
-        if type(self.orig_coord_sys) is list:
+        if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
             o_coord_sys = self.orig_coord_sys[0].strip()
         else:
             o_coord_sys = self.orig_coord_sys.strip()

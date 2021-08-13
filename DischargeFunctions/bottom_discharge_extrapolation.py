@@ -25,8 +25,8 @@ cc = CC('bottom_discharge_extrapolation')
 
 # Bottom Discharge Extrapolation with Numba
 # =========================================
-@cc.export('extrapolate_bot', 'f8[:](f8[:, :], b1[:, :], i4, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
-                              'optional(i4), optional(f8))')
+@cc.export('extrapolate_bot', 'f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
+                              'optional(i8), optional(f8))')
 def extrapolate_bot(xprod,
                     w_valid_data,
                     transect_bot_method,
@@ -107,7 +107,7 @@ def extrapolate_bot(xprod,
 
 
 @njit
-@cc.export('discharge_top', 'f8[:](i4, f8, f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], f8[:], f8[:, :])')
+@cc.export('discharge_top', 'f8[:](i8, f8, f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], f8[:], f8[:, :])')
 def discharge_bot(bot_method, exponent, bot_rng, component,
                   cell_size, cell_depth, depth_ens, delta_t, z):
     """Computes the bottom extrapolated value of the provided component.

@@ -110,6 +110,8 @@ class QAData(object):
             self.check_tempsal_settings(meas)
             self.check_mbt_settings(meas)
             self.check_compass_settings(meas)
+            if meas.oursin is not None:
+                self.check_oursin(meas)
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
 
@@ -2437,3 +2439,30 @@ class QAData(object):
 
             if align_change:
                 self.compass['messages'].append(['Compass: User modified heading offset.', 3, 4])
+
+    def check_oursin(self, meas):
+        """Checks the compass settings for changes.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.settings_dict['tab_uncertainty_2_advanced'] = 'Default'
+        self.settings_dict['tab_uncertainty'] = 'Default'
+
+        for key in meas.oursin.user_advanced_settings.keys():
+            if not np.isnan(meas.oursin.user_advanced_settings[key]):
+                self.settings_dict['tab_uncertainty_2_advanced'] = 'Custom'
+                self.settings_dict['tab_uncertainty'] = 'Custom'
+                break
+
+        for key in meas.oursin.user_specified_u.keys():
+            if not np.isnan(meas.oursin.user_specified_u[key]):
+                self.settings_dict['tab_uncertainty'] = 'Custom'
+                break
+
+
+
+
