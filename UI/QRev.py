@@ -1026,7 +1026,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     uncertainty = self.meas.uncertainty.total_95_user
 
-                rating_dialog.uncertainty_value.setText('{:4.1f}'.format(uncertainty))
+                if np.isnan(uncertainty):
+                    rating_dialog.uncertainty_value.setText('N/A')
+                else:
+                    rating_dialog.uncertainty_value.setText('{:4.1f}'.format(uncertainty))
 
                 if self.meas.user_rating in ['Not Rated', '']:
                     if uncertainty < 3:

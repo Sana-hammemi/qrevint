@@ -479,10 +479,27 @@ class WaterData(object):
                     self.ping_type = np.tile('U', self.d_mps.shape)
 
         else:
-            self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 2, 0)
-            self.corr = np.moveaxis(transect.wVel.corr, 2, 0)
-            self.rssi = np.moveaxis(transect.wVel.rssi, 2, 0)
-            self.valid_data = np.moveaxis(transect.wVel.validData, 2, 0)
+            n_ensembles = transect.wVel.u_mps.shape[1]
+            n_cells = transect.wVel.u_mps.shape[0]
+            if transect.wVel.rawVel_mps.shape[2] != n_ensembles or transect.wVel.rawVel_mps.shape[1] != n_cells:
+                self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 2, 0)
+            else:
+                self.raw_vel_mps = transect.wVel.rawVel_mps
+
+            if transect.wVel.corr.shape[2] != n_ensembles or transect.wVel.corr.shape[1] != n_cells:
+                self.corr = np.moveaxis(transect.wVel.corr, 2, 0)
+            else:
+                self.corr = transect.wVel.corr
+
+            if transect.wVel.rssi.shape[2] != n_ensembles or transect.wVel.rssi.shape[1] != n_cells:
+                self.rssi = np.moveaxis(transect.wVel.rssi, 2, 0)
+            else:
+                self.rssi = transect.wVel.rssi
+
+            if transect.wVel.validData.shape[2] != n_ensembles or transect.wVel.validData.shape[1] != n_cells:
+                self.valid_data = np.moveaxis(transect.wVel.validData, 2, 0)
+            else:
+                self.valid_data = transect.wVel.validData
             self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
             self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
             self.u_mps = transect.wVel.u_mps

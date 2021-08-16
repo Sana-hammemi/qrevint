@@ -97,25 +97,25 @@ class MMTtrdi(object):
                     self.site_info[x] = site_data
             else:
                 self.site_info[x] = ''
+        if 'Transect' in win_river['Project']['Site_Discharge'].keys():
+            trans = win_river['Project']['Site_Discharge']['Transect']
 
-        trans = win_river['Project']['Site_Discharge']['Transect']
+            # Create a Transect class for each transect found under Site_Discharge
+            if type(trans) == list:
+                for i in range(len(trans)):
+                    if 'File' in trans[i]:
+                        self.transects.append(MMTtransect(trans[i]))
+            else:
+                self.transects = [MMTtransect(trans)]
 
-        # Create a Transect class for each transect found under Site_Discharge
-        if type(trans) == list:
-            for i in range(len(trans)):
-                if 'File' in trans[i]:
-                    self.transects.append(MMTtransect(trans[i]))
-        else:
-            self.transects = [MMTtransect(trans)]
+            # Discharge Summary
+            if 'Discharge_Summary' in win_river['Project']['Site_Discharge'].keys():
+                discharge_summary = win_river['Project']['Site_Discharge']['Discharge_Summary']
 
-        # Discharge Summary
-        if 'Discharge_Summary' in win_river['Project']['Site_Discharge'].keys():
-            discharge_summary = win_river['Project']['Site_Discharge']['Discharge_Summary']
-
-            self.summary['NONE'] = self.mmtqsum(discharge_summary['None'])
-            self.summary['BT'] = self.mmtqsum(discharge_summary['BottomTrack'])
-            self.summary['GGA'] = self.mmtqsum(discharge_summary['GGA'])
-            self.summary['VTG'] = self.mmtqsum(discharge_summary['VTG'])
+                self.summary['NONE'] = self.mmtqsum(discharge_summary['None'])
+                self.summary['BT'] = self.mmtqsum(discharge_summary['BottomTrack'])
+                self.summary['GGA'] = self.mmtqsum(discharge_summary['GGA'])
+                self.summary['VTG'] = self.mmtqsum(discharge_summary['VTG'])
 
         # QA_QC
         if 'QA_QC' in win_river['Project'].keys():
