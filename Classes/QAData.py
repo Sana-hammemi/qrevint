@@ -2315,7 +2315,6 @@ class QAData(object):
             if transect.edges.right.number_ensembles != transect.edges.right.orig_number_ensembles:
                 right_edge_ens_change = True
 
-
             if transect.edges.right.user_discharge_cms != transect.edges.right.orig_user_discharge_cms:
                 right_edge_q_change = True
 
@@ -2462,7 +2461,3 @@ class QAData(object):
             if not np.isnan(meas.oursin.user_specified_u[key]):
                 self.settings_dict['tab_uncertainty'] = 'Custom'
                 break
-
-
-
-

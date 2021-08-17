@@ -69,7 +69,6 @@ class Oursin(object):
        List that contains the computed uncertainty (68%) due to left discharge extrapolation for each transect
     u_right_list: list
        List that contains the computed uncertainty (68%) due to right discharge extrapolation for each transect
-               self.u_compass_user_list = []
     u_syst_mean_user_list: list
         List that contains the user specified  systematic uncertainty (68%) for each transect
     u_compass_user_list: list
@@ -432,9 +431,12 @@ class Oursin(object):
 
         if type(meas_struct.oursin.ppExponent) is float:
             self.pp_exp = meas_struct.oursin.ppExponent
-            self.ns_exp = meas_struct.oursin.nsExponent
         else:
             self.pp_exp = meas_struct.oursin.ppExponent.tolist()
+
+        if type(meas_struct.oursin.nsExponent) is float:
+            self.ns_exp = meas_struct.oursin.nsExponent
+        else:
             self.ns_exp = meas_struct.oursin.nsExponent.tolist()
 
         # Parameters used for computing the uncertainty
