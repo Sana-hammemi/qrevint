@@ -433,6 +433,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sticky_settings = SSet(self.settingsFile)
 
         # Set units based on previous session or default to English
+        if not 'Units' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: Units parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['Units'].keys():
+            self.popup_message('QRev.cfg Units: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['Units'].keys():
+            self.popup_message('QRev.cfg Units: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['Units']['show']:
                 units_id = self.sticky_settings.get('UnitsID')
@@ -448,6 +457,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.save_all = True
 
         # Use unweighted medians for extrapolation by default
+        if not 'ExtrapWeighting' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: ExtrapWeighting parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['ExtrapWeighting'].keys():
+            self.popup_message('QRev.cfg ExtrapWeighting: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['ExtrapWeighting'].keys():
+            self.popup_message('QRev.cfg ExtrapWeighting: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['ExtrapWeighting']['show']:
                 wght = self.sticky_settings.get('UseWeighted')
@@ -459,6 +477,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_weighted = self.agency_options['ExtrapWeighting']['default']
 
         # Use whole measurement or transects for error and vertical velocity filters
+        if not 'FilterUsingMeasurement' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: FilterUsingMeasurement parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['FilterUsingMeasurement'].keys():
+            self.popup_message('QRev.cfg FilterUsingMeasurement: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['FilterUsingMeasurement'].keys():
+            self.popup_message('QRev.cfg FilterUsingMeasurement: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['FilterUsingMeasurement']['show']:
                 use_meas = self.sticky_settings.get('UseMeasurementThresholds')
@@ -471,6 +498,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_measurement_thresholds = self.agency_options['FilterUsingMeasurement']['default']
 
         # Stylesheet setting
+        if not 'SaveStyleSheet' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: SaveStyleSheet parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['SaveStyleSheet'].keys():
+            self.popup_message('QRev.cfg SaveStyleSheet: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['SaveStyleSheet'].keys():
+            self.popup_message('QRev.cfg SaveStyleSheet: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['SaveStyleSheet']['show']:
                 ss = self.sticky_settings.get('StyleSheet')
@@ -482,6 +518,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.save_stylesheet = self.agency_options['SaveStyleSheet']['default']
 
         # Prompt for user rating
+        if not 'RatingPrompt' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: RatingPrompt parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['RatingPrompt'].keys():
+            self.popup_message('QRev.cfg RatingPrompt: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['RatingPrompt'].keys():
+            self.popup_message('QRev.cfg RatingPrompt: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['RatingPrompt']['show']:
                 ss = self.sticky_settings.get('UserRating')
@@ -493,6 +538,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rating_prompt = self.agency_options['RatingPrompt']['default']
 
         # Color map
+        if not 'ColorMap' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: ColorMap parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['ColorMap'].keys():
+            self.popup_message('QRev.cfg ColorMap: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['ColorMap'].keys():
+            self.popup_message('QRev.cfg ColorMap: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['ColorMap']['show']:
                 ss = self.sticky_settings.get('ColorMap')
@@ -504,6 +558,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.color_map = self.agency_options['ColorMap']['default']
 
         # Uncertainty model
+        if not 'Uncertainty' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: Uncertainty parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['Uncertainty'].keys():
+            self.popup_message('QRev.cfg Uncertainty: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['Uncertainty'].keys():
+            self.popup_message('QRev.cfg Uncertainty: default parameter not found.')
+            sys.exit()
         try:
             if self.agency_options['Uncertainty']['show']:
                 ss = self.sticky_settings.get('Oursin')
@@ -527,15 +590,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
 
         # Observed no moving-bed
-        try:
-            if self.agency_options['MovingBedObservation']['show']:
-                ss = self.sticky_settings.get('AllowNoMB')
-                self.allow_observed_no_moving_bed = ss
-            else:
+        if not 'MovingBedObservation' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: MovingBedObservation parameter not found.')
+            sys.exit()
+        if not 'show' in self.agency_options['MovingBedObservation'].keys():
+            self.popup_message('QRev.cfg: MovingBedObservation: show parameter not found.')
+            sys.exit()
+        if not 'default' in self.agency_options['MovingBedObservation'].keys():
+            self.popup_message('QRev.cfg MovingBedObservation: default parameter not found.')
+            sys.exit()
+
+            try:
+                if self.agency_options['MovingBedObservation']['show']:
+                    ss = self.sticky_settings.get('AllowNoMB')
+                    self.allow_observed_no_moving_bed = ss
+                else:
+                    self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
+            except KeyError:
+                self.sticky_settings.new('AllowNoMB', self.agency_options['MovingBedObservation']['default'])
                 self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
-        except KeyError:
-            self.sticky_settings.new('AllowNoMB', self.agency_options['MovingBedObservation']['default'])
-            self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
+
+        # Check for QA Settings
+        if not 'QA' in self.agency_options.keys():
+            self.popup_message('QRev.cfg: QA parameter not found.')
+            sys.exit()
+        if not 'MinTransects' in self.agency_options['QA'].keys():
+            self.popup_message('QRev.cfg: QA MinTransects parameter not found.')
+            sys.exit()
+        if not 'MinDuration' in self.agency_options['QA'].keys():
+            self.popup_message('QRev.cfg QA MinDuration parameter not found.')
+            sys.exit()
+
 
         self.manual_computational_settings = {'run_oursin': self.run_oursin,
                                               'use_measurement_thresholds': self.use_measurement_thresholds,
