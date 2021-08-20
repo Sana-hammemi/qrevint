@@ -8,9 +8,10 @@ from contextlib import contextmanager
 from matplotlib.colors import Colormap
 from datetime import datetime, timedelta
 from MiscLibs.common_functions import sind, cosd
+import matplotlib as plt
 
 
-class WTAdvanced(object):
+class AdvGraphs(object):
     """Class to generate the color contour plot of water speed data.
 
     Attributes
@@ -107,6 +108,7 @@ class WTAdvanced(object):
                                          'cb_bt_source_ts': self.bt_source_ts,
                                          'cb_bt_corr_ts': self.bt_corr_ts,
                                          'cb_bt_rssi_ts': self.bt_rssi_ts,
+                                         'cb_bt_other': self.bt_other,
                                          'cb_gga_boat_speed_ts': self.gga_speed_ts,
                                          'cb_vtg_boat_speed_ts': self.vtg_speed_ts,
                                          'cb_gga_quality_ts': self.gga_quality_ts,
@@ -125,7 +127,7 @@ class WTAdvanced(object):
                                          'cb_depths_source_ts': self.depths_source_ts
                                         }
 
-    def create(self, transect, discharge, units, selected_types, flow_direction, color_map='viridis', x_axis_type=None,
+    def create(self, transect, discharge, units, selected_types, flow_direction=0, color_map='viridis', x_axis_type=None,
                show_below_sl=False):
         """Create selected plots for the specified transect.
 
@@ -260,6 +262,90 @@ class WTAdvanced(object):
             self.fig.clear()
 
         self.canvas.draw()
+
+    def create_depth_tab_graphs(self, transect, units,
+                                b1=True, b2=True, b3=True, b4=True, vb = False, ds=False,
+                                avg4_final=False, vb_final=False, ds_final=False, final=True, x_axis_type=None):
+            with self.wait_cursor():
+                # Initialize data sources
+                self.transect = transect
+
+                # Set default axis
+                if x_axis_type is None:
+                    x_axis_type = 'E'
+                self.x_axis_type = x_axis_type
+
+                self.units = units
+
+                # Clear the plot
+                self.fig.clear()
+
+                # Determine number of subplots
+                self.n_subplots = 2
+
+                # Compute x-axis variable
+                self.compute_x_axis()
+
+                # Initialize variable for subplots
+                self.ax = []
+                self.annot = []
+                self.data_plotted = []
+
+                # Create grid specification
+                # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+                # plots to allow the sharing of the x-axis between all plots
+                self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+                # Create first subplot
+                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+                self.depths_beam_ts(b1, b2, b3, b4, vb, ds, leg=False)
+
+                self.fig_no += 2
+                # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+                self.depths_final_ts(avg4_final=avg4_final, vb_final=vb_final, ds_final=ds_final, final=final)
+
+                # Adjust the spacing of the subplots
+                self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+
+                # Apply the x-axis label to the bottom x-axis
+                idx = -1
+
+                self.ax[idx].xaxis.label.set_fontsize(12)
+
+                # x-axis is length
+                if self.x_axis_type == 'L':
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
+                    else:
+                        self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+                # x-axis is ensembles
+                elif self.x_axis_type == 'E':
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                    else:
+                        self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+                # x-axis is time
+                elif self.x_axis_type == 'T':
+                    axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+                    if self.transect.start_edge == 'Right':
+                        self.ax[idx].invert_xaxis()
+                        self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                              left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                    else:
+                        self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                              right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                    date_form = DateFormatter('%H:%M:%S')
+                    self.ax[idx].xaxis.set_major_formatter(date_form)
+                    self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+
+            self.canvas.draw()
 
     def avg_corr_contour(self):
         """Creates average correlation contour plot.
@@ -969,6 +1055,35 @@ class WTAdvanced(object):
         # Configure y axis
         self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
 
+    def bt_other(self):
+        # Plot smooth
+        speed = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
+                        + self.transect.boat_vel.bt_vel.v_mps ** 2)
+        invalid_other_vel = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[4, :])
+        if self.transect.boat_vel.bt_vel.smooth_filter == 'On':
+            self.other = self.fig.ax.plot(self.x,
+                                          self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
+                                          color='#d5dce6')
+            self.other.append(self.fig.ax.plot(self.x,
+                                               self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
+                                               color='#d5dce6')[0])
+            self.other.append(self.fig.ax.fill_between(self.x,
+                                                       self.transect.boat_vel.bt_vel.smooth_lower_limit
+                                                       * self.units['V'],
+                                                       self.transect.boat_vel.bt_vel.smooth_upper_limit
+                                                       * self.units['V'],
+                                                       facecolor='#d5dce6'))
+
+            self.other.append(self.fig.ax.plot(self.x, speed * self.units['V'], 'r-')[0])
+            self.other.append(self.fig.ax.plot(self.x,
+                                               self.transect.boat_vel.bt_vel.smooth_speed * self.units['V'])[0])
+            self.other.append(self.fig.ax.plot(self.x[invalid_other_vel],
+                                               speed[invalid_other_vel] * self.units['V'],
+                                               'ko', linestyle='')[0])
+        else:
+            self.other = self.fig.ax.plot(self.x, speed * self.units['V'], 'r-')
+        self.fig.ax.set_ylabel(self.canvas.tr('Speed' + self.units['label_V']))
+
     def gga_source_ts(self):
         """Plot source for GGA data.
         """
@@ -1264,7 +1379,7 @@ class WTAdvanced(object):
                             ax=self.ax[-1],
                             fmt=fmt)
 
-    def depths_beam_ts(self):
+    def depths_beam_ts(self, b1=True, b2=True, b3=True, b4=True, vb=True, ds=True, leg=True):
         """Plot available beam depths including depth sounder on single plot.
         """
 
@@ -1276,116 +1391,147 @@ class WTAdvanced(object):
         max_depth = [np.nanmax(np.nanmax(beam_depths))]
 
         # Plot beam 1 using mask to identify invalid data
-        data_mask = [[], invalid_beams[0]]
-        data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
-        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o',  'markersize': 4, 'label': 'B1'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                'label': None}]
-        self.plt_timeseries(data=beam_depths[0, :],
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt,
-                            set_annot=True)
+        if b1:
+            data_mask = [[], invalid_beams[0]]
+            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+            fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o',  'markersize': 4, 'label': 'B1'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
+            self.plt_timeseries(data=beam_depths[0, :],
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                                set_annot=True)
 
         # Plot beam 2 using mask to identify invalid data
-        data_mask = [[], invalid_beams[1]]
-        data_units = (self.units['L'], '')
-        fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                'label': None}]
-        self.plt_timeseries(data=beam_depths[1, :],
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt,
-                            set_annot=False)
+        if b2:
+            data_mask = [[], invalid_beams[1]]
+            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+            fmt = [{'color': '#005500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B2'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
+            self.plt_timeseries(data=beam_depths[1, :],
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                                set_annot=False)
 
         # Plot beam 3 using mask to identify invalid data
-        data_mask = [[], invalid_beams[2]]
-        data_units = (self.units['L'], '')
-        fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                'label': None}]
-        self.plt_timeseries(data=beam_depths[2, :],
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt,
-                            set_annot=False)
+        if b3:
+            data_mask = [[], invalid_beams[2]]
+            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+            fmt = [{'color': 'b', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B3'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
+            self.plt_timeseries(data=beam_depths[2, :],
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                                set_annot=False)
 
         # Plot beam 4 using mask to identify invalid data
-        data_mask = [[], invalid_beams[3]]
-        data_units = (self.units['L'], '')
-        fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'},
-               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                'label': None}]
-        self.plt_timeseries(data=beam_depths[3, :],
-                            data_units=data_units,
-                            data_mask=data_mask,
-                            ax=self.ax[-1],
-                            fmt=fmt,
-                            set_annot=False)
+        if b4:
+            data_mask = [[], invalid_beams[3]]
+            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+            fmt = [{'color': '#aa5500', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'B4'},
+                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                    'label': None}]
+            self.plt_timeseries(data=beam_depths[3, :],
+                                data_units=data_units,
+                                data_mask=data_mask,
+                                ax=self.ax[-1],
+                                fmt=fmt,
+                                set_annot=False)
 
         # Plot vertical beam, if available
-        if self.transect.depths.vb_depths is not None:
-            invalid_beams = np.logical_not(self.transect.depths.vb_depths.valid_beams[0, :]).tolist()
-            beam_depths = self.transect.depths.vb_depths.depth_beams_m[0, :]
-            data_mask = [[], invalid_beams]
-            data_units = (self.units['L'], '')
-            fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'VB'},
-                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                    'label': None}]
-            self.plt_timeseries(data=beam_depths,
-                                data_units=data_units,
-                                data_mask=data_mask,
-                                ax=self.ax[-1],
-                                fmt=fmt,
-                                set_annot=False)
-            # Add max depth from vertical beam to list
-            max_depth.append(np.nanmax(beam_depths))
+        if vb:
+            if self.transect.depths.vb_depths is not None:
+                invalid_beams = np.logical_not(self.transect.depths.vb_depths.valid_beams[0, :]).tolist()
+                beam_depths = self.transect.depths.vb_depths.depth_beams_m[0, :]
+                data_mask = [[], invalid_beams]
+                data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+                fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'VB'},
+                       {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                        'label': None}]
+                self.plt_timeseries(data=beam_depths,
+                                    data_units=data_units,
+                                    data_mask=data_mask,
+                                    ax=self.ax[-1],
+                                    fmt=fmt,
+                                    set_annot=False)
+                # Add max depth from vertical beam to list
+                max_depth.append(np.nanmax(beam_depths))
 
         # Plot depth sounder data, if available
-        if self.transect.depths.ds_depths is not None:
-            invalid_beams = np.logical_not(self.transect.depths.ds_depths.valid_beams[0, :])
-            beam_depths = self.transect.depths.ds_depths.depth_beams_m[0, :]
-            data_mask = [[], invalid_beams]
-            data_units = (self.units['L'], '')
-            fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'DS'},
-                   {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
-                    'label': None}]
-            self.plt_timeseries(data=beam_depths,
-                                data_units=data_units,
-                                data_mask=data_mask,
-                                ax=self.ax[-1],
-                                fmt=fmt,
-                                set_annot=False)
-            # Add max depth from depth sounder to list
-            max_depth.append(np.nanmax(beam_depths))
+        if ds:
+            if self.transect.depths.ds_depths is not None:
+                invalid_beams = np.logical_not(self.transect.depths.ds_depths.valid_beams[0, :])
+                beam_depths = self.transect.depths.ds_depths.depth_beams_m[0, :]
+                data_mask = [[], invalid_beams]
+                data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+                fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4, 'label': 'DS'},
+                       {'color': 'r', 'linestyle': '', 'marker': 'o', 'markersize': 8, 'markerfacecolor': 'none',
+                        'label': None}]
+                self.plt_timeseries(data=beam_depths,
+                                    data_units=data_units,
+                                    data_mask=data_mask,
+                                    ax=self.ax[-1],
+                                    fmt=fmt,
+                                    set_annot=False)
+                # Add max depth from depth sounder to list
+                max_depth.append(np.nanmax(beam_depths))
 
-        # Show legend
-        self.ax[-1].legend()
+        if leg:
+            # Show legend
+            self.ax[-1].legend()
 
         # Configure y axis
         self.ax[-1].invert_yaxis()
         self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(max_depth) * 1.1 * self.units['L']), top=0)
 
-    def depths_final_ts(self):
+    def depths_final_ts(self, avg4_final=False, vb_final=False, ds_final=False, final=True):
         """Plot final cross section used to compute discharge.
         """
 
-        # Get selected depth
-        depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
-        beam_depths = depth_selected.depth_processed_m
+        if final:
+            # Get selected depth
+            depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+            beam_depths = depth_selected.depth_processed_m
 
-        # Plot processed depth
-        data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
-        fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
-        self.plt_timeseries(data=beam_depths,
-                            data_units=data_units,
-                            ax=self.ax[-1],
-                            fmt=fmt)
+            # Plot processed depth
+            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+            fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                fmt=fmt)
 
+        if avg4_final:
+            beam_depths = self.transect.depths.bt_depths.depth_processed_m
+            fmt = [{'color': 'r', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                fmt=fmt)
+
+        if vb_final:
+            beam_depths = self.transect.depths.vb_depths.depth_processed_m
+            fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                fmt=fmt)
+
+        if ds_final:
+            beam_depths = self.transect.depths.ds_depths.depth_processed_m
+            fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
+            self.plt_timeseries(data=beam_depths,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                fmt=fmt)
         # Format y axis
         self.ax[-1].invert_yaxis()
         self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units['L']), top=0)
@@ -1708,7 +1854,7 @@ class WTAdvanced(object):
 
         # Setup plot
         ax.set_ylabel(self.canvas.tr(data_units[1]))
-        ax.grid()
+        ax.grid(True)
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
@@ -1784,7 +1930,26 @@ class WTAdvanced(object):
                 # Verify that location is associated with plotted data
                 cont_fig = False
                 if item is not None:
-                    cont_fig, ind_fig = self.fig.contains(event)
+                    # cont_fig, ind_fig = self.fig.contains(event)
+                    for ax in self.ax:
+                        for line in ax.lines:
+                            cont_fig, ind_fig = line.contains(event)
+                            if cont_fig:
+                               break
+                        if cont_fig:
+                            break
+                    if not cont_fig:
+                        for ax in self.ax:
+                            cont_ax, ind_ax = ax.contains(event)
+                            if cont_ax:
+                                child_list = ax.get_children()
+                                for child in child_list:
+                                    if type(child) is plt.collections.QuadMesh:
+                                        cont_fig, ind_fig = child.contains(event)
+                                    if cont_fig:
+                                        break
+                            if cont_fig:
+                                break
 
                 value = None
                 if cont_fig and self.fig.get_visible():

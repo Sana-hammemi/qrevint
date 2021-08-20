@@ -59,7 +59,7 @@ from UI.UMeasurement import UMeasurement
 from UI.UMeasQ import UMeasQ
 from UI.MplCanvas import MplCanvas
 from UI.Disclaimer import Disclaimer
-from UI.WTAdvanced import WTAdvanced
+from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
 
 
@@ -340,7 +340,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Uncertainty measurement toolbar
     adv_graph_canvas: MplCanvas
         Advanced graphics canvas
-    adv_graph_fig: WTAdvanced
+    adv_graph_fig: AdvGraphs
         Advanced graphics figure
     adv_graph_toolbar: NavigationToolbar
         Advanced graphics toolbar
@@ -433,13 +433,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sticky_settings = SSet(self.settingsFile)
 
         # Set units based on previous session or default to English
-        if not 'Units' in self.agency_options.keys():
+        if 'Units' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: Units parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['Units'].keys():
+        if 'show' not in self.agency_options['Units'].keys():
             self.popup_message('QRev.cfg Units: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['Units'].keys():
+        if 'default' not in self.agency_options['Units'].keys():
             self.popup_message('QRev.cfg Units: default parameter not found.')
             sys.exit()
         try:
@@ -457,13 +457,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.save_all = True
 
         # Use unweighted medians for extrapolation by default
-        if not 'ExtrapWeighting' in self.agency_options.keys():
+        if 'ExtrapWeighting' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: ExtrapWeighting parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['ExtrapWeighting'].keys():
+        if 'show' not in self.agency_options['ExtrapWeighting'].keys():
             self.popup_message('QRev.cfg ExtrapWeighting: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['ExtrapWeighting'].keys():
+        if 'default' not in self.agency_options['ExtrapWeighting'].keys():
             self.popup_message('QRev.cfg ExtrapWeighting: default parameter not found.')
             sys.exit()
         try:
@@ -477,13 +477,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_weighted = self.agency_options['ExtrapWeighting']['default']
 
         # Use whole measurement or transects for error and vertical velocity filters
-        if not 'FilterUsingMeasurement' in self.agency_options.keys():
+        if 'FilterUsingMeasurement' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: FilterUsingMeasurement parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['FilterUsingMeasurement'].keys():
+        if 'show' not in self.agency_options['FilterUsingMeasurement'].keys():
             self.popup_message('QRev.cfg FilterUsingMeasurement: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['FilterUsingMeasurement'].keys():
+        if 'default' not in self.agency_options['FilterUsingMeasurement'].keys():
             self.popup_message('QRev.cfg FilterUsingMeasurement: default parameter not found.')
             sys.exit()
         try:
@@ -498,13 +498,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_measurement_thresholds = self.agency_options['FilterUsingMeasurement']['default']
 
         # Stylesheet setting
-        if not 'SaveStyleSheet' in self.agency_options.keys():
+        if 'SaveStyleSheet' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: SaveStyleSheet parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['SaveStyleSheet'].keys():
+        if 'show' not in self.agency_options['SaveStyleSheet'].keys():
             self.popup_message('QRev.cfg SaveStyleSheet: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['SaveStyleSheet'].keys():
+        if 'default' not in self.agency_options['SaveStyleSheet'].keys():
             self.popup_message('QRev.cfg SaveStyleSheet: default parameter not found.')
             sys.exit()
         try:
@@ -518,13 +518,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.save_stylesheet = self.agency_options['SaveStyleSheet']['default']
 
         # Prompt for user rating
-        if not 'RatingPrompt' in self.agency_options.keys():
+        if 'RatingPrompt' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: RatingPrompt parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['RatingPrompt'].keys():
+        if 'show' not in self.agency_options['RatingPrompt'].keys():
             self.popup_message('QRev.cfg RatingPrompt: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['RatingPrompt'].keys():
+        if 'default' not in self.agency_options['RatingPrompt'].keys():
             self.popup_message('QRev.cfg RatingPrompt: default parameter not found.')
             sys.exit()
         try:
@@ -538,13 +538,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rating_prompt = self.agency_options['RatingPrompt']['default']
 
         # Color map
-        if not 'ColorMap' in self.agency_options.keys():
+        if 'ColorMap' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: ColorMap parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['ColorMap'].keys():
+        if 'show' not in self.agency_options['ColorMap'].keys():
             self.popup_message('QRev.cfg ColorMap: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['ColorMap'].keys():
+        if 'default' not in self.agency_options['ColorMap'].keys():
             self.popup_message('QRev.cfg ColorMap: default parameter not found.')
             sys.exit()
         try:
@@ -558,13 +558,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.color_map = self.agency_options['ColorMap']['default']
 
         # Uncertainty model
-        if not 'Uncertainty' in self.agency_options.keys():
+        if 'Uncertainty' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: Uncertainty parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['Uncertainty'].keys():
+        if 'show' not in self.agency_options['Uncertainty'].keys():
             self.popup_message('QRev.cfg Uncertainty: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['Uncertainty'].keys():
+        if 'default' not in self.agency_options['Uncertainty'].keys():
             self.popup_message('QRev.cfg Uncertainty: default parameter not found.')
             sys.exit()
         try:
@@ -590,37 +590,36 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
 
         # Observed no moving-bed
-        if not 'MovingBedObservation' in self.agency_options.keys():
+        if 'MovingBedObservation' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: MovingBedObservation parameter not found.')
             sys.exit()
-        if not 'show' in self.agency_options['MovingBedObservation'].keys():
+        if 'show' not in self.agency_options['MovingBedObservation'].keys():
             self.popup_message('QRev.cfg: MovingBedObservation: show parameter not found.')
             sys.exit()
-        if not 'default' in self.agency_options['MovingBedObservation'].keys():
+        if 'default' not in self.agency_options['MovingBedObservation'].keys():
             self.popup_message('QRev.cfg MovingBedObservation: default parameter not found.')
             sys.exit()
 
-            try:
-                if self.agency_options['MovingBedObservation']['show']:
-                    ss = self.sticky_settings.get('AllowNoMB')
-                    self.allow_observed_no_moving_bed = ss
-                else:
-                    self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
-            except KeyError:
-                self.sticky_settings.new('AllowNoMB', self.agency_options['MovingBedObservation']['default'])
+        try:
+            if self.agency_options['MovingBedObservation']['show']:
+                ss = self.sticky_settings.get('AllowNoMB')
+                self.allow_observed_no_moving_bed = ss
+            else:
                 self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
+        except KeyError:
+            self.sticky_settings.new('AllowNoMB', self.agency_options['MovingBedObservation']['default'])
+            self.allow_observed_no_moving_bed = self.agency_options['MovingBedObservation']['default']
 
         # Check for QA Settings
-        if not 'QA' in self.agency_options.keys():
+        if 'QA' not in self.agency_options.keys():
             self.popup_message('QRev.cfg: QA parameter not found.')
             sys.exit()
-        if not 'MinTransects' in self.agency_options['QA'].keys():
+        if 'MinTransects' not in self.agency_options['QA'].keys():
             self.popup_message('QRev.cfg: QA MinTransects parameter not found.')
             sys.exit()
-        if not 'MinDuration' in self.agency_options['QA'].keys():
+        if 'MinDuration' not in self.agency_options['QA'].keys():
             self.popup_message('QRev.cfg QA MinDuration parameter not found.')
             sys.exit()
-
 
         self.manual_computational_settings = {'run_oursin': self.run_oursin,
                                               'use_measurement_thresholds': self.use_measurement_thresholds,
@@ -695,7 +694,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionVTG.setDisabled(True)
         self.actionOFF.setDisabled(True)
         self.actionON.setDisabled(True)
-        self.actionOptions.setDisabled(True)
+        self.actionOptions.setEnabled(True)
         self.actionGoogle_Earth.setDisabled(True)
 
         # Configure bold and normal fonts
@@ -791,12 +790,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.gps_bt_speed_canvas = None
         self.gps_bt_speed_toolbar = None
         self.gps_bt_speed_fig = None
-        self.depth_top_canvas = None
-        self.depth_top_toolbar = None
-        self.depth_top_fig = None
-        self.depth_bottom_canvas = None
-        self.depth_bottom_toolbar = None
-        self.depth_bottom_fig = None
+        self.depth_canvas = None
+        self.depth_toolbar = None
+        self.depth_fig = None
+        # self.depth_bottom_canvas = None
+        # self.depth_bottom_toolbar = None
+        # self.depth_bottom_fig = None
         self.wt_shiptrack_canvas = None
         self.wt_shiptrack_toolbar = None
         self.wt_shiptrack_fig = None
@@ -1341,190 +1340,195 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def qrev_options(self):
         """Change options triggered by actionOptions
         """
+        # if self.meas is not None:
+        # Initialize options dialog
+        options = Options()
+
+        # Set dialog to current settings
+        if not self.agency_options['Units']['show']:
+            options.gb_units.hide()
+        if self.units['ID'] == 'SI':
+            options.rb_si.setChecked(True)
+        else:
+            options.rb_english.setChecked(True)
+
+        if self.save_all:
+            options.rb_All.setChecked(True)
+        else:
+            options.rb_checked.setChecked(True)
+
+        if not self.agency_options['SaveStyleSheet']['show']:
+            options.cb_stylesheet.hide()
+        if self.save_stylesheet:
+            options.cb_stylesheet.setChecked(True)
+        else:
+            options.cb_stylesheet.setChecked(False)
+
+        if not self.agency_options['ExtrapWeighting']['show']:
+            options.gb_extrap_weighted.hide()
+        if self.use_weighted:
+            options.cb_weighted_extrap.setChecked(True)
+        else:
+            options.cb_weighted_extrap.setChecked(False)
+
+        if not self.agency_options['RatingPrompt']['show']:
+            options.cb_rating.hide()
+        if self.rating_prompt:
+            options.cb_rating.setChecked(True)
+        else:
+            options.cb_rating.setChecked(False)
+
+        if not self.agency_options['Uncertainty']['show']:
+            options.gb_uncertainty.hide()
+        if self.run_oursin:
+            options.rb_oursin_u.setChecked(True)
+        else:
+            options.rb_qrev_u.setChecked(True)
+
         if self.meas is not None:
-            # Initialize options dialog
-            options = Options()
+            self.use_measurement_thresholds = \
+                self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
 
-            # Set dialog to current settings
-            if not self.agency_options['Units']['show']:
-                options.gb_units.hide()
-            if self.units['ID'] == 'SI':
-                options.rb_si.setChecked(True)
-            else:
-                options.rb_english.setChecked(True)
+        if not self.agency_options['FilterUsingMeasurement']['show']:
+            options.gb_filters.hide()
+        if self.use_measurement_thresholds:
+            options.rb_filter_meas.setChecked(True)
+        else:
+            options.rb_filter_transect.setChecked(True)
 
-            if self.save_all:
-                options.rb_All.setChecked(True)
-            else:
-                options.rb_checked.setChecked(True)
+        if not self.agency_options['ColorMap']['show']:
+            options.gb_color_map.hide()
+        if self.color_map == 'viridis':
+            options.rb_viridis.setChecked(True)
+        else:
+            options.rb_jet.setChecked(True)
 
-            if not self.agency_options['SaveStyleSheet']['show']:
-                options.cb_stylesheet.hide()
-            if self.save_stylesheet:
-                options.cb_stylesheet.setChecked(True)
-            else:
-                options.cb_stylesheet.setChecked(False)
+        if not self.agency_options['MovingBedObservation']['show']:
+            options.gb_moving_bed_option.hide()
+        if self.allow_observed_no_moving_bed:
+            options.cb_allow_manual_no_mb.setChecked(True)
+        else:
+            options.cb_allow_manual_no_mb.setChecked(False)
 
-            if not self.agency_options['ExtrapWeighting']['show']:
-                options.gb_extrap_weighted.hide()
-            if self.use_weighted:
-                options.cb_weighted_extrap.setChecked(True)
-            else:
-                options.cb_weighted_extrap.setChecked(False)
+        # Execute the options window
+        rsp = options.exec_()
+        old_discharge = None
 
-            if not self.agency_options['RatingPrompt']['show']:
-                options.cb_rating.hide()
-            if self.rating_prompt:
-                options.cb_rating.setChecked(True)
-            else:
-                options.cb_rating.setChecked(False)
-
-            if not self.agency_options['Uncertainty']['show']:
-                options.gb_uncertainty.hide()
-            if self.run_oursin:
-                options.rb_oursin_u.setChecked(True)
-            else:
-                options.rb_qrev_u.setChecked(True)
-
-            if self.meas is not None:
-                self.use_measurement_thresholds = \
-                    self.meas.transects[self.meas.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
-
-            if not self.agency_options['FilterUsingMeasurement']['show']:
-                options.gb_filters.hide()
-            if self.use_measurement_thresholds:
-                options.rb_filter_meas.setChecked(True)
-            else:
-                options.rb_filter_transect.setChecked(True)
-
-            if not self.agency_options['ColorMap']['show']:
-                options.gb_color_map.hide()
-            if self.color_map == 'viridis':
-                options.rb_viridis.setChecked(True)
-            else:
-                options.rb_jet.setChecked(True)
-
-            if not self.agency_options['MovingBedObservation']['show']:
-                options.gb_moving_bed_option.hide()
-            if self.allow_observed_no_moving_bed:
-                options.cb_allow_manual_no_mb.setChecked(True)
-            else:
-                options.cb_allow_manual_no_mb.setChecked(False)
-
-            # Execute the options window
-            rsp = options.exec_()
-            old_discharge = None
-
-            with self.wait_cursor():
-                # Apply settings from options window
-                if rsp == QtWidgets.QDialog.Accepted:
-                    self.change = False
-                    # Units options
-                    if options.rb_english.isChecked():
-                        if self.units['ID'] == 'SI':
-                            self.units = units_conversion(units_id='English')
-                            self.sticky_settings.set('UnitsID', 'English')
-                            self.update_main()
-                            self.change = True
-                    else:
-                        if self.units['ID'] == 'English':
-                            self.units = units_conversion(units_id='SI')
-                            self.sticky_settings.set('UnitsID', 'SI')
-                            self.update_main()
-                            self.change = True
-
-                    # Color map
-                    if options.rb_viridis.isChecked():
-                        if self.color_map != 'viridis':
-                            self.color_map = 'viridis'
-                            self.sticky_settings.set('ColorMap', 'viridis')
-                            self.update_main()
-                            self.change = True
-                    else:
-                        if self.color_map != 'jet':
-                            self.color_map = 'jet'
-                            self.sticky_settings.set('ColorMap', 'jet')
-                            self.update_main()
-                            self.change = True
-
-                    # Save options
-                    if options.rb_All.isChecked():
-                        self.save_all = True
-                    else:
-                        self.save_all = False
-
-                    # Stylesheet option
-                    if options.cb_stylesheet.isChecked():
-                        self.save_stylesheet = True
-                        self.sticky_settings.set('StyleSheet', True)
-                    else:
-                        self.save_stylesheet = False
-                        self.sticky_settings.set('StyleSheet', False)
-
-                    # Prompt for user rating
-                    if options.cb_rating.isChecked():
-                        self.rating_prompt = True
-                        self.sticky_settings.set('UserRating', True)
-                    else:
-                        self.rating_prompt = False
-                        self.sticky_settings.set('UserRating', False)
-
-                    # Use of weighted medians for extrapolation fit
-                    if options.cb_weighted_extrap.isChecked():
-                        use_weighted = True
-                    else:
-                        use_weighted = False
-
-                    # Check for change in extraplation weighting
-                    if self.use_weighted != use_weighted:
-                        self.change = True
-                        # If change made with measurement loaded recompute measurement
+        with self.wait_cursor():
+            # Apply settings from options window
+            if rsp == QtWidgets.QDialog.Accepted:
+                self.change = False
+                # Units options
+                if options.rb_english.isChecked():
+                    if self.units['ID'] == 'SI':
+                        self.units = units_conversion(units_id='English')
+                        self.sticky_settings.set('UnitsID', 'English')
                         if self.meas is not None:
-                            old_discharge = self.meas.discharge
-                            settings = self.meas.current_settings()
-                            settings['UseWeighted'] = use_weighted
-                            self.meas.apply_settings(settings)
-                            self.sticky_settings.set('UseWeighted', use_weighted)
-                            self.use_weighted = use_weighted
+                            self.update_main()
+                            self.change = True
+                else:
+                    if self.units['ID'] == 'English':
+                        self.units = units_conversion(units_id='SI')
+                        self.sticky_settings.set('UnitsID', 'SI')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+
+                # Color map
+                if options.rb_viridis.isChecked():
+                    if self.color_map != 'viridis':
+                        self.color_map = 'viridis'
+                        self.sticky_settings.set('ColorMap', 'viridis')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+                else:
+                    if self.color_map != 'jet':
+                        self.color_map = 'jet'
+                        self.sticky_settings.set('ColorMap', 'jet')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+
+                # Save options
+                if options.rb_All.isChecked():
+                    self.save_all = True
+                else:
+                    self.save_all = False
+
+                # Stylesheet option
+                if options.cb_stylesheet.isChecked():
+                    self.save_stylesheet = True
+                    self.sticky_settings.set('StyleSheet', True)
+                else:
+                    self.save_stylesheet = False
+                    self.sticky_settings.set('StyleSheet', False)
+
+                # Prompt for user rating
+                if options.cb_rating.isChecked():
+                    self.rating_prompt = True
+                    self.sticky_settings.set('UserRating', True)
+                else:
+                    self.rating_prompt = False
+                    self.sticky_settings.set('UserRating', False)
+
+                # Use of weighted medians for extrapolation fit
+                if options.cb_weighted_extrap.isChecked():
+                    use_weighted = True
+                else:
+                    use_weighted = False
+
+                # Check for change in extraplation weighting
+                if self.use_weighted != use_weighted:
+                    self.change = True
+                    # If change made with measurement loaded recompute measurement
+                    if self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseWeighted'] = use_weighted
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseWeighted', use_weighted)
+                        self.use_weighted = use_weighted
 
                     # If change made before measurement loaded, set value
                     else:
                         self.use_weighted = use_weighted
                         self.sticky_settings.set('UseWeighted', use_weighted)
 
-                    # Filter measurement
-                    if options.rb_filter_meas.isChecked():
-                        filter_meas = True
-                    else:
-                        filter_meas = False
+                # Filter measurement
+                if options.rb_filter_meas.isChecked():
+                    filter_meas = True
+                else:
+                    filter_meas = False
 
-                    # Check for change in filter measurement
-                    if self.use_measurement_thresholds != filter_meas:
-                        self.change = True
-                        # If change made with measurement loaded recompute measurement
-                        if self.meas is not None:
-                            old_discharge = self.meas.discharge
-                            settings = self.meas.current_settings()
-                            settings['UseMeasurementThresholds'] = filter_meas
-                            self.meas.apply_settings(settings)
-                            self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
-                            self.use_measurement_thresholds = filter_meas
+                # Check for change in filter measurement
+                if self.use_measurement_thresholds != filter_meas:
+                    self.change = True
+                    # If change made with measurement loaded recompute measurement
+                    if self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseMeasurementThresholds'] = filter_meas
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
+                        self.use_measurement_thresholds = filter_meas
 
                     # If change made before measurement loaded, set value
                     else:
                         self.sticky_settings.set('UseMeasurementThresholds', filter_meas)
                         self.use_measurement_thresholds = filter_meas
 
-                    # Units options
-                    if options.rb_oursin_u.isChecked():
-                        use_oursin = True
-                    else:
-                        use_oursin = False
+                # Units options
+                if options.rb_oursin_u.isChecked():
+                    use_oursin = True
+                else:
+                    use_oursin = False
 
-                    # Check for change in uncertainty model
-                    if self.run_oursin != use_oursin:
-                        self.run_oursin = use_oursin
-                        self.sticky_settings.set('Oursin', use_oursin)
+                # Check for change in uncertainty model
+                if self.run_oursin != use_oursin:
+                    self.run_oursin = use_oursin
+                    self.sticky_settings.set('Oursin', use_oursin)
+                    if self.meas is not None:
                         if self.run_oursin:
                             # Uncertainty based on Oursin
                             self.meas.run_oursin = True
@@ -1544,18 +1548,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.sticky_settings.set('Oursin', use_oursin)
                         self.run_oursin = use_oursin
 
-                    self.manual_computational_settings = {'run_oursin': self.run_oursin,
-                                                          'use_measurement_thresholds': self.use_measurement_thresholds,
-                                                          'use_weighted': self.use_weighted}
-                    # Allow observed no moving-bed
-                    if options.cb_allow_manual_no_mb.isChecked():
-                        self.allow_observed_no_moving_bed = True
-                        self.sticky_settings.set('AllowNoMB', True)
-                    else:
-                        self.allow_observed_no_moving_bed = False
-                        self.sticky_settings.set('AllowNoMB', False)
+                self.manual_computational_settings = {'run_oursin': self.run_oursin,
+                                                      'use_measurement_thresholds': self.use_measurement_thresholds,
+                                                      'use_weighted': self.use_weighted}
+                # Allow observed no moving-bed
+                if options.cb_allow_manual_no_mb.isChecked():
+                    self.allow_observed_no_moving_bed = True
+                    self.sticky_settings.set('AllowNoMB', True)
+                else:
+                    self.allow_observed_no_moving_bed = False
+                    self.sticky_settings.set('AllowNoMB', False)
 
-                    # Update tabs
+                # Update tabs
+                if self.meas is not None:
                     if old_discharge is None:
                         self.tab_manager()
                     else:
@@ -1721,14 +1726,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_toolbar_trans_select(self):
         """Updates the icon for the select transects on the toolbar.
         """
-
-        if len(self.checked_transects_idx) == len(self.meas.transects):
-            self.actionCheck.setIcon(self.icon_allChecked)
-        elif len(self.checked_transects_idx) > 0:
-            self.actionCheck.setIcon(self.icon_unChecked)
-        else:
-            self.actionCheck.setIcon(self.icon_warning)
-            self.tab_all.setEnabled(False)
+        if self.meas is not None:
+            if len(self.checked_transects_idx) == len(self.meas.transects):
+                self.actionCheck.setIcon(self.icon_allChecked)
+            elif len(self.checked_transects_idx) > 0:
+                self.actionCheck.setIcon(self.icon_unChecked)
+            else:
+                self.actionCheck.setIcon(self.icon_warning)
+                self.tab_all.setEnabled(False)
 
     def update_toolbar_composite_tracks(self):
         """Updates the toolbar to reflect the current setting for composite tracks.
@@ -4744,7 +4749,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_mb_gga.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_vtg.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_vectors.stateChanged.connect(self.mb_plot_change)
-
             self.cb_mb_observed_no.stateChanged.connect(self.mb_observed_change)
 
             self.mb_initialized = True
@@ -5783,6 +5787,56 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Draw canvas
         self.bt_shiptrack_canvas.draw()
+
+    # def bt_ts_plots(self):
+    #     """Creates plots of filter characteristics.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.bt_top_canvas is None:
+    #         # Create the canvas
+    #         self.bt_top_canvas = MplCanvas(parent=self.graph_bt_top, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_bt_top)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.bt_top_canvas)
+    #         self.bt_top_toolbar = NavigationToolbar(self.bt_top_canvas, self)
+    #         self.bt_top_toolbar.hide()
+    #
+    #     # Initialize the boat speed figure and assign to the canvas
+    #     self.bt_top_fig = WTAdvanced(canvas=self.bt_top_canvas)
+    #
+    #     # Create the figure with the specified data
+    #     if self.rb_bt_beam.isChecked():
+    #         self.bt_top_fig.create(transect=self.transect,
+    #                               discharge=self.meas.discharge[transect_id],
+    #                               units=self.units,
+    #                               selected_types=['cb_bt_3beam_ts'],
+    #                               color_map=self.color_map,
+    #                               x_axis_type=self.x_axis_type)
+    #     elif self.rb_bt_error.isChecked():
+    #         self.bt_top_fig.create(transect=self.transect,
+    #                                units=self.units, selected='error', x_axis_type=self.x_axis_type)
+    #     elif self.rb_bt_vert.isChecked():
+    #         self.bt_top_fig.create(transect=self.transect,
+    #                                units=self.units, selected='vert', x_axis_type=self.x_axis_type)
+    #     elif self.rb_bt_other.isChecked():
+    #         self.bt_top_fig.create(transect=self.transect,
+    #                                units=self.units, selected='other', x_axis_type=self.x_axis_type)
+    #     elif self.rb_bt_source.isChecked():
+    #         self.bt_top_fig.create(transect=self.transect,
+    #                                units=self.units, selected='source', x_axis_type=self.x_axis_type)
+    #
+    #     # Update list of figs
+    #     self.figs = [self.bt_shiptrack_fig, self.bt_top_fig, self.bt_bottom_fig]
+    #
+    #     # Reset data cursor to work with new figure
+    #     if self.actionData_Cursor.isChecked():
+    #         self.data_cursor()
+    #     # Draw canvas
+    #     self.bt_top_canvas.draw()
 
     def bt_boat_speed(self):
         """Creates boat speed plot for data in transect.
@@ -7566,9 +7620,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.depth_comments_messages()
 
         # Setup list for use by graphics controls
-        self.canvases = [self.depth_top_canvas, self.depth_bottom_canvas]
-        self.figs = [self.depth_top_fig, self.depth_bottom_fig]
-        self.toolbars = [self.depth_top_toolbar, self.depth_bottom_toolbar]
+        self.canvases = [self.depth_canvas]
+        self.figs = [self.depth_fig]
+        self.toolbars = [self.depth_toolbar]
 
     def update_depth_table(self, old_discharge, new_discharge):
         """Updates the depth table with new or reprocessed data.
@@ -7754,16 +7808,55 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Set selected file to bold font
             self.table_depth.item(self.transect_row, 0).setFont(self.font_bold)
 
-            # Update plots
-            self.depth_top_plot()
-            self.depth_bottom_plot()
+            # # Update plots
+            # self.depth_top_plot()
+            # self.depth_bottom_plot()
+            #
+            # # Update list of figs
+            # self.figs = [self.depth_top_fig, self.depth_bottom_fig]
+
+            # If the canvas has not been previously created, create the canvas and add the widget.
+            if self.depth_canvas is None:
+                # Create the canvas
+                self.depth_canvas = MplCanvas(parent=self.graph_depth, width=8, height=2, dpi=80)
+                # Assign layout to widget to allow auto scaling
+                layout = QtWidgets.QVBoxLayout(self.graph_depth)
+                # Adjust margins of layout to maximize graphic area
+                layout.setContentsMargins(1, 1, 1, 1)
+                # Add the canvas
+                layout.addWidget(self.depth_canvas)
+                # Initialize hidden toolbar for use by graphics controls
+                self.depth_toolbar = NavigationToolbar(self.depth_canvas, self)
+                self.depth_toolbar.hide()
+
+            # Initialize the top figure and assign to the canvas
+            self.depth_fig = AdvGraphs(canvas=self.depth_canvas)
+            # Create the figure with the specified data
+            self.depth_fig.create_depth_tab_graphs(transect=self.transect,
+                                                   units=self.units,
+                                                   b1=self.cb_depth_beam1.isChecked(),
+                                                   b2=self.cb_depth_beam2.isChecked(),
+                                                   b3=self.cb_depth_beam3.isChecked(),
+                                                   b4=self.cb_depth_beam4.isChecked(),
+                                                   vb=self.cb_depth_vert.isChecked(),
+                                                   ds=self.cb_depth_ds.isChecked(),
+                                                   avg4_final=self.cb_depth_4beam_cs.isChecked(),
+                                                   vb_final=self.cb_depth_vert_cs.isChecked(),
+                                                   ds_final=self.cb_depth_ds_cs.isChecked(),
+                                                   final=self.cb_depth_final_cs.isChecked(),
+                                                   x_axis_type=self.x_axis_type)
+
+            # Draw canvas
+            self.depth_canvas.draw()
 
             # Update list of figs
-            self.figs = [self.depth_top_fig, self.depth_bottom_fig]
+            self.figs = [self.depth_fig]
+            self.toolbars = [self.depth_toolbar]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
                 self.data_cursor()
+            self.tab_depth_2_data.setFocus()
 
     def depth_top_plot(self):
         """Creates top plot containing individual beam depths.
@@ -7909,19 +8002,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def depth_top_plot_change(self):
         """Coordinates changes in user selected data to be displayed in the top plot.
         """
-        with self.wait_cursor():
-            self.depth_top_fig.change()
-            self.depth_top_canvas.draw()
-            self.tab_depth_2_data.setFocus()
+        self.depth_plots()
+        # with self.wait_cursor():
+            # self.depth_top_fig.change()
+            # self.depth_top_canvas.draw()
+            # self.tab_depth_2_data.setFocus()
 
     @QtCore.pyqtSlot()
     def depth_bottom_plot_change(self):
         """Coordinates changes in user selected data to be displayed in the bottom plot.
         """
-        with self.wait_cursor():
-            self.depth_bottom_fig.change()
-            self.depth_bottom_canvas.draw()
-            self.tab_depth_2_data.setFocus()
+        self.depth_plots()
+        # with self.wait_cursor():
+        #     self.depth_bottom_fig.change()
+        #     self.depth_bottom_canvas.draw()
+        #     self.tab_depth_2_data.setFocus()
 
     @QtCore.pyqtSlot(str)
     def change_ref(self, text):
@@ -11727,7 +11822,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.adv_graph_toolbar.hide()
 
         # Initialize the advanced figure and assign to the canvas
-        self.adv_graph_fig = WTAdvanced(canvas=self.adv_graph_canvas)
+        self.adv_graph_fig = AdvGraphs(canvas=self.adv_graph_canvas)
         # Create the figure with the specified data
         self.adv_graph_fig.create(transect=self.meas.transects[idx],
                                   discharge=self.meas.discharge[idx],

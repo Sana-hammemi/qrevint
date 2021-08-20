@@ -3661,506 +3661,511 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_31">
             <item row="0" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="8,2">
+             <layout class="QHBoxLayout" name="horizontalLayout_80">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_27" stretch="0,2,2">
+               <layout class="QVBoxLayout" name="verticalLayout_27" stretch="3,7">
                 <item>
                  <widget class="QTableWidget" name="table_depth"/>
                 </item>
                 <item>
-                 <widget class="QGroupBox" name="gb_depth_beams">
-                  <property name="font">
-                   <font>
-                    <pointsize>11</pointsize>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Individual Beams</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_32" stretch="6,1">
-                   <item>
-                    <widget class="QWidget" name="graph_depth_beams" native="true"/>
-                   </item>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_25">
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam1">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 1</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam2">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 2</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam3">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 3</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam4">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 4</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_vert">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Vertical</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_ds">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Depth Sounder</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="gb_depth_cs">
-                  <property name="font">
-                   <font>
-                    <pointsize>11</pointsize>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Cross Section</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="6,1">
-                   <item>
-                    <widget class="QWidget" name="graph_depth_cs" native="true"/>
-                   </item>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_26">
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_4beam_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>4 Beam Avg</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_vert_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Vertical</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_ds_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Depth Sounder</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_final_cs">
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Final</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
+                 <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="9,1">
+                  <item>
+                   <widget class="QWidget" name="graph_depth" native="true"/>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayout_2">
+                    <item>
+                     <widget class="QGroupBox" name="gb_depth_beams">
+                      <property name="font">
+                       <font>
+                        <pointsize>11</pointsize>
+                       </font>
+                      </property>
+                      <property name="title">
+                       <string>Individual Beams</string>
+                      </property>
+                      <layout class="QHBoxLayout" name="horizontalLayout_32" stretch="1">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_25">
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam1">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 1</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam2">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 2</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam3">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 3</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam4">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 4</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_vert">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Vertical</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_ds">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Depth Sounder</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QGroupBox" name="gb_depth_cs">
+                      <property name="font">
+                       <font>
+                        <pointsize>11</pointsize>
+                       </font>
+                      </property>
+                      <property name="title">
+                       <string>Cross Section</string>
+                      </property>
+                      <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="1">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_26">
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_4beam_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>255</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>255</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>4 Beam Avg</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_vert_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Vertical</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_ds_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Depth Sounder</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_final_cs">
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Final</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </item>
