@@ -344,7 +344,7 @@ class AdvGraphs(object):
 
             self.canvas.draw()
 
-    def create_bt_tab_graphs(self, transect, units,beam=True, error=False, vert=False, other= False, source=False,
+    def create_bt_tab_graphs(self, transect, units, beam=True, error=False, vert=False, other= False, source=False,
                              bt=True, gga=False, vtg=False, x_axis_type='E'):
         with self.wait_cursor():
             # Initialize data sources
@@ -383,9 +383,10 @@ class AdvGraphs(object):
             elif vert:
                 self.bt_vertical_ts()
             elif other:
-                self.bt_other_ts()
+                self.other_ts(data=self.transect.boat_vel.bt_vel, data_color='r-')
             elif source:
-                self.bt_source_ts()
+                ref = getattr(self.transect.boat_vel, self.transect.boat_vel.selected)
+                self.source_ts(ref, 'Boat Source')
 
             self.fig_no += 2
             # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
@@ -398,7 +399,118 @@ class AdvGraphs(object):
                 self.vtg_speed_ts(lbl='Boat speed')
 
             # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+
+            # Apply the x-axis label to the bottom x-axis
+            idx = -1
+
+            self.ax[idx].xaxis.label.set_fontsize(12)
+
+            # x-axis is length
+            if self.x_axis_type == 'L':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
+                else:
+                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+            # x-axis is ensembles
+            elif self.x_axis_type == 'E':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                else:
+                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+            # x-axis is time
+            elif self.x_axis_type == 'T':
+                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                else:
+                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                date_form = DateFormatter('%H:%M:%S')
+                self.ax[idx].xaxis.set_major_formatter(date_form)
+                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+
+        self.canvas.draw()
+
+    def create_gps_tab_graphs(self, transect, units, quality=True, altitude=False, hdop=False, n_sats=False,
+                              other= False, source=False, bt=True, gga=False, vtg=False, x_axis_type='E'):
+        with self.wait_cursor():
+            # Initialize data sources
+            self.transect = transect
+
+            # Set default axis
+            self.x_axis_type = x_axis_type
+
+            self.units = units
+
+            # Clear the plot
+            self.fig.clear()
+
+            # Determine number of subplots
+            self.n_subplots = 2
+
+            # Compute x-axis variable
+            self.compute_x_axis()
+
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+            if quality:
+                self.gga_quality_ts()
+            elif altitude:
+                self.gga_altitude_ts()
+            elif hdop:
+                self.gga_hdop_ts()
+            elif n_sats:
+                self.gga_sats_ts()
+            elif other:
+                # Select an object to use for the smooth
+                if self.transect.boat_vel.selected == 'gga_vel':
+                    boat_gps = transect.boat_vel.gga_vel
+                    data_color = 'b-'
+                elif self.transect.boat_vel.selected == 'vtg_vel':
+                    boat_gps = transect.boat_vel.vtg_vel
+                    data_color = 'g-'
+                elif self.transect.boat_vel.vtg_vel is not None:
+                    boat_gps = transect.boat_vel.vtg_vel
+                    data_color = 'g-'
+                else:
+                    boat_gps = self.transect.boat_vel.gga_vel
+                    data_color = 'b-'
+                self.other_ts(data=boat_gps, data_color=data_color)
+            elif source:
+                ref = getattr(self.transect.boat_vel, self.transect.boat_vel.selected)
+                self.source_ts(ref, 'Boat Source')
+
+            self.fig_no += 2
+            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+            if bt:
+                self.bt_speed_ts(lbl='Boat speed')
+            if gga:
+                self.gga_speed_ts(lbl='Boat speed')
+            if vtg:
+                self.vtg_speed_ts(lbl='Boat speed')
+
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
@@ -1150,27 +1262,23 @@ class AdvGraphs(object):
         # Configure y axis
         self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
 
-    def bt_other_ts(self):
+    def other_ts(self, data, data_color='r-'):
         # Plot smooth
-        speed = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
-                        + self.transect.boat_vel.bt_vel.v_mps ** 2)
-        invalid_other_vel = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[4, :])
-        if self.transect.boat_vel.bt_vel.smooth_filter == 'On':
-            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
-                             color='#d5dce6')
-            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
-                             color='#d5dce6')
-            self.ax[-1].fill_between(self.x, self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
-                                     self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
-                                     facecolor='#d5dce6')
+        speed = np.sqrt(data.u_mps ** 2
+                        + data.v_mps ** 2)
+        invalid_other_vel = np.logical_not(data.valid_data[4, :])
+        if data.smooth_filter == 'On':
+            self.ax[-1].plot(self.x, data.smooth_lower_limit * self.units['V'], color='#d5dce6')
+            self.ax[-1].plot(self.x, data.smooth_upper_limit * self.units['V'], color='#d5dce6')
+            self.ax[-1].fill_between(self.x, data.smooth_lower_limit * self.units['V'],
+                                     data.smooth_upper_limit * self.units['V'], facecolor='#d5dce6')
 
-            self.ax[-1].plot(self.x, speed * self.units['V'], 'r-')
-            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_speed * self.units['V'])
-            self.ax[-1].plot(self.x[invalid_other_vel], speed[invalid_other_vel] * self.units['V'],
-                                               'ko', linestyle='')
+            self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
+            self.ax[-1].plot(self.x, data.smooth_speed * self.units['V'])
+            self.ax[-1].plot(self.x[invalid_other_vel], speed[invalid_other_vel] * self.units['V'], 'ko', linestyle='')
         else:
-            self.ax[-1].plot(self.x, speed * self.units['V'], 'r-')
-        self.ax[-1].set_ylabel(self.canvas.tr('Speed' + self.units['label_V']))
+            self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
+        self.ax[-1].set_ylabel(self.canvas.tr('Speed ' + self.units['label_V']))
 
     def gga_source_ts(self):
         """Plot source for GGA data.

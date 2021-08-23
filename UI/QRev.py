@@ -778,12 +778,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.gps_shiptrack_canvas = None
         self.gps_shiptrack_toolbar = None
         self.gps_shiptrack_fig = None
-        self.gps_bottom_canvas = None
-        self.gps_bottom_toolbar = None
-        self.gps_bottom_fig = None
-        self.gps_top_canvas = None
-        self.gps_top_toolbar = None
-        self.gps_top_fig = None
+        # self.gps_bottom_canvas = None
+        # self.gps_bottom_toolbar = None
+        # self.gps_bottom_fig = None
+        self.gps_ts_canvas = None
+        self.gps_ts_toolbar = None
+        self.gps_ts_fig = None
         self.gps_bt_shiptrack_canvas = None
         self.gps_bt_shiptrack_toolbar = None
         self.gps_bt_shiptrack_fig = None
@@ -6300,12 +6300,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.gps_bt()
 
         # Setup lists for use by graphics controls
-        self.canvases = [self.gps_shiptrack_canvas, self.gps_top_canvas, self.gps_bottom_canvas,
-                         self.gps_bt_shiptrack_canvas, self.gps_bt_speed_canvas]
-        self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig, self.gps_bt_shiptrack_fig,
-                     self.gps_bt_speed_fig]
-        self.toolbars = [self.gps_shiptrack_toolbar, self.gps_top_toolbar, self.gps_bottom_toolbar,
-                         self.gps_bt_shiptrack_toolbar, self.gps_bt_speed_toolbar]
+        self.canvases = [self.gps_shiptrack_canvas, self.gps_ts_canvas]
+        self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+        self.toolbars = [self.gps_shiptrack_toolbar, self.gps_ts_toolbar]
 
         if not self.gps_initialized:
             tbl.cellClicked.connect(self.gps_table_clicked)
@@ -6733,11 +6730,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update plots
             self.gps_shiptrack()
-            self.gps_boat_speed()
-            self.gps_filter_plots()
+            self.gps_ts_plots()
 
             # Update list of figs
-            self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig]
+            self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
@@ -6786,37 +6782,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.cb_gps_vtg.blockSignals(False)
         self.cb_gps_vectors.blockSignals(False)
 
-    def gps_boat_speed(self):
-        """Creates boat speed plot for data in transect.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.gps_bottom_canvas is None:
-            # Create the canvas
-            self.gps_bottom_canvas = MplCanvas(parent=self.graph_gps_bottom, width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_gps_bottom)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.gps_bottom_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.gps_bottom_toolbar = NavigationToolbar(self.gps_bottom_canvas, self)
-            self.gps_bottom_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.gps_bottom_fig = BoatSpeed(canvas=self.gps_bottom_canvas)
-        # Create the figure with the specified data
-        self.gps_bottom_fig.create(transect=self.transect,
-                                   units=self.units,
-                                   cb=True,
-                                   cb_bt=self.cb_gps_bt,
-                                   cb_gga=self.cb_gps_gga,
-                                   cb_vtg=self.cb_gps_vtg,
-                                   x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.gps_bottom_canvas.draw()
+    # def gps_boat_speed(self):
+    #     """Creates boat speed plot for data in transect.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.gps_bottom_canvas is None:
+    #         # Create the canvas
+    #         self.gps_bottom_canvas = MplCanvas(parent=self.graph_gps_bottom, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_gps_bottom)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.gps_bottom_canvas)
+    #         # Initialize hidden toolbar for use by graphics controls
+    #         self.gps_bottom_toolbar = NavigationToolbar(self.gps_bottom_canvas, self)
+    #         self.gps_bottom_toolbar.hide()
+    #
+    #     # Initialize the boat speed figure and assign to the canvas
+    #     self.gps_bottom_fig = BoatSpeed(canvas=self.gps_bottom_canvas)
+    #     # Create the figure with the specified data
+    #     self.gps_bottom_fig.create(transect=self.transect,
+    #                                units=self.units,
+    #                                cb=True,
+    #                                cb_bt=self.cb_gps_bt,
+    #                                cb_gga=self.cb_gps_gga,
+    #                                cb_vtg=self.cb_gps_vtg,
+    #                                x_axis_type=self.x_axis_type)
+    #
+    #     # Draw canvas
+    #     self.gps_bottom_canvas.draw()
 
     @QtCore.pyqtSlot()
     def gps_radiobutton_control(self):
@@ -6824,58 +6820,101 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         with self.wait_cursor():
             if self.sender().isChecked():
-                self.gps_filter_plots()
+                self.gps_ts_plots()
 
-    def gps_filter_plots(self):
+    # def gps_filter_plots(self):
+    #     """Creates plots of filter characteristics.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.gps_top_canvas is None:
+    #         # Create the canvas
+    #         self.gps_top_canvas = MplCanvas(parent=self.graph_gps_top, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_gps_top)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.gps_top_canvas)
+    #         # Initialize hidden toolbar for use by graphics controls
+    #         self.gps_top_toolbar = NavigationToolbar(self.gps_top_canvas, self)
+    #         self.gps_top_toolbar.hide()
+    #
+    #     # Initialize the boat speed figure and assign to the canvas
+    #     self.gps_top_fig = GPSFilters(canvas=self.gps_top_canvas)
+    #
+    #     # Create the figure with the specified data
+    #     if self.rb_gps_quality.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='quality', x_axis_type=self.x_axis_type)
+    #     elif self.rb_gps_altitude.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='altitude', x_axis_type=self.x_axis_type)
+    #     elif self.rb_gps_hdop.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='hdop', x_axis_type=self.x_axis_type)
+    #     elif self.rb_gps_other.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='other', x_axis_type=self.x_axis_type)
+    #     elif self.rb_gps_sats.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='sats', x_axis_type=self.x_axis_type)
+    #     elif self.rb_gps_source.isChecked():
+    #         self.gps_top_fig.create(transect=self.transect,
+    #                                 units=self.units, selected='source', x_axis_type=self.x_axis_type)
+    #
+    #     # Update list of figs
+    #     self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig]
+    #
+    #     # Reset data cursor to work with new data plot
+    #     if self.actionData_Cursor.isChecked():
+    #         self.data_cursor()
+    #
+    #     # Draw canvas
+    #     self.gps_top_canvas.draw()
+
+    def gps_ts_plots(self):
         """Creates plots of filter characteristics.
         """
 
         # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.gps_top_canvas is None:
+        if self.gps_ts_canvas is None:
             # Create the canvas
-            self.gps_top_canvas = MplCanvas(parent=self.graph_gps_top, width=8, height=2, dpi=80)
+            self.gps_ts_canvas = MplCanvas(parent=self.graph_gps_ts, width=8, height=2, dpi=80)
             # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_gps_top)
+            layout = QtWidgets.QVBoxLayout(self.graph_gps_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
             # Add the canvas
-            layout.addWidget(self.gps_top_canvas)
+            layout.addWidget(self.gps_ts_canvas)
             # Initialize hidden toolbar for use by graphics controls
-            self.gps_top_toolbar = NavigationToolbar(self.gps_top_canvas, self)
-            self.gps_top_toolbar.hide()
+            self.gps_ts_toolbar = NavigationToolbar(self.gps_ts_canvas, self)
+            self.gps_ts_toolbar.hide()
 
         # Initialize the boat speed figure and assign to the canvas
-        self.gps_top_fig = GPSFilters(canvas=self.gps_top_canvas)
-
-        # Create the figure with the specified data
-        if self.rb_gps_quality.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='quality', x_axis_type=self.x_axis_type)
-        elif self.rb_gps_altitude.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='altitude', x_axis_type=self.x_axis_type)
-        elif self.rb_gps_hdop.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='hdop', x_axis_type=self.x_axis_type)
-        elif self.rb_gps_other.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='other', x_axis_type=self.x_axis_type)
-        elif self.rb_gps_sats.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='sats', x_axis_type=self.x_axis_type)
-        elif self.rb_gps_source.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='source', x_axis_type=self.x_axis_type)
+        self.gps_ts_fig = AdvGraphs(canvas=self.gps_ts_canvas)
+        self.gps_ts_fig.create_gps_tab_graphs(transect=self.transect,
+                                              units=self.units,
+                                              quality=self.rb_gps_quality.isChecked(),
+                                              altitude=self.rb_gps_altitude.isChecked(),
+                                              hdop=self.rb_gps_hdop.isChecked(),
+                                              n_sats=self.rb_gps_sats.isChecked(),
+                                              other=self.rb_gps_other.isChecked(),
+                                              source=self.rb_gps_source.isChecked(),
+                                              bt=self.cb_gps_bt.isChecked(),
+                                              gga=self.cb_gps_gga.isChecked(),
+                                              vtg=self.cb_gps_vtg.isChecked(),
+                                              x_axis_type=self.x_axis_type)
 
         # Update list of figs
-        self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig]
+        self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
 
         # Reset data cursor to work with new data plot
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
 
         # Draw canvas
-        self.gps_top_canvas.draw()
+        self.gps_ts_canvas.draw()
 
     def gps_table_clicked(self, row, column, caller=None):
         """Changes plotted data to the transect of the transect clicked.
@@ -6904,13 +6943,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
 
         with self.wait_cursor():
-            # Shiptrack
-            self.gps_shiptrack_fig.change()
-            self.gps_shiptrack_canvas.draw()
+            # # Shiptrack
+            # self.gps_shiptrack_fig.change()
+            # self.gps_shiptrack_canvas.draw()
+            #
+            # # Boat speed
+            # self.gps_bottom_fig.change()
+            # self.gps_bottom_canvas.draw()
 
-            # Boat speed
-            self.gps_bottom_fig.change()
-            self.gps_bottom_canvas.draw()
+            self.gps_plots()
 
             self.tab_gps_2_data.setFocus()
 
@@ -7303,8 +7344,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.gps_bt_boat_speed()
 
             # Update list of figs
-            self.figs = [self.gps_shiptrack_fig, self.gps_top_fig, self.gps_bottom_fig, self.gps_bt_shiptrack_fig,
-                         self.gps_bt_speed_fig]
+            self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig,]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
