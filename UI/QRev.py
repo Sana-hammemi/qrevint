@@ -769,12 +769,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.bt_shiptrack_canvas = None
         self.bt_shiptrack_toolbar = None
         self.bt_shiptrack_fig = None
-        self.bt_bottom_canvas = None
-        self.bt_bottom_toolbar = None
-        self.bt_bottom_fig = None
-        self.bt_top_canvas = None
-        self.bt_top_toolbar = None
-        self.bt_top_fig = None
+        # self.bt_bottom_canvas = None
+        # self.bt_bottom_toolbar = None
+        # self.bt_bottom_fig = None
+        self.bt_ts_canvas = None
+        self.bt_ts_toolbar = None
+        self.bt_ts_fig = None
         self.gps_shiptrack_canvas = None
         self.gps_shiptrack_toolbar = None
         self.gps_shiptrack_fig = None
@@ -5448,12 +5448,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.bt_comments_messages()
 
         # Setup lists for use by graphics controls
-        self.canvases = [self.bt_shiptrack_canvas, self.bt_top_canvas,
-                         self.bt_bottom_canvas]
-        self.figs = [self.bt_shiptrack_fig, self.bt_top_fig,
-                     self.bt_bottom_fig]
-        self.toolbars = [self.bt_shiptrack_toolbar, self.bt_top_toolbar,
-                         self.bt_bottom_toolbar]
+        self.canvases = [self.bt_shiptrack_canvas, self.bt_ts_canvas]
+        self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+        self.toolbars = [self.bt_shiptrack_toolbar, self.bt_ts_toolbar]
 
         # Turn signals on
         self.cb_bt_bt.blockSignals(False)
@@ -5746,11 +5743,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update plots
             self.bt_shiptrack()
-            self.bt_boat_speed()
-            self.bt_filter_plots()
+            self.bt_ts_plots()
 
             # Update list of figs
-            self.figs = [self.bt_shiptrack_fig, self.bt_top_fig, self.bt_bottom_fig]
+            self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -5788,7 +5784,82 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.bt_shiptrack_canvas.draw()
 
-    # def bt_ts_plots(self):
+    def bt_ts_plots(self):
+        """Creates plots of filter characteristics.
+        """
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.bt_ts_canvas is None:
+            # Create the canvas
+            self.bt_ts_canvas = MplCanvas(parent=self.graph_bt_ts, width=8, height=2, dpi=80)
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graph_bt_ts)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(1, 1, 1, 1)
+            # Add the canvas
+            layout.addWidget(self.bt_ts_canvas)
+            self.bt_ts_toolbar = NavigationToolbar(self.bt_ts_canvas, self)
+            self.bt_ts_toolbar.hide()
+
+        # Initialize the boat speed figure and assign to the canvas
+        self.bt_ts_fig = AdvGraphs(canvas=self.bt_ts_canvas)
+
+        # Create the figure with the specified data
+
+        self.bt_ts_fig.create_bt_tab_graphs(transect=self.transect,
+                                            units=self.units,
+                                            beam=self.rb_bt_beam.isChecked(),
+                                            error=self.rb_bt_error.isChecked(),
+                                            vert=self.rb_bt_vert.isChecked(),
+                                            other=self.rb_bt_other.isChecked(),
+                                            source=self.rb_bt_source.isChecked(),
+                                            bt=self.cb_bt_bt.isChecked(),
+                                            gga=self.cb_bt_gga.isChecked(),
+                                            vtg=self.cb_bt_vtg.isChecked(),
+                                            x_axis_type=self.x_axis_type)
+
+
+        # Update list of figs
+        self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+
+        # Reset data cursor to work with new figure
+        if self.actionData_Cursor.isChecked():
+            self.data_cursor()
+        # Draw canvas
+        self.bt_ts_canvas.draw()
+
+    # def bt_boat_speed(self):
+    #     """Creates boat speed plot for data in transect.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.bt_bottom_canvas is None:
+    #         # Create the canvas
+    #         self.bt_bottom_canvas = MplCanvas(parent=self.graph_bt_bottom, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_bt_bottom)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.bt_bottom_canvas)
+    #         self.bt_bottom_toolbar = NavigationToolbar(self.bt_bottom_canvas, self)
+    #         self.bt_bottom_toolbar.hide()
+    #
+    #     # Initialize the boat speed figure and assign to the canvas
+    #     self.bt_bottom_fig = BoatSpeed(canvas=self.bt_bottom_canvas)
+    #     # Create the figure with the specified data
+    #     self.bt_bottom_fig.create(transect=self.transect,
+    #                               units=self.units,
+    #                               cb=True,
+    #                               cb_bt=self.cb_bt_bt,
+    #                               cb_gga=self.cb_bt_gga,
+    #                               cb_vtg=self.cb_bt_vtg,
+    #                               x_axis_type=self.x_axis_type)
+    #
+    #     # Draw canvas
+    #     self.bt_bottom_canvas.draw()
+    #
+    # def bt_filter_plots(self):
     #     """Creates plots of filter characteristics.
     #     """
     #
@@ -5806,16 +5877,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     #         self.bt_top_toolbar.hide()
     #
     #     # Initialize the boat speed figure and assign to the canvas
-    #     self.bt_top_fig = WTAdvanced(canvas=self.bt_top_canvas)
+    #     self.bt_top_fig = BTFilters(canvas=self.bt_top_canvas)
     #
     #     # Create the figure with the specified data
     #     if self.rb_bt_beam.isChecked():
     #         self.bt_top_fig.create(transect=self.transect,
-    #                               discharge=self.meas.discharge[transect_id],
-    #                               units=self.units,
-    #                               selected_types=['cb_bt_3beam_ts'],
-    #                               color_map=self.color_map,
-    #                               x_axis_type=self.x_axis_type)
+    #                                units=self.units, selected='beam', x_axis_type=self.x_axis_type)
     #     elif self.rb_bt_error.isChecked():
     #         self.bt_top_fig.create(transect=self.transect,
     #                                units=self.units, selected='error', x_axis_type=self.x_axis_type)
@@ -5838,90 +5905,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     #     # Draw canvas
     #     self.bt_top_canvas.draw()
 
-    def bt_boat_speed(self):
-        """Creates boat speed plot for data in transect.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.bt_bottom_canvas is None:
-            # Create the canvas
-            self.bt_bottom_canvas = MplCanvas(parent=self.graph_bt_bottom, width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_bt_bottom)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.bt_bottom_canvas)
-            self.bt_bottom_toolbar = NavigationToolbar(self.bt_bottom_canvas, self)
-            self.bt_bottom_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.bt_bottom_fig = BoatSpeed(canvas=self.bt_bottom_canvas)
-        # Create the figure with the specified data
-        self.bt_bottom_fig.create(transect=self.transect,
-                                  units=self.units,
-                                  cb=True,
-                                  cb_bt=self.cb_bt_bt,
-                                  cb_gga=self.cb_bt_gga,
-                                  cb_vtg=self.cb_bt_vtg,
-                                  x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.bt_bottom_canvas.draw()
-
-    def bt_filter_plots(self):
-        """Creates plots of filter characteristics.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.bt_top_canvas is None:
-            # Create the canvas
-            self.bt_top_canvas = MplCanvas(parent=self.graph_bt_top, width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_bt_top)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.bt_top_canvas)
-            self.bt_top_toolbar = NavigationToolbar(self.bt_top_canvas, self)
-            self.bt_top_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.bt_top_fig = BTFilters(canvas=self.bt_top_canvas)
-
-        # Create the figure with the specified data
-        if self.rb_bt_beam.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='beam', x_axis_type=self.x_axis_type)
-        elif self.rb_bt_error.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='error', x_axis_type=self.x_axis_type)
-        elif self.rb_bt_vert.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='vert', x_axis_type=self.x_axis_type)
-        elif self.rb_bt_other.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='other', x_axis_type=self.x_axis_type)
-        elif self.rb_bt_source.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='source', x_axis_type=self.x_axis_type)
-
-        # Update list of figs
-        self.figs = [self.bt_shiptrack_fig, self.bt_top_fig, self.bt_bottom_fig]
-
-        # Reset data cursor to work with new figure
-        if self.actionData_Cursor.isChecked():
-            self.data_cursor()
-        # Draw canvas
-        self.bt_top_canvas.draw()
-
     @QtCore.pyqtSlot()
     def bt_radiobutton_control(self):
         """Identifies a change in radio buttons and calls the plot routine to update the graph.
         """
         with self.wait_cursor():
             if self.sender().isChecked():
-                self.bt_filter_plots()
+                self.bt_plots()
 
     def bt_table_clicked(self, row, column):
         """Changes plotted data to the transect of the transect clicked.
@@ -5946,14 +5936,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
 
         with self.wait_cursor():
-            # Shiptrack
-            self.bt_shiptrack_fig.change()
-            self.bt_shiptrack_canvas.draw()
-
-            # Boat speed
-            self.bt_bottom_fig.change()
-            self.bt_bottom_canvas.draw()
-
+            # # Shiptrack
+            # self.bt_shiptrack_fig.change()
+            # self.bt_shiptrack_canvas.draw()
+            #
+            # # Boat speed
+            # self.bt_bottom_fig.change()
+            # self.bt_bottom_canvas.draw()
+            self.bt_plots()
             self.tab_bt_2_data.setFocus()
 
     def update_bt_tab(self, s):
@@ -7858,71 +7848,71 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.data_cursor()
             self.tab_depth_2_data.setFocus()
 
-    def depth_top_plot(self):
-        """Creates top plot containing individual beam depths.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.depth_top_canvas is None:
-            # Create the canvas
-            self.depth_top_canvas = MplCanvas(parent=self.graph_depth_beams, width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_depth_beams)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.depth_top_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.depth_top_toolbar = NavigationToolbar(self.depth_top_canvas, self)
-            self.depth_top_toolbar.hide()
-
-        # Initialize the top figure and assign to the canvas
-        self.depth_top_fig = BeamDepths(canvas=self.depth_top_canvas)
-        # Create the figure with the specified data
-        self.depth_top_fig.create(transect=self.transect,
-                                  units=self.units,
-                                  cb_beam1=self.cb_depth_beam1,
-                                  cb_beam2=self.cb_depth_beam2,
-                                  cb_beam3=self.cb_depth_beam3,
-                                  cb_beam4=self.cb_depth_beam4,
-                                  cb_vert=self.cb_depth_vert,
-                                  cb_ds=self.cb_depth_ds,
-                                  x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.depth_top_canvas.draw()
-
-    def depth_bottom_plot(self):
-        """Creates bottom plot containing average cross section.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.depth_bottom_canvas is None:
-            # Create the canvas
-            self.depth_bottom_canvas = MplCanvas(parent=self.graph_depth_cs, width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_depth_cs)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.depth_bottom_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.depth_bottom_toolbar = NavigationToolbar(self.depth_bottom_canvas, self)
-            self.depth_bottom_toolbar.hide()
-
-        # Initialize the bottom figure and assign to the canvas
-        self.depth_bottom_fig = CrossSection(canvas=self.depth_bottom_canvas)
-        # Create the figure with the specified data
-        self.depth_bottom_fig.create(transect=self.transect,
-                                     units=self.units,
-                                     cb_beam_cs=self.cb_depth_4beam_cs,
-                                     cb_vert_cs=self.cb_depth_vert_cs,
-                                     cb_ds_cs=self.cb_depth_ds_cs,
-                                     cb_final_cs=self.cb_depth_final_cs,
-                                     x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.depth_bottom_canvas.draw()
+    # def depth_top_plot(self):
+    #     """Creates top plot containing individual beam depths.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.depth_top_canvas is None:
+    #         # Create the canvas
+    #         self.depth_top_canvas = MplCanvas(parent=self.graph_depth_beams, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_depth_beams)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.depth_top_canvas)
+    #         # Initialize hidden toolbar for use by graphics controls
+    #         self.depth_top_toolbar = NavigationToolbar(self.depth_top_canvas, self)
+    #         self.depth_top_toolbar.hide()
+    #
+    #     # Initialize the top figure and assign to the canvas
+    #     self.depth_top_fig = BeamDepths(canvas=self.depth_top_canvas)
+    #     # Create the figure with the specified data
+    #     self.depth_top_fig.create(transect=self.transect,
+    #                               units=self.units,
+    #                               cb_beam1=self.cb_depth_beam1,
+    #                               cb_beam2=self.cb_depth_beam2,
+    #                               cb_beam3=self.cb_depth_beam3,
+    #                               cb_beam4=self.cb_depth_beam4,
+    #                               cb_vert=self.cb_depth_vert,
+    #                               cb_ds=self.cb_depth_ds,
+    #                               x_axis_type=self.x_axis_type)
+    #
+    #     # Draw canvas
+    #     self.depth_top_canvas.draw()
+    #
+    # def depth_bottom_plot(self):
+    #     """Creates bottom plot containing average cross section.
+    #     """
+    #
+    #     # If the canvas has not been previously created, create the canvas and add the widget.
+    #     if self.depth_bottom_canvas is None:
+    #         # Create the canvas
+    #         self.depth_bottom_canvas = MplCanvas(parent=self.graph_depth_cs, width=8, height=2, dpi=80)
+    #         # Assign layout to widget to allow auto scaling
+    #         layout = QtWidgets.QVBoxLayout(self.graph_depth_cs)
+    #         # Adjust margins of layout to maximize graphic area
+    #         layout.setContentsMargins(1, 1, 1, 1)
+    #         # Add the canvas
+    #         layout.addWidget(self.depth_bottom_canvas)
+    #         # Initialize hidden toolbar for use by graphics controls
+    #         self.depth_bottom_toolbar = NavigationToolbar(self.depth_bottom_canvas, self)
+    #         self.depth_bottom_toolbar.hide()
+    #
+    #     # Initialize the bottom figure and assign to the canvas
+    #     self.depth_bottom_fig = CrossSection(canvas=self.depth_bottom_canvas)
+    #     # Create the figure with the specified data
+    #     self.depth_bottom_fig.create(transect=self.transect,
+    #                                  units=self.units,
+    #                                  cb_beam_cs=self.cb_depth_4beam_cs,
+    #                                  cb_vert_cs=self.cb_depth_vert_cs,
+    #                                  cb_ds_cs=self.cb_depth_ds_cs,
+    #                                  cb_final_cs=self.cb_depth_final_cs,
+    #                                  x_axis_type=self.x_axis_type)
+    #
+    #     # Draw canvas
+    #     self.depth_bottom_canvas.draw()
 
     @QtCore.pyqtSlot(int, int)
     def depth_table_clicked(self, row, column):

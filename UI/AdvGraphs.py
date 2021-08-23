@@ -108,7 +108,6 @@ class AdvGraphs(object):
                                          'cb_bt_source_ts': self.bt_source_ts,
                                          'cb_bt_corr_ts': self.bt_corr_ts,
                                          'cb_bt_rssi_ts': self.bt_rssi_ts,
-                                         'cb_bt_other': self.bt_other,
                                          'cb_gga_boat_speed_ts': self.gga_speed_ts,
                                          'cb_vtg_boat_speed_ts': self.vtg_speed_ts,
                                          'cb_gga_quality_ts': self.gga_quality_ts,
@@ -265,14 +264,12 @@ class AdvGraphs(object):
 
     def create_depth_tab_graphs(self, transect, units,
                                 b1=True, b2=True, b3=True, b4=True, vb = False, ds=False,
-                                avg4_final=False, vb_final=False, ds_final=False, final=True, x_axis_type=None):
+                                avg4_final=False, vb_final=False, ds_final=False, final=True, x_axis_type='E'):
             with self.wait_cursor():
                 # Initialize data sources
                 self.transect = transect
 
                 # Set default axis
-                if x_axis_type is None:
-                    x_axis_type = 'E'
                 self.x_axis_type = x_axis_type
 
                 self.units = units
@@ -346,6 +343,101 @@ class AdvGraphs(object):
                     self.ax[idx].set_xlabel(self.canvas.tr('Time'))
 
             self.canvas.draw()
+
+    def create_bt_tab_graphs(self, transect, units,beam=True, error=False, vert=False, other= False, source=False,
+                             bt=True, gga=False, vtg=False, x_axis_type='E'):
+        with self.wait_cursor():
+            # Initialize data sources
+            self.transect = transect
+
+            # Set default axis
+            self.x_axis_type = x_axis_type
+
+            self.units = units
+
+            # Clear the plot
+            self.fig.clear()
+
+            # Determine number of subplots
+            self.n_subplots = 2
+
+            # Compute x-axis variable
+            self.compute_x_axis()
+
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+            if beam:
+                self.bt_3beam_ts()
+            elif error:
+                self.bt_error_ts()
+            elif vert:
+                self.bt_vertical_ts()
+            elif other:
+                self.bt_other_ts()
+            elif source:
+                self.bt_source_ts()
+
+            self.fig_no += 2
+            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+            if bt:
+                self.bt_speed_ts(lbl='Boat speed')
+            if gga:
+                self.gga_speed_ts(lbl='Boat speed')
+            if vtg:
+                self.vtg_speed_ts(lbl='Boat speed')
+
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+
+            # Apply the x-axis label to the bottom x-axis
+            idx = -1
+
+            self.ax[idx].xaxis.label.set_fontsize(12)
+
+            # x-axis is length
+            if self.x_axis_type == 'L':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
+                else:
+                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+            # x-axis is ensembles
+            elif self.x_axis_type == 'E':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                else:
+                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+            # x-axis is time
+            elif self.x_axis_type == 'T':
+                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                else:
+                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                date_form = DateFormatter('%H:%M:%S')
+                self.ax[idx].xaxis.set_major_formatter(date_form)
+                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+
+        self.canvas.draw()
 
     def avg_corr_contour(self):
         """Creates average correlation contour plot.
@@ -807,21 +899,21 @@ class AdvGraphs(object):
                          ping_name=ping_name,
                          n_names=len(p_types))
 
-    def bt_speed_ts(self):
+    def bt_speed_ts(self, lbl='BT Speed'):
 
         data = np.sqrt(self.transect.boat_vel.bt_vel.u_processed_mps ** 2
                        + self.transect.boat_vel.bt_vel.v_processed_mps ** 2)
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data)
         data_invalid = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
                                + self.transect.boat_vel.bt_vel.v_mps ** 2)
-        fmt = [{'color': 'b', 'linestyle': '-'},
-               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$E$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$V$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$B$'}]
+        fmt = [{'color': 'r', 'linestyle': '-'},
+               {'color': 'k', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$E$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$V$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$B$'}]
 
-        data_units = (self.units['V'], 'BT Speed ' + self.units['label_V'])
+        data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
         self.plt_timeseries(data=data,
                             data_units=data_units,
                             ax=self.ax[-1],
@@ -851,6 +943,7 @@ class AdvGraphs(object):
         self.plt_timeseries(data=data,
                             data_units=data_units,
                             ax=self.ax[-1],
+                            data_2=data,
                             data_mask=data_mask,
                             fmt=fmt)
 
@@ -860,90 +953,92 @@ class AdvGraphs(object):
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[2, :]).tolist()
         data_units = (self.units['V'], 'BT Error Vel ' + self.units['label_V'])
 
-        if not self.transect.boat_vel.bt_vel.d_meas_thresholds:
-            fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
-                   {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+        # if not self.transect.boat_vel.bt_vel.d_meas_thresholds:
+        #     fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
+        #            {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+        #
+        #     self.plt_timeseries(data=y_data,
+        #                         data_units=data_units,
+        #                         ax=self.ax[-1],
+        #                         data_2=y_data,
+        #                         data_mask=invalid,
+        #                         fmt=fmt)
+        # else:
+        freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+        freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+        freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
 
-            self.plt_timeseries(data=y_data,
-                                data_units=data_units,
-                                ax=self.ax[-1],
-                                data_mask=invalid,
-                                fmt=fmt)
-        else:
-            freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-            freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-            freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+        freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
 
-            freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+        data_mask = []
+        fmt = []
+        for freq in freq_used:
+            data_mask.append(freq_ensembles == freq)
+            fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
+                        'mec': freq_color[freq]})
+        data_mask.append(invalid)
+        fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
-            data_mask = []
-            fmt = []
-            for freq in freq_used:
-                data_mask.append(freq_ensembles == freq)
-                fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
-                            'mec': freq_color[freq]})
-            data_mask.append(invalid)
-            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+        self.plt_timeseries(data=None,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=y_data,
+                            data_mask=data_mask,
+                            fmt=fmt)
 
-            self.plt_timeseries(data=None,
-                                data_units=data_units,
-                                ax=self.ax[-1],
-                                data_2=y_data,
-                                data_mask=data_mask,
-                                fmt=fmt)
-
-            # Create legend
-            legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
-                           '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
-            legend_txt = []
-            for freq in freq_used:
-                legend_txt.append(legend_dict[freq])
-            self.ax[-1].legend(legend_txt)
+        # Create legend
+        legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                       '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+        legend_txt = []
+        for freq in freq_used:
+            legend_txt.append(legend_dict[freq])
+        self.ax[-1].legend(legend_txt)
 
     def bt_vertical_ts(self):
         y_data = self.transect.boat_vel.bt_vel.w_mps
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[3, :]).tolist()
         data_units = (self.units['V'], 'BT Vertical Vel ' + self.units['label_V'])
 
-        if not self.transect.boat_vel.bt_vel.w_meas_thresholds:
-            fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
-                   {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+        # if not self.transect.boat_vel.bt_vel.w_meas_thresholds:
+        #     fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
+        #            {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
+        #
+        #     self.plt_timeseries(data=y_data,
+        #                         data_units=data_units,
+        #                         ax=self.ax[-1],
+        #                         data_2=y_data,
+        #                         data_mask=invalid,
+        #                         fmt=fmt)
+        # else:
+        freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
+        freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+        freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
 
-            self.plt_timeseries(data=y_data,
-                                data_units=data_units,
-                                ax=self.ax[-1],
-                                data_mask=invalid,
-                                fmt=fmt)
-        else:
-            freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-            freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-            freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
+        freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
 
-            freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
+        data_mask = []
+        fmt = []
+        for freq in freq_used:
+            data_mask.append(freq_ensembles == freq)
+            fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
+                        'mec': freq_color[freq]})
+        data_mask.append(invalid)
+        fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
-            data_mask = []
-            fmt = []
-            for freq in freq_used:
-                data_mask.append(freq_ensembles == freq)
-                fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
-                            'mec': freq_color[freq]})
-            data_mask.append(invalid)
-            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+        self.plt_timeseries(data=None,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=y_data,
+                            data_mask=data_mask,
+                            fmt=fmt)
 
-            self.plt_timeseries(data=None,
-                                data_units=data_units,
-                                ax=self.ax[-1],
-                                data_2=y_data,
-                                data_mask=data_mask,
-                                fmt=fmt)
-
-            # Create legend
-            legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
-                           '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
-            legend_txt = []
-            for freq in freq_used:
-                legend_txt.append(legend_dict[freq])
-            self.ax[-1].legend(legend_txt)
+        # Create legend
+        legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                       '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+        legend_txt = []
+        for freq in freq_used:
+            legend_txt.append(legend_dict[freq])
+        self.ax[-1].legend(legend_txt)
 
     def bt_source_ts(self):
 
@@ -1055,34 +1150,27 @@ class AdvGraphs(object):
         # Configure y axis
         self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
 
-    def bt_other(self):
+    def bt_other_ts(self):
         # Plot smooth
         speed = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
                         + self.transect.boat_vel.bt_vel.v_mps ** 2)
         invalid_other_vel = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[4, :])
         if self.transect.boat_vel.bt_vel.smooth_filter == 'On':
-            self.other = self.fig.ax.plot(self.x,
-                                          self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
-                                          color='#d5dce6')
-            self.other.append(self.fig.ax.plot(self.x,
-                                               self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
-                                               color='#d5dce6')[0])
-            self.other.append(self.fig.ax.fill_between(self.x,
-                                                       self.transect.boat_vel.bt_vel.smooth_lower_limit
-                                                       * self.units['V'],
-                                                       self.transect.boat_vel.bt_vel.smooth_upper_limit
-                                                       * self.units['V'],
-                                                       facecolor='#d5dce6'))
+            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
+                             color='#d5dce6')
+            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
+                             color='#d5dce6')
+            self.ax[-1].fill_between(self.x, self.transect.boat_vel.bt_vel.smooth_lower_limit * self.units['V'],
+                                     self.transect.boat_vel.bt_vel.smooth_upper_limit * self.units['V'],
+                                     facecolor='#d5dce6')
 
-            self.other.append(self.fig.ax.plot(self.x, speed * self.units['V'], 'r-')[0])
-            self.other.append(self.fig.ax.plot(self.x,
-                                               self.transect.boat_vel.bt_vel.smooth_speed * self.units['V'])[0])
-            self.other.append(self.fig.ax.plot(self.x[invalid_other_vel],
-                                               speed[invalid_other_vel] * self.units['V'],
-                                               'ko', linestyle='')[0])
+            self.ax[-1].plot(self.x, speed * self.units['V'], 'r-')
+            self.ax[-1].plot(self.x, self.transect.boat_vel.bt_vel.smooth_speed * self.units['V'])
+            self.ax[-1].plot(self.x[invalid_other_vel], speed[invalid_other_vel] * self.units['V'],
+                                               'ko', linestyle='')
         else:
-            self.other = self.fig.ax.plot(self.x, speed * self.units['V'], 'r-')
-        self.fig.ax.set_ylabel(self.canvas.tr('Speed' + self.units['label_V']))
+            self.ax[-1].plot(self.x, speed * self.units['V'], 'r-')
+        self.ax[-1].set_ylabel(self.canvas.tr('Speed' + self.units['label_V']))
 
     def gga_source_ts(self):
         """Plot source for GGA data.
@@ -1257,7 +1345,7 @@ class AdvGraphs(object):
             except ValueError:
                 pass
 
-    def gga_speed_ts(self):
+    def gga_speed_ts(self, lbl='GGA Speed'):
         """Plot boat speed using GGA reference.
         """
 
@@ -1272,13 +1360,13 @@ class AdvGraphs(object):
 
         # Format for data and invalid identification
         fmt = [{'color': 'b', 'linestyle': '-'},
-               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$Q$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$A$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
+               {'color': 'k', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$Q$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$A$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
 
-        data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+        data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
 
         # Plot data
         self.plt_timeseries(data=data,
@@ -1288,7 +1376,7 @@ class AdvGraphs(object):
                             data_mask=invalid,
                             fmt=fmt)
 
-    def vtg_speed_ts(self):
+    def vtg_speed_ts(self, lbl='VTG Speed'):
         """Plot boat speed using VTG reference.
         """
 
@@ -1305,11 +1393,11 @@ class AdvGraphs(object):
                                + self.transect.boat_vel.vtg_vel.v_mps ** 2)
 
         # Format for data and invalid identification
-        fmt = [{'color': 'b', 'linestyle': '-'},
-               {'color': 'r', 'linestyle': '', 'marker': '$O$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$S$'},
-               {'color': 'r', 'linestyle': '', 'marker': '$H$'}]
-        data_units = (self.units['V'], 'GGA Speed ' + self.units['label_V'])
+        fmt = [{'color': 'g', 'linestyle': '-'},
+               {'color': 'k', 'linestyle': '', 'marker': '$O$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$S$'},
+               {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
+        data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
 
         # Plot data
         self.plt_timeseries(data=data,
