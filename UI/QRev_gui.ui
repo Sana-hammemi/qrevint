@@ -4416,7 +4416,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_42" stretch="6,3,1">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_49" stretch="5,4">
+                 <layout class="QVBoxLayout" name="verticalLayout_49" stretch="5">
                   <item>
                    <widget class="QGroupBox" name="gb_wt_radio">
                     <property name="title">
@@ -4506,13 +4506,10 @@
                       </layout>
                      </item>
                      <item>
-                      <widget class="QWidget" name="graph_wt_top" native="true"/>
+                      <widget class="QWidget" name="graph_wt" native="true"/>
                      </item>
                     </layout>
                    </widget>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="graph_wt_bottom" native="true"/>
                   </item>
                  </layout>
                 </item>

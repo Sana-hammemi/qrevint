@@ -86,21 +86,21 @@ class AdvGraphs(object):
         self.data_plotted = []
         self.gs = None
         self.ping_name = None
-        self.wt_advanced_type_methods = {'cb_speed_filtered_cc': self.speed_filtered_contour,
-                                         'cb_speed_final_cc': self.speed_final_contour,
-                                         'cb_projected_cc': self.projected_contour,
-                                         'cb_vertical_cc': self.vertical_contour,
-                                         'cb_error_cc': self.error_contour,
-                                         'cb_direction_cc': self.direction_contour,
-                                         'cb_avg_corr_cc': self.avg_corr_contour,
-                                         'cb_corr_beam_cc': self.corr_beam_contour,
-                                         'cb_avg_rssi_cc': self.avg_rssi_contour,
-                                         'cb_rssi_beam_cc': self.rssi_beam_contour,
+        self.wt_advanced_type_methods = {'cb_speed_filtered_cc': self.wt_speed_filtered_contour,
+                                         'cb_speed_final_cc': self.wt_speed_final_contour,
+                                         'cb_projected_cc': self.wt_projected_contour,
+                                         'cb_vertical_cc': self.wt_vertical_contour,
+                                         'cb_error_cc': self.wt_error_contour,
+                                         'cb_direction_cc': self.wt_direction_contour,
+                                         'cb_avg_corr_cc': self.wt_avg_corr_contour,
+                                         'cb_corr_beam_cc': self.wt_corr_beam_contour,
+                                         'cb_avg_rssi_cc': self.wt_avg_rssi_contour,
+                                         'cb_rssi_beam_cc': self.wt_rssi_beam_contour,
                                          'cb_ping_type_cc': self.wt_ping_type,
                                          'cb_discharge_ts': self.discharge_ts,
                                          'cb_discharge_percent_ts': self.discharge_percent_ts,
-                                         'cb_avg_speed_ts': self.avg_speed_ts,
-                                         'cb_projected_speed_ts': self.projected_speed_ts,
+                                         'cb_avg_speed_ts': self.wt_avg_speed_ts,
+                                         'cb_projected_speed_ts': self.wt_projected_speed_ts,
                                          'cb_bt_boat_speed_ts': self.bt_speed_ts,
                                          'cb_bt_3beam_ts': self.bt_3beam_ts,
                                          'cb_bt_error_ts': self.bt_error_ts,
@@ -118,7 +118,7 @@ class AdvGraphs(object):
                                          'cb_vtg_source_ts': self.vtg_source_ts,
                                          'cb_adcp_heading_ts': self.heading_adcp_ts,
                                          'cb_ext_heading_ts': self.heading_external_ts,
-                                         'cb_mag_error_ts': self.mag_error_ts,
+                                         'cb_mag_error_ts': self.heading_mag_error_ts,
                                          'cb_pitch_ts': self.pitch_ts,
                                          'cb_roll_ts': self.roll_ts,
                                          'cb_beam_depths_ts': self.depths_beam_ts,
@@ -551,7 +551,102 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def avg_corr_contour(self):
+    def create_wt_tab_graphs(self, transect, units, contour=True, beam=False, error=False, vert=False, snr= False,
+                             speed=False, x_axis_type='E'):
+        with self.wait_cursor():
+            # Initialize data sources
+            self.transect = transect
+
+            # Set default axis
+            self.x_axis_type = x_axis_type
+
+            self.units = units
+
+            # Clear the plot
+            self.fig.clear()
+
+            # Determine number of subplots
+            self.n_subplots = 2
+
+            # Compute x-axis variable
+            self.compute_x_axis()
+
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+            if contour:
+                self.wt_speed_filtered_contour()
+            elif beam:
+                self.wt_3beam_ts()
+            elif error:
+                self.wt_error_ts()
+            elif vert:
+                self.wt_vertical_ts()
+            elif snr:
+                self.wt_snr_ts()
+            elif speed:
+                self.wt_avg_speed_ts()
+
+            self.fig_no += 2
+            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+            if contour:
+                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+            else:
+                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+            self.wt_speed_final_contour()
+
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+
+            # Apply the x-axis label to the bottom x-axis
+            idx = -1
+
+            self.ax[idx].xaxis.label.set_fontsize(12)
+
+            # x-axis is length
+            if self.x_axis_type == 'L':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
+                else:
+                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+            # x-axis is ensembles
+            elif self.x_axis_type == 'E':
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                else:
+                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+            # x-axis is time
+            elif self.x_axis_type == 'T':
+                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+                if self.transect.start_edge == 'Right':
+                    self.ax[idx].invert_xaxis()
+                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                else:
+                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+                date_form = DateFormatter('%H:%M:%S')
+                self.ax[idx].xaxis.set_major_formatter(date_form)
+                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+
+        self.canvas.draw()
+
+    def wt_avg_corr_contour(self):
         """Creates average correlation contour plot.
         """
 
@@ -577,7 +672,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(1, 'Correlation \n (counts)'))
 
-    def avg_rssi_contour(self):
+    def wt_avg_rssi_contour(self):
         """Creates average return signal strength or SNR contour plot.
         """
 
@@ -611,7 +706,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(1, data_label))
 
-    def avg_speed_ts(self):
+    def wt_avg_speed_ts(self):
         """Create average water speed time series plot.
         """
 
@@ -629,7 +724,7 @@ class AdvGraphs(object):
                             data_units=data_units,
                             ax=self.ax[-1])
 
-    def corr_beam_contour(self):
+    def wt_corr_beam_contour(self):
         """Create contour plots of the correlation in each beam.
         """
 
@@ -686,7 +781,7 @@ class AdvGraphs(object):
                              data_units=(1, 'Beam ' + str(n+1) + ' Corr. \n (counts)'),
                              data_limits=data_limits)
 
-    def direction_contour(self):
+    def wt_direction_contour(self):
         """Create flow direction contour plot.
         """
 
@@ -760,7 +855,7 @@ class AdvGraphs(object):
                             data_units=data_units,
                             ax=self.ax[-1])
 
-    def error_contour(self):
+    def wt_error_contour(self):
         """Creat contour plot of error velocities.
         """
 
@@ -785,7 +880,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(self.units['V'], 'Error Velocity \n' + self.units['label_V']))
 
-    def projected_contour(self):
+    def wt_projected_contour(self):
         """Create contour plot of water speed projected in flow direction.
         """
 
@@ -812,7 +907,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(self.units['V'], 'Projected \n Speed' + self.units['label_V']))
 
-    def projected_speed_ts(self):
+    def wt_projected_speed_ts(self):
         """Create time series plot of projected water speed.
         """
 
@@ -833,7 +928,7 @@ class AdvGraphs(object):
                             data_units=data_units,
                             ax=self.ax[-1])
 
-    def rssi_beam_contour(self):
+    def wt_rssi_beam_contour(self):
         """Create contour plot of the signal intensity for each beam.
         """
 
@@ -889,7 +984,7 @@ class AdvGraphs(object):
                              data_units=(1, 'Beam ' + str(n + 1) + data_label),
                              data_limits=data_limits)
 
-    def speed_filtered_contour(self):
+    def wt_speed_filtered_contour(self):
         """Create contour of water speed with no interpolation for invalid water data.
         """
 
@@ -916,7 +1011,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(self.units['V'], 'Filtered \n Speed ' + self.units['label_V']))
 
-    def speed_final_contour(self):
+    def wt_speed_final_contour(self):
         """Contour plot of water speed with interpolation for invalid data.
         """
 
@@ -942,7 +1037,7 @@ class AdvGraphs(object):
                          depth=depth,
                          data_units=(self.units['V'], 'Interpolated \n Speed ' + self.units['label_V']))
 
-    def vertical_contour(self):
+    def wt_vertical_contour(self):
         """Create contour plot of vertical velocities.
         """
 
@@ -981,7 +1076,7 @@ class AdvGraphs(object):
         ping_type_long_name = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface', '1I': '1 MHz Inc',
                                '1C': '1 MHz Coh', '3I': '3 MHz Inc', '3C': '3 MHz Coh',
                                'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
-                               'U': 'Unspecified'}
+                               'U': 'N/A'}
         ping_type = self.transect.w_vel.ping_type
         p_types = np.unique(ping_type)
         ping_code = {}
@@ -1010,6 +1105,226 @@ class AdvGraphs(object):
                          cmap_in = cmap,
                          ping_name=ping_name,
                          n_names=len(p_types))
+
+    def wt_3beam_ts(self):
+        # Determine number of beams for each ensemble
+        wt_temp = copy.deepcopy(self.transect.w_vel)
+        wt_temp.filter_beam(4)
+        valid_4beam = wt_temp.valid_data[5, :, :].astype(int)
+        beam_data = np.copy(valid_4beam).astype(int)
+        beam_data[valid_4beam == 1] = 4
+        beam_data[wt_temp.valid_data[6, :, :]] = 4
+        beam_data[valid_4beam == 0] = 3
+        beam_data[np.logical_not(self.transect.w_vel.valid_data[1, :, :])] = -999
+
+        # Configure plot settings
+        hold_x = np.copy(self.x)
+        self.x = np.tile(self.x, (self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
+        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[5, :, :]),
+                                 self.transect.w_vel.cells_above_sl).tolist()
+        fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'},
+               {'color': 'r', 'linestyle': '', 'marker': 'o', 'markerfacecolor': 'none'}]
+        data_units = (1, 'WT Number of Beams ')
+        data_mask = [[], invalid]
+
+        # Plot data
+        self.plt_timeseries(data=beam_data,
+                            data_units=data_units,
+                            ax=self.ax[-1],
+                            data_2=beam_data,
+                            data_mask=data_mask,
+                            fmt=fmt)
+        self.x = hold_x
+        # Format axis
+        self.ax[-1].set_ylim(top=4.5, bottom=-0.5)
+
+    def wt_error_ts(self):
+
+        # Plot error velocity
+        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[2, :, :]), self.transect.w_vel.cells_above_sl)
+
+        # Data to plot
+        hold_x = np.copy(self.x)
+        self.x = np.tile(self.x, (self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
+        self.x = self.x[self.transect.w_vel.cells_above_sl]
+        y_data = self.transect.w_vel.d_mps[self.transect.w_vel.cells_above_sl] * self.units['V']
+
+        data_units = (self.units['V'], 'WT Error Vel ' + self.units['label_V'])
+
+        # Setup ping type
+        if self.transect.w_vel.ping_type.size > 1:
+            ping_type = self.transect.w_vel.ping_type[self.transect.w_vel.cells_above_sl]
+            ping_type_used = np.unique(ping_type)
+            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
+                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
+            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
+                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+            p_types = np.unique(ping_type)
+
+            data_mask = []
+            fmt = []
+            for pt in ping_type_used:
+                data_mask.append(ping_type == pt)
+                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
+                            'mec': p_type_color[pt]})
+
+            data_mask.append(invalid)
+
+            # Plot
+            self.plt_timeseries(data=None,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+        else:
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            p_types = ['U']
+            data_mask = [[], invalid]
+
+            # Plot first ping type
+            self.plt_timeseries(data=y_data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+        self.x = hold_x
+
+        # Create legend
+        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
+                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
+        legend_txt = []
+        for p_type in p_types:
+            legend_txt.append(legend_dict[p_type])
+        self.ax[-1].legend(legend_txt)
+
+    def wt_vertical_ts(self):
+        # Plot vertical velocity
+        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[3, :, :]),
+                                           self.transect.w_vel.cells_above_sl)
+
+        # Data to plot
+        hold_x = np.copy(self.x)
+        self.x = np.tile(self.x, (self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
+        self.x = self.x[self.transect.w_vel.cells_above_sl]
+        y_data = self.transect.w_vel.w_mps[self.transect.w_vel.cells_above_sl] * self.units['V']
+
+        data_units = (self.units['V'], 'WT Vert. Vel ' + self.units['label_V'])
+
+        # Setup ping type
+        if self.transect.w_vel.ping_type.size > 1:
+            ping_type = self.transect.w_vel.ping_type[self.transect.w_vel.cells_above_sl]
+            ping_type_used = np.unique(ping_type)
+            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
+                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
+            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
+                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+            p_types = np.unique(ping_type)
+
+            data_mask = []
+            fmt = []
+            for pt in ping_type_used:
+                data_mask.append(ping_type == pt)
+                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
+                            'mec': p_type_color[pt]})
+
+            data_mask.append(invalid)
+
+            # Plot
+            self.plt_timeseries(data=None,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+        else:
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            p_types = ['U']
+            data_mask = [[], invalid]
+
+            # Plot first ping type
+            self.plt_timeseries(data=y_data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+        self.x = hold_x
+
+        # Create legend
+        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
+                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
+        legend_txt = []
+        for p_type in p_types:
+            legend_txt.append(legend_dict[p_type])
+        self.ax[-1].legend(legend_txt)
+
+    def wt_snr_ts(self):
+        # Plot vertical velocity
+        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[7, :, :]),
+                                           self.transect.w_vel.cells_above_sl)[0, :]
+
+        # Data to plot
+        y_data = self.transect.w_vel.snr_rng[self.transect.w_vel.cells_above_sl[0, :]] * self.units['V']
+
+        data_units = (1, 'SNR Range (dB)' )
+
+        # Setup ping type
+        if self.transect.w_vel.ping_type.size > 1:
+            ping_type = self.transect.w_vel.ping_type[0, :]
+            ping_type_used = np.unique(ping_type)
+            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
+                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
+            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
+                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+            p_types = np.unique(ping_type)
+
+            data_mask = []
+            fmt = []
+            for pt in ping_type_used:
+                data_mask.append(ping_type == pt)
+                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
+                            'mec': p_type_color[pt]})
+
+            data_mask.append(invalid)
+
+            # Plot
+            self.plt_timeseries(data=None,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+        else:
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            p_types = ['U']
+            data_mask = [[], invalid]
+
+            # Plot first ping type
+            self.plt_timeseries(data=y_data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=y_data,
+                                data_mask=data_mask,
+                                fmt=fmt)
+
+        # Create legend
+        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
+                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
+        legend_txt = []
+        for p_type in p_types:
+            legend_txt.append(legend_dict[p_type])
+        self.ax[-1].legend(legend_txt)
 
     def bt_speed_ts(self, lbl='BT Speed'):
 
@@ -1065,17 +1380,6 @@ class AdvGraphs(object):
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[2, :]).tolist()
         data_units = (self.units['V'], 'BT Error Vel ' + self.units['label_V'])
 
-        # if not self.transect.boat_vel.bt_vel.d_meas_thresholds:
-        #     fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
-        #            {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
-        #
-        #     self.plt_timeseries(data=y_data,
-        #                         data_units=data_units,
-        #                         ax=self.ax[-1],
-        #                         data_2=y_data,
-        #                         data_mask=invalid,
-        #                         fmt=fmt)
-        # else:
         freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
         freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
         freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
@@ -1539,7 +1843,7 @@ class AdvGraphs(object):
                             ax=self.ax[-1],
                             fmt=fmt)
 
-    def mag_error_ts(self):
+    def heading_mag_error_ts(self):
         """Plot magnetic error.
         """
 
