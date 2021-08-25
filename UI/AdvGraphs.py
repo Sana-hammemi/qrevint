@@ -5,10 +5,9 @@ import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
 from PyQt5 import QtWidgets, QtCore
 from contextlib import contextmanager
-from matplotlib.colors import Colormap
 from datetime import datetime, timedelta
 from MiscLibs.common_functions import sind, cosd
-import matplotlib as plt
+from matplotlib import collections as collections
 
 
 class AdvGraphs(object):
@@ -54,6 +53,22 @@ class AdvGraphs(object):
         Dictionary connecting to the plot type to the method to create the plot
     ping_name: dict
         Name of ping type for labeling colorbar and data cursor
+    show_below_sl: bool
+        Indicates if correlation or intensity data below the side lobe should be shown
+    ping_type_long_name: dict
+        Dictionary linking ping type to long name for labeling
+    p_type_color: dict
+        Dictionary specifying the plot color for each ping type
+    p_type_marker: dict
+        Dictionary specifying the plot marker for each ping type
+    wt_legend_dict: dict
+        Dictionary of legend text for wt ping type
+    bt_legend_dict:
+        Dictionary of legend text for bt ping type
+    freq_color: dict
+        Dictionary for bt frequency color
+    freq_marker: dict
+        Dictionary for bt frequency marker
     """
 
     def __init__(self, canvas):
@@ -86,6 +101,22 @@ class AdvGraphs(object):
         self.data_plotted = []
         self.gs = None
         self.ping_name = None
+        self.show_below_sl = False
+        self.ping_type_long_name = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface', '1I': '1 MHz Inc',
+                                    '1C': '1 MHz Coh', '3I': '3 MHz Inc', '3C': '3 MHz Coh',
+                                    'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
+                                    'U': 'N/A'}
+        self.p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
+                             '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
+        self.p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
+                              'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+        self.wt_legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
+                               '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
+        self.bt_legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
+                               '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+        self.freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
+        self.freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
         self.wt_advanced_type_methods = {'cb_speed_filtered_cc': self.wt_speed_filtered_contour,
                                          'cb_speed_final_cc': self.wt_speed_final_contour,
                                          'cb_projected_cc': self.wt_projected_contour,
@@ -124,10 +155,10 @@ class AdvGraphs(object):
                                          'cb_beam_depths_ts': self.depths_beam_ts,
                                          'cb_final_depths_ts': self.depths_final_ts,
                                          'cb_depths_source_ts': self.depths_source_ts
-                                        }
+                                         }
 
-    def create(self, transect, discharge, units, selected_types, flow_direction=0, color_map='viridis', x_axis_type=None,
-               show_below_sl=False):
+    def create(self, transect, discharge, units, selected_types, flow_direction=0, color_map='viridis',
+               x_axis_type=None, show_below_sl=False):
         """Create selected plots for the specified transect.
 
         Parameters
@@ -201,15 +232,18 @@ class AdvGraphs(object):
                 if selected_types[0][-3:] == '_cc':
                     share_y = True
 
-                # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+                # Create additional subplots as specified, sharing x axis for all plots and  y axis for contour plots
                 if len(selected_types) > 1:
                     for n in range(1, len(selected_types)):
-                        # Figure number increased by two to account for the second column in the grid space for the colorbar
+                        # Figure number increased by two to account for the second column in the grid space
+                        # for the colorbar
                         self.fig_no += 2
                         if share_y and selected_types[n][-3:] == '_cc':
-                            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+                            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no],
+                                                                sharex=self.ax[0], sharey=self.ax[0]))
                         else:
                             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
+
                         # Call method based on link in dictionary
                         self.wt_advanced_type_methods[selected_types[n]]()
 
@@ -224,37 +258,7 @@ class AdvGraphs(object):
 
                 self.ax[idx].xaxis.label.set_fontsize(12)
 
-                # x-axis is length
-                if self.x_axis_type == 'L':
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                    else:
-                        self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
-
-                # x-axis is ensembles
-                elif self.x_axis_type == 'E':
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                    else:
-                        self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-                # x-axis is time
-                elif self.x_axis_type == 'T':
-                    axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                              left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                    else:
-                        self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                              right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                    date_form = DateFormatter('%H:%M:%S')
-                    self.ax[idx].xaxis.set_major_formatter(date_form)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+                self.set_x_axis(idx)
 
         else:
             # Clear the plot
@@ -263,96 +267,122 @@ class AdvGraphs(object):
         self.canvas.draw()
 
     def create_depth_tab_graphs(self, transect, units,
-                                b1=True, b2=True, b3=True, b4=True, vb = False, ds=False,
+                                b1=True, b2=True, b3=True, b4=True, vb=False, ds=False,
                                 avg4_final=False, vb_final=False, ds_final=False, final=True, x_axis_type='E'):
-            with self.wait_cursor():
-                # Initialize data sources
-                self.transect = transect
+        """Creates the plots for the depth tab. This approach allows zoom and pan to work together for both plots.
 
-                # Set default axis
-                self.x_axis_type = x_axis_type
+        Parameters
+        ----------
+        transect: TransectData
+            Transect to plot
+        units: dict
+            Units selected
+        b1: bool
+            Indicates if beam 1 is plotted
+        b2: bool
+            Indicates if beam 2 is plotted
+        b3: bool
+            Indicates if beam 3 is plotted
+        b4: bool
+            Indicates if beam 4 is plotted
+        vb: bool
+            Indicates if the vertical beam is plotted
+        ds: bool
+            Indicates if the depth sounder is plotted
+        avg4_final: bool
+            Indicates if the 4-beam average cross section is plotted
+        vb_final: bool
+            Indicates if the vertical beam cross section is plotted
+        ds_final: bool
+            Indicates if the depth sounder cross section is plotted
+        final: bool
+            Indicates if the selected method for determing the cross section is plotted
+        x_axis_type: str
+            Specifies what variable (ensemble, length or time) to be used for the x-axis
+        """
+        with self.wait_cursor():
 
-                self.units = units
+            # Initialize data sources
+            self.transect = transect
 
-                # Clear the plot
-                self.fig.clear()
+            # Set default axis type and units
+            self.x_axis_type = x_axis_type
+            self.units = units
 
-                # Determine number of subplots
-                self.n_subplots = 2
+            # Clear the plot
+            self.fig.clear()
 
-                # Compute x-axis variable
-                self.compute_x_axis()
+            # Determine number of subplots
+            self.n_subplots = 2
 
-                # Initialize variable for subplots
-                self.ax = []
-                self.annot = []
-                self.data_plotted = []
+            # Compute x-axis variable
+            self.compute_x_axis()
 
-                # Create grid specification
-                # Note: the second column of the grid is for the color bar. It is blank but present even for time series
-                # plots to allow the sharing of the x-axis between all plots
-                self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
 
-                # Create first subplot
-                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
-                self.depths_beam_ts(b1, b2, b3, b4, vb, ds, leg=False)
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
-                self.fig_no += 2
-                # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
-                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
-                self.depths_final_ts(avg4_final=avg4_final, vb_final=vb_final, ds_final=ds_final, final=final)
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+            self.depths_beam_ts(b1, b2, b3, b4, vb, ds, leg=False)
 
-                # Adjust the spacing of the subplots
-                self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig_no += 2
+            # Create additional subplots as specified, sharing x axis y axis
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0], sharey=self.ax[0]))
+            self.depths_final_ts(avg4_final=avg4_final, vb_final=vb_final, ds_final=ds_final, final=final)
 
-                # Apply the x-axis label to the bottom x-axis
-                idx = -1
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
 
-                self.ax[idx].xaxis.label.set_fontsize(12)
+            # Apply the x-axis label to the bottom x-axis
+            idx = -1
+            self.ax[idx].xaxis.label.set_fontsize(12)
+            self.set_x_axis(idx)
 
-                # x-axis is length
-                if self.x_axis_type == 'L':
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                    else:
-                        self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+        self.canvas.draw()
 
-                # x-axis is ensembles
-                elif self.x_axis_type == 'E':
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                    else:
-                        self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-                # x-axis is time
-                elif self.x_axis_type == 'T':
-                    axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                    if self.transect.start_edge == 'Right':
-                        self.ax[idx].invert_xaxis()
-                        self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                              left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                    else:
-                        self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                              right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                    date_form = DateFormatter('%H:%M:%S')
-                    self.ax[idx].xaxis.set_major_formatter(date_form)
-                    self.ax[idx].set_xlabel(self.canvas.tr('Time'))
-
-            self.canvas.draw()
-
-    def create_bt_tab_graphs(self, transect, units, beam=True, error=False, vert=False, other= False, source=False,
+    def create_bt_tab_graphs(self, transect, units, beam=True, error=False, vert=False, other=False, source=False,
                              bt=True, gga=False, vtg=False, x_axis_type='E'):
+        """Creates the plots for the bottom track tab.
+        This approach allows zoom and pan to work together for both plots.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Transect to plot
+        units: dict
+            Units selected
+        beam: bool
+            Indicates if number of beams is plotted
+        error: bool
+            Indicates if error velocity is plotted
+        vert: bool
+            Indicates if vertical velocity is plotted
+        other: bool
+            Indicates if other filter is plotted
+        source: bool
+            Indicates if the boat speed source is plotted
+        bt: bool
+            Indicates if the bottom track is plotted in shiptrack
+        gga: bool
+            Indicates if the gga track is plotted in the shiptrack
+        vtg: bool
+            Indicates if the vtg track is plotted in the shiptrack
+        x_axis_type: str
+            Specifies what variable (ensemble, length or time) to be used for the x-axis
+        """
         with self.wait_cursor():
             # Initialize data sources
             self.transect = transect
 
-            # Set default axis
+            # Set x axis type and units
             self.x_axis_type = x_axis_type
-
             self.units = units
 
             # Clear the plot
@@ -389,7 +419,7 @@ class AdvGraphs(object):
                 self.source_ts(ref, 'Boat Source')
 
             self.fig_no += 2
-            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+            # Create boat speed subplots as specified, sharing x axis for all plots
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
             if bt:
                 self.bt_speed_ts(lbl='Boat speed')
@@ -403,52 +433,50 @@ class AdvGraphs(object):
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
-
             self.ax[idx].xaxis.label.set_fontsize(12)
-
-            # x-axis is length
-            if self.x_axis_type == 'L':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                else:
-                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
-
-            # x-axis is ensembles
-            elif self.x_axis_type == 'E':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                else:
-                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-            # x-axis is time
-            elif self.x_axis_type == 'T':
-                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                else:
-                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                date_form = DateFormatter('%H:%M:%S')
-                self.ax[idx].xaxis.set_major_formatter(date_form)
-                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+            self.set_x_axis(idx)
 
         self.canvas.draw()
 
     def create_gps_tab_graphs(self, transect, units, quality=True, altitude=False, hdop=False, n_sats=False,
-                              other= False, source=False, bt=True, gga=False, vtg=False, x_axis_type='E'):
+                              other=False, source=False, bt=True, gga=False, vtg=False, x_axis_type='E'):
+        """Creates the plots for the bottom track tab.
+        This approach allows zoom and pan to work together for both plots.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Transect to plot
+        units: dict
+            Units selected
+        quality: bool
+            Indicates if gga quality is plotted
+        altitude: bool
+            Indicates if gga altitude is plotted
+        hdop: bool
+            Indicates if gga HDOP is plotted
+        n_sats: bool
+            Indicates if gga number of satellites is plotted
+        other: bool
+            Indicates if other filter is plotted
+        source: bool
+            Indicates if the boat speed source is plotted
+        bt: bool
+            Indicates if the bottom track is plotted in shiptrack
+        gga: bool
+            Indicates if the gga track is plotted in the shiptrack
+        vtg: bool
+            Indicates if the vtg track is plotted in the shiptrack
+        x_axis_type: str
+            Specifies what variable (ensemble, length or time) to be used for the x-axis
+        """
         with self.wait_cursor():
+
             # Initialize data sources
             self.transect = transect
 
-            # Set default axis
+            # Set x axis type and units
             self.x_axis_type = x_axis_type
-
             self.units = units
 
             # Clear the plot
@@ -500,7 +528,7 @@ class AdvGraphs(object):
                 self.source_ts(ref, 'Boat Source')
 
             self.fig_no += 2
-            # Create additional subplots as specified, sharing x axis for all plots and also y axis for contour plots
+            # Create boat speed subplot as specified, sharing x axis
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], sharex=self.ax[0]))
             if bt:
                 self.bt_speed_ts(lbl='Boat speed')
@@ -514,52 +542,44 @@ class AdvGraphs(object):
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
-
             self.ax[idx].xaxis.label.set_fontsize(12)
-
-            # x-axis is length
-            if self.x_axis_type == 'L':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                else:
-                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
-
-            # x-axis is ensembles
-            elif self.x_axis_type == 'E':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                else:
-                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-            # x-axis is time
-            elif self.x_axis_type == 'T':
-                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                else:
-                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                date_form = DateFormatter('%H:%M:%S')
-                self.ax[idx].xaxis.set_major_formatter(date_form)
-                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+            self.set_x_axis(idx)
 
         self.canvas.draw()
 
-    def create_wt_tab_graphs(self, transect, units, contour=True, beam=False, error=False, vert=False, snr= False,
+    def create_wt_tab_graphs(self, transect, units, contour=True, beam=False, error=False, vert=False, snr=False,
                              speed=False, x_axis_type='E'):
+        """Creates the plots for the bottom track tab.
+        This approach allows zoom and pan to work together for both plots.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Transect to plot
+        units: dict
+            Units selected
+        contour: bool
+            Indicates if filtered contour is plotted
+        beam: bool
+            Indicates if number of beams is plotted
+        error: bool
+            Indicates if error velocity is plotted
+        vert: bool
+            Indicates if vertical velocity is plotted
+        snr: bool
+            Indicates if SNR is plotted
+        speed: bool
+            Indicates if the average water speed source is plotted
+        x_axis_type: str
+            Specifies what variable (ensemble, length or time) to be used for the x-axis
+        """
         with self.wait_cursor():
+
             # Initialize data sources
             self.transect = transect
 
-            # Set default axis
+            # Set axis type and units
             self.x_axis_type = x_axis_type
-
             self.units = units
 
             # Clear the plot
@@ -609,42 +629,51 @@ class AdvGraphs(object):
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
-
             self.ax[idx].xaxis.label.set_fontsize(12)
-
-            # x-axis is length
-            if self.x_axis_type == 'L':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
-                else:
-                    self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
-                self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
-
-            # x-axis is ensembles
-            elif self.x_axis_type == 'E':
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
-                else:
-                    self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
-                self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
-
-            # x-axis is time
-            elif self.x_axis_type == 'T':
-                axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
-                if self.transect.start_edge == 'Right':
-                    self.ax[idx].invert_xaxis()
-                    self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                else:
-                    self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                                          right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
-                date_form = DateFormatter('%H:%M:%S')
-                self.ax[idx].xaxis.set_major_formatter(date_form)
-                self.ax[idx].set_xlabel(self.canvas.tr('Time'))
+            self.set_x_axis(idx)
 
         self.canvas.draw()
+
+    def set_x_axis(self, idx):
+        """Configures the x-axis.
+
+        Parameters
+        ----------
+        idx = int
+            Axis number to apply x-axis configuration to.
+        """
+
+        # x-axis is length
+        if self.x_axis_type == 'L':
+            if self.transect.start_edge == 'Right':
+                self.ax[idx].invert_xaxis()
+                self.ax[idx].set_xlim(right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02)
+            else:
+                self.ax[idx].set_xlim(left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02)
+            self.ax[idx].set_xlabel(self.canvas.tr('Length' + self.units['label_L']))
+
+        # x-axis is ensembles
+        elif self.x_axis_type == 'E':
+            if self.transect.start_edge == 'Right':
+                self.ax[idx].invert_xaxis()
+                self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+            else:
+                self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+            self.ax[idx].set_xlabel(self.canvas.tr('Ensembles'))
+
+        # x-axis is time
+        elif self.x_axis_type == 'T':
+            axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
+            if self.transect.start_edge == 'Right':
+                self.ax[idx].invert_xaxis()
+                self.ax[idx].set_xlim(right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                      left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+            else:
+                self.ax[idx].set_xlim(left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
+                                      right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer))
+            date_form = DateFormatter('%H:%M:%S')
+            self.ax[idx].xaxis.set_major_formatter(date_form)
+            self.ax[idx].set_xlabel(self.canvas.tr('Time'))
 
     def wt_avg_corr_contour(self):
         """Creates average correlation contour plot.
@@ -653,7 +682,7 @@ class AdvGraphs(object):
         # Compute average of correlation data for each cel
         data = np.nanmean(self.transect.w_vel.corr, axis=0)
         if not self.show_below_sl:
-            data[self.transect.w_vel.cells_above_sl == False] = np.nan
+            data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
@@ -679,7 +708,7 @@ class AdvGraphs(object):
         # Compute mean signal strength for each cell
         data = np.nanmean(self.transect.w_vel.rssi, axis=0)
         if not self.show_below_sl:
-            data[self.transect.w_vel.cells_above_sl == False] = np.nan
+            data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
@@ -732,7 +761,7 @@ class AdvGraphs(object):
         data_all = np.copy(self.transect.w_vel.corr)
         if not self.show_below_sl:
             for n in range(data_all.shape[0]):
-                data_all[n, self.transect.w_vel.cells_above_sl == False] = np.nan
+                data_all[n, np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Compute the minimum and maximum limits based on all the correlations so each beam has the same color scale
         data_limits = [np.nanmin(data_all), np.nanmax(data_all)]
@@ -856,12 +885,12 @@ class AdvGraphs(object):
                             ax=self.ax[-1])
 
     def wt_error_contour(self):
-        """Creat contour plot of error velocities.
+        """Create contour plot of error velocities.
         """
 
         # Get data
         data = self.transect.w_vel.d_mps
-        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+        data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
@@ -944,7 +973,7 @@ class AdvGraphs(object):
         data_all = np.copy(self.transect.w_vel.rssi)
         if not self.show_below_sl:
             for n in range(data_all.shape[0]):
-                data_all[n, self.transect.w_vel.cells_above_sl == False] = np.nan
+                data_all[n, np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Determine limits for all data so a common scale can be used for all 4 plots
         data_limits = [np.nanmin(data_all), np.nanmax(data_all)]
@@ -1043,7 +1072,7 @@ class AdvGraphs(object):
 
         # Get data
         data = np.copy(self.transect.w_vel.w_mps)
-        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+        data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
@@ -1063,32 +1092,29 @@ class AdvGraphs(object):
                          data_units=(self.units['V'], 'Vertical \n Velocity' + self.units['label_V']))
 
     def wt_ping_type(self):
+        """Create plot showing ping type.
+        """
 
         # Get data
         data = np.copy(self.transect.w_vel.w_mps)
-        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+        data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Set the 1-dimensional x-axis data based on selected x-axis type. Timestamp must be used for time
         if self.x_axis_type == 'T':
             x_1d = self.x_timestamp
         else:
             x_1d = self.x
-        ping_type_long_name = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface', '1I': '1 MHz Inc',
-                               '1C': '1 MHz Coh', '3I': '3 MHz Inc', '3C': '3 MHz Coh',
-                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
-                               'U': 'N/A'}
+
         ping_type = self.transect.w_vel.ping_type
         p_types = np.unique(ping_type)
-        ping_code = {}
         ping_name = {}
         n = 0
-        for type in p_types:
-            ping_code[type] = n
-            ping_name[n] = ping_type_long_name[type]
-            data[ping_type==type] = n
+        for p_type in p_types:
+            ping_name[n] = self.ping_type_long_name[p_type]
+            data[ping_type == p_type] = n
             n = n + 1
 
-        data[self.transect.w_vel.cells_above_sl == False] = np.nan
+        data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(self.transect, data, x_1d=x_1d)
@@ -1102,11 +1128,14 @@ class AdvGraphs(object):
                          x=self.x,
                          depth=depth,
                          data_units=(1, 'WT Ping Type'),
-                         cmap_in = cmap,
+                         cmap_in=cmap,
                          ping_name=ping_name,
                          n_names=len(p_types))
 
     def wt_3beam_ts(self):
+        """Create time series plot of WT beams used.
+        """
+
         # Determine number of beams for each ensemble
         wt_temp = copy.deepcopy(self.transect.w_vel)
         wt_temp.filter_beam(4)
@@ -1135,13 +1164,17 @@ class AdvGraphs(object):
                             data_mask=data_mask,
                             fmt=fmt)
         self.x = hold_x
+
         # Format axis
         self.ax[-1].set_ylim(top=4.5, bottom=-0.5)
 
     def wt_error_ts(self):
+        """Create time series plot of WT error velocity.
+        """
 
         # Plot error velocity
-        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[2, :, :]), self.transect.w_vel.cells_above_sl)
+        invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[2, :, :]),
+                                 self.transect.w_vel.cells_above_sl)
 
         # Data to plot
         hold_x = np.copy(self.x)
@@ -1155,18 +1188,15 @@ class AdvGraphs(object):
         if self.transect.w_vel.ping_type.size > 1:
             ping_type = self.transect.w_vel.ping_type[self.transect.w_vel.cells_above_sl]
             ping_type_used = np.unique(ping_type)
-            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
-                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
-            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
-                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+
             p_types = np.unique(ping_type)
 
             data_mask = []
             fmt = []
             for pt in ping_type_used:
                 data_mask.append(ping_type == pt)
-                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
-                            'mec': p_type_color[pt]})
+                fmt.append({'marker': self.p_type_marker[pt], 'linestyle': '', 'mfc': self.p_type_color[pt],
+                            'mec': self.p_type_color[pt]})
 
             data_mask.append(invalid)
 
@@ -1179,8 +1209,8 @@ class AdvGraphs(object):
                                 fmt=fmt)
 
         else:
-            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
-            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'},
+                   {'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'}]
             p_types = ['U']
             data_mask = [[], invalid]
 
@@ -1194,18 +1224,18 @@ class AdvGraphs(object):
         self.x = hold_x
 
         # Create legend
-        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
-                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
-                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
         legend_txt = []
         for p_type in p_types:
-            legend_txt.append(legend_dict[p_type])
+            legend_txt.append(self.wt_legend_dict[p_type])
         self.ax[-1].legend(legend_txt)
 
     def wt_vertical_ts(self):
+        """Create time series plot of WT vertical velocity.
+        """
+
         # Plot vertical velocity
         invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[3, :, :]),
-                                           self.transect.w_vel.cells_above_sl)
+                                 self.transect.w_vel.cells_above_sl)
 
         # Data to plot
         hold_x = np.copy(self.x)
@@ -1219,18 +1249,15 @@ class AdvGraphs(object):
         if self.transect.w_vel.ping_type.size > 1:
             ping_type = self.transect.w_vel.ping_type[self.transect.w_vel.cells_above_sl]
             ping_type_used = np.unique(ping_type)
-            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
-                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
-            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
-                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+
             p_types = np.unique(ping_type)
 
             data_mask = []
             fmt = []
             for pt in ping_type_used:
                 data_mask.append(ping_type == pt)
-                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
-                            'mec': p_type_color[pt]})
+                fmt.append({'marker': self.p_type_marker[pt], 'linestyle': '', 'mfc': self.p_type_color[pt],
+                            'mec': self.p_type_color[pt]})
 
             data_mask.append(invalid)
 
@@ -1243,8 +1270,8 @@ class AdvGraphs(object):
                                 fmt=fmt)
 
         else:
-            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
-            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'},
+                   {'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'}]
             p_types = ['U']
             data_mask = [[], invalid]
 
@@ -1258,40 +1285,37 @@ class AdvGraphs(object):
         self.x = hold_x
 
         # Create legend
-        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
-                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
-                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
         legend_txt = []
         for p_type in p_types:
-            legend_txt.append(legend_dict[p_type])
+            legend_txt.append(self.wt_legend_dict[p_type])
         self.ax[-1].legend(legend_txt)
 
     def wt_snr_ts(self):
+        """Create time series plot of WT SNR range.
+        """
+
         # Plot vertical velocity
         invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[7, :, :]),
-                                           self.transect.w_vel.cells_above_sl)[0, :]
+                                 self.transect.w_vel.cells_above_sl)[0, :]
 
         # Data to plot
         y_data = self.transect.w_vel.snr_rng[self.transect.w_vel.cells_above_sl[0, :]] * self.units['V']
 
-        data_units = (1, 'SNR Range (dB)' )
+        data_units = (1, 'SNR Range (dB)')
 
         # Setup ping type
         if self.transect.w_vel.ping_type.size > 1:
             ping_type = self.transect.w_vel.ping_type[0, :]
             ping_type_used = np.unique(ping_type)
-            p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00', '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
-                            '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933', 'PC/BB': '#ffbf00', 'U': 'b'}
-            p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.', '1C': '*', '3I': '+', '3C': 'x',
-                             'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+
             p_types = np.unique(ping_type)
 
             data_mask = []
             fmt = []
             for pt in ping_type_used:
                 data_mask.append(ping_type == pt)
-                fmt.append({'marker': p_type_marker[pt], 'linestyle': '', 'mfc': p_type_color[pt],
-                            'mec': p_type_color[pt]})
+                fmt.append({'marker': self.p_type_marker[pt], 'linestyle': '', 'mfc': self.p_type_color[pt],
+                            'mec': self.p_type_color[pt]})
 
             data_mask.append(invalid)
 
@@ -1304,8 +1328,8 @@ class AdvGraphs(object):
                                 fmt=fmt)
 
         else:
-            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'}]
-            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
+            fmt = [{'marker': '.', 'color': 'b', 'ms': 8, 'linestyle': '', 'mfc': 'b', 'mec': 'b'},
+                   {'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'}]
             p_types = ['U']
             data_mask = [[], invalid]
 
@@ -1318,21 +1342,23 @@ class AdvGraphs(object):
                                 fmt=fmt)
 
         # Create legend
-        legend_dict = {'I': 'Incoherent', 'C': 'Coherent', 'S': 'Surface Cell',
-                       '1I': '1MHz Incoherent', '1C': '1 MHz HD', '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
-                       'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB', 'U': 'N/A'}
         legend_txt = []
         for p_type in p_types:
-            legend_txt.append(legend_dict[p_type])
+            legend_txt.append(self.wt_legend_dict[p_type])
         self.ax[-1].legend(legend_txt)
 
     def bt_speed_ts(self, lbl='BT Speed'):
+        """Create time series plot of BT speed.
+        """
 
+        # Prepare data
         data = np.sqrt(self.transect.boat_vel.bt_vel.u_processed_mps ** 2
                        + self.transect.boat_vel.bt_vel.v_processed_mps ** 2)
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data)
         data_invalid = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
                                + self.transect.boat_vel.bt_vel.v_mps ** 2)
+
+        # Specify format
         fmt = [{'color': 'r', 'linestyle': '-'},
                {'color': 'k', 'linestyle': '', 'marker': '$O$'},
                {'color': 'k', 'linestyle': '', 'marker': '$E$'},
@@ -1349,6 +1375,8 @@ class AdvGraphs(object):
                             fmt=fmt)
 
     def bt_3beam_ts(self):
+        """Create time series plot of BT number of beams.
+        """
 
         # Determine number of beams for each ensemble
         bt_temp = copy.deepcopy(self.transect.boat_vel.bt_vel)
@@ -1375,23 +1403,25 @@ class AdvGraphs(object):
                             fmt=fmt)
 
     def bt_error_ts(self):
+        """Create time series plot of BT error velocity.
+        """
+
         # Plot error velocity
         y_data = self.transect.boat_vel.bt_vel.d_mps
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[2, :]).tolist()
         data_units = (self.units['V'], 'BT Error Vel ' + self.units['label_V'])
 
+        # Specify format
         freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-        freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-        freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
-
         freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
 
+        # Create data mask
         data_mask = []
         fmt = []
         for freq in freq_used:
             data_mask.append(freq_ensembles == freq)
-            fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
-                        'mec': freq_color[freq]})
+            fmt.append({'marker': self.freq_marker[freq], 'linestyle': '', 'mfc': self.freq_color[freq],
+                        'mec': self.freq_color[freq]})
         data_mask.append(invalid)
         fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
@@ -1403,11 +1433,9 @@ class AdvGraphs(object):
                             fmt=fmt)
 
         # Create legend
-        legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
-                       '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
         legend_txt = []
         for freq in freq_used:
-            legend_txt.append(legend_dict[freq])
+            legend_txt.append(self.bt_legend_dict[freq])
         self.ax[-1].legend(legend_txt)
 
     def bt_vertical_ts(self):
@@ -1415,29 +1443,15 @@ class AdvGraphs(object):
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data[3, :]).tolist()
         data_units = (self.units['V'], 'BT Vertical Vel ' + self.units['label_V'])
 
-        # if not self.transect.boat_vel.bt_vel.w_meas_thresholds:
-        #     fmt = [{'marker': '.', 'linestyle': '-', 'mfc': 'b', 'mec': 'b'},
-        #            {'color': 'r', 'ms': 8, 'linestyle': '-', 'mfc': 'none'}]
-        #
-        #     self.plt_timeseries(data=y_data,
-        #                         data_units=data_units,
-        #                         ax=self.ax[-1],
-        #                         data_2=y_data,
-        #                         data_mask=invalid,
-        #                         fmt=fmt)
-        # else:
         freq_used = np.unique(self.transect.boat_vel.bt_vel.frequency_khz).astype(int).astype(str)
-        freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b', '2000': 'b', '2400': 'b', '3000': '#009933'}
-        freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.', '2000': '.', '2400': '.', '3000': '+'}
-
         freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(int).astype(str)
 
         data_mask = []
         fmt = []
         for freq in freq_used:
             data_mask.append(freq_ensembles == freq)
-            fmt.append({'marker': freq_marker[freq], 'linestyle': '', 'mfc': freq_color[freq],
-                        'mec': freq_color[freq]})
+            fmt.append({'marker': self.freq_marker[freq], 'linestyle': '', 'mfc': self.freq_color[freq],
+                        'mec': self.freq_color[freq]})
         data_mask.append(invalid)
         fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
@@ -1449,11 +1463,9 @@ class AdvGraphs(object):
                             fmt=fmt)
 
         # Create legend
-        legend_dict = {'600': '600 kHz', '1200': '1200 kHz', '1000': '1 MHz', '2000': '2 MHz',
-                       '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
         legend_txt = []
         for freq in freq_used:
-            legend_txt.append(legend_dict[freq])
+            legend_txt.append(self.bt_legend_dict[freq])
         self.ax[-1].legend(legend_txt)
 
     def bt_source_ts(self):
@@ -1514,7 +1526,7 @@ class AdvGraphs(object):
         self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
 
     def bt_rssi_ts(self):
-        """Plot bottom track correlation.
+        """Plot bottom track intensity.
         """
 
         data = self.transect.boat_vel.bt_vel.rssi
@@ -1567,6 +1579,16 @@ class AdvGraphs(object):
         self.ax[-1].set_ylim(top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1))
 
     def other_ts(self, data, data_color='r-'):
+        """Create plot of other smooth filter.
+
+        Parameters
+        ----------
+        data: BoatData
+            Object of boat data to be plotted
+        data_color: str
+            Color of line containing original data
+        """
+
         # Plot smooth
         speed = np.sqrt(data.u_mps ** 2
                         + data.v_mps ** 2)
@@ -1881,6 +1903,23 @@ class AdvGraphs(object):
 
     def depths_beam_ts(self, b1=True, b2=True, b3=True, b4=True, vb=True, ds=True, leg=True):
         """Plot available beam depths including depth sounder on single plot.
+
+        Parameters
+        ----------
+        b1: bool
+            Indicates if beam 1 depths are plotted
+        b2: bool
+            Indicates if beam 2 depths are plotted
+        b3: bool
+            Indicates if beam 3 depths are plotted
+        b4: bool
+            Indicates if beam 4 depths are plotted
+        vb: bool
+            Indicates if vertical beam depths are plotted
+        ds: bool
+            Indicates if depth sounder depths are plotted
+        leg: bool
+            Indicates is a legend should be shown
         """
 
         # Slant beams
@@ -1994,21 +2033,36 @@ class AdvGraphs(object):
 
     def depths_final_ts(self, avg4_final=False, vb_final=False, ds_final=False, final=True):
         """Plot final cross section used to compute discharge.
+
+        Parameters
+        ----------
+        avg4_final: bool
+            Indicates if 4 beam avg cross section should be plotted
+        vb_final: bool
+            Indicates if vertical beam cross section should be plotted
+        ds_final: bool
+            Indicates if depth sounder cross section should be plotted
+        final: bool
+            Indicates if the selected cross section should be plotted
         """
 
+        beam_depths = np.array([])
+        data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
+
+        # Selected cross section
         if final:
             # Get selected depth
             depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
             beam_depths = depth_selected.depth_processed_m
 
             # Plot processed depth
-            data_units = (self.units['L'], 'Depth ' + self.units['label_L'])
             fmt = [{'color': 'k', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
             self.plt_timeseries(data=beam_depths,
                                 data_units=data_units,
                                 ax=self.ax[-1],
                                 fmt=fmt)
 
+        # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
             fmt = [{'color': 'r', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
@@ -2017,6 +2071,7 @@ class AdvGraphs(object):
                                 ax=self.ax[-1],
                                 fmt=fmt)
 
+        # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
             fmt = [{'color': '#aa00ff', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
@@ -2025,6 +2080,7 @@ class AdvGraphs(object):
                                 ax=self.ax[-1],
                                 fmt=fmt)
 
+        # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
             fmt = [{'color': '#00aaff', 'linestyle': '-', 'marker': 'o', 'markersize': 4}]
@@ -2034,7 +2090,10 @@ class AdvGraphs(object):
                                 fmt=fmt)
         # Format y axis
         self.ax[-1].invert_yaxis()
-        self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units['L']), top=0)
+        try:
+            self.ax[-1].set_ylim(bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units['L']), top=0)
+        except ValueError:
+            pass
 
     def depths_source_ts(self):
         """Plot source of depth for final cross section.
@@ -2232,6 +2291,12 @@ class AdvGraphs(object):
             Tuple of data multiplier and label
         data_limits: list
             Optional list of min max data limits
+        cmap_in: str
+            Name of color map to use
+        ping_name: dict
+            Dictionary of ping names
+        n_names: int
+            Number of names
         """
 
         # Use last subplot
@@ -2301,7 +2366,6 @@ class AdvGraphs(object):
                 label_list.append(ping_name[tick])
             cb.set_ticks(tick_list)
             cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment='center')
-
 
         # Plot depth
         ax.plot(x, depth * self.units['L'], color='k')
@@ -2435,7 +2499,7 @@ class AdvGraphs(object):
                         for line in ax.lines:
                             cont_fig, ind_fig = line.contains(event)
                             if cont_fig:
-                               break
+                                break
                         if cont_fig:
                             break
                     if not cont_fig:
@@ -2444,7 +2508,7 @@ class AdvGraphs(object):
                             if cont_ax:
                                 child_list = ax.get_children()
                                 for child in child_list:
-                                    if type(child) is plt.collections.QuadMesh:
+                                    if type(child) is collections.QuadMesh:
                                         cont_fig, ind_fig = child.contains(event)
                                     if cont_fig:
                                         break
@@ -2528,6 +2592,8 @@ class AdvGraphs(object):
             y coordinate for annotation, depth
         v: float or None
             Speed for annotation
+        v_dict: dict
+            Ping type name for value
         """
 
         # Set local variables
