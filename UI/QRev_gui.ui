@@ -7079,58 +7079,6 @@
                  </item>
                 </layout>
                </item>
-               <item row="2" column="0" colspan="3">
-                <widget class="QGroupBox" name="gb_x_axis_3">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="title">
-                  <string>Select X-Axis</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_89">
-                  <item>
-                   <widget class="QRadioButton" name="rb_adv_graph_ensemble">
-                    <property name="font">
-                     <font>
-                      <pointsize>10</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Ensemble</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="rb_adv_graph_time">
-                    <property name="font">
-                     <font>
-                      <pointsize>10</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Time</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="rb_adv_graph_length">
-                    <property name="font">
-                     <font>
-                      <pointsize>10</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Length</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
                <item row="0" column="0">
                 <layout class="QVBoxLayout" name="verticalLayout_96" stretch="15,1">
                  <item>
@@ -7332,6 +7280,54 @@
                       </property>
                      </widget>
                     </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_error_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Error Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_vert_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Vertical Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_snr_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>SNR</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_beams_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Beams Used</string>
+                      </property>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -7394,6 +7390,58 @@
                     </property>
                     <property name="text">
                      <string>Auto</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QGroupBox" name="gb_x_axis_3">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="title">
+                  <string>Select X-Axis</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_89">
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_ensemble">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Ensemble</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_time">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Time</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_length">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Length</string>
                     </property>
                    </widget>
                   </item>

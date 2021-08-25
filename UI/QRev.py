@@ -11334,6 +11334,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     ('cb_discharge_percent_ts', self.cb_adv_graph_discharge_percent),
                                     ('cb_avg_speed_ts', self.cb_adv_graph_avg_speed),
                                     ('cb_projected_speed_ts', self.cb_adv_graph_projected_speed_ts),
+                                    ('cb_wt_beams_ts', self.cb_adv_graph_wt_beams_ts),
+                                    ('cb_wt_error_ts', self.cb_adv_graph_wt_error_ts),
+                                    ('cb_wt_vert_ts', self.cb_adv_graph_wt_vert_ts),
+                                    ('cb_wt_snr_ts', self.cb_adv_graph_wt_snr_ts),
                                     ('cb_bt_boat_speed_ts', self.cb_adv_graph_bt_boat_speed),
                                     ('cb_bt_3beam_ts', self.cb_adv_graph_bt_3beam),
                                     ('cb_bt_error_ts', self.cb_adv_graph_bt_error),
@@ -11477,6 +11481,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.cb_adv_graph_bt_rssi.setEnabled(False)
             self.cb_adv_graph_bt_rssi.setChecked(False)
+
+        # WT Data
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].adcp.manufacturer == 'SonTek':
+            self.cb_adv_graph_wt_snr_ts.setEnabled(True)
+        else:
+            self.cb_adv_graph_wt_snr_ts.setEnabled(False)
+            self.cb_adv_graph_wt_snr_ts.setChecked(False)
 
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect.
@@ -11848,8 +11859,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     # Support functions
     # =================
-    @staticmethod
-    def q_qa_message(qa_data, cat_idx, transect_id, total_threshold_warning, total_threshold_caution,
+    def q_qa_message(self, qa_data, cat_idx, transect_id, total_threshold_warning, total_threshold_caution,
                      run_threshold_warning, run_threshold_caution):
 
         text = []
@@ -11863,7 +11873,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_check = qa_data['q_total_warning'][transect_id]
 
         if qa_check:
-            text.append('Interpolated Q for invalid cells and ensembles in a transect exceeds '
+            text.append(self.tr('Interpolated Q for invalid cells and ensembles in a transect exceeds ')
                         + '%3.0f' % total_threshold_warning
                         + '%;\n')
 
@@ -11873,7 +11883,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_check = qa_data['q_max_run_warning'][transect_id]
 
         if qa_check:
-            text.append('Interpolated Q for consecutive invalid ensembles exceeds '
+            text.append(self.tr('Interpolated Q for consecutive invalid ensembles exceeds ')
                         + '%3.0f' % run_threshold_warning
                         + '%;\n')
 
@@ -11883,7 +11893,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_check = qa_data['q_total_caution'][transect_id]
 
         if qa_check:
-            text.append('Interpolated Q for invalid cells and ensembles in a transect exceeds '
+            text.append(self.tr('Interpolated Q for invalid cells and ensembles in a transect exceeds ')
                         + '%3.0f' % total_threshold_caution
                         + '%;\n')
 
@@ -11893,7 +11903,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_check = qa_data['q_max_run_caution'][transect_id]
 
         if qa_check:
-            text.append('Interpolated Q for consecutive invalid ensembles exceeds '
+            text.append(self.tr('Interpolated Q for consecutive invalid ensembles exceeds ')
                         + '%3.0f' % run_threshold_caution
                         + '%;\n')
         return text

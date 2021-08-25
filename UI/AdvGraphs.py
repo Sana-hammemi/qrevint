@@ -132,6 +132,10 @@ class AdvGraphs(object):
                                          'cb_discharge_percent_ts': self.discharge_percent_ts,
                                          'cb_avg_speed_ts': self.wt_avg_speed_ts,
                                          'cb_projected_speed_ts': self.wt_projected_speed_ts,
+                                         'cb_wt_beams_ts': self.wt_3beam_ts,
+                                         'cb_wt_error_ts': self.wt_error_ts,
+                                         'cb_wt_vert_ts': self.wt_vertical_ts,
+                                         'cb_wt_snr_ts': self.wt_snr_ts,
                                          'cb_bt_boat_speed_ts': self.bt_speed_ts,
                                          'cb_bt_3beam_ts': self.bt_3beam_ts,
                                          'cb_bt_error_ts': self.bt_error_ts,
@@ -1301,7 +1305,7 @@ class AdvGraphs(object):
         # Data to plot
         y_data = self.transect.w_vel.snr_rng[self.transect.w_vel.cells_above_sl[0, :]] * self.units['V']
 
-        data_units = (1, 'SNR Range (dB)')
+        data_units = (1, 'WT SNR Range (dB)')
 
         # Setup ping type
         if self.transect.w_vel.ping_type.size > 1:
