@@ -1049,13 +1049,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
-                        self.tab_manager(tab_idx=0)
+                        self.tab_manager(tab_idx=0, subtab_idx=0)
                         # self.set_tab_color()
                 else:
                     self.transect_row = 0
                     self.config_gui()
                     self.change = True
-                    self.tab_manager(tab_idx=0)
+                    self.tab_manager(tab_idx=0, subtab_idx=0)
 
     def save_measurement(self):
         """Save measurement in Matlab format.
@@ -1612,6 +1612,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_site_number.editingFinished.connect(self.update_site_number)
                     self.ed_persons.editingFinished.connect(self.update_persons)
                     self.ed_meas_num.editingFinished.connect(self.update_meas_number)
+                    self.ed_stage_start.editingFinished.connect(self.update_stage_start)
+                    self.ed_stage_end.editingFinished.connect(self.update_stage_end)
+                    self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
                     self.table_settings.cellClicked.connect(self.settings_table_row_adjust)
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
@@ -2826,6 +2829,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ed_persons.setText(self.meas.persons)
         self.ed_meas_num.setText(self.meas.meas_number)
 
+        self.label_stage_start.setText('Stage start ' + self.units['label_L'] + ':')
+        self.ed_stage_start.setText('{:3.4f}'.format(self.meas.stage_start_m * self.units['L']))
+        self.label_stage_end.setText('Stage end ' + self.units['label_L'] + ':')
+        self.ed_stage_end.setText('{:3.4f}'.format(self.meas.stage_end_m * self.units['L']))
+        self.label_stage_meas.setText('Stage meas ' + self.units['label_L'] + ':')
+        self.ed_stage_meas.setText('{:3.4f}'.format(self.meas.stage_meas_m * self.units['L']))
+
+
         # Setup table
         tbl = self.table_premeas
         ncols = 4
@@ -2995,6 +3006,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Sets the measurement number to the information entered by the user.
         """
         self.meas.meas_number = self.ed_meas_num.text()
+        self.main_premeasurement_table()
+
+    def update_stage_start(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_start)
+        if stage is not None:
+            self.meas.stage_start_m = stage
+            self.meas.stage_meas_m = (self.meas.stage_start_m + self.meas.stage_end_m) / 2.
+        self.main_premeasurement_table()
+
+    def update_stage_end(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_end)
+        if stage is not None:
+            self.meas.stage_end_m = stage
+            self.meas.stage_meas_m = (self.meas.stage_start_m + self.meas.stage_end_m) / 2.
+        self.main_premeasurement_table()
+
+    def update_stage_meas(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_meas)
+        if stage is not None:
+            self.meas.stage_meas_m = stage
         self.main_premeasurement_table()
 
     def main_settings_table(self):
@@ -5766,7 +5803,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Assign layout to widget to allow auto scaling
             layout = QtWidgets.QVBoxLayout(self.graph_bt_ts)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
             layout.addWidget(self.bt_ts_canvas)
             self.bt_ts_toolbar = NavigationToolbar(self.bt_ts_canvas, self)
@@ -6124,48 +6161,66 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.cb_gps_vectors.setCheckState(QtCore.Qt.Checked)
 
         # Transect selected for display
+        self.transect = self.meas.transects[self.checked_transects_idx[self.transect_row]]
+        # Check for presence of gga data
+        gga_transect = None
         for idx in self.checked_transects_idx:
             if self.meas.transects[idx].boat_vel.gga_vel is not None:
-                self.transect = self.meas.transects[idx]
+                gga_transect = self.meas.transects[idx]
                 break
 
-        # Set gps quality filter
-        if self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 1:
-            self.combo_gps_qual.setCurrentIndex(0)
-        elif self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 2:
-            self.combo_gps_qual.setCurrentIndex(1)
-        elif self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 4:
-            self.combo_gps_qual.setCurrentIndex(2)
-        else:
-            self.combo_gps_qual.setCurrentIndex(0)
+        if gga_transect is not None:
+            # Set gps quality filter
+            if gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 1:
+                self.combo_gps_qual.setCurrentIndex(0)
+            elif gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 2:
+                self.combo_gps_qual.setCurrentIndex(1)
+            elif gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 4:
+                self.combo_gps_qual.setCurrentIndex(2)
+            else:
+                self.combo_gps_qual.setCurrentIndex(0)
 
-        # Set altitude filter from transect data
-        index = self.combo_gps_altitude.findText(self.transect.boat_vel.gga_vel.gps_altitude_filter,
-                                                 QtCore.Qt.MatchFixedString)
-        self.combo_gps_altitude.setCurrentIndex(index)
+            # Set altitude filter from transect data
+            index = self.combo_gps_altitude.findText(gga_transect.boat_vel.gga_vel.gps_altitude_filter,
+                                                     QtCore.Qt.MatchFixedString)
+            self.combo_gps_altitude.setCurrentIndex(index)
 
-        s = self.meas.current_settings()
+            s = self.meas.current_settings()
 
-        if s['ggaAltitudeFilter'] == 'Manual':
-            self.ed_gps_altitude_threshold.setEnabled(True)
-            threshold = '{:3.2f}'.format(s['ggaAltitudeFilterChange'] *
-                                         self.units['L'])
-            self.ed_gps_altitude_threshold.setText(threshold)
+            if s['ggaAltitudeFilter'] == 'Manual':
+                self.ed_gps_altitude_threshold.setEnabled(True)
+                threshold = '{:3.2f}'.format(s['ggaAltitudeFilterChange'] *
+                                             self.units['L'])
+                self.ed_gps_altitude_threshold.setText(threshold)
 
-        # Set hdop filter from transect data
-        index = self.combo_gps_hdop.findText(self.transect.boat_vel.gga_vel.gps_HDOP_filter, QtCore.Qt.MatchFixedString)
-        self.combo_gps_hdop.setCurrentIndex(index)
+            # Set hdop filter from transect data
+            index = self.combo_gps_hdop.findText(gga_transect.boat_vel.gga_vel.gps_HDOP_filter, QtCore.Qt.MatchFixedString)
+            self.combo_gps_hdop.setCurrentIndex(index)
 
-        if s['GPSHDOPFilter'] == 'Manual':
-            self.ed_gps_hdop_threshold.setEnabled(True)
-            threshold = '{:3.2f}'.format(s['GPSHDOPFilterChange'])
-            self.ed_gps_hdop_threshold.setText(threshold)
+            if s['GPSHDOPFilter'] == 'Manual':
+                self.ed_gps_hdop_threshold.setEnabled(True)
+                threshold = '{:3.2f}'.format(s['GPSHDOPFilterChange'])
+                self.ed_gps_hdop_threshold.setText(threshold)
 
-        # Set smooth filter from transect data
-        if self.transect.boat_vel.gga_vel.smooth_filter == 'Off':
-            self.combo_gps_other.setCurrentIndex(0)
-        elif self.transect.boat_vel.gga_vel.smooth_filter == 'On':
-            self.combo_gps_other.setCurrentIndex(1)
+            # Set smooth filter from transect data
+            if self.transect.boat_vel.gga_vel.smooth_filter == 'Off':
+                self.combo_gps_other.setCurrentIndex(0)
+            elif self.transect.boat_vel.gga_vel.smooth_filter == 'On':
+                self.combo_gps_other.setCurrentIndex(1)
+
+        # Check for presence of vtg data
+        vtg_transect = None
+        for idx in self.checked_transects_idx:
+            if self.meas.transects[idx].boat_vel.vtg_vel is not None:
+                vtg_transect = self.meas.transects[idx]
+                break
+
+        if vtg_transect is not None:
+            # Set smooth filter from transect data
+            if vtg_transect.boat_vel.vtg_vel.smooth_filter == 'Off':
+                self.combo_gps_other.setCurrentIndex(0)
+            elif vtg_transect.boat_vel.vtg_vel.smooth_filter == 'On':
+                self.combo_gps_other.setCurrentIndex(1)
 
         # Turn signals on
         self.cb_gps_bt.blockSignals(False)
@@ -6687,7 +6742,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Assign layout to widget to allow auto scaling
             layout = QtWidgets.QVBoxLayout(self.graph_gps_ts)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
             layout.addWidget(self.gps_ts_canvas)
             # Initialize hidden toolbar for use by graphics controls
@@ -7639,7 +7694,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Assign layout to widget to allow auto scaling
                 layout = QtWidgets.QVBoxLayout(self.graph_depth)
                 # Adjust margins of layout to maximize graphic area
-                layout.setContentsMargins(1, 1, 1, 1)
+                layout.setContentsMargins(0, 0, 0, 0)
                 # Add the canvas
                 layout.addWidget(self.depth_canvas)
                 # Initialize hidden toolbar for use by graphics controls
@@ -8392,7 +8447,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Assign layout to widget to allow auto scaling
             layout = QtWidgets.QVBoxLayout(self.graph_wt)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
             layout.addWidget(self.wt_filter_canvas)
             # Initialize hidden toolbar for use by graphics controls
@@ -12069,7 +12124,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         finally:
             QtWidgets.QApplication.restoreOverrideCursor()
 
-    def tab_manager(self, tab_idx=None, old_discharge=None):
+    def tab_manager(self, tab_idx=None, old_discharge=None, subtab_idx=None):
         """Manages the initialization of content for each tab and updates that information as necessary.
 
         Parameters
@@ -12093,6 +12148,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Main tab
         if tab_idx == 'Main':
+
+            if subtab_idx is not None:
+                self.tab_summary.setCurrentIndex(0)
+
             if self.change:
                 # If data has changed update main tab display
                 self.update_main()

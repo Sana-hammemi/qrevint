@@ -45,6 +45,9 @@ class Python2Matlab(object):
             self.matlab_dict['stationNumber'] = ''
         self.matlab_dict['persons'] = meas_mat.persons
         self.matlab_dict['meas_number'] = meas_mat.meas_number
+        self.matlab_dict['stage_start_m'] = meas_mat.stage_start_m
+        self.matlab_dict['stage_end_m'] = meas_mat.stage_end_m
+        self.matlab_dict['stage_meas_m'] = meas_mat.stage_meas_m
         self.matlab_dict['processing'] = meas_mat.processing
         self.matlab_dict['extTempChk'] = meas_mat.ext_temp_chk
         self.matlab_dict['userRating'] = meas_mat.user_rating

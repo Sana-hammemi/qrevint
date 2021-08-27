@@ -69,6 +69,12 @@ class Measurement(object):
         Indicates if ping types should be used in BT and WT filters
     use_measurement_thresholds: bool
         Indicates if the entire measurement should be used to set filter thresholds
+    stage_start_m: float
+        Stage at start of measurement
+    stage_end_m: float
+        Stage at end of measurement
+    stage_meas_m: float
+        Stage assigned to measurement
     """
 
     # @profile
@@ -130,6 +136,9 @@ class Measurement(object):
         self.oursin = None
         self.use_weighted = use_weighted
         self.observed_no_moving_bed = False
+        self.stage_meas_m = 0
+        self.stage_end_m = 0
+        self.stage_start_m = 0
 
         # Load data from selected source
         if source == 'QRev':
@@ -225,6 +234,17 @@ class Measurement(object):
         self.station_number = str(mmt.site_info['Number'])
         self.persons = str(mmt.site_info['Party'])
         self.meas_number = str(mmt.site_info['MeasurementNmb'])
+
+        # Get stage readings, if available. Note: mmt stage is always in m.
+        if mmt.site_info['Use_Inside_Gage_Height'] == '1':
+            stage = float(mmt.site_info['Inside_Gage_Height'])
+        else:
+            stage = float(mmt.site_info['Outside_Gage_Height'])
+
+        self.stage_start_m = stage
+        change = float(mmt.site_info['Gage_Height_Change'])
+        self.stage_end_m = stage + change
+        self.stage_meas_m = (self.stage_start_m + self.stage_end_m) / 2.
 
         # Initialize processing variable
         self.processing = 'WR2'
@@ -490,6 +510,17 @@ class Measurement(object):
                 self.meas_number = rsdata.SiteInfo.Meas_Number
             if hasattr(rsdata.SiteInfo, 'Party'):
                 self.persons = rsdata.SiteInfo.Party
+
+            # Although units imply meters the data are actually stored as m / 10,000
+            if hasattr(rsdata.Setup, 'startGaugeHeight'):
+                self.stage_start_m = rsdata.Setup.startGaugeHeight / 10000.
+
+            if hasattr(rsdata.Setup, 'endGaugeHeight'):
+                self.stage_end_m = rsdata.Setup.endGaugeHeight / 10000.
+
+            self.stage_meas_m = (self.stage_start_m + self.stage_end_m) / 2.
+
+
         self.qaqc_sontek(pathname)
 
         for transect in self.transects:
@@ -621,7 +652,16 @@ class Measurement(object):
         if hasattr(meas_struct, 'meas_number'):
             self.meas_number = meas_struct.meas_number
         if hasattr(meas_struct, 'persons'):
-            self.persons = meas_struct.persons
+            if len(meas_struct.persons) == 0:
+                self.persons = ''
+            else:
+                self.persons = meas_struct.persons
+        if hasattr(meas_struct, 'stage_start_m'):
+            self.stage_start_m = meas_struct.stage_start_m
+        if hasattr(meas_struct, 'stage_end_m'):
+            self.stage_end_m = meas_struct.stage_end_m
+        if hasattr(meas_struct, 'stage_meas_m'):
+            self.stage_meas_m = meas_struct.stage_meas_m
         self.processing = meas_struct.processing
         if type(meas_struct.comments) == np.ndarray:
             self.comments = meas_struct.comments.tolist()
@@ -3755,6 +3795,18 @@ class Measurement(object):
         # (4) DischargePPDefault
         temp = self.extrap_fit.q_sensitivity.q_pp_mean
         ETree.SubElement(s_o, 'DischargePPDefault', type='double').text = '{:.2f}'.format(temp)
+
+        # (4) Stage start
+        temp = self.stage_start_m
+        ETree.SubElement(s_o, 'StageStart', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
+
+        # (4) Stage start
+        temp = self.stage_end_m
+        ETree.SubElement(s_o, 'StageEnd', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
+
+        # (4) Stage start
+        temp = self.stage_meas_m
+        ETree.SubElement(s_o, 'StageMeasurement', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
 
         # (2) UserComment
         if len(self.comments) > 1:

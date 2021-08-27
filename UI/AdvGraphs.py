@@ -342,7 +342,7 @@ class AdvGraphs(object):
             self.depths_final_ts(avg4_final=avg4_final, vb_final=vb_final, ds_final=ds_final, final=final)
 
             # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
@@ -433,7 +433,7 @@ class AdvGraphs(object):
                 self.vtg_speed_ts(lbl='Boat speed')
 
             # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
@@ -542,7 +542,7 @@ class AdvGraphs(object):
                 self.vtg_speed_ts(lbl='Boat speed')
 
             # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
 
             # Apply the x-axis label to the bottom x-axis
             idx = -1
@@ -629,10 +629,10 @@ class AdvGraphs(object):
             self.wt_speed_final_contour()
 
             # Adjust the spacing of the subplots
-            self.fig.subplots_adjust(left=0.07, bottom=0.05, right=0.99, top=0.95, wspace=0.02, hspace=0.08)
+            self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.92, top=0.95, wspace=0.02, hspace=0.08)
 
             # Apply the x-axis label to the bottom x-axis
-            idx = -1
+            idx = -2
             self.ax[idx].xaxis.label.set_fontsize(12)
             self.set_x_axis(idx)
 
