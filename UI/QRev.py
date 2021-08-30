@@ -373,7 +373,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.06'
+        self.QRev_version = 'QRevInt 1.07'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -981,10 +981,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                        squeeze_me=True)
 
                 message = 'Would you like to: <br><br>' + \
-                          '<b>View</b> the measurement as saved <br><br>' + \
+                          '<b>View</b> the measurement as saved <br>' + \
+                          '<I>New quality checks will be applied. </I><br><br>' + \
                           '<b>Reprocess</b> the measurement using all the <br>' + \
                           'current settings (extrapolation, filters,<br>' + \
-                          'uncertianty model, and the latest algorithms)<br><br>' + \
+                          'uncertianty model, and the latest algorithms).<br><br>' + \
                           'NOTE: Any changes will reprocess the file  <br> ' + \
                           'using the latest QRev algorithms, however,  <br>' + \
                           'identifying ping type from older QRev files  <br>' + \
@@ -2336,7 +2337,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_type = getattr(qa, key)
             self.set_icon(key, qa_type['status'])
 
-        self.set_tab_color()
+        gga = getattr(qa, 'gga_vel')
+        vtg = getattr(qa, 'vtg_vel')
+        if gga['lag_status'] == 'caution' or vtg['lag_status'] == 'caution':
+            self.set_icon('gps_bt', 'caution')
+            self.set_tab_color()
+        if gga['lag_status'] == 'warning' or vtg['lag_status'] == 'warning':
+            self.set_icon('gps_bt', 'warning')
+            self.set_tab_color()
 
     def set_icon(self, key, status):
         """Set tab icon based on qa check status.
@@ -2394,6 +2402,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         elif key == 'user':
             tab = 'tab_summary_premeasurement'
             tab_base = self.tab_summary
+        elif key == 'gps_bt':
+            tab_base = self.tab_gps_2
+            tab = 'tab_gps_2_gpsbt'
+
         self.set_tab_icon(tab, status, tab_base=tab_base)
 
     def set_tab_icon(self, tab, status, tab_base=None):
@@ -2835,7 +2847,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ed_stage_end.setText('{:3.4f}'.format(self.meas.stage_end_m * self.units['L']))
         self.label_stage_meas.setText('Stage meas ' + self.units['label_L'] + ':')
         self.ed_stage_meas.setText('{:3.4f}'.format(self.meas.stage_meas_m * self.units['L']))
-
 
         # Setup table
         tbl = self.table_premeas
@@ -6194,7 +6205,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_altitude_threshold.setText(threshold)
 
             # Set hdop filter from transect data
-            index = self.combo_gps_hdop.findText(gga_transect.boat_vel.gga_vel.gps_HDOP_filter, QtCore.Qt.MatchFixedString)
+            index = self.combo_gps_hdop.findText(gga_transect.boat_vel.gga_vel.gps_HDOP_filter,
+                                                 QtCore.Qt.MatchFixedString)
             self.combo_gps_hdop.setCurrentIndex(index)
 
             if s['GPSHDOPFilter'] == 'Manual':
@@ -7046,6 +7058,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col = 1
                     tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(
                         '{:10.1f}'.format(gga_lag)))
+                    if self.meas.qa.gga_vel['lag_status'] == 'warning':
+
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
+                        tbl.item(row + 2, col).setToolTip('GGA: BT and GGA do not appear to be sychronized')
+
+                    elif self.meas.qa.gga_vel['lag_status'] == 'caution':
+
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
+                        tbl.item(row + 2, col).setToolTip('gga: BT and GGA do not appear to be sychronized')
+
+                    else:
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 255, 255))
 
                 if self.meas.transects[transect_id].boat_vel.gga_vel is not None:
                     gga_bt = TransectData.compute_gps_bt(self.meas.transects[transect_id], gps_ref='gga_vel')
@@ -7081,6 +7105,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(
                         '{:10.1f}'.format(vtg_lag)))
                     tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    if self.meas.qa.vtg_vel['lag_status'] == 'warning':
+
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
+                        tbl.item(row + 2, col).setToolTip('VTG: BT and VTG do not appear to be sychronized')
+
+                    elif self.meas.qa.vtg_vel['lag_status'] == 'caution':
+
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
+                        tbl.item(row + 2, col).setToolTip('vtg: BT and VTG do not appear to be sychronized')
+
+                    else:
+                        tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 255, 255))
 
                 if self.meas.transects[transect_id].boat_vel.vtg_vel is not None:
                     vtg_bt = TransectData.compute_gps_bt(self.meas.transects[transect_id], gps_ref='vtg_vel')
@@ -12133,6 +12169,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             Index of tab clicked by user
         old_discharge: list
             List of QComp objects contain the discharge prior to most recent change
+        subtab_idx: int
+            Index of subtab of tab_summary, used to force tab_idx to main, discharge
         """
 
         # Clear zoom, pan, home, data_cursor

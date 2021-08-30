@@ -167,51 +167,60 @@ class QAData(object):
                 self.compass['magvar'] = meas_struct.qa.compass.magvar
             else:
                 self.compass['magvar'] = new_qa.compass['magvar']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'magvarIdx'):
                 self.compass['magvar_idx'] = self.make_array(meas_struct.qa.compass.magvarIdx)
             else:
                 self.compass['magvar_idx'] = new_qa.compass['magvar_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # Changed mag_error_idx from bool to int array in QRevPy
             self.compass['mag_error_idx'] = new_qa.compass['mag_error_idx']
+            self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'pitchMeanWarningIdx'):
                 self.compass['pitch_mean_warning_idx'] = self.make_array(meas_struct.qa.compass.pitchMeanWarningIdx)
             else:
                 self.compass['pitch_mean_warning_idx'] = new_qa.compass['pitch_mean_warning_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'rollMeanWarningIdx'):
                 self.compass['roll_mean_warning_idx'] = self.make_array(meas_struct.qa.compass.rollMeanWarningIdx)
             else:
                 self.compass['roll_mean_warning_idx'] = new_qa.compass['roll_mean_warning_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'pitchMeanCautionIdx'):
                 self.compass['pitch_mean_caution_idx'] = self.make_array(meas_struct.qa.compass.pitchMeanCautionIdx)
             else:
                 self.compass['pitch_mean_caution_idx'] = new_qa.compass['pitch_mean_caution_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'rollMeanCautionIdx'):
                 self.compass['roll_mean_caution_idx'] = self.make_array(meas_struct.qa.compass.rollMeanCautionIdx)
             else:
                 self.compass['roll_mean_caution_idx'] = new_qa.compass['roll_mean_caution_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'pitchStdCautionIdx'):
                 self.compass['pitch_std_caution_idx'] = self.make_array(meas_struct.qa.compass.pitchStdCautionIdx)
             else:
                 self.compass['pitch_std_caution_idx'] = new_qa.compass['pitch_std_caution_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, 'rollStdCautionIdx'):
                 self.compass['roll_std_caution_idx'] = self.make_array(meas_struct.qa.compass.rollStdCautionIdx)
             else:
                 self.compass['roll_std_caution_idx'] = new_qa.compass['roll_std_caution_idx']
+                self.compass['status'] = new_qa.compass['status']
 
             self.temperature = dict()
             self.temperature['messages'] = self.make_list(meas_struct.qa.temperature.messages)
@@ -230,29 +239,39 @@ class QAData(object):
             self.depths = self.create_qa_dict(self, meas_struct.qa.depths)
             if 'draft' not in self.depths:
                 self.depths['draft'] = new_qa.depths['draft']
+                self.depths['status'] = new_qa.depths['status']
 
             if 'all_invalid' not in self.depths:
                 self.depths['all_invalid'] = new_qa.depths['all_invalid']
+                self.depths['status'] = new_qa.depths['status']
 
             # If QA check not available, get check from new QA
             self.bt_vel = self.create_qa_dict(self, meas_struct.qa.btVel, ndim=2)
             if 'all_invalid' not in self.bt_vel:
                 self.bt_vel['all_invalid'] = new_qa.bt_vel['all_invalid']
+                self.bt_vel['status'] = new_qa.bt_vel['status']
 
             # If QA check not available, get check from new QA
             self.gga_vel = self.create_qa_dict(self, meas_struct.qa.ggaVel, ndim=2)
             if 'all_invalid' not in self.gga_vel:
                 self.gga_vel['all_invalid'] = new_qa.gga_vel['all_invalid']
+            if 'lag_status' not in self.gga_vel:
+                self.gga_vel['lag_status'] = new_qa.gga_vel['lag_status']
+                self.gga_vel['status'] = new_qa.gga_vel['status']
 
             # If QA check not available, get check from new QA
             self.vtg_vel = self.create_qa_dict(self, meas_struct.qa.vtgVel, ndim=2)
             if 'all_invalid' not in self.vtg_vel:
                 self.vtg_vel['all_invalid'] = new_qa.vtg_vel['all_invalid']
+            if 'lag_status' not in self.vtg_vel:
+                self.vtg_vel['lag_status'] = new_qa.vtg_vel['lag_status']
+                self.vtg_vel['status'] = new_qa.vtg_vel['status']
 
             # If QA check not available, get check from new QA
             self.w_vel = self.create_qa_dict(self, meas_struct.qa.wVel, ndim=2)
             if 'all_invalid' not in self.w_vel:
                 self.w_vel['all_invalid'] = new_qa.w_vel['all_invalid']
+                self.w_vel['status'] = new_qa.w_vel['status']
 
             self.extrapolation = dict()
             self.extrapolation['messages'] = self.make_list(meas_struct.qa.extrapolation.messages)
@@ -274,36 +293,42 @@ class QAData(object):
                 self.edges['right_dist_moved_idx'] = self.make_array(meas_struct.qa.edges.rightDistMovedIdx)
             else:
                 self.edges['right_dist_moved_idx'] = new_qa.edges['right_dist_moved_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'leftDistMovedIdx'):
                 self.edges['left_dist_moved_idx'] = self.make_array(meas_struct.qa.edges.leftDistMovedIdx)
             else:
                 self.edges['left_dist_moved_idx'] = new_qa.edges['left_dist_moved_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'leftQIdx'):
                 self.edges['left_q_idx'] = self.make_array(meas_struct.qa.edges.leftQIdx)
             else:
                 self.edges['left_q_idx'] = new_qa.edges['left_q_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'rightQIdx'):
                 self.edges['right_q_idx'] = self.make_array(meas_struct.qa.edges.rightQIdx)
             else:
                 self.edges['right_q_idx'] = new_qa.edges['right_q_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'leftZeroIdx'):
                 self.edges['left_zero_idx'] = self.make_array(meas_struct.qa.edges.leftZeroIdx)
             else:
                 self.edges['left_zero_idx'] = new_qa.edges['left_zero_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'rightZeroIdx'):
                 self.edges['right_zero_idx'] = self.make_array(meas_struct.qa.edges.rightZeroIdx)
             else:
                 self.edges['right_zero_idx'] = new_qa.edges['right_zero_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'invalid_transect_left_idx'):
@@ -314,6 +339,7 @@ class QAData(object):
                     self.make_array(meas_struct.qa.edges.invalidTransLeftIdx)
             else:
                 self.edges['invalid_transect_left_idx'] = new_qa.edges['invalid_transect_left_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.edges, 'invalid_transect_right_idx'):
@@ -324,6 +350,7 @@ class QAData(object):
                     self.make_array(meas_struct.qa.edges.invalidTransRightIdx)
             else:
                 self.edges['invalid_transect_right_idx'] = new_qa.edges['invalid_transect_right_idx']
+                self.edges['status'] = new_qa.edges['status']
 
             if hasattr(meas_struct.qa, 'settings_dict'):
                 self.settings_dict = dict()
@@ -1088,6 +1115,7 @@ class QAData(object):
             mb = []
             mb_test_type = []
             loop = []
+            use_2_correct = []
             gps_diff1 = False
             gps_diff2 = False
 
@@ -1110,6 +1138,7 @@ class QAData(object):
                         mb_tests.append(test)
                         mb.append(test.moving_bed)
                         mb_test_type.append(test.type)
+                        use_2_correct.append(test.use_2_correct)
                 else:
                     user_valid_test.append(False)
 
@@ -1135,11 +1164,31 @@ class QAData(object):
 
                     # Check if there is a moving-bed
                     if 'Yes' in mb:
+
                         # Moving-bed present
                         self.movingbed['messages'].append(
-                            ['Moving-Bed Test: A moving-bed is present, use GPS or moving-bed correction;', 2, 6])
+                            ['Moving-Bed Test: A moving-bed is present.', 2, 6])
                         self.movingbed['code'] = 2
                         self.movingbed['status'] = 'caution'
+                        if meas.transects[meas.checked_transect_idx[0]].boat_vel.composite == 'On':
+                            self.movingbed['messages'].append(
+                                ['Moving-Bed: Use of composite tracks could cause inaccurate results.', 2, 6])
+
+                        if meas.transects[meas.checked_transect_idx[0]].boat_vel.selected == 'bt_vel':
+                            if any(use_2_correct):
+                                self.movingbed['messages'].append(
+                                    ['Moving-Bed: BT based moving-bed correction applied.', 2, 6])
+                            else:
+                                self.movingbed['messages'].append(
+                                    ['MOVING-BED: Moving-bed present and BT used, but no correction applied.', 1, 6])
+                                self.movingbed['code'] = 3
+                                self.movingbed['status'] = 'warning'
+                        elif meas.transects[meas.checked_transect_idx[0]].boat_vel.selected == 'gga_vel':
+                            self.movingbed['messages'].append(
+                                ['Moving-Bed: GGA used.', 2, 6])
+                        elif meas.transects[meas.checked_transect_idx[0]].boat_vel.selected == 'vtg_vel':
+                            self.movingbed['messages'].append(
+                                ['Moving-Bed: VTG used.', 2, 6])
 
                         # Check for test type
                         if sum(np.array(mb_test_type) == 'Stationary'):
@@ -1514,6 +1563,8 @@ class QAData(object):
 
         lag_gga = []
         lag_vtg = []
+        self.gga_vel['lag_status'] = 'good'
+        self.vtg_vel['lag_status'] = 'good'
         for transect in meas.transects:
             gga, vtg = TransectData.compute_gps_lag(transect)
             if gga is not None:
@@ -1525,19 +1576,23 @@ class QAData(object):
                 self.gga_vel['messages'].append(['GGA: BT and GGA do not appear to be sychronized', 1, 8])
                 if self.gga_vel['status'] != 'warning':
                     self.gga_vel['status'] = 'warning'
+                    self.gga_vel['lag_status'] = 'warning'
             elif np.mean(np.abs(lag_gga)) > 2:
                 self.gga_vel['messages'].append(['gga: Lag between BT and GGA > 2 sec', 2, 8])
                 if self.gga_vel['status'] != 'warning':
                     self.gga_vel['status'] = 'caution'
+                    self.gga_vel['lag_status'] = 'caution'
         if len(lag_vtg) > 0:
             if np.mean(np.abs(lag_vtg)) > 10:
                 self.vtg_vel['messages'].append(['VTG: BT and VTG do not appear to be sychronized', 1, 8])
                 if self.vtg_vel['status'] != 'warning':
                     self.vtg_vel['status'] = 'warning'
+                    self.vtg_vel['lag status'] = 'warning'
             elif np.mean(np.abs(lag_vtg)) > 2:
                 self.vtg_vel['messages'].append(['vtg: Lag between BT and VTG > 2 sec', 2, 8])
                 if self.vtg_vel['status'] != 'warning':
                     self.vtg_vel['status'] = 'caution'
+                    self.vtg_vel['lag_status'] = 'caution'
 
     def water_qa(self, meas):
         """Apply quality checks to water data.
@@ -2365,9 +2420,7 @@ class QAData(object):
         if len(meas.mb_tests) >= 1:
             mbt = meas.mb_tests
 
-            # mb_present = []
             mb_user_valid = []
-            # mb_test_quality = []
             mb_used = []
 
             auto = copy.deepcopy(mbt)
@@ -2380,7 +2433,8 @@ class QAData(object):
                 else:
                     mb_user_valid.append(True)
 
-                if mbt[n].use_2_correct != auto[n].use_2_correct:
+                if mbt[n].use_2_correct != auto[n].use_2_correct and \
+                        meas.transects[meas.checked_transect_idx[0]].boat_vel.selected == 'bt_vel':
                     mb_used.append(True)
                 else:
                     mb_used.append(False)
