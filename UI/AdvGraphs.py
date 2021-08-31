@@ -752,7 +752,7 @@ class AdvGraphs(object):
         avg_speed = np.nansum(water_speed * weight, axis=0) / np.nansum(weight, axis=0)
 
         # Plot data
-        data_units = (self.units['V'], 'Water speed \n' + self.units['label_V'])
+        data_units = (self.units['V'], 'Water speed ' + self.units['label_V'])
         self.plt_timeseries(data=avg_speed,
                             data_units=data_units,
                             ax=self.ax[-1])
@@ -956,7 +956,7 @@ class AdvGraphs(object):
         avg_speed = np.nansum(projected_speed * weight, axis=0) / np.nansum(weight, axis=0)
 
         # Plot data
-        data_units = (self.units['V'], 'Projected \n Speed ' + self.units['label_V'])
+        data_units = (self.units['V'], 'Projected Speed ' + self.units['label_V'])
         self.plt_timeseries(data=avg_speed,
                             data_units=data_units,
                             ax=self.ax[-1])
@@ -1154,7 +1154,7 @@ class AdvGraphs(object):
         hold_x = np.copy(self.x)
         self.x = np.tile(self.x, (self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
         invalid = np.logical_and(np.logical_not(self.transect.w_vel.valid_data[5, :, :]),
-                                 self.transect.w_vel.cells_above_sl).tolist()
+                                 self.transect.w_vel.cells_above_sl)
         fmt = [{'color': 'b', 'linestyle': '', 'marker': '.'},
                {'color': 'r', 'linestyle': '', 'marker': 'o', 'markerfacecolor': 'none'}]
         data_units = (1, 'WT Number of Beams ')
@@ -1202,7 +1202,8 @@ class AdvGraphs(object):
                 fmt.append({'marker': self.p_type_marker[pt], 'linestyle': '', 'mfc': self.p_type_color[pt],
                             'mec': self.p_type_color[pt]})
 
-            data_mask.append(invalid)
+            data_mask.append(invalid[self.transect.w_vel.cells_above_sl])
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
             # Plot
             self.plt_timeseries(data=None,
@@ -1263,7 +1264,8 @@ class AdvGraphs(object):
                 fmt.append({'marker': self.p_type_marker[pt], 'linestyle': '', 'mfc': self.p_type_color[pt],
                             'mec': self.p_type_color[pt]})
 
-            data_mask.append(invalid)
+            data_mask.append(invalid[self.transect.w_vel.cells_above_sl])
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
             # Plot
             self.plt_timeseries(data=None,
@@ -1322,6 +1324,7 @@ class AdvGraphs(object):
                             'mec': self.p_type_color[pt]})
 
             data_mask.append(invalid)
+            fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '', 'mfc': 'none'})
 
             # Plot
             self.plt_timeseries(data=None,
@@ -1405,6 +1408,7 @@ class AdvGraphs(object):
                             data_2=data,
                             data_mask=data_mask,
                             fmt=fmt)
+        self.ax[-1].set_ylim(top=4.5, bottom=-0.5)
 
     def bt_error_ts(self):
         """Create time series plot of BT error velocity.
