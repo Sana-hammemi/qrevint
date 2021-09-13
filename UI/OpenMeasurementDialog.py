@@ -132,7 +132,6 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
                         self.type = 'SonTek'
                         break
 
-
     def default_folder(self):
         """Returns default folder.
 
