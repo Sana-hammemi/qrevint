@@ -1150,7 +1150,10 @@ class WaterData(object):
             
             # Save logical of valid data to object
             self.valid_data[5, :, :] = valid
-        
+
+            # Combine all filter data and update processed properties
+            self.all_valid_data()
+
         else:
 
             # Apply automatic filter

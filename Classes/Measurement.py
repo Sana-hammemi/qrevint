@@ -1544,7 +1544,7 @@ class Measurement(object):
 
             # Set depth reference
             transect.set_depth_reference(update=False, setting=settings['depthReference'])
-            transect.process_depths(update=True,
+            transect.process_depths(update=False,
                                     filter_method=settings['depthFilterType'],
                                     interpolation_method=settings['depthInterpolation'],
                                     composite_setting=settings['depthComposite'],
