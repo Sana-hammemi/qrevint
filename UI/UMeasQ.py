@@ -58,7 +58,7 @@ class UMeasQ(object):
             x_tick_labels.append(str(n))
 
         # Create legend labels
-        custom_labels = ['Boat', 'Water', 'Depth', 'Cell Size']
+        custom_labels = ['Boat', 'Water', 'Cell Size']
 
         self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax, legend=False)
 

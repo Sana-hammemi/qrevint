@@ -1,4 +1,6 @@
 import numpy as np
+from matplotlib.dates import DateFormatter, num2date
+from datetime import datetime
 
 
 class GPSFilters (object):
@@ -28,6 +30,8 @@ class GPSFilters (object):
         Index to data cursor connection
     annot: Annotation
         Annotation object for data cursor
+    x_axis_type: str
+        Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -51,8 +55,9 @@ class GPSFilters (object):
         self.source = None
         self.hover_connection = None
         self.annot = None
+        self.x_axis_type = 'E'
 
-    def create(self, transect, units, selected):
+    def create(self, transect, units, selected, x_axis_type=None):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -63,7 +68,14 @@ class GPSFilters (object):
             Dictionary of units conversions
         selected: str
             String identifying the type of plot
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
+
+        # Set default axis
+        if x_axis_type is None:
+            x_axis_type = 'E'
+        self.x_axis_type = x_axis_type
 
         # Assign and save parameters
         self.units = units
@@ -76,26 +88,41 @@ class GPSFilters (object):
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.1, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
         self.fig.ax.grid()
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
         self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
-        if transect.boat_vel.gga_vel is not None:
-            ensembles = np.arange(1, len(transect.boat_vel.gga_vel.u_mps) + 1)
-        elif transect.boat_vel.vtg_vel is not None:
-            ensembles = np.arange(1, len(transect.boat_vel.vtg_vel.u_mps) + 1)
-        else:
-            ensembles = np.arange(1, len(transect.boat_vel.bt_vel.u_mps) + 1)
+        # if transect.boat_vel.gga_vel is not None:
+        #     ensembles = np.arange(1, len(transect.boat_vel.gga_vel.u_mps) + 1)
+        # elif transect.boat_vel.vtg_vel is not None:
+        #     ensembles = np.arange(1, len(transect.boat_vel.vtg_vel.u_mps) + 1)
+        # else:
+        #     ensembles = np.arange(1, len(transect.boat_vel.bt_vel.u_mps) + 1)
 
-        if selected == 'quality' and transect.boat_vel.gga_vel is not None:
+        # Compute x axis data
+        x = None
+        if x_axis_type == 'L':
+            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
+                x = boat_track['distance_m'] * units['L']
+        elif x_axis_type == 'E':
+            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+        elif x_axis_type == 'T':
+            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+            x = []
+            for stamp in timestamp:
+                x.append(datetime.utcfromtimestamp(stamp))
+            x = np.array(x)
+
+        if selected == 'quality' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.diff_qual_ens))):
             # GPS Quality
-            self.qual = self.fig.ax.plot(ensembles, transect.gps.diff_qual_ens, 'b.')
+            self.qual = self.fig.ax.plot(x, transect.gps.diff_qual_ens, 'b.')
 
             # Circle invalid data
             invalid_gps = np.logical_not(transect.boat_vel.gga_vel.valid_data[2, :])
-            self.qual.append(self.fig.ax.plot(ensembles[invalid_gps],
+            self.qual.append(self.fig.ax.plot(x[invalid_gps],
                                               transect.gps.diff_qual_ens[invalid_gps], 'ro', markerfacecolor='none')[0])
 
             # Format axis
@@ -104,32 +131,35 @@ class GPSFilters (object):
             self.fig.ax.set_ylim(top=np.nanmax(yint) + 0.5, bottom=np.nanmin(yint) - 0.5)
             self.fig.ax.set_yticks(yint)
 
-        elif selected == 'altitude' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'altitude' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.altitude_ens_m))):
             # Plot altitude
             invalid_altitude = np.logical_not(transect.boat_vel.gga_vel.valid_data[3, :])
-            self.alt = self.fig.ax.plot(ensembles, transect.gps.altitude_ens_m * units['L'], 'b.')
-            self.alt.append(self.fig.ax.plot(ensembles[invalid_altitude],
+            self.alt = self.fig.ax.plot(x, transect.gps.altitude_ens_m * units['L'], 'b.')
+            self.alt.append(self.fig.ax.plot(x[invalid_altitude],
                                              transect.gps.altitude_ens_m[invalid_altitude] * units['L'],
                                              'ro', markerfacecolor='none')[0])
             self.fig.ax.set_ylabel(self.canvas.tr('Altitude' + self.units['label_L']))
 
-        elif selected == 'hdop' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'hdop' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.hdop_ens))):
             # Plot HDOP
             max_y = np.nanmax(transect.gps.hdop_ens) + 0.5
             min_y = np.nanmin(transect.gps.hdop_ens) - 0.5
             invalid_hdop = np.logical_not(transect.boat_vel.gga_vel.valid_data[5, :])
-            self.hdop = self.fig.ax.plot(ensembles, transect.gps.hdop_ens, 'b.')
-            self.hdop.append(self.fig.ax.plot(ensembles[invalid_hdop],
+            self.hdop = self.fig.ax.plot(x, transect.gps.hdop_ens, 'b.')
+            self.hdop.append(self.fig.ax.plot(x[invalid_hdop],
                                               transect.gps.hdop_ens[invalid_hdop],
                                               'ro', markerfacecolor='none')[0])
             self.fig.ax.set_ylim(top=max_y, bottom=min_y)
             self.fig.ax.set_ylabel(self.canvas.tr('HDOP'))
 
-        elif selected == 'sats' and transect.boat_vel.gga_vel is not None:
+        elif selected == 'sats' and transect.boat_vel.gga_vel is not None and \
+                np.any(np.logical_not(np.isnan(transect.gps.num_sats_ens))):
             # Plot number of satellites
             max_y = np.nanmax(transect.gps.num_sats_ens) + 0.5
             min_y = np.nanmin(transect.gps.num_sats_ens) - 0.5
-            self.sats = self.fig.ax.plot(ensembles, transect.gps.num_sats_ens, 'b.')
+            self.sats = self.fig.ax.plot(x, transect.gps.num_sats_ens, 'b.')
             try:
                 self.fig.ax.set_ylim(top=max_y, bottom=min_y)
                 yint = range(int(min_y), int(max_y) + 1)
@@ -161,27 +191,27 @@ class GPSFilters (object):
 
                 if boat_gps.smooth_filter == 'On':
                     invalid_other_vel = np.logical_not(boat_gps.valid_data[4, :])
-                    self.other = self.fig.ax.plot(ensembles,
+                    self.other = self.fig.ax.plot(x,
                                                   boat_gps.smooth_lower_limit * self.units['V'],
                                                   color='#d5dce6')
-                    self.other.append(self.fig.ax.plot(ensembles,
+                    self.other.append(self.fig.ax.plot(x,
                                                        boat_gps.smooth_upper_limit * self.units['V'],
                                                        color='#d5dce6')[0])
-                    self.other.append(self.fig.ax.fill_between(ensembles,
+                    self.other.append(self.fig.ax.fill_between(x,
                                                                boat_gps.smooth_lower_limit
                                                                * self.units['V'],
                                                                boat_gps.smooth_upper_limit
                                                                * self.units['V'],
                                                                facecolor='#d5dce6'))
 
-                    self.other.append(self.fig.ax.plot(ensembles, speed * units['V'], data_color[0])[0])
-                    self.other.append(self.fig.ax.plot(ensembles,
+                    self.other.append(self.fig.ax.plot(x, speed * units['V'], data_color[0])[0])
+                    self.other.append(self.fig.ax.plot(x,
                                                        boat_gps.smooth_speed * self.units['V'])[0])
-                    self.other.append(self.fig.ax.plot(ensembles[invalid_other_vel],
+                    self.other.append(self.fig.ax.plot(x[invalid_other_vel],
                                                        speed[invalid_other_vel] * units['V'],
                                                        'ko', linestyle='')[0])
                 else:
-                    self.other = self.fig.ax.plot(ensembles, speed * units['V'], data_color[1])
+                    self.other = self.fig.ax.plot(x, speed * units['V'], data_color[1])
                 self.fig.ax.set_ylabel(self.canvas.tr('Speed' + units['label_V']))
 
         elif selected == 'source':
@@ -195,21 +225,42 @@ class GPSFilters (object):
 
             # Handle situation where transect does not contain the selected source
             if boat_selected is None:
-                source = np.tile('INV', len(ensembles))
+                source = np.tile('INV', len(x))
             else:
                 source = boat_selected.processed_source
 
             # Plot dummy data to establish consistent order of y axis
             self.source = self.fig.ax.plot([-10, -10, -10, -10, -10], ['INV', 'INT', 'BT', 'GGA', 'VTG'], 'w-')
-            self.source = self.fig.ax.plot(ensembles, source, 'b.')
+            self.source = self.fig.ax.plot(x, source, 'b.')
             self.fig.ax.set_ylabel(self.canvas.tr('Boat Velocity Source'))
             self.fig.ax.set_yticks(['INV', 'INT', 'BT', 'GGA', 'VTG'])
 
-        self.fig.ax.set_xlim(left=-1 * ensembles[-1] * 0.02, right=ensembles[-1] * 1.02)
-
-        if transect.start_edge == 'Right':
-            self.fig.ax.invert_xaxis()
-            self.fig.ax.set_xlim(right=-1 * ensembles[-1] * 0.02, left=ensembles[-1] * 1.02)
+        if x_axis_type == 'L':
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+            else:
+                self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
+            self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
+        elif x_axis_type == 'E':
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
+            else:
+                self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
+            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
+        elif x_axis_type == 'T':
+            axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                                     left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+            else:
+                self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                                     right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+            date_form = DateFormatter('%H:%M:%S')
+            self.fig.ax.xaxis.set_major_formatter(date_form)
+            self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
@@ -259,9 +310,23 @@ class GPSFilters (object):
             else:
                 self.annot._y = -40
 
-        # Format and display text
         self.annot.xy = pos
-        text = 'x: {:.2f}, y: {:.2f}'.format(pos[0], pos[1])
+
+        # Format and display text
+        if self.x_axis_type == 'T':
+            x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
+            if self.source is not None:
+                y_label = ['INV', 'INT', 'BT', 'GGA', 'VTG']
+                text = 'x: {}, y: {}'.format(x_label, y_label[pos[1].astype('int')])
+            else:
+                text = 'x: {}, y: {:.2f}'.format(x_label, pos[1])
+        else:
+            if self.source is not None:
+                y_label = ['INV', 'INT', 'BT', 'GGA', 'VTG']
+                text = 'x: {:.2f}, y: {}'.format(pos[0], y_label[pos[1].astype('int')])
+            else:
+                text = 'x: {:.2f}, y: {:.2f}'.format(pos[0], pos[1])
+
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -285,11 +350,13 @@ class GPSFilters (object):
             cont_alt = False
             cont_sats = False
             cont_other = False
+            cont_source = False
             ind_qual = None
             ind_hdop = None
             ind_alt = None
             ind_sats = None
             ind_other = None
+            ind_source = None
             if self.qual is not None:
                 cont_qual, ind_qual = self.qual[0].contains(event)
             elif self.hdop is not None:
@@ -300,6 +367,8 @@ class GPSFilters (object):
                 cont_sats, ind_sats = self.sats[0].contains(event)
             elif self.other is not None:
                 cont_other, ind_other = self.other[0].contains(event)
+            elif self.source is not None:
+                cont_source, ind_source = self.source[0].contains(event)
 
             if cont_qual:
                 self.update_annot(ind_qual, self.qual[0])
@@ -319,6 +388,10 @@ class GPSFilters (object):
                 self.canvas.draw_idle()
             elif cont_other:
                 self.update_annot(ind_other, self.other[0])
+                self.annot.set_visible(True)
+                self.canvas.draw_idle()
+            elif cont_source:
+                self.update_annot(ind_source, self.source[0])
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:

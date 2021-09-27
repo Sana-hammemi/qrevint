@@ -159,7 +159,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 3
                 comp_depth[np.isnan(comp_depth)] = vb_filtered[np.isnan(comp_depth)]
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 2
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
                 
             elif ref == 'vb_depths':
@@ -169,7 +170,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 3
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(bt_filtered[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 1
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.vb_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.vb_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
                 
             elif ref == 'ds_depths':
@@ -179,7 +181,8 @@ class DepthStructure(object):
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 2
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(bt_filtered[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 1
-                comp_depth[np.isnan(comp_depth)] = np.squeeze(self.ds_depths.depth_processed_m[np.isnan(comp_depth)])
+                comp_depth = self.interpolate_composite(transect=transect, composite_depth=comp_depth)
+                # comp_depth[np.isnan(comp_depth)] = np.squeeze(self.ds_depths.depth_processed_m[np.isnan(comp_depth)])
                 comp_source[np.logical_and((np.isnan(comp_depth) == False), (np.isnan(comp_source) == True))] = 4
 
             # Save composite depth to depth_processed of selected primary reference
@@ -273,3 +276,93 @@ class DepthStructure(object):
         # Vertical beam depths
         if self.vb_depths is not None:
             self.vb_depths.sos_correction(ratio)
+
+    @staticmethod
+    def interpolate_composite(transect, composite_depth):
+
+        """Apply linear interpolation to composite depths
+
+        Parameters
+        ----------
+        transect: TransectData
+            Transect being processed
+        composite_depth: np.array(float)
+            Array of composite depths
+
+        Returns
+        -------
+        depth_new: np.array(float)
+            Array of composite depths with interpolated values
+        """
+
+        # Create position array
+        select = getattr(transect.boat_vel, transect.boat_vel.selected)
+        if select is not None:
+            boat_vel_x = select.u_processed_mps
+            boat_vel_y = select.v_processed_mps
+            track_x = boat_vel_x * transect.date_time.ens_duration_sec
+            track_y = boat_vel_y * transect.date_time.ens_duration_sec
+        else:
+            select = getattr(transect.boat_vel, 'bt_vel')
+            track_x = np.tile(np.nan, select.u_processed_mps.shape)
+            track_y = np.tile(np.nan, select.v_processed_mps.shape)
+
+        idx = np.where(np.isnan(track_x[1:]))
+
+        # If the navigation reference has no gaps use it for interpolation, if not use time
+        if len(idx[0]) < 1:
+            x = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
+        else:
+            # Compute accumulated time
+            x = np.nancumsum(transect.date_time.ens_duration_sec)
+
+        depth_mono = np.copy(composite_depth)
+        depth_new = np.copy(composite_depth)
+
+        #       Create strict monotonic arrays for depth and track by identifying duplicate
+        #       track values.  The first track value is used and the remaining duplicates
+        #       are set to nan.  The depth assigned to that first track value is the average
+        #       of all duplicates.  The depths for the duplicates are then set to nan.  Only
+        #       valid strictly monotonic track and depth data are used for the input in to linear
+        #       interpolation.   Only the interpolated data for invalid depths are added
+        #       to the valid depth data to create depth_new
+
+        x_mono = x
+
+        idx0 = np.where(np.diff(x) == 0)[0]
+        if len(idx0) > 0:
+            if len(idx0) > 1:
+                # Split array into subarrays in proper sequence e.g [[2,3,4],[7,8,9]] etc.
+                idx1 = np.add(np.where(np.diff(idx0) != 1)[0], 1)
+                group = np.split(idx0, idx1)
+
+            else:
+                # Group of only 1 point
+                group = np.array([idx0])
+
+            # Replace repeated values with mean
+            n_group = len(group)
+            for k in range(n_group):
+                indices = group[k]
+                indices = np.append(indices, indices[-1] + 1)
+                depth_avg = np.nanmean(depth_mono[indices])
+                depth_mono[indices[0]] = depth_avg
+                depth_mono[indices[1:]] = np.nan
+                x[indices[1:]] = np.nan
+
+        # Interpolate
+
+
+        # Determine ensembles with valid depth data
+        valid_depth_mono = np.logical_not(np.isnan(depth_mono))
+        valid_x_mono = np.logical_not(np.isnan(x_mono))
+        valid = np.vstack([valid_depth_mono, valid_x_mono])
+        valid = np.all(valid, 0)
+
+        if np.sum(valid) > 1:
+            # Compute interpolation function from all valid data
+            depth_int = np.interp(x_mono, x_mono[valid], depth_mono[valid], left=np.nan, right=np.nan)
+            # Fill in invalid data with interpolated data
+            depth_new[np.logical_not(valid_depth_mono)] = depth_int[np.logical_not(valid_depth_mono)]
+
+        return depth_new

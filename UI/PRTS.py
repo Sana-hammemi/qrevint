@@ -19,6 +19,8 @@ class PRTS(object):
         Switch to allow user to use the data cursor
     annot: Annotation
         Annotation for data cursor
+    x_axis_type: str
+        Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -38,8 +40,9 @@ class PRTS(object):
         self.row_index = []
         self.hover_connection = None
         self.annot = None
+        self.x_axis_type = 'E'
 
-    def create(self, meas, checked, tbl, cb_pitch, cb_roll):
+    def create(self, meas, checked, tbl, cb_pitch, cb_roll, units, x_axis_type=None):
         """Generates the pitch and roll plot.
 
         Parameters
@@ -54,7 +57,16 @@ class PRTS(object):
             Checkbox indicating if the pitch is displayed
         cb_roll: QCheckBox
             Checkbox indication if the roll is displayed
+        units: dict
+            Dictionary of units conversions
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
+
+        # Set default axis
+        if x_axis_type is None:
+            x_axis_type = 'E'
+        self.x_axis_type = x_axis_type
 
         # Clear the plot
         self.fig.clear()
@@ -64,7 +76,6 @@ class PRTS(object):
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_xlabel(self.canvas.tr('Ensembles (left to right) '))
         self.fig.ax.set_ylabel(self.canvas.tr('Pitch or Roll (deg)'))
         self.fig.ax.xaxis.label.set_fontsize(10)
         self.fig.ax.yaxis.label.set_fontsize(10)
@@ -78,24 +89,45 @@ class PRTS(object):
             if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
                 self.row_index.append(row)
                 if cb_pitch.isChecked():
-                    # Plot pitch
+                    # Get pitch data
                     pitch = np.copy(meas.transects[checked[row]].sensors.pitch_deg.internal.data)
+                    # Arrange data from left to right
+                    flip = False
                     if meas.transects[checked[row]].start_edge == 'Right':
                         pitch = np.flip(pitch)
-                    ensembles = range(1, len(pitch) + 1)
-                    self.pitch.append(self.fig.ax.plot(ensembles, pitch, 'r-')[0])
+                        flip = True
+                    # Compute x-axis
+                    x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
+                                        units=units, flip=flip)
+                    self.pitch.append(self.fig.ax.plot(x, pitch, 'r-')[0])
                 else:
                     self.pitch = None
 
                 if cb_roll.isChecked():
-                    # Plot roll
+                    # Get roll data
                     roll = np.copy(meas.transects[checked[row]].sensors.roll_deg.internal.data)
+                    # Arrange data from left to right
+                    flip = False
                     if meas.transects[checked[row]].start_edge == 'Right':
                         roll = np.flip(roll)
-                    ensembles = range(1, len(roll) + 1)
-                    self.roll.append(self.fig.ax.plot(ensembles, roll, 'b-')[0])
+                    # Compute x-axis
+                    x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
+                                        units=units, flip=flip)
+                    self.roll.append(self.fig.ax.plot(x, roll, 'b-')[0])
                 else:
                     self.roll = None
+
+        # Label axis
+        if x_axis_type == 'L':
+            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02 * units['L'],
+                                  right=np.nanmax(x) * 1.02 * units['L'])
+            self.fig.ax.set_xlabel(self.canvas.tr('Length Left to Right' + units['label_L']))
+        elif x_axis_type == 'E':
+            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles Left to Right'))
+        elif x_axis_type == 'T':
+            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+            self.fig.ax.set_xlabel(self.canvas.tr('Duration Left to Right (seconds)'))
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
@@ -105,6 +137,38 @@ class PRTS(object):
         self.annot.set_visible(False)
 
         self.canvas.draw()
+
+    @staticmethod
+    def set_x_axis(x_axis_type, transect, units, flip=False):
+        """Computes values for the x-axis based on specified x-axis type.
+
+        Parameters
+        ----------
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
+        transect: TransectData
+            Object of TransectData
+        units: dict
+            Dictionary of units conversions
+        flip: bool
+            Need to flip data so it is left to right
+        """
+
+        # Compute x axis data
+        x = None
+        if x_axis_type == 'L':
+            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
+                x = boat_track['distance_m'] * units['L']
+        elif x_axis_type == 'E':
+            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+        elif x_axis_type == 'T':
+            x = np.nancumsum(transect.date_time.ens_duration_sec)
+
+        if flip:
+            x = (x[-1] - x)
+
+        return x
 
     def update_annot(self, ind, plt_ref, row):
         """Updates the location and text and makes visible the previously initialized and hidden annotation.

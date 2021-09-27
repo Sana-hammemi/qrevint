@@ -78,12 +78,12 @@ class WaterData(object):
             Set 3 for 3-beam solutions, 4 for 4-beam solutions.
         d_filter: str
             Set difference velocity filter "On", "Off".
-        d_filter_threshold: float
-            Threshold for difference velocity filter.
+        d_filter_thresholds: float, dict, tuple
+            Threshold(s) for difference velocity filter.
         w_filter: str
             Set vertical velocity filter "On", "Off".
-        w_filter_threshold: float
-            Threshold for vertical velocity filter.
+        w_filter_thresholds: float, dict, tuple
+            Threshold(s) for vertical velocity filter.
         excluded_dist_m: float
             Distance below transucer for which data are excluded or marked invalid, in m.
         orig_excluded_dist_m: float
@@ -116,6 +116,15 @@ class WaterData(object):
             User specified number of cells to cutoff from SonTek, not implemented, undefined
         sl_cutoff_type: str
             Type of cutoff method "Percent" or "Number".
+        ping_type: np.array(int)
+            Indicates type of ping for each cell: 0-incoherent, 1-coherent, 2-surface
+        d_meas_thresholds: list
+            Dictionary of difference velocity thresholds computed using the whole measurement by ping type
+        w_meas_thresholds: list
+            Dictionary of vertical velocity thresholds computed using the whole measurement by ping type
+        use_measurement_thresholds: bool
+            Indicates if the measurement based thresholds should be used
+
     """
 
     def __init__(self):
@@ -152,9 +161,9 @@ class WaterData(object):
         # Settings
         self.beam_filter = None
         self.d_filter = None
-        self.d_filter_threshold = None
+        self.d_filter_thresholds = {}
         self.w_filter = None
-        self.w_filter_threshold = None
+        self.w_filter_thresholds = {}
         self.excluded_dist_m = None
         self.orig_excluded_dist_m = None
         self.smooth_filter = None
@@ -172,12 +181,19 @@ class WaterData(object):
         self.sl_cutoff_number = None
         self.sl_cutoff_type = None
         self.sl_cutoff_m = None
+        self.ping_type = np.array([])
+
+        # Filter settings populated from Measurement.create_filter_composites
+        self.d_meas_thresholds = {}
+        self.w_meas_thresholds = {}
+
+        self.use_measurement_thresholds = False
 
     def populate_data(self, vel_in, freq_in, coord_sys_in, nav_ref_in, rssi_in, rssi_units_in,
                       excluded_dist_in, cells_above_sl_in, sl_cutoff_per_in, sl_cutoff_num_in,
                       sl_cutoff_type_in, sl_lag_effect_in, wm_in, blank_in, corr_in=None,
                       surface_vel_in=None, surface_rssi_in=None, surface_corr_in=None, sl_cutoff_m=None,
-                      surface_num_cells_in=0):
+                      surface_num_cells_in=0, ping_type='U', use_measurement_thresholds=False):
         
         """Populates the variables with input, computed, or default values.
 
@@ -224,6 +240,8 @@ class WaterData(object):
             Number of surface cells in each ensemble for RiverRay, RiverPro, RioPro. Optional.
         sl_cutoff_m: np.array(float)
             Depth in meters of side lobe cutoff to center of cells.
+        ping_type: np.array(str)
+            Indicates type of ping used for water tracking
         """
 
         # Set object properties from input data standard for all ADCPs
@@ -235,11 +253,14 @@ class WaterData(object):
         self.water_mode = wm_in
         self.excluded_dist_m = excluded_dist_in
         self.rssi_units = rssi_units_in
+        max_cells = cells_above_sl_in.shape[0]
+        self.ping_type = np.tile(np.array([ping_type]), (max_cells, 1))
+        self.use_measurement_thresholds = use_measurement_thresholds
 
         # Set object properties that depend on the presence or absence of surface cells
         if np.sum(surface_num_cells_in) > 0:
             surface_num_cells_in[np.isnan(surface_num_cells_in)] = 0
-            max_cells = cells_above_sl_in.shape[0]
+
             num_ens = cells_above_sl_in.shape[1]
             num_reg_cells = vel_in.shape[1]
             max_surf_cells = max_cells - num_reg_cells
@@ -253,6 +274,7 @@ class WaterData(object):
                 self.raw_vel_mps[:, :max_surf_cells, :] = surface_vel_in[:, :max_surf_cells, :]
                 self.rssi[:, :max_surf_cells, :] = surface_rssi_in[:, :max_surf_cells, :]
                 self.corr[:, :max_surf_cells, :] = surface_corr_in[:, :max_surf_cells, :]
+                self.ping_type[:max_surf_cells, :] = 'S'
 
             for i_ens in range(num_ens):
                 self.raw_vel_mps[:,
@@ -274,6 +296,7 @@ class WaterData(object):
                 # No correlations input
                 self.corr = np.tile(np.nan, rssi_in.shape)
 
+        #TODO This doesn't seem correct. If raw data in beam coordinates this is not correct.
         self.u_mps = np.copy(self.raw_vel_mps)[0, :, :]
         self.v_mps = np.copy(self.raw_vel_mps)[1, :, :]
         self.w_mps = np.copy(self.raw_vel_mps)[2, :, :]
@@ -301,9 +324,9 @@ class WaterData(object):
         # Set filter defaults to no filtering and no interruption
         self.beam_filter = 3
         self.d_filter = 'Off'
-        self.d_filter_threshold = 99
+        self.d_filter_thresholds = {}
         self.w_filter = 'Off'
-        self.w_filter_threshold = 99
+        self.w_filter_thresholds = {}
         self.smooth_filter = False
         self.interpolate_ens = 'None'
         self.interpolate_cells = 'None'
@@ -370,39 +393,90 @@ class WaterData(object):
             Matlab data structure obtained from sio.loadmat
         """
 
-        # Data requiring manipulation (special case for 1 ensemble)
+        # Data requiring manipulation (special case for 1 ensemble or 1 cell)
         if len(transect.wVel.rawVel_mps.shape) == 2:
-            self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
-            self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
-            self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
-            self.corr = self.corr.reshape(self.corr.shape[0], self.corr.shape[1], 1)
-            self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
-            self.rssi = self.rssi.reshape(self.rssi.shape[0], self.rssi.shape[1], 1)
-            self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
-            self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], self.valid_data.shape[1], 1)
-            self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
-            self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(self.u_earth_no_ref_mps.shape[0], 1)
-            self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
-            self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(self.v_earth_no_ref_mps.shape[0], 1)
-            self.u_mps = transect.wVel.u_mps
-            self.u_mps = self.u_mps.reshape(self.u_mps.shape[0], 1)
-            self.v_mps = transect.wVel.v_mps
-            self.v_mps = self.v_mps.reshape(self.v_mps.shape[0], 1)
-            self.u_processed_mps = transect.wVel.uProcessed_mps
-            self.u_processed_mps = self.u_processed_mps.reshape(self.u_processed_mps.shape[0], 1)
-            self.v_processed_mps = transect.wVel.vProcessed_mps
-            self.v_processed_mps = self.v_processed_mps.reshape(self.v_processed_mps.shape[0], 1)
-            self.w_mps = transect.wVel.w_mps
-            self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
-            self.d_mps = transect.wVel.d_mps
-            self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-            self.snr_rng = transect.wVel.snrRng
-            self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
-            self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
-            self.cells_above_sl = self.cells_above_sl.reshape(self.cells_above_sl.shape[0], 1)
-            self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
-            self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(self.cells_above_sl_bt.shape[0], 1)
-            self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+            if len(transect.boatVel.btVel.rawVel_mps.shape) > 1:
+                # Multiple ensembles with one cell
+                self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
+                self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], 1, self.raw_vel_mps.shape[1])
+                self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
+                self.corr = self.corr.reshape(self.corr.shape[0], 1, self.corr.shape[1])
+                self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
+                self.rssi = self.rssi.reshape(self.rssi.shape[0], 1, self.rssi.shape[1])
+                self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
+                self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], 1, self.valid_data.shape[1])
+                self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
+                self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(1, self.u_earth_no_ref_mps.shape[0])
+                self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
+                self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(1, self.v_earth_no_ref_mps.shape[0])
+                self.u_mps = transect.wVel.u_mps
+                self.u_mps = self.u_mps.reshape(1, self.u_mps.shape[0])
+                self.v_mps = transect.wVel.v_mps
+                self.v_mps = self.v_mps.reshape(1, self.v_mps.shape[0])
+                self.u_processed_mps = transect.wVel.uProcessed_mps
+                self.u_processed_mps = self.u_processed_mps.reshape(1, self.u_processed_mps.shape[0])
+                self.v_processed_mps = transect.wVel.vProcessed_mps
+                self.v_processed_mps = self.v_processed_mps.reshape(1, self.v_processed_mps.shape[0])
+                self.w_mps = transect.wVel.w_mps
+                self.w_mps = self.w_mps.reshape(1, self.w_mps.shape[0])
+                self.d_mps = transect.wVel.d_mps
+                self.d_mps = self.d_mps.reshape(1, self.d_mps.shape[0])
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
+                self.cells_above_sl = self.cells_above_sl.reshape(1, self.cells_above_sl.shape[0])
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
+                self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(1, self.cells_above_sl_bt.shape[0])
+                self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                # Ping type
+                if hasattr(transect.wVel, 'ping_type'):
+                    if type(transect.wVel.ping_type) == str:
+                        self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                    else:
+                        self.ping_type = transect.wVel.ping_type[np.newaxis, :]
+                else:
+                    self.ping_type = np.tile('U', self.d_mps.shape)
+            else:
+                # One ensemble with multiple cells
+                self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
+                self.raw_vel_mps = self.raw_vel_mps.reshape(self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
+                self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
+                self.corr = self.corr.reshape(self.corr.shape[0], self.corr.shape[1], 1)
+                self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
+                self.rssi = self.rssi.reshape(self.rssi.shape[0], self.rssi.shape[1], 1)
+                self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
+                self.valid_data = self.valid_data.reshape(self.valid_data.shape[0], self.valid_data.shape[1], 1)
+                self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
+                self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(self.u_earth_no_ref_mps.shape[0], 1)
+                self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
+                self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(self.v_earth_no_ref_mps.shape[0], 1)
+                self.u_mps = transect.wVel.u_mps
+                self.u_mps = self.u_mps.reshape(self.u_mps.shape[0], 1)
+                self.v_mps = transect.wVel.v_mps
+                self.v_mps = self.v_mps.reshape(self.v_mps.shape[0], 1)
+                self.u_processed_mps = transect.wVel.uProcessed_mps
+                self.u_processed_mps = self.u_processed_mps.reshape(self.u_processed_mps.shape[0], 1)
+                self.v_processed_mps = transect.wVel.vProcessed_mps
+                self.v_processed_mps = self.v_processed_mps.reshape(self.v_processed_mps.shape[0], 1)
+                self.w_mps = transect.wVel.w_mps
+                self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
+                self.d_mps = transect.wVel.d_mps
+                self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
+                self.cells_above_sl = self.cells_above_sl.reshape(self.cells_above_sl.shape[0], 1)
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
+                self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(self.cells_above_sl_bt.shape[0], 1)
+                self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                # Ping type
+                if hasattr(transect.wVel, 'ping_type'):
+                    if type(transect.wVel.ping_type) == str:
+                        self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                    else:
+                        self.ping_type = transect.wVel.ping_type[:, np.newaxis]
+                else:
+                    self.ping_type = np.tile('U', self.d_mps.shape)
 
         else:
             self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 2, 0)
@@ -421,6 +495,14 @@ class WaterData(object):
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
+            # Ping type
+            if hasattr(transect.wVel, 'ping_type'):
+                if type(transect.wVel.ping_type) == str:
+                    self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
+                else:
+                    self.ping_type = transect.wVel.ping_type
+            else:
+                self.ping_type = np.tile('U', self.d_mps.shape)
 
         self.valid_data = self.valid_data.astype(bool)
         # Fix for moving-bed transects that did not have 3D array indices adjusted properly when saved
@@ -444,9 +526,9 @@ class WaterData(object):
         # Settings
         self.beam_filter = transect.wVel.beamFilter
         self.d_filter = transect.wVel.dFilter
-        self.d_filter_threshold = transect.wVel.dFilterThreshold
+        self.d_filter_thresholds = self.struct_to_dict(transect.wVel.dFilterThreshold)
         self.w_filter = transect.wVel.wFilter
-        self.w_filter_threshold = transect.wVel.wFilterThreshold
+        self.w_filter_thresholds = self.struct_to_dict(transect.wVel.wFilterThreshold)
         self.excluded_dist_m = transect.wVel.excludedDist
         if hasattr(transect.wVel, 'orig_excludedDist'):
             self.orig_excluded_dist_m = transect.wVel.orig_excludedDist
@@ -466,6 +548,40 @@ class WaterData(object):
         self.sl_cutoff_number = transect.wVel.slCutoffNum
         self.sl_cutoff_type = transect.wVel.slCutoffType
 
+        # Use measurement for filter
+        if hasattr(transect.wVel, 'use_measurement_thresholds'):
+            self.use_measurement_thresholds = self.struct_to_dict(transect.wVel.use_measurement_thresholds)
+            self.d_meas_thresholds = self.struct_to_dict(transect.wVel.d_meas_thresholds)
+            self.w_meas_thresholds = self.struct_to_dict(transect.wVel.w_meas_thresholds)
+        else:
+            self.use_measurement_thresholds = False
+            self.d_meas_thresholds = {}
+            self.w_meas_thresholds = {}
+
+    @staticmethod
+    def struct_to_dict(struct):
+        """If input is a mat structure it converts it into a dictionary.
+
+        Parameters
+        ----------
+        struct: mat.struct or other
+            Data to be converted
+
+        Returns
+        -------
+        result: dict or other
+            Result of conversion
+        """
+
+        try:
+            keys = struct._fieldnames
+            result = {}
+            for key in keys:
+                result[key] = struct.__dict__[key]
+        except AttributeError:
+            result = struct
+        return result
+
     def change_coord_sys(self, new_coord_sys, sensors, adcp):
         """This function allows the coordinate system to be changed.
 
@@ -481,10 +597,12 @@ class WaterData(object):
         adcp: InstrumentData
             Object of instrument data
         """
-        if type(self.orig_coord_sys) is list:
+        if type(self.orig_coord_sys) is str:
+            o_coord_sys = self.orig_coord_sys.strip()
+        elif type(self.orig_coord_sys) is list or np.ndarray:
             o_coord_sys = self.orig_coord_sys[0].strip()
         else:
-            o_coord_sys = self.orig_coord_sys.strip()
+            o_coord_sys = self.orig_coord_sys
 
         orig_sys = None
         new_sys = None
@@ -871,8 +989,8 @@ class WaterData(object):
             if beam is not None:
                 self.filter_beam(setting=beam, transect=transect)
         else:
-            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_threshold)
-            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_threshold)
+            self.filter_diff_vel(setting=self.d_filter, threshold=self.d_filter_thresholds)
+            self.filter_vert_vel(setting=self.w_filter, threshold=self.w_filter_thresholds)
             self.filter_smooth(transect=transect, setting=self.smooth_filter)
             self.filter_excluded(transect=transect, setting=self.excluded_dist_m)
             self.filter_snr(setting=self.snr_filter)
@@ -922,8 +1040,10 @@ class WaterData(object):
             cells_above_sl = cells_above_slbt
 
         # Compute cutoff from interpolated depths
+        n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
+
         # Find ensembles with no valid beam depths
-        idx = np.where(np.nansum(depth_selected.valid_beams, 0) == 0)[0]
+        idx = np.where(n_valid_beams == 0)[0]
 
         # Determine side lobe cutoff for ensembles with no valid beam depths
         if len(idx) > 0:
@@ -939,7 +1059,8 @@ class WaterData(object):
                 cells_above_sl[:, idx[i]] = np.less(depth_selected.depth_cell_depth_m[:, idx[i]], sl_cutoff_int[i])
             
         # Find ensembles with at least 1 invalid beam depth
-        idx = np.where(np.nansum(depth_selected.valid_beams, 0) < 4)[0]
+
+        idx = np.where(np.logical_and(n_valid_beams < 4, n_valid_beams > 0))[0]
         if len(idx) > 0:
             if len(self.sl_lag_effect_m) > 1:
                 sl_lag_effect_m = self.sl_lag_effect_m[idx]
@@ -1096,58 +1217,87 @@ class WaterData(object):
         # Set difference filter properties
         self.d_filter = setting
         if threshold is not None:
-            self.d_filter_threshold = threshold
-
-        # Set multiplier
-        multiplier = 5
+            self.d_filter_thresholds = threshold
 
         # Get difference data from object
         d_vel = copy.deepcopy(self.d_mps)
 
+        # NOTE: Versions prior to 1.01 did not apply this step to remove data below the side lobe cutoff
+        d_vel[np.logical_not(self.cells_above_sl)] = np.nan
+
         d_vel_min_ref = None
         d_vel_max_ref = None
 
+        bad_idx_rows = np.array([]).astype(int)
+        bad_idx_cols = np.array([]).astype(int)
+
         # Apply selected method
         if self.d_filter == 'Manual':
-            d_vel_max_ref = np.abs(self.d_filter_threshold)
+            d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
+            # Set valid data row 2 for difference velocity filter results
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
+                                                                np.less(d_vel, d_vel_min_ref)))
         elif self.d_filter == 'Off':
             d_vel_max_ref = np.nanmax(np.nanmax(d_vel)) + 1
             d_vel_min_ref = np.nanmin(np.nanmin(d_vel)) - 1
+            # Set valid data row 2 for difference velocity filter results
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
+                                                                np.less(d_vel, d_vel_min_ref)))
+            self.d_filter_thresholds = d_vel_max_ref
+
         elif self.d_filter == 'Auto':
-            # Initialize variables
-            d_vel_filtered = copy.deepcopy(d_vel)
-            std_diff = 1
-            i = -1
-            # Loop until no additional data are removed
-            while std_diff != 0 and i < 1000:
-                i = i+1
+            # Apply threshold from entire measurement processing to each transect
+            if self.use_measurement_thresholds:
+                self.d_filter_thresholds = self.d_meas_thresholds
+                for p_type in self.d_meas_thresholds.keys():
+                    data_max_ref = self.d_meas_thresholds[p_type][0]
+                    data_min_ref = self.d_meas_thresholds[p_type][1]
+                    data = np.copy(self.d_mps)
+                    data[self.ping_type!=p_type] = np.nan
+                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                                np.less(data, data_min_ref)))
+                    if len(idx_invalid_rows) > 0:
+                        if len(bad_idx_rows) > 0:
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
+                        else:
+                            bad_idx_rows = idx_invalid_rows
+                            bad_idx_cols = idx_invalid_cols
 
-                # Compute standard deviation
-                d_vel_std = iqr(d_vel_filtered)
+            # Compute unique threshold for each transect using ping types
+            elif self.ping_type.size > 1:
 
-                # Compute maximum and minimum thresholds
-                d_vel_max_ref = np.nanmedian(d_vel_filtered) + multiplier * d_vel_std
-                d_vel_min_ref = np.nanmedian(d_vel_filtered) - multiplier * d_vel_std
+                # Identify the ping types used in the transect
+                p_types = np.unique(self.ping_type)
 
-                # Identify valid and invalid data
-                d_vel_bad_rows, d_vel_bad_cols = np.where(np.logical_or
-                                                          (np.greater(d_vel_filtered, d_vel_max_ref),
-                                                           np.less(d_vel_filtered, d_vel_min_ref)))
+                thresholds = {}
 
-                # Update filtered data array
-                d_vel_filtered[d_vel_bad_rows, d_vel_bad_cols] = np.nan
+                # Apply the filter to each ping type
+                for p_type in p_types:
+                    # Copy of difference velocities
+                    vel_2_filter = copy.deepcopy(d_vel)
+                    # Remove data not associated with the specified ping type
+                    vel_2_filter[self.ping_type!=p_type] = np.nan
+                    # Apply filter to data of a single ping type
+                    idx_invalid_rows, idx_invalid_cols, threshold = self.iqr_filter(vel_2_filter)
+                    # Combine indices of invalid data for all ping types
+                    if len(idx_invalid_rows) > 0:
+                        if len(bad_idx_rows) > 0:
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
+                        else:
+                            bad_idx_rows = idx_invalid_rows
+                            bad_idx_cols = idx_invalid_cols
+                    thresholds[p_type] = threshold
+                self.d_filter_thresholds = thresholds
 
-                # Determine differences due to last filter iteration
-                if len(d_vel_filtered) > 0:
-                    d_vel_std2 = iqr(d_vel_filtered)
-                    std_diff = d_vel_std2 - d_vel_std
-                else:
-                    std_diff = 0
+            # Compute unique threshold for each transect when no ping types are available
+            else:
+                self.ping_type = np.array(['U'])
+                bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(d_vel)
+                self.d_filter_thresholds = {'U': threshold}
 
-        # Set valid data row 2 for difference velocity filter results
-        bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(d_vel, d_vel_max_ref),
-                                              np.less(d_vel, d_vel_min_ref)))
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
             valid[bad_idx_rows, bad_idx_cols] = False
@@ -1156,14 +1306,130 @@ class WaterData(object):
         # valid[np.isnan(self.d_mps)] = True
         self.valid_data[2, :, :] = valid
 
-        # Set threshold property
-        if np.ma.is_masked(d_vel_max_ref):
-            self.d_filter_threshold = np.nan
-        else:
-            self.d_filter_threshold = d_vel_max_ref
-
         # Combine all filter data and update processed properties
         self.all_valid_data()
+
+    @staticmethod
+    def iqr_filter(data, multiplier=5):
+        """Apply the iqr filter to wt data.
+
+        Parameters
+        ----------
+        data: np.ndarray(float)
+            Array of difference or vertical velocity data
+        multiplier: int
+            Number of IQR's to use to set the threshold
+
+        Returns
+        -------
+        bad_idx_rows: np.ndarray(int)
+            Row indices of invalid data
+        bad_idx_cols: np.ndarray(int)
+            Column indices of invalid data
+        threshold: float
+            Maximum threshold
+        """
+
+        data_max_ref = np.nan
+        data_min_ref = np.nan
+
+        # Check to make sure there are data to process
+        if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
+
+            # Initialize variables
+            data_orig = np.copy(data)
+
+            iqr_diff = 1
+            i = -1
+            # Loop until no additional data are removed
+            while iqr_diff != 0 and i < 1000:
+                i = i + 1
+
+                # Compute standard deviation
+                data_iqr = iqr(data)
+
+                # Compute maximum and minimum thresholds
+                data_max_ref = np.nanmedian(data) + multiplier * data_iqr
+                data_min_ref = np.nanmedian(data) - multiplier * data_iqr
+
+                # Identify valid and invalid data
+                data_bad_rows, data_bad_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                      np.less(data, data_min_ref)))
+                # Update filtered data array
+                data[data_bad_rows, data_bad_cols] = np.nan
+
+                # Determine differences due to last filter iteration
+                if len(data) > 0:
+                    data_iqr2 = iqr(data)
+                    iqr_diff = data_iqr2 - data_iqr
+                else:
+                    iqr_diff = 0
+
+            # Determine row and column index of invalid cells with invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data_orig, data_max_ref),
+                                                                np.less(data_orig, data_min_ref)))
+        else:
+            # All data are invalid
+            # Determine row and column index of invalid cells with invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(data, -1),
+                                                                np.less(data, 1)))
+
+        threshold = [data_max_ref, data_min_ref]
+
+        return bad_idx_rows, bad_idx_cols, threshold
+
+    @staticmethod
+    def meas_iqr_filter(data, multiplier=5):
+        """Apply the iqr filter to wt data.
+
+        Parameters
+        ----------
+        data: np.ndarray(float)
+            Array of difference or vertical velocity data
+        multiplier: int
+            Number of IQR's to use to set the threshold
+
+        Returns
+        -------
+        thresholds: tuple
+            Maximum and minimum thresholds for filter
+        """
+
+        # Initialize variables
+        data_max_ref = np.nan
+        data_min_ref = np.nan
+
+        # Check to make sure there are data to process
+        if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
+            iqr_diff = 1
+            i = -1
+            # Loop until no additional data are removed
+            while iqr_diff != 0 and i < 1000:
+                i = i + 1
+
+                # Compute standard deviation
+                data_iqr = iqr(data)
+
+                # Compute maximum and minimum thresholds
+                data_max_ref = np.nanmedian(data) + multiplier * data_iqr
+                data_min_ref = np.nanmedian(data) - multiplier * data_iqr
+
+                # Identify valid and invalid data
+                bad_idx = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                      np.less(data, data_min_ref)))
+                # Update filtered data array
+                data[bad_idx] = np.nan
+
+                # Determine differences due to last filter iteration
+                if len(data) > 0:
+                    data_iqr2 = iqr(data)
+                    iqr_diff = data_iqr2 - data_iqr
+                else:
+                    iqr_diff = 0
+
+        thresholds = [data_max_ref, data_min_ref]
+
+        return thresholds
 
     def filter_vert_vel(self, setting, threshold=None):
         """Applies filter to vertical velocity.
@@ -1185,56 +1451,86 @@ class WaterData(object):
         # Set vertical velocity filter properties
         self.w_filter = setting
         if threshold is not None:
-            self.w_filter_threshold = threshold
-
-        # Set multiplier
-        multiplier = 5
+            self.w_filter_thresholds = threshold
 
         # Get difference data from object
         w_vel = copy.deepcopy(self.w_mps)
 
+        # NOTE: Versions prior to 1.01 did not apply this step to remove data below the side lobe cutoff
+        w_vel[np.logical_not(self.cells_above_sl)] = np.nan
+
         w_vel_min_ref = None
         w_vel_max_ref = None
 
+        bad_idx_rows = np.array([]).astype(int)
+        bad_idx_cols = np.array([]).astype(int)
+
         # Apply selected method
         if self.w_filter == 'Manual':
-            w_vel_max_ref = np.abs(self.w_filter_threshold)
+            w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
+            # Identify valid and invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
+                                                                    np.less(w_vel, w_vel_min_ref)))
         elif self.w_filter == 'Off':
             w_vel_max_ref = np.nanmax(np.nanmax(w_vel)) + 1
             w_vel_min_ref = np.nanmin(np.nanmin(w_vel)) - 1
+            # Identify valid and invalid data
+            bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
+                                                                    np.less(w_vel, w_vel_min_ref)))
+            self.w_filter_thresholds = w_vel_max_ref
+
         elif self.w_filter == 'Auto':
-            # Initialize variables
-            w_vel_filtered = copy.deepcopy(w_vel[:])
-            std_diff = 1
-            i = 0
-            # Loop until no additional data are removed
-            while std_diff != 0 and i < 1000:
+            # Apply threshold from entire measurement processing to each transect
+            if self.use_measurement_thresholds:
+                self.w_filter_thresholds = self.w_meas_thresholds
+                for p_type in self.w_meas_thresholds.keys():
+                    data_max_ref = self.w_meas_thresholds[p_type][0]
+                    data_min_ref = self.w_meas_thresholds[p_type][1]
+                    data = np.copy(self.w_mps)
+                    data[self.ping_type != p_type] = np.nan
+                    idx_invalid_rows, idx_invalid_cols = np.where(np.logical_or(np.greater(data, data_max_ref),
+                                                                                np.less(data, data_min_ref)))
+                    if len(idx_invalid_rows) > 0:
+                        if len(bad_idx_rows) > 0:
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
+                        else:
+                            bad_idx_rows = idx_invalid_rows
+                            bad_idx_cols = idx_invalid_cols
 
-                # Computed standard deviation
-                w_vel_std = iqr(w_vel_filtered)
+            # Compute unique threshold for each transect using ping types
+            elif self.ping_type.size > 1:
+                # Initialize variables
+                # Identify the ping types used in the transect
+                p_types = np.unique(self.ping_type)
 
-                # Compute maximum and minimum thresholds
-                w_vel_max_ref = np.nanmedian(w_vel_filtered) + multiplier * w_vel_std
-                w_vel_min_ref = np.nanmedian(w_vel_filtered) - multiplier * w_vel_std
+                thresholds = {}
 
-                # Identify valid and invalid data
-                w_vel_bad_rows, w_vel_bad_cols = np.where(np.logical_or(np.greater(w_vel_filtered, w_vel_max_ref),
-                                                                        np.less(w_vel_filtered, w_vel_min_ref)))
+                # Apply the filter to each ping type
+                for p_type in p_types:
+                    # Copy of vertical velocities
+                    vel_2_filter = copy.deepcopy(w_vel)
+                    # Remove data not associated with the specified ping type
+                    vel_2_filter[self.ping_type != p_type] = np.nan
+                    # Apply filter to data of a single ping type
+                    idx_invalid_rows, idx_invalid_cols, threshold = self.iqr_filter(vel_2_filter)
+                    # Combine indices of invalid data for all ping types
+                    if len(idx_invalid_rows) > 0:
+                        if len(bad_idx_rows) > 0:
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
+                        else:
+                            bad_idx_rows = idx_invalid_rows
+                            bad_idx_cols = idx_invalid_cols
+                    thresholds[p_type] = threshold
+                self.w_filter_thresholds = thresholds
+            # Compute unique threshold for each transect when no ping types are available
+            else:
+                self.ping_type = np.array(['U'])
+                bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(w_vel)
+                self.w_filter_thresholds = {'U': threshold}
 
-                # Update filtered data array
-                w_vel_filtered[w_vel_bad_rows, w_vel_bad_cols] = np.nan
-
-                # Determine differences due to last filter iteration
-                if len(w_vel_filtered) > 0:
-                    w_vel_std2 = iqr(w_vel_filtered)
-                    std_diff = w_vel_std2 - w_vel_std
-                else:
-                    std_diff = 0
-                    
-        # Set valid data row 3 for difference velocity filter results
-        bad_idx_rows, bad_idx_cols = np.where(np.logical_or(np.greater(w_vel, w_vel_max_ref),
-                                              np.less(w_vel, w_vel_min_ref)))
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
             valid[bad_idx_rows, bad_idx_cols] = False
@@ -1242,9 +1538,7 @@ class WaterData(object):
 
         # Set threshold property
         if np.ma.is_masked(w_vel_max_ref):
-            self.w_filter_threshold = np.nan
-        else:
-            self.w_filter_threshold = w_vel_max_ref
+            self.w_filter_thresholds = np.nan
 
         # Combine all filter data and update processed properties
         self.all_valid_data()

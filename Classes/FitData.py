@@ -35,7 +35,7 @@ class FitData(object):
         Method to determine exponent (default, optimize, or manual)
     data_type: str
         Type of data (v, q, V, or Q)
-    exponent_95_ci: float
+    exponent_95_ci: np.array(float)
         95% confidence intervals for optimized exponent
     residuals: np.array(float)
         Residuals from fit
@@ -239,14 +239,14 @@ class FitData(object):
                     # Get 95% confidence intervals
                     lower = (popt[-1] - t_val * np.sqrt(np.diag(pcov)[-1]))
                     upper = (popt[-1] + t_val * np.sqrt(np.diag(pcov)[-1]))
-                    self.exponent_95_ci = np.vstack([lower, upper])
+                    self.exponent_95_ci = np.hstack([lower, upper])
 
                     # Get the rsquared for the model
                     ss_tot = np.sum((y[idx_power] - np.mean(yfit))**2)
                     ss_res = np.sum((y[idx_power] - fit_funcs[fit_func](zfit, *popt))**2)
                     self.r_squared = 1 - (ss_res/ss_tot)
                 else:
-                    self.exponent_95_ci = np.nan
+                    self.exponent_95_ci = [np.nan, np.nan]
                     self.r_squared = np.nan
 
             # Fit power curve to appropriate data

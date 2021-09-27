@@ -33,7 +33,7 @@ class BoatStructure(object):
         self.composite = 'Off'  # Setting for compositir tracks
 
     def add_boat_object(self, source, vel_in, freq_in=None, coord_sys_in=None, nav_ref_in=None,
-                        min_beams=3, bottom_mode='Variable'):
+                        min_beams=3, bottom_mode='Variable', corr_in=None, rssi_in=None):
         """Adds a BoatData object to the appropriate property
 
         Parameters
@@ -56,7 +56,8 @@ class BoatStructure(object):
 
         if nav_ref_in == 'BT':
             self.bt_vel = BoatData()
-            self.bt_vel.populate_data(source, vel_in, freq_in, coord_sys_in, nav_ref_in, min_beams, bottom_mode)
+            self.bt_vel.populate_data(source, vel_in, freq_in, coord_sys_in, nav_ref_in, min_beams, bottom_mode,
+                                      corr_in, rssi_in)
         if nav_ref_in == 'GGA':
             self.gga_vel = BoatData()
             self.gga_vel.populate_data(source, vel_in, freq_in, coord_sys_in, nav_ref_in)

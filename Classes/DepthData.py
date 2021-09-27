@@ -194,7 +194,9 @@ class DepthData(object):
 
         self.valid_beams = self.valid_beams.astype(bool)
 
+        # Handle data with one ensemble and multiple cells or one cell and multiple ensembles
         if len(self.depth_beams_m.shape) == 1:
+            # One ensemble multiple cells
             self.depth_beams_m = self.depth_beams_m.reshape(self.depth_beams_m.shape[0], 1)
             self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(self.depth_cell_depth_m.shape[0], 1)
             self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(
@@ -208,6 +210,13 @@ class DepthData(object):
             self.smooth_upper_limit = self.smooth_upper_limit.reshape(self.smooth_upper_limit.shape[0], 1)
             self.valid_data = np.array([self.valid_data])
             self.depth_source_ens = np.array([mat_data.depthSourceEns])
+        elif len(self.depth_cell_depth_m.shape) == 1:
+            # One cell, multiple ensembles
+            self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(1, self.depth_cell_depth_m.shape[0])
+            self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(1,
+                self.depth_cell_depth_orig_m.shape[0])
+            self.depth_cell_size_m = self.depth_cell_size_m.reshape(1, self.depth_cell_size_m.shape[0])
+            self.depth_cell_size_orig_m = self.depth_cell_size_orig_m.reshape(1, self.depth_cell_size_orig_m.shape[0])
 
     def change_draft(self, draft):
         """Changes the draft for object
@@ -436,7 +445,7 @@ class DepthData(object):
         """
 
         # If the smoothed depth has not been computed
-        if self.smooth_depth is None:
+        if self.smooth_depth is None or len(self.smooth_depth) == 0:
             
             # Set filter characteristics
             self.filter_type = 'Smooth'
@@ -601,7 +610,7 @@ class DepthData(object):
         depth[depth_raw > 0] = depth_raw[depth_raw > 0]
 
         # If the smoothed depth has not been computed
-        if self.smooth_depth is None:
+        if self.smooth_depth is None or len(self.smooth_depth) == 0:
 
             # Set filter characteristics
             self.filter_type = 'SavGol'
@@ -794,6 +803,8 @@ class DepthData(object):
             
         # Determine number of beams
         n_beams = self.depth_beams_m.shape[0]
+        depth_mono = copy.deepcopy(self.depth_beams_m)
+        depth_new = copy.deepcopy(self.depth_beams_m)
         
 #       Create strict monotonic arrays for depth and track by identifying duplicate
 #       track values.  The first track value is used and the remaining duplicates
@@ -803,7 +814,7 @@ class DepthData(object):
 #       interpolation.   Only the interpolated data for invalid depths are added
 #       to the valid depth data to create depth_new
         
-        depth_mono = copy.deepcopy(self.depth_beams_m)
+
         x_mono = x
         
         idx0 = np.where(np.diff(x) == 0)[0]
@@ -828,7 +839,7 @@ class DepthData(object):
                 x[indices[1:]] = np.nan
                 
         # Interpolate each beam
-        depth_new = copy.deepcopy(self.depth_beams_m)
+
         for n in range(n_beams):
             # Determine ensembles with valid depth data
             valid_depth_mono = np.logical_not(np.isnan(depth_mono[n]))

@@ -379,3 +379,24 @@ def convert_temperature(temp_in, units_in, units_out):
             temp_out = (temp_in * (9./5.)) + 32
 
     return temp_out
+
+
+def ari2geodeg(ari_ang):
+
+    """Ported from matlab VMT.
+    ARI2GEODEG converts arithmetic angles to geographic angles.
+
+    Parameters
+    ==========
+    ari_ang: np.array
+        temperature in units_in
+
+    Returns
+    =======
+    geo_ang : np.array
+        angles converted to geographic headings
+    """
+
+    geo_ang = (360 - ari_ang + 90) % 360
+
+    return geo_ang

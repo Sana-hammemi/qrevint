@@ -406,6 +406,8 @@ class Uncertainty(object):
                         moving_bed_uncertainty = 1
                 else:
                     moving_bed_uncertainty = 3
+            elif meas.observed_no_moving_bed:
+                moving_bed_uncertainty = 1
             else:
                 # No moving bed tests
                 moving_bed_uncertainty = 3

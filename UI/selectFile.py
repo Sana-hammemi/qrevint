@@ -186,13 +186,15 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
             Filename with path to save file.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, group=None, parent=None):
         """Initializes settings and connections.
 
         Parameters
         ----------
         parent
             Identifies parent GUI.
+        group: str
+            group number if split initiation
         """
         super(SaveMeasurementDialog, self).__init__(parent)
         # self.setupUi(self)
@@ -204,7 +206,19 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
         # Create default file name
-        file_name = os.path.join(folder, datetime.datetime.today().strftime('%Y%m%d_%H%M%S_' + version + '_QRev.mat'))
+        if group is None:
+            file_name = \
+                os.path.join(folder,
+                             datetime.datetime.today().
+                             strftime('%Y%m%d_%H%M%S_' + version +
+                                      '_QRev.mat'))
+        else:
+            file_name = \
+                os.path.join(folder,
+                             datetime.datetime.today().
+                             strftime('%Y%m%d_%H%M%S_' + group + '_' +
+                                      version + '_QRev.mat'))
+
         # Get the full names (path + file) of the selected file
         self.full_Name = QtWidgets.QFileDialog.getSaveFileName(
             self, self.tr('Save File'), file_name,

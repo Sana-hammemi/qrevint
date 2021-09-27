@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 import copy as copy
 from Classes.PreMeasurement import PreMeasurement
@@ -68,8 +69,14 @@ class Python2Matlab(object):
 
         self.matlab_dict['mbTests'] = mb_tests
 
+        self.matlab_dict['observed_no_moving_bed'] = meas_mat.observed_no_moving_bed
+
         self.matlab_dict['uncertainty'] = self.listobj2struct([meas_mat.uncertainty], py_2_mat_dict)
         self.matlab_dict['qa'] = self.listobj2struct([meas_mat.qa], py_2_mat_dict)
+        self.matlab_dict['run_oursin'] = meas_mat.run_oursin
+        if meas_mat.oursin is not None:
+            self.matlab_dict['oursin'] = self.listobj2struct([meas_mat.oursin], py_2_mat_dict)
+
 
     @staticmethod
     def listobj2struct(list_in, new_key_dict=None):
@@ -194,13 +201,16 @@ class Python2Matlab(object):
             elif type(obj_dict[key]) is dict:
                 obj_dict[key] = Python2Matlab.change_dict_keys(obj_dict[key], new_key_dict)
 
+            elif type(obj_dict[key]) is pd.DataFrame:
+                obj_dict[key] = obj_dict[key].to_numpy()
+
             # If variable is None rename as necessary and convert None to empty list
             if obj_dict[key] is None:
                 if new_key_dict is not None and key in new_key_dict:
                     new_dict[new_key_dict[key]] = []
                 else:
                     new_dict[key] = []
-            # If varialbe is not None rename as necessary
+            # If variable is not None rename as necessary
             elif new_key_dict is not None and key in new_key_dict:
                 new_dict[new_key_dict[key]] = obj_dict[key]
             else:
@@ -293,7 +303,7 @@ class Python2Matlab(object):
                          'cov_95_user': 'cov95User',
                          'cust_coef': 'custCoef',
                          'd_filter': 'dFilter',
-                         'd_filter_threshold': 'dFilterThreshold',
+                         'd_filter_thresholds': 'dFilterThreshold',
                          'data_extent': 'dataExtent',
                          'data_orig': 'dataOrig',
                          'data_type': 'dataType',
@@ -519,7 +529,7 @@ class Python2Matlab(object):
                          'vtg_velocity_ens_mps': 'vtgVelocityEns_mps',
                          'vtg_velocity_method': 'vtgVelocityMethod',
                          'w_filter': 'wFilter',
-                         'w_filter_threshold': 'wFilterThreshold',
+                         'w_filter_thresholds': 'wFilterThreshold',
                          'w_vel': 'wVel',
                          'water_mode': 'waterMode',
                          'wt_depth_filter': 'wtDepthFilter',
@@ -556,7 +566,7 @@ class Python2Matlab(object):
                          'magvar_idx': 'magvarIdx',
                          'mag_error_idx': 'magErrorIdx',
                          'invalid_transect_left_idx': 'invalidTransLeftIdx',
-                         'invalid_transect_right_idx': 'invalidTransLeftIdx',
+                         'invalid_transect_right_idx': 'invalidTransRightIdx',
                          }
         return py_2_mat_dict
 
@@ -705,6 +715,6 @@ class Python2Matlab(object):
         seconds_day = 86400
         time_correction = 719529.0000000003
         transect.date_time.start_serial_time = (transect.date_time.start_serial_time / seconds_day) \
-                                               + time_correction
+            + time_correction
         transect.date_time.end_serial_time = (transect.date_time.end_serial_time / seconds_day) + time_correction
         return transect

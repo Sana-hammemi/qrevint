@@ -797,7 +797,7 @@ class Pd0TRDI(object):
                                     temp = ''.join([chr(x) for x in f.read(10)])
                                     self.Gps2.utc[i_ens, j100] = \
                                         float(re.findall('^\d+\.\d+|\d+', temp)[0])
-                                except (ValueError, AttributeError):
+                                except (ValueError, AttributeError, IndexError):
                                     self.Gps2.utc[i_ens, j100] = np.nan
 
                                 self.Gps2.lat_deg[i_ens, j100] = np.fromfile(f, np.float64, count=1)[0]
