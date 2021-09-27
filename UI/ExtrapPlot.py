@@ -130,13 +130,6 @@ class ExtrapPlot(object):
             for label in (self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels()):
                 label.set_fontsize(10)
 
-            # Display the use weighted setting on the figure
-            # commented out for now to avoid confusion until more testing can be completed.
-            #if meas.extrap_fit.norm_data[-1].use_weighted:
-            #    self.fig.ax.text(0.1, 0.95, 'Q Weighted = True', fontweight='bold')
-            #else:
-            #    self.fig.ax.text(0.1, 0.95, 'Q Weighted = False', fontweight='bold')
-
             # Scale axes
             if np.any(np.logical_not(np.isnan(extrap_fit.norm_data[idx].unit_normalized))):
                 min_avg = np.nanmin(extrap_fit.norm_data[idx].unit_normalized_25[extrap_fit.norm_data[idx].valid_data])
@@ -299,7 +292,7 @@ class ExtrapPlot(object):
 
         """
 
-        if norm_data.weights is not None:
+        if norm_data.weights is not None and norm_data.weights.size > 0:
             # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
             #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
             cmap = cm.get_cmap('Blues')

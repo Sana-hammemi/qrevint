@@ -94,6 +94,186 @@ class TransectData(object):
         # If the pd0 file has water track data process all of the data
         if pd0_data.Wt is not None:
 
+            # Ensemble times
+            # Compute time for each ensemble in seconds
+            ens_time_sec = pd0_data.Sensor.time[:, 0] * 3600 \
+                           + pd0_data.Sensor.time[:, 1] * 60 \
+                           + pd0_data.Sensor.time[:, 2] \
+                           + pd0_data.Sensor.time[:, 3] / 100
+
+            # Compute the duration of each ensemble in seconds adjusting for lost data
+            ens_delta_time = np.tile([np.nan], ens_time_sec.shape)
+            idx_time = np.where(np.isnan(ens_time_sec) == False)[0]
+            ens_delta_time[idx_time[1:]] = nandiff(ens_time_sec[idx_time])
+
+            # Adjust for transects tha last past midnight
+            idx_24hr = np.where(np.less(ens_delta_time, 0))[0]
+            ens_delta_time[idx_24hr] = 24 * 3600 + ens_delta_time[idx_24hr]
+            ens_delta_time = ens_delta_time.T
+
+            # Start date and time
+            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][0]
+            start_year = int(pd0_data.Sensor.date[idx, 0])
+
+            # StreamPro doesn't include y2k dates
+            if start_year < 100:
+                start_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
+
+            start_month = int(pd0_data.Sensor.date[idx, 1])
+            start_day = int(pd0_data.Sensor.date[idx, 2])
+            start_hour = int(pd0_data.Sensor.time[idx, 0])
+            start_min = int(pd0_data.Sensor.time[idx, 1])
+            start_sec = int(pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100)
+            start_micro = int(
+                ((pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100) - start_sec) * 10 ** 6)
+
+            start_dt = datetime(start_year, start_month, start_day, start_hour, start_min, start_sec, start_micro,
+                                tzinfo=timezone.utc)
+            start_serial_time = start_dt.timestamp()
+            start_date = datetime.strftime(datetime.utcfromtimestamp(start_serial_time), '%m/%d/%Y')
+
+            # End data and time
+            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][-1]
+            end_year = int(pd0_data.Sensor.date[idx, 0])
+            # StreamPro does not include Y@K dates
+            if end_year < 100:
+                end_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
+
+            end_month = int(pd0_data.Sensor.date[idx, 1])
+            end_day = int(pd0_data.Sensor.date[idx, 2])
+            end_hour = int(pd0_data.Sensor.time[idx, 0])
+            end_min = int(pd0_data.Sensor.time[idx, 1])
+            end_sec = int(pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100)
+            end_micro = int(((pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100) - end_sec) * 10 ** 6)
+
+            end_dt = datetime(end_year, end_month, end_day, end_hour, end_min, end_sec, end_micro, tzinfo=timezone.utc)
+            end_serial_time = end_dt.timestamp()
+
+            # Create date/time object
+            self.date_time = DateTime()
+            self.date_time.populate_data(date_in=start_date,
+                                         start_in=start_serial_time,
+                                         end_in=end_serial_time,
+                                         ens_dur_in=ens_delta_time)
+
+            # Transect checked for use in discharge computation
+            self.checked = mmt_transect.Checked
+
+            # Create class for adcp information
+            self.adcp = InstrumentData()
+            self.adcp.populate_data(manufacturer='TRDI', raw_data=pd0_data, mmt_transect=mmt_transect, mmt=mmt)
+
+            # Create valid frequency time series
+            freq_ts = self.valid_frequencies(pd0_data.Inst.freq)
+
+            # Initialize boat vel
+            self.boat_vel = BoatStructure()
+            # Apply 3-beam setting from mmt file
+            if mmt_config['Proc_Use_3_Beam_BT'] < 0.5:
+                min_beams = 4
+            else:
+                min_beams = 3
+            self.boat_vel.add_boat_object(source='TRDI',
+                                          vel_in=pd0_data.Bt.vel_mps,
+                                          freq_in=freq_ts,
+                                          coord_sys_in=pd0_data.Cfg.coord_sys[0],
+                                          nav_ref_in='BT',
+                                          min_beams=min_beams,
+                                          bottom_mode=pd0_data.Cfg.bm[0],
+                                          corr_in = pd0_data.Bt.corr,
+                                          rssi_in = pd0_data.Bt.rssi)
+
+            self.boat_vel.set_nav_reference('BT')
+
+            # Compute velocities from GPS Data
+            # ------------------------------------
+            # Raw Data
+            raw_gga_utc = pd0_data.Gps2.utc
+            raw_gga_lat = pd0_data.Gps2.lat_deg
+            raw_gga_lon = pd0_data.Gps2.lon_deg
+
+            # Determine correct sign for latitude
+            for n, lat_ref in enumerate(pd0_data.Gps2.lat_ref):
+                idx = np.nonzero(np.array(lat_ref) == 'S')
+                raw_gga_lat[n, idx] = raw_gga_lat[n, idx] * -1
+
+            # Determine correct sign for longitude
+            for n, lon_ref in enumerate(pd0_data.Gps2.lon_ref):
+                idx = np.nonzero(np.array(lon_ref) == 'W')
+                raw_gga_lon[n, idx] = raw_gga_lon[n, idx] * -1
+
+            # Assign data to local variables
+            raw_gga_alt = pd0_data.Gps2.alt
+            raw_gga_diff = pd0_data.Gps2.corr_qual
+            raw_gga_hdop = pd0_data.Gps2.hdop
+            raw_gga_num_sats = pd0_data.Gps2.num_sats
+            raw_vtg_course = pd0_data.Gps2.course_true
+            raw_vtg_speed = pd0_data.Gps2.speed_kph * 0.2777778
+            raw_vtg_delta_time = pd0_data.Gps2.vtg_delta_time
+            raw_vtg_mode_indicator = pd0_data.Gps2.mode_indicator
+            raw_gga_delta_time = pd0_data.Gps2.gga_delta_time
+
+            # RSL provided ensemble values, not supported for TRDI data
+            ext_gga_utc = []
+            ext_gga_lat = []
+            ext_gga_lon = []
+            ext_gga_alt = []
+            ext_gga_diff = []
+            ext_gga_hdop = []
+            ext_gga_num_sats = []
+            ext_vtg_course = []
+            ext_vtg_speed = []
+
+            # QRev methods GPS processing methods
+            gga_p_method = 'Mindt'
+            gga_v_method = 'Mindt'
+            vtg_method = 'Mindt'
+
+            # If valid gps data exist, process the data
+            if (np.nansum(np.nansum(np.abs(raw_gga_lat))) > 0) \
+                    or (np.nansum(np.nansum(np.abs(raw_vtg_speed))) > 0):
+
+                # Process raw GPS data
+                self.gps = GPSData()
+                self.gps.populate_data(raw_gga_utc=raw_gga_utc,
+                                       raw_gga_lat=raw_gga_lat,
+                                       raw_gga_lon=raw_gga_lon,
+                                       raw_gga_alt=raw_gga_alt,
+                                       raw_gga_diff=raw_gga_diff,
+                                       raw_gga_hdop=raw_gga_hdop,
+                                       raw_gga_num_sats=raw_gga_num_sats,
+                                       raw_gga_delta_time=raw_gga_delta_time,
+                                       raw_vtg_course=raw_vtg_course,
+                                       raw_vtg_speed=raw_vtg_speed,
+                                       raw_vtg_delta_time=raw_vtg_delta_time,
+                                       raw_vtg_mode_indicator=raw_vtg_mode_indicator,
+                                       ext_gga_utc=ext_gga_utc,
+                                       ext_gga_lat=ext_gga_lat,
+                                       ext_gga_lon=ext_gga_lon,
+                                       ext_gga_alt=ext_gga_alt,
+                                       ext_gga_diff=ext_gga_diff,
+                                       ext_gga_hdop=ext_gga_hdop,
+                                       ext_gga_num_sats=ext_gga_num_sats,
+                                       ext_vtg_course=ext_vtg_course,
+                                       ext_vtg_speed=ext_vtg_speed,
+                                       gga_p_method=gga_p_method,
+                                       gga_v_method=gga_v_method,
+                                       vtg_method=vtg_method)
+
+                # If valid gga data exists create gga boat velocity object
+                if np.nansum(np.nansum(np.abs(raw_gga_lat))) > 0:
+                    self.boat_vel.add_boat_object(source='TRDI',
+                                                  vel_in=self.gps.gga_velocity_ens_mps,
+                                                  coord_sys_in='Earth',
+                                                  nav_ref_in='GGA')
+
+                # If valid vtg data exist create vtg boat velocity object
+                if np.nansum(np.nansum(np.abs(raw_vtg_speed))) > 0:
+                    self.boat_vel.add_boat_object(source='TRDI',
+                                                  vel_in=self.gps.vtg_velocity_ens_mps,
+                                                  coord_sys_in='Earth',
+                                                  nav_ref_in='VTG')
+
             # Get and compute ensemble beam depths
             temp_depth_bt = np.array(pd0_data.Bt.depth_m)
 
@@ -114,7 +294,7 @@ class TransectData(object):
             self.depths = DepthStructure()
             self.depths.add_depth_object(depth_in=temp_depth_bt,
                                          source_in='BT',
-                                         freq_in=pd0_data.Inst.freq,
+                                         freq_in=freq_ts,
                                          draft_in=mmt_config['Offsets_Transducer_Depth'],
                                          cell_depth_in=cell_depth_m,
                                          cell_size_in=cell_size_all_m)
@@ -142,7 +322,7 @@ class TransectData(object):
                 # Create depth data object for vertical beam
                 self.depths.add_depth_object(depth_in=temp_depth_vb,
                                              source_in='VB',
-                                             freq_in=pd0_data.Inst.freq,
+                                             freq_in=freq_ts,
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
@@ -178,7 +358,7 @@ class TransectData(object):
                 
                 self.depths.add_depth_object(depth_in=ds_depth,
                                              source_in='DS',
-                                             freq_in=pd0_data.Inst.freq,
+                                             freq_in=np.tile(np.nan,pd0_data.Inst.freq.shape),
                                              draft_in=mmt_config['Offsets_Transducer_Depth'],
                                              cell_depth_in=cell_depth_m,
                                              cell_size_in=cell_size_all_m)
@@ -239,7 +419,9 @@ class TransectData(object):
                 
             # Create water_data object
             # ------------------------
-            
+
+            ensemble_ping_type = self.trdi_ping_type(pd0_data)
+
             # Check for RiverRay and RiverPro data
             firmware = str(pd0_data.Inst.firm_ver[0])
             excluded_dist = 0
@@ -250,7 +432,7 @@ class TransectData(object):
                 # Process water velocities for RiverRay and RiverPro
                 self.w_vel = WaterData()
                 self.w_vel.populate_data(vel_in=pd0_data.Wt.vel_mps,
-                                         freq_in=pd0_data.Inst.freq.T,
+                                         freq_in=freq_ts,
                                          coord_sys_in=pd0_data.Cfg.coord_sys,
                                          nav_ref_in='None',
                                          rssi_in=pd0_data.Wt.rssi,
@@ -268,13 +450,14 @@ class TransectData(object):
                                          surface_vel_in=pd0_data.Surface.vel_mps,
                                          surface_rssi_in=pd0_data.Surface.rssi,
                                          surface_corr_in=pd0_data.Surface.corr,
-                                         surface_num_cells_in=pd0_data.Surface.no_cells)
+                                         surface_num_cells_in=pd0_data.Surface.no_cells,
+                                         ping_type=ensemble_ping_type)
                 
             else:
                 # Process water velocities for non-RiverRay ADCPs
                 self.w_vel = WaterData()
                 self.w_vel.populate_data(vel_in=pd0_data.Wt.vel_mps,
-                                         freq_in=pd0_data.Inst.freq.T,
+                                         freq_in=freq_ts,
                                          coord_sys_in=pd0_data.Cfg.coord_sys[0],
                                          nav_ref_in='None',
                                          rssi_in=pd0_data.Wt.rssi,
@@ -288,113 +471,10 @@ class TransectData(object):
                                          sl_cutoff_m=sl_cutoff_m,
                                          wm_in=pd0_data.Cfg.wm[0],
                                          blank_in=pd0_data.Cfg.wf_cm[0] / 100,
-                                         corr_in=pd0_data.Wt.corr)
+                                         corr_in=pd0_data.Wt.corr,
+                                         ping_type=ensemble_ping_type)
                 
-            # Initialize boat vel
-            self.boat_vel = BoatStructure()
-            # Apply 3-beam setting from mmt file
-            if mmt_config['Proc_Use_3_Beam_BT'] < 0.5:
-                min_beams = 4
-            else:
-                min_beams = 3
-            self.boat_vel.add_boat_object(source='TRDI',
-                                          vel_in=pd0_data.Bt.vel_mps,
-                                          freq_in=pd0_data.Inst.freq.T,
-                                          coord_sys_in=pd0_data.Cfg.coord_sys[0],
-                                          nav_ref_in='BT',
-                                          min_beams=min_beams,
-                                          bottom_mode=pd0_data.Cfg.bm[0])
-            
-            self.boat_vel.set_nav_reference('BT')
-            
-            # Compute velocities from GPS Data
-            # ------------------------------------
-            # Raw Data
-            raw_gga_utc = pd0_data.Gps2.utc
-            raw_gga_lat = pd0_data.Gps2.lat_deg
-            raw_gga_lon = pd0_data.Gps2.lon_deg
 
-            # Determine correct sign for latitude
-            for n, lat_ref in enumerate(pd0_data.Gps2.lat_ref):
-                idx = np.nonzero(np.array(lat_ref) == 'S')
-                raw_gga_lat[n, idx] = raw_gga_lat[n, idx] * -1
-
-            # Determine correct sign for longitude
-            for n, lon_ref in enumerate(pd0_data.Gps2.lon_ref):
-                idx = np.nonzero(np.array(lon_ref) == 'W')
-                raw_gga_lon[n, idx] = raw_gga_lon[n, idx] * -1
-
-            # Assign data to local variables
-            raw_gga_alt = pd0_data.Gps2.alt
-            raw_gga_diff = pd0_data.Gps2.corr_qual
-            raw_gga_hdop = pd0_data.Gps2.hdop
-            raw_gga_num_sats = pd0_data.Gps2.num_sats
-            raw_vtg_course = pd0_data.Gps2.course_true
-            raw_vtg_speed = pd0_data.Gps2.speed_kph * 0.2777778
-            raw_vtg_delta_time = pd0_data.Gps2.vtg_delta_time
-            raw_vtg_mode_indicator = pd0_data.Gps2.mode_indicator
-            raw_gga_delta_time = pd0_data.Gps2.gga_delta_time
-            
-            # RSL provided ensemble values, not supported for TRDI data
-            ext_gga_utc = []
-            ext_gga_lat = []
-            ext_gga_lon = []
-            ext_gga_alt = []
-            ext_gga_diff = []
-            ext_gga_hdop = []
-            ext_gga_num_sats = []
-            ext_vtg_course = []
-            ext_vtg_speed = []
-             
-            # QRev methods GPS processing methods
-            gga_p_method = 'Mindt'
-            gga_v_method = 'Mindt'
-            vtg_method = 'Mindt'
-            
-            # If valid gps data exist, process the data
-            if (np.nansum(np.nansum(np.abs(raw_gga_lat))) > 0) \
-                    or (np.nansum(np.nansum(np.abs(raw_vtg_speed))) > 0):
-                
-                # Process raw GPS data
-                self.gps = GPSData()
-                self.gps.populate_data(raw_gga_utc=raw_gga_utc,
-                                       raw_gga_lat=raw_gga_lat,
-                                       raw_gga_lon=raw_gga_lon,
-                                       raw_gga_alt=raw_gga_alt,
-                                       raw_gga_diff=raw_gga_diff,
-                                       raw_gga_hdop=raw_gga_hdop,
-                                       raw_gga_num_sats=raw_gga_num_sats,
-                                       raw_gga_delta_time=raw_gga_delta_time,
-                                       raw_vtg_course=raw_vtg_course,
-                                       raw_vtg_speed=raw_vtg_speed,
-                                       raw_vtg_delta_time=raw_vtg_delta_time,
-                                       raw_vtg_mode_indicator=raw_vtg_mode_indicator,
-                                       ext_gga_utc=ext_gga_utc,
-                                       ext_gga_lat=ext_gga_lat,
-                                       ext_gga_lon=ext_gga_lon,
-                                       ext_gga_alt=ext_gga_alt,
-                                       ext_gga_diff=ext_gga_diff,
-                                       ext_gga_hdop=ext_gga_hdop,
-                                       ext_gga_num_sats=ext_gga_num_sats,
-                                       ext_vtg_course=ext_vtg_course,
-                                       ext_vtg_speed=ext_vtg_speed,
-                                       gga_p_method=gga_p_method,
-                                       gga_v_method=gga_v_method,
-                                       vtg_method=vtg_method)
-                
-                # If valid gga data exists create gga boat velocity object
-                if np.nansum(np.nansum(np.abs(raw_gga_lat))) > 0:
-                    self.boat_vel.add_boat_object(source='TRDI',
-                                                  vel_in=self.gps.gga_velocity_ens_mps,
-                                                  coord_sys_in='Earth',
-                                                  nav_ref_in='GGA')
-
-                # If valid vtg data exist create vtg boat velocity object
-                if np.nansum(np.nansum(np.abs(raw_vtg_speed))) > 0:
-                    self.boat_vel.add_boat_object(source='TRDI',
-                                                  vel_in=self.gps.vtg_velocity_ens_mps,
-                                                  coord_sys_in='Earth',
-                                                  nav_ref_in='VTG')
 
             # Create Edges Object
             self.edges = Edges()
@@ -606,74 +686,30 @@ class TransectData(object):
             
             # The raw data are referenced to the internal SOS
             self.sensors.speed_of_sound_mps.selected = 'internal'
-            
-            # Ensemble times
-            # Compute time for each ensemble in seconds
-            ens_time_sec = pd0_data.Sensor.time[:, 0] * 3600 \
-                + pd0_data.Sensor.time[:, 1] * 60 \
-                + pd0_data.Sensor.time[:, 2] \
-                + pd0_data.Sensor.time[:, 3] / 100
-            
-            # Compute the duration of each ensemble in seconds adjusting for lost data
-            ens_delta_time = np.tile([np.nan], ens_time_sec.shape)
-            idx_time = np.where(np.isnan(ens_time_sec) == False)[0]
-            ens_delta_time[idx_time[1:]] = nandiff(ens_time_sec[idx_time])
-            
-            # Adjust for transects tha last past midnight
-            idx_24hr = np.where(np.less(ens_delta_time, 0))[0]
-            ens_delta_time[idx_24hr] = 24 * 3600 + ens_delta_time[idx_24hr]
-            ens_delta_time = ens_delta_time.T
-            
-            # Start date and time
-            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][0]
-            start_year = int(pd0_data.Sensor.date[idx, 0])
 
-            # StreamPro doesn't include y2k dates
-            if start_year < 100:
-                start_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
-                
-            start_month = int(pd0_data.Sensor.date[idx, 1])
-            start_day = int(pd0_data.Sensor.date[idx, 2])
-            start_hour = int(pd0_data.Sensor.time[idx, 0])
-            start_min = int(pd0_data.Sensor.time[idx, 1])
-            start_sec = int(pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100)
-            start_micro = int(((pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100) - start_sec) * 10**6)
-            
-            start_dt = datetime(start_year, start_month, start_day, start_hour, start_min, start_sec, start_micro,
-                                tzinfo=timezone.utc)
-            start_serial_time = start_dt.timestamp()
-            start_date = datetime.strftime(datetime.utcfromtimestamp(start_serial_time), '%m/%d/%Y')
-            
-            # End data and time
-            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][-1]
-            end_year = int(pd0_data.Sensor.date[idx, 0])
-            # StreamPro does not include Y@K dates
-            if end_year < 100:
-                end_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
-                
-            end_month = int(pd0_data.Sensor.date[idx, 1])
-            end_day = int(pd0_data.Sensor.date[idx, 2])
-            end_hour = int(pd0_data.Sensor.time[idx, 0])
-            end_min = int(pd0_data.Sensor.time[idx, 1])
-            end_sec = int(pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100)
-            end_micro = int(((pd0_data.Sensor.time[idx, 2] + pd0_data.Sensor.time[idx, 3] / 100) - end_sec) * 10**6)
-            
-            end_dt = datetime(end_year, end_month, end_day, end_hour, end_min, end_sec, end_micro, tzinfo=timezone.utc)
-            end_serial_time = end_dt.timestamp()
-            
-            # Create date/time object
-            self.date_time = DateTime()
-            self.date_time.populate_data(date_in=start_date,
-                                         start_in=start_serial_time,
-                                         end_in=end_serial_time,
-                                         ens_dur_in=ens_delta_time)
-            
-            # Transect checked for use in discharge computation
-            self.checked = mmt_transect.Checked
+    @staticmethod
+    def trdi_ping_type(pd0_data):
+        """Determines if the ping is coherent on incoherent based on the lag near bottom. A coherent ping will have
+        the lag near the bottom.
 
-            # Create class for adcp information
-            self.adcp = InstrumentData()
-            self.adcp.populate_data(manufacturer='TRDI', raw_data=pd0_data, mmt_transect=mmt_transect, mmt=mmt)
+        Parameters
+        ----------
+        pd0_data: Pd0TRDI
+            Raw data from pd0 file.
+
+        Returns
+        -------
+        ping_type = np.array(str)
+            Ping_type for each ensemble, C - coherent, I - incoherent
+        """
+        ping_type = np.array([])
+        if hasattr(pd0_data.Cfg, 'lag_near_bottom'):
+            ping_temp = pd0_data.Cfg.lag_near_bottom > 0
+            ping_type = np.tile(['U'], ping_temp.shape)
+            ping_type[ping_temp == 0] = 'I'
+            ping_type[ping_temp == 1] = 'C'
+
+        return ping_type
 
     def sontek(self, rsdata, file_name):
         """Reads Matlab file produced by RiverSurveyor Live and populates the transect instance variables.
@@ -696,79 +732,28 @@ class TransectData(object):
         else:
             self.adcp.populate_data(manufacturer='SonTek', raw_data=rsdata)
 
-        # Depth
-        # -----
+        # Ensemble times
+        ensemble_delta_time = np.append([0], np.diff(rsdata.System.Time))
+        # TODO potentially add popup message when there are missing ensembles. Matlab did that.
 
-        # Initialize depth data structure
-        self.depths = DepthStructure()
+        # idx_missing = np.where(ensemble_delta_time > 1.5)
+        # if len(idx_missing[0]) > 0:
+        #     number_missing = np.sum(ensemble_delta_time[idx_missing]) - len(idx_missing)
+        #     error_str = self.file_name + ' is missing ' + str(number_missing) + ' samples'
 
-        # Determine array rows and cols
-        max_cells = rsdata.WaterTrack.Velocity.shape[0]
-        num_ens = rsdata.WaterTrack.Velocity.shape[2]
+        start_serial_time = rsdata.System.Time[0] + ((30 * 365) + 7) * 24 * 60 * 60
+        end_serial_time = rsdata.System.Time[-1] + ((30 * 365) + 7) * 24 * 60 * 60
+        meas_date = datetime.strftime(datetime.fromtimestamp(start_serial_time), '%m/%d/%Y')
+        self.date_time = DateTime()
+        self.date_time.populate_data(date_in=meas_date,
+                                     start_in=start_serial_time,
+                                     end_in=end_serial_time,
+                                     ens_dur_in=ensemble_delta_time)
 
-        # Compute cell sizes and depths
-        cell_size = rsdata.System.Cell_Size.reshape(1, num_ens)
-        cell_size_all = np.tile(cell_size, (max_cells, 1))
-        top_of_cells = rsdata.System.Cell_Start.reshape(1, num_ens)
-        cell_depth = ((np.tile(np.arange(1, max_cells+1, 1).reshape(max_cells, 1), (1, num_ens)) - 0.5)
-                      * cell_size_all) + np.tile(top_of_cells, (max_cells, 1))
+        # Transect checked for use in discharge computations
+        self.checked = True
 
-        # Prepare bottom track depth variable
-        depth = rsdata.BottomTrack.BT_Beam_Depth.T
-        depth[depth == 0] = np.nan
-
-        # Create depth object for bottom track beams
-        self.depths.add_depth_object(depth_in=depth,
-                                     source_in='BT',
-                                     freq_in=rsdata.BottomTrack.BT_Frequency,
-                                     draft_in=rsdata.Setup.sensorDepth,
-                                     cell_depth_in=cell_depth,
-                                     cell_size_in=cell_size_all)
-
-        # Prepare vertical beam depth variable
-        depth_vb = np.tile(np.nan, (1, cell_depth.shape[1]))
-        depth_vb[0, :] = rsdata.BottomTrack.VB_Depth
-        depth_vb[depth_vb == 0] = np.nan
-
-        # Create depth object for vertical beam
-        self.depths.add_depth_object(depth_in=depth_vb,
-                                     source_in='VB',
-                                     freq_in=np.array([rsdata.Transformation_Matrices.Frequency[1]] * depth.shape[-1]),
-                                     draft_in=rsdata.Setup.sensorDepth,
-                                     cell_depth_in=cell_depth,
-                                     cell_size_in=cell_size_all)
-
-        # Set depth reference
-        if rsdata.Setup.depthReference < 0.5:
-            self.depths.selected = 'vb_depths'
-        else:
-            self.depths.selected = 'bt_depths'
-
-        # Water Velocity
-        # --------------
-
-        # Rearrange arrays for consistency with WaterData class
-        vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
-        snr = np.swapaxes(rsdata.System.SNR, 1, 0)
-        if hasattr(rsdata.WaterTrack, 'Correlation'):
-            corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
-        else:
-            corr = np.array([])
-
-        # Correct SonTek difference velocity for error in earlier transformation matrices.
-        if abs(rsdata.Transformation_Matrices.Matrix[3, 0, 0]) < 0.5:
-            vel[3, :, :] = vel[3, :, :] * 2
-
-        # Apply TRDI scaling to SonTek difference velocity to convert to a TRDI compatible error velocity
-        vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
-
-        # Convert velocity reference from what was used in RiverSurveyor Live to None by adding the boat velocity
-        # to the reported water velocity
-        boat_vel = np.swapaxes(rsdata.Summary.Boat_Vel, 1, 0)
-        vel[0, :, :] = vel[0, :, :] + boat_vel[0, :]
-        vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
-
-        ref_water = 'None'
+        # Coordinate system
         ref_coord = None
 
         # The initial coordinate system must be set to earth for early versions of RiverSurveyor firmware.
@@ -784,65 +769,24 @@ class TransectData(object):
         elif rsdata.Setup.coordinateSystem == 2:
             ref_coord = 'Earth'
 
-        # Compute side lobe cutoff using Transmit Length information if availalbe, if not it is assumed to be equal
-        # to 1/2 depth_cell_size_m. The percent method is use for the side lobe cutoff computation.
-        sl_cutoff_percent = rsdata.Setup.extrapolation_dDiscardPercent
-        sl_cutoff_number = rsdata.Setup.extrapolation_nDiscardCells
-        if hasattr(rsdata.Summary, 'Transmit_Length'):
-            sl_lag_effect_m = (rsdata.Summary.Transmit_Length
-                               + self.depths.bt_depths.depth_cell_size_m[0, :]) / 2.0
-        else:
-            sl_lag_effect_m = np.copy(self.depths.bt_depths.depth_cell_size_m[0, :])
-        sl_cutoff_type = 'Percent'
-        cells_above_sl, sl_cutoff_m = TransectData.side_lobe_cutoff(depths=self.depths.bt_depths.depth_orig_m,
-                                                                    draft=self.depths.bt_depths.draft_orig_m,
-                                                                    cell_depth=self.depths.bt_depths.depth_cell_depth_m,
-                                                                    sl_lag_effect=sl_lag_effect_m,
-                                                                    slc_type=sl_cutoff_type,
-                                                                    value=1 - sl_cutoff_percent / 100)
-        # Determine water mode
-        if len(corr) > 0:
-            corr_nan = np.isnan(corr)
-            number_of_nan = np.count_nonzero(corr_nan)
-            if number_of_nan == 0:
-                wm = 'HD'
-            elif corr_nan.size == number_of_nan:
-                wm = 'IC'
-            else:
-                wm = 'Variable'
-        else:
-            wm = 'Unknown'
-
-        # Determine excluded distance (Similar to SonTek's screening distance)
-        excluded_distance = rsdata.Setup.screeningDistance - rsdata.Setup.sensorDepth
-        if excluded_distance < 0:
-            excluded_distance = 0
-
-        # Create water velocity object
-        self.w_vel = WaterData()
-        self.w_vel.populate_data(vel_in=vel,
-                                 freq_in=rsdata.WaterTrack.WT_Frequency,
-                                 coord_sys_in=ref_coord,
-                                 nav_ref_in=ref_water,
-                                 rssi_in=snr,
-                                 rssi_units_in='SNR',
-                                 excluded_dist_in=excluded_distance,
-                                 cells_above_sl_in=cells_above_sl,
-                                 sl_cutoff_per_in=sl_cutoff_percent,
-                                 sl_cutoff_num_in=sl_cutoff_number,
-                                 sl_cutoff_type_in=sl_cutoff_type,
-                                 sl_lag_effect_in=sl_lag_effect_m,
-                                 sl_cutoff_m=sl_cutoff_m,
-                                 wm_in=wm,
-                                 blank_in=excluded_distance,
-                                 corr_in=corr)
-
         # Bottom Track
         # ------------
+
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
+            freq = rsdata.BottomTrack.BT_Frequency / 1000
+        elif np.nanmean(rsdata.BottomTrack.BT_Frequency) < 100:
+            freq = rsdata.BottomTrack.BT_Frequency * 1000
+        else:
+            freq = rsdata.BottomTrack.BT_Frequency
+
+        # Create valid frequency time series
+        freq_ts = self.valid_frequencies(freq)
+
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(source='SonTek',
                                       vel_in=np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0),
-                                      freq_in=rsdata.BottomTrack.BT_Frequency,
+                                      freq_in=freq_ts,
                                       coord_sys_in=ref_coord,
                                       nav_ref_in='BT')
 
@@ -928,6 +872,159 @@ class TransectData(object):
         elif rsdata.Setup.trackReference == 3:
             ref = 'VTG'
         self.boat_vel.set_nav_reference(ref)
+
+        # Depth
+        # -----
+
+        # Initialize depth data structure
+        self.depths = DepthStructure()
+
+        # Determine array rows and cols
+        max_cells = rsdata.WaterTrack.Velocity.shape[0]
+        num_ens = rsdata.WaterTrack.Velocity.shape[2]
+
+        # Compute cell sizes and depths
+        cell_size = rsdata.System.Cell_Size.reshape(1, num_ens)
+        cell_size_all = np.tile(cell_size, (max_cells, 1))
+        top_of_cells = rsdata.System.Cell_Start.reshape(1, num_ens)
+        cell_depth = ((np.tile(np.arange(1, max_cells+1, 1).reshape(max_cells, 1), (1, num_ens)) - 0.5)
+                      * cell_size_all) + np.tile(top_of_cells, (max_cells, 1))
+
+        # Prepare bottom track depth variable
+        depth = rsdata.BottomTrack.BT_Beam_Depth.T
+        depth[depth == 0] = np.nan
+
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
+            freq = rsdata.BottomTrack.BT_Frequency / 1000
+        else:
+            freq = rsdata.BottomTrack.BT_Frequency
+
+        # Create depth object for bottom track beams
+        self.depths.add_depth_object(depth_in=depth,
+                                     source_in='BT',
+                                     freq_in=freq_ts,
+                                     draft_in=rsdata.Setup.sensorDepth,
+                                     cell_depth_in=cell_depth,
+                                     cell_size_in=cell_size_all)
+
+        # Prepare vertical beam depth variable
+        depth_vb = np.tile(np.nan, (1, cell_depth.shape[1]))
+        depth_vb[0, :] = rsdata.BottomTrack.VB_Depth
+        depth_vb[depth_vb == 0] = np.nan
+
+        # Create depth object for vertical beam
+        self.depths.add_depth_object(depth_in=depth_vb,
+                                     source_in='VB',
+                                     freq_in=np.array([rsdata.Transformation_Matrices.Frequency[1]] * depth.shape[-1]),
+                                     draft_in=rsdata.Setup.sensorDepth,
+                                     cell_depth_in=cell_depth,
+                                     cell_size_in=cell_size_all)
+
+        # Set depth reference
+        if rsdata.Setup.depthReference < 0.5:
+            self.depths.selected = 'vb_depths'
+        else:
+            self.depths.selected = 'bt_depths'
+
+        # Water Velocity
+        # --------------
+
+        # Convert frequency to kHz
+        if np.nanmean(rsdata.WaterTrack.WT_Frequency) > 10000:
+            freq = rsdata.WaterTrack.WT_Frequency / 1000
+        else:
+            freq = rsdata.WaterTrack.WT_Frequency
+
+        # Create valid frequency time series
+        freq_ts = self.valid_frequencies(freq)
+
+        # Rearrange arrays for consistency with WaterData class
+        vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
+        snr = np.swapaxes(rsdata.System.SNR, 1, 0)
+        if hasattr(rsdata.WaterTrack, 'Correlation'):
+            corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
+        else:
+            corr = np.array([])
+
+        # Correct SonTek difference velocity for error in earlier transformation matrices.
+        if abs(rsdata.Transformation_Matrices.Matrix[3, 0, 0]) < 0.5:
+            vel[3, :, :] = vel[3, :, :] * 2
+
+        # Apply TRDI scaling to SonTek difference velocity to convert to a TRDI compatible error velocity
+        vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
+
+        # Convert velocity reference from what was used in RiverSurveyor Live to None by adding the boat velocity
+        # to the reported water velocity
+        boat_vel = np.swapaxes(rsdata.Summary.Boat_Vel, 1, 0)
+        vel[0, :, :] = vel[0, :, :] + boat_vel[0, :]
+        vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
+
+        ref_water = 'None'
+
+        # Compute side lobe cutoff using Transmit Length information if availalbe, if not it is assumed to be equal
+        # to 1/2 depth_cell_size_m. The percent method is use for the side lobe cutoff computation.
+        sl_cutoff_percent = rsdata.Setup.extrapolation_dDiscardPercent
+        sl_cutoff_number = rsdata.Setup.extrapolation_nDiscardCells
+        if hasattr(rsdata.Summary, 'Transmit_Length'):
+            sl_lag_effect_m = (rsdata.Summary.Transmit_Length
+                               + self.depths.bt_depths.depth_cell_size_m[0, :]) / 2.0
+        else:
+            sl_lag_effect_m = np.copy(self.depths.bt_depths.depth_cell_size_m[0, :])
+        sl_cutoff_type = 'Percent'
+        cells_above_sl, sl_cutoff_m = TransectData.side_lobe_cutoff(depths=self.depths.bt_depths.depth_orig_m,
+                                                                    draft=self.depths.bt_depths.draft_orig_m,
+                                                                    cell_depth=self.depths.bt_depths.depth_cell_depth_m,
+                                                                    sl_lag_effect=sl_lag_effect_m,
+                                                                    slc_type=sl_cutoff_type,
+                                                                    value=1 - sl_cutoff_percent / 100)
+        # Determine water mode
+        if len(corr) > 0:
+            corr_nan = np.isnan(corr)
+            number_of_nan = np.count_nonzero(corr_nan)
+            if number_of_nan == 0:
+                wm = 'HD'
+            elif corr_nan.size == number_of_nan:
+                wm = 'IC'
+            else:
+                wm = 'Variable'
+        else:
+            wm = 'Unknown'
+
+        # Determine excluded distance (Similar to SonTek's screening distance)
+        excluded_distance = rsdata.Setup.screeningDistance - rsdata.Setup.sensorDepth
+        if excluded_distance < 0:
+            excluded_distance = 0
+
+        if hasattr(rsdata.WaterTrack, 'Vel_Expected_StdDev'):
+            # RS5
+            ping_type = self.sontek_ping_type(corr=corr, freq=rsdata.WaterTrack.WT_Frequency,
+                                              expected_std=rsdata.WaterTrack.Vel_Expected_StdDev)
+        else:
+            # M9 or S5
+            ping_type = self.sontek_ping_type(corr=corr, freq=rsdata.WaterTrack.WT_Frequency)
+
+        # Create water velocity object
+        self.w_vel = WaterData()
+        self.w_vel.populate_data(vel_in=vel,
+                                 freq_in=freq_ts,
+                                 coord_sys_in=ref_coord,
+                                 nav_ref_in=ref_water,
+                                 rssi_in=snr,
+                                 rssi_units_in='SNR',
+                                 excluded_dist_in=excluded_distance,
+                                 cells_above_sl_in=cells_above_sl,
+                                 sl_cutoff_per_in=sl_cutoff_percent,
+                                 sl_cutoff_num_in=sl_cutoff_number,
+                                 sl_cutoff_type_in=sl_cutoff_type,
+                                 sl_lag_effect_in=sl_lag_effect_m,
+                                 sl_cutoff_m=sl_cutoff_m,
+                                 wm_in=wm,
+                                 blank_in=excluded_distance,
+                                 corr_in=corr,
+                                 ping_type=ping_type)
+
+
 
         # Edges
         # -----
@@ -1096,29 +1193,63 @@ class TransectData(object):
         # Set selected salinity
         self.sensors.speed_of_sound_mps.selected = 'internal'
 
-        # Ensemble times
-        ensemble_delta_time = np.append([0], np.diff(rsdata.System.Time))
-        # TODO potentially add popup message when there are missing ensembles. Matlab did that.
-
-        # idx_missing = np.where(ensemble_delta_time > 1.5)
-        # if len(idx_missing[0]) > 0:
-        #     number_missing = np.sum(ensemble_delta_time[idx_missing]) - len(idx_missing)
-        #     error_str = self.file_name + ' is missing ' + str(number_missing) + ' samples'
-
-        start_serial_time = rsdata.System.Time[0] + ((30 * 365) + 7) * 24 * 60 * 60
-        end_serial_time = rsdata.System.Time[-1] + ((30 * 365) + 7) * 24 * 60 * 60
-        meas_date = datetime.strftime(datetime.fromtimestamp(start_serial_time), '%m/%d/%Y')
-        self.date_time = DateTime()
-        self.date_time.populate_data(date_in=meas_date,
-                                     start_in=start_serial_time,
-                                     end_in=end_serial_time,
-                                     ens_dur_in=ensemble_delta_time)
-
-        # Transect checked for use in discharge computations
-        self.checked = True
 
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
+
+    @staticmethod
+    def sontek_ping_type(corr, freq, expected_std=None):
+        """Determines ping type based on the fact that HD has correlation but incoherent does not.
+
+        Parameters
+        ----------
+        corr: np.ndarray(int)
+            Water track correlation
+        freq:
+            Frequency of ping in Hz
+
+        Returns
+        -------
+        ping_type: np.array(int)
+            Ping_type for each ensemble, 3 - 1 MHz Incoherent, 4 - 1 MHz HD, 5 - 3 MHz Incoherent, 6 - 3 MHz HD
+        """
+        # Determine ping type
+
+        if expected_std is None:
+            # M9 or S5
+            if corr.size > 0:
+                corr_exists = np.nansum(np.nansum(corr, axis=1), axis=0)
+                coherent = corr_exists > 0
+            else:
+                coherent = np.tile([False], freq.size)
+            ping_type = []
+            for n in range(len(coherent)):
+                if n:
+                    if freq[n] == 3000:
+                        ping_type.append('3C')
+                    else:
+                        ping_type.append('1C')
+                else:
+                    if freq[n] == 3000:
+                        ping_type.append('3I')
+                    else:
+                        ping_type.append('1I')
+            ping_type = np.array(ping_type)
+        else:
+            # RS5
+            ves = []
+            for n in range(4):
+                ves.append(np.nanmean(expected_std[:, n, :], axis=0))
+
+            ves = np.array(ves)
+
+            ves_avg = np.nanmean(ves, axis=0)
+
+            ping_type = np.tile(['PC/BB'], ves_avg.size)
+            ping_type[ves_avg < 0.01] = 'PC'
+            ping_type[ves_avg > 0.025] = 'BB'
+
+        return ping_type
 
     @staticmethod
     def qrev_mat_in(meas_struct):
@@ -1190,6 +1321,38 @@ class TransectData(object):
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])
         else:
             self.in_transect_idx = transect.inTransectIdx - 1
+
+    @staticmethod
+    def valid_frequencies(frequency_in):
+        """Create frequency time series for BT and WT with all valid frequencies.
+
+        Parameters
+        ----------
+        frequency_in: nd.array()
+            Frequency time series from raw data
+
+        Returns
+        -------
+        frequency_out: nd.array()
+            Frequency times series with np.nan filled with valid frequencies
+        """
+
+        # Initialize output
+        frequency_out = np.copy(frequency_in)
+
+        # Check for any invalid data
+        invalid_freq = np.isnan(frequency_in)
+        if np.any(invalid_freq):
+            # Identify the first valid frequency
+            valid = frequency_in[np.logical_not(invalid_freq)][0]
+            # Forward fill for invalid frequencies beyond first valid, backfill until 1st valid
+            for n in range(frequency_in.size):
+                if invalid_freq[n]:
+                    frequency_out[n] = valid
+                else:
+                    valid = frequency_in[n]
+
+        return frequency_out
 
     @staticmethod
     def compute_cell_data(pd0):
@@ -1361,10 +1524,25 @@ class TransectData(object):
         Parameters
         ----------
         h_source: str
-            Heading source (internal or external)
+            Heading source (internal or external or user)
         """
 
+
+
+        # If source is user, check to see if it was created, if not create it
+        if h_source == 'user':
+            if self.sensors.heading_deg.user is None:
+                self.sensors.heading_deg.user = HeadingData()
+                self.sensors.heading_deg.user.populate_data(data_in=np.zeros(
+                    self.boat_vel.bt_vel.u_processed_mps.shape),
+                                                                source_in='user',
+                                                                magvar=0,
+                                                                align=0)
+
+        # Get new heading object
         new_heading_selection = getattr(self.sensors.heading_deg, h_source)
+
+        # Change source to that requested
         if h_source is not None:
             old_heading_selection = getattr(self.sensors.heading_deg, self.sensors.heading_deg.selected)
             old_heading = old_heading_selection.data
@@ -1373,6 +1551,7 @@ class TransectData(object):
             self.sensors.heading_deg.set_selected(h_source)
             self.boat_vel.bt_vel.change_heading(heading_change)
             self.w_vel.change_heading(self.boat_vel, heading_change)
+
             
         self.update_water()
             
@@ -1974,12 +2153,11 @@ class TransectData(object):
             bt_track = BoatStructure.compute_boat_track(transect, ref='bt_vel')
 
             try:
-                bt_course, _ = cart2pol(bt_track['track_x_m'][-1],
-                                        bt_track['track_y_m'][-1])
+                bt_course, _ = cart2pol(bt_track['track_x_m'][-1], bt_track['track_y_m'][-1])
+                bt_course = rad2azdeg(bt_course)
             except TypeError:
-                bt_course = float('NaN')
+                bt_course = np.nan
 
-            bt_course = rad2azdeg(bt_course)
             gps_track = BoatStructure.compute_boat_track(transect, ref=gps_ref)
             gps_course, _ = cart2pol(gps_track['track_x_m'][-1], gps_track['track_y_m'][-1])
             gps_course = rad2azdeg(gps_course)
@@ -1991,30 +2169,27 @@ class TransectData(object):
 
             # Compute ratio
             try:
-                gps_bt['ratio'] = \
-                    bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
+                gps_bt['ratio'] = bt_track['dmg_m'][-1] / gps_track['dmg_m'][-1]
             except TypeError:
-                gps_bt['ratio'] = float('NaN')
+                gps_bt['ratio'] = np.nan
 
             # Compute closure vector
             try:
                 x_diff = bt_track['track_x_m'][-1] - gps_track['track_x_m'][-1]
             except TypeError:
-                x_diff = float('NaN')
+                x_diff = np.nan
+
             try:
                 y_diff = bt_track['track_y_m'][-1] - gps_track['track_y_m'][-1]
             except TypeError:
-                y_diff = float('NaN')
+                y_diff = np.nan
 
             try:
                 gps_bt['dir'], gps_bt['mag'] = cart2pol(x_diff, y_diff)
-            except TypeError:
-                gps_bt['dir'] = float('NaN')
-                gps_bt['mag'] = float('NaN')
-            try:
                 gps_bt['dir'] = rad2azdeg(gps_bt['dir'])
             except TypeError:
-                gps_bt['dir'] = float('NaN')
+                gps_bt['dir'] = np.nan
+                gps_bt['mag'] = np.nan
 
         return gps_bt
 

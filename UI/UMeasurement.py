@@ -27,10 +27,10 @@ class UMeasurement(object):
         self.fig = canvas.fig
         self.hover_connection = None
         self.annot = None
-        self.col_labels = {'u_syst':'System', 'u_compass':'Compass', 'u_movbed':'Moving-bed', 'u_ens':'# Ensembles',
-                           'u_meas':'Meas. Q', 'u_top':'Top Q', 'u_bot':'Bottom Q',
-                           'u_left':'Left Q', 'u_right':'Right Q', 'u_boat':'Inv. Boat', 'u_depth':'Inv. Depth',
-                           'u_water':'Inv. Water', 'u_cov':'COV'}
+        self.col_labels = {'u_syst': 'System', 'u_compass': 'Compass', 'u_movbed': 'Moving-bed', 'u_ens': '# Ensembles',
+                           'u_meas': 'Meas. Q', 'u_top': 'Top Q', 'u_bot': 'Bottom Q',
+                           'u_left': 'Left Q', 'u_right': 'Right Q', 'u_boat': 'Inv. Boat', 'u_depth': 'Inv. Depth',
+                           'u_water': 'Inv. Water', 'u_cov': 'COV'}
         self.plot_df_cumsum = None
         self.plot_df = None
 
@@ -52,7 +52,9 @@ class UMeasurement(object):
         # Create dataframe to plot
         self.plot_df = oursin.u_contribution_measurement_user.drop(['total'], axis=1)
         self.plot_df = self.plot_df.append(oursin.u_contribution_user.drop(['total'], axis=1), ignore_index=True)
-        self.plot_df = self.plot_df * 100
+        self.plot_df = self.plot_df.mul(100)
+        self.plot_df = self.plot_df[['u_syst', 'u_compass', 'u_movbed', 'u_ens', 'u_meas', 'u_cov', 'u_top', 'u_bot',
+                                     'u_left', 'u_right', 'u_boat', 'u_depth', 'u_water']]
 
         # Create dataframe to use for data cursor
         self.plot_df_cumsum = self.plot_df.cumsum(axis='columns')
@@ -63,11 +65,14 @@ class UMeasurement(object):
             x_tick_labels.append(str(n))
 
         # Create legend labels
-        custom_labels = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'Top Q', 'Bottom Q',
-                  'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water', 'COV']
+        custom_labels = ['System', 'Compass', 'Moving-bed', '# Ensembles', 'Meas. Q', 'COV', 'Top Q', 'Bottom Q',
+                         'Left Q', 'Right Q', 'Inv. Boat', 'Inv. Depth', 'Inv. Water']
+
+        custom_colors = ['#696969', '#808080', '#A9A9A9', '#0000FF', '#00BFFF', '#00FFFF', '#FF00FF', '#EE82EE',
+                         '#20B2AA', '#008B8B', '#FF6666', '#FF0000', '#CC0000']
 
         # Generate bar graph
-        self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax, legend=False)
+        self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax, legend=False, color=custom_colors)
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.01, bottom=0.01, right=0.95, top=0.99, wspace=0, hspace=0)
@@ -83,9 +88,10 @@ class UMeasurement(object):
         self.fig.ax.legend(reversed(handles), reversed(custom_labels), fontsize=12, loc='center left',
                            bbox_to_anchor=(1, 0.5))
 
+        # Setup annotation features
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                              bbox=dict(boxstyle="round", fc="w"),
-                                              arrowprops=dict(arrowstyle="->"))
+                                          bbox=dict(boxstyle="round", fc="w"),
+                                          arrowprops=dict(arrowstyle="->"))
 
         self.annot.set_visible(False)
 
@@ -136,7 +142,7 @@ class UMeasurement(object):
         self.annot.xy = pos
 
         # Format and display text
-        text =  '{}: {:2.2f}'.format(self.col_labels[col_name], u_value)
+        text = '{}: {:2.2f}'.format(self.col_labels[col_name], u_value)
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -157,7 +163,7 @@ class UMeasurement(object):
         if event.inaxes == self.fig.ax:
             row = int(round(event.xdata))
             df_row = self.plot_df_cumsum.iloc[row, :]
-            col_name =df_row[df_row.gt(event.ydata)].index[0]
+            col_name = df_row[df_row.gt(event.ydata)].index[0]
             u_value = self.plot_df.loc[row, col_name]
 
             self.update_annot(col_name, u_value, event)

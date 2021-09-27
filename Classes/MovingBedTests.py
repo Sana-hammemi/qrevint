@@ -138,7 +138,7 @@ class MovingBedTests(object):
         
         # Convert to earth coordinates and set the navigation reference to BT
         # for both boat and water data
-        self.transect.boat_vel.bt_vel.apply_interpolation(transect=self.transect, interpolation_method='Linear')
+        # self.transect.boat_vel.bt_vel.apply_interpolation(transect=self.transect, interpolation_method='Linear')
         self.transect.change_coord_sys(new_coord_sys='Earth')
         self.transect.change_nav_reference(update=True, new_nav_ref='BT')
             
@@ -337,8 +337,8 @@ class MovingBedTests(object):
         """
 
         # Assign data from transect to local variables
-        self.transect.boat_interpolations(update=False, target='BT', method='Linear')
-        self.transect.boat_interpolations(update=False, target='GPS', method='Linear')
+        # self.transect.boat_interpolations(update=False, target='BT', method='Linear')
+        # self.transect.boat_interpolations(update=False, target='GPS', method='Linear')
         trans_data = copy.deepcopy(self.transect)
         in_transect_idx = trans_data.in_transect_idx
         n_ensembles = len(in_transect_idx)
@@ -704,7 +704,7 @@ class MovingBedTests(object):
             # Quality check
             self.test_quality = 'Good'
             # Check duration
-            if self.duration_sec < 300:
+            if self.duration_sec < 299:
                 self.messages.append('WARNING - Duration of stationary test is less than 5 minutes')
                 self.test_quality = 'Warnings'
                 

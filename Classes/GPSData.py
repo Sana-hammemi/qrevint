@@ -349,7 +349,10 @@ class GPSData(object):
                     self.per_good_ens = transect.gps.perGoodEns
                 else:
                     self.per_good_ens = None
-                self.hdop_ens = transect.gps.hdopEns
+                if type(transect.gps.hdopEns) is np.ndarray:
+                    self.hdop_ens = transect.gps.hdopEns
+                else:
+                    self.hdop_ens = np.array([transect.gps.hdopEns])
                 self.num_sats_ens = transect.gps.numSatsEns
                 self.altitude_ens_m = transect.gps.altitudeEns_m
                 self.diff_qual_ens = transect.gps.diffQualEns
@@ -372,9 +375,10 @@ class GPSData(object):
             v_setting = self.gga_velocity_method
             
         # Use only valid gga data
-        valid = np.copy(self.raw_gga_num_sats)
+        valid = np.copy(self.raw_gga_lat_deg)
+        valid[np.logical_not(np.isnan(valid))] = 1
         valid[np.isnan(valid)] = 0
-        valid[valid > 0] = 1
+        # valid[valid > 0] = 1
         gga_lat_deg = np.copy(self.raw_gga_lat_deg)
         gga_lat_deg[valid == False] = np.nan
         gga_lon_deg = np.copy(self.raw_gga_lon_deg)

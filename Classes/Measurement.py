@@ -1,6 +1,7 @@
 import os
 import datetime
 import numpy as np
+import utm
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
 from Classes.MMT_TRDI import MMTtrdi
@@ -10,15 +11,17 @@ from Classes.MovingBedTests import MovingBedTests
 from Classes.QComp import QComp
 from Classes.MatSonTek import MatSonTek
 from Classes.ComputeExtrap import ComputeExtrap
+from Classes.CrossSectionComp import CrossSectionComp
 from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.Uncertainty import Uncertainty
 from Classes.QAData import QAData
 from Classes.BoatStructure import BoatStructure
-from Classes.NormData import  NormData
+from Classes.BoatData import BoatData
+from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
-# from Classes.Oursin_orig import Oursin_orig
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile
+
 
 class Measurement(object):
     """Class to hold all measurement details.
@@ -59,10 +62,17 @@ class Measurement(object):
         Dictionary of external temperature readings
     use_weighted: bool
         Indicates the setting for use_weighted to be used for reprocessing
+    use_ping_type: bool
+        Indicates if ping types should be used in BT and WT filters
+    use_measurement_thresholds: bool
+        Indicates if the entire measurement should be used to set filter thresholds
+    export_xs: bool
+        Indicates if average cross-section should be computed and exported
     """
 
     # @profile
-    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False):
+    def __init__(self, in_file, source, proc_type='QRev', checked=False, run_oursin=False, use_weighted=False,
+                 use_measurement_thresholds=False, use_ping_type=True, export_xs=True):
         """Initialize instance variables and initiate processing of measurement
         data.
 
@@ -82,8 +92,16 @@ class Measurement(object):
             Determines if the Oursin uncertainty model should be run
         use_weighted: bool
             Specifies if discharge weighted medians are used for extrapolation
+        use_measurement_thresholds: bool
+            Specifies if filters are based on a transect or whole measurement
+        use_ping_type: bool
+            Specifies if filters are based on ping type and frequency
+        export_xs: bool
+            Specifies if average cross-section should be computed and exported
         """
 
+        self.use_ping_type = use_ping_type
+        self.use_measurement_thresholds = use_measurement_thresholds
         self.run_oursin = run_oursin
         self.station_name = None
         self.station_number = None
@@ -104,17 +122,22 @@ class Measurement(object):
         self.checked_transect_idx = []
         self.oursin = None
         self.use_weighted = use_weighted
+        self.observed_no_moving_bed = False
+        self.export_xs = export_xs
 
         # Load data from selected source
         if source == 'QRev':
             self.load_qrev_mat(mat_data=in_file)
             if proc_type == 'QRev':
                 # Apply QRev default settings
-                # settings = self.qrev_default_settings()
+                self.run_oursin = run_oursin
+                self.use_weighted = use_weighted
+                self.use_measurement_thresholds = use_measurement_thresholds
                 settings = self.current_settings()
                 settings['WTEnsInterpolation'] = 'abba'
                 settings['WTCellInterpolation'] = 'abba'
                 settings['Processing'] = 'QRev'
+                settings['UseMeasurementThresholds'] = use_measurement_thresholds
                 self.apply_settings(settings)
 
         else:
@@ -152,6 +175,8 @@ class Measurement(object):
                     # Apply QRev default settings
                     settings = self.qrev_default_settings(check_user_excluded_dist=True, use_weighted=use_weighted)
                     settings['Processing'] = 'QRev'
+                    settings['UseMeasurementThresholds'] = use_measurement_thresholds
+                    settings['UsePingType'] = self.use_ping_type
                     self.apply_settings(settings)
 
                 elif proc_type == 'None':
@@ -172,12 +197,6 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
 
                 self.qa = QAData(self)
-                if self.run_oursin:
-                    self.oursin = Oursin()
-                    self.oursin.compute_oursin(self)
-                #
-                # self.oursin_orig = Oursin_orig()
-                # self.oursin_orig.compute_oursin(self)
 
     def load_trdi(self, mmt_file, transect_type='Q', checked=False):
         """Method to load TRDI data.
@@ -204,6 +223,7 @@ class Measurement(object):
 
         # Create transect objects for  TRDI data
         # TODO refactor allocate_transects
+
         self.transects = allocate_transects(mmt=mmt,
                                             transect_type=transect_type,
                                             checked=checked)
@@ -213,7 +233,7 @@ class Measurement(object):
         # Create object for pre-measurement tests
         if isinstance(mmt.qaqc, dict) or isinstance(mmt.mbt_transects, list):
             self.qaqc_trdi(mmt)
-        
+
         # Save comments from mmt file in comments
         self.comments.append('MMT Remarks: ' + mmt.site_info['Remarks'])
 
@@ -223,7 +243,7 @@ class Measurement(object):
                 note_text = ' File: ' + note['NoteFileNo'] + ' ' \
                             + note['NoteDate'] + ': ' + note['NoteText']
                 self.comments.append(note_text)
-                
+
         # Get external temperature
         if type(mmt.site_info['Water_Temperature']) is float:
             self.ext_temp_chk['user'] = mmt.site_info['Water_Temperature']
@@ -236,7 +256,8 @@ class Measurement(object):
         threshold_settings['bt_settings'] = {}
         threshold_settings['depth_settings'] = {}
 
-		# Select reference transect use first checked or if none then first transect
+        # Select reference transect use first checked or if none then first
+        # transect
         if len(self.checked_transect_idx) > 0:
             ref_transect = self.checked_transect_idx[0]
         else:
@@ -247,20 +268,24 @@ class Measurement(object):
             self.set_num_beam_wt_threshold_trdi(mmt.transects[ref_transect])
         threshold_settings['wt_settings']['difference'] = 'Manual'
         threshold_settings['wt_settings']['difference_threshold'] = \
-            mmt.transects[ref_transect].active_config['Proc_WT_Error_Velocity_Threshold']
+            mmt.transects[ref_transect].active_config[
+                'Proc_WT_Error_Velocity_Threshold']
         threshold_settings['wt_settings']['vertical'] = 'Manual'
         threshold_settings['wt_settings']['vertical_threshold'] = \
-            mmt.transects[ref_transect].active_config['Proc_WT_Up_Vel_Threshold']
+            mmt.transects[ref_transect].active_config[
+                'Proc_WT_Up_Vel_Threshold']
 
         # Bottom track filter threshold settings
         threshold_settings['bt_settings']['beam'] = \
             self.set_num_beam_bt_threshold_trdi(mmt.transects[ref_transect])
         threshold_settings['bt_settings']['difference'] = 'Manual'
         threshold_settings['bt_settings']['difference_threshold'] = \
-            mmt.transects[ref_transect].active_config['Proc_BT_Error_Vel_Threshold']
+            mmt.transects[ref_transect].active_config[
+                'Proc_BT_Error_Vel_Threshold']
         threshold_settings['bt_settings']['vertical'] = 'Manual'
         threshold_settings['bt_settings']['vertical_threshold'] = \
-            mmt.transects[ref_transect].active_config['Proc_BT_Up_Vel_Threshold']
+            mmt.transects[ref_transect].active_config[
+                'Proc_BT_Up_Vel_Threshold']
 
         # Depth filter and averaging settings
         threshold_settings['depth_settings']['depth_weighting'] = \
@@ -334,7 +359,7 @@ class Measurement(object):
 
     def qaqc_trdi(self, mmt):
         """Processes qaqc test, calibrations, and evaluations
-        
+
         Parameters
         ----------
         mmt: MMTtrdi
@@ -356,10 +381,7 @@ class Measurement(object):
                 cc.populate_data(mmt.qaqc['Compass_Calibration_TimeStamp'][n],
                                  mmt.qaqc['Compass_Calibration'][n], 'TCC')
                 self.compass_cal.append(cc)
-        # else:
-        #     cc = PreMeasurement()
-        #     self.compass_cal.append(cc)
-            
+
         # Compass evaluation
         if 'Compass_Evaluation' in mmt.qaqc:
             for n in range(len(mmt.qaqc['Compass_Evaluation'])):
@@ -367,13 +389,10 @@ class Measurement(object):
                 ce.populate_data(mmt.qaqc['Compass_Evaluation_TimeStamp'][n],
                                  mmt.qaqc['Compass_Evaluation'][n], 'TCC')
                 self.compass_eval.append(ce)
-        # else:
-        #     ce = PreMeasurement()
-        #     self.compass_cal.append(ce)
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
-            
+
             # Create transect objects
             transects = allocate_transects(mmt, transect_type='MB')
 
@@ -386,12 +405,13 @@ class Measurement(object):
                     mb_test = MovingBedTests()
                     mb_test.populate_data('TRDI', transects[n],
                                           mmt.mbt_transects[n].moving_bed_type)
-                    
+
                     # Save notes from mmt files in comments
                     notes = getattr(mmt.mbt_transects[n], 'Notes')
                     for note in notes:
                         note_text = ' File: ' + note['NoteFileNo'] + ' ' \
-                                    + note['NoteDate'] + ': ' + note['NoteText']
+                                    + note['NoteDate'] + ': ' + note[
+                                        'NoteText']
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
@@ -472,7 +492,8 @@ class Measurement(object):
             transect.change_coord_sys(new_coord_sys='Earth')
             transect.change_nav_reference(
                 update=False,
-                new_nav_ref=self.transects[self.checked_transect_idx[0]].boat_vel.selected)
+                new_nav_ref=self.transects[
+                    self.checked_transect_idx[0]].boat_vel.selected)
             transect.boat_interpolations(update=False,
                                          target='BT',
                                          method='Hold9')
@@ -504,9 +525,6 @@ class Measurement(object):
         pathname: str
             Path to discharge transect files.
         """
-        # Compass Evaluation
-        # ce = PreMeasurement()
-        # self.compass_eval.append(ce)
 
         # Compass Calibration
         compass_cal_folder = os.path.join(pathname, 'CompassCal')
@@ -526,7 +544,6 @@ class Measurement(object):
                     time_stamp = prefix.split('l')[1]
                     valid_file = True
 
-            # for file in compass_cal_files:
                 if valid_file:
                     with open(os.path.join(compass_cal_folder, file)) as f:
                         cal_data = f.read()
@@ -571,13 +588,15 @@ class Measurement(object):
                 if file.lower().startswith('loop'):
                     self.mb_tests.append(MovingBedTests())
                     self.mb_tests[-1].populate_data(source='SonTek',
-                                                    file=os.path.join(pathname, file),
+                                                    file=os.path.join(pathname,
+                                                                      file),
                                                     test_type='Loop')
                 # Process Stationary test
                 elif file.lower().startswith('smba'):
                     self.mb_tests.append(MovingBedTests())
                     self.mb_tests[-1].populate_data(source='SonTek',
-                                                    file=os.path.join(pathname, file),
+                                                    file=os.path.join(pathname,
+                                                                      file),
                                                     test_type='Stationary')
 
     def load_qrev_mat(self, mat_data):
@@ -629,19 +648,26 @@ class Measurement(object):
         self.initial_settings = vars(meas_struct.initialSettings)
 
         # Update initial settings to agree with Python definitions
-        nav_dict = {'btVel': 'bt_vel', 'ggaVel': 'gga_vel', 'vtgVel': 'vtg_vel',
-                    'bt_vel': 'bt_vel', 'gga_vel': 'gga_vel', 'vtg_vel': 'vtg_vel'}
-        self.initial_settings['NavRef'] = nav_dict[self.initial_settings['NavRef']]
+        nav_dict = {'btVel': 'bt_vel', 'ggaVel': 'gga_vel',
+                    'vtgVel': 'vtg_vel',
+                    'bt_vel': 'bt_vel', 'gga_vel': 'gga_vel',
+                    'vtg_vel': 'vtg_vel'}
+        self.initial_settings['NavRef'] = nav_dict[
+            self.initial_settings['NavRef']]
 
         on_off_dict = {'Off': False, 'On': True, 0: False, 1: True}
-        self.initial_settings['WTwtDepthFilter'] = on_off_dict[self.initial_settings['WTwtDepthFilter']]
+        self.initial_settings['WTwtDepthFilter'] = on_off_dict[
+            self.initial_settings['WTwtDepthFilter']]
 
         if type(self.initial_settings['WTsnrFilter']) is np.ndarray:
             self.initial_settings['WTsnrFilter'] = 'Off'
 
-        nav_dict = {'btDepths': 'bt_depths', 'vbDepths': 'vb_depths', 'dsDepths': 'ds_depths',
-                    'bt_depths': 'bt_depths', 'vb_depths': 'vb_depths', 'ds_depths': 'ds_depths'}
-        self.initial_settings['depthReference'] = nav_dict[self.initial_settings['depthReference']]
+        nav_dict = {'btDepths': 'bt_depths', 'vbDepths': 'vb_depths',
+                    'dsDepths': 'ds_depths',
+                    'bt_depths': 'bt_depths', 'vb_depths': 'vb_depths',
+                    'ds_depths': 'ds_depths'}
+        self.initial_settings['depthReference'] = nav_dict[
+            self.initial_settings['depthReference']]
 
         self.ext_temp_chk = {'user': meas_struct.extTempChk.user,
                              'units': meas_struct.extTempChk.units,
@@ -692,61 +718,166 @@ class Measurement(object):
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
-        # # For compatibility with files saved prior to the implementation of the discharge weighted median option
-        # if self.extrap_fit.norm_data[-1].weights is None:
-        #     # Compute normalized data for each transect to obtain the weights
-        #     for n, transect in enumerate(self.transects):
-        #         norm_data_temp = NormData()
-        #         norm_data_temp.populate_data(transect=transect,
-        #                                 data_type=self.extrap_fit.norm_data[n].data_type,
-        #                                 threshold=self.extrap_fit.threshold,
-        #                                 data_extent=self.extrap_fit.subsection,
-        #                                 use_weighted=self.extrap_fit.use_weighted,
-        #                                 sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
-        #                                 use_q=self.extrap_fit.norm_data[n].use_q)
-        #         # Update the norm_data with the newly computed weights, however, the weights are not used until the
-        #         # user changes the option in the GUI
-        #         self.extrap_fit.norm_data[n].weights = norm_data_temp.weights
-        #
-        #     # Compute composite normalized data to get the composite weights
-        #     norm_data_temp = NormData()
-        #     norm_data_temp.create_composite(transects=self.transects,
-        #                                     norm_data=self.extrap_fit.norm_data[0:-1],
-        #                                     threshold=self.extrap_fit.threshold)
-        #     # Update the norm_data with newly computed weights
-        #     self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
-
         self.discharge = QComp.qrev_mat_in(meas_struct)
 
-        # For compatibility with older QRev.mat files that didn't have this feature
+        # For compatibility with older QRev.mat files that didn't have this
+        # feature
         for n in range(len(self.transects)):
             if len(self.discharge[n].left_idx) == 0:
-                self.discharge[n].left_idx = self.discharge[n].edge_ensembles(edge_loc='left',
-                                                                              transect=self.transects[n])
+                self.discharge[n].left_idx = self.discharge[n].edge_ensembles(
+                    edge_loc='left',
+                    transect=self.transects[n])
 
             if len(self.discharge[n].right_idx) == 0:
-                self.discharge[n].right_idx = self.discharge[n].edge_ensembles(edge_loc='right',
-                                                                               transect=self.transects[n])
+                self.discharge[n].right_idx = self.discharge[n].edge_ensembles(
+                    edge_loc='right',
+                    transect=self.transects[n])
 
             if type(self.discharge[n].correction_factor) is list:
-                self.discharge[n].correction_factor = self.discharge[n].total / self.discharge[n].total_uncorrected
+                self.discharge[n].correction_factor = self.discharge[
+                                                          n].total / \
+                                                      self.discharge[
+                                                          n].total_uncorrected
 
         # Identify checked transects
         self.checked_transect_idx = self.checked_transects(self)
 
+        if hasattr(meas_struct, 'observed_no_moving_bed'):
+            self.observed_no_moving_bed = meas_struct.observed_no_moving_bed
+        else:
+            self.observed_no_moving_bed = False
+
         self.uncertainty = Uncertainty()
         self.uncertainty.populate_from_qrev_mat(meas_struct)
         self.qa = QAData(self, mat_struct=meas_struct, compute=False)
+        if hasattr(meas_struct, 'run_oursin'):
+            self.run_oursin = meas_struct.run_oursin
+        else:
+            self.run_oursin = False
+        if hasattr(meas_struct, 'oursin'):
+            self.oursin = Oursin()
+            self.oursin.populate_from_qrev_mat(meas_struct=meas_struct)
+        else:
+            self.oursin = None
+
+        self.use_weighted = self.extrap_fit.use_weighted
+        self.use_measurement_thresholds = \
+            self.transects[self.checked_transect_idx[
+                0]].boat_vel.bt_vel.use_measurement_thresholds
+
+    def create_filter_composites(self):
+        """Create composite for water and bottom track difference and
+        vertical velocities and compute the thresholds
+        using these composites.
+        """
+
+        # Initialize dictionaries
+        wt_d = {}
+        wt_w = {}
+        bt_d = {}
+        bt_w = {}
+
+        # Create composite arrays for all checked transects
+        for transect in self.transects:
+            if transect.checked:
+                bt_freq = transect.boat_vel.bt_vel.frequency_khz.astype(
+                    int).astype(str)
+                freq = np.unique(bt_freq)
+                for f in freq:
+                    if f in bt_d:
+                        bt_d[f] = np.hstack((bt_d[f],
+                                             transect.boat_vel.bt_vel.d_mps[
+                                                 bt_freq == f]))
+                        bt_w[f] = np.hstack((bt_w[f],
+                                             transect.boat_vel.bt_vel.w_mps[
+                                                 bt_freq == f]))
+                    else:
+                        bt_d[f] = transect.boat_vel.bt_vel.d_mps[bt_freq == f]
+                        bt_w[f] = transect.boat_vel.bt_vel.w_mps[bt_freq == f]
+
+                if transect.w_vel.ping_type.size > 0:
+                    # Identify the ping types used in the transect
+                    p_types = np.unique(transect.w_vel.ping_type)
+                    # Composite for each ping type
+                    for p_type in p_types:
+                        if p_type in wt_d:
+                            wt_d[p_type] = np.hstack(
+                                (wt_d[p_type], transect.w_vel.d_mps[
+                                    np.logical_and(
+                                        transect.w_vel.ping_type == p_type,
+                                        transect.w_vel.cells_above_sl)]))
+                            wt_w[p_type] = np.hstack(
+                                (wt_d[p_type], transect.w_vel.w_mps[
+                                    np.logical_and(
+                                        transect.w_vel.ping_type == p_type,
+                                        transect.w_vel.cells_above_sl)]))
+                        else:
+                            wt_d[p_type] = transect.w_vel.d_mps[np.logical_and(
+                                transect.w_vel.ping_type == p_type,
+                                transect.w_vel.cells_above_sl)]
+                            wt_w[p_type] = transect.w_vel.w_mps[np.logical_and(
+                                transect.w_vel.ping_type == p_type,
+                                transect.w_vel.cells_above_sl)]
+                else:
+                    p_types = np.array(['U'])
+                    for p_type in p_types:
+                        if p_type in wt_d:
+                            wt_d[p_type] = np.hstack((wt_d[p_type],
+                                                      transect.w_vel.d_mps[
+                                                          transect.w_vel.cells_above_sl]))
+                            wt_w[p_type] = np.hstack((wt_d[p_type],
+                                                      transect.w_vel.w_mps[
+                                                          transect.w_vel.cells_above_sl]))
+                        else:
+                            wt_d[p_type] = transect.w_vel.d_mps[
+                                transect.w_vel.cells_above_sl]
+                            wt_w[p_type] = transect.w_vel.w_mps[
+                                transect.w_vel.cells_above_sl]
+
+        # Compute thresholds based on composite arrays
+
+        # Water track
+        wt_d_meas_thresholds = {}
+        wt_w_meas_thresholds = {}
+        for p_type in wt_d.keys():
+            wt_d_meas_thresholds[p_type] = WaterData.meas_iqr_filter(
+                wt_d[p_type], multiplier=5)
+            wt_w_meas_thresholds[p_type] = WaterData.meas_iqr_filter(
+                wt_w[p_type], multiplier=5)
+
+        # Bottom track
+        bt_d_meas_thresholds = {}
+        bt_w_meas_thresholds = {}
+        for freq in bt_d.keys():
+            bt_d_meas_thresholds[freq] = BoatData.iqr_filter(bt_d[freq])
+            bt_w_meas_thresholds[freq] = BoatData.iqr_filter(bt_w[freq])
+
+        # Assign threshold to each transect
+        for transect in self.transects:
+            transect.w_vel.d_meas_thresholds = wt_d_meas_thresholds
+            transect.w_vel.w_meas_thresholds = wt_w_meas_thresholds
+            transect.boat_vel.bt_vel.d_meas_thresholds = bt_d_meas_thresholds
+            transect.boat_vel.bt_vel.w_meas_thresholds = bt_w_meas_thresholds
+
+        if len(self.mb_tests) > 0:
+            for test in self.mb_tests:
+                transect = test.transect
+                transect.w_vel.d_meas_thresholds = wt_d_meas_thresholds
+                transect.w_vel.w_meas_thresholds = wt_w_meas_thresholds
+                transect.boat_vel.bt_vel.d_meas_thresholds = \
+                    bt_d_meas_thresholds
+                transect.boat_vel.bt_vel.w_meas_thresholds = \
+                    bt_w_meas_thresholds
 
     @staticmethod
     def set_num_beam_wt_threshold_trdi(mmt_transect):
         """Get number of beams to use in processing for WT from mmt file
-        
+
         Parameters
         ----------
         mmt_transect: MMT_Transect
             Object of MMT_Transect
-        
+
         Returns
         -------
         num_3_beam_wt_Out: int
@@ -757,7 +888,7 @@ class Measurement(object):
             num_beam_wt_out = 4
         else:
             num_beam_wt_out = 3
-            
+
         return num_beam_wt_out
 
     @staticmethod
@@ -785,20 +916,21 @@ class Measurement(object):
     @staticmethod
     def set_depth_weighting_trdi(mmt_transect):
         """Get the average depth method from mmt
-        
+
         Parameters
         ----------
         mmt_transect: MMT_Transect
             Object of MMT_Transect
-        
+
         Returns
         -------
         depth_weighting_setting: str
             Method to compute mean depth
         """
 
-        depth_weighting = mmt_transect.active_config['Proc_Use_Weighted_Mean_Depth']
-        
+        depth_weighting = mmt_transect.active_config[
+            'Proc_Use_Weighted_Mean_Depth']
+
         if depth_weighting == 0:
             depth_weighting_setting = 'Simple'
         else:
@@ -809,12 +941,12 @@ class Measurement(object):
     @staticmethod
     def set_depth_screening_trdi(mmt_transect):
         """Get the depth screening setting from mmt
-        
+
         Parameters
         ----------
         mmt_transect: MMT_Transect
             Object of MMT_Transect
-        
+
         Returns
         -------
         depth_screening_setting: str
@@ -826,29 +958,32 @@ class Measurement(object):
             depth_screening_setting = 'None'
         else:
             depth_screening_setting = 'TRDI'
-        
+
         return depth_screening_setting
-        
-    def change_sos(self, transect_idx=None, parameter=None, salinity=None, temperature=None, selected=None, speed=None):
+
+    def change_sos(self, transect_idx=None, parameter=None, salinity=None,
+                   temperature=None, selected=None, speed=None):
         """Applies a change in speed of sound to one or all transects
         and update the discharge and uncertainty computations
-        
+
         Parameters
         ----------
         transect_idx: int
             Index of transect to change
         parameter: str
-            Speed of sound parameter to be changed ('temperatureSrc', 'temperature', 'salinity', 'sosSrc')
+            Speed of sound parameter to be changed ('temperatureSrc',
+            'temperature', 'salinity', 'sosSrc')
         salinity: float
             Salinity in ppt
         temperature: float
             Temperature in deg C
         selected: str
-            Selected speed of sound ('internal', 'computed', 'user') or temperature ('internal', 'user')
+            Selected speed of sound ('internal', 'computed', 'user') or
+            temperature ('internal', 'user')
         speed: float
             Manually supplied speed of sound for 'user' source
         """
-        
+
         s = self.current_settings()
         if transect_idx is None:
             # Apply to all transects
@@ -876,7 +1011,8 @@ class Measurement(object):
         magvar: float
             Magnetic variation
         transect_idx: int
-            Index of transect to which the change is applied. None is all transects.
+            Index of transect to which the change is applied. None is all
+            transects.
         """
 
         # Get current settings
@@ -902,7 +1038,8 @@ class Measurement(object):
             # Apply change to moving-bed tests
             if len(self.mb_tests) > 0:
                 for test in self.mb_tests:
-                    old_magvar = test.transect.sensors.heading_deg.internal.mag_var_deg
+                    old_magvar = \
+                        test.transect.sensors.heading_deg.internal.mag_var_deg
                     test.transect.change_mag_var(magvar)
                     test.magvar_change(magvar, old_magvar)
         else:
@@ -923,7 +1060,8 @@ class Measurement(object):
         h_offset: float
             Heading offset
         transect_idx: int
-            Index of transect to which the change is applied. None is all transects.
+            Index of transect to which the change is applied. None is all
+            transects.
         """
 
         # Get current settings
@@ -948,7 +1086,9 @@ class Measurement(object):
             # Apply change to moving-bed tests
             if len(self.mb_tests) > 0:
                 for test in self.mb_tests:
-                    old_h_offset = test.transect.sensors.heading_deg.external.align_correction_deg
+                    old_h_offset = \
+                        test.transect.sensors.heading_deg.external\
+                            .align_correction_deg
                     test.transect.change_offset(h_offset)
                     test.h_offset_change(h_offset, old_h_offset)
         else:
@@ -969,7 +1109,8 @@ class Measurement(object):
         h_source: str
             Heading source (internal or external)
         transect_idx: int
-            Index of transect to which the change is applied. None is all transects.
+            Index of transect to which the change is applied. None is all
+            transects.
         """
 
         # Get current settings
@@ -984,7 +1125,8 @@ class Measurement(object):
             if len(self.mb_tests) > 0:
                 for test in self.mb_tests:
                     test.transect.change_heading_source(h_source)
-                    test.process_mb_test(source=test.transect.adcp.manufacturer)
+                    test.process_mb_test(
+                        source=test.transect.adcp.manufacturer)
                 settings = self.current_settings()
                 select = settings['NavRef']
                 ref = None
@@ -1010,7 +1152,8 @@ class Measurement(object):
         draft: float
             Draft of ADCP in m
         transect_idx: int
-            Index of transect to which the change is applied. None is all transects.
+            Index of transect to which the change is applied. None is all
+            transects.
         """
 
         # Get current settings
@@ -1027,7 +1170,8 @@ class Measurement(object):
 
     @staticmethod
     def h_external_valid(meas):
-        """Determine if valid external heading data is included in the measurement.
+        """Determine if valid external heading data is included in the
+        measurement.
 
         Parameters
         ----------
@@ -1044,16 +1188,44 @@ class Measurement(object):
 
     def apply_settings(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
-        
+
         Parameters
         ----------
         settings: dict
             Dictionary of reference, filter, and interpolation settings
         force_abba: bool
-            Allows the above, below, before, after interpolation to be applied even when the data use another approach.
+            Allows the above, below, before, after interpolation to be
+            applied even when the data use another approach.
         """
 
+        self.use_ping_type = settings['UsePingType']
+
+        # If SonTek data does not have ping type identified, determine ping
+        # types
+        if self.transects[0].w_vel.ping_type.size == 1 and self.transects[
+            0].adcp.manufacturer == 'SonTek':
+            for transect in self.transects:
+                ping_type = TransectData.sontek_ping_type(transect.w_vel.corr,
+                                                          transect.w_vel.frequency)
+                transect.w_vel.ping_type = np.tile(np.array([ping_type]), (
+                transect.w_vel.corr.shape[1], 1))
+
+        # If the measurement thresholds have not been computed, compute them
+        if not self.transects[0].w_vel.d_meas_thresholds:
+            self.create_filter_composites()
+
+        # Apply settings to moving-bed tests:
+        if len(self.mb_tests) > 0:
+            self.apply_settings_to_movingbed(settings, force_abba=True)
+
+        # Apply settings to discharge transects
         for transect in self.transects:
+
+            if not settings['UsePingType']:
+                transect.w_vel.ping_type = np.tile('U',
+                                                   transect.w_vel.ping_type.shape)
+                transect.boat_vel.bt_vel.frequency_khz = np.tile(0,
+                                                                 transect.boat_vel.bt_vel.frequency_khz.shape)
 
             # Moving-boat ensembles
             if 'Processing' in settings.keys():
@@ -1062,7 +1234,8 @@ class Measurement(object):
 
             # Navigation reference
             if transect.boat_vel.selected != settings['NavRef']:
-                transect.change_nav_reference(update=False, new_nav_ref=settings['NavRef'])
+                transect.change_nav_reference(update=False,
+                                              new_nav_ref=settings['NavRef'])
                 if len(self.mb_tests) > 0:
                     self.mb_tests = MovingBedTests.auto_use_2_correct(
                         moving_bed_tests=self.mb_tests,
@@ -1071,28 +1244,34 @@ class Measurement(object):
             # Changing the nav reference applies the current setting for
             # Composite tracks, check to see if a change is needed
             if transect.boat_vel.composite != settings['CompTracks']:
-                transect.composite_tracks(update=False, setting=settings['CompTracks'])
+                transect.composite_tracks(update=False,
+                                          setting=settings['CompTracks'])
 
             # Set difference velocity BT filter
             bt_kwargs = {}
             if settings['BTdFilter'] == 'Manual':
                 bt_kwargs['difference'] = settings['BTdFilter']
-                bt_kwargs['difference_threshold'] = settings['BTdFilterThreshold']
+                bt_kwargs['difference_threshold'] = settings[
+                    'BTdFilterThreshold']
             else:
                 bt_kwargs['difference'] = settings['BTdFilter']
 
             # Set vertical velocity BT filter
             if settings['BTwFilter'] == 'Manual':
                 bt_kwargs['vertical'] = settings['BTwFilter']
-                bt_kwargs['vertical_threshold'] = settings['BTwFilterThreshold']
+                bt_kwargs['vertical_threshold'] = settings[
+                    'BTwFilterThreshold']
             else:
                 bt_kwargs['vertical'] = settings['BTwFilter']
 
-            # Apply beam filter
+                # Apply beam filter
                 bt_kwargs['beam'] = settings['BTbeamFilter']
 
-            # Apply smooth filter
+                # Apply smooth filter
                 bt_kwargs['other'] = settings['BTsmoothFilter']
+
+            transect.boat_vel.bt_vel.use_measurement_thresholds = settings[
+                'UseMeasurementThresholds']
 
             # Apply BT settings
             transect.boat_filters(update=False, **bt_kwargs)
@@ -1110,15 +1289,18 @@ class Measurement(object):
                     gga_kwargs['differential'] = settings['ggaDiffQualFilter']
                     if settings['ggaAltitudeFilter'] == 'Manual':
                         gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
-                        gga_kwargs['altitude_threshold'] = settings['ggaAltitudeFilterChange']
+                        gga_kwargs['altitude_threshold'] = settings[
+                            'ggaAltitudeFilterChange']
                     else:
                         gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
 
                     # Set GGA HDOP Filter
                     if settings['GPSHDOPFilter'] == 'Manual':
                         gga_kwargs['hdop'] = settings['GPSHDOPFilter']
-                        gga_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
-                        gga_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
+                        gga_kwargs['hdop_max_threshold'] = settings[
+                            'GPSHDOPFilterMax']
+                        gga_kwargs['hdop_change_threshold'] = settings[
+                            'GPSHDOPFilterChange']
                     else:
                         gga_kwargs['hdop'] = settings['GPSHDOPFilter']
 
@@ -1130,8 +1312,10 @@ class Measurement(object):
                     vtg_kwargs = {}
                     if settings['GPSHDOPFilter'] == 'Manual':
                         vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
-                        vtg_kwargs['hdop_max_threshold'] = settings['GPSHDOPFilterMax']
-                        vtg_kwargs['hdop_change_threshold'] = settings['GPSHDOPFilterChange']
+                        vtg_kwargs['hdop_max_threshold'] = settings[
+                            'GPSHDOPFilterMax']
+                        vtg_kwargs['hdop_change_threshold'] = settings[
+                            'GPSHDOPFilterChange']
                         vtg_kwargs['other'] = settings['GPSSmoothFilter']
                     else:
                         vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
@@ -1142,15 +1326,19 @@ class Measurement(object):
 
                 transect.boat_interpolations(update=False,
                                              target='GPS',
-                                             method=settings['GPSInterpolation'])
+                                             method=settings[
+                                                 'GPSInterpolation'])
 
             # Set depth reference
-            transect.set_depth_reference(update=False, setting=settings['depthReference'])
+            transect.set_depth_reference(update=False,
+                                         setting=settings['depthReference'])
 
             transect.process_depths(update=True,
                                     filter_method=settings['depthFilterType'],
-                                    interpolation_method=settings['depthInterpolation'],
-                                    composite_setting=settings['depthComposite'],
+                                    interpolation_method=settings[
+                                        'depthInterpolation'],
+                                    composite_setting=settings[
+                                        'depthComposite'],
                                     avg_method=settings['depthAvgMethod'],
                                     valid_method=settings['depthValidMethod'])
 
@@ -1158,14 +1346,16 @@ class Measurement(object):
             wt_kwargs = {}
             if settings['WTdFilter'] == 'Manual':
                 wt_kwargs['difference'] = settings['WTdFilter']
-                wt_kwargs['difference_threshold'] = settings['WTdFilterThreshold']
+                wt_kwargs['difference_threshold'] = settings[
+                    'WTdFilterThreshold']
             else:
                 wt_kwargs['difference'] = settings['WTdFilter']
 
             # Set WT vertical velocity filter
             if settings['WTwFilter'] == 'Manual':
                 wt_kwargs['vertical'] = settings['WTwFilter']
-                wt_kwargs['vertical_threshold'] = settings['WTwFilterThreshold']
+                wt_kwargs['vertical_threshold'] = settings[
+                    'WTwFilterThreshold']
             else:
                 wt_kwargs['vertical'] = settings['WTwFilter']
 
@@ -1175,13 +1365,23 @@ class Measurement(object):
             wt_kwargs['wt_depth'] = settings['WTwtDepthFilter']
             wt_kwargs['excluded'] = settings['WTExcludedDistance']
 
-            # Data loaded from old QRev.mat files will be set to use this new interpolation method. When reprocessing
+            # Data loaded from old QRev.mat files will be set to use this
+            # new interpolation method. When reprocessing
             # any data the interpolation method should be 'abba'
             if force_abba:
                 transect.w_vel.interpolate_cells = 'abba'
                 transect.w_vel.interpolate_ens = 'abba'
                 settings['WTEnsInterpolation'] = 'abba'
                 settings['WTCellInterpolation'] = 'abba'
+
+            transect.w_vel.use_measurement_thresholds = settings[
+                'UseMeasurementThresholds']
+            if transect.w_vel.ping_type.size == 0 and \
+                    transect.adcp.manufacturer == 'SonTek':
+                # Correlation and frequency can be used to determine ping type
+                transect.w_vel.ping_type = TransectData.sontek_ping_type(
+                    corr=transect.w_vel.corr,
+                    freq=transect.w_vel.frequency)
 
             transect.w_vel.apply_filter(transect=transect, **wt_kwargs)
 
@@ -1196,27 +1396,13 @@ class Measurement(object):
 
         if settings['UseWeighted'] and not self.use_weighted:
             if self.extrap_fit.norm_data[-1].weights is None:
-                # Compute normalized data for each transect to obtain the weights
-                self.extrap_fit.process_profiles(self.transects, self.extrap_fit.norm_data[-1].data_type,
-                                                 use_weighted=settings['UseWeighted'])
-            # self.extrap_fit.norm_data = []
-            # for n, transect in enumerate(self.transects):
-            #     self.extrap_fit.norm_data[n] = NormData()
-            #     self.extrap_fit.norm_data[n].populate_data(transect=transect,
-            #                             data_type=self.extrap_fit.norm_data[n].data_type,
-            #                             threshold=self.extrap_fit.threshold,
-            #                             data_extent=self.extrap_fit.subsection,
-            #                             use_weighted=self.extrap_fit.use_weighted,
-            #                             sub_from_left=self.extrap_fit.norm_data[n].sub_from_left,
-            #                             use_q=self.extrap_fit.norm_data[n].use_q)
-            #
-            # # Compute composite normalized data to get the composite weights
-            # norm_data_temp = NormData()
-            # norm_data_temp.create_composite(transects=self.transects,
-            #                                 norm_data=self.extrap_fit.norm_data[0:-1],
-            #                                 threshold=self.extrap_fit.threshold)
-            # # Update the norm_data with newly computed weights
-            # self.extrap_fit.norm_data[-1].weights = norm_data_temp.weights
+                # Compute normalized data for each transect to obtain the
+                # weights
+                self.extrap_fit.process_profiles(self.transects,
+                                                 self.extrap_fit.norm_data[
+                                                     -1].data_type,
+                                                 use_weighted=settings[
+                                                     'UseWeighted'])
 
         self.use_weighted = settings['UseWeighted']
 
@@ -1228,18 +1414,25 @@ class Measurement(object):
         if self.transects[ref_transect].w_vel.interpolate_cells == 'TRDI':
             if self.extrap_fit is None:
                 self.extrap_fit = ComputeExtrap()
-                self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
-                                              use_weighted=settings['UseWeighted'])
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                self.extrap_fit.populate_data(transects=self.transects,
+                                              compute_sensitivity=False,
+                                              use_weighted=settings[
+                                                  'UseWeighted'])
+                self.change_extrapolation(self.extrap_fit.fit_method,
+                                          compute_q=False,
                                           use_weighted=settings['UseWeighted'])
             elif self.extrap_fit.fit_method == 'Automatic':
-                self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+                self.change_extrapolation(self.extrap_fit.fit_method,
+                                          compute_q=False,
                                           use_weighted=settings['UseWeighted'])
             else:
                 if 'extrapTop' not in settings.keys():
-                    settings['extrapTop'] = self.extrap_fit.sel_fit[-1].top_method
-                    settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
-                    settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
+                    settings['extrapTop'] = self.extrap_fit.sel_fit[
+                        -1].top_method
+                    settings['extrapBot'] = self.extrap_fit.sel_fit[
+                        -1].bot_method
+                    settings['extrapExp'] = self.extrap_fit.sel_fit[
+                        -1].exponent
 
             self.change_extrapolation(self.extrap_fit.fit_method,
                                       top=settings['extrapTop'],
@@ -1249,20 +1442,24 @@ class Measurement(object):
                                       use_weighted=settings['UseWeighted'])
 
         for transect in self.transects:
-
             # Water track interpolations
             transect.w_vel.apply_interpolation(transect=transect,
-                                               ens_interp=settings['WTEnsInterpolation'],
-                                               cells_interp=settings['WTCellInterpolation'])
+                                               ens_interp=settings[
+                                                   'WTEnsInterpolation'],
+                                               cells_interp=settings[
+                                                   'WTCellInterpolation'])
 
         if self.extrap_fit is None:
             self.extrap_fit = ComputeExtrap()
-            self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False,
+            self.extrap_fit.populate_data(transects=self.transects,
+                                          compute_sensitivity=False,
                                           use_weighted=settings['UseWeighted'])
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+            self.change_extrapolation(self.extrap_fit.fit_method,
+                                      compute_q=False,
                                       use_weighted=settings['UseWeighted'])
         elif self.extrap_fit.fit_method == 'Automatic':
-            self.change_extrapolation(self.extrap_fit.fit_method, compute_q=False,
+            self.change_extrapolation(self.extrap_fit.fit_method,
+                                      compute_q=False,
                                       use_weighted=settings['UseWeighted'])
         else:
             if 'extrapTop' not in settings.keys():
@@ -1283,12 +1480,196 @@ class Measurement(object):
 
         self.compute_discharge()
 
-        self.uncertainty = Uncertainty()
-        self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self)
-        if self.run_oursin:
-            self.oursin = Oursin()
-            self.oursin.compute_oursin(self)
+        self.compute_uncertainty()
+
+    def apply_settings_to_movingbed(self, settings, force_abba=True):
+        """Applies reference, filter, and interpolation settings.
+
+        Parameters
+        ----------
+        settings: dict
+            Dictionary of reference, filter, and interpolation settings
+        force_abba: bool
+            Allows the above, below, before, after interpolation to be
+            applied even when the data use another approach.
+        """
+
+        self.use_ping_type = settings['UsePingType']
+        # If SonTek data does not have ping type identified, determine ping
+        # types
+        if self.mb_tests[0].transect.w_vel.ping_type.size == 1 and \
+                self.transects[0].adcp.manufacturer == 'SonTek':
+            for test in self.mb_tests:
+                transect = test.transect
+                ping_type = TransectData.sontek_ping_type(transect.w_vel.corr,
+                                                          transect.w_vel.frequency)
+                transect.w_vel.ping_type = np.tile(np.array([ping_type]), (
+                transect.w_vel.corr.shape[1], 1))
+
+        for test in self.mb_tests:
+            transect = test.transect
+
+            if not settings['UsePingType']:
+                transect.w_vel.ping_type = np.tile('U',
+                                                   transect.w_vel.ping_type.shape)
+                transect.boat_vel.bt_vel.frequency_khz = np.tile(0,
+                                                                 transect.boat_vel.bt_vel.frequency_khz.shape)
+
+            # Moving-boat ensembles
+            if 'Processing' in settings.keys():
+                transect.change_q_ensembles(proc_method=settings['Processing'])
+                self.processing = settings['Processing']
+
+            # Set difference velocity BT filter
+            bt_kwargs = {}
+            if settings['BTdFilter'] == 'Manual':
+                bt_kwargs['difference'] = settings['BTdFilter']
+                bt_kwargs['difference_threshold'] = settings[
+                    'BTdFilterThreshold']
+            else:
+                bt_kwargs['difference'] = settings['BTdFilter']
+
+            # Set vertical velocity BT filter
+            if settings['BTwFilter'] == 'Manual':
+                bt_kwargs['vertical'] = settings['BTwFilter']
+                bt_kwargs['vertical_threshold'] = settings[
+                    'BTwFilterThreshold']
+            else:
+                bt_kwargs['vertical'] = settings['BTwFilter']
+
+                # Apply beam filter
+                bt_kwargs['beam'] = settings['BTbeamFilter']
+
+                # Apply smooth filter
+                bt_kwargs['other'] = settings['BTsmoothFilter']
+
+            transect.boat_vel.bt_vel.use_measurement_thresholds = settings[
+                'UseMeasurementThresholds']
+
+            # Apply BT settings
+            transect.boat_filters(update=False, **bt_kwargs)
+
+            # Don't interpolate for stationary tests
+            if test.type == 'Loop':
+                # BT Interpolation
+                transect.boat_interpolations(update=False,
+                                             target='BT',
+                                             method=settings[
+                                                 'BTInterpolation'])
+
+            # GPS filter settings
+            if transect.gps is not None:
+                gga_kwargs = {}
+                if transect.boat_vel.gga_vel is not None:
+                    # GGA
+                    gga_kwargs['differential'] = settings['ggaDiffQualFilter']
+                    if settings['ggaAltitudeFilter'] == 'Manual':
+                        gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
+                        gga_kwargs['altitude_threshold'] = settings[
+                            'ggaAltitudeFilterChange']
+                    else:
+                        gga_kwargs['altitude'] = settings['ggaAltitudeFilter']
+
+                    # Set GGA HDOP Filter
+                    if settings['GPSHDOPFilter'] == 'Manual':
+                        gga_kwargs['hdop'] = settings['GPSHDOPFilter']
+                        gga_kwargs['hdop_max_threshold'] = settings[
+                            'GPSHDOPFilterMax']
+                        gga_kwargs['hdop_change_threshold'] = settings[
+                            'GPSHDOPFilterChange']
+                    else:
+                        gga_kwargs['hdop'] = settings['GPSHDOPFilter']
+
+                    gga_kwargs['other'] = settings['GPSSmoothFilter']
+                    # Apply GGA filters
+                    transect.gps_filters(update=False, **gga_kwargs)
+
+                if transect.boat_vel.vtg_vel is not None:
+                    vtg_kwargs = {}
+                    if settings['GPSHDOPFilter'] == 'Manual':
+                        vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
+                        vtg_kwargs['hdop_max_threshold'] = settings[
+                            'GPSHDOPFilterMax']
+                        vtg_kwargs['hdop_change_threshold'] = settings[
+                            'GPSHDOPFilterChange']
+                        vtg_kwargs['other'] = settings['GPSSmoothFilter']
+                    else:
+                        vtg_kwargs['hdop'] = settings['GPSHDOPFilter']
+                        vtg_kwargs['other'] = settings['GPSSmoothFilter']
+
+                    # Apply VTG filters
+                    transect.gps_filters(update=False, **vtg_kwargs)
+
+                # Don't interpolate for stationary tests
+                if test.type == 'Loop':
+                    transect.boat_interpolations(update=False,
+                                                 target='GPS',
+                                                 method=settings[
+                                                     'GPSInterpolation'])
+
+            # Set depth reference
+            transect.set_depth_reference(update=False,
+                                         setting=settings['depthReference'])
+
+            transect.process_depths(update=True,
+                                    filter_method=settings['depthFilterType'],
+                                    interpolation_method=settings[
+                                        'depthInterpolation'],
+                                    composite_setting=settings[
+                                        'depthComposite'],
+                                    avg_method=settings['depthAvgMethod'],
+                                    valid_method=settings['depthValidMethod'])
+
+            # Set WT difference velocity filter
+            wt_kwargs = {}
+            if settings['WTdFilter'] == 'Manual':
+                wt_kwargs['difference'] = settings['WTdFilter']
+                wt_kwargs['difference_threshold'] = settings[
+                    'WTdFilterThreshold']
+            else:
+                wt_kwargs['difference'] = settings['WTdFilter']
+
+            # Set WT vertical velocity filter
+            if settings['WTwFilter'] == 'Manual':
+                wt_kwargs['vertical'] = settings['WTwFilter']
+                wt_kwargs['vertical_threshold'] = settings[
+                    'WTwFilterThreshold']
+            else:
+                wt_kwargs['vertical'] = settings['WTwFilter']
+
+            wt_kwargs['beam'] = settings['WTbeamFilter']
+            wt_kwargs['other'] = settings['WTsmoothFilter']
+            wt_kwargs['snr'] = settings['WTsnrFilter']
+            wt_kwargs['wt_depth'] = settings['WTwtDepthFilter']
+            wt_kwargs['excluded'] = settings['WTExcludedDistance']
+
+            # Data loaded from old QRev.mat files will be set to use this
+            # new interpolation method. When reprocessing
+            # any data the interpolation method should be 'abba'
+            if force_abba:
+                transect.w_vel.interpolate_cells = 'abba'
+                transect.w_vel.interpolate_ens = 'abba'
+                settings['WTEnsInterpolation'] = 'abba'
+                settings['WTCellInterpolation'] = 'abba'
+
+            transect.w_vel.use_measurement_thresholds = settings[
+                'UseMeasurementThresholds']
+            if transect.w_vel.ping_type.size == 0 and \
+                    transect.adcp.manufacturer == 'SonTek':
+                # Correlation and frequency can be used to determine ping type
+                transect.w_vel.ping_type = TransectData.sontek_ping_type(
+                    corr=transect.w_vel.corr,
+                    freq=transect.w_vel.frequency)
+
+            transect.w_vel.apply_filter(transect=transect, **wt_kwargs)
+
+            transect.w_vel.apply_interpolation(transect=transect,
+                                               ens_interp=settings[
+                                                   'WTEnsInterpolation'],
+                                               cells_interp=settings[
+                                                   'WTCellInterpolation'])
+
+            test.process_mb_test(source=self.transects[0].adcp.manufacturer)
 
     def current_settings(self):
         """Saves the current settings for a measurement. Since all settings
@@ -1303,35 +1684,39 @@ class Measurement(object):
         else:
             ref_transect = 0
         transect = self.transects[ref_transect]
-        
+
         # Navigation reference
         settings['NavRef'] = transect.boat_vel.selected
-        
+
         # Composite tracks
         settings['CompTracks'] = transect.boat_vel.composite
-        
+
         # Water track settings
         settings['WTbeamFilter'] = transect.w_vel.beam_filter
         settings['WTdFilter'] = transect.w_vel.d_filter
-        settings['WTdFilterThreshold'] = transect.w_vel.d_filter_threshold
+        settings['WTdFilterThreshold'] = transect.w_vel.d_filter_thresholds
         settings['WTwFilter'] = transect.w_vel.w_filter
-        settings['WTwFilterThreshold'] = transect.w_vel.w_filter_threshold
+        settings['WTwFilterThreshold'] = transect.w_vel.w_filter_thresholds
         settings['WTsmoothFilter'] = transect.w_vel.smooth_filter
         settings['WTsnrFilter'] = transect.w_vel.snr_filter
         settings['WTwtDepthFilter'] = transect.w_vel.wt_depth_filter
         settings['WTEnsInterpolation'] = transect.w_vel.interpolate_ens
         settings['WTCellInterpolation'] = transect.w_vel.interpolate_cells
         settings['WTExcludedDistance'] = transect.w_vel.excluded_dist_m
-        
+
         # Bottom track settings
         settings['BTbeamFilter'] = transect.boat_vel.bt_vel.beam_filter
         settings['BTdFilter'] = transect.boat_vel.bt_vel.d_filter
-        settings['BTdFilterThreshold'] = transect.boat_vel.bt_vel.d_filter_threshold
+        settings[
+            'BTdFilterThreshold'] = \
+            transect.boat_vel.bt_vel.d_filter_thresholds
         settings['BTwFilter'] = transect.boat_vel.bt_vel.w_filter
-        settings['BTwFilterThreshold'] = transect.boat_vel.bt_vel.w_filter_threshold
+        settings[
+            'BTwFilterThreshold'] = \
+            transect.boat_vel.bt_vel.w_filter_thresholds
         settings['BTsmoothFilter'] = transect.boat_vel.bt_vel.smooth_filter
         settings['BTInterpolation'] = transect.boat_vel.bt_vel.interpolate
-        
+
         # Gps Settings
         # if transect.gps is not None:
 
@@ -1344,15 +1729,26 @@ class Measurement(object):
 
         # GGA settings
         if gga_present:
-            settings['ggaDiffQualFilter'] = transect.boat_vel.gga_vel.gps_diff_qual_filter
-            settings['ggaAltitudeFilter'] = transect.boat_vel.gga_vel.gps_altitude_filter
+            settings[
+                'ggaDiffQualFilter'] = \
+                transect.boat_vel.gga_vel.gps_diff_qual_filter
+            settings[
+                'ggaAltitudeFilter'] = \
+                transect.boat_vel.gga_vel.gps_altitude_filter
             settings['ggaAltitudeFilterChange'] = \
                 transect.boat_vel.gga_vel.gps_altitude_filter_change
-            settings['GPSHDOPFilter'] = transect.boat_vel.gga_vel.gps_HDOP_filter
-            settings['GPSHDOPFilterMax'] = transect.boat_vel.gga_vel.gps_HDOP_filter_max
-            settings['GPSHDOPFilterChange'] = transect.boat_vel.gga_vel.gps_HDOP_filter_change
-            settings['GPSSmoothFilter'] = transect.boat_vel.gga_vel.smooth_filter
-            settings['GPSInterpolation'] = transect.boat_vel.gga_vel.interpolate
+            settings[
+                'GPSHDOPFilter'] = transect.boat_vel.gga_vel.gps_HDOP_filter
+            settings[
+                'GPSHDOPFilterMax'] = \
+                transect.boat_vel.gga_vel.gps_HDOP_filter_max
+            settings[
+                'GPSHDOPFilterChange'] = \
+                transect.boat_vel.gga_vel.gps_HDOP_filter_change
+            settings[
+                'GPSSmoothFilter'] = transect.boat_vel.gga_vel.smooth_filter
+            settings[
+                'GPSInterpolation'] = transect.boat_vel.gga_vel.interpolate
         else:
             settings['ggaDiffQualFilter'] = 1
             settings['ggaAltitudeFilter'] = 'Off'
@@ -1377,24 +1773,33 @@ class Measurement(object):
                 break
 
         if vtg_present:
-            settings['GPSHDOPFilter'] = transect.boat_vel.vtg_vel.gps_HDOP_filter
-            settings['GPSHDOPFilterMax'] = transect.boat_vel.vtg_vel.gps_HDOP_filter_max
-            settings['GPSHDOPFilterChange'] = transect.boat_vel.vtg_vel.gps_HDOP_filter_change
-            settings['GPSSmoothFilter'] = transect.boat_vel.vtg_vel.smooth_filter
-            settings['GPSInterpolation'] = transect.boat_vel.vtg_vel.interpolate
+            settings[
+                'GPSHDOPFilter'] = transect.boat_vel.vtg_vel.gps_HDOP_filter
+            settings[
+                'GPSHDOPFilterMax'] = \
+                transect.boat_vel.vtg_vel.gps_HDOP_filter_max
+            settings[
+                'GPSHDOPFilterChange'] = \
+                transect.boat_vel.vtg_vel.gps_HDOP_filter_change
+            settings[
+                'GPSSmoothFilter'] = transect.boat_vel.vtg_vel.smooth_filter
+            settings[
+                'GPSInterpolation'] = transect.boat_vel.vtg_vel.interpolate
 
         # Depth Settings
         settings['depthAvgMethod'] = transect.depths.bt_depths.avg_method
-        settings['depthValidMethod'] = transect.depths.bt_depths.valid_data_method
-        
+        settings[
+            'depthValidMethod'] = transect.depths.bt_depths.valid_data_method
+
         # Depth settings are always applied to all available depth sources.
-        # Only those saved in the bt_depths are used here but are applied to all sources
+        # Only those saved in the bt_depths are used here but are applied to
+        # all sources
         settings['depthFilterType'] = transect.depths.bt_depths.filter_type
         settings['depthReference'] = transect.depths.selected
         settings['depthComposite'] = transect.depths.composite
         select = getattr(transect.depths, transect.depths.selected)
         settings['depthInterpolation'] = select.interp_type
-        
+
         # Extrap Settings
         if self.extrap_fit is None:
             settings['extrapTop'] = transect.extrap.top_method
@@ -1405,17 +1810,25 @@ class Measurement(object):
             settings['extrapBot'] = self.extrap_fit.sel_fit[-1].bot_method
             settings['extrapExp'] = self.extrap_fit.sel_fit[-1].exponent
 
-        # Use of self.use_weighted allows a QRev mat file to be loaded and initially processed with the settings from
-        # the QRev file but upon reprocessing the self.use_weights will be set to the options setting for use_weights
+        # Use of self.use_weighted allows a QRev mat file to be loaded and
+        # initially processed with the settings from
+        # the QRev file but upon reprocessing the self.use_weights will be
+        # set to the options setting for use_weights
         settings['UseWeighted'] = self.use_weighted
 
         # Edge Settings
         settings['edgeVelMethod'] = transect.edges.vel_method
         settings['edgeRecEdgeMethod'] = transect.edges.rec_edge_method
-        
+
+        settings[
+            'UseMeasurementThresholds'] = \
+            transect.w_vel.use_measurement_thresholds
+        settings['UsePingType'] = self.use_ping_type
+
         return settings
 
-    def qrev_default_settings(self, check_user_excluded_dist=False, use_weighted=False):
+    def qrev_default_settings(self, check_user_excluded_dist=False,
+                              use_weighted=False):
         """QRev default and filter settings for a measurement.
         """
 
@@ -1450,9 +1863,11 @@ class Measurement(object):
             excluded_dist = np.nanmin([x.excluded_dist_m for x in temp])
         else:
             excluded_dist = 0
-        if excluded_dist < 0.158 and self.transects[ref_transect].adcp.model == 'M9':
+        if excluded_dist < 0.158 and self.transects[
+            ref_transect].adcp.model == 'M9':
             settings['WTExcludedDistance'] = 0.16
-        elif excluded_dist < 0.248 and self.transects[ref_transect].adcp.model == 'RioPro':
+        elif excluded_dist < 0.248 and self.transects[
+            ref_transect].adcp.model == 'RioPro':
             settings['WTExcludedDistance'] = 0.25
         else:
             settings['WTExcludedDistance'] = excluded_dist
@@ -1493,7 +1908,8 @@ class Measurement(object):
         for transect in self.transects:
             if transect.checked:
 
-                if transect.depths.vb_depths is not None or transect.depths.ds_depths is not None:
+                if transect.depths.vb_depths is not None or \
+                        transect.depths.ds_depths is not None:
                     settings['depthComposite'] = 'On'
                     break
                 else:
@@ -1512,6 +1928,9 @@ class Measurement(object):
         settings['extrapBot'] = 'Power'
         settings['extrapExp'] = 0.1667
         settings['UseWeighted'] = use_weighted
+
+        settings['UseMeasurementThresholds'] = False
+        settings['UsePingType'] = True
 
         return settings
 
@@ -1612,32 +2031,18 @@ class Measurement(object):
         """
 
         # Update transect settings
+        self.checked_transect_idx = []
         for n in range(len(self.transects)):
             if n in selected_transects_idx:
                 self.transects[n].checked = True
+                self.checked_transect_idx.append(n)
             else:
                 self.transects[n].checked = False
 
-        # Changes in the transects selected may cause a change in extrapolation.
-        self.extrap_fit = ComputeExtrap()
-        self.extrap_fit.populate_data(transects=self.transects, compute_sensitivity=False)
-        top = self.extrap_fit.sel_fit[-1].top_method
-        bot = self.extrap_fit.sel_fit[-1].bot_method
-        exp = self.extrap_fit.sel_fit[-1].exponent
-        self.change_extrapolation(self.extrap_fit.fit_method, top=top, bot=bot, exp=exp)
-
-        self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
-        self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
-                                                    extrap_fits=self.extrap_fit.sel_fit)
-
         # Update computations
-        self.compute_discharge()
-        self.uncertainty = Uncertainty()
-        self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self)
-        if self.run_oursin:
-            self.oursin = Oursin()
-            self.oursin.compute_oursin(self)
+        self.create_filter_composites()
+        settings = self.current_settings()
+        self.apply_settings(settings=settings)
 
     def compute_discharge(self):
         """Computes the discharge for all transects in the measurement.
@@ -1649,9 +2054,31 @@ class Measurement(object):
             q.populate_data(data_in=transect, moving_bed_data=self.mb_tests)
             self.discharge.append(q)
 
+    def compute_uncertainty(self):
+        """Computes uncertainty using QRev model and Oursin model if selected.
+        """
+
+        self.uncertainty = Uncertainty()
+        self.uncertainty.compute_uncertainty(self)
+        self.qa = QAData(self)
+
+        if self.run_oursin:
+            if self.oursin is None:
+                self.oursin = Oursin()
+                user_advanced_settings = None
+                u_measurement_user = None
+            else:
+                user_advanced_settings = self.oursin.user_advanced_settings
+                u_measurement_user = self.oursin.u_measurement_user
+                self.oursin = Oursin()
+            self.oursin.compute_oursin(self,
+                                       user_advanced_settings=user_advanced_settings,
+                                       u_measurement_user=u_measurement_user)
+
     @staticmethod
     def compute_edi(meas, selected_idx, percents):
-        """Computes the locations and vertical properties for the user selected transect and
+        """Computes the locations and vertical properties for the user
+        selected transect and
         flow percentages.
 
         Parameters
@@ -1672,7 +2099,8 @@ class Measurement(object):
         percents.sort()
 
         # Compute cumulative discharge
-        q_cum = np.nancumsum(discharge.middle_ens + discharge.top_ens + discharge.bottom_ens)
+        q_cum = np.nancumsum(
+            discharge.middle_ens + discharge.top_ens + discharge.bottom_ens)
 
         # Adjust for moving-bed conditions
         q_cum = q_cum * discharge.correction_factor
@@ -1698,11 +2126,14 @@ class Measurement(object):
                 ensembles.append(np.where(q_cum < q_target[-1])[0][0])
 
         # Compute distance from start bank
-        boat_vel_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
-        track_x = np.nancumsum(boat_vel_selected.u_processed_mps[transect.in_transect_idx] *
-                               transect.date_time.ens_duration_sec[transect.in_transect_idx])
-        track_y = np.nancumsum(boat_vel_selected.v_processed_mps[transect.in_transect_idx] *
-                               transect.date_time.ens_duration_sec[transect.in_transect_idx])
+        boat_vel_selected = getattr(transect.boat_vel,
+                                    transect.boat_vel.selected)
+        track_x = np.nancumsum(
+            boat_vel_selected.u_processed_mps[transect.in_transect_idx] *
+            transect.date_time.ens_duration_sec[transect.in_transect_idx])
+        track_y = np.nancumsum(
+            boat_vel_selected.v_processed_mps[transect.in_transect_idx] *
+            transect.date_time.ens_duration_sec[transect.in_transect_idx])
 
         dist = np.sqrt(track_x ** 2 + track_y ** 2) + start_dist
 
@@ -1729,20 +2160,30 @@ class Measurement(object):
                 lon.append('')
             depth.append(depth_selected.depth_processed_m[ensemble])
 
-            # The velocity is an average velocity for ensembles +/- 1% of the total ensembles
+            # The velocity is an average velocity for ensembles +/- 1% of
+            # the total ensembles
             # about the selected ensemble
-            u = np.nanmean(transect.w_vel.u_processed_mps[:, ensemble - n_pts_in_avg: ensemble + n_pts_in_avg + 1], 1)
-            v = np.nanmean(transect.w_vel.v_processed_mps[:, ensemble - n_pts_in_avg: ensemble + n_pts_in_avg + 1], 1)
-            velocity.append(np.sqrt(np.nanmean(u)**2 + np.nanmean(v)**2))
+            u = np.nanmean(transect.w_vel.u_processed_mps[:,
+                           ensemble - n_pts_in_avg: ensemble + n_pts_in_avg
+                                                    + 1],
+                           1)
+            v = np.nanmean(transect.w_vel.v_processed_mps[:,
+                           ensemble - n_pts_in_avg: ensemble + n_pts_in_avg
+                                                    + 1],
+                           1)
+            velocity.append(np.sqrt(np.nanmean(u) ** 2 + np.nanmean(v) ** 2))
 
         # Save computed results in a dictionary
-        edi_results = {'percent': percents, 'target_q': q_target, 'actual_q': q_actual, 'distance': distance,
-                       'depth': depth, 'velocity': velocity, 'lat': lat, 'lon': lon}
+        edi_results = {'percent': percents, 'target_q': q_target,
+                       'actual_q': q_actual, 'distance': distance,
+                       'depth': depth, 'velocity': velocity, 'lat': lat,
+                       'lon': lon}
         return edi_results
 
     @staticmethod
     def qrev_default_interpolation_methods(settings):
-        """Adds QRev default interpolation settings to existing settings data structure
+        """Adds QRev default interpolation settings to existing settings
+        data structure
 
         Parameters
         ----------
@@ -1764,7 +2205,8 @@ class Measurement(object):
 
         return settings
 
-    def change_extrapolation(self, method, top=None, bot=None, exp=None, extents=None, threshold=None, compute_q=True,
+    def change_extrapolation(self, method, top=None, bot=None, exp=None,
+                             extents=None, threshold=None, compute_q=True,
                              use_weighted=False):
         """Applies the selected extrapolation method to each transect.
 
@@ -1807,19 +2249,25 @@ class Measurement(object):
             self.extrap_fit.fit_method = 'Manual'
             for transect in self.transects:
                 transect.extrap.set_extrap_data(top=top, bot=bot, exp=exp)
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
+            self.extrap_fit.process_profiles(transects=self.transects,
+                                             data_type=data_type,
+                                             use_weighted=use_weighted)
         else:
             self.extrap_fit.fit_method = 'Automatic'
-            self.extrap_fit.process_profiles(transects=self.transects, data_type=data_type, use_weighted=use_weighted)
+            self.extrap_fit.process_profiles(transects=self.transects,
+                                             data_type=data_type,
+                                             use_weighted=use_weighted)
             for transect in self.transects:
-                transect.extrap.set_extrap_data(top=self.extrap_fit.sel_fit[-1].top_method,
-                                                bot=self.extrap_fit.sel_fit[-1].bot_method,
-                                                exp=self.extrap_fit.sel_fit[-1].exponent)
+                transect.extrap.set_extrap_data(
+                    top=self.extrap_fit.sel_fit[-1].top_method,
+                    bot=self.extrap_fit.sel_fit[-1].bot_method,
+                    exp=self.extrap_fit.sel_fit[-1].exponent)
 
         if compute_q:
             self.extrap_fit.q_sensitivity = ExtrapQSensitivity()
-            self.extrap_fit.q_sensitivity.populate_data(transects=self.transects,
-                                                        extrap_fits=self.extrap_fit.sel_fit)
+            self.extrap_fit.q_sensitivity.populate_data(
+                transects=self.transects,
+                extrap_fits=self.extrap_fit.sel_fit)
 
             self.compute_discharge()
 
@@ -1876,7 +2324,8 @@ class Measurement(object):
 
     @staticmethod
     def compute_measurement_properties(self):
-        """Computes characteristics of the transects and measurement that assist in evaluating the consistency
+        """Computes characteristics of the transects and measurement that
+        assist in evaluating the consistency
         of the transects.
 
         Returns
@@ -1916,11 +2365,13 @@ class Measurement(object):
                       'area_cov': np.array([np.nan] * (n_transects + 1)),
                       'avg_boat_speed': np.array([np.nan] * (n_transects + 1)),
                       'avg_boat_course': np.array([np.nan] * n_transects),
-                      'avg_water_speed': np.array([np.nan] * (n_transects + 1)),
+                      'avg_water_speed': np.array(
+                          [np.nan] * (n_transects + 1)),
                       'avg_water_dir': np.array([np.nan] * (n_transects + 1)),
                       'avg_depth': np.array([np.nan] * (n_transects + 1)),
                       'max_depth': np.array([np.nan] * (n_transects + 1)),
-                      'max_water_speed': np.array([np.nan] * (n_transects + 1))}
+                      'max_water_speed': np.array(
+                          [np.nan] * (n_transects + 1))}
 
         # Process each transect
         for n, transect in enumerate(self.transects):
@@ -1930,40 +2381,52 @@ class Measurement(object):
 
             # Get boat speeds
             in_transect_idx = transect.in_transect_idx
-            if getattr(transect.boat_vel, transect.boat_vel.selected) is not None:
-                boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
+            if getattr(transect.boat_vel,
+                       transect.boat_vel.selected) is not None:
+                boat_selected = getattr(transect.boat_vel,
+                                        transect.boat_vel.selected)
                 u_boat = boat_selected.u_processed_mps[in_transect_idx]
                 v_boat = boat_selected.v_processed_mps[in_transect_idx]
             else:
-                u_boat = nans(transect.boat_vel.bt_vel.u_processed_mps[in_transect_idx].shape)
-                v_boat = nans(transect.boat_vel.bt_vel.v_processed_mps[in_transect_idx].shape)
+                u_boat = nans(transect.boat_vel.bt_vel.u_processed_mps[
+                                  in_transect_idx].shape)
+                v_boat = nans(transect.boat_vel.bt_vel.v_processed_mps[
+                                  in_transect_idx].shape)
 
             if np.logical_not(np.all(np.isnan(boat_track['track_x_m']))):
 
                 # Compute boat course and mean speed
-                [course_radians, dmg] = cart2pol(boat_track['track_x_m'][-1], boat_track['track_y_m'][-1])
+                [course_radians, dmg] = cart2pol(boat_track['track_x_m'][-1],
+                                                 boat_track['track_y_m'][-1])
                 trans_prop['avg_boat_course'][n] = rad2azdeg(course_radians)
-                trans_prop['avg_boat_speed'][n] = np.nanmean(np.sqrt(u_boat**2 + v_boat**2))
+                trans_prop['avg_boat_speed'][n] = np.nanmean(
+                    np.sqrt(u_boat ** 2 + v_boat ** 2))
 
                 # Compute width
-                trans_prop['width'][n] = np.nansum([dmg, transect.edges.left.distance_m,
-                                                    transect.edges.right.distance_m])
+                trans_prop['width'][n] = np.nansum(
+                    [dmg, transect.edges.left.distance_m,
+                     transect.edges.right.distance_m])
 
-                # Project the shiptrack onto a line from the beginning to end of the transect
+                # Project the shiptrack onto a line from the beginning to
+                # end of the transect
                 unit_x, unit_y = pol2cart(course_radians, 1)
-                bt = np.array([boat_track['track_x_m'], boat_track['track_y_m']]).T
+                bt = np.array(
+                    [boat_track['track_x_m'], boat_track['track_y_m']]).T
                 dot_prod = bt @ np.array([unit_x, unit_y])
                 projected_x = dot_prod * unit_x
                 projected_y = dot_prod * unit_y
-                station = np.sqrt(projected_x**2 + projected_y**2)
+                station = np.sqrt(projected_x ** 2 + projected_y ** 2)
 
                 # Get selected depth object
                 depth = getattr(transect.depths, transect.depths.selected)
                 depth_a = np.copy(depth.depth_processed_m)
                 depth_a[np.isnan(depth_a)] = 0
-                # Compute area of the moving-boat portion of the cross section using trapezoidal integration.
-                # This method is consistent with AreaComp but is different from QRev in Matlab
-                area_moving_boat = np.abs(np.trapz(depth_a[in_transect_idx], station[in_transect_idx]))
+                # Compute area of the moving-boat portion of the cross
+                # section using trapezoidal integration.
+                # This method is consistent with AreaComp but is different
+                # from QRev in Matlab
+                area_moving_boat = np.abs(np.trapz(depth_a[in_transect_idx],
+                                                   station[in_transect_idx]))
 
                 # Compute area of left edge
                 edge_type = transect.edges.left.type
@@ -1992,49 +2455,67 @@ class Measurement(object):
                     coef = 0.5
                 edge_idx = QComp.edge_ensembles('right', transect)
                 edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
-                area_right = edge_depth * transect.edges.right.distance_m * coef
+                area_right = edge_depth * transect.edges.right.distance_m * \
+                             coef
 
                 # Compute total cross sectional area
-                trans_prop['area'][n] = np.nansum([area_left, area_moving_boat, area_right])
+                trans_prop['area'][n] = np.nansum(
+                    [area_left, area_moving_boat, area_right])
 
                 # Compute average water speed
-                trans_prop['avg_water_speed'][n] = self.discharge[n].total / trans_prop['area'][n]
+                trans_prop['avg_water_speed'][n] = self.discharge[n].total / \
+                                                   trans_prop['area'][n]
 
                 # Compute flow direction using discharge weighting
                 u_water = transect.w_vel.u_processed_mps[:, in_transect_idx]
                 v_water = transect.w_vel.v_processed_mps[:, in_transect_idx]
                 weight = np.abs(self.discharge[n].middle_cells)
-                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(np.nansum(weight))
-                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(np.nansum(weight))
+                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(
+                    np.nansum(weight))
+                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(
+                    np.nansum(weight))
                 trans_prop['avg_water_dir'][n] = np.arctan2(u, v) * 180 / np.pi
                 if trans_prop['avg_water_dir'][n] < 0:
-                    trans_prop['avg_water_dir'][n] = trans_prop['avg_water_dir'][n] + 360
+                    trans_prop['avg_water_dir'][n] = \
+                    trans_prop['avg_water_dir'][n] + 360
 
                 # Compute average and max depth
                 # This is a deviation from QRev in Matlab which simply averaged all the depths
-                trans_prop['avg_depth'][n] = trans_prop['area'][n] / trans_prop['width'][n]
-                trans_prop['max_depth'][n] = np.nanmax(depth.depth_processed_m[in_transect_idx])
+                trans_prop['avg_depth'][n] = trans_prop['area'][n] / \
+                                             trans_prop['width'][n]
+                trans_prop['max_depth'][n] = np.nanmax(
+                    depth.depth_processed_m[in_transect_idx])
 
                 # Compute max water speed using the 99th percentile
-                water_speed = np.sqrt(u_water**2 + v_water**2)
-                trans_prop['max_water_speed'][n] = np.nanpercentile(water_speed, 99)
+                water_speed = np.sqrt(u_water ** 2 + v_water ** 2)
+                trans_prop['max_water_speed'][n] = np.nanpercentile(
+                    water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)
 
             # Only transects used for discharge are included in measurement properties
             if len(checked_idx) > 0:
                 n = n_transects
-                trans_prop['width'][n] = np.nanmean(trans_prop['width'][checked_idx])
-                trans_prop['width_cov'][n] = (np.nanstd(trans_prop['width'][checked_idx], ddof=1) /
+                trans_prop['width'][n] = np.nanmean(
+                    trans_prop['width'][checked_idx])
+                trans_prop['width_cov'][n] = (np.nanstd(
+                    trans_prop['width'][checked_idx], ddof=1) /
                                               trans_prop['width'][n]) * 100
-                trans_prop['area'][n] = np.nanmean(trans_prop['area'][checked_idx])
-                trans_prop['area_cov'][n] = (np.nanstd(trans_prop['area'][checked_idx], ddof=1) /
+                trans_prop['area'][n] = np.nanmean(
+                    trans_prop['area'][checked_idx])
+                trans_prop['area_cov'][n] = (np.nanstd(
+                    trans_prop['area'][checked_idx], ddof=1) /
                                              trans_prop['area'][n]) * 100
-                trans_prop['avg_boat_speed'][n] = np.nanmean(trans_prop['avg_boat_speed'][checked_idx])
-                trans_prop['avg_water_speed'][n] = np.nanmean(trans_prop['avg_water_speed'][checked_idx])
-                trans_prop['avg_depth'][n] = np.nanmean(trans_prop['avg_depth'][checked_idx])
-                trans_prop['max_depth'][n] = np.nanmax(trans_prop['max_depth'][checked_idx])
-                trans_prop['max_water_speed'][n] = np.nanmax(trans_prop['max_water_speed'][checked_idx])
+                trans_prop['avg_boat_speed'][n] = np.nanmean(
+                    trans_prop['avg_boat_speed'][checked_idx])
+                trans_prop['avg_water_speed'][n] = np.nanmean(
+                    trans_prop['avg_water_speed'][checked_idx])
+                trans_prop['avg_depth'][n] = np.nanmean(
+                    trans_prop['avg_depth'][checked_idx])
+                trans_prop['max_depth'][n] = np.nanmax(
+                    trans_prop['max_depth'][checked_idx])
+                trans_prop['max_water_speed'][n] = np.nanmax(
+                    trans_prop['max_water_speed'][checked_idx])
 
                 # Compute average water direction using vector coordinates to avoid the problem of averaging
                 # fluctuations that cross zero degrees
@@ -2045,7 +2526,8 @@ class Measurement(object):
                     x, y = pol2cart(water_dir_rad, 1)
                     x_coord.append(x)
                     y_coord.append(y)
-                avg_water_dir_rad, _ = cart2pol(np.mean(x_coord), np.mean(y_coord))
+                avg_water_dir_rad, _ = cart2pol(np.mean(x_coord),
+                                                np.mean(y_coord))
                 trans_prop['avg_water_dir'][n] = rad2azdeg(avg_water_dir_rad)
 
         return trans_prop
@@ -2081,9 +2563,12 @@ class Measurement(object):
         # Process transects
         for idx in idx_transects:
             if variable == 'Temperature':
-                data = np.append(data, meas.transects[idx].sensors.temperature_deg_c.internal.data)
-            ens_cum_time = np.nancumsum(meas.transects[idx].date_time.ens_duration_sec)
-            ens_time = meas.transects[idx].date_time.start_serial_time + ens_cum_time
+                data = np.append(data, meas.transects[
+                    idx].sensors.temperature_deg_c.internal.data)
+            ens_cum_time = np.nancumsum(
+                meas.transects[idx].date_time.ens_duration_sec)
+            ens_time = meas.transects[
+                           idx].date_time.start_serial_time + ens_cum_time
             serial_time = np.append(serial_time, ens_time)
 
         return data, serial_time
@@ -2446,14 +2931,22 @@ class Measurement(object):
         # (4) ErrorVelocityFilter Node
         evf = nav_data.d_filter
         if evf == 'Manual':
-            evf = '{:.4f}'.format(nav_data.d_filter_threshold)
+            evf = '{:.4f}'.format(nav_data.d_filter_thresholds)
         ETree.SubElement(navigation, 'ErrorVelocityFilter', type='char', unitsCode='mps').text = evf
 
         # (4) VerticalVelocityFilter Node
         vvf = nav_data.w_filter
         if vvf == 'Manual':
-            vvf = '{:.4f}'.format(nav_data.w_filter_threshold)
+            vvf = '{:.4f}'.format(nav_data.w_filter_thresholds)
         ETree.SubElement(navigation, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = vvf
+
+        # (4) Use measurement thresholds
+        temp = nav_data.use_measurement_thresholds
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(navigation, 'UseMeasurementThresholds', type='char').text = temp
 
         # (4) OtherFilter Node
         o_f = nav_data.smooth_filter
@@ -2561,14 +3054,22 @@ class Measurement(object):
         # (4) ErrorVelocityFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.d_filter
         if temp == 'Manual':
-            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.d_filter_threshold)
+            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.d_filter_thresholds)
         ETree.SubElement(water_track, 'ErrorVelocityFilter', type='char', unitsCode='mps').text = temp
 
         # (4) VerticalVelocityFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.w_filter
         if temp == 'Manual':
-            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.w_filter_threshold)
+            temp = '{:.4f}'.format(self.transects[self.checked_transect_idx[0]].w_vel.w_filter_thresholds)
         ETree.SubElement(water_track, 'VerticalVelocityFilter', type='char', unitsCode='mps').text = temp
+
+        # (4) Use measurement thresholds
+        temp = self.transects[self.checked_transect_idx[0]].w_vel.use_measurement_thresholds
+        if temp:
+            temp = 'Yes'
+        else:
+            temp = 'No'
+        ETree.SubElement(water_track, 'UseMeasurementThresholds', type='char').text = temp
 
         # (4) OtherFilter Node
         temp = self.transects[self.checked_transect_idx[0]].w_vel.smooth_filter
@@ -3089,6 +3590,290 @@ class Measurement(object):
         if not np.isnan(temp):
             ETree.SubElement(s_u, 'Total', type='double').text = '{:.1f}'.format(temp)
 
+        if self.oursin is not None:
+            # (3) Uncertainty Node
+            s_ou = ETree.SubElement(summary, 'OursinUncertainty')
+            oursin = self.oursin
+
+            # (4) System Node
+            temp = oursin.u_measurement['u_syst'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'System', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Node
+            temp = oursin.u_measurement['u_compass'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Compass', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Moving-bed Node
+            temp = oursin.u_measurement['u_movbed'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MovingBed', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Ensembles Node
+            temp = oursin.u_measurement['u_ens'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Ensembles', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Measured Node
+            temp = oursin.u_measurement['u_meas'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Measured', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Top Node
+            temp = oursin.u_measurement['u_top'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Top', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement['u_bot'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Bottom', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left Node
+            temp = oursin.u_measurement['u_left'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Left', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement['u_right'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'Right', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Boat Node
+            temp = oursin.u_measurement['u_boat'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidBoat', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Depth Node
+            temp = oursin.u_measurement['u_depth'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidDepth', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Water Node
+            temp = oursin.u_measurement['u_water'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidWater', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) COV Node
+            temp = oursin.u_measurement['u_cov'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'COV', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Auto Total 95% Node
+            temp = oursin.u_measurement['total_95'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'AutoTotal95', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Minimum
+            temp = oursin.default_advanced_settings['exp_pp_min']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapPPMin', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapPPMin', type='char').text = temp
+
+            # (4) Extrapolation Power/Power Maximum
+            temp = oursin.default_advanced_settings['exp_pp_max']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapPPMax', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapPPMax', type='char').text = temp
+
+            # (4) Extrapolation No Slip Minimum
+            temp = oursin.default_advanced_settings['exp_ns_min']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapNSMin', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapNSMin', type='char').text = temp
+
+            # (4) Extrapolation No Slip Maximum
+            temp = oursin.default_advanced_settings['exp_ns_max']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'ExtrapNSMax', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'ExtrapNSMax', type='char').text = temp
+
+            # (4) Draft error in m
+            temp = oursin.default_advanced_settings['draft_error_m']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'DraftErrorm', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'DraftErrorm', type='char').text = temp
+
+            # (4) Bin size error in percent
+            temp = oursin.default_advanced_settings['dzi_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BinErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Right edge distance error in percent
+            temp = oursin.default_advanced_settings['right_edge_dist_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'REdgeDistErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left edge distance error in percent
+            temp = oursin.default_advanced_settings['left_edge_dist_prct']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LEdgeDistErrorPer', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) GGA Boat Velocity Error in mps
+            temp = oursin.default_advanced_settings['gga_boat_mps']
+            if type(temp) is float:
+                ETree.SubElement(s_ou, 'GGABoatVelErrormps', type='double').text = '{:.2f}'.format(temp)
+            else:
+                ETree.SubElement(s_ou, 'GGABoatVelErrormps', type='char').text = temp
+
+            # (4) VTG Boat Velocity Error in mps
+            temp = oursin.default_advanced_settings['vtg_boat_mps']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'VTGBoatVelErrormps', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Error in deg
+            temp = oursin.default_advanced_settings['compass_error_deg']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassErrordeg', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior in percent
+            temp = oursin.default_advanced_settings['cov_prior']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorper', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior uncertaint in percent
+            temp = oursin.default_advanced_settings['cov_prior_u']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorUncertaintyper', type='double').text = '{:.2f}'.format(temp)
+
+            # User
+
+            # (4) System Node
+            temp = oursin.u_measurement_user['u_syst'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'SystemUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Node
+            temp = oursin.u_measurement_user['u_compass'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Moving-bed Node
+            temp = oursin.u_measurement_user['u_movbed'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MovingBedUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Ensembles Node
+            temp = oursin.u_measurement_user['u_ens'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'EnsemblesUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Measured Node
+            temp = oursin.u_measurement_user['u_meas'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'MeasuredUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Top Node
+            temp = oursin.u_measurement_user['u_top'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'TopUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement_user['u_bot'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BottomUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left Node
+            temp = oursin.u_measurement_user['u_left'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LeftUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bottom Node
+            temp = oursin.u_measurement_user['u_right'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'RightUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Boat Node
+            temp = oursin.u_measurement_user['u_boat'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidBoatUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Depth Node
+            temp = oursin.u_measurement_user['u_depth'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidDepthUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Invalid Water Node
+            temp = oursin.u_measurement_user['u_water'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'InvalidWaterUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Auto Total 95% Node
+            temp = oursin.u_measurement_user['total_95'][0]
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'AutoTotal95User', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Minimum
+            temp = oursin.user_advanced_settings['exp_pp_min_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapPPMinUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation Power/Power Maximum
+            temp = oursin.user_advanced_settings['exp_pp_max_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapPPMaxUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation No Slip Minimum
+            temp = oursin.user_advanced_settings['exp_ns_min_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapNSMinUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Extrapolation No Slip Maximum
+            temp = oursin.user_advanced_settings['exp_ns_max_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'ExtrapNSMaxUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Draft error in m
+            temp = oursin.user_advanced_settings['draft_error_m_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'DraftErrormUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bin size error in percent
+            temp = oursin.user_advanced_settings['dzi_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BinErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Right edge distance error in percent
+            temp = oursin.user_advanced_settings['right_edge_dist_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'REdgeDistErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Left edge distance error in percent
+            temp = oursin.user_advanced_settings['left_edge_dist_prct_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'LEdgeDistErrorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) GGA Boat Velocity Error in mps
+            temp = oursin.user_advanced_settings['gga_boat_mps_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'GGABoatVelErrormpsUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) VTG Boat Velocity Error in mps
+            temp = oursin.user_advanced_settings['vtg_boat_mps_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'VTGBoatVelErrormpsUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Compass Error in deg
+            temp = oursin.user_advanced_settings['compass_error_deg_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'CompassErrordegUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior in percent
+            temp = oursin.user_advanced_settings['cov_prior_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorperUser', type='double').text = '{:.2f}'.format(temp)
+
+            # (4) Bayesian COV prior uncertaint in percent
+            temp = oursin.user_advanced_settings['cov_prior_u_user']
+            if not np.isnan(temp):
+                ETree.SubElement(s_ou, 'BayesCOVPriorUncertaintyperUser', type='double').text = '{:.2f}'.format(temp)
+
         # (3) Other Node
         s_o = ETree.SubElement(summary, 'Other')
 
@@ -3179,6 +3964,103 @@ class Measurement(object):
             for comment in self.comments:
                 temp = temp + comment.replace('\n', ' |||') + ' |||'
             ETree.SubElement(channel, 'UserComment', type='char').text = temp
+
+        # Average cross-section
+        if self.export_xs:
+            # xs = CrossSectionComp(self.transects, file_name)
+            xs = CrossSectionComp(self.transects)
+
+            cross_section = \
+                xs.cross_section[
+                    (len(xs.cross_section)
+                        - 1)]
+            rows = cross_section.shape[0]
+
+            survey = ETree.SubElement(channel, 'CrossSectionSurvey')
+
+            for row in range(rows):
+                lon = cross_section[row, 0]
+                lat = cross_section[row, 1]
+                dist_x = cross_section[row, 2]
+                dist_y = cross_section[row, 3]
+                station = cross_section[row, 4]
+                depth = cross_section[row, 5]
+
+                if not np.isnan(lon):
+                    lat, lon = utm.to_latlon(lat, lon,
+                                             zone_number=xs.zone_number,
+                                             zone_letter=xs.zone_letter)
+
+                meas_pts = ETree.SubElement(survey, 'MeasurementPoints')
+                t_row = ETree.SubElement(meas_pts,
+                                         'TableRow',
+                                         type='integer').text = str(row)
+
+
+                # latitude
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Latitude'
+                ETree.SubElement(parm, 'Units').text = 'Degrees'
+                ETree.SubElement(measurements, 'Value',
+                                 type='double').text = str(lat)
+
+                # Longitude
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Longitude'
+                ETree.SubElement(parm, 'Units').text = 'Degrees'
+                ETree.SubElement(measurements, 'Value',
+                                 type='double').text = str(lon)
+
+                # station
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Distance'
+                ETree.SubElement(parm, 'Units').text = 'Meters'
+                ETree.SubElement(measurements, 'Value',
+                                 type='double',
+                                 unitsCode='m').text = '{:.3f}'.format(station)
+
+                # distance x
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Distance X'
+                ETree.SubElement(parm, 'Units').text = 'Meters'
+                ETree.SubElement(measurements,
+                                 'Value', type='double',
+                                 unitsCode='m').text = '{:.3f}'.format(dist_x)
+
+                # distance y
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Distance Y'
+                ETree.SubElement(parm, 'Units').text = 'Meters'
+                ETree.SubElement(measurements, 'Value',
+                                 type='double',
+                                 unitsCode='m').text = '{:.3f}'.format(dist_y)
+
+                # depth
+                measurements = ETree.SubElement(meas_pts, 'Measurements')
+                sensor = ETree.SubElement(measurements, 'Sensor')
+                s_type = ETree.SubElement(sensor, 'SensorType')
+                parm = ETree.SubElement(s_type, 'Parameter')
+                ETree.SubElement(parm, 'Name').text = 'Depth'
+                ETree.SubElement(parm, 'Units').text = 'Meters'
+                ETree.SubElement(measurements, 'Value',
+                                 type='double',
+                                 unitsCode='m').text = '{:.3f}'.format(depth)
+
 
         # Create xml output file
         with open(file_name, 'wb') as xml_file:

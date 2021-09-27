@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>342</width>
-    <height>155</height>
+    <width>343</width>
+    <height>195</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,6 +54,19 @@
             </property>
             <property name="text">
              <string>External</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="rb_no_compass">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Turn off</string>
             </property>
            </widget>
           </item>

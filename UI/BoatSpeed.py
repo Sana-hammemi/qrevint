@@ -1,5 +1,7 @@
 import numpy as np
 from PyQt5 import QtCore
+from matplotlib.dates import DateFormatter, num2date
+from datetime import datetime
 
 class BoatSpeed(object):
     """Class to generate boat speed time series plot. If checkboxes for the boat speed reference
@@ -31,6 +33,8 @@ class BoatSpeed(object):
         Index to data cursor connection
     annot: Annotation
         Annotation object for data cursor
+    x_axis_type: str
+        Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -55,9 +59,10 @@ class BoatSpeed(object):
         self.vtg = None
         self.hover_connection = None
         self.annot = None
+        self.x_axis_type = 'E'
 
     def create(self, transect, units,
-               cb=False, cb_bt=None, cb_gga=None, cb_vtg=None):
+               cb=False, cb_bt=None, cb_gga=None, cb_vtg=None, x_axis_type=None):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -74,7 +79,14 @@ class BoatSpeed(object):
             Name of QCheckBox for GGA
         cb_vtg: QCheckBox
             Name of QCheckBox for VTG
+        x_axis_type: str
+            Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
+
+        # Set default axis
+        if x_axis_type is None:
+            x_axis_type = 'E'
+        self.x_axis_type = x_axis_type
 
         # Assign and save parameters
         self.units = units
@@ -94,7 +106,6 @@ class BoatSpeed(object):
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
         self.fig.ax.set_ylabel(self.canvas.tr('Boat speed' + units['label_V']))
         self.fig.ax.grid()
         self.fig.ax.xaxis.label.set_fontsize(12)
@@ -105,11 +116,24 @@ class BoatSpeed(object):
         max_gga = np.nan
         max_vtg = np.nan
 
-        ensembles = np.arange(1, len(transect.boat_vel.bt_vel.u_mps) + 1)
+        # Compute x axis data
+        x = None
+        if x_axis_type == 'L':
+            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
+                x = boat_track['distance_m'] * units['L']
+        elif x_axis_type == 'E':
+            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+        elif x_axis_type == 'T':
+            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+            x = []
+            for stamp in timestamp:
+                x.append(datetime.utcfromtimestamp(stamp))
+            x = np.array(x)
 
         # Plot bottom track boat speed
         speed = np.sqrt(transect.boat_vel.bt_vel.u_processed_mps ** 2 + transect.boat_vel.bt_vel.v_processed_mps ** 2)
-        self.bt = self.fig.ax.plot(ensembles, speed * units['V'], 'r-')
+        self.bt = self.fig.ax.plot(x, speed * units['V'], 'r-')
 
         # Plot invalid data points using a symbol to represent what caused the data to be invalid
         invalid_bt = np.logical_not(transect.boat_vel.bt_vel.valid_data)
@@ -117,15 +141,15 @@ class BoatSpeed(object):
             speed = np.sqrt(
                 transect.boat_vel.bt_vel.u_mps ** 2 + transect.boat_vel.bt_vel.v_mps ** 2)
             speed[np.isnan(speed)] = 0
-            self.bt.append(self.fig.ax.plot(ensembles[invalid_bt[1]], speed[invalid_bt[1]] * units['V'],
+            self.bt.append(self.fig.ax.plot(x[invalid_bt[1]], speed[invalid_bt[1]] * units['V'],
                                             'k', linestyle='', marker='$O$')[0])
-            self.bt.append(self.fig.ax.plot(ensembles[invalid_bt[2]], speed[invalid_bt[2]] * units['V'],
+            self.bt.append(self.fig.ax.plot(x[invalid_bt[2]], speed[invalid_bt[2]] * units['V'],
                                             'k', linestyle='', marker='$E$')[0])
-            self.bt.append(self.fig.ax.plot(ensembles[invalid_bt[3]], speed[invalid_bt[3]] * units['V'],
+            self.bt.append(self.fig.ax.plot(x[invalid_bt[3]], speed[invalid_bt[3]] * units['V'],
                                             'k', linestyle='', marker='$V$')[0])
-            self.bt.append(self.fig.ax.plot(ensembles[invalid_bt[4]], speed[invalid_bt[4]] * units['V'],
+            self.bt.append(self.fig.ax.plot(x[invalid_bt[4]], speed[invalid_bt[4]] * units['V'],
                                             'k', linestyle='', marker='$S$')[0])
-            self.bt.append(self.fig.ax.plot(ensembles[invalid_bt[5]], speed[invalid_bt[5]] * units['V'],
+            self.bt.append(self.fig.ax.plot(x[invalid_bt[5]], speed[invalid_bt[5]] * units['V'],
                                             'k', linestyle='', marker='$B$')[0])
 
         max_bt = np.nanmax(speed)
@@ -142,7 +166,7 @@ class BoatSpeed(object):
         if transect.boat_vel.vtg_vel is not None:
             speed = np.sqrt(
                 transect.boat_vel.vtg_vel.u_processed_mps ** 2 + transect.boat_vel.vtg_vel.v_processed_mps ** 2)
-            self.vtg = self.fig.ax.plot(ensembles, speed * units['V'], 'g-')
+            self.vtg = self.fig.ax.plot(x, speed * units['V'], 'g-')
 
             # Plot invalid data points using a symbol to represent what caused the data to be invalid
             invalid_gps = np.logical_not(transect.boat_vel.vtg_vel.valid_data)
@@ -151,11 +175,11 @@ class BoatSpeed(object):
                 speed = np.sqrt(
                     transect.boat_vel.vtg_vel.u_mps ** 2 + transect.boat_vel.vtg_vel.v_mps ** 2)
                 speed[np.isnan(speed)] = 0
-                self.vtg.append(self.fig.ax.plot(ensembles[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
+                self.vtg.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
                                                  'k', linestyle='', marker='$O$')[0])
-                self.vtg.append(self.fig.ax.plot(ensembles[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
+                self.vtg.append(self.fig.ax.plot(x[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
                                                  'k', linestyle='', marker='$H$')[0])
-                self.vtg.append(self.fig.ax.plot(ensembles[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
+                self.vtg.append(self.fig.ax.plot(x[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
                                                  'k', linestyle='', marker='$S$')[0])
 
             max_vtg = np.nanmax(speed)
@@ -170,7 +194,7 @@ class BoatSpeed(object):
         if transect.boat_vel.gga_vel is not None:
             speed = np.sqrt(
                 transect.boat_vel.gga_vel.u_processed_mps ** 2 + transect.boat_vel.gga_vel.v_processed_mps ** 2)
-            self.gga = self.fig.ax.plot(ensembles, speed * units['V'], 'b-')
+            self.gga = self.fig.ax.plot(x, speed * units['V'], 'b-')
 
             # Plot invalid data points using a symbol to represent what caused the data to be invalid
             invalid_gps = np.logical_not(transect.boat_vel.gga_vel.valid_data)
@@ -178,15 +202,15 @@ class BoatSpeed(object):
                 speed = np.sqrt(
                     transect.boat_vel.gga_vel.u_mps ** 2 + transect.boat_vel.gga_vel.v_mps ** 2)
                 speed[np.isnan(speed)] = 0
-                self.gga.append(self.fig.ax.plot(ensembles[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
+                self.gga.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
                                                  'k', linestyle='', marker='$O$')[0])
-                self.gga.append(self.fig.ax.plot(ensembles[invalid_gps[2]], speed[invalid_gps[2]] * units['V'],
+                self.gga.append(self.fig.ax.plot(x[invalid_gps[2]], speed[invalid_gps[2]] * units['V'],
                                                  'k', linestyle='', marker='$Q$')[0])
-                self.gga.append(self.fig.ax.plot(ensembles[invalid_gps[3]], speed[invalid_gps[3]] * units['V'],
+                self.gga.append(self.fig.ax.plot(x[invalid_gps[3]], speed[invalid_gps[3]] * units['V'],
                                                  'k', linestyle='', marker='$A$')[0])
-                self.gga.append(self.fig.ax.plot(ensembles[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
+                self.gga.append(self.fig.ax.plot(x[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
                                                  'k', linestyle='', marker='$H$')[0])
-                self.gga.append(self.fig.ax.plot(ensembles[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
+                self.gga.append(self.fig.ax.plot(x[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
                                                  'k', linestyle='', marker='$S$')[0])
 
             max_gga = np.nanmax(speed)
@@ -200,11 +224,32 @@ class BoatSpeed(object):
         # Set axis limits
         max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
         self.fig.ax.set_ylim(top=np.ceil(max_y * units['L']), bottom=-0.5)
-        self.fig.ax.set_xlim(left=-1 * ensembles[-1] * 0.02, right=ensembles[-1] * 1.02)
-
-        if transect.start_edge == 'Right':
-            self.fig.ax.invert_xaxis()
-            self.fig.ax.set_xlim(right=-1 * ensembles[-1] * 0.02, left=ensembles[-1] * 1.02)
+        if x_axis_type == 'L':
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+            else:
+                self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
+            self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
+        elif x_axis_type == 'E':
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
+            else:
+                self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
+            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
+        elif x_axis_type == 'T':
+            axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
+            if transect.start_edge == 'Right':
+                self.fig.ax.invert_xaxis()
+                self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                                     left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+            else:
+                self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                                     right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+            date_form = DateFormatter('%H:%M:%S')
+            self.fig.ax.xaxis.set_major_formatter(date_form)
+            self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
@@ -339,7 +384,11 @@ class BoatSpeed(object):
         self.annot.xy = pos
 
         # Format and display text
-        text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
+        if self.x_axis_type == 'T':
+            x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
+            text = 'x: {}, {}: {:.2f}'.format(x_label, ref_label, pos[1])
+        else:
+            text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
         self.annot.set_text(text)
 
     def hover(self, event):

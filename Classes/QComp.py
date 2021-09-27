@@ -238,10 +238,7 @@ class QComp(object):
         self.top = q_in.top
         self.middle = q_in.middle
         self.bottom = q_in.bottom
-        self.middle_cells = q_in.middleCells
-        if len(self.middle_cells.shape) < 2:
-            self.middle_cells = self.middle_cells[:, np.newaxis]
-        # If only one value, it will be read in as int but needs to be an array of len 1
+
         if type(q_in.topEns) is not np.ndarray:
             self.top_ens = np.array([q_in.topEns])
             self.middle_ens = np.array([q_in.middleEns])
@@ -251,6 +248,17 @@ class QComp(object):
             self.middle_ens = q_in.middleEns
             self.bottom_ens = q_in.bottomEns
 
+        self.middle_cells = q_in.middleCells
+        # Handle special case for 1 ensemble or 1 cell
+        if len(self.middle_cells.shape) < 2:
+            if self.middle_ens.size > 1:
+                # Multiple ensembles, one cell
+                self.middle_cells = self.middle_cells[np.newaxis, :]
+            else:
+                # One ensemble, multiple cells
+                self.middle_cells = self.middle_cells[:, np.newaxis]
+
+        # If only one value, it will be read in as int but needs to be an array of len 1
         self.left = q_in.left
         # If only one value, it will be read in as int but needs to be an array of len 1
         if type(q_in.leftidx) is int:

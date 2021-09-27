@@ -1,1 +1,1 @@
-pyuic5 -x QRev_gui.ui -o QRev_gui.py
+pyuic5 -x QRev_gui_usgs.ui -o QRev_gui.py
