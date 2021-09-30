@@ -349,6 +349,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Shortcut to set gga reference
     self.sc_vtg: QtWidgets.QShortcut
         Shortcut to set vtg reference
+    self.path: str
+        Path to loaded data file(s)
     """
 
     handle_args_trigger = pyqtSignal()
@@ -402,6 +404,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Create settings object which contains the default values from previous use
         self.sticky_settings = SSet(self.settingsFile)
+
+        if 'XAxis' in self.sticky_settings.settings:
+            self.x_axis_type = self.sticky_settings.get('XAxis')
+        else:
+            self.x_axis_type = 'E'
+            self.sticky_settings.new('XAxis', 'E')
 
         # Set units based on previous session or default to English
         if 'Units' not in self.agency_options.keys():
@@ -695,6 +703,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         # Intialize attributes
+        self.path = (self.sticky_settings.get('Folder'))
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False
@@ -797,7 +806,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_types = []
 
         self.mb_row = 0
-        self.x_axis_type = 'E'
         self.show_below_sl = False
 
         # Tab initialization tracking setup
@@ -912,6 +920,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update sticky_settings
         self.sticky_settings = SSet(self.settingsFile)
+        self.path = (self.sticky_settings.get('Folder'))
 
         # If a selection is made begin loading
         if len(select.type) > 0:
@@ -1367,6 +1376,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.rb_jet.setChecked(True)
 
+        if self.x_axis_type == 'E':
+            options.rb_opt_ensembles.setChecked(True)
+        elif self.x_axis_type == 'L':
+            options.rb_opt_length.setChecked(True)
+        elif self.x-axis_type == 'T':
+            options.rb_opt_time.setChecked(True)
+
         if not self.agency_options['MovingBedObservation']['show']:
             options.gb_moving_bed_option.hide()
         if self.allow_observed_no_moving_bed:
@@ -1398,6 +1414,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.update_main()
                             self.change = True
 
+                # X Axis
+                if options.rb_opt_ensembles.isChecked():
+                    self.x_axis_type = 'E'
+                    self.sticky_settings.set('XAxis', 'E')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                elif options.rb_opt_length.isChecked():
+                    self.x_axis_type = 'L'
+                    self.sticky_settings.set('XAxis', 'L')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                elif options.rb_opt_time.isChecked():
+                    self.x_axis_type = 'T'
+                    self.sticky_settings.set('XAxis', 'T')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
                 # Color map
                 if options.rb_viridis.isChecked():
                     if self.color_map != 'viridis':
@@ -4057,6 +4092,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 h_source_dialog.rb_external.setEnabled(True)
 
+            current = tbl.item(row, column).text()
+            if current == 'internal':
+                h_source_dialog.rb_internal.setChecked(True)
+            elif current == 'external':
+                h_source_dialog.rb_external.setChecked(True)
+            elif current == 'user':
+                h_source_dialog.rb_no_compass.setChecked(True)
+
             h_source_entered = h_source_dialog.exec_()
             # If data entered.
             with self.wait_cursor():
@@ -4467,9 +4510,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         t_source = 'internal'
                     elif t_source_dialog.rb_user.isChecked():
                         t_source = 'user'
-                        user_temp = float(t_source_dialog.ed_user_temp.text())
-                        if self.rb_f.isChecked():
-                            user_temp = convert_temperature(user_temp, units_in='F', units_out='C')
+                        try:
+                            user_temp = float(t_source_dialog.ed_user_temp.text())
+                            if self.rb_f.isChecked():
+                                user_temp = convert_temperature(user_temp, units_in='F', units_out='C')
+                        except ValueError:
+                            t_source = 'internal'
 
                     # Apply change to all or only selected transect based on user input
                     if t_source_dialog.rb_all.isChecked():
@@ -4497,19 +4543,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 with self.wait_cursor():
                     # Assign data based on change made by user
                     old_discharge = copy.deepcopy(self.meas.discharge)
-                    salinity = float(salinity_dialog.ed_salinity.text())
+                    try:
+                        salinity = float(salinity_dialog.ed_salinity.text())
 
-                    # Apply change to all or only selected transect based on user input
-                    if salinity_dialog.rb_all.isChecked():
-                        self.meas.change_sos(parameter='salinity',
-                                             salinity=salinity)
-                    else:
-                        self.meas.change_sos(transect_idx=self.checked_transects_idx[row],
-                                             parameter='salinity',
-                                             salinity=salinity)
-                    # Update the tempsal tab
-                    self.update_tempsal_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
-                    self.change = True
+                        # Apply change to all or only selected transect based on user input
+                        if salinity_dialog.rb_all.isChecked():
+                            self.meas.change_sos(parameter='salinity',
+                                                 salinity=salinity)
+                        else:
+                            self.meas.change_sos(transect_idx=self.checked_transects_idx[row],
+                                                 parameter='salinity',
+                                                 salinity=salinity)
+                        # Update the tempsal tab
+                        self.update_tempsal_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
+                        self.change = True
+                    except ValueError:
+                        pass
 
         # Change speed of sound
         elif column == 4:
@@ -4533,7 +4582,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         sos_source = 'internal'
                     elif sos_source_dialog.rb_user.isChecked():
                         sos_source = 'user'
-                        user_sos = float(sos_source_dialog.ed_sos_user.text()) / self.units['V']
+                        try:
+                            user_sos = float(sos_source_dialog.ed_sos_user.text()) / self.units['V']
+                        except ValueError:
+                            sos_source = 'internal'
 
                     # Apply change to all or only selected transect based on user input
                     if sos_source_dialog.rb_all.isChecked():

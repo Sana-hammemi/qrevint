@@ -201,7 +201,11 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         settings = SSet(parent.settingsFile)
 
         # Get the current folder setting.
-        folder = self.default_folder(settings)
+        if parent is not None:
+            if len(parent.path) > 0:
+                folder = parent.path
+            else:
+                folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
         # Create default file name
         file_name = os.path.join(folder, datetime.datetime.today().strftime('%Y%m%d_%H%M%S_' + version + '_QRev.mat'))

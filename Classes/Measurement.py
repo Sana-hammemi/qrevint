@@ -507,9 +507,15 @@ class Measurement(object):
                 else:
                     self.station_number = ''
             if hasattr(rsdata.SiteInfo, 'Meas_Number'):
-                self.meas_number = rsdata.SiteInfo.Meas_Number
+                if len(rsdata.SiteInfo.Meas_Number) > 0:
+                    self.meas_number = rsdata.SiteInfo.Meas_Number
             if hasattr(rsdata.SiteInfo, 'Party'):
-                self.persons = rsdata.SiteInfo.Party
+                if len(rsdata.SiteInfo.Party) > 0:
+                    self.persons = rsdata.SiteInfo.Party
+
+            if hasattr(rsdata.SiteInfo, 'Comments'):
+                if len(rsdata.SiteInfo.Comments) > 0:
+                    self.comments.append('RS Comments: ' + rsdata.SiteInfo.Comments)
 
             # Although units imply meters the data are actually stored as m / 10,000
             if hasattr(rsdata.Setup, 'startGaugeHeight'):
@@ -650,7 +656,10 @@ class Measurement(object):
         if len(meas_struct.stationNumber) > 0:
             self.station_number = meas_struct.stationNumber
         if hasattr(meas_struct, 'meas_number'):
-            self.meas_number = meas_struct.meas_number
+            if len(meas_struct.meas_number) == 0:
+                self.meas_number = ''
+            else:
+                self.meas_number = meas_struct.meas_number
         if hasattr(meas_struct, 'persons'):
             if len(meas_struct.persons) == 0:
                 self.persons = ''
