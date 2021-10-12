@@ -2437,6 +2437,18 @@ class Measurement(object):
             # (3) Measurement Number
             ETree.SubElement(site_info, 'MeasurementNumber', type='char').text = self.meas_number
 
+            # (3) Stage start
+            temp = self.stage_start_m
+            ETree.SubElement(site_info, 'StageStart', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
+
+            # (4) Stage start
+            temp = self.stage_end_m
+            ETree.SubElement(site_info, 'StageEnd', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
+
+            # (3) Stage start
+            temp = self.stage_meas_m
+            ETree.SubElement(site_info, 'StageMeasurement', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
+
         # (2) QA Node
         qa = ETree.SubElement(channel, 'QA')
 
@@ -3804,18 +3816,6 @@ class Measurement(object):
         # (4) DischargePPDefault
         temp = self.extrap_fit.q_sensitivity.q_pp_mean
         ETree.SubElement(s_o, 'DischargePPDefault', type='double').text = '{:.2f}'.format(temp)
-
-        # (4) Stage start
-        temp = self.stage_start_m
-        ETree.SubElement(s_o, 'StageStart', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
-
-        # (4) Stage start
-        temp = self.stage_end_m
-        ETree.SubElement(s_o, 'StageEnd', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
-
-        # (4) Stage start
-        temp = self.stage_meas_m
-        ETree.SubElement(s_o, 'StageMeasurement', type='double', unitsCode='m').text = '{:.5f}'.format(temp)
 
         # (2) UserComment
         if len(self.comments) > 1:
