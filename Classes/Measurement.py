@@ -487,9 +487,12 @@ class Measurement(object):
             rsdata = MatSonTek(file)
             pathname, file_name = os.path.split(file)
 
-            # Create transect objects for each discharge transect
-            self.transects.append(TransectData())
-            self.transects[-1].sontek(rsdata, file_name)
+            if hasattr(rsdata, 'BottomTrack'):
+                # Create transect objects for each discharge transect
+                self.transects.append(TransectData())
+                self.transects[-1].sontek(rsdata, file_name)
+            else:
+                self.comments.append(file + ' is incomplete and is not included in measurement processing')
 
         # Identify checked transects
         self.checked_transect_idx = self.checked_transects(self)

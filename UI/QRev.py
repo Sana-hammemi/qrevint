@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.09'
+        self.QRev_version = 'QRevInt 1.10'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -1380,7 +1380,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             options.rb_opt_ensembles.setChecked(True)
         elif self.x_axis_type == 'L':
             options.rb_opt_length.setChecked(True)
-        elif self.x-axis_type == 'T':
+        elif self.x_axis_type == 'T':
             options.rb_opt_time.setChecked(True)
 
         if not self.agency_options['MovingBedObservation']['show']:
@@ -3059,7 +3059,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         stage = self.check_numeric_input(self.ed_stage_start)
         if stage is not None:
-            self.meas.stage_start_m = stage
+            self.meas.stage_start_m = stage / self.units['L']
             self.meas.stage_meas_m = (self.meas.stage_start_m + self.meas.stage_end_m) / 2.
         self.main_premeasurement_table()
 
@@ -3068,7 +3068,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         stage = self.check_numeric_input(self.ed_stage_end)
         if stage is not None:
-            self.meas.stage_end_m = stage
+            self.meas.stage_end_m = stage / self.units['L']
             self.meas.stage_meas_m = (self.meas.stage_start_m + self.meas.stage_end_m) / 2.
         self.main_premeasurement_table()
 
@@ -3077,7 +3077,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         stage = self.check_numeric_input(self.ed_stage_meas)
         if stage is not None:
-            self.meas.stage_meas_m = stage
+            self.meas.stage_meas_m = stage / self.units['L']
         self.main_premeasurement_table()
 
     def main_settings_table(self):

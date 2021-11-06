@@ -1305,8 +1305,8 @@ class AdvGraphs(object):
                                  self.transect.w_vel.cells_above_sl)[0, :]
 
         # Data to plot
-        y_data = self.transect.w_vel.snr_rng[self.transect.w_vel.cells_above_sl[0, :]] * self.units['V']
-
+        # y_data = self.transect.w_vel.snr_rng[self.transect.w_vel.cells_above_sl[0, :]] * self.units['V']
+        y_data = self.transect.w_vel.snr_rng * self.units['V']
         data_units = (1, 'WT SNR Range (dB)')
 
         # Setup ping type
