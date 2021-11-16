@@ -110,15 +110,15 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
 
                 if os.path.getsize(self.fullName[0]) > 0 :
                     mat_data = sio.loadmat(self.fullName[0], struct_as_record=False, squeeze_me=True)
-                    if hasattr(mat_data, 'BottomTrack'):
-                        if 'version' in mat_data:
-                            self.type = 'QRev'
-                        elif hasattr(mat_data['System'], 'InstrumentModel'):
-                            self.type = 'Nortek'
-                        else:
-                            self.type = 'SonTek'
+
+                    if 'version' in mat_data:
+                        self.type = 'QRev'
+                    elif hasattr(mat_data['System'], 'InstrumentModel'):
+                        self.type = 'Nortek'
                     else:
-                        self.popup_message("Selected file is incomplete.")
+                        self.type = 'SonTek'
+                        if not hasattr(mat_data, 'BottomTrack'):
+                            self.popup_message("Selected file is incomplete.")
                 else:
                     self.popup_message("Selected file is empty.")
 
