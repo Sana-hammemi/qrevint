@@ -1214,6 +1214,12 @@ class TransectData(object):
         # Set selected salinity
         self.sensors.speed_of_sound_mps.selected = 'internal'
 
+        if rsdata.Setup.useFixedSoundSpeed > 0:
+            self.sensors.speed_of_sound_mps.user = SensorData()
+            user_sos = np.tile(rsdata.Setup.fixedSoundSpeed, len(speed_of_sound))
+            self.sensors.speed_of_sound_mps.user.populate_data(data_in=user_sos, source_in='User')
+            self.sensors.speed_of_sound_mps.selected = 'user'
+
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
 

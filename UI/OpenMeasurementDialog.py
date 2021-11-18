@@ -117,7 +117,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
                         self.type = 'Nortek'
                     else:
                         self.type = 'SonTek'
-                        if not hasattr(mat_data, 'BottomTrack'):
+                        if not 'BottomTrack' in mat_data:
                             self.popup_message("Selected file is incomplete.")
                 else:
                     self.popup_message("Selected file is empty.")
