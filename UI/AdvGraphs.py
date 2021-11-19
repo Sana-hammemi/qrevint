@@ -746,10 +746,14 @@ class AdvGraphs(object):
         # Compute mean water speed for each ensemble using a weighted average based on depth cell size
         water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
-        water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+
         weight = depth_selected.depth_cell_size_m[:, self.transect.in_transect_idx]
-        avg_speed = np.nansum(water_speed * weight, axis=0) / np.nansum(weight, axis=0)
+        weight[np.isnan(water_u)] = np.nan
+
+        mean_u = np.nansum(water_u * weight, axis=0) / np.nansum(weight, axis=0)
+        mean_v = np.nansum(water_v * weight, axis=0) / np.nansum(weight, axis=0)
+        avg_speed = np.sqrt(mean_u ** 2 + mean_v ** 2)
 
         # Plot data
         data_units = (self.units['V'], 'Water speed ' + self.units['label_V'])
@@ -953,6 +957,7 @@ class AdvGraphs(object):
         # Compute the mean projected speed in each ensemble using depth cell size weighting
         depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
         weight = depth_selected.depth_cell_size_m[:, self.transect.in_transect_idx]
+        weight[np.isnan(projected_speed)] = np.nan
         avg_speed = np.nansum(projected_speed * weight, axis=0) / np.nansum(weight, axis=0)
 
         # Plot data

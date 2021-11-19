@@ -365,15 +365,21 @@ class Shiptrack(object):
         if edge_start is not None and n_ensembles is not None:
             u[np.logical_not(transect.w_vel.valid_data[0, :, :])] = np.nan
             v[np.logical_not(transect.w_vel.valid_data[0, :, :])] = np.nan
-            u_mean = np.nanmean(u, axis=0)
-            v_mean = np.nanmean(v, axis=0)
+            depth_selected = getattr(transect.depths, transect.depths.selected)
+            weight = depth_selected.depth_cell_size_m[:, transect.in_transect_idx]
+            weight[np.isnan(u)] = np.nan
+            u_mean = np.nansum(u * weight, axis=0) / np.nansum(weight, axis=0)
+            v_mean = np.nansum(v * weight, axis=0) / np.nansum(weight, axis=0)
             u_mean = self.subsection(u_mean, n_ensembles, edge_start)
             v_mean = self.subsection(v_mean, n_ensembles, edge_start)
         else:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=RuntimeWarning)
-                u_mean = np.nanmean(u, axis=0)[transect.in_transect_idx]
-                v_mean = np.nanmean(v, axis=0)[transect.in_transect_idx]
+                depth_selected = getattr(transect.depths, transect.depths.selected)
+                weight = depth_selected.depth_cell_size_m[:, transect.in_transect_idx]
+                weight[np.isnan(u)] = np.nan
+                u_mean = np.nansum(u * weight, axis=0) / np.nansum(weight, axis=0)
+                v_mean = np.nansum(v * weight, axis=0) / np.nansum(weight, axis=0)
 
         speed = np.sqrt(u_mean**2 + v_mean**2) * units['V']
         if len(speed) > 0:
