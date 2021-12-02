@@ -1772,6 +1772,8 @@ class WaterData(object):
 
         # Save interpolated data, while retaining of the ensembles including those that are not
         # in the in_transect_idx array
+        self.u_processed_mps[:, :] = np.nan
+        self.v_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
         self.v_processed_mps[:, transect.in_transect_idx] = v
 
