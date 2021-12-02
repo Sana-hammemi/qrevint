@@ -362,9 +362,12 @@ class Shiptrack(object):
         v = np.copy(transect.w_vel.v_processed_mps)
         self.vector_ref = transect.w_vel.nav_ref
 
+        u = u[:, transect.in_transect_idx]
+        v = v[:, transect.in_transect_idx]
+
         if edge_start is not None and n_ensembles is not None:
-            u[np.logical_not(transect.w_vel.valid_data[0, :, :])] = np.nan
-            v[np.logical_not(transect.w_vel.valid_data[0, :, :])] = np.nan
+            u[np.logical_not(transect.w_vel.valid_data[0, :, transect.in_transect_idx])] = np.nan
+            v[np.logical_not(transect.w_vel.valid_data[0, :, transect.in_transect_idx])] = np.nan
             depth_selected = getattr(transect.depths, transect.depths.selected)
             weight = depth_selected.depth_cell_size_m[:, transect.in_transect_idx]
             weight[np.isnan(u)] = np.nan
