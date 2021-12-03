@@ -406,7 +406,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.27'
+        self.QRev_version = 'QRev 4.28'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
         show_disclaimer = False
@@ -473,8 +473,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             ss = self.sticky_settings.get('XsExport')
             self.xs_export = ss
         except KeyError:
-            self.sticky_settings.new('XsExport', False)
-            self.xs_export = False
+            self.sticky_settings.new('XsExport', True)
+            self.xs_export = True
 
         # Color map
         try:
@@ -823,10 +823,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Show QRev maximized on the display
         self.showMaximized()
-
-    # Toolbar functions
-    # =================
-    1==1
 
     # Toolbar functions
     # =================
@@ -1928,7 +1924,7 @@ display.
             if len(self.meas.user_rating) > 0:
                 item = rating[self.meas.user_rating[0:4]]
             else:
-                item = 'Note Rated'
+                item = 'Not Rated'
         else:
             item = rating[self.meas.user_rating.split('(')[0].strip()]
         self.le_user_rating.setText(item)
@@ -12924,21 +12920,24 @@ parameters
                     fig.set_hover_connection(True)
         else:
             for fig in self.figs:
-                fig.set_hover_connection(False)
+                if fig is not None:
+                    fig.set_hover_connection(False)
 
     def home(self):
         """Reset graphics to default.
             """
 
         for tb in self.toolbars:
-            tb.home()
+            if tb is not None:
+                tb.home()
 
     def zoom(self):
         """Zoom graphics using window.
             """
 
         for tb in self.toolbars:
-            tb.zoom()
+            if tb is not None:
+                tb.zoom()
         self.actionPan.setChecked(False)
         self.actionData_Cursor.setChecked(False)
         self.data_cursor()
@@ -12948,7 +12947,8 @@ parameters
             """
 
         for tb in self.toolbars:
-            tb.pan()
+            if tb is not None:
+                tb.pan()
         self.actionZoom.setChecked(False)
         self.actionData_Cursor.setChecked(False)
         self.data_cursor()
@@ -13210,8 +13210,6 @@ parameters
                 else:
                     self.checked_transects_idx = self.groupings[self.group_idx]
                     self.split_processing(self.checked_transects_idx)
-
-    1==1
 
     # Support functions
     # =================

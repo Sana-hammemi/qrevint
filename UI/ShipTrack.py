@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from PyQt5 import QtCore
 
@@ -368,9 +369,11 @@ class Shiptrack(object):
             v_mean = np.nanmean(v, axis=0)
             u_mean = self.subsection(u_mean, n_ensembles, edge_start)
             v_mean = self.subsection(v_mean, n_ensembles, edge_start)
+
         else:
             u_mean = np.nanmean(u, axis=0)[transect.in_transect_idx]
             v_mean = np.nanmean(v, axis=0)[transect.in_transect_idx]
+
 
         speed = np.sqrt(u_mean**2 + v_mean**2) * units['V']
         if len(speed) > 0:

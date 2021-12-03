@@ -1727,16 +1727,21 @@ class WaterData(object):
 
         # Get valid data based on all filters applied
         valid = self.valid_data[0, :, :]
+        valid = valid[:, transect.in_transect_idx]
 
         # Initialize processed velocity data variables
-        self.u_processed_mps = copy.deepcopy(self.u_mps)
-        self.v_processed_mps = copy.deepcopy(self.v_mps)
+        u = copy.deepcopy(self.u_mps)
+        v = copy.deepcopy(self.v_mps)
+
+        u = u[:, transect.in_transect_idx]
+        v = v[:, transect.in_transect_idx]
 
         # Set invalid data to nan in processed velocity data variables
-        self.u_processed_mps[np.logical_not(valid)] = np.nan
-        self.v_processed_mps[np.logical_not(valid)] = np.nan
+        u[np.logical_not(valid)] = np.nan
+        v[np.logical_not(valid)] = np.nan
 
         interpolated_data = self.compute_abba_interpolation(wt_data=self,
+                                                            data_list=[u, v],
                                                             valid=valid,
                                                             transect=transect,
                                                             search_loc=search_loc)
@@ -1744,19 +1749,31 @@ class WaterData(object):
         if interpolated_data is not None:
             # Incorporate interpolated values in processed data
             for n in range(len(interpolated_data[0])):
-                self.u_processed_mps[interpolated_data[0][n][0]] = \
+                u[interpolated_data[0][n][0]] = \
                     interpolated_data[0][n][1]
-                self.v_processed_mps[interpolated_data[1][n][0]] = \
+                v[interpolated_data[1][n][0]] = \
                     interpolated_data[1][n][1]
 
+        # Save interpolated data, while retaining of the ensembles including
+        # those that are not
+        # in the in_transect_idx array
+        self.u_processed_mps[:, :] = np.nan
+        self.v_processed_mps[:, :] = np.nan
+        self.u_processed_mps[:, transect.in_transect_idx] = u
+        self.v_processed_mps[:, transect.in_transect_idx] = v
+
     @staticmethod
-    def compute_abba_interpolation(wt_data, valid, transect, search_loc=['above', 'below', 'before', 'after']):
+    def compute_abba_interpolation(wt_data, data_list, valid, transect,
+                                   search_loc=['above', 'below', 'before',
+                                               'after']):
         """Computes the interpolated values for invalid cells using the abba method.
 
         Parameters
         ----------
         wt_data: WaterData
             Object of WaterData
+        data_list: list
++           List of np.array(float) data to used for interpolation
         valid: np.ndarray(bool)
             Array indicating valid to be used for interpolation
         transect: TransectData
@@ -1768,10 +1785,10 @@ class WaterData(object):
             Array of interpolated data
         """
         # Find cells with invalid data
-        valid_cells = wt_data.valid_data[0, :, :]
+        valid_cells = wt_data.valid_data[0, :, transect.in_transect_idx]
         boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
         if boat_selected is not None:
-            boat_valid = boat_selected.valid_data[0]
+            boat_valid = boat_selected.valid_data[0, transect.in_transect_idx]
         else:
             boat_valid = 0
 
@@ -1788,14 +1805,16 @@ class WaterData(object):
                     distance_along_shiptrack[-1 * end_nan:] = np.nan
             # if type(distance_along_shiptrack) is np.ndarray:
                 depth_selected = getattr(transect.depths, transect.depths.selected)
+                cells_above_sl = wt_data.valid_data[6, :, :]
+                cells_above_sl = cells_above_sl[:, transect.in_transect_idx]
 
-                # Interpolate values for  invalid cells with from neighboring data
-                interpolated_data = abba_idw_interpolation(data_list=[wt_data.u_processed_mps, wt_data.v_processed_mps],
+                # Interpolate values for invalid cells with from neighboring data
+                interpolated_data = abba_idw_interpolation(data_list=data_list,
                                                            valid_data=valid,
-                                                           cells_above_sl=wt_data.valid_data[6, :, :],
-                                                           y_centers=depth_selected.depth_cell_depth_m,
-                                                           y_cell_size=depth_selected.depth_cell_size_m,
-                                                           y_depth=depth_selected.depth_processed_m,
+                                                           cells_above_sl=cells_above_sl,
+                                                           y_centers=depth_selected.depth_cell_depth_m[:, transect.in_transect_idx],
+                                                           y_cell_size=depth_selected.depth_cell_size_m[:, transect.in_transect_idx],
+                                                           y_depth=depth_selected.depth_processed_m[transect.in_transect_idx],
                                                            x_shiptrack=distance_along_shiptrack,
                                                            search_loc=search_loc,
                                                            normalize=True)

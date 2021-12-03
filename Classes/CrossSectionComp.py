@@ -6,8 +6,6 @@ import numpy as np
 import utm
 
 from Classes.BoatStructure import BoatStructure
-# Todo: Add option to choose GGA or VTG.
-# Todo: Use Nav ref to determine if XY is computed with BT or GPS
 
 
 class CrossSectionComp(object):
@@ -110,55 +108,53 @@ class CrossSectionComp(object):
 
                     # pull GPS coords if available. If not fill with NANs
                     if hasattr(transect.gps, 'gga_lon_ens_deg'):
-                        try:
-                            lon = transect.gps.gga_lon_ens_deg
-                            lat = transect.gps.gga_lat_ens_deg
+                        if transect.boat_vel.selected == 'vtg_vel' or 'gga_vel':
+                            try:
+                                lon = transect.gps.gga_lon_ens_deg
+                                lat = transect.gps.gga_lat_ens_deg
 
-                            # replace nan values with 0 to avoid utm crash
-                            lon_nan = np.argwhere(np.isnan(lon))
-                            lat_nan = np.argwhere(np.isnan(lat))
+                                # replace nan values with 0 to avoid utm crash
+                                lon_nan = np.argwhere(np.isnan(lon))
+                                lat_nan = np.argwhere(np.isnan(lat))
 
-                            if len(lon_nan) > 0:
-                                lon = np.nan_to_num(lon, nan=0)
+                                if len(lon_nan) > 0:
+                                    lon = np.nan_to_num(lon, nan=0)
 
-                            if len(lat_nan) > 0:
-                                lat = np.nan_to_num(lat, nan=0)
+                                if len(lat_nan) > 0:
+                                    lat = np.nan_to_num(lat, nan=0)
 
-                            # convert lat/lon to UTM coords.
-                            lat_lon = utm.from_latlon(lat, lon)
-                            lat = lat_lon[0]
-                            lon = lat_lon[1]
-                            self.zone_number = lat_lon[2]
-                            self.zone_letter = lat_lon[3]
+                                # convert lat/lon to UTM coords.
+                                lat_lon = utm.from_latlon(lat, lon)
+                                lat = lat_lon[0]
+                                lon = lat_lon[1]
+                                self.zone_number = lat_lon[2]
+                                self.zone_letter = lat_lon[3]
 
-                            # replace 0 values with nan
-                            if len(lat_nan) > 0:
-                                for idx in lat_nan:
-                                    lat[idx] = np.nan
-                            if len(lon_nan) > 0:
-                                for idx in lon_nan:
-                                    lon[idx] = np.nan
+                                # replace 0 values with nan
+                                if len(lat_nan) > 0:
+                                    for idx in lat_nan:
+                                        lat[idx] = np.nan
+                                if len(lon_nan) > 0:
+                                    for idx in lon_nan:
+                                        lon[idx] = np.nan
 
-                            self.gps = True
-                            lon_list.append(lon)
-                            lat_list.append(lat)
+                                self.gps = True
+                                lon_list.append(lon)
+                                lat_list.append(lat)
 
-                        except ValueError:
-                            array_size = unit_x.shape
-                            lon = np.empty(array_size)
-                            lon[:] = np.nan
-                            lat = np.empty(array_size)
-                            lat[:] = np.nan
+                            except (ValueError, TypeError):
+                                lat, lon = self.create_empty_gps(unit_x)
+                                self.gps = False
+                                lon_list.append(lon)
+                                lat_list.append(lat)
+                        else:
+                            lat, lon = self.create_empty_gps(unit_x)
                             self.gps = False
                             lon_list.append(lon)
                             lat_list.append(lat)
 
                     else:
-                        array_size = unit_x.shape
-                        lon = np.empty(array_size)
-                        lon[:] = np.nan
-                        lat = np.empty(array_size)
-                        lat[:] = np.nan
+                        lat, lon = self.create_empty_gps(unit_x)
                         self.gps = False
                         lon_list.append(lon)
                         lat_list.append(lat)
@@ -194,6 +190,17 @@ class CrossSectionComp(object):
         # compute average cross section and append
         avg_cs = self.average_cross_section(self.cross_section)
         self.cross_section.append(avg_cs)
+
+    @staticmethod
+    def create_empty_gps(unit_x):
+
+        array_size = unit_x.shape
+        lon = np.empty(array_size)
+        lon[:] = np.nan
+        lat = np.empty(array_size)
+        lat[:] = np.nan
+
+        return lat, lon
 
     @staticmethod
     def create_projected_cross_section(x_list, y_list):
