@@ -80,20 +80,29 @@ class StationaryGraphs(object):
         self.fig.axmb.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
         # Mark invalid data
-        valid_data = mb_test.transect.boat_vel.bt_vel.valid_data[0, mb_test.transect.in_transect_idx]
+        valid_data = \
+            mb_test.transect.boat_vel.bt_vel.valid_data[0, mb_test.transect.in_transect_idx]
         if np.any(valid_data):
             invalid_data = np.logical_not(valid_data)
             # Compute x axis data
             x = None
             if x_axis_type == 'L':
                 # Length doesn't make sense for this plot so default to ensembles
-                x = np.arange(1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
+                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
             elif x_axis_type == 'E':
-                x = np.arange(1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
+                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
             elif x_axis_type == 'T':
                 x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec)
 
-            self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel * units['V'], 'b-')
+            try:
+                self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel * units['V'], 'b-')
+            except ValueError:
+                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
+                x_axis_type = 'E'
+                self.mb = self.fig.axmb.plot(x,
+                                             mb_test.stationary_mb_vel * units[
+                                                 'V'], 'b-')
+
             self.mb.append(self.fig.axmb.plot(x[invalid_data],
                                               mb_test.stationary_mb_vel[invalid_data] * units['V'], 'ro')[0])
 

@@ -132,14 +132,16 @@ class BoatSpeed(object):
             x = np.array(x)
 
         # Plot bottom track boat speed
-        speed = np.sqrt(transect.boat_vel.bt_vel.u_processed_mps ** 2 + transect.boat_vel.bt_vel.v_processed_mps ** 2)
+        speed = np.sqrt(transect.boat_vel.bt_vel.u_processed_mps ** 2
+                        + transect.boat_vel.bt_vel.v_processed_mps ** 2)
+
         self.bt = self.fig.ax.plot(x, speed * units['V'], 'r-')
 
         # Plot invalid data points using a symbol to represent what caused the data to be invalid
         invalid_bt = np.logical_not(transect.boat_vel.bt_vel.valid_data)
         if invalid_bt is not None:
-            speed = np.sqrt(
-                transect.boat_vel.bt_vel.u_mps ** 2 + transect.boat_vel.bt_vel.v_mps ** 2)
+            speed = np.sqrt(transect.boat_vel.bt_vel.u_mps ** 2
+                            + transect.boat_vel.bt_vel.v_mps ** 2)
             speed[np.isnan(speed)] = 0
             self.bt.append(self.fig.ax.plot(x[invalid_bt[1]], speed[invalid_bt[1]] * units['V'],
                                             'k', linestyle='', marker='$O$')[0])
@@ -164,16 +166,16 @@ class BoatSpeed(object):
 
         # Plot VTG boat speed
         if transect.boat_vel.vtg_vel is not None:
-            speed = np.sqrt(
-                transect.boat_vel.vtg_vel.u_processed_mps ** 2 + transect.boat_vel.vtg_vel.v_processed_mps ** 2)
+            speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps ** 2
+                            + transect.boat_vel.vtg_vel.v_processed_mps ** 2)
             self.vtg = self.fig.ax.plot(x, speed * units['V'], 'g-')
 
             # Plot invalid data points using a symbol to represent what caused the data to be invalid
             invalid_gps = np.logical_not(transect.boat_vel.vtg_vel.valid_data)
             # if invalid_gps is not None:
             if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
-                speed = np.sqrt(
-                    transect.boat_vel.vtg_vel.u_mps ** 2 + transect.boat_vel.vtg_vel.v_mps ** 2)
+                speed = np.sqrt(transect.boat_vel.vtg_vel.u_mps ** 2
+                                + transect.boat_vel.vtg_vel.v_mps ** 2)
                 speed[np.isnan(speed)] = 0
                 self.vtg.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
                                                  'k', linestyle='', marker='$O$')[0])
@@ -192,15 +194,15 @@ class BoatSpeed(object):
 
         # Plot GGA boat speed
         if transect.boat_vel.gga_vel is not None:
-            speed = np.sqrt(
-                transect.boat_vel.gga_vel.u_processed_mps ** 2 + transect.boat_vel.gga_vel.v_processed_mps ** 2)
+            speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps ** 2
+                            + transect.boat_vel.gga_vel.v_processed_mps ** 2)
             self.gga = self.fig.ax.plot(x, speed * units['V'], 'b-')
 
             # Plot invalid data points using a symbol to represent what caused the data to be invalid
             invalid_gps = np.logical_not(transect.boat_vel.gga_vel.valid_data)
             if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
-                speed = np.sqrt(
-                    transect.boat_vel.gga_vel.u_mps ** 2 + transect.boat_vel.gga_vel.v_mps ** 2)
+                speed = np.sqrt(transect.boat_vel.gga_vel.u_mps ** 2
+                                + transect.boat_vel.gga_vel.v_mps ** 2)
                 speed[np.isnan(speed)] = 0
                 self.gga.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
                                                  'k', linestyle='', marker='$O$')[0])

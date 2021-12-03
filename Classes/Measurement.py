@@ -3987,9 +3987,13 @@ class Measurement(object):
                 depth = cross_section[row, 5]
 
                 if not np.isnan(lon):
-                    lat, lon = utm.to_latlon(lat, lon,
-                                             zone_number=xs.zone_number,
-                                             zone_letter=xs.zone_letter)
+                    try:
+                        lat, lon = utm.to_latlon(lat, lon,
+                                                 zone_number=xs.zone_number,
+                                                 zone_letter=xs.zone_letter)
+                    except BaseException:
+                        lat = np.nan
+                        lon = np.nan
 
                 meas_pts = ETree.SubElement(survey, 'MeasurementPoints')
                 t_row = ETree.SubElement(meas_pts,

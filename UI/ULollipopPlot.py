@@ -148,7 +148,8 @@ class ULollipopPlot(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
@@ -156,5 +157,6 @@ class ULollipopPlot(object):
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None
-            self.annot.set_visible(False)
+            if self.annot is not None:
+                self.annot.set_visible(False)
             self.canvas.draw_idle()
