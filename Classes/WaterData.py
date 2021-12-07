@@ -1171,8 +1171,11 @@ class WaterData(object):
         # Check for presence of 3-beam solutions
         if len(rows_3b) > 0:
             interpolated_data = self.compute_abba_interpolation(wt_data=temp,
-                                                                valid=temp.valid_data[5, :, :],
-                                                                transect=transect)
+                                            data_list=[temp.u_processed_mps,
+                                                       temp.v_processed_mps],
+                                            valid=temp.valid_data[5, :, :],
+                                            transect=transect)
+
 
             if interpolated_data is not None:
                 # Compute interpolated to measured ratios and apply filter criteria

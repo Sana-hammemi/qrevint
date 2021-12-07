@@ -135,17 +135,25 @@ class PRTS(object):
                 self.fig.ax.set_xlabel(
                     self.canvas.tr('Duration Left to Right (seconds)'))
 
-        # Label axis
-        if x_axis_type == 'L':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02 * units['L'],
-                                  right=np.nanmax(x) * 1.02 * units['L'])
-            self.fig.ax.set_xlabel(self.canvas.tr('Length Left to Right' + units['label_L']))
-        elif x_axis_type == 'E':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
-            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles Left to Right'))
-        elif x_axis_type == 'T':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
-            self.fig.ax.set_xlabel(self.canvas.tr('Duration Left to Right (seconds)'))
+                # Label axis
+                if x_axis_type == 'L':
+                    self.fig.ax.set_xlim(
+                        left=-1 * np.nanmax(x) * 0.02 * units['L'],
+                        right=np.nanmax(x) * 1.02 * units['L'])
+                    self.fig.ax.set_xlabel(self.canvas.tr(
+                        'Length Left to Right' + units['label_L']))
+                elif x_axis_type == 'E':
+                    self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02,
+                                         right=np.nanmax(x) * 1.02)
+                    self.fig.ax.set_xlabel(
+                        self.canvas.tr('Ensembles Left to Right'))
+                elif x_axis_type == 'T':
+                    self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02,
+                                         right=np.nanmax(x) * 1.02)
+                    self.fig.ax.set_xlabel(
+                        self.canvas.tr('Duration Left to Right (seconds)'))
+
+
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20),
