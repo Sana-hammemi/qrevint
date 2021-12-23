@@ -370,7 +370,8 @@ class Measurement(object):
 
                 # Speed of sound computed based on user supplied values
                 if mmt_sos_method == 1:
-                    transect.change_sos(parameter='salinity')
+                    salinity = mmt.transects[transect_idx].active_config['Proc_Salinity']
+                    transect.change_sos(parameter='salinity', selected='user', salinity=salinity)
                 elif mmt_sos_method == 2:
                     # Speed of sound set by user
                     speed = mmt.transects[transect_idx].active_config[
@@ -558,6 +559,20 @@ class Measurement(object):
             transect.w_vel.apply_interpolation(transect=transect,
                                                ens_interp='None',
                                                cells_interp='TRDI')
+
+            if transect.sensors.speed_of_sound_mps.selected == 'user':
+                transect.sensors.speed_of_sound_mps.selected = 'internal'
+                transect.change_sos(parameter='sosSrc',
+                                    selected='user',
+                                    speed=transect.sensors.speed_of_sound_mps.user.data)
+            elif transect.sensors.salinity_ppt.selected == 'user':
+                transect.change_sos(parameter='salinity',
+                                    selected='user',
+                                    salinity=transect.sensors.salinity_ppt.user.data)
+            elif transect.sensors.temperature_deg_c.selected == 'user':
+                transect.change_sos(parameter='temperature',
+                                    selected='user',
+                                    temperature=transect.sensors.temperature_deg_c.user.data)
 
     def qaqc_sontek(self, pathname):
         """Reads and stores system tests, compass calibrations,

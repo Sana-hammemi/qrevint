@@ -803,7 +803,7 @@ class Oursin(object):
         u_contribution_measurement['u_cov'] = u2_measurement['u_cov'] / n_transects
         u_contribution_measurement = u_contribution_measurement.div(u_contribution_measurement['total'], axis=0)
 
-        # Adjust contribution of u_meas and u_cov to accoutn for number of transects
+        # Adjust contribution of u_meas and u_cov to account for number of transects
         u_contribution = u2.copy()
         u_contribution['u_meas'] = u2['u_meas'].div(n_transects, axis=0)
         u_contribution['u_cov'] = u2['u_cov'].div(n_transects, axis=0)

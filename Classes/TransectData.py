@@ -792,6 +792,79 @@ class TransectData(object):
         elif rsdata.Setup.coordinateSystem == 2:
             ref_coord = 'Earth'
 
+        # Speed of Sound Parameters
+        # -------------------------
+        # In SonTek's Matlab file the BT velocity, VB Depth, and WT Velocity are not reported as raw data but rather
+        # are reported as processed values based on manual settings of temperature, salinity, and speed of sound.
+        # Note: the 4 beam depths are raw data and are not adjusted.
+        # QRev expects raw data to be independent of user settings. Therefore, manual settings must be identified
+        # and the Matlab data adjusted to reflect the raw data before creating the data classes in QRev.
+        # The manual values will then be applied during processing.
+
+        self.sensors = Sensors()
+
+        # Temperature
+        if rsdata.System.Units.Temperature.find('C') >= 0:
+            temperature = rsdata.System.Temperature
+        else:
+            temperature = (5. / 9.) * (rsdata.System.Temperature - 32)
+        self.sensors.temperature_deg_c.internal = SensorData()
+        self.sensors.temperature_deg_c.internal.populate_data(data_in=temperature, source_in='internal')
+        self.sensors.temperature_deg_c.selected = 'internal'
+
+        if hasattr(rsdata.Setup, 'userTemperature'):
+            if rsdata.Setup.useMeasuredTemperature == 0:
+                if rsdata.Setup.Units.userTemperature.find('C') >= 0:
+                    temperature = rsdata.Setup.userTemperature
+                else:
+                    temperature = (5. / 9.) * (rsdata.Setup.userTemperature - 32)
+                self.sensors.temperature_deg_c.user = SensorData()
+                self.sensors.temperature_deg_c.user.populate_data(data_in=temperature, source_in='Manual')
+                self.sensors.temperature_deg_c.selected = 'user'
+
+        # Salinity
+        # Create internal salinity using a zero value since salinity can only be applied in RSL and not in the raw data
+        self.sensors.salinity_ppt.internal = SensorData()
+        self.sensors.salinity_ppt.internal.populate_data(data_in=0, source_in='QRev')
+
+        # Create a user salinity if different from zero
+        if rsdata.Setup.userSalinity > 0:
+            self.sensors.salinity_ppt.user = SensorData()
+            self.sensors.salinity_ppt.user.populate_data(data_in=rsdata.Setup.userSalinity, source_in='Manual')
+            self.sensors.salinity_ppt.selected = 'user'
+        else:
+            self.sensors.salinity_ppt.selected = 'internal'
+
+        # Speed of sound
+        # Internal sos provided in SonTek data but is computed from equation used in TRDI BBSS.
+        temperature = self.sensors.temperature_deg_c.internal.data
+        salinity = self.sensors.salinity_ppt.internal.data
+        speed_of_sound = Sensors.speed_of_sound(temperature=temperature, salinity=salinity)
+        self.sensors.speed_of_sound_mps.internal = SensorData()
+        self.sensors.speed_of_sound_mps.internal.populate_data(data_in=speed_of_sound, source_in='QRev')
+        self.sensors.speed_of_sound_mps.selected = 'internal'
+
+        if hasattr(rsdata.Setup, 'useFixedSoundSpeed'):
+            if rsdata.Setup.useFixedSoundSpeed > 0:
+                self.sensors.speed_of_sound_mps.user = SensorData()
+                user_sos = rsdata.Setup.fixedSoundSpeed
+                self.sensors.speed_of_sound_mps.user.populate_data(data_in=user_sos, source_in='Manual')
+                self.sensors.speed_of_sound_mps.selected = 'user'
+
+        # Speed of sound correction to obtain raw data
+        sos_correction = None
+        if self.sensors.speed_of_sound_mps.selected == 'user':
+            sos_correction = self.sensors.speed_of_sound_mps.internal.data / self.sensors.speed_of_sound_mps.user.data
+
+        elif self.sensors.salinity_ppt.selected == 'user' or self.sensors.temperature_deg_c.selected == 'user':
+            selected_temperature = getattr(self.sensors.temperature_deg_c, self.sensors.temperature_deg_c.selected)
+            temperature = selected_temperature.data
+            selected_salinity = getattr(self.sensors.salinity_ppt, self.sensors.salinity_ppt.selected)
+            salinity = selected_salinity.data
+            sos_user = Sensors.speed_of_sound(temperature=temperature, salinity=salinity)
+            sos_correction = self.sensors.speed_of_sound_mps.internal.data / sos_user
+
+
         # Bottom Track
         # ------------
 
@@ -806,9 +879,15 @@ class TransectData(object):
         # Create valid frequency time series
         freq_ts = self.valid_frequencies(freq)
 
+        bt_vel = np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0)
+
+        # Apply correction for manual sos parameters to obtain raw values
+        if sos_correction is not None:
+            bt_vel = bt_vel * sos_correction
+
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(source='SonTek',
-                                      vel_in=np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0),
+                                      vel_in=bt_vel,
                                       freq_in=freq_ts,
                                       coord_sys_in=ref_coord,
                                       nav_ref_in='BT')
@@ -936,6 +1015,10 @@ class TransectData(object):
         depth_vb[0, :] = rsdata.BottomTrack.VB_Depth
         depth_vb[depth_vb == 0] = np.nan
 
+        # Apply correction for manual sos parameters to obtain raw values
+        if sos_correction is not None:
+            depth_vb = ((depth_vb - rsdata.Setup.sensorDepth) * sos_correction) + rsdata.Setup.sensorDepth
+
         # Create depth object for vertical beam
         self.depths.add_depth_object(depth_in=depth_vb,
                                      source_in='VB',
@@ -964,6 +1047,10 @@ class TransectData(object):
 
         # Rearrange arrays for consistency with WaterData class
         vel = np.swapaxes(rsdata.WaterTrack.Velocity, 1, 0)
+
+        # Apply correction for manual sos parameters to obtain raw values
+        if sos_correction is not None:
+            vel = vel * sos_correction
         snr = np.swapaxes(rsdata.System.SNR, 1, 0)
         if hasattr(rsdata.WaterTrack, 'Correlation'):
             corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
@@ -1132,7 +1219,6 @@ class TransectData(object):
 
         # Sensor data
         # -----------
-        self.sensors = Sensors()
 
         # Internal heading
         self.sensors.heading_deg.internal = HeadingData()
@@ -1187,39 +1273,6 @@ class TransectData(object):
         self.sensors.roll_deg.internal = SensorData()
         self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in='internal')
         self.sensors.roll_deg.selected = 'internal'
-
-        # Temperature
-        if rsdata.System.Units.Temperature.find('C') >= 0:
-            temperature = rsdata.System.Temperature
-        else:
-            temperature = (5. / 9.) * (rsdata.System.Temperature - 32)
-        self.sensors.temperature_deg_c.internal = SensorData()
-        self.sensors.temperature_deg_c.internal.populate_data(data_in=temperature, source_in='internal')
-        self.sensors.temperature_deg_c.selected = 'internal'
-
-        # Salinity
-        self.sensors.salinity_ppt.user = SensorData()
-        self.sensors.salinity_ppt.user.populate_data(data_in=rsdata.Setup.userSalinity, source_in='Manual')
-        self.sensors.salinity_ppt.selected = 'user'
-        # Matlab notes indicated that an internal sensor needed to be created for compatibility with
-        # future computations
-        self.sensors.salinity_ppt.internal = SensorData()
-        self.sensors.salinity_ppt.internal.populate_data(data_in=rsdata.Setup.userSalinity, source_in='Manual')
-
-        # Speed of sound
-        # Not provided in SonTek data but is computed from equation used in TRDI BBSS.
-        speed_of_sound = Sensors.speed_of_sound(temperature=temperature, salinity=rsdata.Setup.userSalinity)
-        self.sensors.speed_of_sound_mps.internal = SensorData()
-        self.sensors.speed_of_sound_mps.internal.populate_data(data_in=speed_of_sound, source_in='QRev')
-        # Set selected salinity
-        self.sensors.speed_of_sound_mps.selected = 'internal'
-
-        if hasattr(rsdata.Setup, 'useFixedSoundSpeed'):
-            if rsdata.Setup.useFixedSoundSpeed > 0:
-                self.sensors.speed_of_sound_mps.user = SensorData()
-                user_sos = np.tile(rsdata.Setup.fixedSoundSpeed, len(speed_of_sound))
-                self.sensors.speed_of_sound_mps.user.populate_data(data_in=user_sos, source_in='User')
-                self.sensors.speed_of_sound_mps.selected = 'user'
 
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
@@ -1851,7 +1904,7 @@ class TransectData(object):
             self.depths.bt_depths.change_draft(draft_in)
 
     def change_sos(self, parameter=None, salinity=None, temperature=None, selected=None, speed=None):
-        """Coordinates changing the speed of sounc.
+        """Coordinates changing the speed of sound.
 
         Parameters
         ----------
@@ -1884,7 +1937,7 @@ class TransectData(object):
             self.update_sos()
 
         elif parameter == 'temperature':
-            adcp_temp = self.sensors.temperature_deg_c.internal.populate_data
+            adcp_temp = self.sensors.temperature_deg_c.internal.data
             new_user_temperature = np.tile(temperature, adcp_temp.shape)
             self.sensors.temperature_deg_c.user.change_data(data_in=new_user_temperature)
             self.sensors.temperature_deg_c.user.set_source(source_in='Manual Input')
@@ -1897,10 +1950,10 @@ class TransectData(object):
             if salinity is not None:
                 self.sensors.salinity_ppt.user.change_data(data_in=salinity)
                 if type(self.sensors.salinity_ppt.internal.data) is float:
-                    sos_internal = self.sensors.salinity_ppt.internal.data
+                    salinity_internal = self.sensors.salinity_ppt.internal.data
                 else:
-                    sos_internal = self.sensors.salinity_ppt.internal.data[0]
-                if self.sensors.salinity_ppt.user.data == sos_internal:
+                    salinity_internal = self.sensors.salinity_ppt.internal.data
+                if self.sensors.salinity_ppt.user.data == salinity_internal[0]:
                     self.sensors.salinity_ppt.set_selected(selected_name='internal')
                 else:
                     self.sensors.salinity_ppt.set_selected(selected_name='user')

@@ -2193,6 +2193,7 @@ class QAData(object):
         self.settings_dict['tab_tempsal'] = 'Default'
 
         t_source_change = False
+        salinity_change = False
         s_sound_change = False
         t_user_change = False
         t_adcp_change = False
@@ -2213,12 +2214,15 @@ class QAData(object):
             if transect.sensors.temperature_deg_c.selected != 'internal':
                 t_source_change = True
 
+            if transect.sensors.salinity_ppt.selected != 'internal':
+                salinity_change = True
+
             # Speed of Sound
             if transect.sensors.speed_of_sound_mps.selected != 'internal':
                 s_sound_change = True
 
         # Report condition and messages
-        if any([t_source_change, s_sound_change, t_adcp_change, t_user_change]):
+        if any([t_source_change, salinity_change, s_sound_change, t_adcp_change, t_user_change]):
             self.settings_dict['tab_tempsal'] = 'Custom'
             
             if t_source_change:

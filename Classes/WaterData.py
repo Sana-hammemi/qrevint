@@ -1188,7 +1188,17 @@ class WaterData(object):
 
         # Check for presence of 3-beam solutions
         if len(rows_3b) > 0:
+            # Initialize velocity data variables
+            u = copy.deepcopy(self.u_mps)
+            v = copy.deepcopy(self.v_mps)
+
+            u = u[:, transect.in_transect_idx]
+            v = v[:, transect.in_transect_idx]
+
+            u[np.logical_not(temp.valid_data[5, :, :])] = np.nan
+            v[np.logical_not(temp.valid_data[5, :, :])] = np.nan
             interpolated_data = self.compute_abba_interpolation(wt_data=temp,
+                                                                data_list=[u, v],
                                                                 valid=temp.valid_data[5, :, :],
                                                                 transect=transect)
 

@@ -65,9 +65,11 @@ class Sensors(object):
             Water salinity at transducer face, in ppt.
         """
 
-        # Not provided in RS Matlab file computed from equation used in TRDI BBSS
+        # Not provided in RS Matlab file computed from equation used in TRDI BBSS, from Urick (1983)
+        # May not be the same equation as used by SonTek
         sos = 1449.2 + 4.6 * temperature - 0.055 * temperature**2 + 0.00029 * temperature**3 \
             + (1.34 - 0.01 * temperature) * (salinity - 35.0)
+
         return sos
 
     @staticmethod
