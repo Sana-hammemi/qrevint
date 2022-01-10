@@ -792,6 +792,7 @@ class BoatData(object):
         # Correct velocities
         self.u_mps = self.u_mps * ratio
         self.v_mps = self.v_mps * ratio
+        self.w_mps = self.w_mps * ratio
 
     def interpolate_hold_9(self):
         """This function applies Sontek's approach to maintaining the last valid boat speed for up to 9 invalid samples.

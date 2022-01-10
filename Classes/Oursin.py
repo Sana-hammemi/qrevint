@@ -945,21 +945,31 @@ class Oursin(object):
                 u_boat = self.boat_std_by_error_velocity(meas.transects[transect_id])
 
             elif meas.transects[transect_id].boat_vel.selected == 'gga_vel':
+                boat_std = np.nan
                 if np.isnan(self.user_advanced_settings['gga_boat_mps_user']):
                     if meas.transects[transect_id].gps is not None:
                         # Estimate the uncertainty in gga boat velocity as 1/3 of the standard deviation of
                         # the elevation (estimate of horizontal position uncertainty) divided by time
-                        u_boat = (np.nanstd(meas.transects[transect_id].gps.altitude_ens_m, ddof=1) / 3) / \
+                        boat_std = (np.nanstd(meas.transects[transect_id].gps.altitude_ens_m, ddof=1) / 3) / \
                                    np.nanmean(np.diff(meas.transects[transect_id].gps.gga_serial_time_ens))
                 else:
-                    u_boat = self.user_advanced_settings['gga_boat_mps']
+                    boat_std = self.user_advanced_settings['gga_boat_mps']
+                u = meas.transects[transect_id].boat_vel.gga_vel.u_processed_mps
+                v = meas.transects[transect_id].boat_vel.gga_vel.v_processed_mps
+                speed = np.sqrt(u ** 2 + v ** 2)
+                u_boat = boat_std / speed
 
             elif meas.transects[transect_id].boat_vel.selected == 'vtg_vel':
                 if np.isnan(self.user_advanced_settings['vtg_boat_mps_user']):
+                    boat_std = np.nan
                     if meas.transects[transect_id].gps is not None:
-                        u_boat = self.default_advanced_settings['vtg_boat_mps']
+                        boat_std = self.default_advanced_settings['vtg_boat_mps']
                 else:
-                    u_boat = self.user_advanced_settings['vtg_boat_mps_user']
+                    boat_std = self.user_advanced_settings['vtg_boat_mps_user']
+                u = meas.transects[transect_id].boat_vel.vtg_vel.u_processed_mps
+                v = meas.transects[transect_id].boat_vel.vtg_vel.v_processed_mps
+                speed = np.sqrt(u ** 2 + v ** 2)
+                u_boat = boat_std / speed
 
             # Computation of u_meas
             q_2_tran = meas.discharge[transect_id].total ** 2

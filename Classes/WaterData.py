@@ -1026,6 +1026,7 @@ class WaterData(object):
         # Correct water velocities
         self.u_mps = self.u_mps * ratio
         self.v_mps = self.v_mps * ratio
+        self.w_mps = self.w_mps * ratio
         self.u_earth_no_ref_mps = self.u_earth_no_ref_mps * ratio
         self.v_earth_no_ref_mps = self.v_earth_no_ref_mps * ratio
 

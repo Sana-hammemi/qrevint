@@ -12,7 +12,7 @@ class ComputeExtrap(object):
     threshold: float
         Threshold as a percent for determining if a median is valid
     subsection: list
-        Percent of discharge, does not account for transect direction
+        Percent of discharge
     fit_method: str
         Method used to determine fit.  Automatic or manual
     norm_data: NormData
@@ -25,8 +25,8 @@ class ComputeExtrap(object):
         Variable for messages to UserWarning
     use_weighted: bool
         Specifies if discharge weighted medians are used in extrapolations
-     sub_from_left: bool
-            Specifies if when subsectioning the subsection should start from left to right.
+    sub_from_left: bool
+        Specifies if when subsectioning the subsection should start from left to right.
     use_q: bool
         Specifies to use the discharge rather than the xprod when subsectioning
 
