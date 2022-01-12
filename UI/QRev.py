@@ -2371,6 +2371,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         for key in qa_check_keys:
             qa_type = getattr(qa, key)
             self.set_icon(key, qa_type['status'])
+            self.set_tab_color()
 
         gga = getattr(qa, 'gga_vel')
         vtg = getattr(qa, 'vtg_vel')
@@ -4529,6 +4530,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                              selected=t_source)
 
                     # Update the tempsal tab
+                    self.meas.qa.check_tempsal_settings(self.meas)
                     self.update_tempsal_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
                     self.change = True
 
@@ -4555,6 +4557,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                  parameter='salinity',
                                                  salinity=salinity)
                         # Update the tempsal tab
+                        self.meas.qa.check_tempsal_settings(self.meas)
                         self.update_tempsal_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
                         self.change = True
                     except ValueError:
@@ -4599,6 +4602,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                              selected=sos_source)
 
                     # Update the tempsal tab
+                    self.meas.qa.check_tempsal_settings(self.meas)
                     self.update_tempsal_tab(tbl=tbl, old_discharge=old_discharge, new_discharge=self.meas.discharge)
                     self.change = True
 
@@ -6267,9 +6271,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_hdop_threshold.setText(threshold)
 
             # Set smooth filter from transect data
-            if self.transect.boat_vel.gga_vel.smooth_filter == 'Off':
+            if gga_transect.boat_vel.gga_vel.smooth_filter == 'Off':
                 self.combo_gps_other.setCurrentIndex(0)
-            elif self.transect.boat_vel.gga_vel.smooth_filter == 'On':
+            elif gga_transect.boat_vel.gga_vel.smooth_filter == 'On':
                 self.combo_gps_other.setCurrentIndex(1)
 
         # Check for presence of vtg data
@@ -6685,13 +6689,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 qa_data = self.meas.qa.gga_vel
             elif self.meas.transects[self.meas.checked_transect_idx[row]].boat_vel.vtg_vel is not None:
                 qa_data = self.meas.qa.vtg_vel
-            tt = tt.join(self.q_qa_message(qa_data=qa_data,
-                                           cat_idx=cat_idx,
-                                           transect_id=transect_id,
-                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
-                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
-                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
-                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            if qa_data is not None:
+                tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                               cat_idx=cat_idx,
+                                               transect_id=transect_id,
+                                               total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                               total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                               run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                               run_threshold_caution=self.meas.qa.q_run_threshold_caution))
 
         elif column == 8:
             cat_idx = 4
@@ -8552,7 +8557,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                 vert=self.rb_wt_vert.isChecked(),
                                                 snr=self.rb_wt_snr.isChecked(),
                                                 speed=self.rb_wt_speed.isChecked(),
-                                                x_axis_type=self.x_axis_type
+                                                x_axis_type=self.x_axis_type,
+                                                color_map = self.color_map
                                                 )
 
         # Draw canvas
@@ -8704,6 +8710,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_wt_error_vel_threshold.setEnabled(False)
                 self.ed_wt_error_vel_threshold.setText('')
                 self.update_wt_tab(s)
+
             self.change = True
 
     @QtCore.pyqtSlot(str)
@@ -8787,6 +8794,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_error_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
@@ -8819,6 +8827,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_vert_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
@@ -8844,6 +8853,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_excluded_dist.blockSignals(False)
 
     def wt_comments_messages(self):

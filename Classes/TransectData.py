@@ -672,6 +672,7 @@ class TransectData(object):
 
             # Create salinity sensor from mmt data
             mmt_salinity = mmt_config['Proc_Salinity']
+            mmt_salinity = np.tile(mmt_salinity, pd0_salinity.shape)
             self.sensors.salinity_ppt.user = SensorData()
             self.sensors.salinity_ppt.user.populate_data(data_in=mmt_salinity, source_in='mmt')
 
@@ -826,20 +827,20 @@ class TransectData(object):
         # Create internal salinity using a zero value since salinity can only be applied in RSL and not in the raw data
         self.sensors.salinity_ppt.internal = SensorData()
         self.sensors.salinity_ppt.internal.populate_data(data_in=0, source_in='QRev')
+        self.sensors.salinity_ppt.user = SensorData()
+        self.sensors.salinity_ppt.user.populate_data(data_in=rsdata.Setup.userSalinity, source_in='Manual')
 
-        # Create a user salinity if different from zero
+        # Set salinity source
         if rsdata.Setup.userSalinity > 0:
-            self.sensors.salinity_ppt.user = SensorData()
-            self.sensors.salinity_ppt.user.populate_data(data_in=rsdata.Setup.userSalinity, source_in='Manual')
             self.sensors.salinity_ppt.selected = 'user'
         else:
             self.sensors.salinity_ppt.selected = 'internal'
 
         # Speed of sound
-        # Internal sos provided in SonTek data but is computed from equation used in TRDI BBSS.
+        # Internal sos provided in SonTek data but is computed from equation.
         temperature = self.sensors.temperature_deg_c.internal.data
         salinity = self.sensors.salinity_ppt.internal.data
-        speed_of_sound = Sensors.speed_of_sound(temperature=temperature, salinity=salinity)
+        speed_of_sound = Sensors.unesco_speed_of_sound(t=temperature, s=salinity)
         self.sensors.speed_of_sound_mps.internal = SensorData()
         self.sensors.speed_of_sound_mps.internal.populate_data(data_in=speed_of_sound, source_in='QRev')
         self.sensors.speed_of_sound_mps.selected = 'internal'
@@ -861,7 +862,7 @@ class TransectData(object):
             temperature = selected_temperature.data
             selected_salinity = getattr(self.sensors.salinity_ppt, self.sensors.salinity_ppt.selected)
             salinity = selected_salinity.data
-            sos_user = Sensors.speed_of_sound(temperature=temperature, salinity=salinity)
+            sos_user = Sensors.unesco_speed_of_sound(t=temperature, s=salinity)
             sos_correction = self.sensors.speed_of_sound_mps.internal.data / sos_user
 
 
@@ -883,7 +884,7 @@ class TransectData(object):
 
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
-            bt_vel = bt_vel * sos_correction
+            bt_vel = np.around(bt_vel * sos_correction, 3)
 
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(source='SonTek',
@@ -992,6 +993,12 @@ class TransectData(object):
         cell_depth = ((np.tile(np.arange(1, max_cells + 1, 1).reshape(max_cells, 1), (1, num_ens)) - 0.5)
                       * cell_size_all) + np.tile(top_of_cells, (max_cells, 1))
 
+        # Adjust cell size and depth for user supplied temp, sal, or sos
+        if sos_correction is not None:
+            cell_size_all = np.around(cell_size_all * sos_correction, 6)
+            cell_depth = \
+                np.around(((cell_depth - rsdata.Setup.sensorDepth) * sos_correction) + rsdata.Setup.sensorDepth, 6)
+
         # Prepare bottom track depth variable
         depth = rsdata.BottomTrack.BT_Beam_Depth.T
         depth[depth == 0] = np.nan
@@ -1017,7 +1024,7 @@ class TransectData(object):
 
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
-            depth_vb = ((depth_vb - rsdata.Setup.sensorDepth) * sos_correction) + rsdata.Setup.sensorDepth
+            depth_vb = np.around(((depth_vb - rsdata.Setup.sensorDepth) * sos_correction) + rsdata.Setup.sensorDepth, 5)
 
         # Create depth object for vertical beam
         self.depths.add_depth_object(depth_in=depth_vb,
@@ -1050,7 +1057,7 @@ class TransectData(object):
 
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
-            vel = vel * sos_correction
+            vel = np.around(vel * sos_correction, 3)
         snr = np.swapaxes(rsdata.System.SNR, 1, 0)
         if hasattr(rsdata.WaterTrack, 'Correlation'):
             corr = np.swapaxes(rsdata.WaterTrack.Correlation, 1, 0)
@@ -1953,7 +1960,7 @@ class TransectData(object):
                     salinity_internal = self.sensors.salinity_ppt.internal.data
                 else:
                     salinity_internal = self.sensors.salinity_ppt.internal.data
-                if self.sensors.salinity_ppt.user.data == salinity_internal[0]:
+                if np.all(np.equal(self.sensors.salinity_ppt.user.data, salinity_internal)):
                     self.sensors.salinity_ppt.set_selected(selected_name='internal')
                 else:
                     self.sensors.salinity_ppt.set_selected(selected_name='user')

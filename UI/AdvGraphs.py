@@ -552,7 +552,7 @@ class AdvGraphs(object):
         self.canvas.draw()
 
     def create_wt_tab_graphs(self, transect, units, contour=True, beam=False, error=False, vert=False, snr=False,
-                             speed=False, x_axis_type='E'):
+                             speed=False, x_axis_type='E', color_map='viridis'):
         """Creates the plots for the bottom track tab.
         This approach allows zoom and pan to work together for both plots.
 
@@ -576,6 +576,8 @@ class AdvGraphs(object):
             Indicates if the average water speed source is plotted
         x_axis_type: str
             Specifies what variable (ensemble, length or time) to be used for the x-axis
+        color_map: str
+            Name of color map to be used for color contour plots
         """
         with self.wait_cursor():
 
@@ -585,6 +587,7 @@ class AdvGraphs(object):
             # Set axis type and units
             self.x_axis_type = x_axis_type
             self.units = units
+            self.color_map = color_map
 
             # Clear the plot
             self.fig.clear()

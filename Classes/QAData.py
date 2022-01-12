@@ -2215,7 +2215,11 @@ class QAData(object):
                 t_source_change = True
 
             if transect.sensors.salinity_ppt.selected != 'internal':
-                salinity_change = True
+                sal = getattr(transect.sensors.salinity_ppt, transect.sensors.salinity_ppt.selected)
+                if np.all(np.equal(sal.data, transect.sensors.salinity_ppt.internal.data)):
+                    salinity_change = False
+                else:
+                    salinity_change = True
 
             # Speed of Sound
             if transect.sensors.speed_of_sound_mps.selected != 'internal':

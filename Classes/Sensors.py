@@ -73,6 +73,39 @@ class Sensors(object):
         return sos
 
     @staticmethod
+    def unesco_speed_of_sound(t, s, p=100):
+
+        p = p / 10
+        sr = np.sqrt(np.abs(s))
+
+        # S ** 2 TERM
+        d = 1.727E-3 - 7.9836E-6 * p
+
+        # S ** 3 / 2  TERM
+        b1 = 7.3637E-5 + 1.7945E-7 * t
+        b0 = -1.922E-2 - 4.42E-5 * t
+        b = b0 + b1 * p
+
+        # S ** 1 TERM
+        a3 = (-3.389E-13 * t + 6.649E-12) * t + 1.100E-10
+        a2 = ((7.988E-12 * t - 1.6002E-10) * t + 9.1041E-9) * t - 3.9064E-7
+        a1 = (((-2.0122E-10 * t + 1.0507E-8) * t - 6.4885E-8) * t - 1.2580E-5) * t + 9.4742E-5
+        a0 = (((-3.21E-8 * t + 2.006E-6) * t + 7.164E-5) * t - 1.262E-2) * t + 1.389
+        a = ((a3 * p + a2) * p + a1) * p + a0
+
+        # S ** 0 TERM
+        c3 = (-2.3643E-12 * t + 3.8504E-10) * t - 9.7729E-9
+        c2 = (((1.0405E-12 * t - 2.5335E-10) * t + 2.5974E-8) * t - 1.7107E-6) * t + 3.1260E-5
+        c1 = (((-6.1185E-10 * t + 1.3621E-7) * t - 8.1788E-6) * t + 6.8982E-4) * t + 0.153563
+        c0 = ((((3.1464E-9 * t - 1.47800E-6) * t + 3.3420E-4) * t - 5.80852E-2) * t + 5.03711) * t + 1402.388
+        c = ((c3 * p + c2) * p + c1) * p + c0
+
+        # SOUND  SPEED
+        sos = c + (a + b * sr + d * s) * s
+
+        return sos
+
+    @staticmethod
     def avg_temperature(transects):
         """Compute mean temperature from temperature data from all transects.
 
