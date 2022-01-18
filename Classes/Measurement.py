@@ -2514,7 +2514,7 @@ class Measurement(object):
 
         except (IndexError, TypeError, AttributeError):
             try:
-                if len(self.compass_eval) > 0:
+                if len(self.compass_cal) > 0:
                     ETree.SubElement(qa, 'CompassCalibrationResult', type='char').text = 'Yes'
                 else:
                     ETree.SubElement(qa, 'CompassCalibrationResult', type='char').text = 'No'

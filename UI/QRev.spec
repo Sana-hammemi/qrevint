@@ -30,4 +30,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , version='file_version_info.txt', icon='QRevInt.ico')
+          console=True , version='file_version_info.txt', icon='QRevInt.ico')
