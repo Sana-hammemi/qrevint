@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.13'
+        self.QRev_version = 'QRevInt 1.14'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -3890,9 +3890,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent difference in old and new discharges
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # If initial is specified uncheck all rows
@@ -3976,9 +3979,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent difference in old and new discharges
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Update graphics, comments, and messages
@@ -4400,9 +4406,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Percent change in discharge
             col += 1
-            per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                          / old_discharge[transect_id].total) * 100
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+            if np.abs(old_discharge[transect_id].total) > 0:
+                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                              / old_discharge[transect_id].total) * 100
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Accumulate all temperature data in a single array used to compute mean temperature
@@ -5751,9 +5760,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Set selected file to bold font
@@ -6363,7 +6375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 transect = self.meas.transects[transect_id]
                 num_ensembles = len(transect.boat_vel.bt_vel.u_processed_mps)
                 # Determine GPS characteristics for gga
-                if transect.boat_vel.gga_vel is not None:
+                if transect.boat_vel.gga_vel is not None and transect.boat_vel.gga_vel.u_mps is not None:
                     valid_data = transect.boat_vel.gga_vel.valid_data
                     num_other_invalid = np.nansum(np.logical_not(valid_data[4, :]))
                     num_invalid_gga = np.nansum(np.logical_not(valid_data[0, :]))
@@ -6386,7 +6398,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     num_other_invalid = -1
 
                 # Determine characteristics for vtg
-                if transect.boat_vel.vtg_vel is not None:
+                if transect.boat_vel.vtg_vel is not None and transect.boat_vel.vtg_vel.u_mps is not None:
                     num_invalid_vtg = np.nansum(np.logical_not(transect.boat_vel.vtg_vel.valid_data[0, :]))
                 else:
                     num_invalid_vtg = -1
@@ -6599,9 +6611,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 self.table_gps.item(row, 0).setFont(self.font_normal)
@@ -7725,9 +7740,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 tbl.item(row, 0).setFont(self.font_normal)
@@ -8436,9 +8454,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total - old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Set selected file to bold font
@@ -9843,8 +9864,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Left edge discharge %
                 col += 1
-                item = '{:2.2f}'.format((self.meas.discharge[transect_id].left / self.meas.discharge[transect_id].total)
-                                        * 100)
+                if np.abs(self.meas.discharge[transect_id].total) > 0:
+                    item = '{:2.2f}'.format((self.meas.discharge[transect_id].left / self.meas.discharge[transect_id].total)
+                                            * 100)
+                else:
+                    item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['left_q_idx']:
@@ -9938,9 +9962,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Right edge discharge %
                 col += 1
-                item = '{:2.2f}'.format(
-                    (self.meas.discharge[transect_id].right / self.meas.discharge[transect_id].total)
-                    * 100)
+                if np.abs(self.meas.discharge[transect_id].total) > 0:
+                    item = '{:2.2f}'.format(
+                        (self.meas.discharge[transect_id].right / self.meas.discharge[transect_id].total)
+                        * 100)
+                else:
+                    item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['right_q_idx']:
@@ -11033,6 +11060,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_meas_q_plot()
             self.uncertainty_measurement_plot()
             self.uncertainty_comments_messages()
+            self.change = True
 
     def user_advanced_settings_change(self):
         """User advanced settings have changed, update settings and recompute uncertainty.
@@ -11592,7 +11620,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_adv_graph_ext_heading.setChecked(False)
 
         # GGA data
-        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.gga_vel is not None:
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.gga_vel is not None and \
+                self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.gga_vel.u_mps is not None:
             self.cb_adv_graph_gga_boat_speed.setEnabled(True)
             self.cb_adv_graph_gga_quality.setEnabled(True)
             self.cb_adv_graph_gga_hdop.setEnabled(True)
@@ -11613,7 +11642,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_adv_graph_gga_satellites.setChecked(False)
             self.cb_adv_graph_gga_source.setChecked(False)
 
-        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.vtg_vel is not None:
+        if self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.vtg_vel is not None and \
+            self.meas.transects[self.checked_transects_idx[self.transect_row]].boat_vel.vtg_vel.u_mps is not None:
             self.cb_adv_graph_vtg_boat_speed.setEnabled(True)
             self.cb_adv_graph_vtg_source.setEnabled(True)
         else:

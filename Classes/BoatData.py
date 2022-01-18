@@ -830,22 +830,23 @@ class BoatData(object):
     def interpolate_hold_last(self):
         """This function holds the last valid value until the next valid data point."""
 
-        # Initialize variables
-        n_ensembles = len(self.u_mps)
+        if self.u_mps is not None:
+            # Initialize variables
+            n_ensembles = len(self.u_mps)
 
-        # Get data from object
-        self.u_processed_mps = np.copy(self.u_mps)
-        self.v_processed_mps = np.copy(self.v_mps)
-        self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
-        self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
+            # Get data from object
+            self.u_processed_mps = np.copy(self.u_mps)
+            self.v_processed_mps = np.copy(self.v_mps)
+            self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
+            self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
 
-        n_invalid = 0
-        # Process data by ensembles
-        for n in range(1, n_ensembles):
-            # Check if ensemble is invalid and number of consecutive invalids is less than 9
-            if (self.valid_data[0, n] == False) and (n_invalid < 9):
-                self.u_processed_mps[n] = self.u_processed_mps[n - 1]
-                self.v_processed_mps[n] = self.v_processed_mps[n - 1]
+            n_invalid = 0
+            # Process data by ensembles
+            for n in range(1, n_ensembles):
+                # Check if ensemble is invalid and number of consecutive invalids is less than 9
+                if (self.valid_data[0, n] == False) and (n_invalid < 9):
+                    self.u_processed_mps[n] = self.u_processed_mps[n - 1]
+                    self.v_processed_mps[n] = self.v_processed_mps[n - 1]
 
     def interpolate_next(self):
         """This function uses the next valid data to back fill for invalid"""
@@ -1505,21 +1506,24 @@ class BoatData(object):
         self.valid_data[5, :] = True
 
         # Determine and apply appropriate filter type
-        self.valid_data[2, np.isnan(gps_data.diff_qual_ens)] = False
-        if self.gps_diff_qual_filter is not None:
-            # Autonomous
-            if self.gps_diff_qual_filter == 1:
-                self.valid_data[2, gps_data.diff_qual_ens < 1] = False
-            # Differential correction
-            elif self.gps_diff_qual_filter == 2:
-                self.valid_data[2, gps_data.diff_qual_ens < 2] = False
-            # RTK
-            elif self.gps_diff_qual_filter == 4:
-                self.valid_data[2, gps_data.diff_qual_ens < 4] = False
+        if gps_data.diff_qual_ens is not None:
+            self.valid_data[2, np.isnan(gps_data.diff_qual_ens)] = False
+            if self.gps_diff_qual_filter is not None:
+                # Autonomous
+                if self.gps_diff_qual_filter == 1:
+                    self.valid_data[2, gps_data.diff_qual_ens < 1] = False
+                # Differential correction
+                elif self.gps_diff_qual_filter == 2:
+                    self.valid_data[2, gps_data.diff_qual_ens < 2] = False
+                # RTK
+                elif self.gps_diff_qual_filter == 4:
+                    self.valid_data[2, gps_data.diff_qual_ens < 4] = False
 
-            # If there is no indication of the quality assume 1 fot vtg
-            if self.nav_ref == 'VTG':
-                self.valid_data[2, np.isnan(gps_data.diff_qual_ens)] = True
+                # If there is no indication of the quality assume 1 fot vtg
+                if self.nav_ref == 'VTG':
+                    self.valid_data[2, np.isnan(gps_data.diff_qual_ens)] = True
+            else:
+                self.valid_data[2, :] = False
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)

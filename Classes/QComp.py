@@ -295,6 +295,11 @@ class QComp(object):
         self.total_uncorrected = q_in.totalUncorrected
         self.total = q_in.total
         self.correction_factor = q_in.correctionFactor
+        if type(self.correction_factor) is np.ndarray:
+            if len(self.correction_factor) == 0:
+                self.correction_factor = 1
+            else:
+                self.correction_factor = self.correction_factor[0]
         self.int_cells = q_in.intCells
         self.int_ens = q_in.intEns
 

@@ -1372,6 +1372,7 @@ class AdvGraphs(object):
         invalid = np.logical_not(self.transect.boat_vel.bt_vel.valid_data)
         data_invalid = np.sqrt(self.transect.boat_vel.bt_vel.u_mps ** 2
                                + self.transect.boat_vel.bt_vel.v_mps ** 2)
+        data_invalid[np.isnan(data_invalid)] = 0
 
         # Specify format
         fmt = [{'color': 'r', 'linestyle': '-'},
@@ -1605,22 +1606,23 @@ class AdvGraphs(object):
             Color of line containing original data
         """
 
-        # Plot smooth
-        speed = np.sqrt(data.u_mps ** 2
-                        + data.v_mps ** 2)
-        invalid_other_vel = np.logical_not(data.valid_data[4, :])
-        if data.smooth_filter == 'On':
-            self.ax[-1].plot(self.x, data.smooth_lower_limit * self.units['V'], color='#d5dce6')
-            self.ax[-1].plot(self.x, data.smooth_upper_limit * self.units['V'], color='#d5dce6')
-            self.ax[-1].fill_between(self.x, data.smooth_lower_limit * self.units['V'],
-                                     data.smooth_upper_limit * self.units['V'], facecolor='#d5dce6')
+        if data is not None and data.u_mps is not None:
+            # Plot smooth
+            speed = np.sqrt(data.u_mps ** 2
+                            + data.v_mps ** 2)
+            invalid_other_vel = np.logical_not(data.valid_data[4, :])
+            if data.smooth_filter == 'On':
+                self.ax[-1].plot(self.x, data.smooth_lower_limit * self.units['V'], color='#d5dce6')
+                self.ax[-1].plot(self.x, data.smooth_upper_limit * self.units['V'], color='#d5dce6')
+                self.ax[-1].fill_between(self.x, data.smooth_lower_limit * self.units['V'],
+                                         data.smooth_upper_limit * self.units['V'], facecolor='#d5dce6')
 
-            self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
-            self.ax[-1].plot(self.x, data.smooth_speed * self.units['V'])
-            self.ax[-1].plot(self.x[invalid_other_vel], speed[invalid_other_vel] * self.units['V'], 'ko', linestyle='')
-        else:
-            self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
-        self.ax[-1].set_ylabel(self.canvas.tr('Speed ' + self.units['label_V']))
+                self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
+                self.ax[-1].plot(self.x, data.smooth_speed * self.units['V'])
+                self.ax[-1].plot(self.x[invalid_other_vel], speed[invalid_other_vel] * self.units['V'], 'ko', linestyle='')
+            else:
+                self.ax[-1].plot(self.x, speed * self.units['V'], data_color)
+            self.ax[-1].set_ylabel(self.canvas.tr('Speed ' + self.units['label_V']))
 
     def gga_source_ts(self):
         """Plot source for GGA data.
@@ -1648,6 +1650,7 @@ class AdvGraphs(object):
         # Handle situation where transect does not contain the selected source
         if selected is None:
             source = np.tile('INV', len(self.x))
+            source = source.astype(object)
         else:
             source = selected.processed_source
 
@@ -1683,7 +1686,7 @@ class AdvGraphs(object):
         """
 
         # Check to make sure there is data to plot
-        if self.transect.boat_vel.gga_vel is not None and \
+        if self.transect.boat_vel.gga_vel is not None and self.transect.boat_vel.gga_vel.u_mps is not None and \
                 np.any(np.logical_not(np.isnan(self.transect.gps.diff_qual_ens))):
 
             # Get data
@@ -1714,7 +1717,8 @@ class AdvGraphs(object):
         """
 
         # Check to make sure there is data to plot
-        if self.transect.boat_vel.gga_vel is not None and np.any(np.logical_not(np.isnan(self.transect.gps.hdop_ens))):
+        if self.transect.boat_vel.gga_vel is not None and self.transect.boat_vel.gga_vel.u_mps is not None and \
+                np.any(np.logical_not(np.isnan(self.transect.gps.hdop_ens))):
 
             # Get data
             data = self.transect.gps.hdop_ens
@@ -1745,7 +1749,7 @@ class AdvGraphs(object):
         """
 
         # Check to make sure there is data to plot
-        if self.transect.boat_vel.gga_vel is not None and \
+        if self.transect.boat_vel.gga_vel is not None and self.transect.boat_vel.gga_vel.u_mps is not None and \
                 np.any(np.logical_not(np.isnan(self.transect.gps.altitude_ens_m))):
             # Get data
             data = self.transect.gps.altitude_ens_m
@@ -1771,7 +1775,7 @@ class AdvGraphs(object):
         """
 
         # Check to make sure there is data to plot
-        if self.transect.boat_vel.gga_vel is not None and \
+        if self.transect.boat_vel.gga_vel is not None and self.transect.boat_vel.gga_vel.u_mps is not None and \
                 np.any(np.logical_not(np.isnan(self.transect.gps.num_sats_ens))):
 
             # Get data
@@ -1798,64 +1802,65 @@ class AdvGraphs(object):
     def gga_speed_ts(self, lbl='GGA Speed'):
         """Plot boat speed using GGA reference.
         """
+        if self.transect.boat_vel.gga_vel is not None and self.transect.boat_vel.gga_vel.u_mps is not None:
+            # Compute speed from processed GGA data
+            data = np.sqrt(self.transect.boat_vel.gga_vel.u_processed_mps ** 2
+                           + self.transect.boat_vel.gga_vel.v_processed_mps ** 2)
 
-        # Compute speed from processed GGA data
-        data = np.sqrt(self.transect.boat_vel.gga_vel.u_processed_mps ** 2
-                       + self.transect.boat_vel.gga_vel.v_processed_mps ** 2)
+            # Create data mask for invalid GGA data
+            invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data)
+            data_invalid = np.sqrt(self.transect.boat_vel.gga_vel.u_mps ** 2
+                                   + self.transect.boat_vel.gga_vel.v_mps ** 2)
+            data_invalid[np.isnan(data_invalid)] = 0
 
-        # Create data mask for invalid GGA data
-        invalid = np.logical_not(self.transect.boat_vel.gga_vel.valid_data)
-        data_invalid = np.sqrt(self.transect.boat_vel.gga_vel.u_mps ** 2
-                               + self.transect.boat_vel.gga_vel.v_mps ** 2)
+            # Format for data and invalid identification
+            fmt = [{'color': 'b', 'linestyle': '-'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$O$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$Q$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$A$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$S$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
 
-        # Format for data and invalid identification
-        fmt = [{'color': 'b', 'linestyle': '-'},
-               {'color': 'k', 'linestyle': '', 'marker': '$O$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$Q$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$A$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$S$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
+            data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
 
-        data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
-
-        # Plot data
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            ax=self.ax[-1],
-                            data_2=data_invalid,
-                            data_mask=invalid,
-                            fmt=fmt)
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=data_invalid,
+                                data_mask=invalid,
+                                fmt=fmt)
 
     def vtg_speed_ts(self, lbl='VTG Speed'):
         """Plot boat speed using VTG reference.
         """
+        if self.transect.boat_vel.vtg_vel is not None and self.transect.boat_vel.vtg_vel.u_mps is not None:
+            # Compute speed from processed VTG data
+            data = np.sqrt(self.transect.boat_vel.vtg_vel.u_processed_mps ** 2
+                           + self.transect.boat_vel.vtg_vel.v_processed_mps ** 2)
 
-        # Compute speed from processed VTG data
-        data = np.sqrt(self.transect.boat_vel.vtg_vel.u_processed_mps ** 2
-                       + self.transect.boat_vel.vtg_vel.v_processed_mps ** 2)
+            # Create data mask for invalid VTG data
+            invalid = np.logical_not(self.transect.boat_vel.vtg_vel.valid_data)
+            data_mask = [[], invalid[1], invalid[4], invalid[5]]
 
-        # Create data mask for invalid VTG data
-        invalid = np.logical_not(self.transect.boat_vel.vtg_vel.valid_data)
-        data_mask = [[], invalid[1], invalid[4], invalid[5]]
+            # Use original unprocessed speed to plot invalid symbols
+            data_invalid = np.sqrt(self.transect.boat_vel.vtg_vel.u_mps ** 2
+                                   + self.transect.boat_vel.vtg_vel.v_mps ** 2)
 
-        # Use original unprocessed speed to plot invalid symbols
-        data_invalid = np.sqrt(self.transect.boat_vel.vtg_vel.u_mps ** 2
-                               + self.transect.boat_vel.vtg_vel.v_mps ** 2)
+            # Format for data and invalid identification
+            fmt = [{'color': 'g', 'linestyle': '-'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$O$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$S$'},
+                   {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
+            data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
 
-        # Format for data and invalid identification
-        fmt = [{'color': 'g', 'linestyle': '-'},
-               {'color': 'k', 'linestyle': '', 'marker': '$O$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$S$'},
-               {'color': 'k', 'linestyle': '', 'marker': '$H$'}]
-        data_units = (self.units['V'], lbl + ' ' + self.units['label_V'])
-
-        # Plot data
-        self.plt_timeseries(data=data,
-                            data_units=data_units,
-                            ax=self.ax[-1],
-                            data_2=data_invalid,
-                            data_mask=data_mask,
-                            fmt=fmt)
+            # Plot data
+            self.plt_timeseries(data=data,
+                                data_units=data_units,
+                                ax=self.ax[-1],
+                                data_2=data_invalid,
+                                data_mask=data_mask,
+                                fmt=fmt)
 
     def heading_adcp_ts(self):
         """Plot heading from ADCP internal compass.
@@ -2477,6 +2482,8 @@ class AdvGraphs(object):
         try:
             max_y = (np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.1)) * data_units[0]
             min_y = (np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.1) * data_units[0]
+            if min_y > max_y * -0.05:
+                min_y = max_y * -0.05
             ax.set_ylim(top=max_y, bottom=min_y)
         except (TypeError, ValueError):
             pass
