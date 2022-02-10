@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.14'
+        self.QRev_version = 'QRevInt 1.15'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -703,7 +703,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
 
         # Intialize attributes
-        self.path = (self.sticky_settings.get('Folder'))
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False

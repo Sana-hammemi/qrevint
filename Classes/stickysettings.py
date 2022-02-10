@@ -28,7 +28,7 @@ class StickySettings(object):
     def __init__(self, arg):
         """Constructor method which establishes the json file.
 
-        If the filename (arg) provided by the user cannont be found a new file is created. If the filename (arg)
+        If the filename (arg) provided by the user cannot be found a new file is created. If the filename (arg)
         provided by the user is found the file is opened and all keys and values are read and stored in settings for
         quick modification by the calling application.
 
