@@ -36,12 +36,10 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
         self.pathName = []
         self.type = ''
         self.checked = False
-        if parent is not None:
-            self.get_files(path=parent.path)
-        else:
-            self.get_files(path='')
+        self.get_files()
 
-    def get_files(self, path):
+
+    def get_files(self):
         """Get filenames and pathname for file(s) to be processed
 
         Allows the user to select one *.mmt or one *_QRev.mat or one or more SonTek *.mat files for
@@ -50,10 +48,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
         """
 
         # Get the current folder setting.
-        if len(path) > 0:
-            folder = path
-        else:
-            folder = self.default_folder()
+        folder = self.default_folder()
 
         # Get the full names (path + file) of the selected files
         self.fullName = QtWidgets.QFileDialog.getOpenFileNames(
