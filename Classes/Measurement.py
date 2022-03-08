@@ -3347,126 +3347,141 @@ class Measurement(object):
 
         # (3) Uncertainty Node
         s_u = ETree.SubElement(summary, 'Uncertainty')
-        uncertainty = self.uncertainty
-
-        # (4) COV Node
-        temp = uncertainty.cov
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'COV', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoRandom Node
-        temp = uncertainty.cov_95
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'AutoRandom', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoInvalidData Node
-        temp = uncertainty.invalid_95
-        ETree.SubElement(s_u, 'AutoInvalidData', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoEdge Node
-        temp = uncertainty.edges_95
-        ETree.SubElement(s_u, 'AutoEdge', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoExtrapolation Node
-        temp = uncertainty.extrapolation_95
-        ETree.SubElement(s_u, 'AutoExtrapolation', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoMovingBed
-        temp = uncertainty.moving_bed_95
-        ETree.SubElement(s_u, 'AutoMovingBed', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoSystematic
-        temp = uncertainty.systematic
-        ETree.SubElement(s_u, 'AutoSystematic', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) AutoTotal
-        temp = uncertainty.total_95
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'AutoTotal', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) UserRandom Node
-        user_random = uncertainty.cov_95_user
-        if user_random:
-            ETree.SubElement(s_u, 'UserRandom', type='double').text = '{:.1f}'.format(user_random)
-
-        # (4) UserInvalidData Node
-        user_invalid = uncertainty.invalid_95_user
-        if user_invalid:
-            ETree.SubElement(s_u, 'UserInvalidData', type='double').text = '{:.1f}'.format(user_invalid)
-
-        # (4) UserEdge
-        user_edge = uncertainty.edges_95_user
-        if user_edge:
-            ETree.SubElement(s_u, 'UserEdge', type='double').text = '{:.1f}'.format(user_edge)
-
-        # (4) UserExtrapolation
-        user_extrap = uncertainty.extrapolation_95_user
-        if user_extrap:
-            ETree.SubElement(s_u, 'UserExtrapolation', type='double').text = '{:.1f}'.format(user_extrap)
-
-        # (4) UserMovingBed
-        user_mb = uncertainty.moving_bed_95_user
-        if user_mb:
-            ETree.SubElement(s_u, 'UserMovingBed', type='double').text = '{:.1f}'.format(user_mb)
-
-        # (4) UserSystematic
-        user_systematic = uncertainty.systematic_user
-        if user_systematic:
-            ETree.SubElement(s_u, 'UserSystematic', type='double').text = '{:.1f}'.format(user_systematic)
-
-        # (4) UserTotal Node
-        temp = uncertainty.total_95_user
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'UserTotal', type='double').text = '{:.1f}'.format(temp)
-
-        # (4) Random
-        if user_random:
-            temp = user_random
+        if self.run_oursin:
+            u_total = self.oursin.u_measurement_user['total_95'][0]
+            u_model = 'OURSIN'
         else:
+            u_total = self.uncertainty.total_95_user
+            u_model = 'QRevUA'
+
+        if not np.isnan(temp):
+            ETree.SubElement(s_u, 'Total', type='double').text = '{:.1f}'.format(u_total)
+            ETree.SubElement(s_u, 'Model', type='char').text = u_model
+
+        # (3) QRev_UA Uncertainty Node
+        if self.uncertainty is not None:
+            s_qu = ETree.SubElement(summary, 'QRevUAUncertainty')
+            uncertainty = self.uncertainty
+
+            # (4) COV Node
+            temp = uncertainty.cov
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'COV', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) AutoRandom Node
             temp = uncertainty.cov_95
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'Random', type='double').text = '{:.1f}'.format(temp)
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'AutoRandom', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) InvalidData
-        if user_invalid:
-            temp = user_invalid
-        else:
+            # (4) AutoInvalidData Node
             temp = uncertainty.invalid_95
-        ETree.SubElement(s_u, 'InvalidData', type='double').text = '{:.1f}'.format(temp)
+            ETree.SubElement(s_qu, 'AutoInvalidData', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) Edge
-        if user_edge:
-            temp = user_edge
-        else:
+            # (4) AutoEdge Node
             temp = uncertainty.edges_95
-        ETree.SubElement(s_u, 'Edge', type='double').text = '{:.1f}'.format(temp)
+            ETree.SubElement(s_qu, 'AutoEdge', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) Extrapolation
-        if user_extrap:
-            temp = user_extrap
-        else:
+            # (4) AutoExtrapolation Node
             temp = uncertainty.extrapolation_95
-        ETree.SubElement(s_u, 'Extrapolation', type='double').text = '{:.1f}'.format(temp)
+            ETree.SubElement(s_qu, 'AutoExtrapolation', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) MovingBed
-        if user_mb:
-            temp = user_mb
-        else:
+            # (4) AutoMovingBed
             temp = uncertainty.moving_bed_95
-        ETree.SubElement(s_u, 'MovingBed', type='double').text = '{:.1f}'.format(temp)
+            ETree.SubElement(s_qu, 'AutoMovingBed', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) Systematic
-        if user_systematic:
-            temp = user_systematic
-        else:
+            # (4) AutoSystematic
             temp = uncertainty.systematic
-        ETree.SubElement(s_u, 'Systematic', type='double').text = '{:.1f}'.format(temp)
+            ETree.SubElement(s_qu, 'AutoSystematic', type='double').text = '{:.1f}'.format(temp)
 
-        # (4) UserTotal Node
-        temp = uncertainty.total_95_user
-        if not np.isnan(temp):
-            ETree.SubElement(s_u, 'Total', type='double').text = '{:.1f}'.format(temp)
+            # (4) AutoTotal
+            temp = uncertainty.total_95
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'AutoTotal', type='double').text = '{:.1f}'.format(temp)
 
+            # (4) UserRandom Node
+            user_random = uncertainty.cov_95_user
+            if user_random:
+                ETree.SubElement(s_qu, 'UserRandom', type='double').text = '{:.1f}'.format(user_random)
+
+            # (4) UserInvalidData Node
+            user_invalid = uncertainty.invalid_95_user
+            if user_invalid:
+                ETree.SubElement(s_qu, 'UserInvalidData', type='double').text = '{:.1f}'.format(user_invalid)
+
+            # (4) UserEdge
+            user_edge = uncertainty.edges_95_user
+            if user_edge:
+                ETree.SubElement(s_qu, 'UserEdge', type='double').text = '{:.1f}'.format(user_edge)
+
+            # (4) UserExtrapolation
+            user_extrap = uncertainty.extrapolation_95_user
+            if user_extrap:
+                ETree.SubElement(s_qu, 'UserExtrapolation', type='double').text = '{:.1f}'.format(user_extrap)
+
+            # (4) UserMovingBed
+            user_mb = uncertainty.moving_bed_95_user
+            if user_mb:
+                ETree.SubElement(s_qu, 'UserMovingBed', type='double').text = '{:.1f}'.format(user_mb)
+
+            # (4) UserSystematic
+            user_systematic = uncertainty.systematic_user
+            if user_systematic:
+                ETree.SubElement(s_qu, 'UserSystematic', type='double').text = '{:.1f}'.format(user_systematic)
+
+            # (4) UserTotal Node
+            temp = uncertainty.total_95_user
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'UserTotal', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) Random
+            if user_random:
+                temp = user_random
+            else:
+                temp = uncertainty.cov_95
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'Random', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) InvalidData
+            if user_invalid:
+                temp = user_invalid
+            else:
+                temp = uncertainty.invalid_95
+            ETree.SubElement(s_qu, 'InvalidData', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) Edge
+            if user_edge:
+                temp = user_edge
+            else:
+                temp = uncertainty.edges_95
+            ETree.SubElement(s_qu, 'Edge', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) Extrapolation
+            if user_extrap:
+                temp = user_extrap
+            else:
+                temp = uncertainty.extrapolation_95
+            ETree.SubElement(s_qu, 'Extrapolation', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) MovingBed
+            if user_mb:
+                temp = user_mb
+            else:
+                temp = uncertainty.moving_bed_95
+            ETree.SubElement(s_qu, 'MovingBed', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) Systematic
+            if user_systematic:
+                temp = user_systematic
+            else:
+                temp = uncertainty.systematic
+            ETree.SubElement(s_qu, 'Systematic', type='double').text = '{:.1f}'.format(temp)
+
+            # (4) UserTotal Node
+            temp = uncertainty.total_95_user
+            if not np.isnan(temp):
+                ETree.SubElement(s_qu, 'Total', type='double').text = '{:.1f}'.format(temp)
+
+        # Oursin Uncertainty Node
         if self.oursin is not None:
             # (3) Uncertainty Node
             s_ou = ETree.SubElement(summary, 'OursinUncertainty')

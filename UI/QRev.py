@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.16'
+        self.QRev_version = 'QRevInt 1.17'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -1537,6 +1537,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             # Uncertainty based on original QRev
                             self.tab_all.removeTab(
                                 self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+                            self.meas.run_oursin = False
+                            self.meas.oursin = None
 
                         # Change display of uncertainty on main tab depending on selection
                         self.update_main_uncertainty()
