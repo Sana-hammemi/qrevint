@@ -53,6 +53,8 @@ def find_neighbors(valid_data, cells_above_sl, y_cell_centers, y_cell_size, y_de
     y_depth: np.array(float)
         1-D array containing values that will be used to normalize the data and specifying the lower boundary for
         identifying neighbors
+    search_loc: list
+        Identifies location to search (above, below, before, after)
     normalize: bool
         Boolean indicating if normalized data should be used
 
@@ -347,7 +349,7 @@ def idw_interpolation(data, neighbor_indices, distances):
 
 
 def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_cell_size, y_depth,
-                           x_shiptrack, normalize, search_loc=['above', 'below', 'before', 'after']):
+                           x_shiptrack, normalize, search_loc=('above', 'below', 'before', 'after')):
     """ Interpolates values for invalid cells using the neighboring cells above, below, before, and after and
     and inverse distance averaging.
 
@@ -370,6 +372,8 @@ def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_c
         X coordinate of cumulative shiptrack
     normalize: bool
         Boolean value specifying whether data should be normalized or not.
+    search_loc: list or tuple
+        Identifies location to search (above, below, before, after)
 
     Returns
     -------

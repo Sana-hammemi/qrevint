@@ -10,8 +10,8 @@ def cosd(angle):
     angle: float
         Angle in degrees
     """
-    
-    return np.cos(np.pi * angle/180)
+
+    return np.cos(np.pi * angle / 180)
 
 
 def sind(angle):
@@ -22,8 +22,8 @@ def sind(angle):
         angle: float
             Angle in degrees
         """
-    
-    return np.sin(np.pi * angle/180)
+
+    return np.sin(np.pi * angle / 180)
 
 
 def tand(angle):
@@ -34,8 +34,8 @@ def tand(angle):
         angle: float
             Angle in degrees
         """
-    
-    return np.tan(np.pi * angle/180)
+
+    return np.tan(np.pi * angle / 180)
 
 
 def arctand(angle):
@@ -46,8 +46,8 @@ def arctand(angle):
         angle: float
             Angle in degrees
         """
-    
-    return np.arctan(angle) * 180/np.pi
+
+    return np.arctan(angle) * 180 / np.pi
 
 
 def cart2pol(x, y):
@@ -55,9 +55,9 @@ def cart2pol(x, y):
 
     Parameters
     ----------
-    x: float
+    x: np.array(float)
         x coordinate
-    y: float
+    y: np.array(float)
         y coordinate
 
     Returns
@@ -67,10 +67,10 @@ def cart2pol(x, y):
     rho: float
         Magnitude
     """
-    
-    rho = np.sqrt(x**2 + y**2)
+
+    rho = np.sqrt(x ** 2 + y ** 2)
     phi = np.arctan2(y, x)
-    
+
     return phi, rho
 
 
@@ -79,9 +79,9 @@ def pol2cart(phi, rho):
 
         Parameters
         ----------
-        phi: float
+        phi: np.array(float)
             Angle in radians
-        rho: float
+        rho: np.array(float)
             Magnitude
 
         Returns
@@ -92,10 +92,10 @@ def pol2cart(phi, rho):
             y coordinate
 
         """
-    
+
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
-    
+
     return x, y
 
 
@@ -114,14 +114,14 @@ def iqr(data):
 
     """
 
-    # If 2-D array use only 1st row
+    # If 2-D array flatten to 1-D array
     if len(data.shape) > 1:
         data_1d = data.flatten()
     else:
         data_1d = data
 
     # Remove nan elements
-    idx = np.where(np.isnan(data_1d) == False)[0]
+    idx = np.where(np.logical_not(np.isnan(data_1d)))[0]
     data_1d = data_1d[idx]
 
     # Compute statistics
@@ -129,6 +129,7 @@ def iqr(data):
     sp_iqr = q75 - q25
 
     return sp_iqr
+
 
 def iqr_2d(data):
     """This function computes the iqr consistent with Matlab
@@ -147,7 +148,7 @@ def iqr_2d(data):
 
     # Remove nan elements
     data = np.array(data)
-    idx = np.where(np.isnan(data) == False)[0]
+    idx = np.where(np.logical_not(np.isnan(data)))[0]
     data = data[idx]
 
     # Compute statistics
@@ -156,7 +157,7 @@ def iqr_2d(data):
     return sp_iqr
 
 
-def azdeg2rad(angle):
+def azdeg2rad(angle) -> float:
     """Converts an azimuth angle in degrees to radians.
 
     Parameters
@@ -171,7 +172,7 @@ def azdeg2rad(angle):
     """
 
     # Convert to radians
-    direction = np.deg2rad(90-angle)
+    direction = np.deg2rad(90 - angle)
 
     # Create postive angle
     idx = np.where(direction < 0)[0]
@@ -179,11 +180,11 @@ def azdeg2rad(angle):
         direction[idx] = direction[idx] + 2 * np.pi
     else:
         direction = direction + 2 * np.pi
-        
+
     return direction
 
 
-def rad2azdeg(angle):
+def rad2azdeg(angle) -> float:
     """Converts an angle in radians to an azimuth in degrees.
 
     Parameters
@@ -202,15 +203,15 @@ def rad2azdeg(angle):
         deg = 90 - deg
         if deg < 0:
             deg += 360
-            
+
         return deg
     else:
         # Multiple values
         deg = np.rad2deg(angle)
         deg = 90 - deg
-        sub_zero = np.where(deg < 0)
+        sub_zero = np.where(nan_less(deg, 0))
         deg[sub_zero] = deg[sub_zero] + 360
-        
+
         return deg
 
 
@@ -227,7 +228,7 @@ def nandiff(values):
     final_values: np.ndarray()
         1-D array of differences of consecutive non nan numbers
     """
-    
+
     final_values = []
     for n in range(len(values) - 1):
         # Check for nan and add nan to final values
@@ -238,13 +239,13 @@ def nandiff(values):
             i = n + 1
             while np.isnan(values[i]) and i < len(values) - 1:
                 i += 1
-            
+
             final_values.append(values[i] - values[n])
-        
+
     return np.array(final_values)
 
 
-def valid_number(data_in):
+def valid_number(data_in) -> float:
     """Check to see if data_in can be converted to float.
 
     Parameters
@@ -335,8 +336,8 @@ def units_conversion(units_id='SI'):
 
     else:
         units = {'L': 1.0 / 0.3048,
-                 'Q': (1.0 / 0.3048)**3,
-                 'A': (1.0 / 0.3048)**2,
+                 'Q': (1.0 / 0.3048) ** 3,
+                 'A': (1.0 / 0.3048) ** 2,
                  'V': 1.0 / 0.3048,
                  'label_L': '(ft)',
                  'label_Q': '(ft3/s)',
@@ -347,7 +348,7 @@ def units_conversion(units_id='SI'):
     return units
 
 
-def convert_temperature(temp_in, units_in, units_out):
+def convert_temperature(temp_in, units_in, units_out) -> float:
     """Converts temperature from F to C or C to F.
 
     Parameters
@@ -368,7 +369,7 @@ def convert_temperature(temp_in, units_in, units_out):
     temp_out = None
     if units_in == 'F':
         if units_out == 'C':
-            temp_out = (temp_in - 32) * (5./9.)
+            temp_out = (temp_in - 32) * (5. / 9.)
         else:
             temp_out = temp_in
 
@@ -376,9 +377,93 @@ def convert_temperature(temp_in, units_in, units_out):
         if units_out == 'C':
             temp_out = temp_in
         else:
-            temp_out = (temp_in * (9./5.)) + 32
+            temp_out = (temp_in * (9. / 5.)) + 32
 
     return temp_out
+
+
+def nan_less_equal(data1, data2) -> bool:
+    """Computes data1 <= data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data2 - data1
+    d3[np.isnan(d3)] = -999.
+    return d3 >= 0
+
+
+def nan_less(data1, data2) -> bool:
+    """Computes data1 < data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data2 - data1
+    d3[np.isnan(d3)] = -999.
+    return d3 > 0
+
+
+def nan_greater_equal(data1, data2) -> bool:
+    """Computes data1 >= data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data1 - data2
+    d3[np.isnan(d3)] = -999.
+    return d3 >= 0
+
+
+def nan_greater(data1, data2) -> bool:
+    """Computes data1 < data2 and sets all np.nan comparisons to False.
+
+    Parameters
+    ----------
+    data1: np.array()
+        Data arrray.
+    data2: np.array()
+        Data arrray.
+
+    Returns
+    -------
+    :bool
+        Result of comparison.
+    """
+
+    d3 = data1 - data2
+    d3[np.isnan(d3)] = -999.
+    return d3 > 0
 
 
 def ari2geodeg(ari_ang):
