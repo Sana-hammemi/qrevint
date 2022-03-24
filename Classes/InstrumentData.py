@@ -26,22 +26,25 @@ class InstrumentData(object):
     configuration_commands:
         Commands used to configure the instrument.
     """
-     
+
     def __init__(self):
         """Constructor initializes the variables to None.
         """
 
         self.serial_num = None  # Serial number of ADCP
         self.manufacturer = None  # manufacturer of ADCP (SonTek, TRDI)
-        self.model = None  # model of ADCP (Rio Grande, StreamPro, RiverRay, M9, S5)
+        self.model = None  # model of ADCP (Rio Grande, StreamPro, RiverRay,
+        # M9, S5)
         self.firmware = None  # firmware version
         self.frequency_khz = None  # frquency of ADCP (could be "Multi")
         self.beam_angle_deg = None  # angle of beam from vertical
         self.beam_pattern = None  # pattern of beams
         self.t_matrix = None  # object of TransformationMatrix
-        self.configuration_commands = np.array([])  # configuration commands sent to ADCP
-        
-    def populate_data(self, manufacturer, raw_data, mmt_transect=None, mmt=None):
+        self.configuration_commands = np.array(
+            [])  # configuration commands sent to ADCP
+
+    def populate_data(self, manufacturer, raw_data, mmt_transect=None,
+                      mmt=None):
         """Manages method calls for different manufacturers.
 
         Parameters
@@ -103,23 +106,29 @@ class InstrumentData(object):
         if model_switch == 10:
             self.model = 'Rio Grande'
             if 'Fixed_Commands' in mmt_config.keys():
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands, mmt_config['Fixed_Commands'])
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands, mmt_config['Fixed_Commands'])
 
         elif model_switch == 31:
             self.model = 'StreamPro'
             self.frequency_khz = 2000
             if 'Fixed_Commands_StreamPro' in mmt_config.keys():
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands,
-                                                        mmt_config['Fixed_Commands_StreamPro'])
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands,
+                    mmt_config['Fixed_Commands_StreamPro'])
 
         elif model_switch == 44:
             self.model = 'RiverRay'
             if 'Fixed_Commands_RiverRay' in mmt_config.keys():
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands,
-                                                        mmt_config['Fixed_Commands_RiverRay'])
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands,
+                    mmt_config['Fixed_Commands_RiverRay'])
 
         elif model_switch == 56:
             self.model = 'RiverPro'
@@ -130,56 +139,73 @@ class InstrumentData(object):
                         self.model = 'RioPro'
 
             if 'Fixed_Commands_RiverPro' in mmt_config.keys():
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands,
-                                                        mmt_config['Fixed_Commands_RiverPro'])
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands,
+                    mmt_config['Fixed_Commands_RiverPro'])
             else:
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands, ' ')
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands, ' ')
 
         else:
             self.model = 'Unknown'
             if 'Fixed_Commands' in mmt_config.keys():
-                self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
-                self.configuration_commands = np.append(self.configuration_commands, mmt_config['Fixed_Commands'])
+                self.configuration_commands = np.append(
+                    self.configuration_commands, 'Fixed')
+                self.configuration_commands = np.append(
+                    self.configuration_commands, mmt_config['Fixed_Commands'])
 
         if 'Wizard_Commands' in mmt_config.keys():
-            self.configuration_commands = np.append(self.configuration_commands, ['Wizard'])
-            self.configuration_commands = np.append(self.configuration_commands,
-                                                    mmt_config['Wizard_Commands'])
+            self.configuration_commands = np.append(
+                self.configuration_commands, ['Wizard'])
+            self.configuration_commands = np.append(
+                self.configuration_commands,
+                mmt_config['Wizard_Commands'])
 
         if 'User_Commands' in mmt_config.keys():
-            self.configuration_commands = np.append(self.configuration_commands, ['User'])
-            self.configuration_commands = np.append(self.configuration_commands,
-                                                    mmt_config['User_Commands'])
+            self.configuration_commands = np.append(
+                self.configuration_commands, ['User'])
+            self.configuration_commands = np.append(
+                self.configuration_commands,
+                mmt_config['User_Commands'])
 
         # Obtain transformation matrix from one of the available sources
         if not np.isnan(pd0.Inst.t_matrix[0, 0]):
             self.t_matrix = TransformationMatrix()
-            self.t_matrix.populate_data(manufacturer='TRDI', model='pd0', data_in=pd0)
+            self.t_matrix.populate_data(manufacturer='TRDI', model='pd0',
+                                        data_in=pd0)
         elif self.model == 'RiverRay':
             self.t_matrix = TransformationMatrix()
-            self.t_matrix.populate_data(manufacturer='TRDI', model=self.model, data_in='Nominal')
+            self.t_matrix.populate_data(manufacturer='TRDI', model=self.model,
+                                        data_in='Nominal')
         else:
             if isinstance(mmt.qaqc, dict) and len(mmt.qaqc) > 0:
                 if 'RG_Test' in mmt.qaqc.keys():
 
                     self.t_matrix = TransformationMatrix()
-                    self.t_matrix.populate_data(manufacturer='TRDI', model=self.model, data_in=mmt.qaqc['RG_Test'][0])
+                    self.t_matrix.populate_data(manufacturer='TRDI',
+                                                model=self.model,
+                                                data_in=mmt.qaqc['RG_Test'][0])
 
                 elif 'Compass_Calibration' in mmt.qaqc.keys():
 
                     self.t_matrix = TransformationMatrix()
                     self.t_matrix.populate_data(manufacturer='TRDI',
                                                 model=self.model,
-                                                data_in=mmt.qaqc['Compass_Calibration'][0])
+                                                data_in=mmt.qaqc[
+                                                    'Compass_Calibration'][0])
 
                 elif 'Compass_Eval_Timestamp' in mmt.qaqc.keys():
 
                     self.t_matrix = TransformationMatrix()
                     self.t_matrix.populate_data(manufacturer='TRDI',
                                                 model=self.model,
-                                                data_in=mmt.qaqc['Compass_Evaluation'][0])
+                                                data_in=
+                                                mmt.qaqc['Compass_Evaluation'][
+                                                    0])
 
                 else:
                     self.t_matrix = TransformationMatrix()
@@ -218,7 +244,8 @@ class InstrumentData(object):
         self.beam_angle_deg = 25
         self.beam_pattern = 'Convex'
         self.t_matrix = TransformationMatrix()
-        self.t_matrix.populate_data('SonTek', data_in=rs.Transformation_Matrices.Matrix)
+        self.t_matrix.populate_data('SonTek',
+                                    data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
     def nortek(self, rs):
@@ -235,11 +262,13 @@ class InstrumentData(object):
         self.beam_angle_deg = 25
         self.beam_pattern = 'Convex'
         self.t_matrix = TransformationMatrix()
-        self.t_matrix.populate_data('SonTek', data_in=rs.Transformation_Matrices.Matrix)
+        self.t_matrix.populate_data('SonTek',
+                                    data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
     def populate_from_qrev_mat(self, transect):
-        """Populates the object using data from previously saved QRev Matlab file.
+        """Populates the object using data from previously saved QRev Matlab
+        file.
 
         Parameters
        ----------

@@ -3,13 +3,17 @@ import json
 
 
 class StickySettings(object):
-    """Provides methods to quickly store and retrieve settings to and from disk.
+    """Provides methods to quickly store and retrieve settings to and from
+    disk.
 
-    This class is intended to be used to store simple settings that need to be retained between session of the subject
-    application, such as, last folder opened, or units setting. Any setting that the application needs to know
+    This class is intended to be used to store simple settings that need to be
+     retained between session of the subject
+    application, such as, last folder opened, or units setting. Any setting
+    that the application needs to know
     when it is run again can be stored using the methods in this class.
 
-    Data are stored a dictionary which is then written to a json file having the filename provided by the user and
+    Data are stored a dictionary which is then written to a json file having
+    the filename provided by the user and
     stored in the folder defined by the APPDATA environment variable.
 
     Note
@@ -28,14 +32,17 @@ class StickySettings(object):
     def __init__(self, arg):
         """Constructor method which establishes the json file.
 
-        If the filename (arg) provided by the user cannont be found a new file is created. If the filename (arg)
-        provided by the user is found the file is opened and all keys and values are read and stored in settings for
+        If the filename (arg) provided by the user cannont be found a new file
+         is created. If the filename (arg)
+        provided by the user is found the file is opened and all keys and
+        values are read and stored in settings for
         quick modification by the calling application.
 
         Parameters
         ----------
         arg : str
-            User supplied filename excluding the suffix. Example 'myFile' but not 'myFile.json'
+            User supplied filename excluding the suffix. Example 'myFile' but
+             not 'myFile.json'
 
         """
         # Construct filename from user input.
@@ -53,7 +60,8 @@ class StickySettings(object):
     def new(self, key, value):
         """Create new key value pair in settings.
 
-        Method checks to see if key exists. If it exists an error is raised. If the key does not exist it is created.
+        Method checks to see if key exists. If it exists an error is raised.
+        If the key does not exist it is created.
 
         Paramenters
         -----------
@@ -78,7 +86,8 @@ class StickySettings(object):
     def set(self, key, value):
         """Set value of existing key.
 
-        Method checks to ensure the key exists and sets the value of the key to value. If the key does not exist an
+        Method checks to ensure the key exists and sets the value of the key
+        to value. If the key does not exist an
         error is raised.
 
         Parameters

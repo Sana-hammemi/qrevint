@@ -2,7 +2,8 @@ import numpy as np
 
 
 class SensorData(object):
-    """Class stores data for pitch, roll, temperature, salinity, and speed of sound and its source/
+    """Class stores data for pitch, roll, temperature, salinity, and speed of
+    sound and its source/
 
     Attributes
     ----------
@@ -37,7 +38,8 @@ class SensorData(object):
         self.source = source_in
 
     def populate_from_qrev_mat(self, mat_data):
-        """Populates the object using data from previously saved QRev Matlab file.
+        """Populates the object using data from previously saved QRev Matlab
+        file.
 
         Parameters
         ----------
