@@ -2,8 +2,13 @@ import copy
 import getpass
 import os
 import shutil
+import copy
+import os
 import sys
 import webbrowser
+import multiprocessing as mp
+import getpass
+import json
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -16,56 +21,54 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
     NavigationToolbar
 
 import UI.QRev_gui as QRev_gui
-from Classes.CoordError import CoordError
+from Classes.stickysettings import StickySettings as SSet
 from Classes.Measurement import Measurement
-from Classes.MovingBedTests import MovingBedTests
+from Classes.TransectData import TransectData
 from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
-from Classes.TransectData import TransectData
-from Classes.stickysettings import StickySettings as SSet
+from Classes.MovingBedTests import MovingBedTests
+from Classes.CoordError import CoordError
+from Classes.Oursin import Oursin
+
 from MiscLibs.common_functions import convert_temperature, units_conversion
-from UI.BTFilters import BTFilters
-from UI.BeamDepths import BeamDepths
-from UI.BoatSpeed import BoatSpeed
+
+from UI.selectFile import SaveMeasurementDialog
+from UI.OpenMeasurementDialog import OpenMeasurementDialog
 from UI.Comment import Comment
-from UI.CrossSection import CrossSection
-from UI.DischargeTS import DischargeTS
-from UI.Draft import Draft
-from UI.EdgeDist import EdgeDist
-from UI.EdgeEns import EdgeEns
-from UI.EdgeType import EdgeType
-from UI.ExtrapPlot import ExtrapPlot
-from UI.GPSFilters import GPSFilters
+from UI.Transects2Use import Transects2Use
+from UI.Options import Options
+from UI.MagVar import MagVar
 from UI.HOffset import HOffset
 from UI.HSource import HSource
-from UI.HeadingTS import HeadingTS
-from UI.MagVar import MagVar
-from UI.MplCanvas import MplCanvas
-from UI.OpenMeasurementDialog import OpenMeasurementDialog
-from UI.Options import Options
-from UI.PRTS import PRTS
-from UI.Rating import Rating
 from UI.SOSSource import SOSSource
+from UI.TempSource import TempSource
 from UI.Salinity import Salinity
 from UI.ShipTrack import Shiptrack
-from UI.StartEdge import StartEdge
-from UI.StationaryGraphs import StationaryGraphs
-from UI.TempSource import TempSource
+from UI.BoatSpeed import BoatSpeed
+from UI.Draft import Draft
 from UI.TemperatureTS import TemperatureTS
-from UI.Transects2Use import Transects2Use
-from UI.ULollipopPlot import ULollipopPlot
-from UI.UMeasQ import UMeasQ
-from UI.UMeasurement import UMeasurement
-from UI.WTAdvanced import WTAdvanced
+from UI.HeadingTS import HeadingTS
+from UI.PRTS import PRTS
+from UI.DischargeTS import DischargeTS
+from UI.StationaryGraphs import StationaryGraphs
 from UI.WTContour import WTContour
-from UI.WTFilters import WTFilters
-from UI.selectFile import SaveMeasurementDialog
+from UI.Rating import Rating
+from UI.ExtrapPlot import ExtrapPlot
+from UI.StartEdge import StartEdge
+from UI.EdgeType import EdgeType
+from UI.EdgeDist import EdgeDist
+from UI.EdgeEns import EdgeEns
+from UI.UMeasurement import UMeasurement
+from UI.UMeasQ import UMeasQ
+from UI.MplCanvas import MplCanvas
+from UI.Disclaimer import Disclaimer
+from UI.AdvGraphs import AdvGraphs
+from UI.ULollipopPlot import ULollipopPlot
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
-    controls the computational code.
-
+     controls the computational code.
 
     Attributes
     ----------
@@ -108,7 +111,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     sticky_settings: SSet
         Object of StickySettings class
     units: dict
-        Dictionary containing units coversions and labels for length, area, velocity, and discharge
+        Dictionary containing units coversions and labels for length, area,
+        velocity, and discharge
     save_stylesheet: bool
         Indicates whether to save a stylesheet with the measurement
     icon_caution: QtGui.QIcon
@@ -122,7 +126,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     icon_unChecked: QtGui.QIcon
         Unchecked icon
     save_all: bool
-        Indicates if all transects should be save (True) or only the checked transects (False)
+        Indicates if all transects should be save (True) or only the checked
+        transects (False)
     QRev_version: str
         QRev version number
     current_tab: str
@@ -150,11 +155,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     invalid_gps: np.array(bool)
         Array to facilitate sharing of invalid gps data among some methods
     invalid_wt: np.array(bool)
-        Array to facilitate sharing of invalid water track data among some methods
+        Array to facilitate sharing of invalid water track data among some
+         methods
     wt_max_limit: float
-        Maximum water speed to allow consistent scaling of color contour graphs on same tab
+        Maximum water speed to allow consistent scaling of color contour graphs
+         on same tab
     extrap_meas: Measurement
-        Copy of measurement to allow resetting of changes made on the extrap tab
+        Copy of measurement to allow resetting of changes made on the extrap
+        tab
     start_bank: str
         Start bank for selected transect used in graphics methods
     idx: int
@@ -225,17 +233,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Bottom track shiptrack toolbar
     bt_shiptrack_fig: ShipTrack
         Bottom track shiptrack figure
-    bt_bottom_canvas: MplCanvas
-        Bottom track time series canvas
-    bt_bottom_toolbar: NavigationToolbar
-        Bottom track time series toolbar
-    bt_bottom_fig: BoatSpeed
-        Bottom track time series figure
-    bt_top_canvas: MplCanvas
+    bt_ts_canvas: MplCanvas
         Bottom track filter time series canvas
-    bt_top_toolbar: NavigationToolbar
+    bt_ts_toolbar: NavigationToolbar
         Bottom track filter time series toolbar
-    bt_top_fig: BTFilters
+    bt_ts_fig: AdvGraphs
         Bottom track filters time series figure
     gps_shiptrack_canvas: MplCanvas
         GPS shiptrack canvas
@@ -243,17 +245,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         GPS shiptrack toolbar
     gps_shiptrack_fig: ShipTrack
         GPS shiptrack figure
-    gps_bottom_canvas: MplCanvas
-        GPS time series canvas
-    gps_bottom_toolbar: NavigationToolbar
-        GPS time series toolbar
-    gps_bottom_fig: BoatSpeed
-        GPS time series figure
-    gps_top_canvas: MplCanvas
+    gps_ts_canvas: MplCanvas
         GPS filters time series canvases
-    gps_top_toolbar: NavigationToolbar
+    gps_ts_toolbar: NavigationToolbar
         GPS filters time series toolbar
-    gps_top_fig: GPSFilters
+    gps_ts_fig: AdvGraphs
         GPS filters times series figure
     gps_bt_shiptrack_canvas: MplCanvas
         GPS - BT shiptrack canvas
@@ -267,17 +263,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         GPS - BT time series speed toolbar
     gps_bt_speed_fig: ShipTrack
         GPS - BT time series speed figure
-    depth_top_canvas: MplCanvas
-        Depth beam depths canvas
-    depth_top_toolbar: NavigationToolbar
-        Depth beam depths toolbar
-    depth_top_fig: BeamDepths
-        Depth beam depths figure
-    depth_bottom_canvas: MplCanvas
+    depth_canvas: MplCanvas
         Depth final cross section canvas
-    depth_bottom_toolbar: NavigationToolbar
+    depth_toolbar: NavigationToolbar
         Depth final cross section toolbar
-    depth_bottom_fig: CrossSection
+    depth_fig: AdvGraphs
         Depth final cross section figure
     wt_shiptrack_canvas: MplCanvas
         Water track shiptrack canvas
@@ -285,17 +275,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Water track shiptrack toolbar
     wt_shiptrack_fig: ShipTrack
         Water track shiptrack figure
-    wt_bottom_canvas: MplCanvas
-        Water track process color contour canvas
-    wt_bottom_toolbar: NavigationToolbar
-        Water track processed color contour toolbar
-    wt_bottom_fig: WTContour
-        Water track processed color contour figure
-    wt_top_canvas: MplCanvas
+    wt_filter_canvas: MplCanvas
         Water track filters graph canvas
-    wt_top_toolbar: NavigationToolbar
+    wt_filter_toolbar: NavigationToolbar
         Water track filters graphs toolbar
-    wt_top_fig: WTFilters
+    wt_filter_fig: AdvGraphs
         Water track filters graph figure
     extrap_canvas: MplCanvas
         Extrapolation canvas
@@ -341,14 +325,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Uncertainty measurement toolbar
     adv_graph_canvas: MplCanvas
         Advanced graphics canvas
-    adv_graph_fig: WTAdvanced
+    adv_graph_fig: AdvGraphs
         Advanced graphics figure
     adv_graph_toolbar: NavigationToolbar
         Advanced graphics toolbar
     rating_prompt: bool
-        Indicates that the user should be prompted to rate the measurement when saving
+        Indicates that the user should be prompted to rate the measurement
+        when saving
     use_weighted: bool
-        Indicates if the discharge weighted medians should be used to determine the extrapolation
+        Indicates if the discharge weighted medians should be used to determine
+         the extrapolation
     agreement: bool
         Indicates that the user has agreed to the disclaimer and license
     show_below_sl: bool
@@ -358,7 +344,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     self.sc_bt: QtWidgets.QShortcut
         Shortcut to set BT reference
     self.sc_weighted: QtWidgets.QShortcut
-        Shortcut to toggle dischare weighted extrapolation
+        Shortcut to toggle discharge weighted extrapolation
     self.sc_options: QtWidgets.QShortcut
         Shortcut to open Options dialog
     self.sc_comment: QtWidgets.QShortcut
@@ -379,6 +365,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Shortcut to set gga reference
     self.sc_vtg: QtWidgets.QShortcut
         Shortcut to set vtg reference
+    self.path: str
+        Path to loaded data file(s)
     xs_export: bool
         Indicates that the mean cross-section should be computed and included
         the XML when saving
@@ -396,7 +384,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         parent: QWidget
             Parent object
         groupings: list
-            List of lists containing the transect indices that make up individual measurements
+            List of lists containing the transect indices that make up
+            individual measurements
         data: Measurement
             Object of Measurement class
         caller: object
@@ -406,13 +395,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.29'
+        self.QRev_version = 'QRev 4.30'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
         show_disclaimer = False
 
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
+
+        # Get agency optional settings
+        options_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'QRev.cfg')
+        if os.path.exists(options_file):
+            if os.path.isfile(options_file):
+                # Read json into dictionary
+                try:
+                    with open(options_file, 'r') as f:
+                        self.agency_options = json.load(f)
+                except json.decoder.JSONDecodeError:
+                    self.popup_message(self.tr(
+                        'QRev.cfg could not be read due a formatting error. '
+                        'QRev cannot continue.'))
+                    sys.exit()
+        else:
+            self.popup_message(
+                self.tr('QRev.cfg could not be found. QRev cannot continue.'))
+            sys.exit()
 
         # Setting file for settings to carry over from one session to the next
         # (examples: Folder, UnitsID)
@@ -421,52 +429,144 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # previous use
         self.sticky_settings = SSet(self.settingsFile)
 
+        if 'XAxis' in self.sticky_settings.settings:
+            self.x_axis_type = self.sticky_settings.get('XAxis')
+        else:
+            self.x_axis_type = 'E'
+            self.sticky_settings.new('XAxis', 'E')
+
         # Set units based on previous session or default to English
+        if 'Units' not in self.agency_options.keys():
+            self.popup_message(self.tr('QRev.cfg: Units parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['Units'].keys():
+            self.popup_message(self.tr('QRev.cfg Units: show parameter not '
+                                       'found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['Units'].keys():
+            self.popup_message(self.tr('QRev.cfg Units: default parameter not '
+                                       'found.'))
+            sys.exit()
         try:
-            units_id = self.sticky_settings.get('UnitsID')
+            if self.agency_options['Units']['show']:
+                units_id = self.sticky_settings.get('UnitsID')
+            else:
+                units_id = self.agency_options['Units']['default']
             if not units_id:
-                self.sticky_settings.set('UnitsID', 'English')
+                self.sticky_settings.set(
+                    'UnitsID', self.agency_options['Units']['default'])
         except KeyError:
-            self.sticky_settings.new('UnitsID', 'English')
-        self.units = units_conversion(units_id=self.sticky_settings.get(
-            'UnitsID'))
+            self.sticky_settings.new(
+                'UnitsID', self.agency_options['Units']['default'])
+        self.units = units_conversion(
+            units_id=self.sticky_settings.get('UnitsID'))
 
         # Save all transects by default
         self.save_all = True
 
         # Use unweighted medians for extrapolation by default
-        # Commenting out for now so it always defaults to False.
+        if 'ExtrapWeighting' not in self.agency_options.keys():
+            self.popup_message(
+                self.tr('QRev.cfg: ExtrapWeighting parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['ExtrapWeighting'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg ExtrapWeighting: show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['ExtrapWeighting'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg ExtrapWeighting: default parameter not found.'))
+            sys.exit()
         try:
-            wght = self.sticky_settings.get('UseWeighted')
-        #    self.use_weighted = wght
+            if self.agency_options['ExtrapWeighting']['show']:
+                wght = self.sticky_settings.get('UseWeighted')
+            else:
+                wght = self.agency_options['ExtrapWeighting']['default']
+            self.use_weighted = wght
         except KeyError:
-            self.sticky_settings.new('UseWeighted', False)
-            self.use_weighted = False
-        self.use_weighted = False
+            self.sticky_settings.new(
+                'UseWeighted',
+                self.agency_options['ExtrapWeighting']['default'])
+            self.use_weighted = \
+                self.agency_options['ExtrapWeighting']['default']
 
         # Use whole measurement or transects for error and vertical velocity filters
+        if 'FilterUsingMeasurement' not in self.agency_options.keys():
+            self.popup_message(self.tr(
+                'QRev.cfg: FilterUsingMeasurement parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['FilterUsingMeasurement'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg FilterUsingMeasurement: show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['FilterUsingMeasurement'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg FilterUsingMeasurement: default parameter not found.'))
+            sys.exit()
         try:
-            use_meas = self.sticky_settings.get('UseMeasurementThresholds')
+            if self.agency_options['FilterUsingMeasurement']['show']:
+                use_meas = self.sticky_settings.get('UseMeasurementThresholds')
+            else:
+                use_meas = \
+                    self.agency_options['FilterUsingMeasurement']['default']
             self.use_measurement_thresholds = use_meas
         except KeyError:
-            self.sticky_settings.new('UseMeasurementThresholds', False)
-            self.use_measurement_thresholds = False
+            self.sticky_settings.new('UseMeasurementThresholds',
+                                     self.agency_options[
+                                         'FilterUsingMeasurement']['default'])
+            self.use_measurement_thresholds = \
+                self.agency_options['FilterUsingMeasurement']['default']
 
         # Stylesheet setting
+        if 'SaveStyleSheet' not in self.agency_options.keys():
+            self.popup_message(self.tr(
+                'QRev.cfg: SaveStyleSheet parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['SaveStyleSheet'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg SaveStyleSheet: show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['SaveStyleSheet'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg SaveStyleSheet: default parameter not found.'))
+            sys.exit()
         try:
-            ss = self.sticky_settings.get('StyleSheet')
-            self.save_stylesheet = ss
+            if self.agency_options['SaveStyleSheet']['show']:
+                ss = self.sticky_settings.get('StyleSheet')
+                self.save_stylesheet = ss
+            else:
+                self.save_stylesheet = \
+                    self.agency_options['SaveStyleSheet']['default']
         except KeyError:
-            self.sticky_settings.new('StyleSheet', False)
-            self.save_stylesheet = False
+            self.sticky_settings.new(
+                'StyleSheet', self.agency_options['SaveStyleSheet']['default'])
+            self.save_stylesheet = \
+                self.agency_options['SaveStyleSheet']['default']
 
         # Prompt for user rating
+        if 'RatingPrompt' not in self.agency_options.keys():
+            self.popup_message(self.tr(
+                'QRev.cfg: RatingPrompt parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['RatingPrompt'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg RatingPrompt: show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['RatingPrompt'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg RatingPrompt: default parameter not found.'))
+            sys.exit()
         try:
-            ss = self.sticky_settings.get('UserRating')
-            self.rating_prompt = ss
+            if self.agency_options['RatingPrompt']['show']:
+                ss = self.sticky_settings.get('UserRating')
+                self.rating_prompt = ss
+            else:
+                self.rating_prompt = \
+                    self.agency_options['RatingPrompt']['default']
         except KeyError:
-            self.sticky_settings.new('UserRating', False)
-            self.rating_prompt = False
+            self.sticky_settings.new(
+                'UserRating', self.agency_options['RatingPrompt']['default'])
+            self.rating_prompt = self.agency_options['RatingPrompt']['default']
 
         # check xs export setting
         try:
@@ -477,38 +577,109 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.xs_export = True
 
         # Color map
+        if 'ColorMap' not in self.agency_options.keys():
+            self.popup_message(self.tr('QRev.cfg: ColorMap '
+                                       'parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['ColorMap'].keys():
+            self.popup_message(self.tr('QRev.cfg ColorMap: '
+                                       'show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['ColorMap'].keys():
+            self.popup_message(self.tr('QRev.cfg ColorMap: '
+                                       'default parameter not found.'))
+            sys.exit()
         try:
-            ss = self.sticky_settings.get('ColorMap')
-            self.color_map = ss
+            if self.agency_options['ColorMap']['show']:
+                ss = self.sticky_settings.get('ColorMap')
+                self.color_map = ss
+            else:
+                self.color_map = self.agency_options['ColorMap']['default']
         except KeyError:
-            self.sticky_settings.new('ColorMap', 'viridis')
-            self.color_map = 'viridis'
+            self.sticky_settings.new(
+                'ColorMap', self.agency_options['ColorMap']['default'])
+            self.color_map = self.agency_options['ColorMap']['default']
 
         # Uncertainty model
+        if 'Uncertainty' not in self.agency_options.keys():
+            self.popup_message(self.tr('QRev.cfg: Uncertainty '
+                                       'parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['Uncertainty'].keys():
+            self.popup_message(self.tr('QRev.cfg Uncertainty: '
+                                       'show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['Uncertainty'].keys():
+            self.popup_message(self.tr('QRev.cfg Uncertainty: '
+                                       'default parameter not found.'))
+            sys.exit()
         try:
-            ss = self.sticky_settings.get('Oursin')
-            self.run_oursin = ss
+            if self.agency_options['Uncertainty']['show']:
+                ss = self.sticky_settings.get('Oursin')
+                self.run_oursin = ss
+            elif self.agency_options['Uncertainty']['default'] == 'Oursin':
+                self.run_oursin = True
+            else:
+                self.run_oursin = False
+
         except KeyError:
-            self.sticky_settings.new('Oursin', False)
-            self.run_oursin = False
+            if self.agency_options['Uncertainty']['default'] == 'Oursin':
+                self.run_oursin = True
+            else:
+                self.run_oursin = False
+            self.sticky_settings.new('Oursin', self.run_oursin)
 
         if self.run_oursin:
             self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
         else:
             self.tab_all.removeTab(
-                self.tab_all.indexOf(self.tab_all.findChild(QtWidgets.QWidget, 'tab_uncertainty')))
+                self.tab_all.indexOf(
+                    self.tab_all.findChild(QtWidgets.QWidget,
+                                           'tab_uncertainty')))
 
         # Observed no moving-bed
-        try:
-            ss = self.sticky_settings.get('AllowNoMB')
-            self.allow_observed_no_moving_bed = ss
-        except KeyError:
-            self.sticky_settings.new('AllowNoMB', False)
-            self.allow_observed_no_moving_bed = False
+        if 'MovingBedObservation' not in self.agency_options.keys():
+            self.popup_message(
+                self.tr('QRev.cfg: MovingBedObservation parameter not found.'))
+            sys.exit()
+        if 'show' not in self.agency_options['MovingBedObservation'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg: MovingBedObservation: show parameter not found.'))
+            sys.exit()
+        if 'default' not in self.agency_options['MovingBedObservation'].keys():
+            self.popup_message(self.tr(
+                'QRev.cfg MovingBedObservation: default parameter not found.'))
+            sys.exit()
 
-        self.manual_computational_settings = {'run_oursin': self.run_oursin,
-                                              'use_measurement_thresholds': self.use_measurement_thresholds,
-                                              'use_weighted': self.use_weighted}
+        try:
+            if self.agency_options['MovingBedObservation']['show']:
+                ss = self.sticky_settings.get('AllowNoMB')
+                self.allow_observed_no_moving_bed = ss
+            else:
+                self.allow_observed_no_moving_bed = \
+                    self.agency_options['MovingBedObservation']['default']
+        except KeyError:
+            self.sticky_settings.new(
+                'AllowNoMB',
+                self.agency_options['MovingBedObservation']['default'])
+            self.allow_observed_no_moving_bed = \
+                self.agency_options['MovingBedObservation']['default']
+
+        # Check for QA Settings
+        if 'QA' not in self.agency_options.keys():
+            self.popup_message(self.tr('QRev.cfg: QA parameter not found.'))
+            sys.exit()
+        if 'MinTransects' not in self.agency_options['QA'].keys():
+            self.popup_message(self.tr('QRev.cfg: QA MinTransects parameter not found.'))
+            sys.exit()
+        if 'MinDuration' not in self.agency_options['QA'].keys():
+            self.popup_message(self.tr('QRev.cfg QA MinDuration parameter not found.'))
+            sys.exit()
+
+        self.manual_computational_settings = {
+            'run_oursin': self.run_oursin,
+            'use_measurement_thresholds': self.use_measurement_thresholds,
+            'use_weighted': self.use_weighted}
 
         # Set initial change switch to false
         self.change = False
@@ -660,42 +831,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.bt_shiptrack_canvas = None
         self.bt_shiptrack_toolbar = None
         self.bt_shiptrack_fig = None
-        self.bt_bottom_canvas = None
-        self.bt_bottom_toolbar = None
-        self.bt_bottom_fig = None
-        self.bt_top_canvas = None
-        self.bt_top_toolbar = None
-        self.bt_top_fig = None
+        self.bt_ts_canvas = None
+        self.bt_ts_toolbar = None
+        self.bt_ts_fig = None
         self.gps_shiptrack_canvas = None
         self.gps_shiptrack_toolbar = None
         self.gps_shiptrack_fig = None
-        self.gps_bottom_canvas = None
-        self.gps_bottom_toolbar = None
-        self.gps_bottom_fig = None
-        self.gps_top_canvas = None
-        self.gps_top_toolbar = None
-        self.gps_top_fig = None
+        self.gps_ts_canvas = None
+        self.gps_ts_toolbar = None
+        self.gps_ts_fig = None
         self.gps_bt_shiptrack_canvas = None
         self.gps_bt_shiptrack_toolbar = None
         self.gps_bt_shiptrack_fig = None
         self.gps_bt_speed_canvas = None
         self.gps_bt_speed_toolbar = None
         self.gps_bt_speed_fig = None
-        self.depth_top_canvas = None
-        self.depth_top_toolbar = None
-        self.depth_top_fig = None
-        self.depth_bottom_canvas = None
-        self.depth_bottom_toolbar = None
-        self.depth_bottom_fig = None
+        self.depth_canvas = None
+        self.depth_toolbar = None
+        self.depth_fig = None
         self.wt_shiptrack_canvas = None
         self.wt_shiptrack_toolbar = None
         self.wt_shiptrack_fig = None
-        self.wt_bottom_canvas = None
-        self.wt_bottom_toolbar = None
-        self.wt_bottom_fig = None
-        self.wt_top_canvas = None
-        self.wt_top_toolbar = None
-        self.wt_top_fig = None
+        self.wt_filter_canvas = None
+        self.wt_filter_toolbar = None
+        self.wt_filter_fig = None
         self.wt_advanced_canvas = None
         self.wt_advanced_toolbar = None
         self.wt_advanced_fig = None
@@ -729,7 +888,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_types = []
 
         self.mb_row = 0
-        self.x_axis_type = 'E'
         self.show_below_sl = False
 
         # Tab initialization tracking setup
@@ -824,18 +982,38 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Show QRev maximized on the display
         self.showMaximized()
 
+        # Disclaimer is for QRevInt
+        #if show_disclaimer:
+        #    try:
+        #        self.agreement = self.sticky_settings.get('Agreement')
+        #        if not self.agreement:
+        #            self.close()
+        #    except KeyError:
+        #        # Open disclaimer and license
+        #        disclaimer = Disclaimer(self)
+        #        disclaimer_exec = disclaimer.exec_()
+        #        if disclaimer_exec:
+        #            self.sticky_settings.new('Agreement', True)
+        #            self.agreement = True
+        #        else:
+        #            self.agreement = False
+        #           self.close()
+        #else:
+        #    self.agreement = True
+
     # Toolbar functions
     # =================
     def select_measurement(self):
         """Opens a dialog to allow the user to load measurement file(s) for
-        viewing or processing.
-            """
+         viewing or processing.
+        """
 
         # Open dialog
         select = OpenMeasurementDialog(parent=self)
 
         # Update sticky_settings
         self.sticky_settings = SSet(self.settingsFile)
+        self.path = (self.sticky_settings.get('Folder'))
 
         # If a selection is made begin loading
         if len(select.type) > 0:
@@ -844,25 +1022,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Reset computational settings
             self.run_oursin = self.manual_computational_settings['run_oursin']
             self.use_measurement_thresholds = \
-                self.manual_computational_settings['use_measurement_thresholds']
-            self.use_weighted = self.manual_computational_settings[
-                'use_weighted']
+                self.manual_computational_settings[
+                    'use_measurement_thresholds']
+            self.use_weighted = \
+                self.manual_computational_settings['use_weighted']
 
             # Load and process Sontek data
             if select.type == 'SonTek':
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(
-                        self.QRev_version + ': ' + select.pathName)
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.pathName)
 
                     # Create measurement object
                     try:
-                        self.meas = Measurement(in_file=select.fullName,
-                                                source='SonTek',
-                                                proc_type='QRev',
-                                                run_oursin=self.run_oursin,
-                                                use_weighted=self.use_weighted,
-                                                use_measurement_thresholds=self.use_measurement_thresholds)
+                        self.meas = Measurement(
+                            in_file=select.fullName,
+                            source='SonTek',
+                            proc_type='QRev',
+                            run_oursin=self.run_oursin,
+                            use_weighted=self.use_weighted,
+                            use_measurement_thresholds=self.use_measurement_thresholds,
+                            min_transects=self.agency_options['QA'][
+                                'MinTransects'],
+                            min_duration=self.agency_options['QA'][
+                                'MinDuration'])
                     except CoordError as error:
                         self.popup_message(error.text)
 
@@ -870,57 +1054,70 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == 'Nortek':
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(
-                        self.QRev_version + ': ' + select.pathName)
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.pathName)
                     # Create measurement object
-                    self.meas = Measurement(in_file=select.fullName,
-                                            source='Nortek',
-                                            proc_type='QRev',
-                                            run_oursin=self.run_oursin,
-                                            use_weighted=self.use_weighted,
-                                            use_measurement_thresholds=self.use_measurement_thresholds)
+                    self.meas = Measurement(
+                        in_file=select.fullName,
+                        source='Nortek',
+                        proc_type='QRev',
+                        run_oursin=self.run_oursin,
+                        use_weighted=self.use_weighted,
+                        use_measurement_thresholds=
+                        self.use_measurement_thresholds,
+                        min_transects=self.agency_options['QA'][
+                            'MinTransects'],
+                        min_duration=self.agency_options['QA']['MinDuration'])
 
             # Load and process TRDI data
             elif select.type == 'TRDI':
                 with self.wait_cursor():
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(
-                        self.QRev_version + ': ' + select.fullName[0])
+                    self.setWindowTitle(self.QRev_version + ': ' +
+                                        select.fullName[0])
                     # Create measurement object
-                    self.meas = Measurement(in_file=select.fullName[0],
-                                            source='TRDI',
-                                            proc_type='QRev',
-                                            checked=select.checked,
-                                            run_oursin=self.run_oursin,
-                                            use_weighted=self.use_weighted,
-                                            use_measurement_thresholds=self.use_measurement_thresholds)
+                    self.meas = Measurement(
+                        in_file=select.fullName[0],
+                        source='TRDI',
+                        proc_type='QRev',
+                        checked=select.checked,
+                        run_oursin=self.run_oursin,
+                        use_weighted=self.use_weighted,
+                        use_measurement_thresholds=
+                        self.use_measurement_thresholds,
+                        min_transects=self.agency_options['QA'][
+                            'MinTransects'],
+                        min_duration=self.agency_options['QA']['MinDuration'])
 
             # Load QRev data
             elif select.type == 'QRev':
                 # Show QRev filename in GUI header
-                self.setWindowTitle(
-                    self.QRev_version + ': ' + select.fullName[0])
+                self.setWindowTitle(self.QRev_version + ': ' +
+                                    select.fullName[0])
                 mat_data = sio.loadmat(select.fullName[0],
                                        struct_as_record=False,
                                        squeeze_me=True)
 
                 message = 'Would you like to: <br><br>' + \
-                          '<b>View</b> the measurement as saved <br><br>' + \
-                          '<b>Reprocess</b> the measurement using all the ' \
-                          '<br>' + \
+                          '<b>View</b> the measurement as saved <br>' + \
+                          '<I>New quality checks will be ' \
+                          'applied. </I><br><br>' + \
+                          '<b>Reprocess</b> the measurement ' \
+                          'using all the <br>' + \
                           'current settings (extrapolation, filters,<br>' + \
                           'uncertianty model, and the latest ' \
-                          'algorithms)<br><br>' + \
-                          'NOTE: Any changes will reprocess the file  <br> '\
-                          + \
-                          'using the latest QRev algorithms, however,  ' \
-                          '<br>' + \
-                          'identifying ping type from older QRev files  ' \
-                          '<br>' + \
+                          'algorithms).<br><br>' + \
+                          'NOTE: Any changes will reprocess ' \
+                          'the file  <br> ' + \
+                          'using the latest QRev algorithms, ' \
+                          'however,  <br>' + \
+                          'identifying ping type from older ' \
+                          'QRev files  <br>' + \
                           'cannot be done for TRDI ADCPs. <br>' + \
-                          '<I>To identify the ping type for TRDI data you ' \
-                          '<br> ' + \
+                          '<I>To identify the ping type for TRDI ' \
+                          'data you <br> ' + \
                           'must load the raw data files.</I><<br><br>'
+                message = self.tr(message)
                 msg_box = QtWidgets.QMessageBox()
                 msg_box.setIcon(QtWidgets.QMessageBox.Question)
                 msg_box.setWindowTitle('View or Reprocess')
@@ -928,8 +1125,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 msg_box.setText(message)
                 view_btn = msg_box.addButton(self.tr('View'),
                                              QtWidgets.QMessageBox.NoRole)
-                reprocess_btn = msg_box.addButton(self.tr('Reprocess'),
-                                                  QtWidgets.QMessageBox.YesRole)
+                reprocess_btn = msg_box.addButton(
+                    self.tr('Reprocess'), QtWidgets.QMessageBox.YesRole)
 
                 msg_box.exec_()
                 # Process QRev data
@@ -939,12 +1136,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                 source='QRev',
                                                 proc_type='None')
                     elif msg_box.clickedButton() == reprocess_btn:
-                        self.meas = Measurement(in_file=mat_data,
-                                                source='QRev',
-                                                proc_type='QRev',
-                                                run_oursin=self.run_oursin,
-                                                use_weighted=self.use_weighted,
-                                                use_measurement_thresholds=self.use_measurement_thresholds)
+                        self.meas = Measurement(
+                            in_file=mat_data,
+                            source='QRev',
+                            proc_type='QRev',
+                            run_oursin=self.run_oursin,
+                            use_weighted=self.use_weighted,
+                            use_measurement_thresholds=
+                            self.use_measurement_thresholds,
+                            min_transects=self.agency_options['QA'][
+                                'MinTransects'],
+                            min_duration=self.agency_options['QA'][
+                                'MinDuration'])
 
                 # Settings based on measurement settings
                 self.use_weighted = self.meas.use_weighted
@@ -957,21 +1160,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tab_all.addTab(self.tab_uncertainty, 'Uncertainty')
                 else:
                     self.tab_all.removeTab(
-                        self.tab_all.indexOf(
-                            self.tab_all.findChild(QtWidgets.QWidget,
-                                                   'tab_uncertainty')))
+                        self.tab_all.indexOf(self.tab_all.findChild(
+                            QtWidgets.QWidget, 'tab_uncertainty')))
 
             if self.meas is not None:
 
                 # Identify transects to be used in discharge computation
-                self.checked_transects_idx = Measurement.checked_transects(
-                    self.meas)
+                self.checked_transects_idx = \
+                    Measurement.checked_transects(self.meas)
                 if len(self.checked_transects_idx) > 0:
                     with self.wait_cursor():
 
                         # Determine if external heading is included in the data
-                        self.h_external_valid = Measurement.h_external_valid(
-                            self.meas)
+                        self.h_external_valid = \
+                            Measurement.h_external_valid(self.meas)
 
                         # Initialize GUI
                         self.tab_settings = {'tab_bt': 'Default',
@@ -983,17 +1185,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
-                        self.tab_manager(tab_idx=0)
+                        self.tab_manager(tab_idx=0, subtab_idx=0)
                         # self.set_tab_color()
                 else:
                     self.transect_row = 0
                     self.config_gui()
                     self.change = True
-                    self.tab_manager(tab_idx=0)
+                    self.tab_manager(tab_idx=0, subtab_idx=0)
 
     def save_measurement(self):
         """Save measurement in Matlab format.
-            """
+        """
 
         if len(self.checked_transects_idx) > 0:
             if self.rating_prompt:
@@ -1001,12 +1203,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 rating_dialog = Rating(self)
                 if self.run_oursin:
                     uncertainty = \
-                    self.meas.oursin.u_measurement_user['total_95'][0]
+                        self.meas.oursin.u_measurement_user['total_95'][0]
                 else:
                     uncertainty = self.meas.uncertainty.total_95_user
 
-                rating_dialog.uncertainty_value.setText(
-                    '{:4.1f}'.format(uncertainty))
+                if np.isnan(uncertainty):
+                    rating_dialog.uncertainty_value.setText('N/A')
+                else:
+                    rating_dialog.uncertainty_value.setText('{:4.1f}'.format(
+                        uncertainty))
 
                 if self.meas.user_rating in ['Not Rated', '']:
                     if uncertainty < 3:
@@ -1034,13 +1239,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 with self.wait_cursor():
                     if rating_entered:
                         if rating_dialog.rb_excellent.isChecked():
-                            rating = 'Excellent'
+                            rating = self.tr('Excellent')
                         elif rating_dialog.rb_good.isChecked():
-                            rating = 'Good'
+                            rating = self.tr('Good')
                         elif rating_dialog.rb_fair.isChecked():
-                            rating = 'Fair'
+                            rating = self.tr('Fair')
                         else:
-                            rating = 'Poor'
+                            rating = self.tr('Poor')
 
                 # Create default file name
                 if rating_entered:
@@ -1054,11 +1259,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 user_name = getpass.getuser()
                 discharge = Measurement.mean_discharges(self.meas)
-                text = '[' + time_stamp + ', ' + user_name + ']: File Saved ' \
-                                                             'Q = ' \
-                       + '{:8.2f}'.format(
-                    discharge['total_mean'] * self.units['Q']) \
-                       + ' ' + self.units['label_Q'][1:-1] \
+                text = '[' + time_stamp + ', ' +\
+                       user_name + ']: File Saved Q = ' \
+                       + '{:8.2f}'.format(discharge['total_mean'] *
+                                          self.units['Q']) \
+                       + ' ' + self.units['label_Q'][1:-1]\
                        + ' (Uncertainty: ' + '{:4.1f}'.format(
                     self.meas.uncertainty.total_95_user) + '%)'
                 self.meas.comments.append(text)
@@ -1073,7 +1278,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     Python2Matlab.save_matlab_file(self.meas,
                                                    save_file.full_Name,
                                                    self.QRev_version,
-                                                   checked=self.checked_transects_idx)
+                                                   checked=
+                                                   self.checked_transects_idx)
 
                 # Save xml file
                 self.meas.xml_output(self.QRev_version,
@@ -1081,28 +1287,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Save stylesheet in measurement folder
                 if self.save_stylesheet:
-                    if self.units['ID'] == 'SI':
-                        stylesheet = 'QRevStylesheet_si.xsl'
-                    else:
-                        stylesheet = 'QRevStylesheet_english.xsl'
-                    stylesheet_file = os.path.join(
-                        os.path.dirname(os.path.realpath(__file__)),
-                        stylesheet)
+                    stylesheet_file = \
+                        os.path.join(os.path.dirname(
+                            os.path.realpath(__file__)), 'QRevStylesheet.xsl')
                     meas_folder, _ = os.path.split(save_file.full_Name)
-                    dest = os.path.join(meas_folder, 'QRevStylesheet.xsl')
-                    shutil.copy2(stylesheet_file, dest)
+                    shutil.copy2(stylesheet_file, meas_folder)
 
                 # Notify user save is complete
-                QtWidgets.QMessageBox.about(self, "Save",
-                                            "Files (*_QRev.mat and "
-                                            "*_QRev.xml) have been saved.")
+                QtWidgets.QMessageBox.about(self, self.tr("Save"),
+                                            self.tr("Files (*_QRev.mat and "
+                                                    "*_QRev.xml) have been "
+                                                    "saved."))
 
                 self.uncertainty_table()
         else:
             # Notify user save is complete
-            QtWidgets.QMessageBox.warning(self, "Save",
-                                          "No transects are selected. Save "
-                                          "cancelled.")
+            QtWidgets.QMessageBox.warning(self, self.tr("Save"),
+                                          self.tr("No transects are selected."
+                                                  " Save cancelled."))
 
     def add_comment(self):
         """Add comment triggered by actionComment
@@ -1255,7 +1457,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def comp_tracks_off(self):
         """Change composite tracks setting to Off and update measurement and
-display.
+           display.
             """
         with self.wait_cursor():
             # Get all current settings
@@ -1271,157 +1473,228 @@ display.
 
     def qrev_options(self):
         """Change options triggered by actionOptions
-            """
+        """
+        # if self.meas is not None:
+        # Initialize options dialog
+        options = Options()
+
+        # Set dialog to current settings
+        if not self.agency_options['Units']['show']:
+            options.gb_units.hide()
+        if self.units['ID'] == 'SI':
+            options.rb_si.setChecked(True)
+        else:
+            options.rb_english.setChecked(True)
+
+        if self.save_all:
+            options.rb_All.setChecked(True)
+        else:
+            options.rb_checked.setChecked(True)
+
+        if not self.agency_options['SaveStyleSheet']['show']:
+            options.cb_stylesheet.hide()
+        if self.save_stylesheet:
+            options.cb_stylesheet.setChecked(True)
+        else:
+            options.cb_stylesheet.setChecked(False)
+
+        if not self.agency_options['ExtrapWeighting']['show']:
+            options.gb_extrap_weighted.hide()
+        if self.use_weighted:
+            options.cb_weighted_extrap.setChecked(True)
+        else:
+            options.cb_weighted_extrap.setChecked(False)
+
+        if not self.agency_options['RatingPrompt']['show']:
+            options.cb_rating.hide()
+        if self.rating_prompt:
+            options.cb_rating.setChecked(True)
+        else:
+            options.cb_rating.setChecked(False)
+
+        if not self.agency_options['Uncertainty']['show']:
+            options.gb_uncertainty.hide()
+        if self.run_oursin:
+            options.rb_oursin_u.setChecked(True)
+        else:
+            options.rb_qrev_u.setChecked(True)
+
         if self.meas is not None:
-            # Initialize options dialog
-            options = Options()
-
-            # Set dialog to current settings
-            if self.units['ID'] == 'SI':
-                options.rb_si.setChecked(True)
-            else:
-                options.rb_english.setChecked(True)
-
-            if self.save_all:
-                options.rb_All.setChecked(True)
-            else:
-                options.rb_checked.setChecked(True)
-
-            if self.save_stylesheet:
-                options.cb_stylesheet.setChecked(True)
-            else:
-                options.cb_stylesheet.setChecked(False)
-
-            if self.use_weighted:
-                options.cb_weighted_extrap.setChecked(True)
-            else:
-                options.cb_weighted_extrap.setChecked(False)
-
-            if self.rating_prompt:
-                options.cb_rating.setChecked(True)
-            else:
-                options.cb_rating.setChecked(False)
-
-            if self.run_oursin:
-                options.rb_oursin_u.setChecked(True)
-            else:
-                options.rb_qrev_u.setChecked(True)
-
-            if self.meas is not None:
-                self.use_measurement_thresholds = \
-                    self.meas.transects[self.meas.checked_transect_idx[
+            self.use_measurement_thresholds = \
+                self.meas.transects[
+                    self.meas.checked_transect_idx[
                         0]].boat_vel.bt_vel.use_measurement_thresholds
 
-            if self.color_map == 'viridis':
-                options.rb_viridis.setChecked(True)
-            else:
-                options.rb_jet.setChecked(True)
+        if not self.agency_options['FilterUsingMeasurement']['show']:
+            options.gb_filters.hide()
+        if self.use_measurement_thresholds:
+            options.rb_filter_meas.setChecked(True)
+        else:
+            options.rb_filter_transect.setChecked(True)
 
-            if self.xs_export:
-                options.cb_xs_export.setChecked(True)
-            else:
-                options.cb_xs_export.setChecked(False)
+        if not self.agency_options['ColorMap']['show']:
+            options.gb_color_map.hide()
+        if self.color_map == 'viridis':
+            options.rb_viridis.setChecked(True)
+        else:
+            options.rb_jet.setChecked(True)
 
-            # Execute the options window
-            rsp = options.exec_()
-            old_discharge = None
+        if self.x_axis_type == 'E':
+            options.rb_opt_ensembles.setChecked(True)
+        elif self.x_axis_type == 'L':
+            options.rb_opt_length.setChecked(True)
+        elif self.x_axis_type == 'T':
+            options.rb_opt_time.setChecked(True)
 
-            with self.wait_cursor():
-                # Apply settings from options window
-                if rsp == QtWidgets.QDialog.Accepted:
-                    self.change = False
-                    # Units options
-                    if options.rb_english.isChecked():
-                        if self.units['ID'] == 'SI':
-                            self.units = units_conversion(units_id='English')
-                            self.sticky_settings.set('UnitsID', 'English')
-                            self.update_main()
-                            self.change = True
-                    else:
-                        if self.units['ID'] == 'English':
-                            self.units = units_conversion(units_id='SI')
-                            self.sticky_settings.set('UnitsID', 'SI')
-                            self.update_main()
-                            self.change = True
+        if not self.agency_options['MovingBedObservation']['show']:
+            options.gb_moving_bed_option.hide()
+        if self.allow_observed_no_moving_bed:
+            options.cb_allow_manual_no_mb.setChecked(True)
+        else:
+            options.cb_allow_manual_no_mb.setChecked(False)
 
-                    # Color map
-                    if options.rb_viridis.isChecked():
-                        if self.color_map != 'viridis':
-                            self.color_map = 'viridis'
-                            self.sticky_settings.set('ColorMap', 'viridis')
-                            self.update_main()
-                            self.change = True
-                    else:
-                        if self.color_map != 'jet':
-                            self.color_map = 'jet'
-                            self.sticky_settings.set('ColorMap', 'jet')
-                            self.update_main()
-                            self.change = True
+        # Execute the options window
+        rsp = options.exec_()
+        old_discharge = None
 
-                    # Save options
-                    if options.rb_All.isChecked():
-                        self.save_all = True
-                    else:
-                        self.save_all = False
-
-                    # Stylesheet option
-                    if options.cb_stylesheet.isChecked():
-                        self.save_stylesheet = True
-                        self.sticky_settings.set('StyleSheet', True)
-                    else:
-                        self.save_stylesheet = False
-                        self.sticky_settings.set('StyleSheet', False)
-
-                    # Prompt for user rating
-                    if options.cb_rating.isChecked():
-                        self.rating_prompt = True
-                        self.sticky_settings.set('UserRating', True)
-                    else:
-                        self.rating_prompt = False
-                        self.sticky_settings.set('UserRating', False)
-
-                        # Prompt for xs export
-                        if options.cb_xs_export.isChecked():
-                            self.xs_export = True
-                            self.sticky_settings.set('XsExport', True)
-                        else:
-                            self.xs_export = False
-                            self.sticky_settings.set('XsExport', False)
-
-                        self.meas.export_xs = self.xs_export
-
-                    # Use of weighted medians for extrapolation fit
-                    if options.cb_weighted_extrap.isChecked():
-                        use_weighted = True
-                    else:
-                        use_weighted = False
-
-                    # Check for change in extraplation weighting
-                    if self.use_weighted != use_weighted:
-                        self.change = True
-                        # If change made with measurement loaded recompute
-                        # measurement
+        with self.wait_cursor():
+            # Apply settings from options window
+            if rsp == QtWidgets.QDialog.Accepted:
+                self.change = False
+                # Units options
+                if options.rb_english.isChecked():
+                    if self.units['ID'] == 'SI':
+                        self.units = units_conversion(units_id='English')
+                        self.sticky_settings.set('UnitsID', 'English')
                         if self.meas is not None:
-                            old_discharge = self.meas.discharge
-                            settings = self.meas.current_settings()
-                            settings['UseWeighted'] = use_weighted
-                            self.meas.apply_settings(settings)
-                            self.use_weighted = use_weighted
+                            self.update_main()
+                            self.change = True
+                else:
+                    if self.units['ID'] == 'English':
+                        self.units = units_conversion(units_id='SI')
+                        self.sticky_settings.set('UnitsID', 'SI')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+
+                # X Axis
+                if options.rb_opt_ensembles.isChecked():
+                    self.x_axis_type = 'E'
+                    self.sticky_settings.set('XAxis', 'E')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                elif options.rb_opt_length.isChecked():
+                    self.x_axis_type = 'L'
+                    self.sticky_settings.set('XAxis', 'L')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                elif options.rb_opt_time.isChecked():
+                    self.x_axis_type = 'T'
+                    self.sticky_settings.set('XAxis', 'T')
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                # Color map
+                if options.rb_viridis.isChecked():
+                    if self.color_map != 'viridis':
+                        self.color_map = 'viridis'
+                        self.sticky_settings.set('ColorMap', 'viridis')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+                else:
+                    if self.color_map != 'jet':
+                        self.color_map = 'jet'
+                        self.sticky_settings.set('ColorMap', 'jet')
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+
+                # Save options
+                if options.rb_All.isChecked():
+                    self.save_all = True
+                else:
+                    self.save_all = False
+
+                # Stylesheet option
+                if options.cb_stylesheet.isChecked():
+                    self.save_stylesheet = True
+                    self.sticky_settings.set('StyleSheet', True)
+                else:
+                    self.save_stylesheet = False
+                    self.sticky_settings.set('StyleSheet', False)
+
+                # Prompt for user rating
+                if options.cb_rating.isChecked():
+                    self.rating_prompt = True
+                    self.sticky_settings.set('UserRating', True)
+                else:
+                    self.rating_prompt = False
+                    self.sticky_settings.set('UserRating', False)
+
+                # Use of weighted medians for extrapolation fit
+                if options.cb_weighted_extrap.isChecked():
+                    use_weighted = True
+                else:
+                    use_weighted = False
+
+                # Check for change in extraplation weighting
+                if self.use_weighted != use_weighted:
+                    self.change = True
+                    # If change made with measurement loaded recompute
+                    # measurement
+                    if self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseWeighted'] = use_weighted
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseWeighted', use_weighted)
+                        self.use_weighted = use_weighted
 
                     # If change made before measurement loaded, set value
                     else:
                         self.use_weighted = use_weighted
+                        self.sticky_settings.set('UseWeighted', use_weighted)
 
-                    # Units options
-                    if options.rb_oursin_u.isChecked():
-                        use_oursin = True
+                # Filter measurement
+                if options.rb_filter_meas.isChecked():
+                    filter_meas = True
+                else:
+                    filter_meas = False
+
+                # Check for change in filter measurement
+                if self.use_measurement_thresholds != filter_meas:
+                    self.change = True
+                    # If change made with measurement loaded recompute
+                    # measurement
+                    if self.meas is not None:
+                        old_discharge = self.meas.discharge
+                        settings = self.meas.current_settings()
+                        settings['UseMeasurementThresholds'] = filter_meas
+                        self.meas.apply_settings(settings)
+                        self.sticky_settings.set('UseMeasurementThresholds',
+                                                 filter_meas)
+                        self.use_measurement_thresholds = filter_meas
+
+                    # If change made before measurement loaded, set value
                     else:
-                        use_oursin = False
+                        self.sticky_settings.set('UseMeasurementThresholds',
+                                                 filter_meas)
+                        self.use_measurement_thresholds = filter_meas
 
-                    # Check for change in uncertainty model
-                    if self.run_oursin != use_oursin:
-                        self.run_oursin = use_oursin
-                        self.sticky_settings.set('Oursin', use_oursin)
+                # Units options
+                if options.rb_oursin_u.isChecked():
+                    use_oursin = True
+                else:
+                    use_oursin = False
+
+                # Check for change in uncertainty model
+                if self.run_oursin != use_oursin:
+                    self.run_oursin = use_oursin
+                    self.sticky_settings.set('Oursin', use_oursin)
+                    if self.meas is not None:
                         if self.run_oursin:
                             # Uncertainty based on Oursin
                             self.meas.run_oursin = True
@@ -1433,11 +1706,13 @@ display.
                             # Uncertainty based on original QRev
                             self.tab_all.removeTab(
                                 self.tab_all.indexOf(
-                                    self.tab_all.findChild(QtWidgets.QWidget,
-                                                           'tab_uncertainty')))
+                                    self.tab_all.findChild(
+                                        QtWidgets.QWidget, 'tab_uncertainty')))
+                            self.meas.run_oursin = False
+                            self.meas.oursin = None
 
-                        # Change display of uncertainty on main tab
-                        # depending on selection
+                        # Change display of uncertainty on main tab depending
+                        # on selection
                         self.update_main_uncertainty()
 
                     # If change made before measurement loaded, set value
@@ -1445,13 +1720,21 @@ display.
                         self.sticky_settings.set('Oursin', use_oursin)
                         self.run_oursin = use_oursin
 
-                    self.manual_computational_settings = {
-                        'run_oursin': self.run_oursin,
-                        'use_measurement_thresholds':
-                            self.use_measurement_thresholds,
-                        'use_weighted': self.use_weighted}
+                self.manual_computational_settings = {
+                    'run_oursin': self.run_oursin,
+                    'use_measurement_thresholds':
+                        self.use_measurement_thresholds,
+                    'use_weighted': self.use_weighted}
+                # Allow observed no moving-bed
+                if options.cb_allow_manual_no_mb.isChecked():
+                    self.allow_observed_no_moving_bed = True
+                    self.sticky_settings.set('AllowNoMB', True)
+                else:
+                    self.allow_observed_no_moving_bed = False
+                    self.sticky_settings.set('AllowNoMB', False)
 
-                    # Update tabs
+                # Update tabs
+                if self.meas is not None:
                     if old_discharge is None:
                         self.tab_manager()
                     else:
@@ -1549,10 +1832,22 @@ display.
                         self.update_site_name)
                     self.ed_site_number.editingFinished.connect(
                         self.update_site_number)
+                    self.ed_persons.editingFinished.connect(
+                        self.update_persons)
+                    self.ed_meas_num.editingFinished.connect(
+                        self.update_meas_number)
+                    self.ed_stage_start.editingFinished.connect(
+                        self.update_stage_start)
+                    self.ed_stage_end.editingFinished.connect(
+                        self.update_stage_end)
+                    self.ed_stage_meas.editingFinished.connect(
+                        self.update_stage_meas)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust)
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
+                    self.cb_user_rating.currentIndexChanged.connect(
+                        self.rating_change)
 
                     # Main tab has been initialized
                     self.main_initialized = True
@@ -2182,13 +2477,13 @@ display.
 
     def main_uncertainty_plot(self):
         """Creates a lollipop plot for the Oursin uncertainty model.
-            """
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
+        """
+        # If the canvas has not been previously created, create the canvas and add the widget.
         if self.uncertainty_lollipop_canvas is None:
             # Create the canvas
-            self.uncertainty_lollipop_canvas = MplCanvas(
-                parent=self.uncertainty_lollipop, width=1, height=4, dpi=80)
+            self.uncertainty_lollipop_canvas = \
+                MplCanvas(parent=self.uncertainty_lollipop, width=1, height=4,
+                          dpi=80)
             # Assign layout to widget to allow auto scaling
             layout = QtWidgets.QVBoxLayout(self.uncertainty_lollipop)
             # Adjust margins of layout to maximize graphic area
@@ -2196,13 +2491,13 @@ display.
             # Add the canvas
             layout.addWidget(self.uncertainty_lollipop_canvas)
             # Initialize hidden toolbar for use by graphics controls
-            self.uncertainty_lollipop_toolbar = NavigationToolbar(
-                self.uncertainty_lollipop_canvas, self)
+            self.uncertainty_lollipop_toolbar = \
+                NavigationToolbar(self.uncertainty_lollipop_canvas, self)
             self.uncertainty_lollipop_toolbar.hide()
 
         # Initialize the figure and assign to the canvas
-        self.uncertainty_lollipop_fig = ULollipopPlot(
-            canvas=self.uncertainty_lollipop_canvas)
+        self.uncertainty_lollipop_fig = \
+            ULollipopPlot(canvas=self.uncertainty_lollipop_canvas)
         # Create the figure with the specified data
         self.uncertainty_lollipop_fig.create(meas=self.meas)
 
@@ -2329,7 +2624,7 @@ display.
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis.
-            """
+        """
         qa = self.meas.qa
         qa_check_keys = ['bt_vel', 'compass', 'depths', 'edges',
                          'extrapolation', 'gga_vel', 'movingbed', 'system_tst',
@@ -2338,7 +2633,16 @@ display.
         for key in qa_check_keys:
             qa_type = getattr(qa, key)
             self.set_icon(key, qa_type['status'])
-        self.set_tab_color()
+            self.set_tab_color()
+
+        gga = getattr(qa, 'gga_vel')
+        vtg = getattr(qa, 'vtg_vel')
+        if gga['lag_status'] == 'caution' or vtg['lag_status'] == 'caution':
+            self.set_icon('gps_bt', 'caution')
+            self.set_tab_color()
+        if gga['lag_status'] == 'warning' or vtg['lag_status'] == 'warning':
+            self.set_icon('gps_bt', 'warning')
+            self.set_tab_color()
 
     def set_icon(self, key, status):
         """Set tab icon based on qa check status.
@@ -2448,7 +2752,7 @@ display.
     def set_tab_color(self):
 
         """Updates tab font to Blue if a setting was changed from the
-            default settings."""
+        default settings."""
 
         if self.meas.qa is not None:
             for tab in self.meas.qa.settings_dict:
@@ -2456,19 +2760,40 @@ display.
                 if tab != "tab_gps":
 
                     if self.meas.qa.settings_dict[tab] == 'Custom':
+
                         self.tab_all.tabBar().setTabTextColor(
                             self.tab_all.indexOf(
-                                self.tab_all.findChild(QtWidgets.QWidget,
-                                                       tab)),
+                                self.tab_all.findChild(QtWidgets.QWidget, tab)),
                             QtGui.QColor(0, 0, 255))
+                        if tab == 'tab_uncertainty_2_advanced':
+                            self.tab_uncertainty_2.tabBar().setTabTextColor(
+                                self.tab_uncertainty_2.indexOf(
+                                    self.tab_uncertainty_2.findChild(
+                                        QtWidgets.QWidget, tab)),
+                                QtGui.QColor(0, 0, 255))
+
+                    elif tab == 'tab_uncertainty':
+                        self.tab_all.tabBar().setTabTextColor(
+                            self.tab_all.indexOf(
+                                self.tab_all.findChild(
+                                    QtWidgets.QWidget, tab)),
+                            QtGui.QColor(0, 0, 0))
+
+                    elif tab == 'tab_uncertainty_2_advanced':
+                        self.tab_uncertainty_2.tabBar().setTabTextColor(
+                            self.tab_uncertainty_2.indexOf(
+                                self.tab_uncertainty_2.findChild(
+                                    QtWidgets.QWidget, tab)),
+                            QtGui.QColor(0, 0, 0))
 
                 else:
                     if self.tab_all.isTabEnabled(6) is True:
                         if self.meas.qa.settings_dict[tab] == 'Custom':
+
                             self.tab_all.tabBar().setTabTextColor(
                                 self.tab_all.indexOf(
-                                    self.tab_all.findChild(QtWidgets.QWidget,
-                                                           tab)),
+                                    self.tab_all.findChild(
+                                        QtWidgets.QWidget, tab)),
                                 QtGui.QColor(0, 0, 255))
 
     def comments_tab(self):
@@ -2840,7 +3165,7 @@ display.
 
     def main_premeasurement_table(self):
         """Initialize and populate the premeasurement table.
-            """
+        """
 
         # Initialize and connect the station name and number fields
         font = self.label_site_name.font()
@@ -2867,6 +3192,22 @@ display.
             self.label_site_number.setStyleSheet('background: white')
             self.label_site_number.setToolTip('')
 
+        self.ed_persons.setText(self.meas.persons)
+        self.ed_meas_num.setText(self.meas.meas_number)
+
+        self.label_stage_start.setText('Stage start ' + self.units['label_L'] +
+                                       ':')
+        self.ed_stage_start.setText('{:3.4f}'.format(self.meas.stage_start_m *
+                                                     self.units['L']))
+        self.label_stage_end.setText('Stage end ' + self.units['label_L'] +
+                                     ':')
+        self.ed_stage_end.setText('{:3.4f}'.format(self.meas.stage_end_m *
+                                                   self.units['L']))
+        self.label_stage_meas.setText('Stage meas ' + self.units['label_L'] +
+                                      ':')
+        self.ed_stage_meas.setText('{:3.4f}'.format(self.meas.stage_meas_m *
+                                                    self.units['L']))
+
         # Setup table
         tbl = self.table_premeas
         ncols = 4
@@ -2880,8 +3221,8 @@ display.
         if len(self.checked_transects_idx) > 0:
 
             # ADCP Test
-            tbl.setItem(0, 0,
-                        QtWidgets.QTableWidgetItem(self.tr('ADCP Test: ')))
+            tbl.setItem(0, 0, QtWidgets.QTableWidgetItem(
+                self.tr('ADCP Test: ')))
             tbl.item(0, 0).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.item(0, 0).setFont(self.font_bold)
             # Determine is a system test was recorded
@@ -2899,8 +3240,8 @@ display.
             num_tests_with_failure = 0
             for test in self.meas.system_tst:
                 if hasattr(test, 'result'):
-                    if test.result['sysTest']['n_failed'] is not None and \
-                            test.result['sysTest']['n_failed'] > 0:
+                    if test.result['sysTest']['n_failed'] is not None \
+                            and test.result['sysTest']['n_failed'] > 0:
                         num_tests_with_failure += 1
             tbl.setItem(0, 3, QtWidgets.QTableWidgetItem(
                 '{:2.0f}'.format(num_tests_with_failure)))
@@ -2925,16 +3266,15 @@ display.
             if len(self.meas.compass_eval) == 0:
                 tbl.setItem(1, 3, QtWidgets.QTableWidgetItem(self.tr('No')))
             else:
-                if self.meas.compass_eval[-1].result['compass'][
-                    'error'] != 'N/A':
+                if self.meas.compass_eval[-1].result['compass']['error'] != \
+                        'N/A':
                     tbl.setItem(1, 3, QtWidgets.QTableWidgetItem(
-                        '{:3.1f}'.format(
-                            self.meas.compass_eval[-1].result['compass'][
-                                'error'])))
+                        '{:3.1f}'.format(self.meas.compass_eval[
+                                             -1].result['compass']['error'])))
                 else:
                     tbl.setItem(1, 3, QtWidgets.QTableWidgetItem(
-                        str(self.meas.compass_eval[-1].result['compass'][
-                                'error'])))
+                        str(self.meas.compass_eval[-1].result['compass']
+                            ['error'])))
             tbl.item(1, 3).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Moving-Bed Test
@@ -2949,13 +3289,13 @@ display.
             tbl.item(2, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Report if the test indicated a moving bed
-            tbl.setItem(2, 2,
-                        QtWidgets.QTableWidgetItem(self.tr('Moving-Bed?: ')))
+            tbl.setItem(2, 2, QtWidgets.QTableWidgetItem(
+                self.tr('Moving-Bed?: ')))
             tbl.item(2, 2).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.item(2, 2).setFont(self.font_bold)
             if len(self.meas.mb_tests) < 1:
-                tbl.setItem(2, 3,
-                            QtWidgets.QTableWidgetItem(self.tr('Unknown')))
+                tbl.setItem(2, 3, QtWidgets.QTableWidgetItem(
+                    self.tr('Unknown')))
             else:
                 moving_bed = 'No'
                 for test in self.meas.mb_tests:
@@ -2970,8 +3310,8 @@ display.
                 self.tr('Independent Temperature (C): ')))
             tbl.item(3, 0).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.item(3, 0).setFont(self.font_bold)
-            if type(self.meas.ext_temp_chk['user']) != float or np.isnan(
-                    self.meas.ext_temp_chk['user']):
+            if type(self.meas.ext_temp_chk['user']) != float or \
+                    np.isnan(self.meas.ext_temp_chk['user']):
                 tbl.setItem(3, 1, QtWidgets.QTableWidgetItem(self.tr('N/A')))
             else:
                 tbl.setItem(3, 1, QtWidgets.QTableWidgetItem(
@@ -2983,8 +3323,8 @@ display.
                 self.tr('ADCP Temperature (C): ')))
             tbl.item(3, 2).setFlags(QtCore.Qt.ItemIsEnabled)
             tbl.item(3, 2).setFont(self.font_bold)
-            if type(self.meas.ext_temp_chk['adcp']) != float or np.isnan(
-                    self.meas.ext_temp_chk['adcp']):
+            if type(self.meas.ext_temp_chk['adcp']) != float or \
+                    np.isnan(self.meas.ext_temp_chk['adcp']):
                 avg_temp = Sensors.avg_temperature(self.meas.transects)
                 tbl.setItem(3, 3, QtWidgets.QTableWidgetItem(
                     '{:4.1f}'.format(avg_temp)))
@@ -3001,11 +3341,11 @@ display.
             magvar = []
             for transect in self.meas.transects:
                 if transect.checked:
-                    magvar.append(
-                        transect.sensors.heading_deg.internal.mag_var_deg)
+                    magvar.append(transect.sensors.heading_deg.
+                                  internal.mag_var_deg)
             if len(np.unique(magvar)) > 1:
-                tbl.setItem(4, 1,
-                            QtWidgets.QTableWidgetItem(self.tr('Varies')))
+                tbl.setItem(4, 1, QtWidgets.QTableWidgetItem(
+                    self.tr('Varies')))
             else:
                 tbl.setItem(4, 1, QtWidgets.QTableWidgetItem(
                     '{:4.1f}'.format(magvar[0])))
@@ -3019,15 +3359,14 @@ display.
             hoffset = []
             for transect in self.meas.transects:
                 if transect.sensors.heading_deg.external is None:
-                    tbl.setItem(4, 3,
-                                QtWidgets.QTableWidgetItem(self.tr('N/A')))
+                    tbl.setItem(4, 3, QtWidgets.QTableWidgetItem(
+                        self.tr('N/A')))
                 if transect.checked:
-                    hoffset.append(
-                        transect.sensors.heading_deg.internal
-                            .align_correction_deg)
+                    hoffset.append(transect.sensors.heading_deg.internal.
+                                   align_correction_deg)
             if len(np.unique(hoffset)) > 1:
-                tbl.setItem(4, 3,
-                            QtWidgets.QTableWidgetItem(self.tr('Varies')))
+                tbl.setItem(4, 3, QtWidgets.QTableWidgetItem(
+                    self.tr('Varies')))
             else:
                 tbl.setItem(4, 3, QtWidgets.QTableWidgetItem(
                     '{:4.1f}'.format(hoffset[0])))
@@ -3054,6 +3393,46 @@ display.
             self.label_site_number.setStyleSheet('background: white')
         self.meas.qa.user_qa(self.meas)
         self.messages_tab()
+        self.main_premeasurement_table()
+
+    def update_persons(self):
+        """Sets the person(s) to the information entered by the user.
+        """
+        self.meas.persons = self.ed_persons.text()
+        self.main_premeasurement_table()
+
+    def update_meas_number(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        self.meas.meas_number = self.ed_meas_num.text()
+        self.main_premeasurement_table()
+
+    def update_stage_start(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_start)
+        if stage is not None:
+            self.meas.stage_start_m = stage / self.units['L']
+            self.meas.stage_meas_m = (self.meas.stage_start_m +
+                                      self.meas.stage_end_m) / 2.
+        self.main_premeasurement_table()
+
+    def update_stage_end(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_end)
+        if stage is not None:
+            self.meas.stage_end_m = stage / self.units['L']
+            self.meas.stage_meas_m = (self.meas.stage_start_m +
+                                      self.meas.stage_end_m) / 2.
+        self.main_premeasurement_table()
+
+    def update_stage_meas(self):
+        """Sets the measurement number to the information entered by the user.
+        """
+        stage = self.check_numeric_input(self.ed_stage_meas)
+        if stage is not None:
+            self.meas.stage_meas_m = stage / self.units['L']
         self.main_premeasurement_table()
 
     def main_settings_table(self):
@@ -3374,9 +3753,10 @@ display.
                 self.checked_transects_idx[0]].adcp.manufacturer == 'Nortek':
                 item = 'Variable'
             else:
-                item = '{:2.0f}'.format(self.meas.transects[
-                                            self.checked_transects_idx[
-                                                0]].boat_vel.bt_vel.bottom_mode)
+                item = \
+                    '{:2.0f}'.format(self.meas.transects[
+                                         self.checked_transects_idx[
+                                             0]].boat_vel.bt_vel.bottom_mode)
             tbl.setItem(3, 3, QtWidgets.QTableWidgetItem(item))
             tbl.item(3, 3).setFlags(QtCore.Qt.ItemIsEnabled)
 
@@ -4201,7 +4581,8 @@ display.
                         # Update compass tab
                         self.change_table_data(tbl=tbl,
                                                old_discharge=old_discharge,
-                                               new_discharge=self.meas.discharge)
+                                               new_discharge=
+                                               self.meas.discharge)
                         self.change = True
 
         # Heading Offset
@@ -4478,15 +4859,15 @@ display.
     def update_tempsal_tab(self, tbl, old_discharge, new_discharge):
         """Updates all data displayed on the tempsal tab.
 
-            Parameters
-            ==========
-            tbl: QWidget
-                Reference to QTableWidget
-            old_discharge: list
-                List of objects of QComp with previous settings
-            new_discharge: list
-                List of objects of QComp  after change applied
-            """
+        Parameters
+        ==========
+        tbl: QWidget
+            Reference to QTableWidget
+        old_discharge: list
+            List of objects of QComp with previous settings
+        new_discharge: list
+            List of objects of QComp  after change applied
+        """
 
         # Initialize array to accumalate all temperature data
         temp_all = np.array([])
@@ -4504,89 +4885,100 @@ display.
 
             # Temperature source
             col += 1
-            item = 'Internal (ADCP)'
-            if self.meas.transects[
-                transect_id].sensors.temperature_deg_c.selected == 'user':
+            item = self.tr('Internal (ADCP)')
+            if self.meas.transects[transect_id].\
+                    sensors.temperature_deg_c.selected == 'user':
                 item = 'User'
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Average temperature for transect
             col += 1
-            temp = getattr(
-                self.meas.transects[transect_id].sensors.temperature_deg_c,
-                self.meas.transects[
-                    transect_id].sensors.temperature_deg_c.selected)
+            temp = getattr(self.meas.transects[transect_id].
+                           sensors.temperature_deg_c,
+                           self.meas.transects[transect_id].
+                           sensors.temperature_deg_c.selected)
             temp_converted = temp.data
             if self.rb_f.isChecked():
                 temp_converted = convert_temperature(temp_in=temp.data,
                                                      units_in='C',
                                                      units_out='F')
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:3.1f}'.format(np.nanmean(temp_converted))))
+            tbl.setItem(row, col,
+                        QtWidgets.QTableWidgetItem('{:3.1f}'.
+                                                   format(np.nanmean(
+                            temp_converted))))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Salinity for transect
             col += 1
-            sal = getattr(
-                self.meas.transects[transect_id].sensors.salinity_ppt,
-                self.meas.transects[transect_id].sensors.salinity_ppt.selected)
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:3.1f}'.format(np.nanmean(sal.data))))
+            sal = getattr(self.meas.transects[transect_id].
+                          sensors.salinity_ppt,
+                          self.meas.transects[transect_id].
+                          sensors.salinity_ppt.selected)
+            tbl.setItem(row, col,
+                        QtWidgets.QTableWidgetItem('{:3.1f}'.
+                                                   format(np.nanmean(
+                            sal.data))))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Speed of sound source
             col += 1
-            item = 'User'
-            if self.meas.transects[
-                transect_id].sensors.speed_of_sound_mps.selected == 'internal':
-                if self.meas.transects[
-                    transect_id].sensors.speed_of_sound_mps.internal.source\
-                        .strip() == 'Calculated':
-                    item = 'Internal (ADCP)'
+            item = self.tr('User')
+            if self.meas.transects[transect_id].sensors.\
+                    speed_of_sound_mps.selected == 'internal':
+                if self.meas.transects[transect_id].sensors.\
+                        speed_of_sound_mps.internal.source.strip() == \
+                        'Calculated':
+                    item = self.tr('Internal (ADCP)')
                 else:
-                    item = 'Computed'
+                    item = self.tr('Computed')
 
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Average speed of sound
             col += 1
-            sos = getattr(
-                self.meas.transects[transect_id].sensors.speed_of_sound_mps,
-                self.meas.transects[
-                    transect_id].sensors.speed_of_sound_mps.selected)
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:3.1f}'.format(np.nanmean(sos.data) * self.units['V'])))
+            sos = getattr(self.meas.transects[transect_id].
+                          sensors.speed_of_sound_mps,
+                          self.meas.transects[transect_id].
+                          sensors.speed_of_sound_mps.selected)
+            tbl.setItem(row, col,
+                        QtWidgets.QTableWidgetItem('{:3.1f}'.format(
+                            np.nanmean(sos.data) * self.units['V'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Discharge before changes
             col += 1
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:8.3f}'.format(
-                    old_discharge[transect_id].total * self.units['Q'])))
+                '{:8.3f}'.format(old_discharge[transect_id].total *
+                                 self.units['Q'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Discharge after changes
             col += 1
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:8.3f}'.format(
-                    new_discharge[transect_id].total * self.units['Q'])))
+                '{:8.3f}'.format(new_discharge[transect_id].total *
+                                 self.units['Q'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Percent change in discharge
             col += 1
-            per_change = ((new_discharge[transect_id].total - old_discharge[
-                transect_id].total)
-                          / old_discharge[transect_id].total) * 100
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                '{:3.1f}'.format(per_change)))
+            if np.abs(old_discharge[transect_id].total) > 0:
+                per_change = ((new_discharge[transect_id].total -
+                               old_discharge[transect_id].total)
+                              / old_discharge[transect_id].total) * 100
+                tbl.setItem(row, col,
+                            QtWidgets.QTableWidgetItem('{:3.1f}'.
+                                                       format(per_change)))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
-            # Accumulate all temperature data in a single array used to
-            # compute mean temperature
-            temp_all = np.append(temp_all, self.meas.transects[
-                transect_id].sensors.temperature_deg_c.internal.data)
+            # Accumulate all temperature data in a single array used to compute
+            # mean temperature
+            temp_all = np.append(temp_all,
+                                 self.meas.transects[transect_id].sensors.
+                                 temperature_deg_c.internal.data)
 
         tbl.resizeColumnsToContents()
         tbl.resizeRowsToContents()
@@ -4596,11 +4988,11 @@ display.
             if np.isnan(self.meas.ext_temp_chk['user']):
                 self.ed_user_temp.setText('')
                 self.pb_ind_temp_apply.setEnabled(False)
-                self.label_independent.setStyleSheet(
-                    'background: #ffcc00; font: 12pt MS Shell Dlg '
-                    '2;QToolTip{font: 12pt}')
-                self.label_independent.setToolTip(
-                    self.tr('No user supplied temperature.'))
+                self.label_independent.setStyleSheet('background: #ffcc00; '
+                                                     'font: 12pt MS Shell Dlg'
+                                                     ' 2;QToolTip{font: 12pt}')
+                self.label_independent.setToolTip(self.tr('No user supplied '
+                                                          'temperature.'))
             else:
                 temp = float(self.meas.ext_temp_chk['user'])
                 if self.rb_f.isChecked():
@@ -4608,8 +5000,8 @@ display.
                                                units_in='C', units_out='F')
                 self.ed_user_temp.setText('{:3.1f}'.format(temp))
                 self.pb_ind_temp_apply.setEnabled(False)
-                self.label_independent.setStyleSheet(
-                    'background: white; font: 12pt MS Shell Dlg 2')
+                self.label_independent.setStyleSheet('background: white; font:'
+                                                     ' 12pt MS Shell Dlg 2')
         except (ValueError, TypeError):
             self.ed_user_temp.setText('')
             self.pb_ind_temp_apply.setEnabled(False)
@@ -4981,7 +5373,7 @@ display.
     def movbedtst_tab(self):
         """Initialize, setup settings, and display initial data in
         moving-bed test tab.
-            """
+               """
 
         # Setup data table
         tbl = self.table_moving_bed
@@ -5006,6 +5398,16 @@ display.
         ncols = len(table_header)
         nrows = len(self.meas.mb_tests)
 
+        # Display option to manually certify there is no moving bed, if the
+        # option is available or
+        # if the loaded data used that option.
+        if nrows == 0 and (
+                self.allow_observed_no_moving_bed or
+                self.meas.observed_no_moving_bed):
+            self.cb_mb_observed_no.show()
+            self.cb_mb_observed_no.setChecked(self.meas.observed_no_moving_bed)
+        else:
+            self.cb_mb_observed_no.hide()
         tbl.setRowCount(nrows)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(table_header)
@@ -5035,6 +5437,8 @@ display.
             self.cb_mb_gga.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_vtg.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_vectors.stateChanged.connect(self.mb_plot_change)
+            self.cb_mb_observed_no.stateChanged.connect(
+                self.mb_observed_change)
 
             self.mb_initialized = True
         self.mb_row = self.mb_row_selected
@@ -5042,7 +5446,7 @@ display.
 
     def update_mb_table(self):
         """Populates the moving-bed table with the current settings and data.
-            """
+        """
 
         with self.wait_cursor():
 
@@ -5058,8 +5462,7 @@ display.
                 # User Valid
                 col = 0
                 checked = QtWidgets.QTableWidgetItem('')
-                checked.setFlags(
-                    QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checked.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(checked))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.mb_tests[row].user_valid:
@@ -5070,8 +5473,7 @@ display.
                 # Use for Correction
                 col += 1
                 checked2 = QtWidgets.QTableWidgetItem('')
-                checked2.setFlags(
-                    QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checked2.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(checked2))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 tbl.item(row, col).setCheckState(QtCore.Qt.Unchecked)
@@ -5082,19 +5484,16 @@ display.
                 # Use GPS for test
                 col += 1
                 checked3 = QtWidgets.QTableWidgetItem('')
-                checked3.setFlags(
-                    QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checked3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(checked3))
                 tbl.item(row, col).setCheckState(QtCore.Qt.Unchecked)
                 if self.meas.mb_tests[row].ref == 'GPS':
                     tbl.item(row, col).setCheckState(QtCore.Qt.Checked)
-                has_gps.append(np.logical_not(
-                    np.isnan(self.meas.mb_tests[row].gps_percent_mb)))
+                has_gps.append(np.logical_not(np.isnan(self.meas.mb_tests[row].gps_percent_mb)))
 
                 # Filename
                 col += 1
-                item = os.path.basename(
-                    self.meas.mb_tests[row].transect.file_name)
+                item = os.path.basename(self.meas.mb_tests[row].transect.file_name)
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item[:-4]))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if self.meas.mb_tests[row].selected:
@@ -5103,8 +5502,7 @@ display.
 
                 # Type
                 col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    self.meas.mb_tests[row].type))
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(self.meas.mb_tests[row].type))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Duration
@@ -5117,8 +5515,7 @@ display.
 
                 # Distance Upstream
                 col += 1
-                item = '{:4.1f}'.format(
-                    self.meas.mb_tests[row].dist_us_m * self.units['L'])
+                item = '{:4.1f}'.format(self.meas.mb_tests[row].dist_us_m * self.units['L'])
                 if 'nan' in item:
                     item = ''
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -5126,8 +5523,7 @@ display.
 
                 # Moving-Bed Speed
                 col += 1
-                item = '{:3.2f}'.format(
-                    self.meas.mb_tests[row].mb_spd_mps * self.units['V'])
+                item = '{:3.2f}'.format(self.meas.mb_tests[row].mb_spd_mps * self.units['V'])
                 if 'nan' in item:
                     item = ''
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -5145,8 +5541,7 @@ display.
 
                 # Flow Speed
                 col += 1
-                item = '{:3.1f}'.format(
-                    self.meas.mb_tests[row].flow_spd_mps * self.units['V'])
+                item = '{:3.1f}'.format(self.meas.mb_tests[row].flow_spd_mps * self.units['V'])
                 if 'nan' in item:
                     item = ''
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -5163,8 +5558,7 @@ display.
 
                 # Percent Invalid BT
                 col += 1
-                item = '{:3.1f}'.format(
-                    self.meas.mb_tests[row].percent_invalid_bt)
+                item = '{:3.1f}'.format(self.meas.mb_tests[row].percent_invalid_bt)
                 if 'nan' in item:
                     item = ''
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -5173,8 +5567,7 @@ display.
                 # Compass Error
                 col += 1
                 if type(self.meas.mb_tests[row].compass_diff_deg) is not list:
-                    item = '{:3.1f}'.format(
-                        self.meas.mb_tests[row].compass_diff_deg)
+                    item = '{:3.1f}'.format(self.meas.mb_tests[row].compass_diff_deg)
                     if 'nan' in item:
                         item = ''
                     tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
@@ -5214,181 +5607,158 @@ display.
                 tbl.setColumnHidden(2, False)
 
     def mb_table_clicked(self, row, column):
-        """Manages actions caused by the user clicking in selected columns
-        of the table.
+        """Manages actions caused by the user clicking in selected columns of the table.
 
-            Parameters
-            ==========
-            row: int
-                row in table clicked by user
-            column: int
-                column in table clicked by user
-            """
+        Parameters
+        ==========
+        row: int
+            row in table clicked by user
+        column: int
+            column in table clicked by user
+        """
 
         tbl = self.table_moving_bed
         reprocess_measurement = True
         tbl.blockSignals(True)
-        with self.wait_cursor():
-            # User valid
-            if column == 0:
-                if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
-                    self.meas.mb_tests[row].user_valid = False
-                    self.add_comment()
-                else:
-                    self.meas.mb_tests[row].user_valid = True
-                    self.add_comment()
 
-                self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                    moving_bed_tests=self.meas.mb_tests,
-                    boat_ref=self.meas.transects[
-                        self.checked_transects_idx[0]].w_vel.nav_ref)
+        # User valid
+        if column == 0:
+            if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
+                self.meas.mb_tests[row].user_valid = False
+                self.add_comment()
+            else:
+                self.meas.mb_tests[row].user_valid = True
+                self.add_comment()
 
-            # Use to correct, manual override
-            if column == 1:
-                if self.meas.transects[
-                    self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
-                    quality = tbl.item(row, 15).text()
-                    # Identify a moving-bed condition
+            self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                moving_bed_tests=self.meas.mb_tests,
+                boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-                    moving_bed_idx = []
-                    for n, test in enumerate(self.meas.mb_tests):
-                        if test.selected:
-                            if test.moving_bed == 'Yes':
-                                moving_bed_idx.append(n)
+        # Use to correct, manual override
+        if column == 1:
+            if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == 'BT':
+                quality = tbl.item(row, 15).text()
+                # Identify a moving-bed condition
 
-                    if quality == 'Manual':
-                        # Cancel Manual
-                        self.meas.mb_tests[row].use_2_correct = False
-                        self.meas.mb_tests[row].moving_bed = 'Unknown'
-                        self.meas.mb_tests[row].selected = False
-                        self.meas.mb_tests[row].test_quality = "Errors"
-                        self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
-                            moving_bed_tests=self.meas.mb_tests,
-                            boat_ref=self.meas.transects[
-                                self.checked_transects_idx[0]].w_vel.nav_ref)
+                moving_bed_idx = []
+                for n, test in enumerate(self.meas.mb_tests):
+                    if test.selected:
+                        if test.moving_bed == 'Yes':
+                            moving_bed_idx.append(n)
 
-                    elif quality == 'Errors':
-                        # Manual override
-                        # Warn user and force acknowledgement before proceeding
-                        user_warning = QtWidgets.QMessageBox.question(self,
-                                                                      'Moving-Bed Test Manual Override',
-                                                                      'QRev '
-                                                                      'has '
-                                                                      'determined this moving-bed test has '
-                                                                      'critical errors and does not recommend using it '
-                                                                      'for '
-                                                                      'correction. If you choose to use the test '
-                                                                      'anyway you will be required to justify its use.',
-                                                                      QtWidgets.QMessageBox.Ok |
-                                                                      QtWidgets.QMessageBox.Cancel,
-                                                                      QtWidgets.QMessageBox.Cancel)
-                        if user_warning == QtWidgets.QMessageBox.Ok:
-                            # Apply manual override
-                            self.add_comment()
-                            self.meas.mb_tests[row].use_2_correct = True
-                            self.meas.mb_tests[row].moving_bed = 'Yes'
-                            self.meas.mb_tests[row].selected = True
-                            self.meas.mb_tests[row].test_quality = "Manual"
-                        else:
-                            reprocess_measurement = False
-
-                    elif len(moving_bed_idx) > 0:
-                        if row in moving_bed_idx:
-                            if tbl.item(row,
-                                        1).checkState() == QtCore.Qt.Checked:
-                                self.meas.mb_tests[row].use_2_correct = False
-                                self.add_comment()
-                            else:
-                                # Apply setting
-                                self.meas.mb_tests[row].use_2_correct = True
-
-                                # Check to make sure the selected test are
-                                # of the same type
-                                test_type = []
-                                test_quality = []
-                                for test in self.meas.mb_tests:
-                                    if test.selected:
-                                        test_type.append(test.type)
-                                        test_quality = test.test_quality
-                                unique_types = set(test_type)
-                                if len(unique_types) == 1:
-
-                                    # Check for errors
-                                    if 'Errors' not in test_quality:
-
-                                        # Multiple loops not allowed
-                                        if test_type == 'Loop' and len(
-                                                test_type) > 1:
-                                            self.meas.mb_tests[
-                                                row].use_2_correct = False
-                                            reprocess_measurement = False
-                                            self.popup_message(
-                                                'Only one loop can be '
-                                                'applied. Select the best '
-                                                'loop.')
-
-                                else:
-                                    # Mixing of stationary and loop tests
-                                    # are not allowed
-                                    self.meas.mb_tests[
-                                        row].use_2_correct = False
-                                    reprocess_measurement = False
-                                    self.popup_message(
-                                        'Application of mixed moving-bed '
-                                        'test types is not allowed.' +
-                                        'Select only one loop or one or more '
-                                        'stationary tests.')
-                        else:
-                            self.popup_message(
-                                'This moving-bed test is not being used. ' +
-                                'Only those tests with Bold file names can '
-                                'be used.')
-
-                    else:
-                        # No moving-bed, so no moving-bed correction is applied
-                        reprocess_measurement = False
-                        self.popup_message(
-                            'There is no moving-bed. Correction cannot be '
-                            'applied.')
-                else:
-                    self.popup_message(
-                        'Bottom track is not the selected reference. A '
-                        'moving-bed correction cannot' +
-                        ' be applied.')
-
-            # Use GPS for Test
-            elif column == 2:
-                # Determine if selected test has been processed using GPS
-                if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
-                    tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
-                    reprocess_measurement = False
-                    self.change = False
-                else:
-                    if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
-                        self.meas.mb_tests[row].change_ref(ref='GPS')
-                    else:
-                        self.meas.mb_tests[row].change_ref(ref='BT')
+                if quality == 'Manual':
+                    # Cancel Manual
+                    self.meas.mb_tests[row].use_2_correct = False
+                    self.meas.mb_tests[row].moving_bed = 'Unknown'
+                    self.meas.mb_tests[row].selected = False
+                    self.meas.mb_tests[row].test_quality = "Errors"
                     self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
                         moving_bed_tests=self.meas.mb_tests,
-                        boat_ref=self.meas.transects[
-                            self.checked_transects_idx[0]].w_vel.nav_ref)
+                        boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-            # Data to plot
-            elif column == 3:
-                self.mb_plots(idx=row)
-                self.mb_row = row
+                elif quality == 'Errors':
+                    # Manual override
+                    # Warn user and force acknowledgement before proceeding
+                    user_warning = QtWidgets.QMessageBox.question(self,
+                                                                  self.tr('Moving-Bed Test Manual Override'),
+                                                                  self.tr('QRev has determined this moving-bed test has'
+                                                                          ' critical errors and does not recommend '
+                                                                          'using it for correction. If you choose to '
+                                                                          'use the test anyway you will be required to '
+                                                                          'justify its use.'),
+                                                                  QtWidgets.QMessageBox.Ok |
+                                                                  QtWidgets.QMessageBox.Cancel,
+                                                                  QtWidgets.QMessageBox.Cancel)
+                    if user_warning == QtWidgets.QMessageBox.Ok:
+                        # Apply manual override
+                        self.add_comment()
+                        self.meas.mb_tests[row].use_2_correct = True
+                        self.meas.mb_tests[row].moving_bed = 'Yes'
+                        self.meas.mb_tests[row].selected = True
+                        self.meas.mb_tests[row].test_quality = "Manual"
+                    else:
+                        reprocess_measurement = False
+
+                elif len(moving_bed_idx) > 0:
+                    if row in moving_bed_idx:
+                        if tbl.item(row, 1).checkState() == QtCore.Qt.Checked:
+                            self.meas.mb_tests[row].use_2_correct = False
+                            self.add_comment()
+                        else:
+                            # Apply setting
+                            self.meas.mb_tests[row].use_2_correct = True
+
+                            # Check to make sure the selected test are of the same type
+                            test_type = []
+                            test_quality = []
+                            for test in self.meas.mb_tests:
+                                if test.selected:
+                                    test_type.append(test.type)
+                                    test_quality = test.test_quality
+                            unique_types = set(test_type)
+                            if len(unique_types) == 1:
+
+                                # Check for errors
+                                if 'Errors' not in test_quality:
+
+                                    # Multiple loops not allowed
+                                    if test_type == 'Loop' and len(test_type) > 1:
+                                        self.meas.mb_tests[row].use_2_correct = False
+                                        reprocess_measurement = False
+                                        self.popup_message(self.tr('Only one loop can be applied. '
+                                                                   'Select the best loop.'))
+
+                            else:
+                                # Mixing of stationary and loop tests are not allowed
+                                self.meas.mb_tests[row].use_2_correct = False
+                                reprocess_measurement = False
+                                self.popup_message(self.tr('Application of mixed moving-bed test types is not allowed.'
+                                                           'Select only one loop or one or more stationary tests.'))
+                    else:
+                        self.popup_message(self.tr('This moving-bed test is not being used. ' 
+                                                   'Only those tests with Bold file names can be used.'))
+
+                else:
+                    # No moving-bed, so no moving-bed correction is applied
+                    reprocess_measurement = False
+                    self.popup_message(self.tr('There is no moving-bed. Correction cannot be applied.'))
+            else:
+                self.popup_message(self.tr('Bottom track is not the selected reference. A moving-bed correction '
+                                           'cannot be applied.'))
+
+        # Use GPS for Test
+        elif column == 2:
+            # Determine if selected test has been processed using GPS
+            if np.isnan(self.meas.mb_tests[row].gps_percent_mb):
+                tbl.item(row, column).setCheckState(QtCore.Qt.Unchecked)
                 reprocess_measurement = False
                 self.change = False
+            else:
+                if tbl.item(row, column).checkState() == QtCore.Qt.Checked:
+                    self.meas.mb_tests[row].change_ref(ref='GPS')
+                else:
+                    self.meas.mb_tests[row].change_ref(ref='BT')
+                self.meas.mb_tests = MovingBedTests.auto_use_2_correct(
+                    moving_bed_tests=self.meas.mb_tests,
+                    boat_ref=self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref)
 
-            # If changes were made reprocess the measurement
-            if reprocess_measurement:
+        # Data to plot
+        elif column == 3:
+            self.mb_plots(idx=row)
+            self.mb_row = row
+            reprocess_measurement = False
+            self.change = False
+
+        # If changes were made reprocess the measurement
+        if reprocess_measurement:
+            with self.wait_cursor():
                 self.meas.compute_discharge()
                 self.meas.compute_uncertainty()
                 self.meas.qa.moving_bed_qa(self.meas)
                 self.change = True
 
-            self.update_mb_table()
-            self.mb_comments_messages()
+        self.update_mb_table()
+        self.mb_comments_messages()
 
         tbl.blockSignals(False)
         self.tab_mbt_2_data.setFocus()
@@ -5396,11 +5766,11 @@ display.
     def mb_plots(self, idx=0):
         """Creates graphics specific to the type of moving-bed test.
 
-            Parameters
-            ----------
-            idx: int
-                Index of the test to be plotted.
-            """
+        Parameters
+        ----------
+        idx: int
+            Index of the test to be plotted.
+        """
         self.cb_mb_bt.blockSignals(True)
         self.cb_mb_gga.blockSignals(True)
         self.cb_mb_vtg.blockSignals(True)
@@ -5415,8 +5785,7 @@ display.
         if len(self.meas.mb_tests) > 0:
             # Show name of test plotted
             try:
-                item = os.path.basename(
-                    self.meas.mb_tests[idx].transect.file_name)
+                item = os.path.basename(self.meas.mb_tests[idx].transect.file_name)
             except IndexError:
                 item = self.meas.mb_tests[idx].transect.file_name
             self.txt_mb_plotted.setText(item[:-4])
@@ -5453,11 +5822,11 @@ display.
     def mb_shiptrack(self, transect):
         """Creates shiptrack plot for data in transect.
 
-            Parameters
-            ----------
-            transect: TransectData
-                Object of TransectData with data to be plotted.
-            """
+        Parameters
+        ----------
+        transect: TransectData
+            Object of TransectData with data to be plotted.
+        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -5494,11 +5863,11 @@ display.
     def mb_boat_speed(self, transect):
         """Creates boat speed plot for data in transect.
 
-            Parameters
-            ----------
-            transect: TransectData
-                Object of TransectData with data to be plotted.
-            """
+        Parameters
+        ----------
+        transect: TransectData
+            Object of TransectData with data to be plotted.
+        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -5533,11 +5902,11 @@ display.
     def stationary(self, mb_test):
         """Creates the plots for analyzing stationary moving-bed tests.
 
-            Parameters
-            ----------
-            mb_test: MovingBedTests
-                Object of MovingBedTests with data to be plotted.
-            """
+        Parameters
+        ----------
+        mb_test: MovingBedTests
+            Object of MovingBedTests with data to be plotted.
+        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -5566,7 +5935,7 @@ display.
     def mb_plot_change(self):
         """Coordinates changes in what references should be displayed in the
         boat speed and shiptrack plots.
-            """
+        """
 
         # Shiptrack
         self.mb_shiptrack_fig.change()
@@ -5580,7 +5949,7 @@ display.
 
     def mb_observed_change(self):
         """Sets observation of no moving bed.
-            """
+        """
 
         with self.wait_cursor():
             if self.cb_mb_observed_no.isChecked():
@@ -5597,7 +5966,7 @@ display.
     def mb_comments_messages(self):
         """Displays comments and messages associated with moving-bed tests
         in Messages tab.
-            """
+        """
 
         # Clear comments and messages
         self.display_mb_comments.clear()
@@ -5644,13 +6013,13 @@ display.
     # ================
     def bt_tab(self, old_discharge=None):
         """Initialize, setup settings, and display initial data in bottom
-            track tab.
+                        track tab.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        """
 
         # Setup data table
         tbl = self.table_bt
@@ -5790,12 +6159,9 @@ display.
         self.bt_comments_messages()
 
         # Setup lists for use by graphics controls
-        self.canvases = [self.bt_shiptrack_canvas, self.bt_top_canvas,
-                         self.bt_bottom_canvas]
-        self.figs = [self.bt_shiptrack_fig, self.bt_top_fig,
-                     self.bt_bottom_fig]
-        self.toolbars = [self.bt_shiptrack_toolbar, self.bt_top_toolbar,
-                         self.bt_bottom_toolbar]
+        self.canvases = [self.bt_shiptrack_canvas, self.bt_ts_canvas]
+        self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+        self.toolbars = [self.bt_shiptrack_toolbar, self.bt_ts_toolbar]
 
         # Turn signals on
         self.cb_bt_bt.blockSignals(False)
@@ -5810,13 +6176,13 @@ display.
     def update_bt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            new_discharge: list
-                List of objects of QComp with new settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        new_discharge: list
+                            List of objects of QComp with new settings
+                        """
 
         with self.wait_cursor():
             # Set tbl variable
@@ -6060,11 +6426,14 @@ display.
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total -
-                               old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total -
+                                   old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Set selected file to bold font
@@ -6112,7 +6481,7 @@ display.
 
     def bt_plots(self):
         """Creates graphics for BT tab.
-            """
+                        """
 
         with self.wait_cursor():
             # Set all filenames to normal font
@@ -6129,12 +6498,10 @@ display.
 
             # Update plots
             self.bt_shiptrack()
-            self.bt_boat_speed()
-            self.bt_filter_plots()
+            self.bt_ts_plots()
 
             # Update list of figs
-            self.figs = [self.bt_shiptrack_fig, self.bt_top_fig,
-                         self.bt_bottom_fig]
+            self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -6142,7 +6509,7 @@ display.
 
     def bt_shiptrack(self):
         """Creates shiptrack plot for data in transect.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -6175,113 +6542,70 @@ display.
         # Draw canvas
         self.bt_shiptrack_canvas.draw()
 
-    def bt_boat_speed(self):
-        """Creates boat speed plot for data in transect.
-            """
-
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
-        if self.bt_bottom_canvas is None:
-            # Create the canvas
-            self.bt_bottom_canvas = MplCanvas(parent=self.graph_bt_bottom,
-                                              width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_bt_bottom)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.bt_bottom_canvas)
-            self.bt_bottom_toolbar = NavigationToolbar(self.bt_bottom_canvas,
-                                                       self)
-            self.bt_bottom_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.bt_bottom_fig = BoatSpeed(canvas=self.bt_bottom_canvas)
-        # Create the figure with the specified data
-        self.bt_bottom_fig.create(transect=self.transect,
-                                  units=self.units,
-                                  cb=True,
-                                  cb_bt=self.cb_bt_bt,
-                                  cb_gga=self.cb_bt_gga,
-                                  cb_vtg=self.cb_bt_vtg,
-                                  x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.bt_bottom_canvas.draw()
-
-    def bt_filter_plots(self):
+    def bt_ts_plots(self):
         """Creates plots of filter characteristics.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
-        if self.bt_top_canvas is None:
+        if self.bt_ts_canvas is None:
             # Create the canvas
-            self.bt_top_canvas = MplCanvas(parent=self.graph_bt_top, width=8,
-                                           height=2, dpi=80)
+            self.bt_ts_canvas = MplCanvas(parent=self.graph_bt_ts, width=8,
+                                          height=2, dpi=80)
             # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_bt_top)
+            layout = QtWidgets.QVBoxLayout(self.graph_bt_ts)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
-            layout.addWidget(self.bt_top_canvas)
-            self.bt_top_toolbar = NavigationToolbar(self.bt_top_canvas, self)
-            self.bt_top_toolbar.hide()
+            layout.addWidget(self.bt_ts_canvas)
+            self.bt_ts_toolbar = NavigationToolbar(self.bt_ts_canvas, self)
+            self.bt_ts_toolbar.hide()
 
         # Initialize the boat speed figure and assign to the canvas
-        self.bt_top_fig = BTFilters(canvas=self.bt_top_canvas)
+        self.bt_ts_fig = AdvGraphs(canvas=self.bt_ts_canvas)
 
         # Create the figure with the specified data
-        if self.rb_bt_beam.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='beam',
-                                   x_axis_type=self.x_axis_type)
-        elif self.rb_bt_error.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='error',
-                                   x_axis_type=self.x_axis_type)
-        elif self.rb_bt_vert.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='vert',
-                                   x_axis_type=self.x_axis_type)
-        elif self.rb_bt_other.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='other',
-                                   x_axis_type=self.x_axis_type)
-        elif self.rb_bt_source.isChecked():
-            self.bt_top_fig.create(transect=self.transect,
-                                   units=self.units, selected='source',
-                                   x_axis_type=self.x_axis_type)
+
+        self.bt_ts_fig.create_bt_tab_graphs(transect=self.transect,
+                                            units=self.units,
+                                            beam=self.rb_bt_beam.isChecked(),
+                                            error=self.rb_bt_error.isChecked(),
+                                            vert=self.rb_bt_vert.isChecked(),
+                                            other=self.rb_bt_other.isChecked(),
+                                            source=self.rb_bt_source.isChecked(),
+                                            bt=self.cb_bt_bt.isChecked(),
+                                            gga=self.cb_bt_gga.isChecked(),
+                                            vtg=self.cb_bt_vtg.isChecked(),
+                                            x_axis_type=self.x_axis_type)
 
         # Update list of figs
-        self.figs = [self.bt_shiptrack_fig, self.bt_top_fig,
-                     self.bt_bottom_fig]
+        self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
         # Draw canvas
-        self.bt_top_canvas.draw()
+        self.bt_ts_canvas.draw()
 
     @QtCore.pyqtSlot()
     def bt_radiobutton_control(self):
         """Identifies a change in radio buttons and calls the plot routine
-                to update the graph.
-            """
+        to update the graph.
+                        """
         with self.wait_cursor():
             if self.sender().isChecked():
-                self.bt_filter_plots()
+                self.bt_plots()
 
     def bt_table_clicked(self, row, column):
         """Changes plotted data to the transect of the transect clicked.
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            column: int
-                Column clicked by user
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        column: int
+                            Column clicked by user
+                        """
 
         if column == 0:
             self.transect_row = row
@@ -6292,29 +6616,23 @@ display.
     @QtCore.pyqtSlot()
     def bt_plot_change(self):
         """Coordinates changes in what references should be displayed in the
-            boat speed and shiptrack plots.
-            """
+        boat speed and shiptrack plots.
+                        """
 
         with self.wait_cursor():
-            # Shiptrack
-            self.bt_shiptrack_fig.change()
-            self.bt_shiptrack_canvas.draw()
-
-            # Boat speed
-            self.bt_bottom_fig.change()
-            self.bt_bottom_canvas.draw()
-
+            self.bt_plots()
             self.tab_bt_2_data.setFocus()
 
     def update_bt_tab(self, s):
         """Updates the measurement and bottom track tab (table and graphics)
         after a change to settings has been made.
 
-            Parameters
-            ----------
-            s: dict
-                Dictionary of all process settings for the measurement
-            """
+                        Parameters
+                        ----------
+                        s: dict
+                            Dictionary of all process settings for the
+                            measurement
+                        """
 
         # Save discharge from previous settings
         old_discharge = copy.deepcopy(self.meas.discharge)
@@ -6336,11 +6654,11 @@ display.
     def change_bt_beam(self, text):
         """Coordinates user initiated change to the beam settings.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_bt_3beam.blockSignals(True)
@@ -6363,11 +6681,11 @@ display.
     def change_bt_error(self, text):
         """Coordinates user initiated change to the error velocity settings.
 
-             Parameters
-             ----------
-             text: str
-                 User selection from combo box
-             """
+                         Parameters
+                         ----------
+                         text: str
+                             User selection from combo box
+                         """
 
         with self.wait_cursor():
             self.combo_bt_error_velocity.blockSignals(True)
@@ -6395,11 +6713,11 @@ display.
     def change_bt_vertical(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_bt_vert_velocity.blockSignals(True)
@@ -6428,11 +6746,11 @@ display.
     def change_bt_other(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_bt_other.blockSignals(True)
@@ -6455,7 +6773,7 @@ display.
     def change_error_vel_threshold(self):
         """Coordinates application of a user specified error velocity
         threshold.
-            """
+                        """
 
         self.ed_bt_error_vel_threshold.blockSignals(True)
         with self.wait_cursor():
@@ -6493,7 +6811,7 @@ display.
     def change_vert_vel_threshold(self):
         """Coordinates application of a user specified vertical velocity
         threshold.
-            """
+                        """
         self.ed_bt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
 
@@ -6526,8 +6844,8 @@ display.
 
     def bt_comments_messages(self):
         """Displays comments and messages associated with bottom track
-filters in Messages tab.
-            """
+        filters in Messages tab.
+                        """
 
         # Clear comments and messages
         self.display_bt_comments.clear()
@@ -6559,11 +6877,11 @@ filters in Messages tab.
     def gps_tab(self, old_discharge=None):
         """Initialize, setup settings, and display initial data in gps tab.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        """
 
         # Setup data table
         tbl = self.table_gps
@@ -6616,51 +6934,70 @@ filters in Messages tab.
         self.cb_gps_vectors.setCheckState(QtCore.Qt.Checked)
 
         # Transect selected for display
+        self.transect = self.meas.transects[
+            self.checked_transects_idx[self.transect_row]]
+        # Check for presence of gga data
+        gga_transect = None
         for idx in self.checked_transects_idx:
             if self.meas.transects[idx].boat_vel.gga_vel is not None:
-                self.transect = self.meas.transects[idx]
+                gga_transect = self.meas.transects[idx]
                 break
 
-        # Set gps quality filter
-        if self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 1:
-            self.combo_gps_qual.setCurrentIndex(0)
-        elif self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 2:
-            self.combo_gps_qual.setCurrentIndex(1)
-        elif self.transect.boat_vel.gga_vel.gps_diff_qual_filter == 4:
-            self.combo_gps_qual.setCurrentIndex(2)
-        else:
-            self.combo_gps_qual.setCurrentIndex(0)
+        if gga_transect is not None:
+            # Set gps quality filter
+            if gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 1:
+                self.combo_gps_qual.setCurrentIndex(0)
+            elif gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 2:
+                self.combo_gps_qual.setCurrentIndex(1)
+            elif gga_transect.boat_vel.gga_vel.gps_diff_qual_filter == 4:
+                self.combo_gps_qual.setCurrentIndex(2)
+            else:
+                self.combo_gps_qual.setCurrentIndex(0)
 
-        # Set altitude filter from transect data
-        index = self.combo_gps_altitude.findText(
-            self.transect.boat_vel.gga_vel.gps_altitude_filter,
-            QtCore.Qt.MatchFixedString)
-        self.combo_gps_altitude.setCurrentIndex(index)
+            # Set altitude filter from transect data
+            index = self.combo_gps_altitude.findText(
+                gga_transect.boat_vel.gga_vel.gps_altitude_filter,
+                QtCore.Qt.MatchFixedString)
+            self.combo_gps_altitude.setCurrentIndex(index)
 
-        s = self.meas.current_settings()
+            s = self.meas.current_settings()
 
-        if s['ggaAltitudeFilter'] == 'Manual':
-            self.ed_gps_altitude_threshold.setEnabled(True)
-            threshold = '{:3.2f}'.format(s['ggaAltitudeFilterChange'] *
-                                         self.units['L'])
-            self.ed_gps_altitude_threshold.setText(threshold)
+            if s['ggaAltitudeFilter'] == 'Manual':
+                self.ed_gps_altitude_threshold.setEnabled(True)
+                threshold = '{:3.2f}'.format(s['ggaAltitudeFilterChange'] *
+                                             self.units['L'])
+                self.ed_gps_altitude_threshold.setText(threshold)
 
-        # Set hdop filter from transect data
-        index = self.combo_gps_hdop.findText(
-            self.transect.boat_vel.gga_vel.gps_HDOP_filter,
-            QtCore.Qt.MatchFixedString)
-        self.combo_gps_hdop.setCurrentIndex(index)
+            # Set hdop filter from transect data
+            index = self.combo_gps_hdop.findText(
+                gga_transect.boat_vel.gga_vel.gps_HDOP_filter,
+                QtCore.Qt.MatchFixedString)
+            self.combo_gps_hdop.setCurrentIndex(index)
 
-        if s['GPSHDOPFilter'] == 'Manual':
-            self.ed_gps_hdop_threshold.setEnabled(True)
-            threshold = '{:3.2f}'.format(s['GPSHDOPFilterChange'])
-            self.ed_gps_hdop_threshold.setText(threshold)
+            if s['GPSHDOPFilter'] == 'Manual':
+                self.ed_gps_hdop_threshold.setEnabled(True)
+                threshold = '{:3.2f}'.format(s['GPSHDOPFilterChange'])
+                self.ed_gps_hdop_threshold.setText(threshold)
 
-        # Set smooth filter from transect data
-        if self.transect.boat_vel.gga_vel.smooth_filter == 'Off':
-            self.combo_gps_other.setCurrentIndex(0)
-        elif self.transect.boat_vel.gga_vel.smooth_filter == 'On':
-            self.combo_gps_other.setCurrentIndex(1)
+            # Set smooth filter from transect data
+            if gga_transect.boat_vel.gga_vel.smooth_filter == 'Off':
+                self.combo_gps_other.setCurrentIndex(0)
+            elif gga_transect.boat_vel.gga_vel.smooth_filter == 'On':
+                self.combo_gps_other.setCurrentIndex(1)
+
+        # Check for presence of vtg data
+        vtg_transect = None
+        for idx in self.checked_transects_idx:
+            if self.meas.transects[idx].boat_vel.vtg_vel is not None:
+                vtg_transect = self.meas.transects[idx]
+                break
+
+        if vtg_transect is not None:
+            # Set smooth filter from transect data
+            if vtg_transect.boat_vel.vtg_vel.smooth_filter == 'Off':
+                self.combo_gps_other.setCurrentIndex(0)
+            elif vtg_transect.boat_vel.vtg_vel.smooth_filter == 'On':
+                self.combo_gps_other.setCurrentIndex(1)
 
         # Turn signals on
         self.cb_gps_bt.blockSignals(False)
@@ -6682,17 +7019,9 @@ filters in Messages tab.
         self.gps_bt()
 
         # Setup lists for use by graphics controls
-        self.canvases = [self.gps_shiptrack_canvas, self.gps_top_canvas,
-                         self.gps_bottom_canvas,
-                         self.gps_bt_shiptrack_canvas,
-                         self.gps_bt_speed_canvas]
-        self.figs = [self.gps_shiptrack_fig, self.gps_top_fig,
-                     self.gps_bottom_fig, self.gps_bt_shiptrack_fig,
-                     self.gps_bt_speed_fig]
-        self.toolbars = [self.gps_shiptrack_toolbar, self.gps_top_toolbar,
-                         self.gps_bottom_toolbar,
-                         self.gps_bt_shiptrack_toolbar,
-                         self.gps_bt_speed_toolbar]
+        self.canvases = [self.gps_shiptrack_canvas, self.gps_ts_canvas]
+        self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+        self.toolbars = [self.gps_shiptrack_toolbar, self.gps_ts_toolbar]
 
         if not self.gps_initialized:
             tbl.cellClicked.connect(self.gps_table_clicked)
@@ -6731,13 +7060,13 @@ filters in Messages tab.
     def update_gps_table(self, old_discharge, new_discharge):
         """Updates the gps table with new or reprocessed data.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            new_discharge: list
-                List of objects of QComp with new settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        new_discharge: list
+                            List of objects of QComp with new settings
+                        """
 
         with self.wait_cursor():
             # Set tbl variable
@@ -6750,7 +7079,8 @@ filters in Messages tab.
                 transect = self.meas.transects[transect_id]
                 num_ensembles = len(transect.boat_vel.bt_vel.u_processed_mps)
                 # Determine GPS characteristics for gga
-                if transect.boat_vel.gga_vel is not None:
+                if transect.boat_vel.gga_vel is not None and \
+                        transect.boat_vel.gga_vel.u_mps is not None:
                     valid_data = transect.boat_vel.gga_vel.valid_data
                     num_other_invalid = np.nansum(
                         np.logical_not(valid_data[4, :]))
@@ -6779,7 +7109,8 @@ filters in Messages tab.
                     num_other_invalid = -1
 
                 # Determine characteristics for vtg
-                if transect.boat_vel.vtg_vel is not None:
+                if transect.boat_vel.vtg_vel is not None and \
+                        transect.boat_vel.vtg_vel.u_mps is not None:
                     num_invalid_vtg = np.nansum(np.logical_not(
                         transect.boat_vel.vtg_vel.valid_data[0, :]))
                 else:
@@ -7046,11 +7377,14 @@ filters in Messages tab.
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total -
-                               old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total -
+                                   old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 self.table_gps.item(row, 0).setFont(self.font_normal)
@@ -7070,7 +7404,6 @@ filters in Messages tab.
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
 
-        cat_idx = None
         tt = ''
         qa_data = None
 
@@ -7141,13 +7474,14 @@ filters in Messages tab.
             elif self.meas.transects[self.meas.checked_transect_idx[
                 row]].boat_vel.vtg_vel is not None:
                 qa_data = self.meas.qa.vtg_vel
-            tt = tt.join(self.q_qa_message(qa_data=qa_data,
-                                           cat_idx=cat_idx,
-                                           transect_id=transect_id,
-                                           total_threshold_warning=self.meas.qa.q_total_threshold_warning,
-                                           total_threshold_caution=self.meas.qa.q_total_threshold_caution,
-                                           run_threshold_warning=self.meas.qa.q_run_threshold_warning,
-                                           run_threshold_caution=self.meas.qa.q_run_threshold_caution))
+            if qa_data is not None:
+                tt = tt.join(self.q_qa_message(qa_data=qa_data,
+                                               cat_idx=cat_idx,
+                                               transect_id=transect_id,
+                                               total_threshold_warning=self.meas.qa.q_total_threshold_warning,
+                                               total_threshold_caution=self.meas.qa.q_total_threshold_caution,
+                                               run_threshold_warning=self.meas.qa.q_run_threshold_warning,
+                                               run_threshold_caution=self.meas.qa.q_run_threshold_caution))
 
         elif column == 8:
             cat_idx = 4
@@ -7175,7 +7509,7 @@ filters in Messages tab.
 
     def gps_plots(self):
         """Creates graphics for GPS tab.
-            """
+                        """
 
         with self.wait_cursor():
             # Set all filenames to normal font
@@ -7193,12 +7527,10 @@ filters in Messages tab.
 
             # Update plots
             self.gps_shiptrack()
-            self.gps_boat_speed()
-            self.gps_filter_plots()
+            self.gps_ts_plots()
 
             # Update list of figs
-            self.figs = [self.gps_shiptrack_fig, self.gps_top_fig,
-                         self.gps_bottom_fig]
+            self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
@@ -7208,7 +7540,7 @@ filters in Messages tab.
 
     def gps_shiptrack(self):
         """Creates shiptrack plot for data in transect.
-            """
+                        """
 
         self.cb_gps_bt.blockSignals(True)
         self.cb_gps_gga.blockSignals(True)
@@ -7250,122 +7582,72 @@ filters in Messages tab.
         self.cb_gps_vtg.blockSignals(False)
         self.cb_gps_vectors.blockSignals(False)
 
-    def gps_boat_speed(self):
-        """Creates boat speed plot for data in transect.
-            """
-
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
-        if self.gps_bottom_canvas is None:
-            # Create the canvas
-            self.gps_bottom_canvas = MplCanvas(parent=self.graph_gps_bottom,
-                                               width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_gps_bottom)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.gps_bottom_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.gps_bottom_toolbar = NavigationToolbar(self.gps_bottom_canvas,
-                                                        self)
-            self.gps_bottom_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.gps_bottom_fig = BoatSpeed(canvas=self.gps_bottom_canvas)
-        # Create the figure with the specified data
-        self.gps_bottom_fig.create(transect=self.transect,
-                                   units=self.units,
-                                   cb=True,
-                                   cb_bt=self.cb_gps_bt,
-                                   cb_gga=self.cb_gps_gga,
-                                   cb_vtg=self.cb_gps_vtg,
-                                   x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.gps_bottom_canvas.draw()
-
     @QtCore.pyqtSlot()
     def gps_radiobutton_control(self):
         """Identifies a change in radio buttons and calls the plot routine
         to update the graph.
-            """
+                        """
         with self.wait_cursor():
             if self.sender().isChecked():
-                self.gps_filter_plots()
+                self.gps_ts_plots()
 
-    def gps_filter_plots(self):
+    def gps_ts_plots(self):
         """Creates plots of filter characteristics.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
-        if self.gps_top_canvas is None:
+        if self.gps_ts_canvas is None:
             # Create the canvas
-            self.gps_top_canvas = MplCanvas(parent=self.graph_gps_top, width=8,
-                                            height=2, dpi=80)
+            self.gps_ts_canvas = MplCanvas(parent=self.graph_gps_ts, width=8,
+                                           height=2, dpi=80)
             # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_gps_top)
+            layout = QtWidgets.QVBoxLayout(self.graph_gps_ts)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
-            layout.addWidget(self.gps_top_canvas)
+            layout.addWidget(self.gps_ts_canvas)
             # Initialize hidden toolbar for use by graphics controls
-            self.gps_top_toolbar = NavigationToolbar(self.gps_top_canvas, self)
-            self.gps_top_toolbar.hide()
+            self.gps_ts_toolbar = NavigationToolbar(self.gps_ts_canvas, self)
+            self.gps_ts_toolbar.hide()
 
         # Initialize the boat speed figure and assign to the canvas
-        self.gps_top_fig = GPSFilters(canvas=self.gps_top_canvas)
-
-        # Create the figure with the specified data
-        if self.rb_gps_quality.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='quality',
-                                    x_axis_type=self.x_axis_type)
-        elif self.rb_gps_altitude.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='altitude',
-                                    x_axis_type=self.x_axis_type)
-        elif self.rb_gps_hdop.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='hdop',
-                                    x_axis_type=self.x_axis_type)
-        elif self.rb_gps_other.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='other',
-                                    x_axis_type=self.x_axis_type)
-        elif self.rb_gps_sats.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='sats',
-                                    x_axis_type=self.x_axis_type)
-        elif self.rb_gps_source.isChecked():
-            self.gps_top_fig.create(transect=self.transect,
-                                    units=self.units, selected='source',
-                                    x_axis_type=self.x_axis_type)
+        self.gps_ts_fig = AdvGraphs(canvas=self.gps_ts_canvas)
+        self.gps_ts_fig.create_gps_tab_graphs(transect=self.transect,
+                                              units=self.units,
+                                              quality=self.rb_gps_quality.isChecked(),
+                                              altitude=self.rb_gps_altitude.isChecked(),
+                                              hdop=self.rb_gps_hdop.isChecked(),
+                                              n_sats=self.rb_gps_sats.isChecked(),
+                                              other=self.rb_gps_other.isChecked(),
+                                              source=self.rb_gps_source.isChecked(),
+                                              bt=self.cb_gps_bt.isChecked(),
+                                              gga=self.cb_gps_gga.isChecked(),
+                                              vtg=self.cb_gps_vtg.isChecked(),
+                                              x_axis_type=self.x_axis_type)
 
         # Update list of figs
-        self.figs = [self.gps_shiptrack_fig, self.gps_top_fig,
-                     self.gps_bottom_fig]
+        self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
 
         # Reset data cursor to work with new data plot
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
 
         # Draw canvas
-        self.gps_top_canvas.draw()
+        self.gps_ts_canvas.draw()
 
     def gps_table_clicked(self, row, column, caller=None):
         """Changes plotted data to the transect of the transect clicked.
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            column: int
-                Column clicked by user
-            caller: str
-                Identifies the tab from which the method is called
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        column: int
+                            Column clicked by user
+                        caller: str
+                            Identifies the tab from which the method is called
+                        """
 
         if column == 0:
             self.transect_row = row
@@ -7379,28 +7661,22 @@ filters in Messages tab.
     def gps_plot_change(self):
         """Coordinates changes in what references should be displayed in the
         boat speed and shiptrack plots.
-            """
+                        """
 
         with self.wait_cursor():
-            # Shiptrack
-            self.gps_shiptrack_fig.change()
-            self.gps_shiptrack_canvas.draw()
-
-            # Boat speed
-            self.gps_bottom_fig.change()
-            self.gps_bottom_canvas.draw()
-
+            self.gps_plots()
             self.tab_gps_2_data.setFocus()
 
     def update_gps_tab(self, s):
         """Updates the measurement and bottom track tab (table and graphics)
         after a change to settings has been made.
 
-            Parameters
-            ----------
-            s: dict
-                Dictionary of all process settings for the measurement
-            """
+                        Parameters
+                        ----------
+                        s: dict
+                            Dictionary of all process settings for the
+                            measurement
+                        """
 
         # Save discharge from previous settings
         old_discharge = copy.deepcopy(self.meas.discharge)
@@ -7421,11 +7697,11 @@ filters in Messages tab.
     def change_quality(self, text):
         """Coordinates user initiated change to the minumum GPS quality.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Get current settings
@@ -7447,11 +7723,11 @@ filters in Messages tab.
     def change_altitude(self, text):
         """Coordinates user initiated change to the error velocity settings.
 
-             Parameters
-             ----------
-             text: str
-                 User selection from combo box
-             """
+                         Parameters
+                         ----------
+                         text: str
+                             User selection from combo box
+                         """
 
         with self.wait_cursor():
             # Get current settings
@@ -7478,11 +7754,11 @@ filters in Messages tab.
     def change_hdop(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Get current settings
@@ -7509,11 +7785,11 @@ filters in Messages tab.
     def change_gps_other(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Get current settings
@@ -7533,7 +7809,7 @@ filters in Messages tab.
     def change_altitude_threshold(self):
         """Coordinates application of a user specified error velocity
         threshold.
-            """
+                        """
 
         self.ed_gps_altitude_threshold.blockSignals(True)
         with self.wait_cursor():
@@ -7564,7 +7840,7 @@ filters in Messages tab.
     def change_hdop_threshold(self):
         """Coordinates application of a user specified vertical velocity
         threshold.
-            """
+                        """
 
         self.ed_gps_hdop_threshold.blockSignals(True)
         with self.wait_cursor():
@@ -7591,7 +7867,7 @@ filters in Messages tab.
 
     def gps_bt(self):
         """Displays the comparison of bottom track to GPS characteristics.
-            """
+                        """
 
         # Setup table
         tbl = self.table_gps_bt
@@ -7652,6 +7928,23 @@ filters in Messages tab.
                     col = 1
                     tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(
                         '{:10.1f}'.format(gga_lag)))
+                    if self.meas.qa.gga_vel['lag_status'] == 'warning':
+
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 77, 77))
+                        tbl.item(row + 2, col).setToolTip(
+                            'GGA: BT and GGA do not appear to be sychronized')
+
+                    elif self.meas.qa.gga_vel['lag_status'] == 'caution':
+
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 204, 0))
+                        tbl.item(row + 2, col).setToolTip(
+                            'gga: BT and GGA do not appear to be sychronized')
+
+                    else:
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 255, 255))
 
                 if self.meas.transects[
                     transect_id].boat_vel.gga_vel is not None:
@@ -7694,6 +7987,23 @@ filters in Messages tab.
                     tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(
                         '{:10.1f}'.format(vtg_lag)))
                     tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    if self.meas.qa.vtg_vel['lag_status'] == 'warning':
+
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 77, 77))
+                        tbl.item(row + 2, col).setToolTip(
+                            'VTG: BT and VTG do not appear to be sychronized')
+
+                    elif self.meas.qa.vtg_vel['lag_status'] == 'caution':
+
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 204, 0))
+                        tbl.item(row + 2, col).setToolTip(
+                            'vtg: BT and VTG do not appear to be sychronized')
+
+                    else:
+                        tbl.item(row + 2, col).setBackground(
+                            QtGui.QColor(255, 255, 255))
 
                 if self.meas.transects[
                     transect_id].boat_vel.vtg_vel is not None:
@@ -7774,15 +8084,15 @@ filters in Messages tab.
     def gps_bt_table_clicked(self, row, column, caller=None):
         """Changes plotted data to the transect of the transect clicked.
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            column: int
-                Column clicked by user
-            caller: str
-                Identifies tab from which the method is called
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        column: int
+                            Column clicked by user
+                        caller: str
+                            Identifies tab from which the method is called
+                        """
 
         if column == 0:
             self.transect_row = row - 2
@@ -7794,7 +8104,7 @@ filters in Messages tab.
 
     def gps_bt_plots(self):
         """Creates graphic for GPS BT tab.
-            """
+                        """
 
         with self.wait_cursor():
             # Set all filenames to normal font
@@ -7816,9 +8126,7 @@ filters in Messages tab.
             self.gps_bt_boat_speed()
 
             # Update list of figs
-            self.figs = [self.gps_shiptrack_fig, self.gps_top_fig,
-                         self.gps_bottom_fig, self.gps_bt_shiptrack_fig,
-                         self.gps_bt_speed_fig]
+            self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
@@ -7828,7 +8136,7 @@ filters in Messages tab.
 
     def gps_bt_shiptrack(self):
         """Creates shiptrack plot for data in transect.
-            """
+                        """
         self.cb_gps_bt_2.blockSignals(True)
         self.cb_gps_gga_2.blockSignals(True)
         self.cb_gps_vtg_2.blockSignals(True)
@@ -7873,7 +8181,7 @@ filters in Messages tab.
 
     def gps_bt_boat_speed(self):
         """Creates boat speed plot for data in transect.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -7908,8 +8216,8 @@ filters in Messages tab.
     @QtCore.pyqtSlot()
     def gps_bt_plot_change(self):
         """Coordinates changes in what references should be displayed in the
-boat speed and shiptrack plots.
-            """
+        boat speed and shiptrack plots.
+                        """
         with self.wait_cursor():
             # Shiptrack
             self.gps_bt_shiptrack_fig.change()
@@ -7924,7 +8232,7 @@ boat speed and shiptrack plots.
     def gps_comments_messages(self):
         """Displays comments and messages associated with gps filters in
         Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_gps_comments.clear()
@@ -7964,11 +8272,11 @@ boat speed and shiptrack plots.
     def depth_tab(self, old_discharge=None):
         """Initialize, setup settings, and display initial data in depth tab.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        """
 
         # Setup data table
         tbl = self.table_depth
@@ -8055,7 +8363,7 @@ boat speed and shiptrack plots.
             self.depth_initialized = True
 
         self.combo_depth_ref.blockSignals(True)
-        depth_ref_options = ['4-Beam Avg']
+        depth_ref_options = [self.tr('4-Beam Avg')]
 
         # Setup depth reference combo box for vertical beam
         if self.meas.transects[self.checked_transects_idx[
@@ -8063,9 +8371,9 @@ boat speed and shiptrack plots.
             self.cb_depth_vert.blockSignals(True)
             self.cb_depth_vert.setCheckState(QtCore.Qt.Checked)
             self.cb_depth_vert.blockSignals(False)
-            depth_ref_options.append('Comp 4-Beam Preferred')
-            depth_ref_options.append('Vertical')
-            depth_ref_options.append('Comp Vertical Preferred')
+            depth_ref_options.append(self.tr('Comp 4-Beam Preferred'))
+            depth_ref_options.append(self.tr('Vertical'))
+            depth_ref_options.append(self.tr('Comp Vertical Preferred'))
             self.cb_depth_vert.setEnabled(True)
             self.cb_depth_vert_cs.setEnabled(True)
         else:
@@ -8078,9 +8386,9 @@ boat speed and shiptrack plots.
             self.cb_depth_ds.blockSignals(True)
             self.cb_depth_ds.setCheckState(QtCore.Qt.Checked)
             self.cb_depth_ds.blockSignals(False)
-            depth_ref_options.append('Comp 4-Beam Preferred')
-            depth_ref_options.append('Depth Sounder')
-            depth_ref_options.append('Comp DS Preferred')
+            depth_ref_options.append(self.tr('Comp 4-Beam Preferred'))
+            depth_ref_options.append(self.tr('Depth Sounder'))
+            depth_ref_options.append(self.tr('Comp DS Preferred'))
             self.cb_depth_ds.setEnabled(True)
             self.cb_depth_ds_cs.setEnabled(True)
         else:
@@ -8155,20 +8463,20 @@ boat speed and shiptrack plots.
         self.depth_comments_messages()
 
         # Setup list for use by graphics controls
-        self.canvases = [self.depth_top_canvas, self.depth_bottom_canvas]
-        self.figs = [self.depth_top_fig, self.depth_bottom_fig]
-        self.toolbars = [self.depth_top_toolbar, self.depth_bottom_toolbar]
+        self.canvases = [self.depth_canvas]
+        self.figs = [self.depth_fig]
+        self.toolbars = [self.depth_toolbar]
 
     def update_depth_table(self, old_discharge, new_discharge):
         """Updates the depth table with new or reprocessed data.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            new_discharge: list
-                List of objects of QComp with new settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        new_discharge: list
+                            List of objects of QComp with new settings
+                        """
 
         with self.wait_cursor():
             # Set tbl variable
@@ -8302,11 +8610,14 @@ boat speed and shiptrack plots.
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total -
-                               old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total -
+                                   old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 tbl.item(row, 0).setFont(self.font_normal)
@@ -8336,14 +8647,15 @@ boat speed and shiptrack plots.
 
         elif column == 1:
             if self.meas.qa.depths['draft'] == 1:
-                tt = 'Transducer depth is not consistent among transects.'
+                tt = self.tr(
+                    'Transducer depth is not consistent among transects.')
             elif self.meas.qa.depths['draft'] == 2:
-                tt = 'Transducer depth is too shallow, likely 0.'
+                tt = self.tr('Transducer depth is too shallow, likely 0.')
         return tt
 
     def depth_plots(self):
         """Creates graphics for depth tab.
-            """
+                        """
 
         with self.wait_cursor():
             # Set all filenames to normal font
@@ -8359,101 +8671,63 @@ boat speed and shiptrack plots.
             # Set selected file to bold font
             self.table_depth.item(self.transect_row, 0).setFont(self.font_bold)
 
-            # Update plots
-            self.depth_top_plot()
-            self.depth_bottom_plot()
+            # If the canvas has not been previously created, create the
+            # canvas and add the widget.
+            if self.depth_canvas is None:
+                # Create the canvas
+                self.depth_canvas = MplCanvas(parent=self.graph_depth, width=8,
+                                              height=2, dpi=80)
+                # Assign layout to widget to allow auto scaling
+                layout = QtWidgets.QVBoxLayout(self.graph_depth)
+                # Adjust margins of layout to maximize graphic area
+                layout.setContentsMargins(0, 0, 0, 0)
+                # Add the canvas
+                layout.addWidget(self.depth_canvas)
+                # Initialize hidden toolbar for use by graphics controls
+                self.depth_toolbar = NavigationToolbar(self.depth_canvas, self)
+                self.depth_toolbar.hide()
+
+            # Initialize the top figure and assign to the canvas
+            self.depth_fig = AdvGraphs(canvas=self.depth_canvas)
+            # Create the figure with the specified data
+            self.depth_fig.create_depth_tab_graphs(transect=self.transect,
+                                                   units=self.units,
+                                                   b1=self.cb_depth_beam1.isChecked(),
+                                                   b2=self.cb_depth_beam2.isChecked(),
+                                                   b3=self.cb_depth_beam3.isChecked(),
+                                                   b4=self.cb_depth_beam4.isChecked(),
+                                                   vb=self.cb_depth_vert.isChecked(),
+                                                   ds=self.cb_depth_ds.isChecked(),
+                                                   avg4_final=self.cb_depth_4beam_cs.isChecked(),
+                                                   vb_final=self.cb_depth_vert_cs.isChecked(),
+                                                   ds_final=self.cb_depth_ds_cs.isChecked(),
+                                                   final=self.cb_depth_final_cs.isChecked(),
+                                                   x_axis_type=self.x_axis_type)
+
+            # Draw canvas
+            self.depth_canvas.draw()
 
             # Update list of figs
-            self.figs = [self.depth_top_fig, self.depth_bottom_fig]
+            self.figs = [self.depth_fig]
+            self.toolbars = [self.depth_toolbar]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
                 self.data_cursor()
-
-    def depth_top_plot(self):
-        """Creates top plot containing individual beam depths.
-            """
-
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
-        if self.depth_top_canvas is None:
-            # Create the canvas
-            self.depth_top_canvas = MplCanvas(parent=self.graph_depth_beams,
-                                              width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_depth_beams)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.depth_top_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.depth_top_toolbar = NavigationToolbar(self.depth_top_canvas,
-                                                       self)
-            self.depth_top_toolbar.hide()
-
-        # Initialize the top figure and assign to the canvas
-        self.depth_top_fig = BeamDepths(canvas=self.depth_top_canvas)
-        # Create the figure with the specified data
-        self.depth_top_fig.create(transect=self.transect,
-                                  units=self.units,
-                                  cb_beam1=self.cb_depth_beam1,
-                                  cb_beam2=self.cb_depth_beam2,
-                                  cb_beam3=self.cb_depth_beam3,
-                                  cb_beam4=self.cb_depth_beam4,
-                                  cb_vert=self.cb_depth_vert,
-                                  cb_ds=self.cb_depth_ds,
-                                  x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.depth_top_canvas.draw()
-
-    def depth_bottom_plot(self):
-        """Creates bottom plot containing average cross section.
-            """
-
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
-        if self.depth_bottom_canvas is None:
-            # Create the canvas
-            self.depth_bottom_canvas = MplCanvas(parent=self.graph_depth_cs,
-                                                 width=8, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_depth_cs)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.depth_bottom_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.depth_bottom_toolbar = NavigationToolbar(
-                self.depth_bottom_canvas, self)
-            self.depth_bottom_toolbar.hide()
-
-        # Initialize the bottom figure and assign to the canvas
-        self.depth_bottom_fig = CrossSection(canvas=self.depth_bottom_canvas)
-        # Create the figure with the specified data
-        self.depth_bottom_fig.create(transect=self.transect,
-                                     units=self.units,
-                                     cb_beam_cs=self.cb_depth_4beam_cs,
-                                     cb_vert_cs=self.cb_depth_vert_cs,
-                                     cb_ds_cs=self.cb_depth_ds_cs,
-                                     cb_final_cs=self.cb_depth_final_cs,
-                                     x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.depth_bottom_canvas.draw()
+            self.tab_depth_2_data.setFocus()
 
     @QtCore.pyqtSlot(int, int)
     def depth_table_clicked(self, row, column):
         """Changes plotted data to the transect of the transect clicked or
         allows changing of the draft.
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            column: int
-                Column clicked by user
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        column: int
+                            Column clicked by user
+                        """
 
         self.table_depth.blockSignals(True)
         # Change transect plotted
@@ -8499,11 +8773,12 @@ boat speed and shiptrack plots.
         """Updates the depth tab (table and graphics) after a change to
         settings has been made.
 
-            Parameters
-            ----------
-            s: dict
-                Dictionary of all process settings for the measurement
-            """
+                        Parameters
+                        ----------
+                        s: dict
+                            Dictionary of all process settings for the
+                            measurement
+                        """
 
         # Save discharge from previous settings
         old_discharge = copy.deepcopy(self.meas.discharge)
@@ -8525,31 +8800,25 @@ boat speed and shiptrack plots.
     def depth_top_plot_change(self):
         """Coordinates changes in user selected data to be displayed in the
         top plot.
-            """
-        with self.wait_cursor():
-            self.depth_top_fig.change()
-            self.depth_top_canvas.draw()
-            self.tab_depth_2_data.setFocus()
+                        """
+        self.depth_plots()
 
     @QtCore.pyqtSlot()
     def depth_bottom_plot_change(self):
         """Coordinates changes in user selected data to be displayed in the
         bottom plot.
-            """
-        with self.wait_cursor():
-            self.depth_bottom_fig.change()
-            self.depth_bottom_canvas.draw()
-            self.tab_depth_2_data.setFocus()
+                        """
+        self.depth_plots()
 
     @QtCore.pyqtSlot(str)
     def change_ref(self, text):
         """Coordinates user initiated change to depth reference.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_depth_ref.blockSignals(True)
@@ -8585,11 +8854,11 @@ boat speed and shiptrack plots.
     def change_filter(self, text):
         """Coordinates user initiated change to the depth filter.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_depth_filter.blockSignals(True)
@@ -8606,11 +8875,11 @@ boat speed and shiptrack plots.
     def change_avg_method(self, text):
         """Coordinates user initiated change to the averaging method.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             self.combo_depth_avg.blockSignals(True)
@@ -8627,7 +8896,7 @@ boat speed and shiptrack plots.
     def depth_comments_messages(self):
         """Displays comments and messages associated with depth filters in
         Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_depth_comments.clear()
@@ -8659,13 +8928,13 @@ boat speed and shiptrack plots.
     # ======
     def wt_tab(self, old_discharge=None):
         """Initialize, setup settings, and display initial data in water
-            track tab.
+                        track tab.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        """
 
         # Setup data table
         tbl = self.table_wt
@@ -8834,23 +9103,20 @@ boat speed and shiptrack plots.
         self.wt_comments_messages()
 
         # Setup list for use by graphics controls
-        self.canvases = [self.wt_shiptrack_canvas, self.wt_top_canvas,
-                         self.wt_bottom_canvas]
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig,
-                     self.wt_bottom_fig]
-        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_top_toolbar,
-                         self.wt_bottom_toolbar]
+        self.canvases = [self.wt_shiptrack_canvas, self.wt_filter_canvas]
+        self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
+        self.toolbars = [self.wt_shiptrack_toolbar, self.wt_filter_toolbar]
 
     def update_wt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
 
-            Parameters
-            ----------
-            old_discharge: list
-                List of objects of QComp with previous settings
-            new_discharge: list
-                List of objects of QComp with new settings
-            """
+                        Parameters
+                        ----------
+                        old_discharge: list
+                            List of objects of QComp with previous settings
+                        new_discharge: list
+                            List of objects of QComp with new settings
+                        """
 
         with self.wait_cursor():
             # Set tbl variable
@@ -9139,11 +9405,14 @@ boat speed and shiptrack plots.
 
                 # Percent change in discharge
                 col += 1
-                per_change = ((new_discharge[transect_id].total -
-                               old_discharge[transect_id].total)
-                              / old_discharge[transect_id].total) * 100
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
-                    '{:3.1f}'.format(per_change)))
+                if np.abs(old_discharge[transect_id].total) > 0:
+                    per_change = ((new_discharge[transect_id].total -
+                                   old_discharge[transect_id].total)
+                                  / old_discharge[transect_id].total) * 100
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(
+                        '{:3.1f}'.format(per_change)))
+                else:
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Set selected file to bold font
@@ -9158,7 +9427,7 @@ boat speed and shiptrack plots.
 
     def wt_plots(self):
         """Creates graphics for WT tab.
-            """
+                        """
 
         with self.wait_cursor():
             self.cb_wt_bt.blockSignals(True)
@@ -9180,12 +9449,10 @@ boat speed and shiptrack plots.
 
             # Update plots
             self.wt_shiptrack()
-            self.wt_water_speed_contour()
             self.wt_filter_plots()
 
             # Update list of figs
-            self.figs = [self.wt_shiptrack_fig, self.wt_top_fig,
-                         self.wt_bottom_fig, self.wt_advanced_fig]
+            self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -9198,7 +9465,7 @@ boat speed and shiptrack plots.
 
     def wt_shiptrack(self):
         """Creates shiptrack plot for data in transect.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -9231,125 +9498,55 @@ boat speed and shiptrack plots.
         # Draw canvas
         self.wt_shiptrack_canvas.draw()
 
-    def wt_water_speed_contour(self):
-        """Creates boat speed plot for data in transect.
-            """
-
-        # If the canvas has not been previously created, create the canvas
-        # and add the widget.
-        if self.wt_bottom_canvas is None:
-            # Create the canvas
-            self.wt_bottom_canvas = MplCanvas(parent=self.graph_wt_bottom,
-                                              width=10, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_wt_bottom)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.wt_bottom_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.wt_bottom_toolbar = NavigationToolbar(self.wt_bottom_canvas,
-                                                       self)
-            self.wt_bottom_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.wt_bottom_fig = WTContour(canvas=self.wt_bottom_canvas)
-
-        # Create the figure with the specified data
-        self.wt_max_limit = self.wt_bottom_fig.create(transect=self.transect,
-                                                      units=self.units,
-                                                      color_map=self.color_map,
-                                                      x_axis_type=self.x_axis_type)
-
-        # Draw canvas
-        self.wt_bottom_canvas.draw()
-
     @QtCore.pyqtSlot()
     def wt_radiobutton_control(self):
         """Identifies a change in radio buttons and calls the plot routine
         to update the graph.
-            """
+                        """
         with self.wait_cursor():
             if self.sender().isChecked():
                 self.wt_filter_plots()
 
     def wt_filter_plots(self):
         """Creates plots of filter characteristics.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
-        if self.wt_top_canvas is None:
+        if self.wt_filter_canvas is None:
             # Create the canvas
-            self.wt_top_canvas = MplCanvas(parent=self.graph_wt_top, width=10,
-                                           height=2, dpi=80)
+            self.wt_filter_canvas = MplCanvas(parent=self.graph_wt, width=10,
+                                              height=2, dpi=80)
             # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graph_wt_top)
+            layout = QtWidgets.QVBoxLayout(self.graph_wt)
             # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
+            layout.setContentsMargins(0, 0, 0, 0)
             # Add the canvas
-            layout.addWidget(self.wt_top_canvas)
+            layout.addWidget(self.wt_filter_canvas)
             # Initialize hidden toolbar for use by graphics controls
-            self.wt_top_toolbar = NavigationToolbar(self.wt_top_canvas, self)
-            self.wt_top_toolbar.hide()
+            self.wt_filter_toolbar = NavigationToolbar(self.wt_filter_canvas,
+                                                       self)
+            self.wt_filter_toolbar.hide()
 
-        if self.rb_wt_contour.isChecked():
-            # Initialize the contour plot
-            # Initialize the water filters figure and assign to the canvas
-            self.wt_top_fig = WTContour(canvas=self.wt_top_canvas)
-            # Determine invalid data based on depth, nav, and wt
-            try:
-                depth_valid = getattr(self.transect.depths,
-                                      self.transect.depths.selected).valid_data
-                boat_valid = getattr(self.transect.boat_vel,
-                                     self.transect.boat_vel.selected).valid_data[
-                             0, :]
-                invalid_ens = np.logical_not(
-                    np.logical_and(depth_valid, boat_valid))
-                valid_data = np.copy(self.transect.w_vel.valid_data[0, :, :])
-                valid_data[:, invalid_ens[0]] = False
-                # Create the figure with the specified data
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units,
-                                       invalid_data=np.logical_not(
-                                           self.transect.w_vel.valid_data[0, :,
-                                           :]),
-                                       max_limit=self.wt_max_limit,
-                                       color_map=self.color_map,
-                                       x_axis_type=self.x_axis_type)
-            except AttributeError:
-                pass
-        else:
-            # Initialize the wt filters plot
-            self.wt_top_fig = WTFilters(canvas=self.wt_top_canvas)
-            # Create the figure with the specified data
-            if self.rb_wt_beam.isChecked():
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='beam',
-                                       x_axis_type=self.x_axis_type)
-            elif self.rb_wt_error.isChecked():
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='error',
-                                       x_axis_type=self.x_axis_type)
-            elif self.rb_wt_vert.isChecked():
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='vert',
-                                       x_axis_type=self.x_axis_type)
-            elif self.rb_wt_speed.isChecked():
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='speed',
-                                       x_axis_type=self.x_axis_type)
-            elif self.rb_wt_snr.isChecked():
-                self.wt_top_fig.create(transect=self.transect,
-                                       units=self.units, selected='snr',
-                                       x_axis_type=self.x_axis_type)
+        # Initialize the water filters figure and assign to the canvas
+        self.wt_filter_fig = AdvGraphs(canvas=self.wt_filter_canvas)
+        self.wt_filter_fig.create_wt_tab_graphs(transect=self.transect,
+                                                units=self.units,
+                                                contour=self.rb_wt_contour.isChecked(),
+                                                beam=self.rb_wt_beam.isChecked(),
+                                                error=self.rb_wt_error.isChecked(),
+                                                vert=self.rb_wt_vert.isChecked(),
+                                                snr=self.rb_wt_snr.isChecked(),
+                                                speed=self.rb_wt_speed.isChecked(),
+                                                x_axis_type=self.x_axis_type,
+                                                color_map=self.color_map
+                                                )
 
         # Draw canvas
-        self.wt_top_canvas.draw()
+        self.wt_filter_canvas.draw()
 
         # Update list of figs
-        self.figs = [self.wt_shiptrack_fig, self.wt_top_fig,
-                     self.wt_bottom_fig, self.wt_advanced_fig]
+        self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -9359,13 +9556,13 @@ boat speed and shiptrack plots.
     def wt_table_clicked(self, row, column):
         """Changes plotted data to the transect of the transect clicked.
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            column: int
-                Column clicked by user
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        column: int
+                            Column clicked by user
+                        """
 
         if column == 0:
             self.transect_row = row
@@ -9411,7 +9608,7 @@ boat speed and shiptrack plots.
     def wt_plot_change(self):
         """Coordinates changes in what references should be displayed in the
         shiptrack plots.
-            """
+                        """
 
         with self.wait_cursor():
             # Shiptrack
@@ -9423,11 +9620,12 @@ boat speed and shiptrack plots.
         """Updates the measurement and water track tab (table and graphics)
         after a change to settings has been made.
 
-            Parameters
-            ----------
-            s: dict
-                Dictionary of all process settings for the measurement
-            """
+                        Parameters
+                        ----------
+                        s: dict
+                            Dictionary of all process settings for the
+                            measurement
+                        """
 
         # Save discharge from previous settings
         old_discharge = copy.deepcopy(self.meas.discharge)
@@ -9448,11 +9646,11 @@ boat speed and shiptrack plots.
     def change_wt_beam(self, text):
         """Coordinates user initiated change to the beam settings.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
 
@@ -9475,11 +9673,11 @@ boat speed and shiptrack plots.
     def change_wt_error(self, text):
         """Coordinates user initiated change to the error velocity settings.
 
-             Parameters
-             ----------
-             text: str
-                 User selection from combo box
-             """
+                         Parameters
+                         ----------
+                         text: str
+                             User selection from combo box
+                         """
 
         with self.wait_cursor():
             # Get current settings
@@ -9499,17 +9697,18 @@ boat speed and shiptrack plots.
                 self.ed_wt_error_vel_threshold.setEnabled(False)
                 self.ed_wt_error_vel_threshold.setText('')
                 self.update_wt_tab(s)
+
             self.change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_vertical(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-                User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                            User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Get current settings
@@ -9535,11 +9734,11 @@ boat speed and shiptrack plots.
     def change_wt_snr(self, text):
         """Coordinates user initiated change to the vertical velocity settings.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Get current settings
@@ -9559,7 +9758,7 @@ boat speed and shiptrack plots.
     def change_wt_error_vel_threshold(self):
         """Coordinates application of a user specified error velocity
         threshold.
-            """
+                        """
 
         self.ed_wt_error_vel_threshold.blockSignals(True)
         with self.wait_cursor():
@@ -9587,13 +9786,14 @@ boat speed and shiptrack plots.
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_error_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
     def change_wt_vert_vel_threshold(self):
         """Coordinates application of a user specified vertical velocity
         threshold.
-            """
+                        """
 
         self.ed_wt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
@@ -9621,12 +9821,13 @@ boat speed and shiptrack plots.
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_vert_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
     def change_wt_excluded_dist(self):
         """Coordinates application of a user specified excluded distance.
-            """
+                        """
 
         self.ed_wt_excluded_dist.blockSignals(True)
         with self.wait_cursor():
@@ -9648,12 +9849,13 @@ boat speed and shiptrack plots.
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+
         self.ed_wt_excluded_dist.blockSignals(False)
 
     def wt_comments_messages(self):
         """Displays comments and messages associated with bottom track
         filters in Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_wt_comments.clear()
@@ -9685,7 +9887,7 @@ boat speed and shiptrack plots.
     # ==========
     def extrap_tab(self):
         """Initializes all of the features on the extrap_tab.
-            """
+                        """
 
         # Make copy to allow resting to original if changes are made
         self.extrap_meas = copy.deepcopy(self.meas)
@@ -9695,15 +9897,17 @@ boat speed and shiptrack plots.
 
         # ID Weighted Method
         if self.meas.extrap_fit.norm_data[-1].use_weighted:
-            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+            self.gb_fit.setTitle(self.tr('Fit Parameters (Weighted)'))
         else:
-            self.gb_fit.setTitle('Fit Parameters')
+            self.gb_fit.setTitle(self.tr('Fit Parameters'))
 
         # Subsectioning
         if self.meas.extrap_fit.sub_from_left:
-            self.txt_extrap_subsection.setText('Subsection (% L to R, x:x):')
+            self.txt_extrap_subsection.setText(
+                self.tr('Subsection (% L to R, x:x):'))
         else:
-            self.txt_extrap_subsection.setText('Subsection (st%:end%)')
+            self.txt_extrap_subsection.setText(
+                self.tr('Subsection (st%:end%)'))
 
         # Setup number of points data table
         tbl = self.table_extrap_n_points
@@ -9800,7 +10004,7 @@ boat speed and shiptrack plots.
 
     def extrap_update(self):
         """Update the extrapolation tab.
-            """
+                        """
 
         # If change was to the measurement apply changes and update
         # sensitivity and messages
@@ -9817,15 +10021,17 @@ boat speed and shiptrack plots.
 
         # ID Weighted Method
         if self.meas.extrap_fit.norm_data[-1].use_weighted:
-            self.gb_fit.setTitle('Fit Parameters (Weighted)')
+            self.gb_fit.setTitle(self.tr('Fit Parameters (Weighted)'))
         else:
-            self.gb_fit.setTitle('Fit Parameters')
+            self.gb_fit.setTitle(self.tr('Fit Parameters'))
 
         # Subsectioning
         if self.meas.extrap_fit.sub_from_left:
-            self.txt_extrap_subsection.setText('Subsection (% L to R, x:x):')
+            self.txt_extrap_subsection.setText(
+                self.tr('Subsection (% L to R, x:x):'))
         else:
-            self.txt_extrap_subsection.setText('Subsection (st%:end%)')
+            self.txt_extrap_subsection.setText(
+                self.tr('Subsection (st%:end%)'))
 
         # Update tab
         self.n_points_table()
@@ -9836,11 +10042,11 @@ boat speed and shiptrack plots.
     def extrap_index(self, row):
         """Converts the row value to a transect index.
 
-            Parameters
-            ----------
-            row: int
-                Row selected from the fit list table
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row selected from the fit list table
+                        """
         if row > len(self.checked_transects_idx) - 1:
             self.idx = len(self.meas.transects)
         else:
@@ -9849,7 +10055,7 @@ boat speed and shiptrack plots.
     def display_current_fit(self):
         """Displays the extrapolation methods currently used to compute
         discharge.
-            """
+                        """
 
         # Display Previous settings
         self.txt_extrap_p_fit.setText(
@@ -9863,8 +10069,8 @@ boat speed and shiptrack plots.
 
     def set_fit_options(self):
         """Sets the fit options for the currently selected transect or
-            measurement.
-            """
+        measurement.
+                        """
 
         # Setup fit method
         self.combo_extrap_fit.blockSignals(True)
@@ -9907,7 +10113,7 @@ boat speed and shiptrack plots.
     def n_points_table(self):
         """Populates the table showing the normalized depth of each layer
         and how many data points are in each layer.
-            """
+                        """
 
         # Set table variable
         tbl = self.table_extrap_n_points
@@ -9943,7 +10149,7 @@ boat speed and shiptrack plots.
 
     def q_sensitivity_table(self):
         """Populates the discharge sensitivity table.
-            """
+                        """
 
         # Set table reference
         tbl = self.table_extrap_qsen
@@ -10072,12 +10278,12 @@ boat speed and shiptrack plots.
         """Sets the discharge sensitivity table to show the selected method
         as the reference.
 
-            Parameters
-            ----------
-            reference_row: int
-                Integer of the row in sensitivity table for the selected fit
-parameters
-            """
+                        Parameters
+                        ----------
+                        reference_row: int
+                            Integer of the row in sensitivity table for the
+                            selected fit parameters
+                        """
 
         # Get table reference
         tbl = self.table_extrap_qsen
@@ -10093,8 +10299,8 @@ parameters
 
     def fit_list_table(self):
         """Populates the fit list table to show all the checked transects
- and the composite measurement.
-            """
+        and the composite measurement.
+                        """
 
         # Get table reference
         tbl = self.table_extrap_fit
@@ -10122,11 +10328,11 @@ parameters
         """Selects data to display and fit from list of transects and
         composite measurements.
 
-            Parameters
-            ----------
-            selected_row: int
-                Index to selected transect/measurement from list.
-            """
+                        Parameters
+                        ----------
+                        selected_row: int
+                            Index to selected transect/measurement from list.
+                        """
 
         with self.wait_cursor():
             # Set all filenames to normal font
@@ -10145,7 +10351,7 @@ parameters
 
     def extrap_plot(self):
         """Creates extrapolation plot.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -10188,7 +10394,7 @@ parameters
 
     def extrap_set_data(self):
         """Sets UI for data panel
-            """
+                        """
         if self.meas.extrap_fit.sel_fit[-1].data_type.lower() != 'q':
             self.extrap_set_data_manual()
         elif self.meas.extrap_fit.threshold != 20:
@@ -10201,7 +10407,7 @@ parameters
 
     def extrap_set_data_manual(self):
         """Updates the UI when the user changes the data setting to manual.
-            """
+                        """
 
         if self.combo_extrap_data.currentIndex() == 0:
             self.combo_extrap_data.setCurrentIndex(1)
@@ -10221,7 +10427,7 @@ parameters
 
     def extrap_set_data_auto(self):
         """Updates the UI when the user changes the data setting to automatic.
-            """
+                        """
 
         if self.combo_extrap_data.currentIndex() == 1:
             self.combo_extrap_data.setCurrentIndex(0)
@@ -10235,13 +10441,13 @@ parameters
     @QtCore.pyqtSlot(str)
     def change_data(self, text):
         """Coordinates user initiated change to the data from automatic to
- manual.
+        manual.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             if text == 'Manual':
@@ -10261,8 +10467,8 @@ parameters
     @QtCore.pyqtSlot()
     def change_threshold(self):
         """Allows the user to change the threshold and then updates the data
-        and display.
-            """
+and display.
+                        """
 
         self.ed_extrap_threshold.blockSignals(True)
 
@@ -10294,8 +10500,8 @@ parameters
     @QtCore.pyqtSlot()
     def change_subsection(self):
         """Allows the user to change the subsectioning and then updates the
-                data and display.
-            """
+        data and display.
+                        """
         self.ed_extrap_subsection.editingFinished.disconnect(
             self.change_subsection)
 
@@ -10338,9 +10544,9 @@ parameters
             except (IndexError, TypeError):
                 # If the user input is not valid, display message
                 self.popup_message(
-                    'Subsectioning requires data entry as two numbers '
-                    'separated by a colon (example: 10:90) where the '
-                    'first number is larger than the second')
+                    self.tr('Subsectioning requires data entry as two numbers '
+                            'separated by a colon (example: 10:90) where the '
+                            'first number is larger than the second'))
 
         self.ed_extrap_subsection.editingFinished.connect(
             self.change_subsection)
@@ -10349,11 +10555,11 @@ parameters
     def change_data_type(self, text):
         """Coordinates user initiated change to the data type.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Change setting based on combo box selection
@@ -10370,11 +10576,11 @@ parameters
     def change_fit_method(self, text):
         """Coordinates user initiated changing the fit type.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Change setting based on combo box selection
@@ -10389,11 +10595,11 @@ parameters
     def change_top_method(self, text):
         """Coordinates user initiated changing the top method.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Change setting based on combo box selection
@@ -10409,11 +10615,11 @@ parameters
     def change_bottom_method(self, text):
         """Coordinates user initiated changing the bottom method.
 
-            Parameters
-            ----------
-            text: str
-             User selection from combo box
-            """
+                        Parameters
+                        ----------
+                        text: str
+                         User selection from combo box
+                        """
 
         with self.wait_cursor():
             # Change setting based on combo box selection
@@ -10428,7 +10634,7 @@ parameters
     @QtCore.pyqtSlot()
     def change_exponent(self):
         """Coordinates user initiated changing the bottom method.
-            """
+                        """
 
         self.ed_extrap_exponent.blockSignals(True)
 
@@ -10460,11 +10666,12 @@ parameters
         """Changes the fit based on the row in the discharge sensitivity
         table selected by the user.
 
-            Parameters
-            ----------
-            row: int
-                Index to selected fit combination from sensitivity table.
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Index to selected fit combination from
+                            sensitivity table.
+                        """
 
         with self.wait_cursor():
             # Get fit settings from table
@@ -10486,11 +10693,11 @@ parameters
     def compare_medians(self):
         """This method computes and displays the median values for the
         measurement using an alternative method to allow
-            comparison. If weighted is used the unweighted are computed and
- display. If the unweighted are used
-            the method computes and displays the weighted. This method does
-            not affect the computed discharge
-            only the extrapolation display."""
+                        comparison. If weighted is used the unweighted are
+                        computed and display. If the unweighted are used
+                        the method computes and displays the weighted. This
+                        method does not affect the computed discharge
+                        only the extrapolation display."""
 
         if self.meas.extrap_fit.norm_data[-1].data_type.lower() == 'q':
             # Create a copy of the normalized values of the entire measurement
@@ -10511,7 +10718,7 @@ parameters
     def cancel_extrap(self):
         """Rest extrapolation to settings that were inplace when the tab was
         opened.
-            """
+                        """
         self.meas = copy.deepcopy(self.extrap_meas)
         self.extrap_tab()
         self.change = False
@@ -10519,7 +10726,7 @@ parameters
     def extrap_comments_messages(self):
         """Displays comments and messages associated with bottom track
         filters in Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_extrap_comments.clear()
@@ -10551,7 +10758,7 @@ parameters
     # =========
     def edges_tab(self):
         """Initializes all of the features of the edges tab.
-            """
+                        """
 
         # Setup data table
         tbl = self.table_edges
@@ -10612,7 +10819,7 @@ parameters
     def update_edges_table(self):
         """Populates the edges table with the latest data and also updates
         the messages tab.
-            """
+                        """
 
         with self.wait_cursor():
             # Set tbl variable
@@ -10676,7 +10883,8 @@ parameters
                 # Format cell
                 if transect_id in self.meas.qa.edges['left_dist_moved_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row, col).setToolTip('Excessive boat movement.')
+                    tbl.item(row, col).setToolTip(
+                        self.tr('Excessive boat movement.'))
                 else:
                     tbl.item(row, col).setBackground(
                         QtGui.QColor(255, 255, 255))
@@ -10737,11 +10945,14 @@ parameters
 
                 # Left edge discharge %
                 col += 1
-                item = '{:2.2f}'.format((self.meas.discharge[
-                                             transect_id].left /
-                                         self.meas.discharge[
-                                             transect_id].total)
-                                        * 100)
+                if np.abs(self.meas.discharge[transect_id].total) > 0:
+                    item = '{:2.2f}'.format((self.meas.discharge[
+                                                 transect_id].left /
+                                             self.meas.discharge[
+                                                 transect_id].total)
+                                            * 100)
+                else:
+                    item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['left_q_idx']:
@@ -10791,7 +11002,8 @@ parameters
                 # Format cell
                 if transect_id in self.meas.qa.edges['right_dist_moved_idx']:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row, col).setToolTip('Excessive boat movement.')
+                    tbl.item(row, col).setToolTip(
+                        self.tr('Excessive boat movement.'))
                 else:
                     tbl.item(row, col).setBackground(
                         QtGui.QColor(255, 255, 255))
@@ -10851,10 +11063,13 @@ parameters
 
                 # Right edge discharge %
                 col += 1
-                item = '{:2.2f}'.format(
-                    (self.meas.discharge[transect_id].right /
-                     self.meas.discharge[transect_id].total)
-                    * 100)
+                if np.abs(self.meas.discharge[transect_id].total) > 0:
+                    item = '{:2.2f}'.format(
+                        (self.meas.discharge[transect_id].right /
+                         self.meas.discharge[transect_id].total)
+                        * 100)
+                else:
+                    item = 'N/A'
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                 if transect_id in self.meas.qa.edges['right_q_idx']:
@@ -10877,13 +11092,13 @@ parameters
     def edges_table_clicked(self, row, col):
         """Coordinates user changes to edge settings.
 
-            Parameters
-            ----------
-            row: int
-                Row in table clicked
-            col: int
-                Column in table clicked
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row in table clicked
+                        col: int
+                            Column in table clicked
+                        """
 
         tbl = self.table_edges
         tbl.blockSignals(True)
@@ -10929,12 +11144,14 @@ parameters
                     self.update_edges_table()
                     self.edges_graphics()
                     self.change = True
-                    QtWidgets.QMessageBox.about(self, 'Start Edge Change',
-                                                'You changed the start edge, '
-                                                'verify that the '
-                                                'left and right distances '
-                                                'and edge types '
-                                                'are correct.')
+                    QtWidgets.QMessageBox.about(self,
+                                                self.tr('Start Edge Change'),
+                                                self.tr(
+                                                    'You changed the start '
+                                                    'edge, verify that the '
+                                                    'left and right '
+                                                    'distances and edge types '
+                                                    'are correct.'))
 
         # Left edge type and coefficient
         elif col == 2 or col == 3 or col == 7:
@@ -11042,7 +11259,7 @@ parameters
                         self.update_edges_table()
 
         # Left number of ensembles
-        elif col == 5:
+        elif col == 6:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -11176,7 +11393,7 @@ parameters
                         self.update_edges_table()
 
         # Right number of ensembles
-        elif col == 12:
+        elif col == 13:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -11210,7 +11427,7 @@ parameters
 
     def edges_graphics(self):
         """Generate graphs for edges tab.
-            """
+                        """
         self.edges_shiptrack_plots()
         self.edges_contour_plots()
 
@@ -11220,7 +11437,7 @@ parameters
 
     def edges_contour_plots(self):
         """Create or update color contour plot for edges.
-            """
+                        """
 
         transect = self.meas.transects[
             self.checked_transects_idx[self.transect_row]]
@@ -11324,7 +11541,7 @@ parameters
 
     def edges_shiptrack_plots(self):
         """Create or update the shiptrack graphs for the edges tab.
-            """
+                        """
         transect = self.meas.transects[
             self.checked_transects_idx[self.transect_row]]
 
@@ -11460,7 +11677,7 @@ parameters
     def edges_comments_messages(self):
         """Displays comments and messages associated with edge filters in
         Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_edges_comments.clear()
@@ -11492,7 +11709,7 @@ parameters
     # ===============
     def uncertainty_tab(self):
         """Initializes and configures Oursin uncertainty tab.
-    """
+                """
 
         self.uncertainty_results_table()
         self.advanced_settings_table()
@@ -11510,7 +11727,7 @@ parameters
 
     def uncertainty_results_table(self):
         """Create and populate uncertainty results table.
-            """
+                        """
 
         # Setup table
         tbl = self.table_uncertainty_results
@@ -11520,7 +11737,6 @@ parameters
         tbl.setColumnCount(16)
         tbl.horizontalHeader().hide()
         tbl.verticalHeader().hide()
-        # tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         tbl.itemChanged.connect(self.user_uncertainty_change)
         tbl.itemChanged.disconnect()
 
@@ -11874,7 +12090,7 @@ parameters
 
     def advanced_settings_table(self):
         """Create and populate uncertainty results table.
-            """
+                        """
 
         # Setup table
         tbl = self.table_uncertainty_settings
@@ -11889,8 +12105,8 @@ parameters
                     self.tr('Extrap: no slip exponent minimum'),
                     self.tr('Extrap: no slip exponent maximum'),
                     self.tr('GGA boat speed (m/s)'),
-                    self.tr('VTG boat speed (m/s'),
-                    self.tr('Compass error (deg'),
+                    self.tr('VTG boat speed (m/s)'),
+                    self.tr('Compass error (deg)'),
                     self.tr('Bayesian COV Prior'),
                     self.tr('Bayesian COV Prior Uncertainty')]
         tbl.setHorizontalHeaderLabels([self.tr('Default'), self.tr('User')])
@@ -12074,7 +12290,7 @@ parameters
 
     def user_uncertainty_change(self):
         """Recomputes the uncertainty based on user input.
-            """
+                        """
 
         # Get edited value from table
         with self.wait_cursor():
@@ -12130,11 +12346,12 @@ parameters
             self.uncertainty_meas_q_plot()
             self.uncertainty_measurement_plot()
             self.uncertainty_comments_messages()
+            self.change = True
 
     def user_advanced_settings_change(self):
         """User advanced settings have changed, update settings and
-        recompute uncertainty.
-            """
+           recompute uncertainty.
+                        """
 
         # Get edited value from table
         with self.wait_cursor():
@@ -12199,7 +12416,7 @@ parameters
 
     def uncertainty_measurement_plot(self):
         """Create or update measurement uncertainty plot.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -12236,7 +12453,7 @@ parameters
 
     def uncertainty_meas_q_plot(self):
         """Create or update measured discharge uncertainty plot.
-            """
+                        """
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -12274,7 +12491,7 @@ parameters
     def uncertainty_comments_messages(self):
         """Displays comments and messages associated with uncertainty in
         Messages tab.
-            """
+                        """
 
         # Clear comments and messages
         self.display_uncertainty_comments.clear()
@@ -12291,6 +12508,7 @@ parameters
                     QtGui.QTextCursor.End)
                 self.display_uncertainty_comments.textCursor().insertBlock()
 
+            self.meas.qa.check_oursin(self.meas)
             self.update_tab_icons()
 
     # EDI tab
@@ -12439,15 +12657,16 @@ parameters
 
     def edi_select_transect(self, row, col):
         """Handles checkbox so only one box can be checked.
-            Updates the GUI to reflect the start bank of the transect selected
+                        Updates the GUI to reflect the start bank of the
+                        transect selected
 
-            Parameters
-            ----------
-            row: int
-                Row clicked by user
-            col: int
-                Column clicked by user
-            """
+                        Parameters
+                        ----------
+                        row: int
+                            Row clicked by user
+                        col: int
+                            Column clicked by user
+                        """
 
         # Checkbox control
         if col == 0:
@@ -12463,16 +12682,17 @@ parameters
             # Update the GUI to reflect the start bank of the selected transect
             if self.meas.transects[self.checked_transects_idx[row]].start_edge[
                 0] == 'R':
-                self.txt_edi_bank.setText('From Right Bank')
+                self.txt_edi_bank.setText(self.tr('From Right Bank'))
             else:
-                self.txt_edi_bank.setText('From Left Bank')
+                self.txt_edi_bank.setText(self.tr('From Left Bank'))
 
             # After a transect is selected enable the compute button in the GUI
             self.pb_edi_compute.setEnabled(True)
 
     def edi_add_row(self):
-        """Allows the user to add a row to the results table so that more than 5 verticals
-            can be defined."""
+        """Allows the user to add a row to the results table so that more
+        than 5 verticals
+                        can be defined."""
 
         # Insert row at bottom
         row_position = self.tbl_edi_results.rowCount()
@@ -12487,7 +12707,7 @@ parameters
 
     def edi_update_table(self):
         """Updates the results table with the computed data.
-            """
+                        """
 
         tbl = self.tbl_edi_results
 
@@ -12532,7 +12752,8 @@ parameters
                     self.edi_results['velocity'][row] * self.units['L'])))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
-            # Convert lat and lon for decimal degrees to degrees and decimal minutes
+            # Convert lat and lon for decimal degrees to degrees and decimal
+            # minutes
             try:
                 latd = int(self.edi_results['lat'][row])
                 latm = np.abs((self.edi_results['lat'][row] - latd) * 60)
@@ -12558,7 +12779,7 @@ parameters
 
     def edi_compute(self):
         """Coordinates the computation of the EDI results.
-            """
+                        """
 
         selected_idx = 0
 
@@ -12590,17 +12811,25 @@ parameters
                 self.create_topoquad_file()
         else:
             # Display message to user
-            self.popup_message('The selected transect has no discharge')
+            self.popup_message(
+                self.tr('The selected transect has no discharge'))
 
     def create_topoquad_file(self):
-        """Create an ASCII file that can be loaded into TopoQuads to mark the EDI locations
-            with a yellow dot.
-            """
+        """Create an ASCII file that can be loaded into TopoQuads to mark
+        the EDI locations
+                        with a yellow dot.
+                        """
 
         # Get user defined filename
         text, ok_pressed = QtWidgets.QInputDialog.getText(self,
-                                                          'TopoQuad File',
-                                                          'Enter filename (no suffix)for TopoQuad file:',
+                                                          self.tr(
+                                                              'TopoQuad File'),
+                                                          self.tr(
+                                                              'Enter '
+                                                              'filename (no '
+                                                              'suffix)for '
+                                                              'TopoQuad '
+                                                              'file:'),
                                                           QtWidgets.QLineEdit.Normal,
                                                           'edi_topoquad')
         # Create and save file to folder containing measurement data
@@ -12619,13 +12848,13 @@ parameters
             # Report error to user
             error_dialog = QtWidgets.QErrorMessage()
             error_dialog.showMessage(
-                'Invalid output filename. TopoQuad file not created.')
+                self.tr('Invalid output filename. TopoQuad file not created.'))
 
     # Adv. Graph tab
     # ==============
     def adv_graph_tab(self):
         """Initializes all of the features of the advanced graphics tab.
-            """
+                        """
 
         if not self.adv_graph_initialized:
             # Advanced tab setup
@@ -12653,12 +12882,17 @@ parameters
                 ('cb_corr_beam_cc', self.cb_adv_graph_corr_beam),
                 ('cb_avg_rssi_cc', self.cb_adv_graph_avg_rssi),
                 ('cb_rssi_beam_cc', self.cb_adv_graph_rssi_beam),
+                ('cb_ping_type_cc', self.cb_adv_graph_ping_type),
                 ('cb_discharge_ts', self.cb_adv_graph_discharge),
                 ('cb_discharge_percent_ts',
                  self.cb_adv_graph_discharge_percent),
                 ('cb_avg_speed_ts', self.cb_adv_graph_avg_speed),
                 (
                 'cb_projected_speed_ts', self.cb_adv_graph_projected_speed_ts),
+                ('cb_wt_beams_ts', self.cb_adv_graph_wt_beams_ts),
+                ('cb_wt_error_ts', self.cb_adv_graph_wt_error_ts),
+                ('cb_wt_vert_ts', self.cb_adv_graph_wt_vert_ts),
+                ('cb_wt_snr_ts', self.cb_adv_graph_wt_snr_ts),
                 ('cb_bt_boat_speed_ts', self.cb_adv_graph_bt_boat_speed),
                 ('cb_bt_3beam_ts', self.cb_adv_graph_bt_3beam),
                 ('cb_bt_error_ts', self.cb_adv_graph_bt_error),
@@ -12726,15 +12960,16 @@ parameters
 
     def adv_graph_transect_select(self):
         """Updates advanced graphics with newly selected transect.
-            """
+                        """
 
         self.transect_row = self.combo_adv_graph_transect.currentIndex()
         self.available_plot_types()
         self.adv_graph_plots()
 
     def adv_graph_auto_flow_direction(self):
-        """Computes the mean flow direction and populates the flow direction edit box.
-            """
+        """Computes the mean flow direction and populates the flow direction
+        edit box.
+                        """
 
         trans_prop = Measurement.compute_measurement_properties(self.meas)
         direction = trans_prop['avg_water_dir'][
@@ -12743,7 +12978,7 @@ parameters
 
     def available_plot_types(self):
         """Enable / disable plot types
-            """
+                        """
 
         # Mag Error
         if self.meas.transects[self.checked_transects_idx[
@@ -12767,7 +13002,9 @@ parameters
 
         # GGA data
         if self.meas.transects[self.checked_transects_idx[
-            self.transect_row]].boat_vel.gga_vel is not None:
+            self.transect_row]].boat_vel.gga_vel is not None and \
+                self.meas.transects[self.checked_transects_idx[
+                    self.transect_row]].boat_vel.gga_vel.u_mps is not None:
             self.cb_adv_graph_gga_boat_speed.setEnabled(True)
             self.cb_adv_graph_gga_quality.setEnabled(True)
             self.cb_adv_graph_gga_hdop.setEnabled(True)
@@ -12789,7 +13026,9 @@ parameters
             self.cb_adv_graph_gga_source.setChecked(False)
 
         if self.meas.transects[self.checked_transects_idx[
-            self.transect_row]].boat_vel.vtg_vel is not None:
+            self.transect_row]].boat_vel.vtg_vel is not None and \
+                self.meas.transects[self.checked_transects_idx[
+                    self.transect_row]].boat_vel.vtg_vel.u_mps is not None:
             self.cb_adv_graph_vtg_boat_speed.setEnabled(True)
             self.cb_adv_graph_vtg_source.setEnabled(True)
         else:
@@ -12813,9 +13052,17 @@ parameters
             self.cb_adv_graph_bt_rssi.setEnabled(False)
             self.cb_adv_graph_bt_rssi.setChecked(False)
 
+        # WT Data
+        if self.meas.transects[self.checked_transects_idx[
+            self.transect_row]].adcp.manufacturer == 'SonTek':
+            self.cb_adv_graph_wt_snr_ts.setEnabled(True)
+        else:
+            self.cb_adv_graph_wt_snr_ts.setEnabled(False)
+            self.cb_adv_graph_wt_snr_ts.setChecked(False)
+
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect.
-            """
+                        """
 
         # Determine which plot types the user has selected
         selected_types = []
@@ -12830,7 +13077,8 @@ parameters
         idx = self.checked_transects_idx[
             self.combo_adv_graph_transect.currentIndex()]
 
-        # If the canvas has not been previously created, create the canvas and add the widget.
+        # If the canvas has not been previously created, create the canvas and
+        # add the widget.
         if self.adv_graph_canvas is None:
             # Create the canvas
             self.adv_graph_canvas = MplCanvas(parent=self.graph_adv_graph,
@@ -12847,7 +13095,7 @@ parameters
             self.adv_graph_toolbar.hide()
 
         # Initialize the advanced figure and assign to the canvas
-        self.adv_graph_fig = WTAdvanced(canvas=self.adv_graph_canvas)
+        self.adv_graph_fig = AdvGraphs(canvas=self.adv_graph_canvas)
         # Create the figure with the specified data
         self.adv_graph_fig.create(transect=self.meas.transects[idx],
                                   discharge=self.meas.discharge[idx],
@@ -12870,9 +13118,9 @@ parameters
         self.tab_adv_graph.setFocus()
 
     def adv_graph_show_hide(self):
-        """Controls the visibility of the plot controls and expands and contracts the layout holding the plots
-            and plot controls.
-            """
+        """Controls the visibility of the plot controls and expands and
+         contracts the layout holding the plots and plot controls.
+                        """
 
         # Hide control and expand plots
         if self.gb_adv_graph_controls.isVisible():
@@ -12892,7 +13140,7 @@ parameters
     # =================
     def clear_zphd(self):
         """Clears the graphics user controls.
-            """
+                        """
 
         try:
             self.actionData_Cursor.setChecked(False)
@@ -12907,7 +13155,7 @@ parameters
 
     def data_cursor(self):
         """Apply the data cursor.
-            """
+                        """
 
         if self.actionData_Cursor.isChecked():
             for fig in self.figs:
@@ -12920,111 +13168,108 @@ parameters
                     fig.set_hover_connection(True)
         else:
             for fig in self.figs:
-                if fig is not None:
-                    fig.set_hover_connection(False)
+                fig.set_hover_connection(False)
 
     def home(self):
         """Reset graphics to default.
-            """
+                        """
 
         for tb in self.toolbars:
-            if tb is not None:
-                tb.home()
+            tb.home()
 
     def zoom(self):
         """Zoom graphics using window.
-            """
+                        """
 
         for tb in self.toolbars:
-            if tb is not None:
-                tb.zoom()
+            tb.zoom()
         self.actionPan.setChecked(False)
         self.actionData_Cursor.setChecked(False)
         self.data_cursor()
 
     def pan(self):
         """Pan graph.
-            """
+                        """
 
         for tb in self.toolbars:
-            if tb is not None:
-                tb.pan()
+            tb.pan()
         self.actionZoom.setChecked(False)
         self.actionData_Cursor.setChecked(False)
         self.data_cursor()
 
     def change_x_axis(self):
         """Manages the changing of the x axis type.
-            """
+                        """
 
-        # Clear zoom, pan, home, data_cursor
-        self.clear_zphd()
+        with self.wait_cursor():
+            # Clear zoom, pan, home, data_cursor
+            self.clear_zphd()
 
-        # Determine the selected tab
-        tab_idx = self.current_tab
+            # Determine the selected tab
+            tab_idx = self.current_tab
 
-        # Main tab
-        if tab_idx == 'Main':
-            self.contour_shiptrack(
-                self.checked_transects_idx[self.transect_row])
+            # Main tab
+            if tab_idx == 'Main':
+                self.contour_shiptrack(
+                    self.checked_transects_idx[self.transect_row])
 
-        # Compass/PR tab
-        elif tab_idx == 'Compass/P/R':
-            self.compass_plot()
-            self.pr_plot()
+            # Compass/PR tab
+            elif tab_idx == 'Compass/P/R':
+                self.compass_plot()
+                self.pr_plot()
 
-        # Moving-bed test tab
-        elif tab_idx == 'MovBedTst':
-            self.mb_plots(idx=self.mb_row)
+            # Moving-bed test tab
+            elif tab_idx == 'MovBedTst':
+                self.mb_plots(idx=self.mb_row)
 
-        # Bottom track tab
-        elif tab_idx == 'BT':
-            self.bt_plots()
+            # Bottom track tab
+            elif tab_idx == 'BT':
+                self.bt_plots()
 
-        # GPS tab
-        elif tab_idx == 'GPS':
-            self.gps_plots()
+            # GPS tab
+            elif tab_idx == 'GPS':
+                self.gps_plots()
 
-        # Depth tab
-        elif tab_idx == 'Depth':
-            self.depth_plots()
+            # Depth tab
+            elif tab_idx == 'Depth':
+                self.depth_plots()
 
-        # Water track tab
-        elif tab_idx == 'WT':
-            self.wt_plots()
+            # Water track tab
+            elif tab_idx == 'WT':
+                self.wt_plots()
 
-        # Edges tab
-        elif tab_idx == 'Edges':
-            self.edges_graphics()
+            # Edges tab
+            elif tab_idx == 'Edges':
+                self.edges_graphics()
 
-        # Adv. Graph
-        elif tab_idx == 'Adv. Graph':
-            self.adv_graph_tab()
+            # Adv. Graph
+            elif tab_idx == 'Adv. Graph':
+                self.adv_graph_tab()
 
     def x_axis_time(self):
         """Changes the x-axis type to time
-            """
+                        """
 
         self.x_axis_type = 'T'
         self.change_x_axis()
 
     def x_axis_ensemble(self):
         """Changes the x-axis type to ensembles
-            """
+                        """
 
         self.x_axis_type = 'E'
         self.change_x_axis()
 
     def x_axis_length(self):
         """Changes the x-axis type to length
-            """
+                        """
 
         self.x_axis_type = 'L'
         self.change_x_axis()
 
     def set_show_below_sl(self):
         """Sets toggle to allow data below the side lobe to be shown.
-            """
+                        """
 
         if self.show_below_sl:
             self.show_below_sl = False
@@ -13034,24 +13279,20 @@ parameters
     # Split functions
     # ==============
     def split_initialization(self, groupings=None, data=None):
-        """Sets the GUI components to support semi-automatic processing of
-        pairings that split a single
+        """Sets the GUI components to support semi-automatic processing of pairings that split a single
         measurement into multiple measurements. Loads the first pairing.
 
         Parameters
         ==========
         groupings: list
-            This a list of lists of transect indices splitting a single
-            measurement into multiple measurements
+            This a list of lists of transect indices splitting a single measurement into multiple measurements
             Example groupings = [[0, 1], [2, 3, 4, 5], [8, 9]]
         data: Measurement
-            Object of class Measurement which contains all of the transects
-            to be grouped into multiple measurements
+            Object of class Measurement which contains all of the transects to be grouped into multiple measurements
         """
 
         if groupings is not None:
-            # GUI settings to allow processing to split measurement into
-            # multiple measurements
+            # GUI settings to allow processing to split measurement into multiple measurements
             self.save_all = False
             self.actionOpen.setEnabled(False)
             self.actionCheck.setEnabled(False)
@@ -13068,8 +13309,8 @@ parameters
             # Data settings
             self.meas = data
             self.groupings = groupings
-            self.checked_transects_idx = Measurement.checked_transects(
-                self.meas)
+            self.checked_transects_idx = \
+                Measurement.checked_transects(self.meas)
             self.h_external_valid = Measurement.h_external_valid(self.meas)
             self.transect_row = 0
 
@@ -13213,9 +13454,7 @@ parameters
 
     # Support functions
     # =================
-    @staticmethod
-    def q_qa_message(qa_data, cat_idx, transect_id, total_threshold_warning,
-                     total_threshold_caution,
+    def q_qa_message(self, qa_data, cat_idx, transect_id, total_threshold_warning, total_threshold_caution,
                      run_threshold_warning, run_threshold_caution):
 
         text = []
@@ -13229,11 +13468,9 @@ parameters
             qa_check = qa_data['q_total_warning'][transect_id]
 
         if qa_check:
-            text.append(
-                'Interpolated Q for invalid cells and ensembles in a '
-                'transect exceeds '
-                + '%3.0f' % total_threshold_warning
-                + '%;\n')
+            text.append(self.tr('Interpolated Q for invalid cells and ensembles in a transect exceeds ')
+                        + '%3.0f' % total_threshold_warning
+                        + '%;\n')
 
         try:
             qa_check = qa_data['q_max_run_warning'][transect_id, cat_idx]
@@ -13241,10 +13478,9 @@ parameters
             qa_check = qa_data['q_max_run_warning'][transect_id]
 
         if qa_check:
-            text.append(
-                'Interpolated Q for consecutive invalid ensembles exceeds '
-                + '%3.0f' % run_threshold_warning
-                + '%;\n')
+            text.append(self.tr('Interpolated Q for consecutive invalid ensembles exceeds ')
+                        + '%3.0f' % run_threshold_warning
+                        + '%;\n')
 
         try:
             qa_check = qa_data['q_total_caution'][transect_id, cat_idx]
@@ -13252,11 +13488,9 @@ parameters
             qa_check = qa_data['q_total_caution'][transect_id]
 
         if qa_check:
-            text.append(
-                'Interpolated Q for invalid cells and ensembles in a '
-                'transect exceeds '
-                + '%3.0f' % total_threshold_caution
-                + '%;\n')
+            text.append(self.tr('Interpolated Q for invalid cells and ensembles in a transect exceeds ')
+                        + '%3.0f' % total_threshold_caution
+                        + '%;\n')
 
         try:
             qa_check = qa_data['q_max_run_caution'][transect_id, cat_idx]
@@ -13264,10 +13498,9 @@ parameters
             qa_check = qa_data['q_max_run_caution'][transect_id]
 
         if qa_check:
-            text.append(
-                'Interpolated Q for consecutive invalid ensembles exceeds '
-                + '%3.0f' % run_threshold_caution
-                + '%;\n')
+            text.append(self.tr('Interpolated Q for consecutive invalid ensembles exceeds ')
+                        + '%3.0f' % run_threshold_caution
+                        + '%;\n')
         return text
 
     @staticmethod
@@ -13340,8 +13573,7 @@ parameters
 
             self.mb_table_clicked(self.mb_row, 3)
 
-        # Turn on or off display of alternate method medians to allow
-        # comparison
+        # Turn on or off display of alternate method medians to allow comparison
         if self.current_tab == 'Extrap':
             # Turn on comparison medians
             if e.key() == QtCore.Qt.Key_F8:
@@ -13438,17 +13670,17 @@ parameters
         finally:
             QtWidgets.QApplication.restoreOverrideCursor()
 
-    def tab_manager(self, tab_idx=None, old_discharge=None):
-        """Manages the initialization of content for each tab and updates
-        that information as necessary.
+    def tab_manager(self, tab_idx=None, old_discharge=None, subtab_idx=None):
+        """Manages the initialization of content for each tab and updates that information as necessary.
 
         Parameters
         ----------
         tab_idx: int
             Index of tab clicked by user
         old_discharge: list
-            List of QComp objects contain the discharge prior to most recent
-            change
+            List of QComp objects contain the discharge prior to most recent change
+        subtab_idx: int
+            Index of subtab of tab_summary, used to force tab_idx to main, discharge
         """
 
         # Clear zoom, pan, home, data_cursor
@@ -13464,21 +13696,20 @@ parameters
 
         # Main tab
         if tab_idx == 'Main':
+
+            if subtab_idx is not None:
+                self.tab_summary.setCurrentIndex(0)
+
             if self.change:
                 # If data has changed update main tab display
                 self.update_main()
             else:
                 # Setup list for use by graphics controls
-                self.canvases = [self.main_shiptrack_canvas,
-                                 self.main_wt_contour_canvas,
-                                 self.main_extrap_canvas,
+                self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
                                  self.main_discharge_canvas]
-                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
-                             self.main_extrap_fig,
+                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig, self.main_extrap_fig,
                              self.main_discharge_fig]
-                self.toolbars = [self.main_shiptrack_toolbar,
-                                 self.main_wt_contour_toolbar,
-                                 self.main_extrap_toolbar,
+                self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
                                  self.main_discharge_toolbar]
                 self.tab_main.show()
 
@@ -13537,8 +13768,7 @@ parameters
         self.set_tab_color()
 
     def update_comments(self, tab_idx=None):
-        """Manages the initialization of content for each tab and updates
-        that information as necessary.
+        """Manages the initialization of content for each tab and updates that information as necessary.
 
         Parameters
         ----------
@@ -13620,10 +13850,9 @@ parameters
         self.actionON.setDisabled(True)
 
         # Set tab text and icons to default
-        for tab_idx in range(self.tab_all.count() - 2):
+        for tab_idx in range(self.tab_all.count() - 3):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
-            self.tab_all.tabBar().setTabTextColor(tab_idx,
-                                                  QtGui.QColor(191, 191, 191))
+            self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
 
         # Configure tabs and toolbar for the presence or absence of GPS data
         self.tab_all.setTabEnabled(6, False)
@@ -13640,8 +13869,7 @@ parameters
                 self.actionOFF.setEnabled(True)
                 self.actionGoogle_Earth.setEnabled(True)
                 if not hasattr(self, 'sc_gga'):
-                    self.sc_gga = QtWidgets.QShortcut(
-                        QtGui.QKeySequence('Ctrl+G'), self)
+                    self.sc_gga = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+G'), self)
                     self.sc_gga.activated.connect(self.set_ref_gga)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
@@ -13649,16 +13877,14 @@ parameters
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
                 if not hasattr(self, 'sc_vtg'):
-                    self.sc_vtg = QtWidgets.QShortcut(
-                        QtGui.QKeySequence('Ctrl+V'), self)
+                    self.sc_vtg = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
                     self.sc_vtg.activated.connect(self.set_ref_vtg)
             if self.actionVTG.isEnabled() and self.actionGGA.isEnabled():
                 break
 
         # Configure tabs for the presence or absence of a compass
         if len(self.checked_transects_idx) > 0:
-            heading = np.unique(self.meas.transects[self.checked_transects_idx[
-                0]].sensors.heading_deg.internal.data)
+            heading = np.unique(self.meas.transects[self.checked_transects_idx[0]].sensors.heading_deg.internal.data)
         else:
             heading = np.array([0])
 
@@ -13702,7 +13928,11 @@ parameters
 # Main
 # ====
 if __name__ == "__main__":
+    mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     window = QRev()
-    window.show()
-    app.exec_()
+    if window.agreement:
+        window.show()
+        app.exec_()
+    else:
+        app.closeAllWindows()

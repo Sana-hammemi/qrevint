@@ -3,7 +3,8 @@ import matplotlib.gridspec as gridspec
 
 
 class StationaryGraphs(object):
-    """Class to generate two time series plots (moving-bed velocity and shiptrack based on upstream/downstream
+    """Class to generate two time series plots (moving-bed velocity and
+    shiptrack based on upstream/downstream
     movement) used to evaluate stationary moving-bed tests.
 
     Attributes
@@ -44,7 +45,8 @@ class StationaryGraphs(object):
         self.stud = None
 
     def create(self, mb_test, units, x_axis_type=None):
-        """Generates a moving-bed time series and upstream/downstream bottom track plot from stationary moving-bed
+        """Generates a moving-bed time series and upstream/downstream bottom
+        track plot from stationary moving-bed
         test data.
 
         Parameters
@@ -69,92 +71,106 @@ class StationaryGraphs(object):
         gs = gridspec.GridSpec(1, 2)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.1, bottom=0.1, right=0.98, top=0.85, wspace=0.2, hspace=0)
+        self.fig.subplots_adjust(left=0.1, bottom=0.1, right=0.98, top=0.85,
+                                 wspace=0.2, hspace=0)
 
         # Configure moving-bed time series graph
         self.fig.axmb = self.fig.add_subplot(gs[0, 0])
-        self.fig.axmb.set_ylabel(self.canvas.tr('BT Moving-bed speed' + units['label_V']))
+        self.fig.axmb.set_ylabel(self.canvas.tr('BT Moving-bed speed' +
+                                                units['label_V']))
         self.fig.axmb.grid()
         self.fig.axmb.xaxis.label.set_fontsize(12)
         self.fig.axmb.yaxis.label.set_fontsize(12)
-        self.fig.axmb.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+        self.fig.axmb.tick_params(axis='both', direction='in', bottom=True,
+                                  top=True, left=True, right=True)
 
         # Mark invalid data
         valid_data = \
-            mb_test.transect.boat_vel.bt_vel.valid_data[0, mb_test.transect.in_transect_idx]
+            mb_test.transect.boat_vel.bt_vel.valid_data[
+                0, mb_test.transect.in_transect_idx]
         if np.any(valid_data):
             invalid_data = np.logical_not(valid_data)
             # Compute x axis data
             x = None
             if x_axis_type == 'L':
-                # Length doesn't make sense for this plot so default to ensembles
-                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
+                # Length doesn't make sense for this plot so default to
+                # ensembles
+                x = np.arange(1, len(
+                    mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
             elif x_axis_type == 'E':
-                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
+                x = np.arange(1, len(
+                    mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
             elif x_axis_type == 'T':
                 x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec)
 
-            try:
-                self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel * units['V'], 'b-')
-            except ValueError:
-                x = np.arange(1, len(mb_test.stationary_mb_vel) + 1)
-                x_axis_type = 'E'
-                self.mb = self.fig.axmb.plot(x,
-                                             mb_test.stationary_mb_vel * units[
-                                                 'V'], 'b-')
-
+            self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel *
+                                         units['V'], 'b-')
             self.mb.append(self.fig.axmb.plot(x[invalid_data],
-                                              mb_test.stationary_mb_vel[invalid_data] * units['V'], 'ro')[0])
+                                              mb_test.stationary_mb_vel[
+                                                  invalid_data] * units['V'],
+                                              'ro')[0])
 
             # Label axis
             if x_axis_type == 'L':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
+                                       right=np.nanmax(x) * 1.02)
                 self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
             elif x_axis_type == 'E':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
+                                       right=np.nanmax(x) * 1.02)
                 self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
             elif x_axis_type == 'T':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
+                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
+                                       right=np.nanmax(x) * 1.02)
                 self.fig.axmb.set_xlabel(self.canvas.tr('Duration (seconds)'))
 
             # Generate upstream/cross stream shiptrack
             self.fig.axstud = self.fig.add_subplot(gs[0, 1])
-            self.fig.axstud.set_xlabel(self.canvas.tr('Distance cross stream' + units['label_L']))
-            self.fig.axstud.set_ylabel(self.canvas.tr('Distance upstream' + units['label_L']))
+            self.fig.axstud.set_xlabel(self.canvas.tr(
+                'Distance cross stream' + units['label_L']))
+            self.fig.axstud.set_ylabel(self.canvas.tr('Distance upstream' +
+                                                      units['label_L']))
             self.fig.axstud.grid()
             self.fig.axstud.xaxis.label.set_fontsize(12)
             self.fig.axstud.yaxis.label.set_fontsize(12)
             self.fig.axstud.axis('equal')
-            self.fig.axstud.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+            self.fig.axstud.tick_params(axis='both', direction='in',
+                                        bottom=True, top=True, left=True,
+                                        right=True)
 
-            self.stud = self.fig.axstud.plot(mb_test.stationary_cs_track * units['L'],
-                                             mb_test.stationary_us_track * units['L'], 'r-')
+            self.stud = self.fig.axstud.plot(
+                mb_test.stationary_cs_track * units['L'],
+                mb_test.stationary_us_track * units['L'], 'r-')
 
             # Initialize annotation for data cursor
-            self.annot_mb = self.fig.axmb.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                                   bbox=dict(boxstyle="round", fc="w"),
-                                                   arrowprops=dict(arrowstyle="->"))
+            self.annot_mb = self.fig.axmb.annotate(
+                "", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                bbox=dict(boxstyle="round", fc="w"),
+                arrowprops=dict(arrowstyle="->"))
 
             self.annot_mb.set_visible(False)
 
             # Initialize annotation for data cursor
-            self.annot_stud = self.fig.axstud.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                                       bbox=dict(boxstyle="round", fc="w"),
-                                                       arrowprops=dict(arrowstyle="->"))
+            self.annot_stud = self.fig.axstud.annotate(
+                "", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                bbox=dict(boxstyle="round", fc="w"),
+                arrowprops=dict(arrowstyle="->"))
 
             self.annot_stud.set_visible(False)
 
             self.canvas.draw()
 
     def change(self):
-        """Function to all call to change, but there is nothing to change for this class. Mirrors BoatSpeed class
+        """Function to all call to change, but there is nothing to change for
+        this class. Mirrors BoatSpeed class
         to allow interchangable use.
         """
         pass
 
     @staticmethod
     def update_annot(ind, plt_ref, annot):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously
+        initialized and hidden annotation.
 
         Parameters
         ----------
@@ -168,28 +184,35 @@ class StationaryGraphs(object):
 
         pos = plt_ref._xy[ind["ind"][0]]
 
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
+        # Shift annotation box left or right depending on which half of the
+        # axis the pos x is located and the
         # direction of x increasing.
-        if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+        if plt_ref.axes.viewLim.intervalx[0] < \
+                plt_ref.axes.viewLim.intervalx[1]:
+            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
+                         plt_ref.axes.viewLim.intervalx[1]) / 2:
                 annot._x = -20
             else:
                 annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
+                         plt_ref.axes.viewLim.intervalx[1]) / 2:
                 annot._x = -80
             else:
                 annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the
         # direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
+                         plt_ref.axes.viewLim.intervaly[1]) / 2:
                 annot._y = -40
             else:
                 annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
+                         plt_ref.axes.viewLim.intervaly[1]) / 2:
                 annot._y = 20
             else:
                 annot._y = -40
@@ -201,7 +224,8 @@ class StationaryGraphs(object):
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
-        annotation visible and calls method to update the text of the annotation. If the
+        annotation visible and calls method to update the text of the
+        annotation. If the
         location is not valid the existing annotation is hidden.
 
         Parameters
@@ -214,7 +238,8 @@ class StationaryGraphs(object):
         vis_mb = self.annot_mb.get_visible()
         vis_stud = self.annot_stud.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.axmb:
             cont_mb = False
             ind_mb = None
@@ -238,7 +263,8 @@ class StationaryGraphs(object):
                 self.annot_stud.set_visible(True)
                 self.canvas.draw_idle()
             else:
-                # If the cursor location is not associated with the plotted data hide the annotation.
+                # If the cursor location is not associated with the plotted
+                # data hide the annotation.
                 if vis_stud:
                     self.annot_stud.set_visible(False)
                     self.canvas.draw_idle()
@@ -249,11 +275,13 @@ class StationaryGraphs(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                'button_press_event', self.hover)
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None
