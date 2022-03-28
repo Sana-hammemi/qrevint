@@ -375,7 +375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRevInt 1.17'
+        self.QRev_version = 'QRevInt 1.18'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRevInt.ico'))
         show_disclaimer = True
@@ -1071,13 +1071,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
 
         if len(self.checked_transects_idx) > 0:
+
+            # Get uncertainty
+            if self.run_oursin:
+                uncertainty = self.meas.oursin.u_measurement_user['total_95'][0]
+            else:
+                uncertainty = self.meas.uncertainty.total_95_user
+
+            # Check for rating prompt
             if self.rating_prompt:
                 # Intialize dialog
                 rating_dialog = Rating(self)
-                if self.run_oursin:
-                    uncertainty = self.meas.oursin.u_measurement_user['total_95'][0]
-                else:
-                    uncertainty = self.meas.uncertainty.total_95_user
 
                 if np.isnan(uncertainty):
                     rating_dialog.uncertainty_value.setText('N/A')
@@ -1133,7 +1137,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 text = '[' + time_stamp + ', ' + user_name + ']: File Saved Q = ' \
                        + '{:8.2f}'.format(discharge['total_mean'] * self.units['Q']) \
                        + ' ' + self.units['label_Q'][1:-1]\
-                       + ' (Uncertainty: ' + '{:4.1f}'.format(self.meas.uncertainty.total_95_user) + '%)'
+                       + ' (Uncertainty: ' + '{:4.1f}'.format(uncertainty) + '%)'
                 self.meas.comments.append(text)
                 self.comments_tab()
 
