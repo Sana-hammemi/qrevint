@@ -37,8 +37,8 @@ class TestCrossSectionComp(unittest.TestCase):
         xs = CrossSectionComp(meas.transects)
         mean_xs = xs.cross_section[(len(xs.cross_section)-1)]
 
-        self.assertIsNone(np.testing.assert_array_equal(
-            expected_data, mean_xs))
+        self.assertIsNone(np.testing.assert_array_almost_equal(
+            expected_data, mean_xs, decimal=5))
 
 
 if __name__ == '__main__':

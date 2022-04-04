@@ -42,6 +42,7 @@ class CrossSectionComp(object):
         # Export CSV and PDF plots for testing
         if path is not None:
             self.export_csv(path)
+            self.export_plots(path)
 
     def create_cross_sections(self, transects):
         """Create the axes and lines for the figure.
