@@ -507,6 +507,8 @@ class BoatStructure(object):
                     self.vtg_vel = BoatData()
                     self.vtg_vel.populate_from_qrev_mat(
                         transect.boatVel.vtgVel)
+            if hasattr(transect.boatVel, 'composite'):
+                self.composite = transect.boatVel.composite
             nav_dict = {'btVel': 'bt_vel', 'bt_vel': 'bt_vel',
                         'ggaVel': 'gga_vel', 'gga_vel': 'gga_vel',
                         'vtgVel': 'vtg_vel', 'vtg_vel': 'vtg_vel'}

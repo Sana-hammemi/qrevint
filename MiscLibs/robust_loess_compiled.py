@@ -280,5 +280,6 @@ def rloess(x, y, span):
                         smoothed_values[n] = compute_loess(x, y, neighbors_idx, n, r_weights)
     return smoothed_values
 
+
 if __name__ == '__main__':
     cc.compile()

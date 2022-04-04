@@ -4,6 +4,7 @@ from numba import njit
 
 cc = CC('run_iqr')
 
+
 @cc.export('run_iqr', 'f8[:](i4, f8[::1])')
 def run_iqr(half_width, data):
     """Computes a running Innerquartile Range
@@ -53,6 +54,7 @@ def run_iqr(half_width, data):
 
     return np.array(iqr_array)
 
+
 @njit
 @cc.export('iqr', 'f8(f8[::1])')
 def iqr(data_1d):
@@ -83,6 +85,7 @@ def iqr(data_1d):
 
     return sp_iqr
 
+
 @njit
 @cc.export('compute_quantile', 'f8(f8[::1], f8)')
 def compute_quantile(data_1d, q):
@@ -98,5 +101,5 @@ def compute_quantile(data_1d, q):
         result = sorted_data[x1]
     return result
 
-if __name__ is '__main__':
+if __name__ == '__main__':
     cc.compile()

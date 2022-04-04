@@ -4408,7 +4408,6 @@ class Measurement(object):
                 temp = temp + comment.replace('\n', ' |||') + ' |||'
             ETree.SubElement(channel, 'UserComment', type='char').text = temp
 
-#=======================================================================================================================================================
         # Average cross-section
         if self.export_xs:
             # xs = CrossSectionComp(self.transects, file_name)

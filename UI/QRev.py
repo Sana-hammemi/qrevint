@@ -983,23 +983,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.showMaximized()
 
         # Disclaimer is for QRevInt
-        #if show_disclaimer:
-        #    try:
-        #        self.agreement = self.sticky_settings.get('Agreement')
-        #        if not self.agreement:
-        #            self.close()
-        #    except KeyError:
-        #        # Open disclaimer and license
-        #        disclaimer = Disclaimer(self)
-        #        disclaimer_exec = disclaimer.exec_()
-        #        if disclaimer_exec:
-        #            self.sticky_settings.new('Agreement', True)
-        #            self.agreement = True
-        #        else:
-        #            self.agreement = False
-        #           self.close()
-        #else:
-        #    self.agreement = True
+        if show_disclaimer:
+            try:
+                self.agreement = self.sticky_settings.get('Agreement')
+                if not self.agreement:
+                    self.close()
+            except KeyError:
+                # Open disclaimer and license
+                disclaimer = Disclaimer(self)
+                disclaimer_exec = disclaimer.exec_()
+                if disclaimer_exec:
+                    self.sticky_settings.new('Agreement', True)
+                    self.agreement = True
+                else:
+                    self.agreement = False
+                    self.close()
+        else:
+            self.agreement = True
 
     # Toolbar functions
     # =================
@@ -1553,6 +1553,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_allow_manual_no_mb.setChecked(False)
 
+        if self.xs_export:
+            options.cb_xs_export.setChecked(True)
+        else:
+            options.cb_xs_export.setChecked(False)
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -1733,12 +1738,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.allow_observed_no_moving_bed = False
                     self.sticky_settings.set('AllowNoMB', False)
 
+                # Export mean XS
+                if options.cb_xs_export.isChecked():
+                    self.xs_export = True
+                    self.sticky_settings.set('XsExport', True)
+                else:
+                    self.xs_export = False
+                    self.sticky_settings.set('XsExport', False)
+
                 # Update tabs
                 if self.meas is not None:
                     if old_discharge is None:
                         self.tab_manager()
                     else:
                         self.tab_manager(old_discharge=old_discharge)
+
+
 
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA
@@ -2205,24 +2220,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def rating_change(self):
         """Stores the user selected rating.
             """
-        self.meas.user_rating = self.le_user_rating.currentText()
+        self.meas.user_rating = self.cb_user_rating.currentText()
 
     def set_user_rating(self):
         """Sets the user rating from stored data.
-            """
-        rating = {'Excellent': 'Excellent (<3%)', 'Good': 'Good (3-5%)',
-                  'Fair': 'Fair (5-8%)',
-                  'Poor': 'Poor (>8%)', 'Not Rated': 'Not Rated',
-                  '': 'Not Rated', 'Not ': 'Not Rated',
-                  'Exce': 'Excellent (<3%)'}
+        """
+        rating = {'Excellent': self.tr('Excellent (<3%)'),
+                  'Good': self.tr('Good (3-5%)'),
+                  'Fair': self.tr('Fair (5-8%)'),
+                  'Poor': self.tr('Poor (>8%)'),
+                  'Not Rated': self.tr('Not Rated'),
+                  '': self.tr('Not Rated'),
+                  'Not ': self.tr('Not Rated'),
+                  'Exce': self.tr('Excellent (<3%)')}
         if type(self.meas.user_rating) is np.ndarray:
             if len(self.meas.user_rating) > 0:
                 item = rating[self.meas.user_rating[0:4]]
             else:
-                item = 'Not Rated'
+                item = self.tr('Not Rated')
         else:
             item = rating[self.meas.user_rating.split('(')[0].strip()]
-        self.le_user_rating.setText(item)
+        self.cb_user_rating.setCurrentText(item)
 
     def qa_table(self):
         """Create and populate quality assurance table.
@@ -13671,16 +13689,19 @@ and display.
             QtWidgets.QApplication.restoreOverrideCursor()
 
     def tab_manager(self, tab_idx=None, old_discharge=None, subtab_idx=None):
-        """Manages the initialization of content for each tab and updates that information as necessary.
+        """Manages the initialization of content for each tab and updates that
+         information as necessary.
 
         Parameters
         ----------
         tab_idx: int
             Index of tab clicked by user
         old_discharge: list
-            List of QComp objects contain the discharge prior to most recent change
+            List of QComp objects contain the discharge prior to most recent
+            change
         subtab_idx: int
-            Index of subtab of tab_summary, used to force tab_idx to main, discharge
+            Index of subtab of tab_summary, used to force tab_idx to main,
+            discharge
         """
 
         # Clear zoom, pan, home, data_cursor
@@ -13852,7 +13873,8 @@ and display.
         # Set tab text and icons to default
         for tab_idx in range(self.tab_all.count() - 3):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
-            self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
+            self.tab_all.tabBar().setTabTextColor(tab_idx,
+                                                  QtGui.QColor(191, 191, 191))
 
         # Configure tabs and toolbar for the presence or absence of GPS data
         self.tab_all.setTabEnabled(6, False)
@@ -13869,7 +13891,8 @@ and display.
                 self.actionOFF.setEnabled(True)
                 self.actionGoogle_Earth.setEnabled(True)
                 if not hasattr(self, 'sc_gga'):
-                    self.sc_gga = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+G'), self)
+                    self.sc_gga = QtWidgets.QShortcut(
+                        QtGui.QKeySequence('Ctrl+G'), self)
                     self.sc_gga.activated.connect(self.set_ref_gga)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
@@ -13877,10 +13900,15 @@ and display.
                 self.actionON.setEnabled(True)
                 self.actionOFF.setEnabled(True)
                 if not hasattr(self, 'sc_vtg'):
-                    self.sc_vtg = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+V'), self)
+                    self.sc_vtg = QtWidgets.QShortcut(
+                        QtGui.QKeySequence('Ctrl+V'), self)
                     self.sc_vtg.activated.connect(self.set_ref_vtg)
+
             if self.actionVTG.isEnabled() and self.actionGGA.isEnabled():
                 break
+
+        if self.actionVTG.isEnabled() and self.actionGGA.isEnabled():
+            self.update_toolbar_composite_tracks()
 
         # Configure tabs for the presence or absence of a compass
         if len(self.checked_transects_idx) > 0:
