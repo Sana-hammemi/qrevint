@@ -441,7 +441,6 @@ class Shiptrack(object):
             if np.logical_not(np.any(np.isnan(np.array([max_x, min_x, max_y,
                                                         min_y])))):
 
-
                 self.fig.ax.set_ylim(top=max_y * units['L'],
                                      bottom=min_y * units['L'])
                 self.fig.ax.set_xlim(left=min_x * units['L'],
@@ -488,14 +487,14 @@ class Shiptrack(object):
                 warnings.simplefilter("ignore", category=RuntimeWarning)
                 depth_selected = getattr(transect.depths,
                                          transect.depths.selected)
-                weight = depth_selected.depth_cell_size_m[:,
-                         transect.in_transect_idx]
+
+                weight = depth_selected.depth_cell_size_m[
+                         :, transect.in_transect_idx]
                 weight[np.isnan(u)] = np.nan
                 u_mean = np.nansum(u * weight, axis=0) / \
                          np.nansum(weight, axis=0)
                 v_mean = np.nansum(v * weight, axis=0) / \
                          np.nansum(weight, axis=0)
-
 
         speed = np.sqrt(u_mean**2 + v_mean**2) * units['V']
         if len(speed) > 0:

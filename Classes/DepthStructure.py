@@ -82,11 +82,8 @@ class DepthStructure(object):
         """
         if hasattr(transect, 'depths'):
 
-            # try:
             self.bt_depths = DepthData()
             self.bt_depths.populate_from_qrev_mat(transect.depths.btDepths)
-            # except AttributeError:
-            #     self.bt_depths = None
 
             try:
                 self.vb_depths = DepthData()
@@ -100,11 +97,14 @@ class DepthStructure(object):
             except AttributeError:
                 self.ds_depths = None
 
-            if transect.depths.selected == 'btDepths':
+            if transect.depths.selected == 'btDepths' or \
+                    transect.depths.selected == 'bt_depths':
                 self.selected = 'bt_depths'
-            elif transect.depths.selected == 'vbDepths':
+            elif transect.depths.selected == 'vbDepths' or \
+                    transect.depths.selected == 'vb_depths':
                 self.selected = 'vb_depths'
-            elif transect.depths.selected == 'dsDepths':
+            elif transect.depths.selected == 'dsDepths' or \
+                    transect.depths.selected == 'ds_depths':
                 self.selected = 'ds_depths'
             self.composite = transect.depths.composite
             if self.vb_depths is None and self.ds_depths is None:
