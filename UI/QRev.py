@@ -1287,11 +1287,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Save stylesheet in measurement folder
                 if self.save_stylesheet:
+                    if self.units['ID'] == 'SI':
+                        stylesheet = 'QRevStylesheet_si.xsl'
+                    else:
+                        stylesheet = 'QRevStylesheet_english.xsl'
+
                     stylesheet_file = \
                         os.path.join(os.path.dirname(
-                            os.path.realpath(__file__)), 'QRevStylesheet.xsl')
+                            os.path.realpath(__file__)), stylesheet)
                     meas_folder, _ = os.path.split(save_file.full_Name)
-                    shutil.copy2(stylesheet_file, meas_folder)
+                    dest = os.path.join(meas_folder, 'QRevStylesheet.xsl')
+                    shutil.copy2(stylesheet_file, dest)
 
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(self, self.tr("Save"),
@@ -1514,6 +1520,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if not self.agency_options['Uncertainty']['show']:
             options.gb_uncertainty.hide()
+
         if self.run_oursin:
             options.rb_oursin_u.setChecked(True)
         else:
