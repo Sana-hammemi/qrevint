@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1938</width>
-    <height>1055</height>
+    <height>1208</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,7 +20,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="QRevInt.ico">
+   <iconset theme="QRev.ico">
     <normaloff>../../qrevpy/UI</normaloff>../../qrevpy/UI</iconset>
   </property>
   <property name="layoutDirection">

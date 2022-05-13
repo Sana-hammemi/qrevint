@@ -4398,7 +4398,7 @@ class Ui_MainWindow(object):
         self.actionData_Cursor.setToolTip(_translate("MainWindow", "Data Cursor"))
         self.actionGoogle_Earth.setText(_translate("MainWindow", "Google Earth"))
         self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
-import dsm_rc
+import UI.dsm_rc
 
 
 if __name__ == "__main__":

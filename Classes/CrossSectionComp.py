@@ -7,6 +7,9 @@ import utm
 
 from Classes.BoatStructure import BoatStructure
 
+#ToDo: Add stats to show variability between transects ie Area and
+# mean depth variance.
+
 
 class CrossSectionComp(object):
     """Creates average cross-section.

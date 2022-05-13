@@ -404,8 +404,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.toolBar.toggleViewAction().setEnabled(False)
 
         # Get agency optional settings
-        options_file = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), 'QRev.cfg')
+        options_file = os.path.join(os.getcwd(), 'QRev.cfg')
+
         if os.path.exists(options_file):
             if os.path.isfile(options_file):
                 # Read json into dictionary
@@ -1293,8 +1293,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         stylesheet = 'QRevStylesheet_english.xsl'
 
                     stylesheet_file = \
-                        os.path.join(os.path.dirname(
-                            os.path.realpath(__file__)), stylesheet)
+                        os.path.join(os.getcwd(), stylesheet)
                     meas_folder, _ = os.path.split(save_file.full_Name)
                     dest = os.path.join(meas_folder, 'QRevStylesheet.xsl')
                     shutil.copy2(stylesheet_file, dest)
@@ -1802,8 +1801,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setWindowIcon(QtGui.QIcon('QRev.ico'))
         msg.exec_()
 
-        help_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                 'Help')
+        help_file = os.path.join(os.getcwd(), 'Help')
         if msg.clickedButton().text() == 'Users Manual':
             help_file = os.path.join(help_file, 'QRev_Users.pdf')
             webbrowser.open('file:///' + help_file, new=2, autoraise=True)
