@@ -494,6 +494,8 @@ class WaterData(object):
                                                  self.d_mps.shape)
                     else:
                         self.ping_type = transect.wVel.ping_type[np.newaxis, :]
+
+                    self.ping_type = np.char.strip(self.ping_type)
                 else:
                     self.ping_type = np.tile('U', self.d_mps.shape)
             else:
@@ -547,6 +549,7 @@ class WaterData(object):
                                                  self.d_mps.shape)
                     else:
                         self.ping_type = transect.wVel.ping_type[:, np.newaxis]
+                    self.ping_type = np.char.strip(self.ping_type)
                 else:
                     self.ping_type = np.tile('U', self.d_mps.shape)
 
@@ -595,6 +598,7 @@ class WaterData(object):
                                              self.d_mps.shape)
                 else:
                     self.ping_type = transect.wVel.ping_type
+                self.ping_type = np.char.strip(self.ping_type)
             else:
                 self.ping_type = np.tile('U', self.d_mps.shape)
 
@@ -974,9 +978,8 @@ class WaterData(object):
         u_nr = self.u_earth_no_ref_mps
         v_nr = self.v_earth_no_ref_mps
         direction, mag = cart2pol(u_nr, v_nr)
-        u_nr_rotated, v_nr_rotated = pol2cart(direction
-                                              - np.deg2rad(
-            repmat(heading, len(mag), 1)), mag)
+        u_nr_rotated, v_nr_rotated = \
+            pol2cart(direction - np.deg2rad(repmat(heading, len(mag), 1)), mag)
         self.u_earth_no_ref_mps = u_nr_rotated
         self.v_earth_no_ref_mps = v_nr_rotated
 
