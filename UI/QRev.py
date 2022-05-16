@@ -1,6 +1,3 @@
-import copy
-import getpass
-import os
 import shutil
 import copy
 import os
@@ -19,6 +16,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as \
     NavigationToolbar
+
+from Classes.createconfig import Config
 
 import UI.QRev_gui as QRev_gui
 from Classes.stickysettings import StickySettings as SSet
@@ -406,20 +405,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Get agency optional settings
         options_file = os.path.join(os.getcwd(), 'QRev.cfg')
 
-        if os.path.exists(options_file):
-            if os.path.isfile(options_file):
-                # Read json into dictionary
-                try:
-                    with open(options_file, 'r') as f:
-                        self.agency_options = json.load(f)
-                except json.decoder.JSONDecodeError:
-                    self.popup_message(self.tr(
-                        'QRev.cfg could not be read due a formatting error. '
-                        'QRev cannot continue.'))
-                    sys.exit()
-        else:
+        if os.path.exists(options_file) is False:
+            config = Config()
+            config.export_config()
+
             self.popup_message(
-                self.tr('QRev.cfg could not be found. QRev cannot continue.'))
+                self.tr('QRev.cfg was not found so a default configuration '
+                        'file was created.'))
+
+        # Read json into dictionary
+        try:
+            with open(options_file, 'r') as f:
+                self.agency_options = json.load(f)
+        except json.decoder.JSONDecodeError:
+            self.popup_message(self.tr(
+                'QRev.cfg could not be read due a formatting error. '
+                'QRev cannot continue.'))
             sys.exit()
 
         # Setting file for settings to carry over from one session to the next
@@ -1794,10 +1795,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setIcon(QtWidgets.QMessageBox.Question)
         msg.addButton(self.tr('Users Manual'), msg.ActionRole)
         msg.addButton(self.tr('Technical Manual'), msg.ActionRole)
+        msg.addButton(self.tr('Submit Bug or Feature Request \n '
+                              '(Internet Required)'), msg.ActionRole)
         msg.addButton(self.tr('About'), msg.ActionRole)
         msg.addButton(self.tr('Cancel'), msg.ActionRole)
         # msg.setInformativeText('Select option:')
-        msg.setWindowTitle("Help Documents")
+        msg.setWindowTitle("Help")
         msg.setWindowIcon(QtGui.QIcon('QRev.ico'))
         msg.exec_()
 
@@ -1811,6 +1814,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         elif msg.clickedButton().text() == 'About':
             help_file = os.path.join(help_file, 'QRev_About.pdf')
             webbrowser.open('file:///' + help_file, new=2, autoraise=True)
+        elif msg.clickedButton().text() == 'Submit Bug or Feature Request ' \
+                                           '\n (Internet Required)':
+            webbrowser.open('https://forms.office.com/Pages/ResponsePage.aspx'
+                            '?id=urWTBhhLe02TQfMvQApUlAlv4jGjsJhOstclxasDPuZUO'
+                            'E1UWkZIV0JKWVY0NDdHVVlDVkxNNkFKNiQlQCN0PWcu',
+                            new=2, autoraise=True)
 
     def set_use_weighted(self):
         """Called by shortcut key cntrl+w toggle between use weighted and
@@ -1920,20 +1929,35 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.set_user_rating()
 
                 # Setup list for use by graphics controls
-                self.canvases = [self.main_shiptrack_canvas,
-                                 self.main_wt_contour_canvas,
-                                 self.main_extrap_canvas,
-                                 self.main_discharge_canvas,
-                                 self.uncertainty_lollipop_canvas]
-                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
-                             self.main_extrap_fig,
-                             self.main_discharge_fig,
-                             self.uncertainty_lollipop_fig]
-                self.toolbars = [self.main_shiptrack_toolbar,
-                                 self.main_wt_contour_toolbar,
-                                 self.main_extrap_toolbar,
-                                 self.main_discharge_toolbar,
-                                 self.uncertainty_lollipop_toolbar]
+                if self.run_oursin:
+                    self.canvases = [self.main_shiptrack_canvas,
+                                     self.main_wt_contour_canvas,
+                                     self.main_extrap_canvas,
+                                     self.main_discharge_canvas,
+                                     self.uncertainty_lollipop_canvas]
+                    self.figs = [self.main_shiptrack_fig,
+                                 self.main_wt_contour_fig,
+                                 self.main_extrap_fig,
+                                 self.main_discharge_fig,
+                                 self.uncertainty_lollipop_fig]
+                    self.toolbars = [self.main_shiptrack_toolbar,
+                                     self.main_wt_contour_toolbar,
+                                     self.main_extrap_toolbar,
+                                     self.main_discharge_toolbar,
+                                     self.uncertainty_lollipop_toolbar]
+                else:
+                    self.canvases = [self.main_shiptrack_canvas,
+                                     self.main_wt_contour_canvas,
+                                     self.main_extrap_canvas,
+                                     self.main_discharge_canvas]
+                    self.figs = [self.main_shiptrack_fig,
+                                 self.main_wt_contour_fig,
+                                 self.main_extrap_fig,
+                                 self.main_discharge_fig]
+                    self.toolbars = [self.main_shiptrack_toolbar,
+                                     self.main_wt_contour_toolbar,
+                                     self.main_extrap_toolbar,
+                                     self.main_discharge_toolbar]
 
                 # Toggles changes indicating the main has been updated
                 self.change = False
@@ -2501,7 +2525,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def main_uncertainty_plot(self):
         """Creates a lollipop plot for the Oursin uncertainty model.
         """
-        # If the canvas has not been previously created, create the canvas and add the widget.
+        # If the canvas has not been previously created, create the canvas and
+        # add the widget.
         if self.uncertainty_lollipop_canvas is None:
             # Create the canvas
             self.uncertainty_lollipop_canvas = \
