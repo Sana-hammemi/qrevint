@@ -397,6 +397,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.QRev_version = 'QRev 4.30'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
+
         show_disclaimer = False
 
         # Disable ability to hide toolbar
@@ -491,7 +492,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_weighted = \
                 self.agency_options['ExtrapWeighting']['default']
 
-        # Use whole measurement or transects for error and vertical velocity filters
+        # Use whole measurement or transects for error and vertical velocity
+        # filters
         if 'FilterUsingMeasurement' not in self.agency_options.keys():
             self.popup_message(self.tr(
                 'QRev.cfg: FilterUsingMeasurement parameter not found.'))
@@ -671,10 +673,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.popup_message(self.tr('QRev.cfg: QA parameter not found.'))
             sys.exit()
         if 'MinTransects' not in self.agency_options['QA'].keys():
-            self.popup_message(self.tr('QRev.cfg: QA MinTransects parameter not found.'))
+            self.popup_message(self.tr('QRev.cfg: QA MinTransects parameter '
+                                       'not found.'))
             sys.exit()
         if 'MinDuration' not in self.agency_options['QA'].keys():
-            self.popup_message(self.tr('QRev.cfg QA MinDuration parameter not found.'))
+            self.popup_message(self.tr('QRev.cfg QA MinDuration parameter '
+                                       'not found.'))
             sys.exit()
 
         self.manual_computational_settings = {
@@ -13756,11 +13760,16 @@ and display.
                 self.update_main()
             else:
                 # Setup list for use by graphics controls
-                self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas, self.main_extrap_canvas,
+                self.canvases = [self.main_shiptrack_canvas,
+                                 self.main_wt_contour_canvas,
+                                 self.main_extrap_canvas,
                                  self.main_discharge_canvas]
-                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig, self.main_extrap_fig,
+                self.figs = [self.main_shiptrack_fig,
+                             self.main_wt_contour_fig, self.main_extrap_fig,
                              self.main_discharge_fig]
-                self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
+                self.toolbars = [self.main_shiptrack_toolbar,
+                                 self.main_wt_contour_toolbar,
+                                 self.main_extrap_toolbar,
                                  self.main_discharge_toolbar]
                 self.tab_main.show()
 
@@ -13818,8 +13827,15 @@ and display.
 
         self.set_tab_color()
 
+        # Toggle window to fix sizing when BT or WT tabs are chosen to prevent
+        # full screen window from going behind the taskbar.
+        if self.isMaximized() or self.isFullScreen():
+            self.showNormal()
+            self.showMaximized()
+
     def update_comments(self, tab_idx=None):
-        """Manages the initialization of content for each tab and updates that information as necessary.
+        """Manages the initialization of content for each tab and updates that
+        information as necessary.
 
         Parameters
         ----------
