@@ -38,7 +38,7 @@ setup(
                       'more-itertools==7.2.0',
                       'statsmodels',
                       'numpy==1.22.1',
-                      'numba',
+                      'numba==0.53.1',
                       'pandas==1.4.0',
                       'pefile==2019.4.18',
                       'pluggy==0.13.0',

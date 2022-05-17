@@ -106,6 +106,8 @@ class DepthStructure(object):
             elif transect.depths.selected == 'dsDepths' or \
                     transect.depths.selected == 'ds_depths':
                 self.selected = 'ds_depths'
+            else:
+                self.selected = 'bt_depths'
             self.composite = transect.depths.composite
             if self.vb_depths is None and self.ds_depths is None:
                 self.composite = 'Off'
