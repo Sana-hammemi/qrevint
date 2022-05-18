@@ -25,8 +25,6 @@ a = Analysis(['QRev.py'],
              cipher=block_cipher,
              noarchive=False)
 
-#a.datas += Tree("C:/Users/tknight/AppData/Local/Programs/Python/Python38/env/qrev/Lib/site-packages/numba/cext/", "./numba/cext")
-#a.datas += Tree("C:/Users/tknight/AppData/Local/Programs/Python/Python38/env/qrev/Lib/site-packages/numpy/core/lib/npy-pkg-config", "./numpy/core/lib/npy-pkg-config")
 
 a.datas += Tree(cext_path, "./numba/cext")
 a.datas += Tree(npy_path, "./numpy/core/lib/npy-pkg-config")
