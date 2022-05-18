@@ -205,11 +205,7 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         settings = SSet(parent.settingsFile)
 
         # Get the current folder setting.
-        if parent is not None:
-            if len(parent.path) > 0:
-                folder = parent.path
-            else:
-                folder = self.default_folder(settings)
+        folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
         # Create default file name
         if group is None:
@@ -232,6 +228,7 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         if len(self.full_Name) > 0:
             if self.full_Name[-4:] != '.mat':
                 self.full_Name = self.full_Name + '.mat'
+
 
     @staticmethod
     def default_folder(settings):

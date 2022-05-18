@@ -21,7 +21,7 @@ setup(
     license=license,
     REQUIRES_PYTHON='>=3.6.6',
     packages=['Classes', 'MiscLibs', 'UI'],
-    install_requires=['PyInstaller==3.5',
+    install_requires=['PyInstaller',
                       'PyQt5',
                       'PyQt5-sip',
                       'PyQt5-stubs',
