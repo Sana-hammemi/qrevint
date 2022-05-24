@@ -3,10 +3,6 @@
 block_cipher = None
 import os
 
-base_path = os.get_exec_path()[0][:-7]
-cext_path = os.path.join(base_path, 'Lib\\site-packages\\numba\\cext')
-npy_path = os.path.join(base_path, 'Lib\\site-packages\\numpy\\core\\lib\\npy-pkg-config')
-
 a = Analysis(['QRev.py'],
              binaries=[],
              datas=[],
@@ -24,10 +20,6 @@ a = Analysis(['QRev.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
-
-
-a.datas += Tree(cext_path, "./numba/cext")
-a.datas += Tree(npy_path, "./numpy/core/lib/npy-pkg-config")
 
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
