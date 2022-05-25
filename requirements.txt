@@ -11,7 +11,7 @@ future==0.17.1
 importlib-metadata==0.23
 kiwisolver==1.1.0
 macholib==1.11
-matplotlib~=3.5.2
+matplotlib==3.3.3
 more-itertools==7.2.0
 numpy==1.22.1
 numba~=0.53.0
