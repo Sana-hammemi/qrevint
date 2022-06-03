@@ -21,7 +21,8 @@ class SensorStructure(object):
     def __init__(self):
         """Initialize class and set variable to None."""
 
-        self.selected = None  # The selected sensor reference name ('internal', 'external', 'user')
+        # The selected sensor reference name ('internal', 'external', 'user')
+        self.selected = None
         self.internal = None  # Contains the data from the internal sensor
         self.external = None  # Contains the data from an external sensor
         self.user = None  # Contains user supplied value

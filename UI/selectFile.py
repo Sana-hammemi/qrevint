@@ -60,8 +60,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
     def default_folder(self):
         """Returns default folder.
 
-        Returns the folder stored in settings or if no folder is stored, then the current
-        working folder is returned.
+        Returns the folder stored in settings or if no folder is stored, then
+        the current working folder is returned.
         """
         try:
             folder = self.settings.get('Folder')
@@ -73,7 +73,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         return folder
 
     def process_names(self):
-        """Parses fullnames into filenames and pathnames and sets default folder.
+        """Parses fullnames into filenames and pathnames and sets default
+        folder.
         """
         # Parse filenames and pathname from fullName
         if isinstance(self.fullName, str):
@@ -91,8 +92,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         """Get filenames and pathname for SonTek Matlab transect files
 
         Allows the user to select one or more SonTek Matlab transect files for
-        processing. The selected folder becomes the default folder for subsequent
-        selectFile requests.
+        processing. The selected folder becomes the default folder for
+        subsequent selectFile requests.
         """
 
         # Get the current folder setting.
@@ -142,7 +143,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
     def select_qrev(self):
         """Get filename and pathname of QRev file.
 
-                Allows the user to select a QRev file for viewing or reprocessing.
+                Allows the user to select a QRev file for viewing or
+                reprocessing.
                 The selected folder becomes the default folder for subsequent
                 selectFile requests.
                 """
@@ -227,12 +229,13 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
             if self.full_Name[-4:] != '.mat':
                 self.full_Name = self.full_Name + '.mat'
 
+
     @staticmethod
     def default_folder(settings):
         """Returns default folder.
 
-        Returns the folder stored in settings or if no folder is stored, then the current
-        working folder is returned.
+        Returns the folder stored in settings or if no folder is stored,
+        then the current working folder is returned.
         """
         try:
             folder = settings.get('Folder')

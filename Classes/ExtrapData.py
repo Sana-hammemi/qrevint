@@ -4,28 +4,34 @@ class ExtrapData(object):
     Attributes
     ----------
     top_method_orig: str
-        Original extrapolation method for top of profile: Power, Constant, 3-Point.
+        Original extrapolation method for top of profile: Power, Constant,
+        3-Point.
     bot_method_orig: str
         Original extrapolation method for bottom of profile: Power, No Slip.
     exponent_orig: float
         Original exponent for power of no slip methods.
     top_method: str
-        Applied extrapolation method for top of profile: Power, Constant, 3-Point.
+        Applied extrapolation method for top of profile: Power, Constant,
+        3-Point.
     bot_method: str
         Applied extrapolation method for bottom of profile: Power, No Slip
     exponent: float
         Applied exponent for power of no slip methods
     """
-    
+
     def __init__(self):
         """Initialize class and set defaults."""
-        self.top_method_orig = None  # Extrapolation method for top of profile: Power, Constant, 3-Point
-        self.bot_method_orig = None  # Extrapolation method for bottom of profile: Power, No Slip
+        self.top_method_orig = None  # Extrapolation method for top of
+        # profile: Power, Constant, 3-Point
+        self.bot_method_orig = None  # Extrapolation method for bottom of
+        # profile: Power, No Slip
         self.exponent_orig = None  # Exponent for power of no slip methods
-        self.top_method = None  # Extrapolation method for top of profile: Power, Constant, 3-Point
-        self.bot_method = None  # Extrapolation method for bottom of profile: Power, No Slip
+        self.top_method = None  # Extrapolation method for top of profile:
+        # Power, Constant, 3-Point
+        self.bot_method = None  # Extrapolation method for bottom of
+        # profile: Power, No Slip
         self.exponent = None  # Exponent for power of no slip methods
-        
+
     def populate_data(self, top, bot, exp):
         """Store data in class variables.
 
@@ -46,7 +52,8 @@ class ExtrapData(object):
         self.exponent = float(exp)
 
     def populate_from_qrev_mat(self, transect):
-        """Populates the object using data from previously saved QRev Matlab file.
+        """Populates the object using data from previously saved QRev Matlab
+        file.
 
         Parameters
         ----------
@@ -77,7 +84,7 @@ class ExtrapData(object):
         self.top_method = top
         self.bot_method = bot
         self.exponent = exp
-        
+
     def set_property(self, prop, setting):
         """Allows setting any property.
 

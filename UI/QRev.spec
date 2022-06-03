@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-
+import os
 
 a = Analysis(['QRev.py'],
              binaries=[],
@@ -20,6 +20,16 @@ a = Analysis(['QRev.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
+
+splash = Splash(
+    'QRev.ico',
+    binaries=a.binaries,
+    datas=a.datas,
+    text_pos=None,
+    text_size=12,
+    minify_script=True,
+    always_on_top=False,)
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
@@ -27,6 +37,8 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
+          splash,
+          splash.binaries,
           [],
           name='QRev',
           debug=False,

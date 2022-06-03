@@ -6,167 +6,28 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1312</width>
-    <height>821</height>
+    <width>1938</width>
+    <height>1208</height>
    </rect>
   </property>
-  <property name="palette">
-   <palette>
-    <active>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>0</red>
-        <green>0</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </active>
-    <inactive>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>0</red>
-        <green>0</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </inactive>
-    <disabled>
-     <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Text">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>120</red>
-        <green>120</green>
-        <blue>120</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Base">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="Window">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>175</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="NoBrush">
-       <color alpha="128">
-        <red>0</red>
-        <green>0</green>
-        <blue>255</blue>
-       </color>
-      </brush>
-     </colorrole>
-    </disabled>
-   </palette>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="QRevInt.ico">
-    <normaloff>.</normaloff>.</iconset>
+   <iconset theme="QRev.ico">
+    <normaloff>../../qrevpy/UI</normaloff>../../qrevpy/UI</iconset>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
   </property>
   <property name="styleSheet">
-   <string notr="true">QMainWindow{background: solid rgb(0, 0, 175);}</string>
+   <string notr="true"/>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
@@ -205,29 +66,11 @@
            </color>
           </brush>
          </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="NoBrush">
-           <color alpha="128">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
         </active>
         <inactive>
          <colorrole role="Text">
           <brush brushstyle="SolidPattern">
            <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="NoBrush">
-           <color alpha="128">
             <red>0</red>
             <green>0</green>
             <blue>0</blue>
@@ -242,15 +85,6 @@
             <red>120</red>
             <green>120</green>
             <blue>120</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="NoBrush">
-           <color alpha="128">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
            </color>
           </brush>
          </colorrole>
@@ -292,7 +126,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_49">
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_64" stretch="8,2">
+         <layout class="QHBoxLayout" name="horizontalLayout_76" stretch="8,2">
           <item>
            <widget class="QSplitter" name="splitter">
             <property name="orientation">
@@ -414,56 +248,155 @@
                <string>Premeasurement</string>
               </attribute>
               <layout class="QGridLayout" name="gridLayout_7">
-               <item row="0" column="0">
-                <layout class="QVBoxLayout" name="verticalLayout_2">
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,5,1,2">
-                   <item>
-                    <widget class="QLabel" name="label_site_name">
-                     <property name="frameShape">
-                      <enum>QFrame::NoFrame</enum>
-                     </property>
-                     <property name="text">
-                      <string>Site Name: </string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="ed_site_name"/>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_site_number">
-                     <property name="text">
-                      <string>Site Number:</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="ed_site_number"/>
-                   </item>
-                  </layout>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="3">
-                   <item>
-                    <widget class="QTableWidget" name="table_premeas">
-                     <property name="font">
-                      <font>
-                       <pointsize>10</pointsize>
-                      </font>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </item>
-                </layout>
-               </item>
                <item row="0" column="1">
                 <widget class="QLabel" name="txt_site_name">
                  <property name="text">
                   <string/>
                  </property>
                 </widget>
+               </item>
+               <item row="1" column="0">
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_79" stretch="6,3">
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QLabel" name="label_site_name">
+                       <property name="frameShape">
+                        <enum>QFrame::NoFrame</enum>
+                       </property>
+                       <property name="text">
+                        <string>Site Name: </string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_site_name"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_78">
+                     <item>
+                      <widget class="QLabel" name="label_site_number">
+                       <property name="text">
+                        <string>Site Number:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_site_number"/>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_77" stretch="6,3">
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_75">
+                     <item>
+                      <widget class="QLabel" name="label_person">
+                       <property name="text">
+                        <string>Person(s):</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_persons"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_74">
+                     <item>
+                      <widget class="QLabel" name="label_measnum">
+                       <property name="text">
+                        <string>Measurement Number:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_meas_num"/>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </item>
+               <item row="2" column="0">
+                <layout class="QHBoxLayout" name="horizontalLayout_84" stretch="0,0,0,4">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_81">
+                   <item>
+                    <widget class="QLabel" name="label_stage_start">
+                     <property name="text">
+                      <string>Stage Start:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="ed_stage_start"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_83">
+                   <item>
+                    <widget class="QLabel" name="label_stage_end">
+                     <property name="text">
+                      <string>Stage End:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="ed_stage_end"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_82">
+                   <item>
+                    <widget class="QLabel" name="label_stage_meas">
+                     <property name="text">
+                      <string>Measurement Stage:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="ed_stage_meas"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item row="3" column="0">
+                <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="3">
+                 <item>
+                  <widget class="QTableWidget" name="table_premeas">
+                   <property name="font">
+                    <font>
+                     <pointsize>10</pointsize>
+                    </font>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
               </layout>
              </widget>
@@ -610,12 +543,81 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="20,40,40">
+           <layout class="QVBoxLayout" name="verticalLayout_right" stretch="15,0,45,0,40">
             <item>
              <widget class="QTableWidget" name="table_qa"/>
             </item>
             <item>
-             <widget class="QTableWidget" name="table_uncertainty"/>
+             <widget class="QWidget" name="uncertainty_lollipop" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTableWidget" name="table_uncertainty">
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustIgnored</enum>
+              </property>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>49</number>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_64">
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>User Rating:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cb_user_rating">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                 </font>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Not Rated</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Excellent (&lt;3%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Good (3-5%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Fair (5-8%)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Poor (&gt;8%)</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QWidget" name="graphics_main_extrap" native="true">
@@ -637,6 +639,11 @@
        <layout class="QGridLayout" name="gridLayout_10">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_systest_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabPosition">
            <enum>QTabWidget::North</enum>
           </property>
@@ -751,6 +758,11 @@
        <layout class="QGridLayout" name="gridLayout_28">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_compass_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -797,15 +809,6 @@
                          </color>
                         </brush>
                        </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -820,15 +823,6 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
                           <red>0</red>
                           <green>0</green>
                           <blue>255</blue>
@@ -855,17 +849,13 @@
                          </color>
                         </brush>
                        </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
                       </disabled>
                      </palette>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
                     </property>
                     <property name="text">
                      <string>ADCP Compass</string>
@@ -917,6 +907,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Ext. Compass</string>
                     </property>
@@ -926,6 +921,11 @@
                    <widget class="QCheckBox" name="cb_mag_field">
                     <property name="enabled">
                      <bool>false</bool>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
                     </property>
                     <property name="text">
                      <string>Mag. Field</string>
@@ -982,6 +982,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Pitch</string>
                     </property>
@@ -1029,6 +1034,11 @@
                       </disabled>
                      </palette>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>11</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>Roll</string>
                     </property>
@@ -1056,6 +1066,11 @@
                <layout class="QVBoxLayout" name="verticalLayout_7">
                 <item>
                  <widget class="QGroupBox" name="groupBox_cal">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Compass Calibration</string>
                   </property>
@@ -1068,6 +1083,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="groupBox_eval">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Compass Evaluation</string>
                   </property>
@@ -1169,6 +1189,11 @@
        <layout class="QGridLayout" name="gridLayout_18">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_tempsal_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -1494,6 +1519,11 @@
        <layout class="QGridLayout" name="gridLayout_23">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_mtb_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -1506,13 +1536,25 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_22">
             <item row="0" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout_14" stretch="1,0,2">
+             <layout class="QVBoxLayout" name="verticalLayout_14" stretch="1,0,0,2">
               <item>
                <widget class="QTableWidget" name="table_moving_bed">
                 <property name="font">
                  <font>
                   <pointsize>10</pointsize>
                  </font>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="cb_mb_observed_no">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>User certifies that they have visually observed the streambed and that there is no moving-bed condition.</string>
                 </property>
                </widget>
               </item>
@@ -1564,15 +1606,6 @@
                               </color>
                              </brush>
                             </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="SolidPattern">
-                              <color alpha="128">
-                               <red>255</red>
-                               <green>0</green>
-                               <blue>0</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
                            </active>
                            <inactive>
                             <colorrole role="WindowText">
@@ -1587,15 +1620,6 @@
                             <colorrole role="Text">
                              <brush brushstyle="SolidPattern">
                               <color alpha="255">
-                               <red>255</red>
-                               <green>0</green>
-                               <blue>0</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="SolidPattern">
-                              <color alpha="128">
                                <red>255</red>
                                <green>0</green>
                                <blue>0</blue>
@@ -1619,15 +1643,6 @@
                                <red>120</red>
                                <green>120</green>
                                <blue>120</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="SolidPattern">
-                              <color alpha="128">
-                               <red>0</red>
-                               <green>0</green>
-                               <blue>0</blue>
                               </color>
                              </brush>
                             </colorrole>
@@ -1884,7 +1899,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_22" stretch="6,3,1">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_17" stretch="4,3">
+                 <layout class="QVBoxLayout" name="verticalLayout_17" stretch="4">
                   <item>
                    <widget class="QGroupBox" name="gb_bt_radio">
                     <property name="title">
@@ -1959,13 +1974,10 @@
                       </layout>
                      </item>
                      <item>
-                      <widget class="QWidget" name="graph_bt_top" native="true"/>
+                      <widget class="QWidget" name="graph_bt_ts" native="true"/>
                      </item>
                     </layout>
                    </widget>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="graph_bt_bottom" native="true"/>
                   </item>
                  </layout>
                 </item>
@@ -1996,15 +2008,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -2019,15 +2022,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -2051,15 +2045,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>0</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -2227,6 +2212,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_21">
                       <item>
                        <widget class="QComboBox" name="combo_bt_3beam">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2262,6 +2252,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_22">
                       <item>
                        <widget class="QComboBox" name="combo_bt_error_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2331,6 +2326,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_23">
                       <item>
                        <widget class="QComboBox" name="combo_bt_vert_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2400,6 +2400,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_24">
                       <item>
                        <widget class="QComboBox" name="combo_bt_other">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Off</string>
@@ -2502,6 +2507,11 @@
        <layout class="QGridLayout" name="gridLayout_27">
         <item row="1" column="0">
          <widget class="QTabWidget" name="tab_gps_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -2527,7 +2537,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_27" stretch="6,3,1">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_35" stretch="4,3">
+                 <layout class="QVBoxLayout" name="verticalLayout_35" stretch="4">
                   <item>
                    <widget class="QGroupBox" name="gb_gps_radio">
                     <property name="title">
@@ -2614,13 +2624,10 @@
                       </layout>
                      </item>
                      <item>
-                      <widget class="QWidget" name="graph_gps_top" native="true"/>
+                      <widget class="QWidget" name="graph_gps_ts" native="true"/>
                      </item>
                     </layout>
                    </widget>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="graph_gps_bottom" native="true"/>
                   </item>
                  </layout>
                 </item>
@@ -2651,15 +2658,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -2674,15 +2672,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -2706,15 +2695,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>0</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -2882,6 +2862,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_39">
                       <item>
                        <widget class="QComboBox" name="combo_gps_qual">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <property name="currentIndex">
                          <number>1</number>
                         </property>
@@ -2920,6 +2905,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_40">
                       <item>
                        <widget class="QComboBox" name="combo_gps_altitude">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -2989,6 +2979,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_41">
                       <item>
                        <widget class="QComboBox" name="combo_gps_hdop">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -3058,6 +3053,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_42">
                       <item>
                        <widget class="QComboBox" name="combo_gps_other">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Off</string>
@@ -3132,15 +3132,6 @@
                          </color>
                         </brush>
                        </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="SolidPattern">
-                         <color alpha="128">
-                          <red>255</red>
-                          <green>0</green>
-                          <blue>0</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -3155,15 +3146,6 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
-                          <red>255</red>
-                          <green>0</green>
-                          <blue>0</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="SolidPattern">
-                         <color alpha="128">
                           <red>255</red>
                           <green>0</green>
                           <blue>0</blue>
@@ -3187,15 +3169,6 @@
                           <red>120</red>
                           <green>120</green>
                           <blue>120</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="SolidPattern">
-                         <color alpha="128">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>0</blue>
                          </color>
                         </brush>
                        </colorrole>
@@ -3417,6 +3390,11 @@
        <layout class="QGridLayout" name="gridLayout_30">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_depth_2">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -3429,496 +3407,511 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_31">
             <item row="0" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="8,2">
+             <layout class="QHBoxLayout" name="horizontalLayout_80">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_27" stretch="0,2,2">
+               <layout class="QVBoxLayout" name="verticalLayout_27" stretch="3,7">
                 <item>
                  <widget class="QTableWidget" name="table_depth"/>
                 </item>
                 <item>
-                 <widget class="QGroupBox" name="gb_depth_beams">
-                  <property name="title">
-                   <string>Individual Beams</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_32" stretch="6,1">
-                   <item>
-                    <widget class="QWidget" name="graph_depth_beams" native="true"/>
-                   </item>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_25">
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam1">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 1</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam2">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 2</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam3">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 3</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_beam4">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>85</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Beam 4</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_vert">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Vertical</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_ds">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Depth Sounder</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="gb_depth_cs">
-                  <property name="title">
-                   <string>Cross Section</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="6,1">
-                   <item>
-                    <widget class="QWidget" name="graph_depth_cs" native="true"/>
-                   </item>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_26">
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_4beam_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>255</red>
-                             <green>0</green>
-                             <blue>0</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>4 Beam Avg</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_vert_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>170</red>
-                             <green>0</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Vertical</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_ds_cs">
-                       <property name="palette">
-                        <palette>
-                         <active>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </active>
-                         <inactive>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>0</red>
-                             <green>170</green>
-                             <blue>255</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </inactive>
-                         <disabled>
-                          <colorrole role="WindowText">
-                           <brush brushstyle="SolidPattern">
-                            <color alpha="255">
-                             <red>120</red>
-                             <green>120</green>
-                             <blue>120</blue>
-                            </color>
-                           </brush>
-                          </colorrole>
-                         </disabled>
-                        </palette>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Depth Sounder</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_depth_final_cs">
-                       <property name="font">
-                        <font>
-                         <pointsize>10</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>Final</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
+                 <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="9,1">
+                  <item>
+                   <widget class="QWidget" name="graph_depth" native="true"/>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayout_2">
+                    <item>
+                     <widget class="QGroupBox" name="gb_depth_beams">
+                      <property name="font">
+                       <font>
+                        <pointsize>11</pointsize>
+                       </font>
+                      </property>
+                      <property name="title">
+                       <string>Individual Beams</string>
+                      </property>
+                      <layout class="QHBoxLayout" name="horizontalLayout_32" stretch="1">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_25">
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam1">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 1</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam2">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 2</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam3">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 3</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_beam4">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>85</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Beam 4</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_vert">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Vertical</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_ds">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Depth Sounder</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QGroupBox" name="gb_depth_cs">
+                      <property name="font">
+                       <font>
+                        <pointsize>11</pointsize>
+                       </font>
+                      </property>
+                      <property name="title">
+                       <string>Cross Section</string>
+                      </property>
+                      <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="1">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_26">
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_4beam_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>255</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>255</red>
+                                 <green>0</green>
+                                 <blue>0</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>4 Beam Avg</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_vert_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>170</red>
+                                 <green>0</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Vertical</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_ds_cs">
+                           <property name="palette">
+                            <palette>
+                             <active>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </active>
+                             <inactive>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>0</red>
+                                 <green>170</green>
+                                 <blue>255</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </inactive>
+                             <disabled>
+                              <colorrole role="WindowText">
+                               <brush brushstyle="SolidPattern">
+                                <color alpha="255">
+                                 <red>120</red>
+                                 <green>120</green>
+                                 <blue>120</blue>
+                                </color>
+                               </brush>
+                              </colorrole>
+                             </disabled>
+                            </palette>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Depth Sounder</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="cb_depth_final_cs">
+                           <property name="font">
+                            <font>
+                             <pointsize>10</pointsize>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Final</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </item>
@@ -3950,24 +3943,45 @@
                   <layout class="QVBoxLayout" name="verticalLayout_29">
                    <item>
                     <widget class="QGroupBox" name="gb_depth_ref">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>Depth Reference</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_30">
                       <item>
-                       <widget class="QComboBox" name="combo_depth_ref"/>
+                       <widget class="QComboBox" name="combo_depth_ref">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
+                       </widget>
                       </item>
                      </layout>
                     </widget>
                    </item>
                    <item>
                     <widget class="QGroupBox" name="gb_depth_averaging">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>BT Averaging Method</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_31">
                       <item>
                        <widget class="QComboBox" name="combo_depth_avg">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>IDW</string>
@@ -3985,12 +3999,22 @@
                    </item>
                    <item>
                     <widget class="QGroupBox" name="gb_depth_filter">
+                     <property name="font">
+                      <font>
+                       <pointsize>10</pointsize>
+                      </font>
+                     </property>
                      <property name="title">
                       <string>Filter</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_32">
                       <item>
                        <widget class="QComboBox" name="combo_depth_filter">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <property name="currentText">
                          <string>Off</string>
                         </property>
@@ -4114,6 +4138,11 @@
        <layout class="QGridLayout" name="gridLayout_38">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_wt_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -4139,7 +4168,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_42" stretch="6,3,1">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_49" stretch="5,4">
+                 <layout class="QVBoxLayout" name="verticalLayout_49" stretch="5">
                   <item>
                    <widget class="QGroupBox" name="gb_wt_radio">
                     <property name="title">
@@ -4229,13 +4258,10 @@
                       </layout>
                      </item>
                      <item>
-                      <widget class="QWidget" name="graph_wt_top" native="true"/>
+                      <widget class="QWidget" name="graph_wt" native="true"/>
                      </item>
                     </layout>
                    </widget>
-                  </item>
-                  <item>
-                   <widget class="QWidget" name="graph_wt_bottom" native="true"/>
                   </item>
                  </layout>
                 </item>
@@ -4266,15 +4292,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -4289,15 +4306,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -4321,15 +4329,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="SolidPattern">
-                           <color alpha="128">
-                            <red>0</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -4547,6 +4546,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_53">
                       <item>
                        <widget class="QComboBox" name="combo_wt_3beam">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4582,6 +4586,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_54">
                       <item>
                        <widget class="QComboBox" name="combo_wt_error_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4651,6 +4660,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_55">
                       <item>
                        <widget class="QComboBox" name="combo_wt_vert_velocity">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -4720,6 +4734,11 @@
                      <layout class="QVBoxLayout" name="verticalLayout_59">
                       <item>
                        <widget class="QComboBox" name="combo_wt_snr">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                         </font>
+                        </property>
                         <item>
                          <property name="text">
                           <string>Auto</string>
@@ -5056,6 +5075,11 @@
                  </item>
                  <item>
                   <widget class="QLabel" name="txt_start">
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Start Edge: </string>
                    </property>
@@ -5100,6 +5124,11 @@
                      </disabled>
                     </palette>
                    </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Left</string>
                    </property>
@@ -5143,6 +5172,11 @@
                       </colorrole>
                      </disabled>
                     </palette>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
                    </property>
                    <property name="text">
                     <string>Right</string>
@@ -5690,6 +5724,11 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pb_extrap_cancel">
+                   <property name="font">
+                    <font>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>Reset to These Settings</string>
                    </property>
@@ -5807,6 +5846,11 @@
        <layout class="QGridLayout" name="gridLayout_42">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_edges_2">
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -5827,6 +5871,11 @@
                <layout class="QHBoxLayout" name="horizontalLayout_61">
                 <item>
                  <widget class="QGroupBox" name="gb_left">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Left</string>
                   </property>
@@ -5846,6 +5895,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_right">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Right</string>
                   </property>
@@ -6118,6 +6172,11 @@
        <layout class="QGridLayout" name="gridLayout_45">
         <item row="0" column="0">
          <widget class="QTabWidget" name="tab_uncertainty_2">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
           <property name="tabShape">
            <enum>QTabWidget::Triangular</enum>
           </property>
@@ -6138,6 +6197,11 @@
                <layout class="QHBoxLayout" name="horizontalLayout_69" stretch="3,7">
                 <item>
                  <widget class="QGroupBox" name="qb_contrib_meas_area">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Contributions to Meas. Q Uncertainty</string>
                   </property>
@@ -6150,6 +6214,11 @@
                 </item>
                 <item>
                  <widget class="QGroupBox" name="gb_contrib_measurement">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                   </font>
+                  </property>
                   <property name="title">
                    <string>Contributions to Measurement Uncertainty</string>
                   </property>
@@ -6247,6 +6316,885 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_adv_graph">
+       <attribute name="title">
+        <string>Adv. Graph</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_57">
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="adv_graph_layout" stretch="7,3">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_86" stretch="1,20">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_86">
+              <item>
+               <widget class="QComboBox" name="combo_adv_graph_transect">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                 </font>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pb_adv_graph_controls">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Hide Plot Controls</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QWidget" name="graph_adv_graph" native="true"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_99">
+            <item>
+             <widget class="QGroupBox" name="gb_adv_graph_controls">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="title">
+               <string>Plot Controls</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_55" rowstretch="0,0,0,0">
+               <item row="0" column="1">
+                <layout class="QVBoxLayout" name="verticalLayout_98">
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_2">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Bottom Track</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_94">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_boat_speed">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Boat Speed (BT)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_3beam">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>3 Beam Solutions</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_error">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Error Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_vertical">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Vertical Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_source">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Source</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_correlation">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Correlation</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_bt_rssi">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>RSSI</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_3">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>GPS</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_92">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_boat_speed">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Boat Speed (GGA)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_vtg_boat_speed">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Boat Speed (VTG)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_quality">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Quality</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_hdop">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>HDOP</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_altitude">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Altitude</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_satellites">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>No. Satellites</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_gga_source">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Source (GGA)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_vtg_source">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Source (VTG)</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_8">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item row="3" column="0" colspan="3">
+                <widget class="QPushButton" name="pb_adv_graph_create_plots">
+                 <property name="font">
+                  <font>
+                   <pointsize>11</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Create Plot</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <layout class="QVBoxLayout" name="verticalLayout_97">
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_6">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Discharge</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_93">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_discharge">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Discharge Time Series</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_discharge_percent">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Discharge % of Total</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_5">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Compass/P/R</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_90">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_adcp_heading">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Heading (ADCP)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_ext_heading">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Heading (External)</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_mag_error">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Magnetic Error</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_pitch">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Pitch</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_roll">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Roll</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_4">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Depth</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_91">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_beam_depths">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Beam Depths</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_final_depths">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Final Depths</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_depth_source">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Depth Source</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_5">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item row="0" column="0">
+                <layout class="QVBoxLayout" name="verticalLayout_96" stretch="15,1">
+                 <item>
+                  <widget class="QGroupBox" name="gb_plot_type_3">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Water Track</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_87">
+                    <item>
+                     <widget class="QLabel" name="label_8">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                        <underline>true</underline>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Contour Plots</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_speed_filtered">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Speed - Filtered</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_speed_final">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Speed - Final</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_projected">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Speed Projected</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_vertical">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Vertical Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_error">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Error Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_direction">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Direction</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_avg_corr">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Average Correlation</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_corr_beam">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Correlation by Beam</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_avg_rssi">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Average RSSI or SNR</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_rssi_beam">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>RSSI or SNR by Beam</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_ping_type">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Ping Type</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="label_9">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                        <underline>true</underline>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Time Series</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_avg_speed">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Average Speed</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_projected_speed_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Projected Speed</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_error_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Error Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_vert_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Vertical Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_snr_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>SNR</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_wt_beams_ts">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Beams Used</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_9">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item row="1" column="0">
+                <widget class="QGroupBox" name="groupBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="title">
+                  <string>Projection Angle</string>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_88">
+                  <item>
+                   <widget class="QLineEdit" name="ed_adv_graph_flow_dir">
+                    <property name="maximumSize">
+                     <size>
+                      <width>100</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="pb_adv_graph_auto_flow_direction">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>50</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Auto</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QGroupBox" name="gb_x_axis_3">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="title">
+                  <string>Select X-Axis</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_89">
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_ensemble">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Ensemble</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_time">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Time</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="rb_adv_graph_length">
+                    <property name="font">
+                     <font>
+                      <pointsize>10</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Length</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_10">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>130</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -6259,6 +7207,14 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>50</weight>
+     <italic>false</italic>
+     <bold>false</bold>
+    </font>
+   </property>
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -6266,7 +7222,8 @@
     <enum>Qt::LeftToRight</enum>
    </property>
    <property name="styleSheet">
-    <string notr="true">QToolBar{background: solid rgb(240, 240, 240);}</string>
+    <string notr="true">QToolBar{background: solid rgb(240, 240, 240); font: 12pt}
+font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    </property>
    <property name="movable">
     <bool>false</bool>
@@ -6336,7 +7293,7 @@
   </action>
   <action name="actionOptions">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Application.png</normaloff>
      <normalon>:/images/24x24/Application.png</normalon>:/images/24x24/Application.png</iconset>
    </property>
@@ -6349,7 +7306,7 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/images/22.png</normaloff>:/images/images/22.png</iconset>
    </property>
    <property name="text">
@@ -6358,7 +7315,7 @@
   </action>
   <action name="actionComment">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Notes.png</normaloff>
      <normalon>:/images/24x24/Notes.png</normalon>:/images/24x24/Notes.png</iconset>
    </property>
@@ -6368,7 +7325,7 @@
   </action>
   <action name="actionHelp">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Help book 3d.png</normaloff>:/images/24x24/Help book 3d.png</iconset>
    </property>
    <property name="text">
@@ -6484,7 +7441,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Home.png</normaloff>:/images/24x24/Home.png</iconset>
    </property>
    <property name="text">
@@ -6499,7 +7456,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/images/83.png</normaloff>:/images/images/83.png</iconset>
    </property>
    <property name="text">
@@ -6514,7 +7471,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Move.png</normaloff>:/images/24x24/Move.png</iconset>
    </property>
    <property name="text">
@@ -6529,7 +7486,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Info.png</normaloff>:/images/24x24/Info.png</iconset>
    </property>
    <property name="text">
@@ -6541,7 +7498,7 @@
   </action>
   <action name="actionGoogle_Earth">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset resource="../../qrevpy/UI/dsm.qrc">
      <normaloff>:/images/24x24/Globe.png</normaloff>:/images/24x24/Globe.png</iconset>
    </property>
    <property name="text">
@@ -6553,7 +7510,7 @@
   </action>
  </widget>
  <resources>
-  <include location="dsm.qrc"/>
+  <include location="../../qrevpy/UI/dsm.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -80,28 +80,33 @@ class Pd0TRDI(object):
             0x0510: ('surface_status', self.decode_surface_status),
             0x4401: ('auto_configuration', self.decode_auto_config),
             0x4100: ('vertical_beam', self.decode_vertical_beam),
-            0x3200: ('transformation_matrix', self.decode_transformation_matrix)
+            0x3200: ('transformation_matrix',
+                     self.decode_transformation_matrix)
         }
 
         self.nmea_decoders = {100: ('gga', self.decode_gga_100),
                               101: ('vtg', self.decode_vtg_101),
                               102: ('ds', self.decode_ds_102),
-                              103: ('ext_heading', self.decode_ext_heading_103),
+                              103: ('ext_heading',
+                                    self.decode_ext_heading_103),
                               104: ('gga', self.decode_gga_104),
                               105: ('vtg', self.decode_vtg_105),
                               106: ('ds', self.decode_ds_106),
-                              107: ('ext_heading', self.decode_ext_heading_107),
+                              107: ('ext_heading',
+                                    self.decode_ext_heading_107),
                               204: ('gga', self.decode_gga_204),
                               205: ('vtg', self.decode_vtg_205),
                               206: ('ds', self.decode_ds_206),
-                              207: ('ext_heading', self.decode_ext_heading_207)}
+                              207: ('ext_heading',
+                                    self.decode_ext_heading_207)}
 
         self.n_velocities = 4
         self.max_surface_bins = 5
 
         self.pd0_read(file_name)
 
-    def create_objects(self, n_ensembles, n_types, n_bins, max_surface_bins, n_velocities, wr2=False):
+    def create_objects(self, n_ensembles, n_types, n_bins, max_surface_bins,
+                       n_velocities, wr2=False):
         """Create objects for instance variables.
 
         Parameters
@@ -133,7 +138,8 @@ class Pd0TRDI(object):
         self.Nmea = Nmea(n_ensembles)
 
     def pd0_read(self, fullname, wr2=False):
-        """Reads the binary pd0 file and assigns values to object instance variables.
+        """Reads the binary pd0 file and assigns values to object instance
+        variables.
 
         Parameters
         ----------
@@ -154,8 +160,11 @@ class Pd0TRDI(object):
                 pd0_bytes = bytearray(pd0)
 
                 # Intialize classes and arrays
-                n_ensembles, max_types, max_beams, max_bins = self.number_of_ensembles(self, file_info, pd0_bytes)
-                self.create_objects(n_ensembles, max_types, max_bins, self.max_surface_bins, self.n_velocities, wr2)
+                n_ensembles, max_types, max_beams, max_bins =\
+                    self.number_of_ensembles(self, file_info, pd0_bytes)
+                self.create_objects(n_ensembles, max_types, max_bins,
+                                    self.max_surface_bins, self.n_velocities,
+                                    wr2)
                 self.decode_all(pd0_bytes, file_info)
                 self.screen_and_convert(wr2)
 
@@ -198,7 +207,8 @@ class Pd0TRDI(object):
                 for i in range(len(vtg_delta_time)):
                     idx = np.where(vtg_delta_time == vtg_min)[0][0]
                     self.Gps2.vtg_velE_mps[i], self.Gps2.vtg_velN_mps[i] = \
-                        pol2cart((90 - self.Gps2.course_true[i, idx]) * np.pi / 180,
+                        pol2cart((90 - self.Gps2.course_true[i, idx]) *
+                                 np.pi / 180,
                                  self.Gps2.speed_kph[i, idx] * 0.2777778)
 
             if self.Gps2.gga_header[0, 0] == '$':
@@ -217,14 +227,20 @@ class Pd0TRDI(object):
                     idx = np.where(gga_delta_time[i:] == gga_min)
                     if idx > 0:
                         lat_avg_rad = (self.Gps2.lat_deg[i, idx[i]]
-                                       + self.Gps2.lat_deg[i - 1, idx[i - 1]]) / 2
+                                       + self.Gps2.lat_deg[i - 1,
+                                                           idx[i - 1]]) / 2
                         sin_lat_avg_rad = np.sin(np.deg2rad(lat_avg_rad))
-                        r_e = coeff * (1 + ellip * sin_lat_avg_rad * sin_lat_avg_rad)
-                        rn = coeff * (1 - 2 * ellip + 3 * ellip * sin_lat_avg_rad * sin_lat_avg_rad)
+                        r_e = coeff * (1 + ellip * sin_lat_avg_rad *
+                                       sin_lat_avg_rad)
+                        rn = coeff * (1 - 2 * ellip + 3 * ellip *
+                                      sin_lat_avg_rad * sin_lat_avg_rad)
                         dx = r_e * (self.Gps2.lon_deg[i, idx[i]] -
-                                    self.Gps2.lon_deg(i - 1, idx[i - 1])) * np.cos(np.deg2rad(lat_avg_rad))
-                        dy = rn * (self.Gps2.lat_deg[i, idx[i]] - self.Gps2.lat_deg[i - 1, idx[i - 1]])
-                        dt = self.Gps2.utc[i, idx[i]] - self.Gps2.utc[i - 1, idx[i - 1]]
+                                    self.Gps2.lon_deg(i - 1, idx[i - 1])) *\
+                             np.cos(np.deg2rad(lat_avg_rad))
+                        dy = rn * (self.Gps2.lat_deg[i, idx[i]] -
+                                   self.Gps2.lat_deg[i - 1, idx[i - 1]])
+                        dt = self.Gps2.utc[i, idx[i]] -\
+                             self.Gps2.utc[i - 1, idx[i - 1]]
                         self.Gps2.gga_velE_mps[i] = dx / dt
                         self.Gps2.gga_velN_mps[i] = dy / dt
                     else:
@@ -237,11 +253,13 @@ class Pd0TRDI(object):
         n = 0
         ensemble_number = 0
         while start_byte < file_info:
-            data = self.decode_pd0_bytearray(self.data_decoders, pd0_bytes[start_byte:])
+            data = self.decode_pd0_bytearray(self.data_decoders,
+                                             pd0_bytes[start_byte:])
             if data['checksum']:
                 # Adjust index for lost ensembles
                 if ensemble_number > 0:
-                    n = n + data['variable_leader']['ensemble_number'] - ensemble_number
+                    n = n + data['variable_leader']['ensemble_number'] - \
+                        ensemble_number
                 try:
                     self.Hdr.populate_data(n, data)
                     self.Inst.populate_data(n, data)
@@ -254,12 +272,16 @@ class Pd0TRDI(object):
                     self.Surface.populate_data(n, data, self)
                     self.AutoMode.populate_data(n, data)
                     self.Nmea.populate_data(n, data)
-                    start_byte = start_byte + data['header']['number_of_bytes'] + 2
-                    ensemble_number = data['variable_leader']['ensemble_number']
+                    start_byte = start_byte + \
+                                 data['header']['number_of_bytes'] + 2
+                    ensemble_number =\
+                        data['variable_leader']['ensemble_number']
                 except ValueError:
-                    start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
+                    start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte,
+                                                   file_info)
             else:
-                start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
+                start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte,
+                                               file_info)
 
 
     @staticmethod
@@ -289,7 +311,8 @@ class Pd0TRDI(object):
 
         # Configure data decoders to be used
         data_decoders = {0x0000: ('fixed_leader', self.preload_fixed_leader),
-                         0x0080: ('variable_leader', self.preload_variable_leader)}
+                         0x0080: ('variable_leader',
+                                  self.preload_variable_leader)}
 
         # Intitialize variables
         start_byte = 0
@@ -301,20 +324,24 @@ class Pd0TRDI(object):
         # Loop through entire file
         while start_byte < file_info:
 
-            data = self.decode_pd0_bytearray(data_decoders, pd0_bytes[start_byte:])
+            data = self.decode_pd0_bytearray(data_decoders,
+                                             pd0_bytes[start_byte:])
             # start_byte = start_byte + data['header']['number_of_bytes'] + 2
             if data['checksum']:
-                # if 'number_of_bytes' in data['header'] and data['header']['number_of_bytes'] > 0:
-                if 'number_of_bytes' in data['header'] and 'fixed_leader' in data and 'variable_leader' in data:
+                if 'number_of_bytes' in data['header'] and 'fixed_leader' \
+                        in data and 'variable_leader' in data:
                     n_data_types.append(data['header']['number_of_data_types'])
                     n_beams.append(data['fixed_leader']['number_of_beams'])
                     n_bins.append(data['fixed_leader']['number_of_cells'])
                     ens_num.append(data['variable_leader']['ensemble_number'])
-                    start_byte = start_byte + data['header']['number_of_bytes'] + 2
+                    start_byte = start_byte + \
+                                 data['header']['number_of_bytes'] + 2
                 else:
-                    start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
+                    start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte,
+                                                   file_info)
             else:
-                start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte, file_info)
+                start_byte = Pd0TRDI.find_next(pd0_bytes, start_byte,
+                                               file_info)
 
 
         # Compute maximums
@@ -331,7 +358,6 @@ class Pd0TRDI(object):
         try:
             start_byte = start_byte + 1
             skip_forward = pd0_bytes[start_byte:].index(b'\x7f\x7f')
-            # data['header'] = Pd0TRDI.decode_fixed_header(pd0_bytes[start_byte + skip_forward:])
             start_byte = start_byte + skip_forward
         except ValueError:
             start_byte = file_info
@@ -359,7 +385,8 @@ class Pd0TRDI(object):
             Number of regular cells in ensemble
         """
 
-        fixed_leader_format = (('number_of_beams', 'B', 8), ('number_of_cells', 'B', 9))
+        fixed_leader_format = (('number_of_beams', 'B', 8),
+                               ('number_of_cells', 'B', 9))
 
         return Pd0TRDI.unpack_bytes(pd0_bytes, fixed_leader_format, offset)
 
@@ -389,7 +416,8 @@ class Pd0TRDI(object):
 
     @staticmethod
     def decode_pd0_bytearray(data_decoders, pd0_bytes):
-        """Loops through data and calls appropriate parsing method for each header ID.
+        """Loops through data and calls appropriate parsing method for each
+         header ID.
 
         Parameters
         ----------
@@ -409,18 +437,25 @@ class Pd0TRDI(object):
         # Read in header
         data['header'] = Pd0TRDI.decode_fixed_header(pd0_bytes)
         data['checksum'] = False
-        if 'number_of_bytes' in data['header'] and data['header']['number_of_bytes'] > 0:
+        if 'number_of_bytes' in data['header'] and \
+                data['header']['number_of_bytes'] > 0:
             if 'number_of_data_types' in data['header']:
-                # If checksum is OK then decode address offsets to the data types
-                if Pd0TRDI.validate_checksum(pd0_bytes, data['header']['number_of_bytes']):
+                # If checksum is OK then decode address offsets to the data
+                # types
+                if Pd0TRDI.validate_checksum(
+                        pd0_bytes, data['header']['number_of_bytes']):
                     data['checksum'] = True
-                    data['header']['address_offsets'] = Pd0TRDI.decode_address_offsets(pd0_bytes,
-                                                                                       data['header']['number_of_data_types'])
+                    data['header']['address_offsets'] = \
+                        Pd0TRDI.decode_address_offsets(
+                            pd0_bytes, data['header']['number_of_data_types'])
                     data['header']['invalid'] = []
-                    # Loop to decode all data types for which a data decoder is provided
+                    # Loop to decode all data types for which a data
+                    # decoder is provided
                     for offset in data['header']['address_offsets']:
                         if len(pd0_bytes) > offset + 2:
-                            header_id = struct.unpack('<H', pd0_bytes[offset: offset + 2])[0]
+                            header_id = \
+                                struct.unpack('<H',
+                                              pd0_bytes[offset: offset + 2])[0]
                             if header_id in data_decoders:
                                 key = data_decoders[header_id][0]
                                 decoder = data_decoders[header_id][1]
@@ -432,14 +467,16 @@ class Pd0TRDI(object):
 
     @staticmethod
     def unpack_bytes(pd0_bytes, data_format_tuples, offset=0):
-        """Unpackes the data based on the supplied data format tuples and offset.
+        """Unpackes the data based on the supplied data format tuples and
+        offset.
 
         Parameters
         ----------
         pd0_bytes: bytearray
             Bytearray of all pd0 data
         data_format_tuples: tuple
-            A tuple of tuples providing the data name, format, and byte location
+            A tuple of tuples providing the data name, format, and byte
+            location
         offset: int
             Pointer into pd0_bytes
 
@@ -450,12 +487,16 @@ class Pd0TRDI(object):
         """
         data = {}
 
-        # Decode data for each format specified in the data format tuples and assign to the data dictionary
+        # Decode data for each format specified in the data format tuples and
+        # assign to the data dictionary
         for fmt in data_format_tuples:
             try:
                 struct_offset = offset + fmt[2]
                 size = struct.calcsize(fmt[1])
-                data[fmt[0]] = struct.unpack(fmt[1], pd0_bytes[struct_offset: struct_offset + size])[0]
+                data[fmt[0]] = \
+                    struct.unpack(
+                        fmt[1], pd0_bytes[struct_offset: struct_offset +
+                                                         size])[0]
             except:
                 print('Error parsing %s with the arguments ')
 
@@ -480,7 +521,8 @@ class Pd0TRDI(object):
         """
         if len(pd0_bytes) > offset + 1:
             calc_checksum = sum(pd0_bytes[:offset]) & 0xFFFF
-            given_checksum = struct.unpack('<H', pd0_bytes[offset: offset + 2])[0]
+            given_checksum = struct.unpack('<H',
+                                           pd0_bytes[offset: offset + 2])[0]
 
             if calc_checksum == given_checksum:
                 return True
@@ -520,7 +562,8 @@ class Pd0TRDI(object):
 
         # Loop through each data type
         for bytes_start in range(offset, offset + (num_data_types * 2), 2):
-            data = struct.unpack_from('<H', pd0_bytes[bytes_start: bytes_start + 2])[0]
+            data = struct.unpack_from(
+                '<H', pd0_bytes[bytes_start: bytes_start + 2])[0]
             address_data.append(data)
 
         return address_data
@@ -684,9 +727,11 @@ class Pd0TRDI(object):
 
         return Pd0TRDI.unpack_bytes(pd0_bytes, variable_leader_format, offset)
 
-    def decode_per_cell_per_beam(pd0_bytes, offset, number_of_cells, number_of_beams, struct_format):
+    def decode_per_cell_per_beam(pd0_bytes, offset, number_of_cells,
+                                 number_of_beams, struct_format):
         """Parses fields that are stored in serial cells and beams structures.
-        Returns an array of cell readings where each reading is an array containing the value at that beam.
+        Returns an array of cell readings where each reading is an array
+        containing the value at that beam.
 
         Parameters
         ----------
@@ -746,15 +791,15 @@ class Pd0TRDI(object):
         velocity_format = (('id', '<h', 0),)
 
         # Unpack data
-        velocity_data = Pd0TRDI.unpack_bytes(pd0_bytes, velocity_format, offset)
+        velocity_data = Pd0TRDI.unpack_bytes(pd0_bytes, velocity_format,
+                                             offset)
         # Move past id field
         offset += 2
         # Arrange data in list of depth cells and beams or velocity components
-        velocity_data['data'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes,
-                                                                 offset,
-                                                                 data['fixed_leader']['number_of_cells'],
-                                                                 data['fixed_leader']['number_of_beams'],
-                                                                 '<h')
+        velocity_data['data'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset, data['fixed_leader']['number_of_cells'],
+                data['fixed_leader']['number_of_beams'], '<h')
 
         return velocity_data
 
@@ -779,15 +824,14 @@ class Pd0TRDI(object):
 
         correlation_format = (('id', '<H', 0),)
         # Unpack data
-        correlation_data = Pd0TRDI.unpack_bytes(pd0_bytes, correlation_format, offset)
+        correlation_data = Pd0TRDI.unpack_bytes(pd0_bytes, correlation_format,
+                                                offset)
         # Move past id field
         offset += 2
         # Arrange data in list of depth cells and beams
-        correlation_data['data'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes,
-                                                                    offset,
-                                                                    data['fixed_leader']['number_of_cells'],
-                                                                    data['fixed_leader']['number_of_beams'],
-                                                                    'B')
+        correlation_data['data'] = Pd0TRDI.decode_per_cell_per_beam(
+            pd0_bytes, offset, data['fixed_leader']['number_of_cells'],
+            data['fixed_leader']['number_of_beams'], 'B')
 
         return correlation_data
 
@@ -812,15 +856,18 @@ class Pd0TRDI(object):
 
         echo_intensity_format = (('id', '<H', 0),)
         # Unpack data
-        echo_intensity_data = Pd0TRDI.unpack_bytes(pd0_bytes, echo_intensity_format, offset)
+        echo_intensity_data = Pd0TRDI.unpack_bytes(pd0_bytes,
+                                                   echo_intensity_format,
+                                                   offset)
         # Move past id field
         offset += 2
         # Arrange data in list of depth cells and beams
-        echo_intensity_data['data'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes,
-                                                                       offset,
-                                                                       data['fixed_leader']['number_of_cells'],
-                                                                       data['fixed_leader']['number_of_beams'],
-                                                                       'B')
+        echo_intensity_data['data'] = Pd0TRDI.decode_per_cell_per_beam(
+            pd0_bytes,
+            offset,
+            data['fixed_leader']['number_of_cells'],
+            data['fixed_leader']['number_of_beams'],
+            'B')
 
         return echo_intensity_data
 
@@ -845,15 +892,15 @@ class Pd0TRDI(object):
 
         percent_good_format = (('id', '<H', 0),)
         # Unpack data
-        percent_good_data = Pd0TRDI.unpack_bytes(pd0_bytes, percent_good_format, offset)
+        percent_good_data = Pd0TRDI.unpack_bytes(pd0_bytes,
+                                                 percent_good_format, offset)
         # Move past id field
         offset += 2
         # Arrange data in list of depth cells and beams
-        percent_good_data['data'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes,
-                                                                     offset,
-                                                                     data['fixed_leader']['number_of_cells'],
-                                                                     data['fixed_leader']['number_of_beams'],
-                                                                     'B')
+        percent_good_data['data'] = Pd0TRDI.decode_per_cell_per_beam(
+            pd0_bytes, offset, data['fixed_leader']['number_of_cells'],
+            data['fixed_leader']['number_of_beams'],
+            'B')
 
         return percent_good_data
 
@@ -882,11 +929,10 @@ class Pd0TRDI(object):
         # Move past id field
         offset += 2
         # Arrange data in list of depth cells and beams
-        status_data['data'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes,
-                                                               offset,
-                                                               data['fixed_leader']['number_of_cells'],
-                                                               data['fixed_leader']['number_of_beams'],
-                                                               'B')
+        status_data['data'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset, data['fixed_leader']['number_of_cells'],
+                data['fixed_leader']['number_of_beams'], 'B')
 
         return status_data
 
@@ -917,14 +963,24 @@ class Pd0TRDI(object):
                                ('bottom_track_mode_bm', 'B', 9),
                                ('error_velocity_maximum_be', '<H', 10))
 
-        bottom_track_data = Pd0TRDI.unpack_bytes(pd0_bytes, bottom_track_format, offset)
-        bottom_track_data['range_lsb'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 16, 1, 4, '<H')
-        bottom_track_data['velocity'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 24, 1, 4, '<h')
-        bottom_track_data['correlation'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 32, 1, 4, 'B')
-        bottom_track_data['amplitude'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 36, 1, 4, 'B')
-        bottom_track_data['percent_good'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 40, 1, 4, 'B')
-        bottom_track_data['rssi'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 72, 1, 4, 'B')
-        bottom_track_data['range_msb'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 77, 1, 4, 'B')
+        bottom_track_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, bottom_track_format, offset)
+        bottom_track_data['range_lsb'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 16, 1, 4, '<H')
+        bottom_track_data['velocity'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 24, 1, 4, '<h')
+        bottom_track_data['correlation'] = \
+            Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 32, 1, 4, 'B')
+        bottom_track_data['amplitude'] = \
+            Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 36, 1, 4, 'B')
+        bottom_track_data['percent_good'] = \
+            Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 40, 1, 4, 'B')
+        bottom_track_data['rssi'] = \
+            Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 72, 1, 4, 'B')
+        bottom_track_data['range_msb'] = \
+            Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 77, 1, 4, 'B')
 
         return bottom_track_data
 
@@ -998,14 +1054,17 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
         try:
-            decoded_data['utc'] = float(re.findall(b'^\d+\.\d+|\d+', decoded_data['utc'])[0])
+            decoded_data['utc'] = \
+                float(re.findall(b'^\d+\.\d+|\d+', decoded_data['utc'])[0])
         except BaseException:
             decoded_data['utc'] = np.nan
         decoded_data['lat_ref'] = Pd0TRDI.bin2str(decoded_data['lat_ref'])
         decoded_data['lon_ref'] = Pd0TRDI.bin2str(decoded_data['lon_ref'])
-        decoded_data['geoid_unit'] = Pd0TRDI.bin2str(decoded_data['geoid_unit'])
+        decoded_data['geoid_unit'] =\
+            Pd0TRDI.bin2str(decoded_data['geoid_unit'])
         decoded_data['alt_unit'] = Pd0TRDI.bin2str(decoded_data['alt_unit'])
         decoded_data['delta_time'] = data['delta_time']
 
@@ -1043,12 +1102,18 @@ class Pd0TRDI(object):
                   ('mode_indicator', 'c', 30))
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
-        decoded_data['true_indicator'] = Pd0TRDI.bin2str(decoded_data['true_indicator'])
-        decoded_data['mag_indicator'] = Pd0TRDI.bin2str(decoded_data['mag_indicator'])
-        decoded_data['knots_indicator'] = Pd0TRDI.bin2str(decoded_data['knots_indicator'])
-        decoded_data['kph_indicator'] = Pd0TRDI.bin2str(decoded_data['kph_indicator'])
+        decoded_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['true_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['true_indicator'])
+        decoded_data['mag_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['mag_indicator'])
+        decoded_data['knots_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['knots_indicator'])
+        decoded_data['kph_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['kph_indicator'])
         decoded_data['delta_time'] = data['delta_time']
 
         return decoded_data
@@ -1083,10 +1148,14 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
-        decoded_data['ft_indicator'] = Pd0TRDI.bin2str(decoded_data['ft_indicator'])
-        decoded_data['m_indicator'] = Pd0TRDI.bin2str(decoded_data['m_indicator'])
-        decoded_data['fath_indicator'] = Pd0TRDI.bin2str(decoded_data['fath_indicator'])
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['ft_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['ft_indicator'])
+        decoded_data['m_indicator'] =\
+            Pd0TRDI.bin2str(decoded_data['m_indicator'])
+        decoded_data['fath_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['fath_indicator'])
         decoded_data['delta_time'] = data['delta_time']
 
         return decoded_data
@@ -1117,15 +1186,18 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
-        decoded_data['h_true_indicator'] = Pd0TRDI.bin2str(decoded_data['h_true_indicator'])
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['h_true_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['h_true_indicator'])
         decoded_data['delta_time'] = data['delta_time']
 
         return decoded_data
 
     @staticmethod
     def decode_gga_104(pd0_bytes, offset, data):
-        """Decodes gga data for WinRiver 2.00 and greater with ADCP's without integrated NMEA data
+        """Decodes gga data for WinRiver 2.00 and greater with ADCP's without
+        integrated NMEA data
 
         Parameters
         ----------
@@ -1161,14 +1233,17 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
         try:
-            decoded_data['utc'] = float(re.findall(b'^\d+\.\d+|\d+', decoded_data['utc'])[0])
+            decoded_data['utc'] = float(re.findall(b'^\d+\.\d+|\d+',
+                                                   decoded_data['utc'])[0])
         except BaseException:
             decoded_data['utc'] = np.nan
         decoded_data['lat_ref'] = Pd0TRDI.bin2str(decoded_data['lat_ref'])
         decoded_data['lon_ref'] = Pd0TRDI.bin2str(decoded_data['lon_ref'])
-        decoded_data['geoid_unit'] = Pd0TRDI.bin2str(decoded_data['geoid_unit'])
+        decoded_data['geoid_unit'] = \
+            Pd0TRDI.bin2str(decoded_data['geoid_unit'])
         decoded_data['alt_unit'] = Pd0TRDI.bin2str(decoded_data['alt_unit'])
         decoded_data['delta_time'] = data['delta_time']
 
@@ -1176,7 +1251,8 @@ class Pd0TRDI(object):
 
     @staticmethod
     def decode_vtg_105(pd0_bytes, offset, data):
-        """Decodes vtg data for WinRiver 2.00 and greater with ADCP's without integrated NMEA data
+        """Decodes vtg data for WinRiver 2.00 and greater with ADCP's without
+        integrated NMEA data
 
         Parameters
         ----------
@@ -1207,18 +1283,24 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
-        decoded_data['true_indicator'] = Pd0TRDI.bin2str(decoded_data['true_indicator'])
-        decoded_data['mag_indicator'] = Pd0TRDI.bin2str(decoded_data['mag_indicator'])
-        decoded_data['knots_indicator'] = Pd0TRDI.bin2str(decoded_data['knots_indicator'])
-        decoded_data['kph_indicator'] = Pd0TRDI.bin2str(decoded_data['kph_indicator'])
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['true_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['true_indicator'])
+        decoded_data['mag_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['mag_indicator'])
+        decoded_data['knots_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['knots_indicator'])
+        decoded_data['kph_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['kph_indicator'])
         decoded_data['delta_time'] = data['delta_time']
 
         return decoded_data
 
     @staticmethod
     def decode_ds_106(pd0_bytes, offset, data):
-        """Decodes depth sounder for WinRiver 2.00 and greater with ADCP's without integrated NMEA data
+        """Decodes depth sounder for WinRiver 2.00 and greater with ADCP's
+        without integrated NMEA data
 
         Parameters
         ----------
@@ -1246,17 +1328,22 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
-        decoded_data['ft_indicator'] = Pd0TRDI.bin2str(decoded_data['ft_indicator'])
-        decoded_data['m_indicator'] = Pd0TRDI.bin2str(decoded_data['m_indicator'])
-        decoded_data['fath_indicator'] = Pd0TRDI.bin2str(decoded_data['fath_indicator'])
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['ft_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['ft_indicator'])
+        decoded_data['m_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['m_indicator'])
+        decoded_data['fath_indicator'] = \
+            Pd0TRDI.bin2str(decoded_data['fath_indicator'])
         decoded_data['delta_time'] = data['delta_time']
 
         return decoded_data
 
     @staticmethod
     def decode_ext_heading_107(pd0_bytes, offset, data):
-        """Decodes external heading for WinRiver 2.00 and greater with ADCP's without integrated NMEA data
+        """Decodes external heading for WinRiver 2.00 and greater with
+        ADCP's without integrated NMEA data
 
         Parameters
         ----------
@@ -1280,10 +1367,12 @@ class Pd0TRDI(object):
 
         # Decode data
         decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
-        decoded_data['header'] = Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
+        decoded_data['header'] = \
+            Pd0TRDI.bin2str(decoded_data['header']).rstrip('\x00')
         if abs(decoded_data['heading_deg']) < 360:
             try:
-                decoded_data['h_true_indicator'] = Pd0TRDI.bin2str(decoded_data['h_true_indicator'])
+                decoded_data['h_true_indicator'] = \
+                    Pd0TRDI.bin2str(decoded_data['h_true_indicator'])
             except:
                 decoded_data['h_true_indicator'] = ''
         else:
@@ -1333,7 +1422,10 @@ class Pd0TRDI(object):
 
         # Decode NMEA sentence and split into an array
         format = str(data['msg_size']) + 'c'
-        sentence = Pd0TRDI.bin2str(b''.join(list(struct.unpack(format, pd0_bytes[offset: offset + data['msg_size']]))))
+        sentence = \
+            Pd0TRDI.bin2str(
+                b''.join(list(struct.unpack(
+                    format, pd0_bytes[offset: offset + data['msg_size']]))))
         temp_array = np.array(sentence.split(','))
         temp_array[temp_array == '999.9'] = ''
 
@@ -1349,7 +1441,8 @@ class Pd0TRDI(object):
             lon_str = temp_array[4]
             lon_num = valid_number(lon_str)
             lon_deg = np.floor(lon_num / 100.)
-            decoded_data['lon_deg'] = lon_deg + (((lon_num / 100.) - lon_deg) * 100.) / 60.
+            decoded_data['lon_deg'] = \
+                lon_deg + (((lon_num / 100.) - lon_deg) * 100.) / 60.
             decoded_data['lon_ref'] = temp_array[5]
             decoded_data['corr_qual'] = valid_number(temp_array[6])
             decoded_data['num_sats'] = valid_number(temp_array[7])
@@ -1360,7 +1453,8 @@ class Pd0TRDI(object):
             decoded_data['geoid_unit'] = temp_array[12]
             decoded_data['d_gps_age'] = valid_number(temp_array[13])
             idx_star = temp_array[14].find('*')
-            decoded_data['ref_stat_id'] = valid_number(temp_array[15][:idx_star])
+            decoded_data['ref_stat_id'] = \
+                valid_number(temp_array[15][:idx_star])
 
         except (ValueError, EOFError, IndexError):
             pass
@@ -1402,7 +1496,10 @@ class Pd0TRDI(object):
 
         # Decode NMEA sentence and split into an array
         format = str(data['msg_size']) + 'c'
-        sentence = Pd0TRDI.bin2str(b''.join(list(struct.unpack(format, pd0_bytes[offset: offset + data['msg_size']]))))
+        sentence =\
+            Pd0TRDI.bin2str(
+                b''.join(list(struct.unpack(
+                    format, pd0_bytes[offset: offset + data['msg_size']]))))
         temp_array = np.array(sentence.split(','))
         temp_array[temp_array == '999.9'] = ''
 
@@ -1458,7 +1555,10 @@ class Pd0TRDI(object):
 
         # Decode NMEA sentence and split into an array
         format = str(data['msg_size']) + 'c'
-        sentence = Pd0TRDI.bin2str(b''.join(list(struct.unpack(format, pd0_bytes[offset: offset + data['msg_size']]))))
+        sentence = \
+            Pd0TRDI.bin2str(
+                b''.join(list(struct.unpack(
+                    format, pd0_bytes[offset: offset + data['msg_size']]))))
         temp_array = np.array(sentence.split(','))
         temp_array[temp_array == '999.9'] = ''
 
@@ -1507,7 +1607,10 @@ class Pd0TRDI(object):
 
         # Decode NMEA sentence and split into an array
         format = str(data['msg_size']) + 'c'
-        sentence = Pd0TRDI.bin2str(b''.join(list(struct.unpack(format, pd0_bytes[offset: offset + data['msg_size']]))))
+        sentence = \
+            Pd0TRDI.bin2str(
+                b''.join(list(struct.unpack(
+                    format, pd0_bytes[offset: offset + data['msg_size']]))))
         temp_array = np.array(sentence.split(','))
         temp_array[temp_array == '999.9'] = ''
 
@@ -1543,7 +1646,8 @@ class Pd0TRDI(object):
             Dictionary of decoded data
         """
 
-        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data, 'dbt_sentence')
+        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data,
+                                            'dbt_sentence')
 
     @staticmethod
     def decode_gga_sentence(pd0_bytes, offset, data):
@@ -1564,7 +1668,8 @@ class Pd0TRDI(object):
             Dictionary of decoded data
         """
 
-        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data, 'gga_sentence')
+        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data,
+                                            'gga_sentence')
 
     @staticmethod
     def decode_vtg_sentence(pd0_bytes, offset, data):
@@ -1585,7 +1690,8 @@ class Pd0TRDI(object):
             Dictionary of decoded data
         """
 
-        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data, 'vtg_sentence')
+        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data,
+                                            'vtg_sentence')
 
     @staticmethod
     def decode_gsa_sentence(pd0_bytes, offset, data):
@@ -1606,7 +1712,8 @@ class Pd0TRDI(object):
             Dictionary of decoded data
         """
 
-        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data, 'gsa_sentence')
+        return Pd0TRDI.decode_nmea_sentence(pd0_bytes, offset, data,
+                                            'gsa_sentence')
 
     @staticmethod
     def decode_nmea_sentence(pd0_bytes, offset, data, target):
@@ -1636,14 +1743,17 @@ class Pd0TRDI(object):
             end_offset = data['header']['number_of_bytes']
         else:
             end_offset = data['header']['address_offsets'][offset_idx + 1]
-        number_of_characters = end_offset - data['header']['address_offsets'][offset_idx]
+        number_of_characters = \
+            end_offset - data['header']['address_offsets'][offset_idx]
 
         # Generate format string
         format_str = str(number_of_characters - 4) + 'c'
         format = (('sentence', format_str, 0))
         offset = data['header']['address_offsets'][offset_idx]
         # Decode data
-        sentence = struct.unpack(format_str, pd0_bytes[offset + 4: offset + number_of_characters ])
+        sentence = struct.unpack(format_str,
+                                 pd0_bytes[offset + 4: offset +
+                                                       number_of_characters ])
         try:
             end_of_sentence = sentence.index(b'\n') + 1
             sentence = b''.join(sentence[0:end_of_sentence]).decode('utf-8')
@@ -1681,7 +1791,8 @@ class Pd0TRDI(object):
                                  ('cell_size', '<H', 3),
                                  ('range_cell_1', '<H', 5))
 
-        surface_leader_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_leader_format, offset)
+        surface_leader_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, surface_leader_format, offset)
         return surface_leader_data
 
     @staticmethod
@@ -1704,10 +1815,12 @@ class Pd0TRDI(object):
         """
         surface_velocity_format = (('id', '<H', 0),)
 
-        surface_velocity_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_velocity_format, offset)
-        surface_velocity_data['velocity'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 2,
-                                                                             data['surface_leader']['cell_count'],
-                                                                             4, '<h')
+        surface_velocity_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, surface_velocity_format, offset)
+        surface_velocity_data['velocity'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 2, data['surface_leader']['cell_count'],
+                4, '<h')
         return surface_velocity_data
 
     @staticmethod
@@ -1730,10 +1843,12 @@ class Pd0TRDI(object):
         """
         surface_correlation_format = (('id', '<H', 0),)
 
-        surface_correlation_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_correlation_format, offset)
-        surface_correlation_data['correlation'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 2,
-                                                                                   data['surface_leader']['cell_count'],
-                                                                                   4, 'B')
+        surface_correlation_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, surface_correlation_format, offset)
+        surface_correlation_data['correlation'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 2, data['surface_leader']['cell_count'],
+                4, 'B')
         return surface_correlation_data
 
     @staticmethod
@@ -1756,10 +1871,13 @@ class Pd0TRDI(object):
         """
         surface_rssi_format = (('id', '<H', 0),)
 
-        surface_rssi_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_rssi_format, offset)
-        surface_rssi_data['rssi'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 2,
-                                                                     data['surface_leader']['cell_count'],
-                                                                     4, 'B')
+        surface_rssi_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, surface_rssi_format, offset)
+        surface_rssi_data['rssi'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 2,
+                data['surface_leader']['cell_count'],
+                4, 'B')
         return surface_rssi_data
 
     @staticmethod
@@ -1782,10 +1900,12 @@ class Pd0TRDI(object):
         """
         surface_per_good_format = (('id', '<H', 0),)
 
-        surface_per_good_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_per_good_format, offset)
-        surface_per_good_data['percent_good'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 2,
-                                                                                 data['surface_leader']['cell_count'],
-                                                                                 4, 'B')
+        surface_per_good_data = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, surface_per_good_format, offset)
+        surface_per_good_data['percent_good'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 2, data['surface_leader']['cell_count'],
+                4, 'B')
         return surface_per_good_data
 
     @staticmethod
@@ -1808,10 +1928,13 @@ class Pd0TRDI(object):
         """
         surface_status_format = (('id', '<H', 0),)
 
-        surface_status_data = Pd0TRDI.unpack_bytes(pd0_bytes, surface_status_format, offset)
-        surface_status_data['percent_good'] = Pd0TRDI.decode_per_cell_per_beam(pd0_bytes, offset + 2,
-                                                                               data['surface_leader']['cell_count'],
-                                                                               4, 'B')
+        surface_status_data = Pd0TRDI.unpack_bytes(pd0_bytes,
+                                                   surface_status_format,
+                                                   offset)
+        surface_status_data['percent_good'] = \
+            Pd0TRDI.decode_per_cell_per_beam(
+                pd0_bytes, offset + 2, data['surface_leader']['cell_count'],
+                4, 'B')
         return surface_status_data
 
     @staticmethod
@@ -1847,12 +1970,15 @@ class Pd0TRDI(object):
                                    ('receive_bandwidth', 'B', 17),
                                    ('min_ping_interval', '<H', 18))
         auto_config_data = {}
-        auto_config_data['leader'] = Pd0TRDI.unpack_bytes(pd0_bytes, auto_config_leader_format, offset)
+        auto_config_data['leader'] = \
+            Pd0TRDI.unpack_bytes(pd0_bytes, auto_config_leader_format, offset)
 
         for n in range(1, auto_config_data['leader']['beam_count'] + 1):
             label = 'beam_' + str(n)
             beam_offset = offset + 3 + (20 * (n - 1))
-            auto_config_data[label] = Pd0TRDI.unpack_bytes(pd0_bytes, auto_config_beam_format, beam_offset)
+            auto_config_data[label] = \
+                Pd0TRDI.unpack_bytes(pd0_bytes,
+                                     auto_config_beam_format, beam_offset)
 
         return auto_config_data
 
@@ -1880,7 +2006,8 @@ class Pd0TRDI(object):
                                 ('range', 'L', 4),
                                 ('status', 'B', 8))
 
-        vertical_beam_data = Pd0TRDI.unpack_bytes(pd0_bytes, vertical_beam_format, offset)
+        vertical_beam_data = Pd0TRDI.unpack_bytes(pd0_bytes,
+                                                  vertical_beam_format, offset)
         return vertical_beam_data
 
     @staticmethod
@@ -1910,8 +2037,9 @@ class Pd0TRDI(object):
             row_list = []
             for col in range(4):
                 offset = offset + 2
-                # row.append(struct.unpack('<H', pd0_bytes[offset: offset + 2])[0])
-                row_list.append(Pd0TRDI.unpack_bytes(pd0_bytes, matrix_data_format, offset)['element'])
+                row_list.append(Pd0TRDI.unpack_bytes(pd0_bytes,
+                                                     matrix_data_format,
+                                                     offset)['element'])
             matrix.append(row_list)
         matrix_data['matrix'] = matrix
 
@@ -2037,11 +2165,13 @@ class Inst(object):
 
 
         if 'fixed_leader' in data:
-            self.firm_ver[i_ens] = data['fixed_leader']['cpu_firmware_version'] + \
-                            (data['fixed_leader']['cpu_firmware_revision']  / 100)
+            self.firm_ver[i_ens] = \
+                data['fixed_leader']['cpu_firmware_version'] + \
+                (data['fixed_leader']['cpu_firmware_revision'] / 100)
 
             # Convert system_configuration_ls to individual bits
-            bitls = "{0:08b}".format(data['fixed_leader']['system_configuration_ls'])
+            bitls = "{0:08b}".format(
+                data['fixed_leader']['system_configuration_ls'])
             val = int(bitls[5:], 2)
             if val == 0:
                 self.freq[i_ens] = 75
@@ -2077,7 +2207,9 @@ class Inst(object):
                 self.xducer[i_ens] = 'n/a'
 
             # Convert system_configuration_ms to individual bits
-            bitms = "{0:08b}".format(data['fixed_leader']['system_configuration_ms'])
+            bitms = \
+                "{0:08b}".format(
+                    data['fixed_leader']['system_configuration_ms'])
 
             val = int(bitms[6:], 2)
             if val == 0:
@@ -2114,7 +2246,8 @@ class Inst(object):
         if 'transformation_matrix' in data:
             self.res_RDI = 0
             # Scale transformation matrix
-            self.t_matrix = np.array(data['transformation_matrix']['matrix']) / 10000
+            self.t_matrix = \
+                np.array(data['transformation_matrix']['matrix']) / 10000
 
 
 class AutoMode(object):
@@ -2162,11 +2295,16 @@ class AutoMode(object):
         """
 
         if 'auto_configuration' in data:
-            self.beam_count[i_ens] = data['auto_configuration']['leader']['beam_count']
-            self.Beam1.populate_data(i_ens, data['auto_configuration']['beam_1'])
-            self.Beam2.populate_data(i_ens, data['auto_configuration']['beam_2'])
-            self.Beam3.populate_data(i_ens, data['auto_configuration']['beam_3'])
-            self.Beam4.populate_data(i_ens, data['auto_configuration']['beam_4'])
+            self.beam_count[i_ens] = \
+                data['auto_configuration']['leader']['beam_count']
+            self.Beam1.populate_data(i_ens,
+                                     data['auto_configuration']['beam_1'])
+            self.Beam2.populate_data(i_ens,
+                                     data['auto_configuration']['beam_2'])
+            self.Beam3.populate_data(i_ens,
+                                     data['auto_configuration']['beam_3'])
+            self.Beam4.populate_data(i_ens,
+                                     data['auto_configuration']['beam_4'])
 
 
 class Beam(object):
@@ -2304,13 +2442,20 @@ class Bt(object):
 
         if 'bottom_track' in data:
             # Combine bytes to compute depth
-            self.depth_m[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['range_lsb']).T) + \
-                                       np.squeeze(np.array(data['bottom_track']['range_msb']).T) * 2e16 / 100
-            self.vel_mps[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['velocity']).T)
-            self.corr[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['correlation']).T)
-            self.eval_amp[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['amplitude']).T)
-            self.pergd[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['percent_good']).T)
-            self.rssi[0:4, i_ens] = np.squeeze(np.array(data['bottom_track']['rssi']).T)
+            self.depth_m[0:4, i_ens] = \
+                np.squeeze(np.array(data['bottom_track']['range_lsb']).T) + \
+                np.squeeze(
+                    np.array(data['bottom_track']['range_msb']).T) * 2e16 / 100
+            self.vel_mps[0:4, i_ens] = \
+                np.squeeze(np.array(data['bottom_track']['velocity']).T)
+            self.corr[0:4, i_ens] =\
+                np.squeeze(np.array(data['bottom_track']['correlation']).T)
+            self.eval_amp[0:4, i_ens] = \
+                np.squeeze(np.array(data['bottom_track']['amplitude']).T)
+            self.pergd[0:4, i_ens] = \
+                np.squeeze(np.array(data['bottom_track']['percent_good']).T)
+            self.rssi[0:4, i_ens] = \
+                np.squeeze(np.array(data['bottom_track']['rssi']).T)
 
 
 class Cfg(object):
@@ -2487,15 +2632,19 @@ class Cfg(object):
             self.wf_cm[i_ens] = data['fixed_leader']['blank_after_transmit']
             self.wm[i_ens] = data['fixed_leader']['water_mode']
             self.wc[i_ens] = data['fixed_leader']['low_correlation_threshold']
-            self.code_reps[i_ens] = data['fixed_leader']['number_of_code_repetitions']
-            self.wg_per[i_ens] = data['fixed_leader']['minimum_percentage_water_profile_pings']
-            self.we_mmps[i_ens] = data['fixed_leader']['error_velocity_threshold']
+            self.code_reps[i_ens] = \
+                data['fixed_leader']['number_of_code_repetitions']
+            self.wg_per[i_ens] = \
+                data['fixed_leader']['minimum_percentage_water_profile_pings']
+            self.we_mmps[i_ens] = \
+                data['fixed_leader']['error_velocity_threshold']
             self.tp_sec[i_ens] = data['fixed_leader']['minutes'] * 60. + \
                                      data['fixed_leader']['seconds'] + \
                                      data['fixed_leader']['hundredths'] * 0.01
 
             # Convert coordinate_transformation_process to individual bits
-            self.ex[i_ens] = "{0:08b}".format(data['fixed_leader']['coordinate_transformation_process'])
+            self.ex[i_ens] = "{0:08b}".format(
+                data['fixed_leader']['coordinate_transformation_process'])
 
             val = int(self.ex[i_ens][3:5], 2)
             if val == 0:
@@ -2533,11 +2682,13 @@ class Cfg(object):
             else:
                 self.map_bins = 'N/a'
 
-            self.ea_deg[i_ens] = data['fixed_leader']['heading_alignment'] * 0.01
+            self.ea_deg[i_ens] = \
+                data['fixed_leader']['heading_alignment'] * 0.01
             self.eb_deg[i_ens] = data['fixed_leader']['heading_bias'] * 0.01
 
             # Convert sensour_source to individual bits
-            self.ez[i_ens] = "{0:08b}".format(data['fixed_leader']['sensor_source'])
+            self.ez[i_ens] = \
+                "{0:08b}".format(data['fixed_leader']['sensor_source'])
 
             val = int(self.ez[i_ens][:2], 2)
             if val == 0:
@@ -2597,28 +2748,37 @@ class Cfg(object):
             else:
                 self.temp_src[i_ens] = 'N/a'
 
-            self.sensor_avail[i_ens] = "{0:08b}".format(data['fixed_leader']['sensor_available'])
+            self.sensor_avail[i_ens] = \
+                "{0:08b}".format(data['fixed_leader']['sensor_available'])
             self.dist_bin1_cm[i_ens] = data['fixed_leader']['bin_1_distance']
-            self.xmit_pulse_cm[i_ens] = data['fixed_leader']['transmit_pulse_length']
-            self.ref_lay_str_cell[i_ens] = data['fixed_leader']['starting_depth_cell']
-            self.ref_lay_end_cell[i_ens] = data['fixed_leader']['ending_depth_cell']
+            self.xmit_pulse_cm[i_ens] =\
+                data['fixed_leader']['transmit_pulse_length']
+            self.ref_lay_str_cell[i_ens] = \
+                data['fixed_leader']['starting_depth_cell']
+            self.ref_lay_end_cell[i_ens] = \
+                data['fixed_leader']['ending_depth_cell']
             self.wa[i_ens] = data['fixed_leader']['false_target_threshold']
             self.cx[i_ens] = data['fixed_leader']['low_latency_trigger']
             self.lag_cm[i_ens] = data['fixed_leader']['transmit_lag_distance']
-            self.cpu_ser_no[i_ens] = data['fixed_leader']['cpu_board_serial_number']
+            self.cpu_ser_no[i_ens] = \
+                data['fixed_leader']['cpu_board_serial_number']
             self.wb[i_ens] = data['fixed_leader']['system_bandwidth']
             self.cq[i_ens] = data['fixed_leader']['system_power']
 
         if 'variable_leader' in data:
-            self.lag_near_bottom[i_ens] = data['variable_leader']['lag_near_bottom']
+            self.lag_near_bottom[i_ens] = \
+                data['variable_leader']['lag_near_bottom']
 
         if 'bottom_track' in data:
             self.bp[i_ens] = data['bottom_track']['pings_per_ensemble_bp']
-            self.bc[i_ens] = data['bottom_track']['correlation_magnitude_minimum_bc']
-            self.ba[i_ens] = data['bottom_track']['evaluation_amplitude_minimum_ba']
+            self.bc[i_ens] = \
+                data['bottom_track']['correlation_magnitude_minimum_bc']
+            self.ba[i_ens] = \
+                data['bottom_track']['evaluation_amplitude_minimum_ba']
             self.bg[i_ens] = data['bottom_track']['percent_good_minimum_bg']
             self.bm[i_ens] = data['bottom_track']['bottom_track_mode_bm']
-            self.be_mmps[i_ens] = data['bottom_track']['error_velocity_maximum_be']
+            self.be_mmps[i_ens] = \
+                data['bottom_track']['error_velocity_maximum_be']
 
 
 class Gps(object):
@@ -2853,7 +3013,8 @@ class Gps2(object):
 
             for n, gga_data in enumerate(data['gga']):
                 # Try implemented because of occasional garbage in data stream.
-                # This prevents a crash and data after garbage are not used, but any data before garbage is saved
+                # This prevents a crash and data after garbage are not used,
+                # but any data before garbage is saved
                 try:
                     self.gga_delta_time[i_ens, n] = gga_data['delta_time']
                     self.gga_header[i_ens, n] = gga_data['header']
@@ -2882,7 +3043,8 @@ class Gps2(object):
 
             for n, vtg_data in enumerate(data['vtg']):
                 # Try implemented because of occasional garbage in data stream.
-                # This prevents a crash and data after garbage are not used, but any data before garbage is saved
+                # This prevents a crash and data after garbage are not used,
+                # but any data before garbage is saved
                 try:
                     self.vtg_delta_time[i_ens, n] = vtg_data['delta_time']
                     self.vtg_header[i_ens, n] = vtg_data['header']
@@ -2891,7 +3053,8 @@ class Gps2(object):
                     self.course_mag[i_ens, n] = vtg_data['course_mag']
                     self.mag_indicator[i_ens, n] = vtg_data['mag_indicator']
                     self.speed_knots[i_ens, n] = vtg_data['speed_knots']
-                    self.knots_indicator[i_ens, n] = vtg_data['knots_indicator']
+                    self.knots_indicator[i_ens, n] = \
+                        vtg_data['knots_indicator']
                     self.speed_kph[i_ens, n] = vtg_data['speed_kph']
                     self.kph_indicator[i_ens, n] = vtg_data['kph_indicator']
                     self.mode_indicator[i_ens, n] = vtg_data['mode_indicator']
@@ -2906,7 +3069,8 @@ class Gps2(object):
 
             for n, dbt_data in enumerate(data['ds']):
                 # Try implemented because of occasional garbage in data stream.
-                # This prevents a crash and data after garbage are not used, but any data before garbage is saved
+                # This prevents a crash and data after garbage are not used,
+                # but any data before garbage is saved
                 try:
                     self.dbt_delta_time[i_ens, n] = dbt_data['delta_time']
                     self.dbt_header[i_ens, n] = dbt_data['header']
@@ -2927,12 +3091,14 @@ class Gps2(object):
 
             for n, hdt_data in enumerate(data['ext_heading']):
                 # Try implemented because of occasional garbage in data stream.
-                # This prevents a crash and data after garbage are not used, but any data before garbage is saved
+                # This prevents a crash and data after garbage are not used,
+                # but any data before garbage is saved
                 try:
                     self.hdt_delta_time[i_ens, n] = hdt_data['delta_time']
                     self.hdt_header[i_ens, n] = hdt_data['header']
                     self.heading_deg[i_ens, n] = hdt_data['heading_deg']
-                    self.h_true_indicator[i_ens, n] = hdt_data['h_true_indicator']
+                    self.h_true_indicator[i_ens, n] = \
+                        hdt_data['h_true_indicator']
                 except:
                     pass
 
@@ -2951,27 +3117,38 @@ class Gps2(object):
 
         # Expand arrays
         self.gga_delta_time = np.concatenate(
-            (self.gga_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.gga_delta_time,
+             np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
         self.utc = np.concatenate(
-            (self.utc, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.utc, np.tile(np.nan,
+                               (n_ensembles, n_expansion))), axis=1)
         self.lat_deg = np.concatenate(
-            (self.lat_deg, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.lat_deg, np.tile(np.nan,
+                                   (n_ensembles, n_expansion))), axis=1)
         self.lon_deg = np.concatenate(
-            (self.lon_deg, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.lon_deg, np.tile(np.nan,
+                                   (n_ensembles, n_expansion))), axis=1)
         self.corr_qual = np.concatenate(
-            (self.corr_qual, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.corr_qual, np.tile(np.nan,
+                                     (n_ensembles, n_expansion))), axis=1)
         self.num_sats = np.concatenate(
-            (self.num_sats, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.num_sats, np.tile(np.nan,
+                                    (n_ensembles, n_expansion))), axis=1)
         self.hdop = np.concatenate(
-            (self.hdop, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.hdop, np.tile(np.nan,
+                                (n_ensembles, n_expansion))), axis=1)
         self.alt = np.concatenate(
-            (self.alt, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.alt, np.tile(np.nan,
+                               (n_ensembles, n_expansion))), axis=1)
         self.geoid = np.concatenate(
-            (self.geoid, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.geoid, np.tile(np.nan,
+                                 (n_ensembles, n_expansion))), axis=1)
         self.d_gps_age = np.concatenate(
-            (self.d_gps_age, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.d_gps_age, np.tile(np.nan,
+                                     (n_ensembles, n_expansion))), axis=1)
         self.ref_stat_id = np.concatenate(
-            (self.ref_stat_id, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.ref_stat_id, np.tile(np.nan,
+                                       (n_ensembles, n_expansion))), axis=1)
 
         self.gga_header = np.concatenate(
             (self.gga_header, np.tile('', (n_ensembles, n_expansion))), axis=1)
@@ -2999,28 +3176,39 @@ class Gps2(object):
 
         # Expand arrays
         self.vtg_delta_time = np.concatenate(
-            (self.vtg_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.vtg_delta_time, np.tile(np.nan,
+                                          (n_ensembles, n_expansion))), axis=1)
         self.course_true = np.concatenate(
-            (self.course_true, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.course_true, np.tile(np.nan,
+                                       (n_ensembles, n_expansion))), axis=1)
         self.course_mag = np.concatenate(
-            (self.course_mag, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.course_mag, np.tile(np.nan,
+                                      (n_ensembles, n_expansion))), axis=1)
         self.speed_knots = np.concatenate(
-            (self.speed_knots, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.speed_knots, np.tile(np.nan,
+                                       (n_ensembles, n_expansion))), axis=1)
         self.speed_kph = np.concatenate(
-            (self.speed_kph, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.speed_kph, np.tile(np.nan,
+                                     (n_ensembles, n_expansion))), axis=1)
 
         self.kph_indicator = np.concatenate(
-            (self.kph_indicator, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.kph_indicator, np.tile('',
+                                         (n_ensembles, n_expansion))), axis=1)
         self.mode_indicator = np.concatenate(
-            (self.mode_indicator, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.mode_indicator, np.tile('',
+                                          (n_ensembles, n_expansion))), axis=1)
         self.vtg_header = np.concatenate(
-            (self.vtg_header, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.vtg_header, np.tile('',
+                                      (n_ensembles, n_expansion))), axis=1)
         self.true_indicator = np.concatenate(
-            (self.true_indicator, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.true_indicator, np.tile('',
+                                          (n_ensembles, n_expansion))), axis=1)
         self.mag_indicator = np.concatenate(
-            (self.mag_indicator, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.mag_indicator, np.tile('',
+                                         (n_ensembles, n_expansion))), axis=1)
         self.knots_indicator = np.concatenate(
-            (self.knots_indicator, np.tile('', (n_ensembles, n_expansion))), axis=1)
+            (self.knots_indicator, np.tile('',
+                                           (n_ensembles, n_expansion))), axis=1)
 
     def dbt_expand(self, n_samples):
         """Expand arrays.
@@ -3037,22 +3225,30 @@ class Gps2(object):
 
         # Expand arrays
         self.dbt_delta_time = np.concatenate(
-            (self.dbt_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.dbt_delta_time, np.tile(np.nan,
+                                          (n_ensembles, n_expansion))), axis=1)
         self.depth_ft = np.concatenate(
-            (self.depth_ft, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.depth_ft, np.tile(np.nan,
+                                    (n_ensembles, n_expansion))), axis=1)
         self.depth_m = np.concatenate(
-            (self.depth_m, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.depth_m, np.tile(np.nan,
+                                   (n_ensembles, n_expansion))), axis=1)
         self.depth_fath = np.concatenate(
-            (self.depth_fath, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.depth_fath, np.tile(np.nan,
+                                      (n_ensembles, n_expansion))), axis=1)
 
         self.fath_indicator = np.concatenate(
-            (self.fath_indicator, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.fath_indicator, np.tile(np.nan,
+                                          (n_ensembles, n_expansion))), axis=1)
         self.dbt_header = np.concatenate(
-            (self.dbt_header, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.dbt_header, np.tile(np.nan,
+                                      (n_ensembles, n_expansion))), axis=1)
         self.ft_indicator = np.concatenate(
-            (self.ft_indicator, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.ft_indicator, np.tile(np.nan,
+                                        (n_ensembles, n_expansion))), axis=1)
         self.m_indicator = np.concatenate(
-            (self.m_indicator, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.m_indicator, np.tile(np.nan,
+                                       (n_ensembles, n_expansion))), axis=1)
 
     def hdt_expand(self, n_samples):
         """Expand arrays.
@@ -3069,13 +3265,17 @@ class Gps2(object):
 
         # Expand the arrays
         self.hdt_delta_time = np.concatenate(
-            (self.hdt_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.hdt_delta_time, np.tile(np.nan,
+                                          (n_ensembles, n_expansion))), axis=1)
         self.heading_deg = np.concatenate(
-            (self.heading_deg, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.heading_deg, np.tile(np.nan,
+                                       (n_ensembles, n_expansion))), axis=1)
         self.h_true_indicator = np.concatenate(
-            (self.h_true_indicator, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.h_true_indicator, np.tile(np.nan,
+                                            (n_ensembles, n_expansion))), axis=1)
         self.hdt_header = np.concatenate(
-            (self.hdt_header, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1)
+            (self.hdt_header, np.tile(np.nan,
+                                      (n_ensembles, n_expansion))), axis=1)
 
 
 class Nmea(object):
@@ -3275,7 +3475,9 @@ class Sensor(object):
 
         if 'fixed_leader' in data and 'variable_leader' in data:
             # Convert system_configuration_ls to 1s and 0s
-            bitls = "{0:08b}".format(data['fixed_leader']['system_configuration_ls'])
+            bitls = \
+                "{0:08b}".format(
+                    data['fixed_leader']['system_configuration_ls'])
 
             # Convert first two bits to integer
             val = int(bitls[0], 2)
@@ -3289,62 +3491,86 @@ class Sensor(object):
             self.num[i_ens] = data['variable_leader']['ensemble_number']
 
             # Store data and time as list
-            self.date_not_y2k[i_ens, :] = [data['variable_leader']['rtc_year'],
-                                                  data['variable_leader']['rtc_month'],
-                                                  data['variable_leader']['rtc_day']]
-            self.time[i_ens, :] = [data['variable_leader']['rtc_hour'],
-                                          data['variable_leader']['rtc_minutes'],
-                                          data['variable_leader']['rtc_seconds'],
-                                          data['variable_leader']['rtc_hundredths']]
+            self.date_not_y2k[i_ens, :] = \
+                [data['variable_leader']['rtc_year'],
+                 data['variable_leader']['rtc_month'],
+                 data['variable_leader']['rtc_day']]
+            self.time[i_ens, :] = \
+                [data['variable_leader']['rtc_hour'],
+                 data['variable_leader']['rtc_minutes'],
+                 data['variable_leader']['rtc_seconds'],
+                 data['variable_leader']['rtc_hundredths']]
 
-            self.num_fact[i_ens] = data['variable_leader']['ensemble_number_msb']
-            self.num_tot[i_ens] = self.num[i_ens] + self.num_fact[i_ens] * 65535
+            self.num_fact[i_ens] = \
+                data['variable_leader']['ensemble_number_msb']
+            self.num_tot[i_ens] = \
+                self.num[i_ens] + self.num_fact[i_ens] * 65535
             self.bit_test[i_ens] = data['variable_leader']['bit_fault']
             self.bit_test_count[i_ens] = data['variable_leader']['bit_count']
             self.sos_mps[i_ens] = data['variable_leader']['speed_of_sound']
-            self.xdcr_depth_dm[i_ens] = data['variable_leader']['depth_of_transducer']
+            self.xdcr_depth_dm[i_ens] = \
+                data['variable_leader']['depth_of_transducer']
             self.heading_deg[i_ens] = data['variable_leader']['heading'] / 100.
             self.pitch_deg[i_ens] = data['variable_leader']['pitch'] / 100.
             self.roll_deg[i_ens] = data['variable_leader']['roll'] / 100.
             self.salinity_ppt[i_ens] = data['variable_leader']['salinity']
-            self.temperature_deg_c[i_ens] = data['variable_leader']['temperature'] / 100.
-            self.mpt_msc[i_ens, :] = [data['variable_leader']['mpt_minutes'],
-                                             data['variable_leader']['mpt_seconds'],
-                                             data['variable_leader']['mpt_hundredths']]
-            self.heading_std_dev_deg[i_ens] = data['variable_leader']['heading_standard_deviation']
-            self.pitch_std_dev_deg[i_ens] = data['variable_leader']['pitch_standard_deviation'] / 10.
-            self.roll_std_dev_deg[i_ens] = data['variable_leader']['roll_standard_deviation'] / 10.
-            self.xmit_current[i_ens] = data['variable_leader']['transmit_current']
-            self.xmit_voltage[i_ens] = data['variable_leader']['transmit_voltage']
-            self.ambient_temp[i_ens] = data['variable_leader']['ambient_temperature']
-            self.pressure_pos[i_ens] = data['variable_leader']['pressure_positive']
-            self.pressure_neg[i_ens] = data['variable_leader']['pressure_negative']
-            self.attitude_temp[i_ens] = data['variable_leader']['attitude_temperature']
+            self.temperature_deg_c[i_ens] = \
+                data['variable_leader']['temperature'] / 100.
+            self.mpt_msc[i_ens, :] = \
+                [data['variable_leader']['mpt_minutes'],
+                 data['variable_leader']['mpt_seconds'],
+                 data['variable_leader']['mpt_hundredths']]
+            self.heading_std_dev_deg[i_ens] = \
+                data['variable_leader']['heading_standard_deviation']
+            self.pitch_std_dev_deg[i_ens] = \
+                data['variable_leader']['pitch_standard_deviation'] / 10.
+            self.roll_std_dev_deg[i_ens] = \
+                data['variable_leader']['roll_standard_deviation'] / 10.
+            self.xmit_current[i_ens] = \
+                data['variable_leader']['transmit_current']
+            self.xmit_voltage[i_ens] = \
+                data['variable_leader']['transmit_voltage']
+            self.ambient_temp[i_ens] =\
+                data['variable_leader']['ambient_temperature']
+            self.pressure_pos[i_ens] =\
+                data['variable_leader']['pressure_positive']
+            self.pressure_neg[i_ens] = \
+                data['variable_leader']['pressure_negative']
+            self.attitude_temp[i_ens] = \
+                data['variable_leader']['attitude_temperature']
             self.attitude[i_ens] = data['variable_leader']['attitude']
-            self.contam_sensor[i_ens] = data['variable_leader']['contamination_sensor']
-            self.error_status_word[i_ens] = "{0:032b}".format(data['variable_leader']['error_status_word'])
+            self.contam_sensor[i_ens] = \
+                data['variable_leader']['contamination_sensor']
+            self.error_status_word[i_ens] = \
+                "{0:032b}".format(data['variable_leader']['error_status_word'])
             self.pressure_pascal[i_ens] = data['variable_leader']['pressure']
-            self.pressure_var_pascal[i_ens] = data['variable_leader']['pressure_variance']
+            self.pressure_var_pascal[i_ens] = \
+                data['variable_leader']['pressure_variance']
 
             # Store Y2K date and time as list
-            self.date_y2k[i_ens, :] = [data['variable_leader']['rtc_y2k_century'],
-                                              data['variable_leader']['rtc_y2k_year'],
-                                              data['variable_leader']['rtc_y2k_month'],
-                                              data['variable_leader']['rtc_y2k_day']]
-            self.time_y2k[i_ens, :] = [data['variable_leader']['rtc_y2k_hour'],
-                                              data['variable_leader']['rtc_y2k_minutes'],
-                                              data['variable_leader']['rtc_y2k_seconds'],
-                                              data['variable_leader']['rtc_y2k_hundredths']]
+            self.date_y2k[i_ens, :] = \
+                [data['variable_leader']['rtc_y2k_century'],
+                 data['variable_leader']['rtc_y2k_year'],
+                 data['variable_leader']['rtc_y2k_month'],
+                 data['variable_leader']['rtc_y2k_day']]
+            self.time_y2k[i_ens, :] = \
+                [data['variable_leader']['rtc_y2k_hour'],
+                 data['variable_leader']['rtc_y2k_minutes'],
+                 data['variable_leader']['rtc_y2k_seconds'],
+                 data['variable_leader']['rtc_y2k_hundredths']]
             self.date[i_ens, :] = self.date_not_y2k[i_ens, :]
-            self.date[i_ens, 0] = self.date_y2k[i_ens, 0] * 100 + \
-                                         self.date_y2k[i_ens, 1]
+            self.date[i_ens, 0] = \
+                self.date_y2k[i_ens, 0] * 100 + self.date_y2k[i_ens, 1]
 
             if 'vertical_beam' in data:
-                self.vert_beam_eval_amp[i_ens] = data['vertical_beam']['eval_amp']
+                self.vert_beam_eval_amp[i_ens] = \
+                    data['vertical_beam']['eval_amp']
                 self.vert_beam_RSSI_amp[i_ens] = data['vertical_beam']['rssi']
-                self.vert_beam_range_m[i_ens] = data['vertical_beam']['range'] / 1000
+                self.vert_beam_range_m[i_ens] = \
+                    data['vertical_beam']['range'] / 1000
 
-                # Use first 8 bits of status and the 6 the bit to determine the gain
+                # Use first 8 bits of status and the 6 the bit to determine
+                # the gain
                 temp = "{0:08b}".format(data['vertical_beam']['status'])
                 self.vert_beam_status[i_ens] = int(temp[6:], 2)
                 if temp[5] == '0':
@@ -3371,7 +3597,8 @@ class Surface(object):
     pergd: np.array(int)
         3D array of percent good for each beam, cell, and ensemble
     rssi: np.array(int)
-        3D array of return signal strength indicator for each beam, cell, and ensemble
+        3D array of return signal strength indicator for each beam, cell,
+        and ensemble
     """
 
     def __init__(self, n_ensembles, n_velocities, max_surface_bins):
@@ -3390,7 +3617,8 @@ class Surface(object):
         self.no_cells = np.zeros(n_ensembles)
         self.cell_size_cm = nans(n_ensembles)
         self.dist_bin1_cm = nans(n_ensembles)
-        self.vel_mps = np.tile([np.nan], [n_velocities, max_surface_bins, n_ensembles])
+        self.vel_mps = np.tile([np.nan], [n_velocities, max_surface_bins,
+                                          n_ensembles])
         self.corr = nans([n_velocities, max_surface_bins, n_ensembles])
         self.pergd = nans([n_velocities, max_surface_bins, n_ensembles])
         self.rssi = nans([n_velocities, max_surface_bins, n_ensembles])
@@ -3414,19 +3642,23 @@ class Surface(object):
             self.dist_bin1_cm[i_ens] = data['surface_leader']['range_cell_1']
 
         if 'surface_velocity' in data:
-            self.vel_mps[:main_data.n_velocities, :len(data['surface_velocity']['velocity']), i_ens] = \
+            self.vel_mps[:main_data.n_velocities,
+            :len(data['surface_velocity']['velocity']), i_ens] = \
                 np.array(data['surface_velocity']['velocity']).T
 
         if 'surface_correlation' in data:
-            self.corr[:main_data.n_velocities, :len(data['surface_correlation']['correlation']), i_ens] = \
+            self.corr[:main_data.n_velocities,
+            :len(data['surface_correlation']['correlation']), i_ens] = \
                 np.array(data['surface_correlation']['correlation']).T
 
         if 'surface_intensity' in data:
-            self.rssi[:main_data.n_velocities, :len(data['surface_intensity']['rssi']), i_ens] = \
+            self.rssi[:main_data.n_velocities,
+            :len(data['surface_intensity']['rssi']), i_ens] = \
                 np.array(data['surface_intensity']['rssi']).T
 
         if 'surface_percent_good' in data:
-            self.pergd[:main_data.n_velocities, :len(data['surface_percent_good']['percent_good']), i_ens] = \
+            self.pergd[:main_data.n_velocities,
+            :len(data['surface_percent_good']['percent_good']), i_ens] = \
                 np.array(data['surface_percent_good']['percent_good']).T
 
 
@@ -3442,7 +3674,8 @@ class Wt(object):
     pergd: np.array(int)
         3D array of percent good for each beam, cell, and ensemble
     rssi: np.array(int)
-        3D array of return signal strength indicator for each beam, cell, and ensemble
+        3D array of return signal strength indicator for each beam, cell,
+        and ensemble
     """
 
     def __init__(self, n_bins, n_ensembles, n_velocities):
@@ -3476,12 +3709,12 @@ class Wt(object):
             Object of PD0TRDI
         """
 
-
         if 'velocity' in data:
             # Check size in case array needs to be expanded
             if main_data.Cfg.wn[i_ens] > self.vel_mps.shape[1]:
                 append = np.zeros([self.vel_mps.shape[0],
-                                   int(main_data.Cfg.wn[i_ens] - self.vel_mps.shape[1]),
+                                   int(main_data.Cfg.wn[i_ens] -
+                                       self.vel_mps.shape[1]),
                                    self.vel_mps.shape[2]])
                 self.vel_mps = np.hstack([self.vel_mps, append])
                 self.corr = np.hstack([self.corr, append])
@@ -3490,14 +3723,18 @@ class Wt(object):
 
             # Reformat and assign data
             if 'velocity' in data:
-                self.vel_mps[:main_data.n_velocities, :int(main_data.Cfg.wn[i_ens]), i_ens] = \
+                self.vel_mps[:main_data.n_velocities,
+                :int(main_data.Cfg.wn[i_ens]), i_ens] = \
                     np.array(data['velocity']['data']).T
             if 'correlation' in data:
-                self.corr[:main_data.n_velocities, :int(main_data.Cfg.wn[i_ens]), i_ens] = \
+                self.corr[:main_data.n_velocities,
+                :int(main_data.Cfg.wn[i_ens]), i_ens] = \
                     np.array(data['correlation']['data']).T
             if 'echo_intensity' in data:
-                self.rssi[:main_data.n_velocities, :int(main_data.Cfg.wn[i_ens]), i_ens] = \
+                self.rssi[:main_data.n_velocities,
+                :int(main_data.Cfg.wn[i_ens]), i_ens] = \
                     np.array(data['echo_intensity']['data']).T
             if 'percent_good' in data:
-                self.pergd[:main_data.n_velocities, :int(main_data.Cfg.wn[i_ens]), i_ens] = \
+                self.pergd[:main_data.n_velocities,
+                :int(main_data.Cfg.wn[i_ens]), i_ens] = \
                     np.array(data['percent_good']['data']).T

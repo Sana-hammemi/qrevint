@@ -15,7 +15,7 @@ class Edges(object):
     right: EdgeData
         Object of EdgeData for right edge.
     """
-    
+
     def __init__(self):
         """Initialize Edges.
         """
@@ -24,7 +24,7 @@ class Edges(object):
         self.vel_method = None
         self.left = EdgeData()
         self.right = EdgeData()
-        
+
     def populate_data(self, rec_edge_method, vel_method):
         """Store the general methods used for edge data.
 
@@ -39,7 +39,8 @@ class Edges(object):
         self.vel_method = vel_method
 
     def populate_from_qrev_mat(self, transect):
-        """Populates the object using data from previously saved QRev Matlab file.
+        """Populates the object using data from previously saved QRev Matlab
+        file.
 
         Parameters
         ----------
@@ -59,7 +60,7 @@ class Edges(object):
 
     def change_property(self, prop, setting, edge=None):
         """Change edge property
-        
+
         Parameters
         ----------
         prop: str
@@ -69,7 +70,7 @@ class Edges(object):
         edge: str
             Edge to change (left, right)
         """
-        
+
         if edge is None:
             setattr(self, prop, setting)
         else:
