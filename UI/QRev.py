@@ -64,6 +64,13 @@ from UI.Disclaimer import Disclaimer
 from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
 
+# if there is a splash screen close it
+try:
+    import pyi_splash
+    pyi_splash.close()
+except:
+    pass
+
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
