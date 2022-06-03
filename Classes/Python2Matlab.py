@@ -15,7 +15,8 @@ class Python2Matlab(object):
     """
 
     def __init__(self, meas, checked):
-        """Initialize dictionaries and convert Python data to Matlab structures.
+        """Initialize dictionaries and convert Python data to Matlab
+        structures.
 
         Parameters
         ----------
@@ -29,7 +30,8 @@ class Python2Matlab(object):
         # Initialize Matlab dictionary
         self.matlab_dict = dict()
 
-        # Apply conversion of Python data to be compatible with Matlab conventions
+        # Apply conversion of Python data to be compatible with Matlab
+        # conventions
         meas_mat = self.data2matlab(meas)
 
         checked_idx = np.array(checked)
@@ -43,22 +45,33 @@ class Python2Matlab(object):
         self.matlab_dict['stationNumber'] = meas_mat.station_number
         if self.matlab_dict['stationNumber'] is None:
             self.matlab_dict['stationNumber'] = ''
+        self.matlab_dict['persons'] = meas_mat.persons
+        self.matlab_dict['meas_number'] = meas_mat.meas_number
+        self.matlab_dict['stage_start_m'] = meas_mat.stage_start_m
+        self.matlab_dict['stage_end_m'] = meas_mat.stage_end_m
+        self.matlab_dict['stage_meas_m'] = meas_mat.stage_meas_m
         self.matlab_dict['processing'] = meas_mat.processing
         self.matlab_dict['extTempChk'] = meas_mat.ext_temp_chk
         self.matlab_dict['userRating'] = meas_mat.user_rating
         self.matlab_dict['initialSettings'] = meas_mat.initial_settings
         self.matlab_dict['comments'] = self.comment2struct(meas_mat.comments)
-        self.matlab_dict['compassCal'] = self.listobj2struct(meas_mat.compass_cal, py_2_mat_dict)
-        self.matlab_dict['compassEval'] = self.listobj2struct(meas_mat.compass_eval, py_2_mat_dict)
-        self.matlab_dict['sysTest'] = self.listobj2struct(meas_mat.system_tst, py_2_mat_dict)
+        self.matlab_dict['compassCal'] = \
+            self.listobj2struct(meas_mat.compass_cal, py_2_mat_dict)
+        self.matlab_dict['compassEval'] = \
+            self.listobj2struct(meas_mat.compass_eval, py_2_mat_dict)
+        self.matlab_dict['sysTest'] = self.listobj2struct(meas_mat.system_tst,
+                                                          py_2_mat_dict)
         discharge = np.copy(meas_mat.discharge)
         discharge_sel = [discharge[i] for i in checked_idx]
-        self.matlab_dict['discharge'] = self.listobj2struct(discharge_sel, py_2_mat_dict)
+        self.matlab_dict['discharge'] = self.listobj2struct(discharge_sel,
+                                                            py_2_mat_dict)
         transects = np.copy(meas_mat.transects)
         transects_sel = [transects[i] for i in checked_idx]
-        self.matlab_dict['transects'] = self.listobj2struct(transects_sel, py_2_mat_dict)
+        self.matlab_dict['transects'] = self.listobj2struct(transects_sel,
+                                                            py_2_mat_dict)
         extrap = copy.deepcopy(meas_mat.extrap_fit)
-        self.matlab_dict['extrapFit'] = self.listobj2struct([extrap], py_2_mat_dict)
+        self.matlab_dict['extrapFit'] = self.listobj2struct([extrap],
+                                                            py_2_mat_dict)
         # Check for multiple moving-bed tests
         if type(meas_mat.mb_tests) == list:
             mb_tests = self.listobj2struct(meas_mat.mb_tests, py_2_mat_dict)
@@ -69,13 +82,17 @@ class Python2Matlab(object):
 
         self.matlab_dict['mbTests'] = mb_tests
 
-        self.matlab_dict['observed_no_moving_bed'] = meas_mat.observed_no_moving_bed
+        self.matlab_dict['observed_no_moving_bed'] = \
+            meas_mat.observed_no_moving_bed
 
-        self.matlab_dict['uncertainty'] = self.listobj2struct([meas_mat.uncertainty], py_2_mat_dict)
-        self.matlab_dict['qa'] = self.listobj2struct([meas_mat.qa], py_2_mat_dict)
+        self.matlab_dict['uncertainty'] = \
+            self.listobj2struct([meas_mat.uncertainty], py_2_mat_dict)
+        self.matlab_dict['qa'] = self.listobj2struct([meas_mat.qa],
+                                                     py_2_mat_dict)
         self.matlab_dict['run_oursin'] = meas_mat.run_oursin
         if meas_mat.oursin is not None:
-            self.matlab_dict['oursin'] = self.listobj2struct([meas_mat.oursin], py_2_mat_dict)
+            self.matlab_dict['oursin'] = self.listobj2struct([meas_mat.oursin],
+                                                             py_2_mat_dict)
 
 
     @staticmethod
@@ -87,7 +104,8 @@ class Python2Matlab(object):
         list_in: list
             List of objects
         new_key_dict: dict
-            Dictionary to translate python variable names to Matlab variable names
+            Dictionary to translate python variable names to Matlab variable
+            names
 
         Returns
         -------
@@ -136,7 +154,8 @@ class Python2Matlab(object):
 
     @staticmethod
     def change_dict_keys(dict_in, new_key_dict):
-        """Recursively changes the name of dictionary keys and checks for str data types and converts them to arrays.
+        """Recursively changes the name of dictionary keys and checks for str
+        data types and converts them to arrays.
 
         Parameters
         ----------
@@ -151,15 +170,18 @@ class Python2Matlab(object):
         for key in dict_in:
             # Iterate on nested dictionaries
             if type(dict_in[key]) is dict:
-                dict_in[key] = Python2Matlab.change_dict_keys(dict_in[key], new_key_dict)
+                dict_in[key] = Python2Matlab.change_dict_keys(dict_in[key],
+                                                              new_key_dict)
 
-            # If a list contains a str variable, such as messages, convert the string to an array
+            # If a list contains a str variable, such as messages, convert
+            # the string to an array
             if type(dict_in[key]) is list:
                 for line in range(len(dict_in[key])):
                     if type(line) == str:
                         for col in range(len(dict_in[key][line])):
                             if type(dict_in[key][line][col]) is str:
-                                dict_in[key][line][col] = np.array([list(dict_in[key][line][col])])
+                                dict_in[key][line][col] = \
+                                    np.array([list(dict_in[key][line][col])])
 
             # Change key if needed
             if new_key_dict is not None and key in new_key_dict:
@@ -171,14 +193,16 @@ class Python2Matlab(object):
 
     @staticmethod
     def obj2dict(obj, new_key_dict=None):
-        """Converts object variables to dictionaries. Works recursively to all levels of objects.
+        """Converts object variables to dictionaries. Works recursively to all
+         levels of objects.
 
         Parameters
         ----------
         obj: object
             Object of some class
         new_key_dict: dict
-            Dictionary to translate python variable names to Matlab variable names
+            Dictionary to translate python variable names to Matlab variable
+            names
 
         Returns
         -------
@@ -191,20 +215,24 @@ class Python2Matlab(object):
 
             # If variable is another object convert to dictionary recursively
             if str(type(obj_dict[key]))[8:13] == 'Class':
-                obj_dict[key] = Python2Matlab.obj2dict(obj_dict[key], new_key_dict)
+                obj_dict[key] = Python2Matlab.obj2dict(obj_dict[key],
+                                                       new_key_dict)
 
             # If variable is a list of objects convert to dictionary
             elif type(obj_dict[key]) is list and len(obj_dict[key]) > 0 \
                     and str(type(obj_dict[key][0]))[8:13] == 'Class':
-                obj_dict[key] = Python2Matlab.listobj2struct(obj_dict[key], new_key_dict)
+                obj_dict[key] = Python2Matlab.listobj2struct(obj_dict[key],
+                                                             new_key_dict)
 
             elif type(obj_dict[key]) is dict:
-                obj_dict[key] = Python2Matlab.change_dict_keys(obj_dict[key], new_key_dict)
+                obj_dict[key] = Python2Matlab.change_dict_keys(obj_dict[key],
+                                                               new_key_dict)
 
             elif type(obj_dict[key]) is pd.DataFrame:
                 obj_dict[key] = obj_dict[key].to_numpy()
 
-            # If variable is None rename as necessary and convert None to empty list
+            # If variable is None rename as necessary and convert None to
+            # empty list
             if obj_dict[key] is None:
                 if new_key_dict is not None and key in new_key_dict:
                     new_dict[new_key_dict[key]] = []
@@ -242,14 +270,16 @@ class Python2Matlab(object):
 
     @staticmethod
     def listobj2dict(list_in, new_key_dict=None):
-        """Converts list of objects to list of dictionaries. Works recursively to all levels of objects.
+        """Converts list of objects to list of dictionaries. Works recursively
+        to all levels of objects.
 
         Parameters
         ----------
         list_in: list
             List of objects of some class
         new_key_dict: dict
-            Dictionary to translate python variable names to Matlab variable names
+            Dictionary to translate python variable names to Matlab variable
+            names
 
         Returns
         -------
@@ -263,7 +293,8 @@ class Python2Matlab(object):
 
     @staticmethod
     def create_py_2_mat_dict():
-        """Creates a dictionary to cross reference Python names with Matlab names
+        """Creates a dictionary to cross reference Python names with Matlab
+        names
 
         Returns
         -------
@@ -369,7 +400,8 @@ class Python2Matlab(object):
                          'gps_HDOP_filter_change': 'gpsHDOPFilterChange',
                          'gps_HDOP_filter_max': 'gpsHDOPFilterMax',
                          'gps_altitude_filter': 'gpsAltitudeFilter',
-                         'gps_altitude_filter_change': 'gpsAltitudeFilterChange',
+                         'gps_altitude_filter_change':
+                             'gpsAltitudeFilterChange',
                          'gps_diff_qual_filter': 'gpsDiffQualFilter',
                          'hard_limit': 'hardLimit',
                          'hdop_ens': 'hdopEns',
@@ -572,7 +604,8 @@ class Python2Matlab(object):
 
     @staticmethod
     def save_matlab_file(meas, file_name, version, checked=None):
-        """Saves the measurement class and all data into a Matlab file using the variable names and structure
+        """Saves the measurement class and all data into a Matlab file using
+        the variable names and structure
         from the QRev Matlab version.
 
         Parameters
@@ -591,7 +624,8 @@ class Python2Matlab(object):
             checked = list(range(len(meas.transects)))
 
         # Convert Python objects to Matlab structure
-        mat_struct = {'meas_struct': Python2Matlab(meas, checked).matlab_dict, 'version': version}
+        mat_struct = {'meas_struct': Python2Matlab(meas, checked).matlab_dict,
+                      'version': version}
         sio.savemat(file_name=file_name,
                     mdict=mat_struct,
                     appendmat=True,
@@ -602,7 +636,8 @@ class Python2Matlab(object):
 
     @staticmethod
     def data2matlab(meas):
-        """Apply changes to the Python data to replicate QRev for Matlab conventions.
+        """Apply changes to the Python data to replicate QRev for Matlab
+        conventions.
 
         Parameters
         ----------
@@ -612,7 +647,8 @@ class Python2Matlab(object):
         Returns
         -------
         meas_mat: Measurement
-            Deepcopy of meas with changes to replicate QRev for Matlab conventions
+            Deepcopy of meas with changes to replicate QRev for Matlab
+            conventions
         """
 
         # Make copy to prevent changing Python meas data
@@ -625,7 +661,8 @@ class Python2Matlab(object):
         # Process changes for each moving-bed test transect
         if len(meas.mb_tests) > 0:
             for test in meas_mat.mb_tests:
-                test.transect = Python2Matlab.reconfigure_transect(test.transect)
+                test.transect = \
+                    Python2Matlab.reconfigure_transect(test.transect)
 
         # Adjust 1-D array to be row based
         for fit in meas_mat.extrap_fit.sel_fit:
@@ -642,7 +679,8 @@ class Python2Matlab(object):
         for dat in meas_mat.extrap_fit.norm_data:
             dat.valid_data = dat.valid_data + 1
 
-        # If system tests, compass calibrations, or compass evaluations don't exist create empty objects
+        # If system tests, compass calibrations, or compass evaluations don't
+        # exist create empty objects
         if len(meas_mat.system_tst) == 0:
             meas_mat.system_tst = [PreMeasurement()]
         if len(meas_mat.compass_eval) == 0:
@@ -655,7 +693,8 @@ class Python2Matlab(object):
             meas_mat.mb_tests = meas_mat.mb_tests[0]
             # Convert message to cell array for Matlab
             if len(meas_mat.mb_tests.messages) > 0:
-                meas_mat.mb_tests.messages = np.array(meas_mat.mb_tests.messages).astype(np.object)
+                meas_mat.mb_tests.messages = \
+                    np.array(meas_mat.mb_tests.messages).astype(np.object)
 
         # Fix user and adcp temperature for QRev Matlab
         if np.isnan(meas_mat.ext_temp_chk['user']):
@@ -667,7 +706,8 @@ class Python2Matlab(object):
 
     @staticmethod
     def reconfigure_transect(transect):
-        """Changes variable names, rearranges arrays, and adjusts time for consistency with original QRev Matlab output.
+        """Changes variable names, rearranges arrays, and adjusts time for
+        consistency with original QRev Matlab output.
 
         Parameters
         ----------
@@ -700,21 +740,29 @@ class Python2Matlab(object):
         transect.in_transect_idx = transect.in_transect_idx + 1
 
         # Adjust arrangement of 3-D arrays for consistency with Matlab
-        transect.w_vel.raw_vel_mps = np.moveaxis(transect.w_vel.raw_vel_mps, 0, 2)
+        transect.w_vel.raw_vel_mps = np.moveaxis(transect.w_vel.raw_vel_mps,
+                                                 0, 2)
         transect.w_vel.corr = np.moveaxis(transect.w_vel.corr, 0, 2)
         transect.w_vel.rssi = np.moveaxis(transect.w_vel.rssi, 0, 2)
-        transect.w_vel.valid_data = np.moveaxis(transect.w_vel.valid_data, 0, 2)
+        transect.w_vel.valid_data = np.moveaxis(transect.w_vel.valid_data,
+                                                0, 2)
         if len(transect.adcp.t_matrix.matrix.shape) == 3:
-            transect.adcp.t_matrix.matrix = np.moveaxis(transect.adcp.t_matrix.matrix, 2, 0)
+            transect.adcp.t_matrix.matrix = \
+                np.moveaxis(transect.adcp.t_matrix.matrix, 2, 0)
 
         # Adjust 2-D array to be row based
         if transect.adcp.configuration_commands is not None:
-            transect.adcp.configuration_commands = transect.adcp.configuration_commands.reshape(-1, 1)
+            transect.adcp.configuration_commands = \
+                transect.adcp.configuration_commands.reshape(-1, 1)
 
         # Adjust serial time to Matlab convention
         seconds_day = 86400
         time_correction = 719529.0000000003
-        transect.date_time.start_serial_time = (transect.date_time.start_serial_time / seconds_day) \
+        transect.date_time.start_serial_time = \
+            (transect.date_time.start_serial_time / seconds_day) \
             + time_correction
-        transect.date_time.end_serial_time = (transect.date_time.end_serial_time / seconds_day) + time_correction
+        transect.date_time.end_serial_time = \
+            (transect.date_time.end_serial_time / seconds_day) + \
+            time_correction
+
         return transect

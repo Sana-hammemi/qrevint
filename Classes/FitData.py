@@ -4,7 +4,8 @@ from scipy.stats import t
 
 
 class FitData(object):
-    """Class to compute top and bottom extrapolation methods and associated statistics.
+    """Class to compute top and bottom extrapolation methods and associated
+    statistics.
 
      Data required for the constructor method include data of class
      NormData, threshold for the minimum number of points for a valid
@@ -55,9 +56,11 @@ class FitData(object):
         self.u_auto = None  # Fit values from automatic fit
         self.z_auto = None  # z values for automtic fit
         self.z = None  # Distance from the streambed for fit variable
-        self.exp_method = 'Power'  # Method to determine exponent (default, optimize, or manual)
+        # Method to determine exponent (default, optimize, or manual)
+        self.exp_method = 'Power'
         self.data_type = None  # Type of data (velocity or unit discharge)
-        self.exponent_95_ci = 0  # 95% confidence intervals for optimized exponent
+        # 95% confidence intervals for optimized exponent
+        self.exponent_95_ci = 0
         self.residuals = np.array([])  # Residuals from fit
         self.r_squared = 0  # R squared of model
 
@@ -73,7 +76,8 @@ class FitData(object):
         bot: str
             Bottom extrapolation method
         method:
-            Method used to define the exponent (default, optimize, or manual), default is 1/6.
+            Method used to define the exponent (default, optimize, or manual),
+            default is 1/6.
         exponent:
             Exponent for power or no slip fit methods.
         """
@@ -94,7 +98,8 @@ class FitData(object):
             idx_power = idxz
 
             # Create arrays for data fitting
-            # Select median values to use in extrapolation methods selected and create
+            # Select median values to use in extrapolation methods selected
+            # and create
             # methods selected and create fir output data arrays
 
             # If bottom is No Slip, Power at top is not allowed
@@ -128,7 +133,8 @@ class FitData(object):
             elif fit_combo == 'ConstantNo Slip':
                 # Optimize constant / no slip if sufficient cells are available
                 if method.lower() == 'optimize':
-                    idx = idxz[int(1+len(idxz) - np.floor(len(avg_z[idxz]) / 3) - 1)::]
+                    idx = idxz[int(1+len(idxz) -
+                                   np.floor(len(avg_z[idxz]) / 3) - 1)::]
                     if len(idx) < 4:
                         method = 'default'
 
@@ -152,7 +158,8 @@ class FitData(object):
             elif fit_combo == '3-PointNo Slip':
                 # Optimize 3-Point / no slip if sufficient cells are available
                 if method.lower() == 'optimize':
-                    idx = idxz[int(1 + len(idxz) - np.floor(len(avg_z[idxz])) / 3) - 1::]
+                    idx = idxz[int(1 + len(idxz) -
+                                   np.floor(len(avg_z[idxz])) / 3) - 1::]
                     if len(idx) < 4:
                         method = 'default'
 
@@ -243,23 +250,30 @@ class FitData(object):
 
                     # Get the rsquared for the model
                     ss_tot = np.sum((y[idx_power] - np.mean(yfit))**2)
-                    ss_res = np.sum((y[idx_power] - fit_funcs[fit_func](zfit, *popt))**2)
+                    ss_res = np.sum((y[idx_power] -
+                                     fit_funcs[fit_func](zfit, *popt))**2)
                     self.r_squared = 1 - (ss_res/ss_tot)
                 else:
                     self.exponent_95_ci = [np.nan, np.nan]
                     self.r_squared = np.nan
 
             # Fit power curve to appropriate data
-            self.coef = ((self.exponent + 1) * 0.05 * np.nansum(y[idx_power])) / \
-                np.nansum(((avg_z[idx_power] + (0.5 * 0.05))**(self.exponent + 1)
-                           - ((avg_z[idx_power] - (0.5 * 0.05))**(self.exponent + 1))))
+            self.coef = ((self.exponent + 1) * 0.05 *
+                         np.nansum(y[idx_power])) / \
+                np.nansum(((avg_z[idx_power] + (0.5 *
+                                                0.05))**(self.exponent + 1)
+                           - ((avg_z[idx_power] - (0.5 *
+                                                   0.05))**(self.exponent +
+                                                            1))))
 
             # Compute residuals
-            self.residuals = y[idx_power] - self.coef * avg_z[idx_power]**self.exponent
+            self.residuals = y[idx_power] - self.coef * \
+                             avg_z[idx_power]**self.exponent
             if self.residuals is None:
                 self.residuals = np.array([])
 
-            # Compute values (velocity or discharge) based on exponent and compute coefficient
+            # Compute values (velocity or discharge) based on exponent and
+            # compute coefficient
             self.u = self.coef * self.z**self.exponent
             if type(zc) == np.ndarray:
                 self.u = np.append(self.u, uc)

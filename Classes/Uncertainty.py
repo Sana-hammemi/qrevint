@@ -8,15 +8,16 @@ class Uncertainty(object):
     Attributes
     ----------
     cov: float
-        Coefficient of variation for all transects used in dicharge computation
+        Coefficient of variation for all transects used in discharge computation
     cov_95: float
         Coefficient of variation inflated to the 95% percent coverage
     invalid_95: float
-        Estimated 95% uncertainty for dicharge in invalid bins and ensembles
+        Estimated 95% uncertainty for discharge in invalid bins and ensembles
     edges_95: float
         Estimated 95% uncertainty for the computed edge discharges
     extrapolation_95: float
-        Estimated 95% uncertainty in discharge due to top and bottom extrapolations
+        Estimated 95% uncertainty in discharge due to top and bottom
+        extrapolations
     moving_bed_95: float
         Estimated 95% uncertainty due to moving-bed tests and conditions
     systematic: float
@@ -24,19 +25,25 @@ class Uncertainty(object):
     total_95: float
         Estimated 95% uncertainty in discharge using automated values
     cov_95_user: float
-        User provided estimate of coefficient of variation inflated to the 95% percent coverage
+        User provided estimate of coefficient of variation inflated to the
+        95% percent coverage
     invalid_95_user: float
-        User provided estimate of95% uncertainty for discharge in invalid bins and ensembles
+        User provided estimate of95% uncertainty for discharge in invalid
+        bins and ensembles
     edges_95_user: float
-        User provided estimate of 95% uncertainty for the computed edge discharges
+        User provided estimate of 95% uncertainty for the computed edge
+        discharges
     extrapolation_95_user: float
-        User provided estimate of 95% uncertainty in discharge due to top and bottom extrapolations
+        User provided estimate of 95% uncertainty in discharge due to top
+        and bottom extrapolations
     moving_bed_95_user: float
-        User provided estimate of 95% uncertainty due to moving-bed tests and conditions
+        User provided estimate of 95% uncertainty due to moving-bed tests
+        and conditions
     systematic_user: float
         User provided estimate of systematic error estimated at 1.5% at 1 sigma
     total_95_user: float
-        Estimated 95% uncertainty in discharge using user provide values to override automated values
+        Estimated 95% uncertainty in discharge using user provide values to
+        override automated values
     """
 
     def __init__(self):
@@ -57,9 +64,12 @@ class Uncertainty(object):
         self.systematic_user = None
         self.total_95_user = None
 
-    def compute_uncertainty(self, meas, cov_95_user=None, invalid_95_user=None, edges_95_user=None,
-                            extrapolation_95_user=None, moving_bed_95_user=None, systematic_user=None):
-        """Computes the uncertainty for the components of the discharge measurement
+    def compute_uncertainty(self, meas, cov_95_user=None,
+                            invalid_95_user=None, edges_95_user=None,
+                            extrapolation_95_user=None,
+                            moving_bed_95_user=None, systematic_user=None):
+        """Computes the uncertainty for the components of the discharge
+        measurement
         using measurement data or user provided values.
 
         Parameters
@@ -67,17 +77,23 @@ class Uncertainty(object):
         meas: Measurement
             Object of class Measurement
         cov_95_user: float
-            User provided estimate of coefficient of variation inflated to the 95% percent coverage
+            User provided estimate of coefficient of variation inflated to
+             the 95% percent coverage
         invalid_95_user: float
-            User provided estimate of95% uncertainty for discharge in invalid bins and ensembles
+            User provided estimate of95% uncertainty for discharge in invalid
+             bins and ensembles
         edges_95_user: float
-            User provided estimate of 95% uncertainty for the computed edge discharges
+            User provided estimate of 95% uncertainty for the computed edge
+             discharges
         extrapolation_95_user: float
-            User provided estimate of 95% uncertainty in discharge due to top and bottom extrapolations
+            User provided estimate of 95% uncertainty in discharge due to top
+            and bottom extrapolations
         moving_bed_95_user: float
-            User provided estimate of 95% uncertainty due to moving-bed tests and conditions
+            User provided estimate of 95% uncertainty due to moving-bed tests
+             and conditions
         systematic_user: float
-            User provided estimate of systematic error estimated at 1.5% at 1 sigma
+            User provided estimate of systematic error estimated at 1.5% at 1
+            sigma
         """
 
         # Use only checked discharges
@@ -92,7 +108,8 @@ class Uncertainty(object):
         self.cov, self.cov_95 = self.uncertainty_q_random(discharges, 'total')
         self.invalid_95 = self.uncertainty_invalid_data(discharges)
         self.edges_95 = self.uncertainty_edges(discharges)
-        self.extrapolation_95 = self.uncertainty_extrapolation(meas, discharges)
+        self.extrapolation_95 = self.uncertainty_extrapolation(meas,
+                                                               discharges)
         self.moving_bed_95 = self.uncertainty_moving_bed(meas, checked)
         self.systematic = 1.5
 
@@ -108,7 +125,8 @@ class Uncertainty(object):
         self.estimate_total_uncertainty()
 
     def populate_from_qrev_mat(self, meas_struct):
-        """Populates the object using data from previously saved QRev Matlab file.
+        """Populates the object using data from previously saved QRev Matlab
+        file.
 
         Parameters
         ----------
@@ -130,16 +148,20 @@ class Uncertainty(object):
                 self.invalid_95_user = meas_struct.uncertainty.invalid95User
             if not type(meas_struct.uncertainty.edges95User) is np.ndarray:
                 self.edges_95_user = meas_struct.uncertainty.edges95User
-            if not type(meas_struct.uncertainty.extrapolation95User) is np.ndarray:
-                self.extrapolation_95_user = meas_struct.uncertainty.extrapolation95User
+            if not type(meas_struct.uncertainty.extrapolation95User) is \
+                   np.ndarray:
+                self.extrapolation_95_user = \
+                    meas_struct.uncertainty.extrapolation95User
             if not type(meas_struct.uncertainty.movingBed95User) is np.ndarray:
-                self.moving_bed_95_user = meas_struct.uncertainty.movingBed95User
+                self.moving_bed_95_user = \
+                    meas_struct.uncertainty.movingBed95User
             if not type(meas_struct.uncertainty.systematicUser) is np.ndarray:
                 self.systematic_user = meas_struct.uncertainty.systematicUser
             self.total_95_user = meas_struct.uncertainty.total95User
 
     def estimate_total_uncertainty(self):
-        """Compute the uncertainty of the measurement using the automatically computed uncertainties and
+        """Compute the uncertainty of the measurement using the automatically
+        computed uncertainties and
         user overrides.
         """
 
@@ -191,7 +213,8 @@ class Uncertainty(object):
 
     @staticmethod
     def get_array_attr(list_in, prop):
-        """Create an array of the requested attribute from a list of objects containing the requested attribute.
+        """Create an array of the requested attribute from a list of objects
+        containing the requested attribute.
 
         Parameters
         ----------
@@ -242,8 +265,10 @@ class Uncertainty(object):
 
             # Inflate the cov to the 95% value
             if n_max == 2:
-                # Use the approximate method as taught in class to reduce the high coverage factor for 2 transects
-                # and account for prior knowledge related to 720 second duration analysis
+                # Use the approximate method as taught in class to reduce the
+                # high coverage factor for 2 transects
+                # and account for prior knowledge related to 720 second
+                # duration analysis
                 cov_95 = cov * 3.3
             else:
                 # Use Student's t to inflate COV for n > 2
@@ -256,7 +281,8 @@ class Uncertainty(object):
 
     @staticmethod
     def uncertainty_edges(discharges):
-        """Compute uncertainty of edge discharge. Currently assuming random plus bias
+        """Compute uncertainty of edge discharge. Currently assuming random
+        plus bias
         is within 30% of actual value.
 
         Parameters
@@ -273,10 +299,12 @@ class Uncertainty(object):
         # Compute mean discharge values for total, left, and right
         mean_q = np.nanmean(Uncertainty.get_array_attr(discharges, 'total'))
         mean_left = np.nanmean(Uncertainty.get_array_attr(discharges, 'left'))
-        mean_right = np.nanmean(Uncertainty.get_array_attr(discharges, 'right'))
+        mean_right = \
+            np.nanmean(Uncertainty.get_array_attr(discharges, 'right'))
 
         # Compute combined edge uncertainty
-        percent_edge = ((np.abs(mean_left) + np.abs(mean_right)) / mean_q) * 100
+        percent_edge = \
+            ((np.abs(mean_left) + np.abs(mean_right)) / mean_q) * 100
         edge_uncertainty = percent_edge * 0.3
 
         return edge_uncertainty
@@ -299,7 +327,9 @@ class Uncertainty(object):
         """
 
         # Compute mean total uncorrected discharge
-        q_selected = np.nanmean(Uncertainty.get_array_attr(discharges, 'total_uncorrected'))
+        q_selected = \
+            np.nanmean(Uncertainty.get_array_attr(discharges,
+                                                  'total_uncorrected'))
 
         # Create array of discharges from the various extrapolation methods
         q_possible = np.array([meas.extrap_fit.q_sensitivity.q_pp_mean,
@@ -322,7 +352,8 @@ class Uncertainty(object):
 
     @staticmethod
     def uncertainty_invalid_data(discharges):
-        """Computes an estimate of the uncertainty for the discharge computed for invalid bins and ensembles.
+        """Computes an estimate of the uncertainty for the discharge computed
+        for invalid bins and ensembles.
 
         Parameters
         ----------
@@ -336,22 +367,27 @@ class Uncertainty(object):
         """
 
         # Compute mean discharges
-        q_mean = np.nanmean(Uncertainty.get_array_attr(discharges, 'total'))
-        q_cells = np.nanmean(Uncertainty.get_array_attr(discharges, 'int_cells'))
-        q_ensembles = np.nanmean(Uncertainty.get_array_attr(discharges, 'int_ens'))
+        q_mean = np.nanmean(Uncertainty.get_array_attr(discharges,
+                                                       'total'))
+        q_cells = np.nanmean(Uncertainty.get_array_attr(discharges,
+                                                        'int_cells'))
+        q_ensembles = np.nanmean(Uncertainty.get_array_attr(discharges,
+                                                            'int_ens'))
 
         # Compute percentages
         percent_cells = (q_cells / q_mean) * 100
         percent_ensembles = (q_ensembles / q_mean) * 100
 
         # Compute uncertainty for combined invalid cells and ensembles
-        invalid_data_uncertainty = (np.abs(percent_cells) + np.abs(percent_ensembles)) * 0.2
+        invalid_data_uncertainty = (np.abs(percent_cells) +
+                                    np.abs(percent_ensembles)) * 0.2
 
         return invalid_data_uncertainty
 
     @staticmethod
     def uncertainty_moving_bed(meas, checked):
-        """Estimates the 95% uncertainty of the discharge due to a moving-bed and navigation reference.
+        """Estimates the 95% uncertainty of the discharge due to a
+        moving-bed and navigation reference.
 
         Parameters
         ----------
@@ -366,7 +402,8 @@ class Uncertainty(object):
             95% uncertainty associated with moving-bed conditions
         """
 
-        if np.any(checked) and meas.transects[checked.index(1)].boat_vel.selected == 'bt_vel':
+        if np.any(checked) and \
+                meas.transects[checked.index(1)].boat_vel.selected == 'bt_vel':
             # Boat velocity based on bottom track, moving-bed possible
             if len(meas.mb_tests) > 0:
                 # Moving_bed tests recorded
@@ -384,7 +421,8 @@ class Uncertainty(object):
                     used.append(test.use_2_correct)
 
                 # Check to see if there are any valid tests
-                if np.any(np.logical_and(np.asarray(quality), np.asarray(user_valid))):
+                if np.any(np.logical_and(np.asarray(quality),
+                                         np.asarray(user_valid))):
                     # Check to see if the valid tests indicate a moving bed
                     moving_bed_bool = []
                     for result in moving_bed:
@@ -392,10 +430,12 @@ class Uncertainty(object):
                             moving_bed_bool.append(True)
                         else:
                             moving_bed_bool.append(False)
-                    valid_moving_bed = np.logical_and(quality, np.asarray(moving_bed_bool))
+                    valid_moving_bed = \
+                        np.logical_and(quality, np.asarray(moving_bed_bool))
                     if np.any(valid_moving_bed):
                         # Check to see that a correction was used
-                        if np.any(np.logical_and(valid_moving_bed, np.asarray(used))):
+                        if np.any(np.logical_and(valid_moving_bed,
+                                                 np.asarray(used))):
                             # Moving-bed exists and correction applied
                             moving_bed_uncertainty = 1.5
                         else:

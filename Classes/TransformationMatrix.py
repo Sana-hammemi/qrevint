@@ -2,7 +2,8 @@ import numpy as np
 
 
 class TransformationMatrix(object):
-    """Determines the transformation matrix and source for the specified ADCP model from the data provided.
+    """Determines the transformation matrix and source for the specified ADCP
+     model from the data provided.
 
     Attributes
     ----------
@@ -18,7 +19,8 @@ class TransformationMatrix(object):
         self.matrix = None
         
     def populate_data(self, manufacturer, model=None, data_in=None):
-        """Uses the manufacturer and model to determine how to parse the transformation matrix.
+        """Uses the manufacturer and model to determine how to parse the
+        transformation matrix.
 
         Parameters
         ----------
@@ -36,8 +38,10 @@ class TransformationMatrix(object):
             self.sontek(data_in)
 
     def trdi(self, model=None, data_in=None):
-        """Processes the data to store the transformation matrix for TRDI ADCPs.
-        If no transformation matrix information is available a nominal transformation
+        """Processes the data to store the transformation matrix for
+        TRDI ADCPs.
+        If no transformation matrix information is available a nominal
+        transformation
         matrix for that model is assumed.
 
         Parameters
@@ -61,7 +65,8 @@ class TransformationMatrix(object):
                            [0.2887, 0.2887, 0.2887, 0.2887],
                            [0.7071, 0.7071, -0.7071, -0.7071]]
 
-        # Overwrite nominal transformation matrix with custom matrix from test data, if available
+        # Overwrite nominal transformation matrix with custom matrix from
+        # test data, if available
         self.source = 'Nominal'
         if data_in == 'Nominal':
             self.source = 'Nominal'
@@ -95,7 +100,8 @@ class TransformationMatrix(object):
         if data_in is not None:
             idx = data_in.find('Instrument Transformation Matrix (Down):')
             if idx != -1:
-                cell_matrix = np.fromstring(data_in[idx + 50:idx + 356], dtype=np.float64, sep=' ')
+                cell_matrix = np.fromstring(data_in[idx + 50:idx + 356],
+                                            dtype=np.float64, sep=' ')
                 try:
                     self.matrix = np.reshape(cell_matrix, (-1, 8))[:, 0:4]
 
@@ -118,7 +124,8 @@ class TransformationMatrix(object):
                 temp_str = data_in[idx + 5:idx + 138]
                 temp_str = temp_str.replace('-', ' -')
                 temp_str = temp_str[:temp_str.find('>')]
-                cell_matrix = np.fromstring(temp_str, dtype=np.float64, sep=' ')
+                cell_matrix = np.fromstring(temp_str, dtype=np.float64,
+                                            sep=' ')
                 try:
                     self.matrix = cell_matrix.reshape(4, 4)
                     self.source = 'ADCP'

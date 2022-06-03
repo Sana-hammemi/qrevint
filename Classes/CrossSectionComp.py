@@ -7,6 +7,9 @@ import utm
 
 from Classes.BoatStructure import BoatStructure
 
+#ToDo: Add stats to show variability between transects ie Area and
+# mean depth variance.
+
 
 class CrossSectionComp(object):
     """Creates average cross-section.
@@ -42,6 +45,7 @@ class CrossSectionComp(object):
         # Export CSV and PDF plots for testing
         if path is not None:
             self.export_csv(path)
+            self.export_plots(path)
 
     def create_cross_sections(self, transects):
         """Create the axes and lines for the figure.

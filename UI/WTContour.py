@@ -3,6 +3,7 @@ import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
 from datetime import datetime
 
+
 class WTContour(object):
     """Class to generate the color contour plot of water speed data.
 
@@ -48,7 +49,8 @@ class WTContour(object):
         self.speed_plt = None
         self.x_axis_type = 'E'
 
-    def create(self, transect, units, invalid_data=None, n_ensembles=None, edge_start=None, max_limit=0,
+    def create(self, transect, units, invalid_data=None, n_ensembles=None,
+               edge_start=None, max_limit=0,
                color_map='viridis', x_axis_type=None):
         """Create the axes and lines for the figure.
 
@@ -65,7 +67,8 @@ class WTContour(object):
         edge_start: bool, None
             Transect started on left bank
         max_limit: float
-            Maximum limit for colorbar. Used to keep scale consistent when multiple contours on same page.
+            Maximum limit for colorbar. Used to keep scale consistent when
+             multiple contours on same page.
         color_map: str
             Defines the color map to be used in the color contour plot
         x_axis_type: str
@@ -87,40 +90,48 @@ class WTContour(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.1, hspace=0)
+        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=1, top=0.97,
+                                 wspace=0.1, hspace=0)
 
         # Compute x axis data
         x = None
         if x_axis_type == 'L':
-            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
+            boat_track = transect.boat_vel.compute_boat_track(
+                transect=transect)
             if not np.alltrue(np.isnan(boat_track['track_x_m'])):
                 x = boat_track['distance_m'] * units['L']
         elif x_axis_type == 'E':
-            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+            x = np.arange(1, len(
+                transect.depths.bt_depths.depth_processed_m) + 1)
         elif x_axis_type == 'T':
-            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + \
+                        transect.date_time.start_serial_time
             x = np.copy(timestamp)
 
         if n_ensembles is None or n_ensembles > 0:
             if edge_start is None:
-                x_plt, cell_plt, speed_plt, ensembles, depth = self.color_contour_data_prep(transect=transect,
-                                                                                            data_type='Processed',
-                                                                                            invalid_data=invalid_data,
-                                                                                            n_ensembles=n_ensembles,
-                                                                                            x_1d=x)
+                x_plt, cell_plt, speed_plt, ensembles, depth = \
+                    self.color_contour_data_prep(transect=transect,
+                                                 data_type='Processed',
+                                                 invalid_data=invalid_data,
+                                                 n_ensembles=n_ensembles,
+                                                 x_1d=x)
+
             else:
-                x_plt, cell_plt, speed_plt, ensembles, depth = self.color_contour_data_prep(transect=transect,
-                                                                                            data_type='Raw',
-                                                                                            invalid_data=invalid_data,
-                                                                                            n_ensembles=n_ensembles,
-                                                                                            edge_start=edge_start,
-                                                                                            x_1d=x)
+                x_plt, cell_plt, speed_plt, ensembles, depth = \
+                    self.color_contour_data_prep(transect=transect,
+                                                 data_type='Raw',
+                                                 invalid_data=invalid_data,
+                                                 n_ensembles=n_ensembles,
+                                                 edge_start=edge_start,
+                                                 x_1d=x)
 
             if x_axis_type == 'T':
                 self.x_plt = np.zeros(x_plt.shape, dtype='object')
                 for r in range(x_plt.shape[0]):
                     for c in range(x_plt.shape[1]):
-                        self.x_plt[r, c] = datetime.utcfromtimestamp(x_plt[r, c])
+                        self.x_plt[r, c] = datetime.utcfromtimestamp(
+                            x_plt[r, c])
                 x = []
                 for stamp in timestamp:
                     x.append(datetime.utcfromtimestamp(stamp))
@@ -139,7 +150,8 @@ class WTContour(object):
             min_limit = 0
             if max_limit == 0:
                 if np.sum(speed_plt[speed_plt > -900]) > 0:
-                    max_limit = np.percentile(speed_plt[speed_plt > -900] * units['V'], 99)
+                    max_limit = np.percentile(speed_plt[speed_plt > -900] *
+                                              units['V'], 99)
                 else:
                     max_limit = 1
 
@@ -148,7 +160,9 @@ class WTContour(object):
             cmap.set_under('white')
 
             # Generate color contour
-            c = self.fig.ax.pcolormesh(self.x_plt, self.cell_plt, self.speed_plt, cmap=cmap, vmin=min_limit,
+            c = self.fig.ax.pcolormesh(self.x_plt, self.cell_plt,
+                                       self.speed_plt, cmap=cmap,
+                                       vmin=min_limit,
                                        vmax=max_limit)
 
             # Add color bar and axis labels
@@ -164,11 +178,18 @@ class WTContour(object):
             # Plot side lobe cutoff if available
             if transect.w_vel.sl_cutoff_m is not None:
                 depth_obj = getattr(transect.depths, transect.depths.selected)
-                last_valid_cell = np.nansum(transect.w_vel.cells_above_sl, axis=0) - 1
-                last_depth_cell_size = depth_obj.depth_cell_size_m[last_valid_cell,
-                                                                   np.arange(depth_obj.depth_cell_size_m.shape[1])]
-                y_plt_sl = (transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)) * units['L']
-                y_plt_top = (depth_obj.depth_cell_depth_m[0, :] - (depth_obj.depth_cell_size_m[0, :] * 0.5)) * units['L']
+                last_valid_cell = np.nansum(transect.w_vel.cells_above_sl,
+                                            axis=0) - 1
+                last_depth_cell_size = \
+                    depth_obj.depth_cell_size_m[last_valid_cell,
+                                                np.arange(depth_obj.
+                                                          depth_cell_size_m.
+                                                          shape[1])]
+                y_plt_sl = (transect.w_vel.sl_cutoff_m +
+                            (last_depth_cell_size * 0.5)) * units['L']
+                y_plt_top = (depth_obj.depth_cell_depth_m[0, :] -
+                             (depth_obj.depth_cell_size_m[0, :] * 0.5)) * \
+                            units['L']
 
                 if edge_start is True:
                     y_plt_sl = y_plt_sl[:int(n_ensembles)]
@@ -185,44 +206,61 @@ class WTContour(object):
             self.fig.ax.set_ylabel(self.canvas.tr('Depth ') + units['label_L'])
             self.fig.ax.xaxis.label.set_fontsize(12)
             self.fig.ax.yaxis.label.set_fontsize(12)
-            self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
-            self.fig.ax.set_ylim(top=0, bottom=np.ceil(np.nanmax(depth * units['L'])))
+            self.fig.ax.tick_params(axis='both', direction='in', bottom=True,
+                                    top=True, left=True, right=True)
+            self.fig.ax.set_ylim(top=0, bottom=np.ceil(np.nanmax(depth *
+                                                                 units['L'])))
 
             # Label and limits for x axis
             if x_axis_type == 'L':
                 axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
                 if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
-                                         left=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02)
+                    self.fig.ax.set_xlim(right=np.nanmin(x_plt[0, :]) -
+                                               axis_buffer * 0.02,
+                                         left=np.nanmax(x_plt[0, :]) +
+                                              axis_buffer * 0.02)
                 else:
-                    self.fig.ax.set_xlim(left=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
-                                         right=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02)
-                self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
+                    self.fig.ax.set_xlim(left=np.nanmin(x_plt[0, :]) -
+                                              axis_buffer * 0.02,
+                                         right=np.nanmax(x_plt[0, :]) +
+                                               axis_buffer * 0.02)
+                self.fig.ax.set_xlabel(self.canvas.tr('Length' +
+                                                      units['label_L']))
             elif x_axis_type == 'E':
                 if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=np.nanmin(x) - 1, left=np.nanmax(x) + 1)
+                    self.fig.ax.set_xlim(right=np.nanmin(x) - 1,
+                                         left=np.nanmax(x) + 1)
                 else:
-                    self.fig.ax.set_xlim(left=np.nanmin(x) - 1, right=np.nanmax(x) + 1)
+                    self.fig.ax.set_xlim(left=np.nanmin(x) - 1,
+                                         right=np.nanmax(x) + 1)
                 self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
             elif x_axis_type == 'T':
                 axis_buffer = (x_plt[0, -1] - x_plt[0, 0]) * 0.02
                 if transect.start_edge == 'Right':
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(x_plt[0, 0] - axis_buffer),
-                                         left=datetime.utcfromtimestamp(x_plt[0, -1] + axis_buffer))
+                    self.fig.ax.set_xlim(
+                        right=datetime.utcfromtimestamp(x_plt[0, 0] -
+                                                        axis_buffer),
+                        left=datetime.utcfromtimestamp(x_plt[0, -1] +
+                                                       axis_buffer))
                 else:
-                    self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(x_plt[0, 0] - axis_buffer),
-                                         right=datetime.utcfromtimestamp(x_plt[0, -1] + axis_buffer))
+                    self.fig.ax.set_xlim(
+                        left=datetime.utcfromtimestamp(x_plt[0, 0] -
+                                                       axis_buffer),
+                        right=datetime.utcfromtimestamp(x_plt[0, -1] +
+                                                        axis_buffer))
                 date_form = DateFormatter('%H:%M:%S')
                 self.fig.ax.xaxis.set_major_formatter(date_form)
                 self.fig.autofmt_xdate()
-                self.fig.subplots_adjust(left=0.08, bottom=0.3, right=1, top=0.97, wspace=0.1, hspace=0)
+                self.fig.subplots_adjust(left=0.08, bottom=0.3, right=1,
+                                         top=0.97, wspace=0.1, hspace=0)
                 self.fig.ax.set_xlabel(self.canvas.tr('Time'))
 
             # Initialize annotation for data cursor
-            self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+            self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20),
+                                              textcoords="offset points",
                                               bbox=dict(boxstyle="round", fc="w"),
                                               arrowprops=dict(arrowstyle="->"))
 
@@ -234,9 +272,11 @@ class WTContour(object):
         return max_limit
 
     @staticmethod
-    def color_contour_data_prep(transect, data_type='Processed', invalid_data=None, n_ensembles=None,
+    def color_contour_data_prep(transect, data_type='Processed',
+                                invalid_data=None, n_ensembles=None,
                                 edge_start=None, x_1d=None):
-        """Modifies the selected data from transect into arrays matching the meshgrid format for
+        """Modifies the selected data from transect into arrays matching the
+         meshgrid format for
         creating contour or color plots.
 
         Parameters
@@ -263,7 +303,8 @@ class WTContour(object):
         speed_plt: np.array
             Data in meshgrid format used to determine colors in plot
         ensembles: np.array
-            Ensemble numbers used as the x variable to plot the cross section bottom
+            Ensemble numbers used as the x variable to plot the cross section
+            bottom
         depth: np.array
             Depth data used to plot the cross section bottom
         """
@@ -301,7 +342,8 @@ class WTContour(object):
                     water_u = transect.w_vel.u_mps[:, :n_ensembles]
                     water_v = transect.w_vel.v_mps[:, :n_ensembles]
 
-                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth_selected = getattr(transect.depths,
+                                         transect.depths.selected)
                 depth = depth_selected.depth_processed_m[:n_ensembles]
                 cell_depth = depth_selected.depth_cell_depth_m[:, :n_ensembles]
                 cell_size = depth_selected.depth_cell_size_m[:, :n_ensembles]
@@ -318,9 +360,11 @@ class WTContour(object):
                     water_u = transect.w_vel.u_mps[:, -n_ensembles:]
                     water_v = transect.w_vel.v_mps[:, -n_ensembles:]
 
-                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth_selected = getattr(transect.depths,
+                                         transect.depths.selected)
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
-                cell_depth = depth_selected.depth_cell_depth_m[:, -n_ensembles:]
+                cell_depth = \
+                    depth_selected.depth_cell_depth_m[:, -n_ensembles:]
                 cell_size = depth_selected.depth_cell_size_m[:, -n_ensembles:]
                 ensembles = in_transect_idx[-n_ensembles:]
                 x_data = x_1d[-n_ensembles:]
@@ -341,9 +385,12 @@ class WTContour(object):
         # Prep data in x direction
         j = -1
         x_xpand = np.tile(np.nan, (cell_size.shape[0], 2 * cell_size.shape[1]))
-        cell_depth_xpand = np.tile(np.nan, (cell_size.shape[0], 2 * cell_size.shape[1]))
-        cell_size_xpand = np.tile(np.nan, (cell_size.shape[0], 2 * cell_size.shape[1]))
-        speed_xpand = np.tile(np.nan, (cell_size.shape[0], 2 * cell_size.shape[1]))
+        cell_depth_xpand = np.tile(np.nan, (cell_size.shape[0], 2 *
+                                            cell_size.shape[1]))
+        cell_size_xpand = np.tile(np.nan, (cell_size.shape[0], 2 *
+                                           cell_size.shape[1]))
+        speed_xpand = np.tile(np.nan, (cell_size.shape[0], 2 *
+                                       cell_size.shape[1]))
         depth_xpand = np.array([np.nan] * (2 * cell_size.shape[1]))
 
         # Center ensembles in grid
@@ -377,17 +424,22 @@ class WTContour(object):
         # Create plotting mesh grid
         n_cells = x.shape[0]
         j = -1
-        x_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 * cell_size.shape[1]))
-        speed_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 * cell_size.shape[1]))
-        cell_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 * cell_size.shape[1]))
+        x_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 *
+                                 cell_size.shape[1]))
+        speed_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 *
+                                     cell_size.shape[1]))
+        cell_plt = np.tile(np.nan, (2 * cell_size.shape[0], 2 *
+                                    cell_size.shape[1]))
         for n in range(n_cells):
             j += 1
             x_plt[j, :] = x_xpand[n, :]
-            cell_plt[j, :] = cell_depth_xpand[n, :] - 0.5 * cell_size_xpand[n, :]
+            cell_plt[j, :] = cell_depth_xpand[n, :] - 0.5 * \
+                             cell_size_xpand[n, :]
             speed_plt[j, :] = speed_xpand[n, :]
             j += 1
             x_plt[j, :] = x_xpand[n, :]
-            cell_plt[j, :] = cell_depth_xpand[n, :] + 0.5 * cell_size_xpand[n, :]
+            cell_plt[j, :] = cell_depth_xpand[n, :] + 0.5 *\
+                             cell_size_xpand[n, :]
             speed_plt[j, :] = speed_xpand[n, :]
 
         cell_plt[np.isnan(cell_plt)] = 0
@@ -398,7 +450,8 @@ class WTContour(object):
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
-        annotation visible and calls method to update the text of the annotation. If the
+        annotation visible and calls method to update the text of the
+        annotation. If the
         location is not valid the existing annotation is hidden.
 
         Parameters
@@ -410,7 +463,8 @@ class WTContour(object):
         # Set annotation to visible
         vis = self.annot.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.ax:
             cont_fig = False
             if self.fig is not None:
@@ -418,11 +472,14 @@ class WTContour(object):
 
             if cont_fig and self.fig.get_visible():
                 if self.x_axis_type == 'T':
-                    col_idx = np.where(self.x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None))[0][-1]
+                    col_idx = np.where(self.x_plt[0, :] <
+                                       num2date(event.xdata).replace(
+                                           tzinfo=None))[0][-1]
                 elif self.x_axis_type == 'L':
                     col_idx = np.where(self.x_plt[0, :] < event.xdata)[0][-1]
                 else:
-                    col_idx = (int(round(abs(event.xdata - self.x_plt[0, 0]))) * 2) - 1
+                    col_idx = (int(round(abs(event.xdata -
+                                             self.x_plt[0, 0]))) * 2) - 1
                 vel = None
                 for n, cell in enumerate(self.cell_plt[:, col_idx]):
                     if event.ydata < cell:
@@ -433,7 +490,8 @@ class WTContour(object):
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:
-                # If the cursor location is not associated with the plotted data hide the annotation.
+                # If the cursor location is not associated with the plotted
+                # data hide the annotation.
                 if vis:
                     self.annot.set_visible(False)
                     self.canvas.draw_idle()
@@ -444,11 +502,14 @@ class WTContour(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
         if setting and self.hover_connection is None:
-            # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            # self.hover_connection =
+            # self.canvas.mpl_connect("motion_notify_event", self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                'button_press_event', self.hover)
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None
@@ -456,7 +517,8 @@ class WTContour(object):
             self.canvas.draw_idle()
 
     def update_annot(self, x, y, v):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously
+        initialized and hidden annotation.
 
         Parameters
         ----------
@@ -470,28 +532,34 @@ class WTContour(object):
         plt_ref = self.fig
         pos = [x, y]
 
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
+        # Shift annotation box left or right depending on which half of the
+        # axis the pos x is located and the
         # direction of x increasing.
         if plt_ref.ax.viewLim.intervalx[0] < plt_ref.ax.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1]) / 2:
+            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] +
+                         plt_ref.ax.viewLim.intervalx[1]) / 2:
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1]) / 2:
+            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] +
+                         plt_ref.ax.viewLim.intervalx[1]) / 2:
                 self.annot._x = -80
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
+        # Shift annotation box up or down depending on which half of the
+        # axis the pos y is located and the
         # direction of y increasing.
         if plt_ref.ax.viewLim.intervaly[0] < plt_ref.ax.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1]) / 2:
+            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] +
+                         plt_ref.ax.viewLim.intervaly[1]) / 2:
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1]) / 2:
+            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] +
+                         plt_ref.ax.viewLim.intervaly[1]) / 2:
                 self.annot._y = 20
             else:
                 self.annot._y = -40
@@ -501,7 +569,8 @@ class WTContour(object):
                 x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
                 text = 'x: {}, y: {:.2f}, \n v: {:.1f}'.format(x_label, y, v)
             elif self.x_axis_type == 'E':
-                text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
+                text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.\
+                    format(int(round(x)), y, v)
             elif self.x_axis_type == 'L':
                 text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(x, y, v)
         else:
