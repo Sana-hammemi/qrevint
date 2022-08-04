@@ -898,20 +898,37 @@ class Measurement(object):
         # Create composite arrays for all checked transects
         for transect in self.transects:
             if transect.checked:
-                bt_freq = transect.boat_vel.bt_vel.frequency_khz.astype(
-                    int).astype(str)
-                freq = np.unique(bt_freq)
-                for f in freq:
-                    if f in bt_d:
-                        bt_d[f] = np.hstack((bt_d[f],
-                                             transect.boat_vel.bt_vel.d_mps[
-                                                 bt_freq == f]))
-                        bt_w[f] = np.hstack((bt_w[f],
-                                             transect.boat_vel.bt_vel.w_mps[
-                                                 bt_freq == f]))
-                    else:
-                        bt_d[f] = transect.boat_vel.bt_vel.d_mps[bt_freq == f]
-                        bt_w[f] = transect.boat_vel.bt_vel.w_mps[bt_freq == f]
+                if transect.adcp.model == 'RS5':
+                    bt_pt = transect.boat_vel.bt_vel.ping_type
+                    pt = np.unique(bt_pt)
+                    for p in pt:
+                        if p in bt_d:
+                            bt_d[p] = np.hstack((bt_d[p],
+                                                 transect.boat_vel.bt_vel.d_mps[
+                                                     bt_pt == p]))
+                            bt_w[p] = np.hstack((bt_w[p],
+                                                 transect.boat_vel.bt_vel.w_mps[
+                                                     bt_pt == p]))
+                        else:
+                            bt_d[p] = transect.boat_vel.bt_vel.d_mps[bt_pt == p]
+                            bt_w[p] = transect.boat_vel.bt_vel.w_mps[bt_pt == p]
+                else:
+                    bt_freq = transect.boat_vel.bt_vel.frequency_khz.astype(
+                        int).astype(str)
+                    freq = np.unique(bt_freq)
+                    for f in freq:
+                        if f in bt_d:
+                            bt_d[f] = np.hstack((bt_d[f],
+                                                 transect.boat_vel.bt_vel.d_mps[
+                                                     bt_freq == f]))
+                            bt_w[f] = np.hstack((bt_w[f],
+                                                 transect.boat_vel.bt_vel.w_mps[
+                                                     bt_freq == f]))
+                        else:
+                            bt_d[f] = transect.boat_vel.bt_vel.d_mps[
+                                bt_freq == f]
+                            bt_w[f] = transect.boat_vel.bt_vel.w_mps[
+                                bt_freq == f]
 
                 if transect.w_vel.ping_type.size > 0:
                     # Identify the ping types used in the transect

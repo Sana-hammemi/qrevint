@@ -37,7 +37,7 @@ class BoatStructure(object):
     def add_boat_object(self, source, vel_in, freq_in=None, coord_sys_in=None,
                         nav_ref_in=None,
                         min_beams=3, bottom_mode='Variable', corr_in=None,
-                        rssi_in=None):
+                        rssi_in=None, ping_type=None):
         """Adds a BoatData object to the appropriate property
 
         Parameters
@@ -57,21 +57,22 @@ class BoatStructure(object):
             set to Auto (-1)
         bottom_mode: str
             Bottom mode used
+        ping_type: np.array
         """
 
         if nav_ref_in == 'BT':
             self.bt_vel = BoatData()
             self.bt_vel.populate_data(source, vel_in, freq_in, coord_sys_in,
                                       nav_ref_in, min_beams, bottom_mode,
-                                      corr_in, rssi_in)
+                                      corr_in, rssi_in, ping_type=ping_type)
         if nav_ref_in == 'GGA':
             self.gga_vel = BoatData()
             self.gga_vel.populate_data(source, vel_in, freq_in, coord_sys_in,
-                                       nav_ref_in)
+                                       nav_ref_in, ping_type=ping_type)
         if nav_ref_in == 'VTG':
             self.vtg_vel = BoatData()
             self.vtg_vel.populate_data(source, vel_in, freq_in, coord_sys_in,
-                                       nav_ref_in)
+                                       nav_ref_in, ping_type=ping_type)
 
     def set_nav_reference(self, reference):
         """This function will set the navigation reference property to the

@@ -988,6 +988,14 @@ class TransectData(object):
         # Create valid frequency time series
         freq_ts = self.valid_frequencies(freq)
 
+        # Add ping types
+        if hasattr(rsdata.BottomTrack, 'BT_PingType_Text'):
+            # RS5
+            ping_ts = self.rs5_bt_ping_type(
+                rsdata.BottomTrack.BT_PingType_Text)
+        else:
+            ping_ts = None
+
         bt_vel = np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0)
 
         # Apply correction for manual sos parameters to obtain raw values
@@ -999,7 +1007,8 @@ class TransectData(object):
                                       vel_in=bt_vel,
                                       freq_in=freq_ts,
                                       coord_sys_in=ref_coord,
-                                      nav_ref_in='BT')
+                                      nav_ref_in='BT',
+                                      ping_type=ping_ts)
 
         # GPS Data
         # --------
@@ -1452,6 +1461,26 @@ class TransectData(object):
 
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
+
+    @staticmethod
+    def rs5_bt_ping_type(mat_data):
+        """Pulls ping type from mat_strut object
+
+        Parameters
+        ---------
+        mat_data: mat_strut
+            BottomTrack.BT_PingType_Text"""
+
+        pt = []
+        for data in mat_data:
+            for item in data._fieldnames:
+                ping = data.__dict__[item]
+                pt.append(ping)
+
+        pt = np.array(pt)
+        pt[pt == '1'] = 'U'
+
+        return pt
 
     @staticmethod
     def sontek_ping_type(corr, freq, expected_std=None):

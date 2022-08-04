@@ -99,7 +99,9 @@ class BoatData(object):
                 Row 4 [3] - w_filter or altitude
                 Row 5 [4] - smooth_filter
                 Row 6 [5] - beam_filter or HDOP
-
+        ping_type: np.array(int)
+            Indicates type of ping for each cell: 0-incoherent, 1-coherent,
+             2-surface
         d_meas_thresholds: dict
             Dictionary of difference velocity thresholds computed using the
             whole measurement
@@ -181,6 +183,7 @@ class BoatData(object):
         # Logical array of identifying valid and invalid data for each filter
         # applied
         self.valid_data = None
+        self.ping_type = np.array([])
 
         # Filter settings populated from Measurement.create_filter_composites
         self.d_meas_thresholds = {}
@@ -190,7 +193,7 @@ class BoatData(object):
 
     def populate_data(self, source, vel_in, freq_in, coord_sys_in, nav_ref_in,
                       beam_filter_in=3, bottom_mode_in='Variable',
-                      corr_in=None, rssi_in=None):
+                      corr_in=None, rssi_in=None, ping_type=None):
         """Assigns data to instance variables.
 
         Parameters
@@ -213,6 +216,8 @@ class BoatData(object):
             Correlation values for bottom track
         rssi: np.array
             Returned signal strength for bottom track
+        ping_type: np.array(str)
+            Indicates type of ping used for water tracking
         """
 
         # Identify invalid ensembles for SonTek data.
@@ -222,6 +227,7 @@ class BoatData(object):
         # Store input data
         self.raw_vel_mps = vel_in
         self.frequency_khz = freq_in
+        self.ping_type = ping_type
         self.coord_sys = coord_sys_in
         self.orig_coord_sys = coord_sys_in
         self.nav_ref = nav_ref_in
@@ -317,6 +323,17 @@ class BoatData(object):
             self.frequency_khz = None
         else:
             self.frequency_khz = np.array([mat_data.frequency_hz])
+
+        if hasattr(mat_data, 'ping_type'):
+            if type(mat_data.ping_type) is np.ndarray:
+                if np.size(mat_data.ping_type):
+                    self.ping_type = mat_data.ping_type
+                    self.ping_type = np.char.strip(self.ping_type)
+                else:
+                    self.ping_type = None
+        else:
+            self.ping_type = None
+
         self.orig_coord_sys = mat_data.origCoordSys
         self.nav_ref = mat_data.navRef
 
@@ -360,8 +377,6 @@ class BoatData(object):
                 self.corr = mat_data.corr
             if hasattr(mat_data, 'rssi'):
                 self.rssi = mat_data.rssi
-
-            # self.bottom_mode = mat_data.bottomMode
 
             # Processed data
             self.u_processed_mps = mat_data.uProcessed_mps
@@ -1295,7 +1310,10 @@ class BoatData(object):
 
         elif self.d_filter == 'Auto':
             if self.use_measurement_thresholds:
-                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                if self.ping_type is None:
+                    freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                else:
+                    freq_ensembles = self.ping_type
                 invalid_idx = np.array([])
                 for freq in self.d_meas_thresholds.keys():
                     filter_data = np.copy(self.d_mps)
@@ -1312,9 +1330,14 @@ class BoatData(object):
                         else:
                             invalid_idx = idx
             else:
-                freq_used = \
-                    np.unique(self.frequency_khz).astype(int).astype(str)
-                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                if self.ping_type is None:
+                    freq_used = \
+                        np.unique(self.frequency_khz).astype(int).astype(str)
+                    freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                else:
+                    freq_used = \
+                        np.unique(self.ping_type)
+                    freq_ensembles = self.ping_type
                 self.d_filter_thresholds = {}
                 invalid_idx = np.array([])
                 for freq in freq_used:
@@ -1375,7 +1398,10 @@ class BoatData(object):
 
         elif self.w_filter == 'Auto':
             if self.use_measurement_thresholds:
-                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                if self.ping_type is None:
+                    freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                else:
+                    freq_ensembles = self.ping_type
                 invalid_idx = np.array([])
                 for freq in self.w_meas_thresholds.keys():
                     filter_data = np.copy(self.w_mps.astype(float))
@@ -1390,9 +1416,14 @@ class BoatData(object):
                         else:
                             invalid_idx = idx
             else:
-                freq_used = \
-                    np.unique(self.frequency_khz).astype(int).astype(str)
-                freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                if self.ping_type is None:
+                    freq_used = \
+                        np.unique(self.frequency_khz).astype(int).astype(str)
+                    freq_ensembles = self.frequency_khz.astype(int).astype(str)
+                else:
+                    freq_used = \
+                        np.unique(self.ping_type)
+                    freq_ensembles = self.ping_type
                 self.w_filter_thresholds = {}
                 invalid_idx = np.array([])
                 for freq in freq_used:

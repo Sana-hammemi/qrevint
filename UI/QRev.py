@@ -401,7 +401,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.31'
+        self.QRev_version = 'QRev 4.32'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
 
@@ -954,6 +954,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.processed_data = []
             self.processed_transects = []
         else:
+            self.caller = None
             self.actionSave.triggered.connect(self.save_measurement)
             self.sc_open = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+F'),
                                                self)
@@ -6863,7 +6864,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
-                # self.tab_bt_2_data.setFocus()
+
         self.ed_bt_error_vel_threshold.blockSignals(False)
 
     @QtCore.pyqtSlot()
@@ -9485,8 +9486,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tab_wt_2_data.setFocus()
 
     def wt_plots(self):
-        """Creates graphics for WT tab.
-                        """
+        """Creates graphics for WT tab."""
 
         with self.wait_cursor():
             self.cb_wt_bt.blockSignals(True)
@@ -13997,6 +13997,8 @@ and display.
                 close = close.exec()
 
                 if close == QtWidgets.QMessageBox.Yes:
+                    if self.caller is not None:
+                        self.caller.Show_RIVRS()
                     event.accept()
                 else:
                     event.ignore()

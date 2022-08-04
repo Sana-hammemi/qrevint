@@ -125,7 +125,9 @@ class AdvGraphs(object):
                                'U': 'N/A'}
         self.bt_legend_dict = {'600': '600 kHz', '1200': '1200 kHz',
                                '1000': '1 MHz', '2000': '2 MHz',
-                               '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U'}
+                               '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U',
+                               'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
+                               'U': 'U'}
         self.freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b',
                            '2000': 'b', '2400': 'b', '3000': '#009933'}
         self.freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.',
@@ -1334,7 +1336,7 @@ class AdvGraphs(object):
             self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
         self.x = self.x[self.transect.w_vel.cells_above_sl]
         y_data = self.transect.w_vel.d_mps[
-                     self.transect.w_vel.cells_above_sl] * self.units['V']
+                     self.transect.w_vel.cells_above_sl]
 
         data_units = (self.units['V'], 'WT Error Vel ' + self.units['label_V'])
 
@@ -1592,20 +1594,32 @@ class AdvGraphs(object):
         data_units = (self.units['V'], 'BT Error Vel ' + self.units['label_V'])
 
         # Specify format
-        freq_used = np.unique(
-            self.transect.boat_vel.bt_vel.frequency_khz).astype(
-            int).astype(str)
-        freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(
-            int).astype(str)
+        if self.transect.boat_vel.bt_vel.ping_type is None:
+            freq_used = np.unique(
+                self.transect.boat_vel.bt_vel.frequency_khz).astype(
+                int).astype(str)
+            freq_ensembles = \
+                self.transect.boat_vel.bt_vel.frequency_khz.astype(
+                int).astype(str)
+            marker_dict = self.freq_marker
+            color_dict = self.freq_color
+        else:
+            freq_used = np.unique(
+                self.transect.boat_vel.bt_vel.ping_type)
+
+            freq_ensembles = \
+                self.transect.boat_vel.bt_vel.ping_type
+            marker_dict = self.p_type_marker
+            color_dict = self.p_type_color
 
         # Create data mask
         data_mask = []
         fmt = []
         for freq in freq_used:
             data_mask.append(freq_ensembles == freq)
-            fmt.append({'marker': self.freq_marker[freq], 'linestyle': '',
-                        'mfc': self.freq_color[freq],
-                        'mec': self.freq_color[freq]})
+            fmt.append({'marker': marker_dict[freq], 'linestyle': '',
+                        'mfc': color_dict[freq],
+                        'mec': color_dict[freq]})
         data_mask.append(invalid)
         fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '',
                     'mfc': 'none'})
@@ -1630,19 +1644,30 @@ class AdvGraphs(object):
         data_units = (self.units['V'], 'BT Vertical Vel ' +
                       self.units['label_V'])
 
-        freq_used = np.unique(
-            self.transect.boat_vel.bt_vel.frequency_khz).astype(
-            int).astype(str)
-        freq_ensembles = self.transect.boat_vel.bt_vel.frequency_khz.astype(
-            int).astype(str)
+        if self.transect.boat_vel.bt_vel.ping_type is None:
+            freq_used = np.unique(
+                self.transect.boat_vel.bt_vel.frequency_khz).astype(
+                int).astype(str)
+            freq_ensembles = \
+                self.transect.boat_vel.bt_vel.frequency_khz.astype(
+                    int).astype(str)
+            marker_dict = self.freq_marker
+            color_dict = self.freq_color
+        else:
+            freq_used = np.unique(
+                self.transect.boat_vel.bt_vel.ping_type)
+            freq_ensembles = \
+                self.transect.boat_vel.bt_vel.ping_type
+            marker_dict = self.p_type_marker
+            color_dict = self.p_type_color
 
         data_mask = []
         fmt = []
         for freq in freq_used:
             data_mask.append(freq_ensembles == freq)
-            fmt.append({'marker': self.freq_marker[freq], 'linestyle': '',
-                        'mfc': self.freq_color[freq],
-                        'mec': self.freq_color[freq]})
+            fmt.append({'marker': marker_dict[freq], 'linestyle': '',
+                        'mfc': color_dict[freq],
+                        'mec': color_dict[freq]})
         data_mask.append(invalid)
         fmt.append({'marker': 'o', 'color': 'r', 'ms': 8, 'linestyle': '',
                     'mfc': 'none'})
