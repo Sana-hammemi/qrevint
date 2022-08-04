@@ -239,6 +239,11 @@ class InstrumentData(object):
             if len(revision) < 2:
                 revision = '0' + revision
             self.firmware = str(rs.SystemHW.FirmwareVersion) + '.' + revision
+        elif self.model == 'RS5':
+            try:
+                self.firmware = str(rs.System.FirmwareVersion)
+            except BaseException:
+                self.firmware = ''
         else:
             self.firmware = ''
         self.beam_angle_deg = 25
