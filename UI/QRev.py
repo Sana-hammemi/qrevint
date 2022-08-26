@@ -1717,7 +1717,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Check for change in uncertainty model
                 if self.run_oursin != use_oursin:
                     self.run_oursin = use_oursin
-                    self.sticky_settings.set('Oursin', use_oursin)
+
+                    try:
+                        self.sticky_settings.set('Oursin', use_oursin)
+                    except KeyError:
+                        self.sticky_settings.new('Oursin', use_oursin)
+
                     if self.meas is not None:
                         if self.run_oursin:
                             # Uncertainty based on Oursin
@@ -1752,18 +1757,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Allow observed no moving-bed
                 if options.cb_allow_manual_no_mb.isChecked():
                     self.allow_observed_no_moving_bed = True
-                    self.sticky_settings.set('AllowNoMB', True)
+                    try:
+                        self.sticky_settings.set('AllowNoMB', True)
+                    except KeyError:
+                        self.sticky_settings.new('AllowNoMB', True)
                 else:
                     self.allow_observed_no_moving_bed = False
-                    self.sticky_settings.set('AllowNoMB', False)
+                    try:
+                        self.sticky_settings.set('AllowNoMB', False)
+                    except KeyError:
+                        self.sticky_settings.new('AllowNoMB', False)
 
                 # Export mean XS
                 if options.cb_xs_export.isChecked():
                     self.xs_export = True
-                    self.sticky_settings.set('XsExport', True)
+                    try:
+                        self.sticky_settings.set('XsExport', True)
+                    except KeyError:
+                        self.sticky_settings.new('XsExport', True)
                 else:
                     self.xs_export = False
-                    self.sticky_settings.set('XsExport', False)
+                    try:
+                        self.sticky_settings.set('XsExport', False)
+                    except KeyError:
+                        self.sticky_settings.new('XsExport', False)
 
                 # Update tabs
                 if self.meas is not None:
@@ -1771,8 +1788,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.tab_manager()
                     else:
                         self.tab_manager(old_discharge=old_discharge)
-
-
 
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA
