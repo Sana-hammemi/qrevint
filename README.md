@@ -20,47 +20,47 @@
 ## Requirements and Dependencies
 ### Source Code
 
-QRevPy is currently being developed using Python 3.6.6 and makes use of the following packages:
+QRevPy is currently being developed using Python 3.8 and makes use of the following packages:
 
-PyInstaller==3.5	
-PyQt5==5.13.1
-PyQt5-sip==4.19.19
-PyQt5-stubs==5.13.1.3
+PyQt5~=5.15.6
+PyQt5-sip
+PyQt5-stubs
 altgraph==0.16.1
 atomicwrites==1.3.0
 attrs==19.1.0
+click==7.1.2
 colorama==0.4.1
 cycler==0.10.0
 future==0.17.1
 importlib-metadata==0.23
-kiwisolver==1.1.0
+kiwisolver==1.4.2
 macholib==1.11
-matplotlib==3.1.1
+matplotlib==3.3.3
 more-itertools==7.2.0
-numpy==1.17.2
+numpy==1.22.1
+numba~=0.53.0
 packaging==19.2
-pandas==0.25.1
+pandas==1.4.0
 patsy==0.5.1
 pefile==2019.4.18
-pip==20.1
 pluggy==0.13.0
 py==1.8.0
 pyparsing==2.4.2
-pyqt5-tools==5.12.1.1.5rc4
 pytest==5.1.3
-python-dateutil==2.8.0
+python-dateutil
 python-dotenv==0.10.3
-pytz==2019.2
+pytz
 pywin32-ctypes==0.2.0
-scipy==1.3.1
+scipy==1.7.3
 setuptools==41.2.0
-sip==4.19.8
+simplekml~=1.3.6
+sip
 six==1.12.0
-utm==0.5.0
+statsmodels==0.10.1
+utm~=0.7.0
 wcwidth==0.1.7
 xmltodict==0.12.0
 zipp==0.6.0
-simplekml==1.3.1
 
 
 ## Bugs
