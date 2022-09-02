@@ -396,7 +396,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                'QRev cannot continue.'))
                     sys.exit()
         else:
-            self.popup_message(self.tr('QRev.cfg could not be found. QRev cannot continue.'))
+            self.popup_message(self.tr('QRev.cfg could not be found. QRev cannot continue.{}'.format(options_file)))
             sys.exit()
 
         # Setting file for settings to carry over from one session to the next

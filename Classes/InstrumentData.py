@@ -128,6 +128,11 @@ class InstrumentData(object):
                     idx = mmt.qaqc['RG_Test'][0].find('RioPro')
                     if idx != -1:
                         self.model = 'RioPro'
+                    else:
+                        self.model = 'RiverPro'
+                else:
+                    # Assume RioPro based on number of beams
+                    self.model='RioPro'
 
             if 'Fixed_Commands_RiverPro' in mmt_config.keys():
                 self.configuration_commands = np.append(self.configuration_commands, 'Fixed')
