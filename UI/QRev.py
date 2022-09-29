@@ -10554,6 +10554,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Setup table
         tbl = self.table_uncertainty_results
+        tbl.setRowCount(0)
         n_transects = len(self.checked_transects_idx)
 
         tbl.setRowCount(n_transects + 5)

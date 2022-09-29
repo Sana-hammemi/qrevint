@@ -2453,7 +2453,7 @@ class AdvGraphs(object):
         if data is not None:
             ax.plot(self.x, data * data_units[0], **kwargs)
         else:
-            ax.plot(self.x[data_mask[0]], data_2[data_mask[0]], **kwargs)
+            ax.plot(self.x, data_2 * data_units[0], **kwargs)
 
         # Compile all data from primary and masked data sets
         all_data = data
