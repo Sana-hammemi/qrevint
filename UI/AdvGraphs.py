@@ -109,25 +109,29 @@ class AdvGraphs(object):
                                     '1C': '1 MHz Coh', '3I': '3 MHz Inc',
                                     '3C': '3 MHz Coh',
                                     'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
-                                    'U': 'N/A'}
+                                    'PCBB': 'PC/BB', 'U': 'N/A', '1': 'N/A',
+                                    'Other': 'N/A'}
         self.p_type_color = {'I': 'b', 'C': '#009933', 'S': '#ffbf00',
                              '1I': 'b', '1C': '#009933', '3I': '#ffbf00',
                              '3C': '#ff33cc', 'BB': 'b', 'PC': '#009933',
-                             'PC/BB': '#ffbf00', 'U': 'b'}
+                             'PC/BB': '#ffbf00', 'PCBB': '#ffbf00', 'U': 'b',
+                             '1': 'b', 'Other': 'b'}
         self.p_type_marker = {'I': '.', 'C': '+', 'S': 'x', '1I': '.',
                               '1C': '*', '3I': '+', '3C': 'x',
-                              'BB': '.', 'PC': '+', 'PC/BB': 'x', 'U': '.'}
+                              'BB': '.', 'PC': '+', 'PC/BB': 'x',
+                              'PCBB': 'x', 'U': '.',
+                              '1': '.', 'Other': '.'}
         self.wt_legend_dict = {'I': 'Incoherent', 'C': 'Coherent',
                                'S': 'Surface Cell',
                                '1I': '1MHz Incoherent', '1C': '1 MHz HD',
                                '3I': '3 MHz Incoherent', '3C': '3 MHz HD',
                                'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
-                               'U': 'N/A'}
+                               'PCBB': 'PC/BB', 'U': 'N/A'}
         self.bt_legend_dict = {'600': '600 kHz', '1200': '1200 kHz',
                                '1000': '1 MHz', '2000': '2 MHz',
                                '2400': '2.4 MHz', '3000': '3 MHz', '0': 'N/U',
                                'BB': 'BB', 'PC': 'PC', 'PC/BB': 'PC/BB',
-                               'U': 'U'}
+                               'U': 'U', 'PCBB': 'PC/BB', '1': 'U', 'Other': 'U'}
         self.freq_color = {'0': 'b', '600': 'b', '1200': 'b', '1000': 'b',
                            '2000': 'b', '2400': 'b', '3000': '#009933'}
         self.freq_marker = {'0': '.', '600': '.', '1200': '.', '1000': '.',
@@ -1389,7 +1393,13 @@ class AdvGraphs(object):
         legend_txt = []
         for p_type in p_types:
             legend_txt.append(self.wt_legend_dict[p_type])
-        self.ax[-1].legend(legend_txt)
+
+        clean_legend = []
+        for item in legend_txt:
+            if item not in clean_legend:
+                clean_legend.append(item)
+
+        self.ax[-1].legend(clean_legend)
 
     def wt_vertical_ts(self):
         """Create time series plot of WT vertical velocity.
@@ -1459,7 +1469,13 @@ class AdvGraphs(object):
         legend_txt = []
         for p_type in p_types:
             legend_txt.append(self.wt_legend_dict[p_type])
-        self.ax[-1].legend(legend_txt)
+
+        clean_legend = []
+        for item in legend_txt:
+            if item not in clean_legend:
+                clean_legend.append(item)
+
+        self.ax[-1].legend(clean_legend)
 
     def wt_snr_ts(self):
         """Create time series plot of WT SNR range.
@@ -1521,7 +1537,13 @@ class AdvGraphs(object):
         legend_txt = []
         for p_type in p_types:
             legend_txt.append(self.wt_legend_dict[p_type])
-        self.ax[-1].legend(legend_txt)
+
+        clean_legend = []
+        for item in legend_txt:
+            if item not in clean_legend:
+                clean_legend.append(item)
+
+        self.ax[-1].legend(clean_legend)
 
     def bt_speed_ts(self, lbl='BT Speed'):
         """Create time series plot of BT speed.
@@ -1616,6 +1638,7 @@ class AdvGraphs(object):
         data_mask = []
         fmt = []
         for freq in freq_used:
+
             data_mask.append(freq_ensembles == freq)
             fmt.append({'marker': marker_dict[freq], 'linestyle': '',
                         'mfc': color_dict[freq],
@@ -1635,7 +1658,13 @@ class AdvGraphs(object):
         legend_txt = []
         for freq in freq_used:
             legend_txt.append(self.bt_legend_dict[freq])
-        self.ax[-1].legend(legend_txt)
+
+        clean_legend = []
+        for item in legend_txt:
+            if item not in clean_legend:
+                clean_legend.append(item)
+
+        self.ax[-1].legend(clean_legend)
 
     def bt_vertical_ts(self):
         y_data = self.transect.boat_vel.bt_vel.w_mps
@@ -1683,7 +1712,12 @@ class AdvGraphs(object):
         legend_txt = []
         for freq in freq_used:
             legend_txt.append(self.bt_legend_dict[freq])
-        self.ax[-1].legend(legend_txt)
+        clean_legend = []
+        for item in legend_txt:
+            if item not in clean_legend:
+                clean_legend.append(item)
+
+        self.ax[-1].legend(clean_legend)
 
     def bt_source_ts(self):
 
