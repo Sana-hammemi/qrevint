@@ -14,7 +14,7 @@ from PyQt5.QtCore import pyqtSignal, QRegExp
 from datetime import datetime
 from contextlib import contextmanager
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from MiscLibs.common_functions import units_conversion, convert_temperature
+from MiscLibs.common_functions import units_conversion, convert_temperature, scientific_notation
 from Classes.stickysettings import StickySettings as SSet
 from Classes.Measurement import Measurement
 from Classes.TransectData import TransectData
@@ -2603,43 +2603,43 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Transect total discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:8.3f}'.format(self.meas.discharge[transect_id].total
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(self.meas.discharge[transect_id].total
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect top discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(self.meas.discharge[transect_id].top
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(self.meas.discharge[transect_id].top
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect middle discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(self.meas.discharge[transect_id].middle
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(self.meas.discharge[transect_id].middle
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect bottom discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(self.meas.discharge[transect_id].bottom
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(self.meas.discharge[transect_id].bottom
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect left discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(self.meas.discharge[transect_id].left
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(self.meas.discharge[transect_id].left
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect right discharge
                 col += 1
                 tbl.setItem(row + 1, col,
-                            QtWidgets.QTableWidgetItem('{:7.3f}'.format(self.meas.discharge[transect_id].right
-                                                                        * self.units['Q'])))
+                            QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(self.meas.discharge[transect_id].right
+                                                                        * self.units['Q']))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Percent difference from measurement mean
@@ -2651,7 +2651,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem('N/A'))
                 else:
                     tbl.setItem(row + 1, col,
-                                QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+                                QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(per_diff))))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Add measurement summaries
@@ -2688,32 +2688,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Mean total discharge
             discharge = Measurement.mean_discharges(self.meas)
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:8.3f}'.format(discharge['total_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(discharge['total_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Mean top discharge
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(discharge['top_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(discharge['top_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Mean middle discharge
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(discharge['mid_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(discharge['mid_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Mean bottom discharge
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(discharge['bot_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(discharge['bot_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Mean left discharge
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(discharge['left_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(discharge['left_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Mean right discharge
             col += 1
-            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(discharge['right_mean'] * self.units['Q'])))
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem('{:7}'.format(scientific_notation(discharge['right_mean'] * self.units['Q']))))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Bold Measurement row
