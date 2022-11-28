@@ -485,11 +485,15 @@ def scientific_notation(n, sig: int = 3):
     if exp < 0:
         n_sn = a
     elif exp == 0:
-        n_sn = val
+        if float(val) == 0:
+            n_sn = '0.'+'0'*(sig-1)
+        else:
+            n_sn = val
     else:
-        n_sn_temp = float(val) * 10**exp
+        n_sn_temp = np.round(float(val) * 10**exp, 3)
         if abs(n_sn_temp) > 10**(sig-1):
             n_sn = str(n_sn_temp).split('.')[0]
         else:
             n_sn = str(n_sn_temp)
+    print(f'{n} change for {n_sn}')
     return n_sn
