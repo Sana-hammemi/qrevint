@@ -495,5 +495,4 @@ def scientific_notation(n, sig: int = 3):
             n_sn = str(n_sn_temp).split('.')[0]
         else:
             n_sn = str(n_sn_temp)
-    print(f'{n} change for {n_sn}')
     return n_sn
