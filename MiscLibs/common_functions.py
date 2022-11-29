@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as sp
+from decimal import Decimal
 
 
 def cosd(angle):
@@ -464,3 +465,34 @@ def nan_greater(data1, data2) -> bool:
     d3 = data1 - data2
     d3[np.isnan(d3)] = -999.
     return d3 > 0
+
+
+def scientific_notation(n, sig: int = 3):
+    """Return scientific notation
+
+        Parameters
+        ----------
+        n: float or int
+            Value to convert in scientific notation
+        sig: int
+            Number of significant digits
+        """
+    n_str = str(n)
+    b = '%.'+str(sig-1)+'E'
+    a = b % Decimal(n_str)
+    [val, exp] = a.split('E')
+    exp = int(exp)
+    if exp < 0:
+        n_sn = a
+    elif exp == 0:
+        if float(val) == 0:
+            n_sn = '0.'+'0'*(sig-1)
+        else:
+            n_sn = val
+    else:
+        n_sn_temp = np.round(float(val) * 10**exp, 3)
+        if abs(n_sn_temp) > 10**(sig-1):
+            n_sn = str(n_sn_temp).split('.')[0]
+        else:
+            n_sn = str(n_sn_temp)
+    return n_sn
