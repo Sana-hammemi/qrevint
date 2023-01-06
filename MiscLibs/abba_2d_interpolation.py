@@ -336,8 +336,9 @@ def idw_interpolation(data, neighbor_indices, distances):
     sum_of_weights = 0
     weighted_sum = 0
     for n, index in enumerate(neighbor_indices):
-        sum_of_weights = sum_of_weights + (1/distances[n])
-        weighted_sum = weighted_sum + data[index] * (1/distances[n])
+        if distances[n] > 0:
+            sum_of_weights = sum_of_weights + (1/distances[n])
+            weighted_sum = weighted_sum + data[index] * (1/distances[n])
 
     # Compute interpolated value
     if sum_of_weights > 0:
