@@ -401,7 +401,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = 'QRev 4.33'
+        self.QRev_version = 'QRev 4.34'
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon('QRev.ico'))
 
@@ -3765,7 +3765,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(2, 0).setFont(self.font_bold)
             if self.meas.transects[
                 self.checked_transects_idx[0]].adcp.manufacturer == 'SonTek':
-                item = 'Variable'
+                if self.meas.transects[self.checked_transects_idx[0]].adcp.model == 'RS5':
+                    item = '{:4.0f}'.format(self.meas.transects[
+                                            self.checked_transects_idx[
+                                                0]].adcp.frequency_khz[0])
+                else:
+                    item = 'Variable'
             elif self.meas.transects[
                 self.checked_transects_idx[0]].adcp.manufacturer == 'Nortek':
                 item = '{:4.0f}'.format(self.meas.transects[

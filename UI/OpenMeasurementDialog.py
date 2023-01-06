@@ -107,7 +107,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
             # SonTek, Nortek, or QRev file
             else:
 
-                if os.path.getsize(self.fullName[0]) > 0 :
+                if os.path.getsize(self.fullName[0]) > 0:
                     mat_data = sio.loadmat(self.fullName[0],
                                            struct_as_record=False,
                                            squeeze_me=True)
@@ -132,7 +132,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
                     self.popup_message("Selected files contain an mmt file. "
                                        "An mmt file must be loaded separately")
                     break
-                elif file_extension == '.mat':
+                elif file_extension == '.mat' or file_extension == '.MAT':
                     mat_data = sio.loadmat(self.fullName[0],
                                            struct_as_record=False,
                                            squeeze_me=True)

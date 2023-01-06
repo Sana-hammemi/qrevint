@@ -54,7 +54,8 @@ the U.S. Government.
 shortcut in a convenient location in the Start Menu or on the Desktop.
 ---
 
-# Integration with SVMAQ and AQ
+# Integration with Site Visit Mobile Aquarius (SVMAQ) and Aquarius (AQ)
+
 The results of data processed with QRev can be efficiently loaded into AQ through the use of SVMAQ. Saving a 
 processed measurement in QRev automatically creates an XML file (*_QRev.xml). This xml file can be loaded into SVMAQ. 
 After completing the site visit information in SVMAQ, the saved SVMAQ file can be loaded into AQ using the normal 
@@ -77,12 +78,12 @@ processed data, and 4) helps prevents accidental overwritting of previously proc
 - Backup all files to separate media from your field computer.
 - Follow office policy for storage and uploading of data into AQ.
 
-**Note: The _QRev.mat file contains all the original data and final processing settings. The _QRev.mat file is 
+Note: The _QRev.mat file contains all the original data and final processing settings. The _QRev.mat file is 
 independent of the original manufacturer files. Thus data processed with QRev should only be reviewed by loading 
 the _QRev.mat file. WinRiver II and RiverSurveyor Live files should be considered the original field data and not 
 used for review or reprocessing of data previously processed in QRev. In the rare situation where a display of data 
 in WinRiver II or RiverSurveyor Live is not available in QRev, WinRiver II or RiverSurveyor Live could be used to 
-review that portion of the data.**
+review that portion of the data.
 ---
 
 # Development

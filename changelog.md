@@ -1,5 +1,15 @@
 # QRev Change Log
 
+### [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
+
+**Status**: *Recommended*
+
+**Changes:**
+- Fixed RS5 frequency display.
+- Fixed reading of SonTek files with long directories.
+- Fix MB correction application.
+___
+
 ### [**Version 4.33**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.33)
 
 **Status**: *Recommended*
