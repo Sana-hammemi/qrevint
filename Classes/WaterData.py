@@ -747,10 +747,11 @@ class WaterData(object):
                 # Because of padded arrays with zeros and RR has a variable number of bins,
                 # the raw data may be padded with zeros.  The next 4 statements changes
                 # those to nan
-                self.u_mps[self.u_mps == 0] = np.nan
-                self.v_mps[self.v_mps == 0] = np.nan
-                self.w_mps[self.w_mps == 0] = np.nan
-                self.d_mps[self.d_mps == 0] = np.nan
+                find_padded = np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(self.w_mps) + np.abs(self.d_mps)
+                self.u_mps[find_padded == 0] = np.nan
+                self.v_mps[find_padded == 0] = np.nan
+                self.w_mps[find_padded == 0] = np.nan
+                self.d_mps[find_padded == 0] = np.nan
                 
                 # Assign processed object properties
                 self.u_processed_mps = np.copy(self.u_mps)
@@ -769,10 +770,12 @@ class WaterData(object):
                 self.d_mps = np.copy(self.raw_vel_mps[3])
                 
                 if adcp.manufacturer == 'TRDI':
-                    self.u_mps[self.u_mps == 0] = np.nan
-                    self.v_mps[self.v_mps == 0] = np.nan
-                    self.w_mps[self.w_mps == 0] = np.nan
-                    self.d_mps[self.d_mps == 0] = np.nan
+                    find_padded = np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(
+                        self.w_mps) + np.abs(self.d_mps)
+                    self.u_mps[find_padded == 0] = np.nan
+                    self.v_mps[find_padded == 0] = np.nan
+                    self.w_mps[find_padded == 0] = np.nan
+                    self.d_mps[find_padded == 0] = np.nan
                     
                 # Assign processed properties
                 self.u_processed_mps = np.copy(self.u_mps)
@@ -787,10 +790,12 @@ class WaterData(object):
             self.d_mps = np.copy(self.raw_vel_mps[3])
             
             if adcp.manufacturer == 'TRDI':
-                self.u_mps[self.u_mps == 0] = np.nan
-                self.v_mps[self.v_mps == 0] = np.nan
-                self.w_mps[self.w_mps == 0] = np.nan
-                self.d_mps[self.d_mps == 0] = np.nan
+                find_padded = np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(
+                    self.w_mps) + np.abs(self.d_mps)
+                self.u_mps[find_padded == 0] = np.nan
+                self.v_mps[find_padded == 0] = np.nan
+                self.w_mps[find_padded == 0] = np.nan
+                self.d_mps[find_padded == 0] = np.nan
                 
             # Assign processed properties
             self.u_processed_mps = np.copy(self.u_mps)

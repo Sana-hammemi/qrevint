@@ -50,46 +50,17 @@ If you would like to contribute to this project finacially please contact dave@g
 ## Requirements and Dependencies
 QRevPy is currently being developed using Python 3.6.8 and makes use of the following packages:
 
-PyInstaller==3.5  	
-PyQt5==5.13.1  
-PyQt5-sip==4.19.19  
-PyQt5-stubs==5.13.1.3  
-altgraph==0.16.1  
-atomicwrites==1.3.0  
-attrs==19.1.0  
-click==7.1.2  
-colorama==0.4.1  
-cycler==0.10.0  
-future==0.17.1  
-importlib-metadata==0.23  
-kiwisolver==1.1.0  
-macholib==1.11  
 matplotlib==3.1.1  
-more-itertools==7.2.0  
+numba==0.53.1  
 numpy==1.17.2  
-packaging==19.2  
 pandas==0.25.1  
-patsy==0.5.1  
-pefile==2019.4.18  
-pip==21.0  
-pluggy==0.13.0  
-py==1.8.0  
-pyparsing==2.4.2  
-pyqt5-tools==5.12.1.1.5rc4  
+profilehooks==1.12.0  
 pytest==5.1.3  
-python-dateutil==2.8.0  
-python-dotenv==0.10.3  
-pytz==2019.2  
-pywin32-ctypes==0.2.0  
 scipy==1.3.1  
-setuptools==41.2.0  
+sigfig==1.3.2  
 simplekml==1.3.1  
-sip==4.19.8  
-six==1.12.0  
 utm==0.5.0  
-wcwidth==0.1.7  
 xmltodict==0.12.0  
-zipp==0.6.0  
 
 # Disclaimer
 This software (QRevInt) is a fork of QRev, which was originally approved for release by the U.S. Geological Survey (USGS), IP-118174. Genesis HydroTech LLC through funding from various international agencies is working to improve and expand the capabilities and features available in QRevInt. While Genesis HydroTech LLC makes every effort to deliver high quality products, Genesis HydroTech LLC does not guarantee that the product is free from defects. QRevInt is provided “as is," and you use the software at your own risk. Genesis HydroTech LLC and contributing agencies make no warranties as to performance, merchantability, fitness for a particular purpose, or any other warranties whether expressed or implied. No oral or written communication from or information provided by Genesis HydroTech LLC or contributing agencies shall create a warranty. Under no circumstances shall Genesis HydroTech LLC or the contributing agencies be liable for direct, indirect, special, incidental, or consequential damages resulting from the use, misuse, or inability to use this software, even if Genesis HydroTech LLC or the contributing agencies have been advised of the possibility of such damages. 
@@ -116,7 +87,7 @@ Endorsement: In some jurisdictions, wrongfully implying that an author, publishe
 
 
 # Suggested citations
-Mueller, D.S., 2021, QRevInt, Version x.xx, Genesis HydroTech LLC, https://bitbucket.org/genesishydrotech/qrevint/src/master/.
+Mueller, D.S., 2021, QRevInt, Version x.xx, Genesis HydroTech LLC, https://bitbucket.org/genesishydrotech/qrevint/src/master/.  
 Mueller, D.S., 2020, QRev, U.S. Geological Survey software release, https://doi.org/10.5066/P9OZ8QDL.
 
 # Author

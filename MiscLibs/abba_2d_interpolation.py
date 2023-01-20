@@ -336,8 +336,9 @@ def idw_interpolation(data, neighbor_indices, distances):
     sum_of_weights = 0
     weighted_sum = 0
     for n, index in enumerate(neighbor_indices):
-        sum_of_weights = sum_of_weights + (1/distances[n])
-        weighted_sum = weighted_sum + data[index] * (1/distances[n])
+        if distances[n] > 0:
+            sum_of_weights = sum_of_weights + (1/distances[n])
+            weighted_sum = weighted_sum + data[index] * (1/distances[n])
 
     # Compute interpolated value
     if sum_of_weights > 0:
@@ -394,7 +395,7 @@ def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_c
                                               y_depth=y_depth,
                                               search_loc=search_loc,
                                               normalize=normalize)
-
+        dist = []
         # Process each target
         for point in interpolation_points:
             # Compute distance from target to neighbors
@@ -402,7 +403,7 @@ def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_c
                                           neighbors=point['neighbors'],
                                           x=x_shiptrack,
                                           y=y_centers)
-
+            dist.append(dist)
             # Interpolate target for each data set in data_list
             for n, data in enumerate(data_list):
                 interpolated_value = idw_interpolation(data=data,
