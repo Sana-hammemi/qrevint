@@ -7,7 +7,6 @@ import webbrowser
 import getpass
 import json
 import numpy as np
-import multiprocessing as mp
 import scipy.io as sio
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, QRegExp
@@ -56,6 +55,7 @@ from UI.MplCanvas import MplCanvas
 from UI.Disclaimer import Disclaimer
 from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
+
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
@@ -396,7 +396,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                'QRev cannot continue.'))
                     sys.exit()
         else:
-            self.popup_message(self.tr('QRev.cfg could not be found. QRev cannot continue.'))
+            self.popup_message(self.tr('QRev.cfg could not be found. QRev cannot continue.{}'.format(options_file)))
             sys.exit()
 
         # Setting file for settings to carry over from one session to the next
@@ -10553,6 +10553,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Setup table
         tbl = self.table_uncertainty_results
+        tbl.setRowCount(0)
         n_transects = len(self.checked_transects_idx)
 
         tbl.setRowCount(n_transects + 5)
@@ -12512,7 +12513,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 # Main
 # ====
 if __name__ == "__main__":
-    mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     window = QRev()
     if window.agreement:

@@ -1942,6 +1942,8 @@ class Oursin(object):
         u_water = transect.w_vel.u_processed_mps
         v_water = transect.w_vel.v_processed_mps
         v_wa_cell_abs = np.sqrt(u_water ** 2 + v_water ** 2)
+        v_wa_cell_abs[np.round(v_wa_cell_abs, 3) == 0.000] = np.nan
+
 
         # Use only valid error velocity data
         d_vel_filtered = np.tile([np.nan], transect.w_vel.d_mps.shape)
@@ -1977,6 +1979,7 @@ class Oursin(object):
         u_boat = transect.boat_vel.bt_vel.u_processed_mps
         v_boat = transect.boat_vel.bt_vel.v_processed_mps
         speed = np.sqrt(u_boat ** 2 + v_boat ** 2)
+        speed[np.round(speed, 3) == 0.000] = np.nan
 
         # Use only valid error velocity data
         d_vel_filtered = np.tile([np.nan], transect.boat_vel.bt_vel.d_mps.shape)

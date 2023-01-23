@@ -925,8 +925,12 @@ class DepthData(object):
             # Compute inverse weighted mean depth
             rng = depth - draft
             w = 1 - np.divide(rng, np.nansum(rng, 0))
-            avg_depth = draft + np.nansum(np.divide((rng * w), np.nansum(w, 0), out=np.zeros_like(rng),
-                                                    where=np.nansum(w, 0) != 0), 0)
+            avg_depth = draft + np.nansum(
+                np.divide((rng * w),
+                    np.nansum(w, 0),
+                    out=np.zeros_like(rng),
+                    where = np.nansum(w, 0) != 0)
+                , 0)
             avg_depth[avg_depth == draft] = np.nan
 
         return avg_depth

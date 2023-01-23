@@ -99,7 +99,9 @@ class PRTS(object):
                     # Compute x-axis
                     x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
                                         units=units, flip=flip)
-                    self.pitch.append(self.fig.ax.plot(x, pitch, 'r-')[0])
+                    if pitch.shape[0] > 0:
+                        self.pitch.append(self.fig.ax.plot(x, pitch, 'r-')[0])
+
                 else:
                     self.pitch = None
 
@@ -113,7 +115,8 @@ class PRTS(object):
                     # Compute x-axis
                     x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
                                         units=units, flip=flip)
-                    self.roll.append(self.fig.ax.plot(x, roll, 'b-')[0])
+                    if roll.shape[0] > 0:
+                        self.roll.append(self.fig.ax.plot(x, roll, 'b-')[0])
                 else:
                     self.roll = None
 

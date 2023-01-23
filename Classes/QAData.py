@@ -1126,6 +1126,7 @@ class QAData(object):
                     file_names.append(test.transect.file_name)
                     if test.type == 'Loop' and not test.test_quality == 'Errors':
                         loop.append(test.moving_bed)
+
                     if not np.isnan(test.gps_percent_mb):
                         if np.abs(test.bt_percent_mb - test.gps_percent_mb) > 2:
                             gps_diff2 = True
@@ -1248,6 +1249,14 @@ class QAData(object):
                 if gps_diff1:
                     self.movingbed['messages'].append(['Moving-Bed Test: Bottom track and GPS results do not agree.',
                                                       2, 6])
+                    if self.movingbed['code'] < 3:
+                        self.movingbed['code'] = 2
+                        self.movingbed['status'] = 'caution'
+
+            if len(loop) > 0:
+                if self.compass['status1'] != 'good':
+                    self.movingbed['messages'].append('Moving-Bed Test: Loop test used but compass calibration is ' +
+                                                     self.compass['status1'])
                     if self.movingbed['code'] < 3:
                         self.movingbed['code'] = 2
                         self.movingbed['status'] = 'caution'

@@ -1144,6 +1144,8 @@ class AdvGraphs(object):
                          ping_name=ping_name,
                          n_names=len(p_types))
 
+        self.data_plotted[-2]['type'] = 'ping type'
+
     def wt_3beam_ts(self):
         """Create time series plot of WT beams used.
         """
@@ -2453,7 +2455,7 @@ class AdvGraphs(object):
         if data is not None:
             ax.plot(self.x, data * data_units[0], **kwargs)
         else:
-            ax.plot(self.x[data_mask[0]], data_2[data_mask[0]], **kwargs)
+            ax.plot(self.x[data_mask[0]], data_2[data_mask[0]] * data_units[0], **kwargs)
 
         # Compile all data from primary and masked data sets
         all_data = data
@@ -2541,7 +2543,7 @@ class AdvGraphs(object):
                 value = None
                 if cont_fig and self.fig.get_visible():
                     # Annotation for contour plot
-                    if self.data_plotted[n]['type'] == 'contour':
+                    if self.data_plotted[n]['type'] == 'contour' or self.data_plotted[n]['type'] == 'ping type':
                         # Get plotted data
                         x_plt = self.data_plotted[n]['x']
                         y_plt = self.data_plotted[n]['y']
@@ -2561,12 +2563,20 @@ class AdvGraphs(object):
                                 value = z_plt[row_idx, col_idx]
                                 break
 
-                        # Create annotation
-                        self.update_annot(ax_idx=n,
-                                          x=event.xdata,
-                                          y=event.ydata,
-                                          v=value,
-                                          v_dict=self.ping_name)
+                        if self.data_plotted[n]['type'] == 'contour':
+                            # Create annotation
+                            self.update_annot(ax_idx=n,
+                                              x=event.xdata,
+                                              y=event.ydata,
+                                              v=value,
+                                              v_dict=None)
+                        else:
+                            # Create annotation
+                            self.update_annot(ax_idx=n,
+                                              x=event.xdata,
+                                              y=event.ydata,
+                                              v=value,
+                                              v_dict=self.ping_name)
 
                     # Annotation for time series data
                     elif self.data_plotted[n]['type'] == 'ts':
@@ -2664,15 +2674,15 @@ class AdvGraphs(object):
             # Format for ensemble axis
             elif self.x_axis_type == 'E':
                 if v_dict is None:
-                    text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
+                    text = 'x: {:.0f}, y: {:.2f}, \n v: {:.1f}'.format(int(round(x)), y, v)
                 else:
-                    text = 'x: {}, y: {:.2f}, \n {}'.format(int(round(x)), y, v_dict[v])
+                    text = 'x: {:.0f}, y: {:.2f}, \n {}'.format(int(round(x)), y, v_dict[v])
             # Format for length axis
             elif self.x_axis_type == 'L':
                 if v_dict is None:
                     text = 'x: {:.2f}, y: {:.2f}, \n v: {:.1f}'.format(x, y, v)
                 else:
-                    text = 'x: {}, y: {:.2f}, \n {}'.format(x, y, v_dict[v])
+                    text = 'x: {:.2f}, y: {:.2f}, \n {}'.format(x, y, v_dict[v])
         # Annotation for time series
         else:
             # Format for time axis
@@ -2681,10 +2691,10 @@ class AdvGraphs(object):
                 text = 'x: {}, y: {:.2f}'.format(x_label, y)
             # Format for ensemble axis
             elif self.x_axis_type == 'E':
-                text = 'x: {:.2f}, y: {:.2f}'.format(int(round(x)), y)
+                text = 'x: {:.0f}, y: {:.2f}'.format(int(round(x)), y)
             # Format for length axis
             elif self.x_axis_type == 'L':
-                text = 'x: {:.2f}, y: {:.2f}'.format(x, y)
+                text = 'x: {:.0f}, y: {:.2f}'.format(x, y)
 
         annot_ref.set_text(text)
 

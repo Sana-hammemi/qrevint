@@ -118,8 +118,10 @@ class TransectData(object):
             idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][0]
             start_year = int(pd0_data.Sensor.date[idx, 0])
 
-            # StreamPro doesn't include y2k dates
-            if start_year < 100:
+            # Handle data that is not Y2K compliant
+            if pd0_data.Sensor.date_not_y2k[idx, 0] > 80:
+                start_year = 1900 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
+            elif pd0_data.Sensor.date_not_y2k[idx, 1] < 81:
                 start_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
 
             start_month = int(pd0_data.Sensor.date[idx, 1])
@@ -138,8 +140,11 @@ class TransectData(object):
             # End data and time
             idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][-1]
             end_year = int(pd0_data.Sensor.date[idx, 0])
-            # StreamPro does not include Y@K dates
-            if end_year < 100:
+
+            # Handle data that is not Y2K compliant
+            if pd0_data.Sensor.date_not_y2k[idx, 0] > 80:
+                end_year = 1900 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
+            elif pd0_data.Sensor.date_not_y2k[idx, 1] < 81:
                 end_year = 2000 + int(pd0_data.Sensor.date_not_y2k[idx, 0])
 
             end_month = int(pd0_data.Sensor.date[idx, 1])
