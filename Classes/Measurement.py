@@ -17,6 +17,7 @@ from Classes.BoatStructure import BoatStructure
 from Classes.BoatData import BoatData
 from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
+from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile, timecall
@@ -134,6 +135,7 @@ class Measurement(object):
         self.ext_temp_chk = {'user': np.nan, 'units': 'C', 'adcp': np.nan, 'user_orig': np.nan, 'adcp_orig': np.nan}
         self.checked_transect_idx = []
         self.oursin = None
+        self.map = None
         self.use_weighted = use_weighted
         self.observed_no_moving_bed = False
         self.stage_meas_m = 0
@@ -1461,6 +1463,7 @@ class Measurement(object):
         self.compute_discharge()
 
         self.compute_uncertainty()
+        self.compute_map()
 
     def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -1993,6 +1996,16 @@ class Measurement(object):
             self.oursin.compute_oursin(self,
                                        user_advanced_settings=user_advanced_settings,
                                        u_measurement_user=u_measurement_user)
+
+    def compute_map(self):
+        """Computes uncertainty using QRev model and Oursin model if selected.
+        """
+        if all(deg == 0 for deg in self.transects[self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
+            self.map = None
+        else:
+            self.map = MAP()
+            self.map.populate_data(self)
+
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):

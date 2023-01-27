@@ -22,6 +22,7 @@ from Classes.Sensors import Sensors
 from Classes.MovingBedTests import MovingBedTests
 from Classes.CoordError import CoordError
 from Classes.Oursin import Oursin
+from Classes.MAP import MAP
 import UI.QRev_gui as QRev_gui
 from UI.selectFile import SaveMeasurementDialog
 from UI.OpenMeasurementDialog import OpenMeasurementDialog

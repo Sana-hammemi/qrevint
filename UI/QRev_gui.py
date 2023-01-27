@@ -4288,7 +4288,7 @@ class Ui_MainWindow(object):
         self.toolBar.addSeparator()
 
         self.retranslateUi(MainWindow)
-        self.tab_all.setCurrentIndex(14)
+        self.tab_all.setCurrentIndex(0)
         self.tab_summary.setCurrentIndex(0)
         self.tab_mc.setCurrentIndex(0)
         self.tab_systest_2.setCurrentIndex(1)
