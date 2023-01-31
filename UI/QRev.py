@@ -11750,6 +11750,146 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.adv_graph_layout.setStretch(1, 3)
             self.pb_adv_graph_controls.setText('Hide Plot Controls')
 
+    # MAP tab (Multi-transects Average Profile)
+    # ==============
+    def map_tab(self):
+        """Initializes and configures map tab.
+"""
+
+        self.map_table()
+        # self.advanced_settings_table()
+        # self.uncertainty_meas_q_plot()
+        # self.uncertainty_measurement_plot()
+        # self.uncertainty_comments_messages()
+        #
+        # # Setup list for use by graphics controls
+        # self.canvases = [self.uncertainty_meas_q_canvas, self.uncertainty_measurement_canvas]
+        # self.figs = [self.uncertainty_meas_q_fig, self.uncertainty_measurement_fig]
+        # self.toolbars = [self.uncertainty_meas_q_toolbar, self.uncertainty_measurement_toolbar]
+
+    def map_table(self):
+        """Create and populate map results table.
+        """
+
+        # Setup table
+        tbl = self.table_map_results
+        map_header = [self.tr('MAP'), self.tr('Meas.'), self.tr('Delta (%)')]
+        map_rows = [self.tr('Total Q ') + self.tr(self.units['label_Q']),
+                    self.tr('Q/A ') + self.tr(self.units['label_V']),
+                    self.tr('Mean depth ') + self.tr(self.units['label_L']),
+                    self.tr('Width ') + self.tr(self.units['label_L'])]
+        tbl.setRowCount(0)
+        ncols = len(map_header)
+        nrows = len(map_rows)
+        n_transects = len(self.meas.transects)
+        tbl.setRowCount(nrows)
+        tbl.setColumnCount(ncols)
+
+        # tbl.horizontalHeader().hide()
+        tbl.setHorizontalHeaderLabels(map_header)
+        tbl.horizontalHeader().setFont(self.font_bold)
+        tbl.setVerticalHeaderLabels(map_rows)
+        tbl.verticalHeader().setFont(self.font_bold)
+
+        header = tbl.horizontalHeader()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        col_header = tbl.verticalHeader()
+        col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+
+        if len(self.checked_transects_idx) > 0:
+            trans_prop = Measurement.compute_measurement_properties(self.meas)
+
+            row = 0
+            # MAP Q
+            col = 0
+            map_q = self.meas.map.total_discharge
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_q *
+                                                                                             self.units['Q']))))
+            # Meas Q
+            col += 1
+            discharge = Measurement.mean_discharges(self.meas)
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(discharge['total_mean'] *
+                                                                                             self.units['Q']))))
+            # Delta Q
+            col += 1
+            per_diff = 100*(map_q - discharge['total_mean'])/discharge['total_mean']
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+
+            row += 1
+            # MAP mean v
+            col = 0
+            map_area = np.nansum(self.meas.map.left_area) + np.nansum(self.meas.map.mid_area) + \
+                   np.nansum(self.meas.map.right_area)
+            map_v = map_q / map_area * self.units['V']
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_v))))
+
+            # Meas. mean v
+            col += 1
+            meas_v = trans_prop['avg_water_speed'][n_transects] * self.units['V']
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_v))))
+
+            # Delta v
+            col += 1
+            per_diff = 100 * (map_v - meas_v) / meas_v
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+
+
+            row += 1
+            # MAP mean depth
+            col = 0
+            map_d = np.nanmean(self.meas.map.depths)
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_d *
+                                                                                               self.units['L']))))
+
+            # Meas. mean depth
+            col += 1
+            depth_meas = []
+            for id_transect in self.checked_transects_idx:
+                transect = self.meas.transects[id_transect]
+                depth_meas.append(transect.depths.bt_depths.depth_processed_m)
+            every_depth = np.array([item for subarray in depth_meas for item in subarray])
+            meas_d = np.nanmean(every_depth)
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_d *
+                                                                                               self.units['L']))))
+
+            # Delta mean depth
+            col += 1
+            per_diff = 100 * (map_d - meas_d) / meas_d
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+
+            row += 1
+            # MAP width
+            col = 0
+            map_width = self.meas.map.borders_ens[-1]
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_width))))
+
+            # Meas. width
+            col += 1
+            meas_width = trans_prop['width'][n_transects] * self.units['L']
+            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_width))))
+
+            # Delta mean depth
+            col += 1
+            per_diff = 100 * (map_width - meas_width) / meas_width
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:7.3f}'.format(per_diff)))
+
+            tbl.item(0, 0).setFont(self.font_bold)
+            tbl.item(1, 0).setFont(self.font_bold)
+            tbl.item(2, 0).setFont(self.font_bold)
+            tbl.item(3, 0).setFont(self.font_bold)
+
     # Graphics controls
     # =================
     def clear_zphd(self):
@@ -11858,6 +11998,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Adv. Graph
             elif tab_idx == 'Adv. Graph':
                 self. adv_graph_tab()
+
+            # MAP
+            elif tab_idx == 'MAP':
+                self.map_tab()
 
     def x_axis_time(self):
         """Changes the x-axis type to time
@@ -12352,6 +12496,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Adv. Graph tab
         elif tab_idx == 'Adv. Graph':
             self.adv_graph_tab()
+
+        elif tab_idx == 'MAP':
+            self.map_tab()
 
         self.set_tab_color()
 

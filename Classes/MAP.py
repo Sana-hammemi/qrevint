@@ -75,6 +75,7 @@ class MAP(object):
         self.left_distance = None  # MAP edge distance from edge computation
         self.left_borders = None  # Borders of each MAP vertical from edge computation
         self.left_coef = None  # Shape coefficient of MAP edge
+        self.left_area = 0
         self.left_primary_velocity = None  # MAP primary velocity for edge cells
         self.left_secondary_velocity = None  # MAP secondary velocity for edge cells
         self.left_vertical_velocity = None  # MAP vertical velocity for edge cells
@@ -83,6 +84,7 @@ class MAP(object):
         self.right_distance = None  # MAP edge distance from edge computation
         self.right_borders = None  # Borders of each MAP vertical from edge computation
         self.right_coef = None  # Shape coefficient of MAP edge
+        self.right_area = 0
         self.right_primary_velocity = None  # MAP primary velocity for edge cells
         self.right_secondary_velocity = None  # MAP secondary velocity for edge cells
         self.right_vertical_velocity = None  # MAP vertical velocity for edge cells
@@ -192,14 +194,13 @@ class MAP(object):
 
         # Compute edge extrapolation
         print("compute_edges")
-        left_direction, right_direction, left_area, right_area, left_mid_cells_x, right_mid_cells_x, \
+        left_direction, right_direction, left_mid_cells_x, right_mid_cells_x, \
         left_mid_cells_y, right_mid_cells_y = self.compute_edges(borders_ens_raw, mid_direction, settings,
                                                                  edge_constant)
 
         # Compute discharge
         print("compute_discharge")
-        self.compute_discharge(direction_meas, mid_direction, extrap_option, left_direction, right_direction,
-                               left_area, right_area)
+        self.compute_discharge(direction_meas, mid_direction, extrap_option, left_direction, right_direction)
 
         print(f"Total Q : {self.total_discharge}")
         print(meas.mean_discharges(meas)['total_mean'])
@@ -943,15 +944,15 @@ class MAP(object):
         extrap_exp = 1 / settings['extrapExp']
         self.left_primary_velocity, self.left_secondary_velocity, self.left_vertical_velocity, \
         self.left_borders, left_direction, left_mid_cells_x, left_mid_cells_y, \
-        left_area = self.edge_velocity(self.left_distance, self.left_coef, 'left', borders_ens_raw, mid_direction,
+        self.left_area = self.edge_velocity(self.left_distance, self.left_coef, 'left', borders_ens_raw, mid_direction,
                                        extrap_exp, edge_constant)
 
         self.right_primary_velocity, self.right_secondary_velocity, self.right_vertical_velocity, \
         self.right_borders, right_direction, right_mid_cells_x, right_mid_cells_y, \
-        right_area = self.edge_velocity(self.right_distance, self.right_coef, 'right', borders_ens_raw, mid_direction,
+        self.right_area = self.edge_velocity(self.right_distance, self.right_coef, 'right', borders_ens_raw, mid_direction,
                                         extrap_exp, edge_constant)
 
-        return left_direction, right_direction, left_area, right_area, left_mid_cells_x, \
+        return left_direction, right_direction, left_mid_cells_x, \
                right_mid_cells_x, left_mid_cells_y, right_mid_cells_y
 
     @staticmethod
@@ -1174,8 +1175,7 @@ class MAP(object):
         return edge_primary_velocity, edge_secondary_velocity, edge_vertical_velocity, nodes, \
                edge_direction, mid_cells_x, mid_cells_y, area
 
-    def compute_discharge(self, direction_meas, mid_direction, extrap_option, left_direction=0, right_direction=0,
-                          left_area=0, right_area=0):
+    def compute_discharge(self, direction_meas, mid_direction, extrap_option, left_direction=0, right_direction=0):
         """ Compute discharge
 
         Parameters
@@ -1199,7 +1199,7 @@ class MAP(object):
         distance = (self.borders_ens[1:] - self.borders_ens[:-1])
         depth = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
 
-        mid_area = distance * depth
+        self.mid_area = distance * depth
 
         if extrap_option:
             downstream_velocity_mid = self.extrap_primary_velocity * np.cos(mid_direction - direction_meas) + \
@@ -1211,7 +1211,7 @@ class MAP(object):
             downstream_velocity_right = self.right_primary_velocity * np.cos(right_direction - direction_meas) + \
                                         self.right_secondary_velocity * np.sin(right_direction - direction_meas)
 
-            middle_cells_discharge = mid_area * downstream_velocity_mid
+            middle_cells_discharge = self.mid_area * downstream_velocity_mid
             middle_discharge = np.nansum(middle_cells_discharge)
 
             if middle_discharge < 0:
@@ -1222,8 +1222,8 @@ class MAP(object):
             self.middle_cells_discharge = middle_cells_discharge * unit
             self.middle_discharge = middle_discharge * unit
 
-            self.left_cells_discharge = downstream_velocity_left * left_area * unit
-            self.right_cells_discharge = downstream_velocity_right * right_area * unit
+            self.left_cells_discharge = downstream_velocity_left * self.left_area * unit
+            self.right_cells_discharge = downstream_velocity_right * self.right_area * unit
 
             self.left_discharge = np.nansum(self.left_cells_discharge)
             self.right_discharge = np.nansum(self.right_cells_discharge)
@@ -1234,7 +1234,7 @@ class MAP(object):
             downstream_velocity_mid = self.primary_velocity * np.cos(mid_direction - direction_meas) + \
                                       self.secondary_velocity * np.sin(mid_direction - direction_meas)
 
-            middle_cells_discharge = mid_area * downstream_velocity_mid
+            middle_cells_discharge = self.mid_area * downstream_velocity_mid
             middle_discharge = np.nansum(middle_cells_discharge)
 
             if middle_discharge < 0:
