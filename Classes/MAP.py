@@ -1,3 +1,4 @@
+import utm
 import copy
 import numpy as np
 import scipy as sc
@@ -5,256 +6,196 @@ import pandas as pd
 from scipy.optimize.minpack import curve_fit
 
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
+from sklearn.linear_model import LinearRegression
+
 
 class MAP(object):
     """Multitransect Averaged Profile (MAP) generates an average profile of selected transects.
 
         Attributes
         ----------
+        slope: float
+            Slope of the average cross-section
+        intercept: float
+            Intercept of the average cross-section
+        x_raw_coordinates: np.list(np.array(float))
+            East distance from left bank for each selected transect
+        y_raw_coordinates: np.list(np.array(float))
+            North distance from left bank for each selected transect
+        x_projected: np.list(np.array(float))
+            East distance after projection on average cross-section
+        y_projected: np.list(np.array(float))
+            North distance after projection on average cross-section
+        acs_distance: np.list(np.array(float))
+            Distance from the left bank on average cross-section
+
         primary_velocity: np.array(float)
-            MAP primary velocity of each middle cell without extrapolation
+            Primary velocity of each MAP cell
         secondary_velocity: np.array(float)
-            MAP secondary velocity of each middle cell without extrapolation
+            Secondary velocity of each MAP cell
         vertical_velocity: np.array(float)
-            MAP primary velocity of each middle cell without extrapolation
+            Vertical velocity of each MAP cell
+        streamwise_velocity: np.array(float)
+            Streamwise velocity of each MAP cell
+        transverse_velocity: np.array(float)
+            Transverse velocity of each MAP cell
         depths: np.array(float) 1D
-            MAP depths
-        extrap_primary_velocity: np.array(float)
-            MAP primary velocity with extrpolation on bottom/top part
-        extrap_secondary_velocity: np.array(float)
-            MAP secondary velocity with extrpolation on bottom/top part
-        extrap_vertical_velocity: np.array(float)
-            MAP vertical velocity with extrpolation on bottom/top part
-        depth_cells_border: np.array(float)
-            Depth borders of each MAP cell, last one of each vertical equal to vertical depth
-        depth_cells_center: np.array(float)
-            Depth center of each MAP cell
+            Depths for each MAP vertical
+
+        direction_ens: np.array(float) 1D
+            Main direction of each MAP ensemble
         borders_ens: np.array(float) 1D
-            Borders of each MAP vertical
+            Borders of each MAP vertical (distance from left bank)
+        main_depth_layers: np.array(float) 1D
+            Borders of each MAP depth layer (distance from surface)
+        depth_cells_center: np.array(float)
+            Depth of each MAP cell center
+        distance_cells_center: np.array(float)
+            Distance of each MAP cell center
+        cells_area: np.array(float)
+            Area of each MAP cell
 
-        left_distance/right_distance: float
-            MAP edge distance from edge computation
-        left_borders/right_borders: np.array(float) 1D
-            Borders of each MAP vertical from edge computation
-        left_coef/right_coef: float
-            Shape coefficient of MAP edge
-        left_primary_velocity/right_primary_velocity: np.array(float)
-            MAP primary velocity for edge cells
-        left_secondary_velocity/right_secondary_velocity: np.array(float)
-            MAP secondary velocity for edge cells
-        left_vertical_velocity/right_vertical_velocity: np.array(float)
-            MAP vertical velocity for edge cells
-        left_cells_discharge/right_cells_discharge: np.array(float)
-            MAP edge cells discharge
-        left_discharge/right_discharge: float
-            MAP edge total discharge
-
+        cells_discharge: np.array(float) 1D
+            MAP discharge for each cell
         total_discharge: float
-            MAP total discharge with current parameters
-        middle_cells_discharge: np.array(float)
-            MAP discharge of each middle cell (with top/bottom extrapolation if selected)
-        middle_discharge: float
-            MAP middle discharge with top/bottom extrapolation (if selected)
+            MAP total discharge
         """
 
     def __init__(self):
         """Initialize class and instance variables."""
 
-        self.primary_velocity = None  # MAP primary velocity of each middle cell without extrapolation
-        self.secondary_velocity = None  # MAP secondary velocity of each middle cell without extrapolation
-        self.vertical_velocity = None  # MAP primary velocity of each middle cell without extrapolation
-        self.depths = None  # MAP depths
-        self.extrap_primary_velocity = None  # MAP primary velocity with extrpolation on bottom/top part
-        self.extrap_secondary_velocity = None  # MAP secondary velocity with extrpolation on bottom/top part
-        self.extrap_vertical_velocity = None  # MAP vertical velocity with extrpolation on bottom/top part
-        self.depth_cells_border = None  # Depth borders of each MAP cell, last one of each vertical equal to vertical depth
-        self.depth_cells_center = None  # Depth center of each MAP cell
-        self.borders_ens = None  # Borders of each MAP vertical
-        self.borders_depth = None
+        self.slope = None  # Slope of the average cross-section
+        self.intercept = None  # Intercept of the average cross-section
+        self.x_raw_coordinates = []  # East distance from left bank for each selected transect
+        self.y_raw_coordinates = []  # North distance from left bank for each selected transect
+        self.lat_gps_coordinate = []  #
+        self.lon_gps_coordinate = []  #
+        self.x_projected = None  # East distance after projection on average cross-section
+        self.y_projected = None  # North distance after projection on average cross-section
+        self.acs_distance = None  # Distance from the left bank on average cross-section
 
-        self.left_distance = None  # MAP edge distance from edge computation
-        self.left_borders = None  # Borders of each MAP vertical from edge computation
-        self.left_coef = None  # Shape coefficient of MAP edge
-        self.left_area = 0
-        self.left_primary_velocity = None  # MAP primary velocity for edge cells
-        self.left_secondary_velocity = None  # MAP secondary velocity for edge cells
-        self.left_vertical_velocity = None  # MAP vertical velocity for edge cells
-        self.left_cells_discharge = None  # MAP edge cells discharge
-        self.left_discharge = None  # MAP edge total discharge
-        self.right_distance = None  # MAP edge distance from edge computation
-        self.right_borders = None  # Borders of each MAP vertical from edge computation
-        self.right_coef = None  # Shape coefficient of MAP edge
-        self.right_area = 0
-        self.right_primary_velocity = None  # MAP primary velocity for edge cells
-        self.right_secondary_velocity = None  # MAP secondary velocity for edge cells
-        self.right_vertical_velocity = None  # MAP vertical velocity for edge cells
-        self.right_cells_discharge = None  # MAP edge cells discharge
-        self.right_discharge = None  # MAP edge total discharge
+        self.primary_velocity = None  # Primary velocity (ROZ) of each MAP cell
+        self.secondary_velocity = None  # Secondary velocity (ROZ) of each MAP cell
+        self.vertical_velocity = None  # Vertical velocity of each MAP cell
+        self.streamwise_velocity = None  # Streamwise velocity of each MAP cell
+        self.transverse_velocity = None  # Transverse velocity of each MAP cell
+        self.depths = None  # Depths for each MAP vertical
+        self.depth_by_transect = None  # Depth for each transect
 
-        self.total_discharge = None  # MAP total discharge with current parameters
-        self.middle_cells_discharge = None  # MAP discharge of each middle cell (with top/bottom extrapolation if selected)
-        self.middle_discharge = None  # MAP middle discharge with top/bottom extrapolation (if selected)
+        self.direction_ens = None  # Main direction of each MAP ensemble
+        self.borders_ens = None  # Borders of each MAP vertical (distance from left bank)
+        self.main_depth_layers = None  # Borders of each MAP depth layer (distance from surface)
+        self.depth_cells_center = None  # Depth of each MAP cell center
+        self.distance_cells_center = None  # Distance of each MAP cell center
+        self.cells_area = None  # Area of each MAP cell
+        self.left_geometry = None  # Distance and shape coefficient of left bank
+        self.right_geometry = None  # Distance and shape coefficient of right bank
 
-    def populate_data(self, meas, node_horizontal_user=None, node_vertical_user=None, edge_constant=False,
-                      extrap_option=True, interp_option=True):
-        """Parameters
+        self.cells_discharge = None  # MAP discharge for each cell
+        self.total_discharge = None  # MAP total discharge
+
+    def populate_data(self, meas, node_horizontal_user=None, node_vertical_user=None,
+                      extrap_option=True, edges_option=False, interp_option=True, n_burn=None):
+        """Attributes
         ----------
         meas: Measurement
             Object of Measurement class
         node_horizontal_user: float
-            Length of MAP cells, if None automatical value is selected
+            Length of MAP cells, if None a value is selected automatically
         node_vertical_user: float
-            Depth of MAP cells, if None automatical value is selected
-        edge_constant: bool
-            Indicates if edge cells should all be the same size
+            Depth of MAP cells, if None a value is selected automatically
         extrap_option: bool
-            Indicates if top/bottom/edges extrapolation should be applied
+            Indicates if top/bottom extrapolation should be applied
+        edges_option: bool
+            Indicates if edge extrapolation should be applied
         interp_option: bool
             Indicates if velocities interpolation should be applied
-        track_section: bool
-            Indicates if average cross-section should be computed on boat track (True) or
-            on mean velocities direction (False)
-        plot: bool
-            Indicates if graphics should be plotted and saved
-        name_meas: str
-            Indicates graphics name for save
-        path_results: str
-            Indicates the path to save graphics
         """
 
         print("MAP IS RUNNING")
         # Get meas current parameters
         settings = meas.current_settings()
         checked_transect_idx = meas.checked_transect_idx
-
-        if not extrap_option:
-            self.extrap_option = extrap_option
-            transect = meas.transects[checked_transect_idx[0]]
-            top_cell = transect.depths.bt_depths.depth_cell_depth_m[0, 0] - \
-                       transect.depths.bt_depths.depth_cell_size_m[0, 0] / 2
-        else:
-            self.extrap_option = extrap_option
-            top_cell = 0
-
+        if n_burn is None:
+            n_burn = int(1+len(meas.checked_transect_idx)/3)
+        print(settings['NavRef'])
         # Get main data from selected transects
         print('collect_data')
-        x_raw_coordinates, y_raw_coordinates, w_vel_x, w_vel_y, w_vel_z, \
-        depth_data, q_cells, orig_start_edge, invalid_data, cell_depth, \
-        left_geometry, right_geometry = MAP.collect_data(meas, interp_option)
+        data_transects = self.collect_data(meas, interp_option, settings['NavRef'])
 
         # Compute coefficients of the average cross-section
         print('compute_coef')
-        alpha, beta, direction_meas = MAP.compute_coef(x_raw_coordinates, y_raw_coordinates)
+        left_coord = self.compute_coef()
 
         # Project raw coordinates on average cross-section
         print('project_transect')
-        x_projected, y_projected, acs_distance_raw = MAP.project_transect(alpha, beta, x_raw_coordinates,
-                                                                          y_raw_coordinates)
+        acs_distance_raw = self.project_transect(left_coord, settings['NavRef'])
 
         # Compare bathymetry and translate transects on average cross-section if needed
-        print('translated_transects')
-        acs_distance = MAP.translated_transects(acs_distance_raw, depth_data)
+        if settings['NavRef'] == 'gga_vel':
+            self.acs_distance = acs_distance_raw
+        else:
+            print('translated_transects')
+            self.translated_transects(acs_distance_raw, data_transects['depth_data'])
 
         # Define horizontal and vertical mesh
         print('compute_node_size')
-        borders_ens_raw, nodes_depth_raw = MAP.compute_node_size(cell_depth, acs_distance,
-                                                                 depth_data, node_horizontal_user,
-                                                                 node_vertical_user, top_cell)
+        self.compute_node_size(meas, data_transects, node_horizontal_user, node_vertical_user, extrap_option)
 
         # Compute transect median velocity on each mesh (North, East and vertical velocities) and depth on each vertical
         print("compute_nodes_velocity")
-        transects_node_x_velocity, transects_node_y_velocity, transects_node_vertical_velocity, \
-        transects_node_depth, transects_nodes = MAP.compute_nodes_velocity(checked_transect_idx, w_vel_x, w_vel_y,
-                                                                           w_vel_z, cell_depth, depth_data, acs_distance,
-                                                                           borders_ens_raw, nodes_depth_raw,
-                                                                           orig_start_edge)
+        tr_nodes_data = self.compute_nodes_velocity(checked_transect_idx, data_transects)
 
         # Compute mesh mean value of selected transects
         print("compute_mean")
-        map_x_velocity, map_y_velocity = self.compute_mean(transects_nodes, transects_node_x_velocity,
-                                                           transects_node_y_velocity,
-                                                           transects_node_vertical_velocity,
-                                                           transects_node_depth, borders_ens_raw, nodes_depth_raw)
+        map_x_velocity, map_y_velocity = self.compute_mean(tr_nodes_data, n_burn)
 
         # Compute primary and secondary velocity according Rozovskii projection
         print("compute_rozovskii")
-        mid_direction = self.compute_rozovskii(map_x_velocity, map_y_velocity)
+        self.compute_rozovskii(map_x_velocity, map_y_velocity)
 
-        # Compute edges parameters
+        # Compute top/bottom extrapolation according QRevInt method/exponent
         if extrap_option:
-            self.left_distance, self.left_coef = [x for x in left_geometry]
-            self.right_distance, self.right_coef = [x for x in right_geometry]
-        else:
-            self.left_distance = 0
-            self.right_distance = 0
-
-        # Compute top/bottom extrapolation according QRevInt velocity exponent
-        print("compute_extrap_velocity")
-        self.compute_extrap_velocity(nodes_depth_raw, settings, extrap_option)
+            print("compute_extrap_velocity")
+            self.compute_extrap_velocity(settings)
 
         # Compute edge extrapolation
-        print("compute_edges")
-        left_direction, right_direction, left_mid_cells_x, right_mid_cells_x, \
-        left_mid_cells_y, right_mid_cells_y = self.compute_edges(borders_ens_raw, mid_direction, settings,
-                                                                 edge_constant)
+        if edges_option:
+            print("compute_edges")
+            self.compute_edges(data_transects, settings)
 
         # Compute discharge
         print("compute_discharge")
-        self.compute_discharge(direction_meas, mid_direction, extrap_option, left_direction, right_direction)
+        self.compute_discharge()
 
-        print(f"Total Q : {self.total_discharge}")
-        print(meas.mean_discharges(meas)['total_mean'])
+        print(f"MAP Q: {self.total_discharge}")
+        print(f"Meas Q: {meas.mean_discharges(meas)['total_mean']}")
         print("MAP IS OVER")
 
-    @staticmethod
-    def collect_data(meas, interp_option):
+    def collect_data(self, meas, interp_option, nav_ref='bt_vel'):
         """ Collect data of valid position and depth for each selected transect
-
-        Parameters
+        Attributes
         ----------
         meas: Measurement
             Object of Measurement class
         interp_option: bool
-            Indicates if interpolated velocities should be used
-
+            Indicates if velocities interpolation should be applied
         Returns
         -------
-        x_raw_coordinates: list(np.array(float))
-            List of 1D arrays of East boat coordinates from selected transects
-        y_raw_coordinates: list(np.array(float))
-            List of 1D arrays of North boat coordinates from selected transects
-        w_vel_x: list(np.array(float))
-            List of arrays of cells East velocity from selected transects
-        w_vel_y: list(np.array(float))
-            List of arrays of cells North velocity from selected transects
-        w_vel_z: list(np.array(float))
-            List of arrays of cells vertical velocity from selected transects
-        depth_data: list(np.array(float))
-            List of 1D arrays of depth from selected transects
-        q_cells: list(np.array(float))
-            List of arrays of cells discharge from selected transects
-        orig_start_edge: list(str)
-            List of original starting edge of transect looking downstream (Left or Right) from selected transects
-        invalid_data: list(np.array(bool))
-            List of arrays of invalid cells
-        cell_depth: list(np.array(float))
-            Depth to centerline of depth cells in meters
-        left_geometry/right_geometry: np.array(float)
-            Array returning values of edge distance and shape coefficient
+        data_transects: dic
+            Dictionary of transects data necessary to MAP
         """
-        print("collect launch")
         # Create empty lists to iterate
         depth_data = []
-        x_raw_coordinates = []
-        y_raw_coordinates = []
         w_vel_x = []
         w_vel_y = []
         w_vel_z = []
         q_cells = []
-        dmg = []
         orig_start_edge = []
         invalid_data = []
         cell_depth = []
+        self.x_raw_coordinates = []
+        self.y_raw_coordinates = []
 
         checked_transect_idx = meas.checked_transect_idx
 
@@ -262,23 +203,26 @@ class MAP(object):
         right_param = np.tile([np.nan], (len(checked_transect_idx), 2))
 
         for id_transect in checked_transect_idx:
-            print(id_transect)
             transect = meas.transects[id_transect]
             index_transect = checked_transect_idx.index(id_transect)
             in_transect_idx = transect.in_transect_idx
-            ship_data = transect.boat_vel.compute_boat_track(transect)
-            print(transect.orig_start_edge)
+            ship_data = transect.boat_vel.compute_boat_track(transect, nav_ref)
+
             if transect.orig_start_edge == 'Right':
                 # Reverse transects in ordred to start at 0 on left edge
                 valid = transect.depths.bt_depths.valid_data[::-1]
                 # Track
                 dmg_ind = np.where(abs(ship_data['dmg_m']) == max(abs(ship_data['dmg_m'])))[0][0]
-                x_track = ship_data['track_x_m'] - ship_data['track_x_m'][dmg_ind]
-                y_track = ship_data['track_y_m'] - ship_data['track_y_m'][dmg_ind]
-                x_transect = x_track[::-1]
-                y_transect = y_track[::-1]
-                # Discharge
-                q_cell_transect = meas.discharge[id_transect].middle_cells[:, ::-1]
+                if nav_ref == 'gga_vel':
+                    # x_transect = transect.gps.gga_lat_ens_deg[::-1]
+                    # y_transect = transect.gps.gga_lon_ens_deg[::-1]
+                    x_transect, y_transect, _, _ = utm.from_latlon(transect.gps.gga_lat_ens_deg[::-1],
+                                                                   transect.gps.gga_lon_ens_deg[::-1])
+                else:
+                    x_track = ship_data['track_x_m'] - ship_data['track_x_m'][dmg_ind]
+                    y_track = ship_data['track_y_m'] - ship_data['track_y_m'][dmg_ind]
+                    x_transect = x_track[::-1]
+                    y_transect = y_track[::-1]
                 # Depth
                 depth_transect = transect.depths.bt_depths.depth_processed_m[::-1]
                 cells_depth = transect.depths.bt_depths.depth_cell_depth_m[:, ::-1]
@@ -297,10 +241,14 @@ class MAP(object):
 
             else:
                 valid = transect.depths.bt_depths.valid_data
-                x_transect = ship_data['track_x_m']
-                y_transect = ship_data['track_y_m']
-                # Discharge
-                q_cell_transect = meas.discharge[id_transect].middle_cells
+                if nav_ref == 'gga_vel':
+                    x_transect, y_transect, _, _ = utm.from_latlon(transect.gps.gga_lat_ens_deg,
+                                                                   transect.gps.gga_lon_ens_deg)
+                    # x_transect = transect.gps.gga_lat_ens_deg
+                    # y_transect = transect.gps.gga_lon_ens_deg
+                else:
+                    x_transect = ship_data['track_x_m']
+                    y_transect = ship_data['track_y_m']
                 # Depth
                 depth_transect = transect.depths.bt_depths.depth_processed_m
                 cells_depth = transect.depths.bt_depths.depth_cell_depth_m
@@ -317,11 +265,12 @@ class MAP(object):
                 y_velocity = vel_y[:, valid]
                 z_velocity = vel_z[:, valid]
 
-            q_cells.append(q_cell_transect[:, valid])
             x_transect = x_transect[valid]
             y_transect = y_transect[valid]
-            x_raw_coordinates.append(x_transect)
-            y_raw_coordinates.append(y_transect)
+            x_transect -= x_transect[0]
+            y_transect -= y_transect[0]
+            self.x_raw_coordinates.append(x_transect)
+            self.y_raw_coordinates.append(y_transect)
             depth_data.append(depth_transect[valid])
             cell_depth.append(cells_depth[:, valid])
             w_vel_x.append(x_velocity)
@@ -336,130 +285,136 @@ class MAP(object):
             right_param[index_transect, :] = [meas.transects[id_transect].edges.right.distance_m,
                                               meas.discharge[id_transect].edge_coef('right',
                                                                                     meas.transects[id_transect])]
-            left_geometry = np.nanmedian(left_param, axis=0)
-            right_geometry = np.nanmedian(right_param, axis=0)
+            self.left_geometry = np.nanmedian(left_param, axis=0)
+            self.right_geometry = np.nanmedian(right_param, axis=0)
 
             orig_start_edge.append(transect.orig_start_edge)
 
+        data_transects = {
+            'w_vel_x': w_vel_x, 'w_vel_y': w_vel_y, 'w_vel_z': w_vel_z, 'depth_data': depth_data,
+            'orig_start_edge': orig_start_edge, 'invalid_data': invalid_data, 'cell_depth': cell_depth
+        }
+        self.depth_by_transect = depth_data
 
-        return x_raw_coordinates, y_raw_coordinates, w_vel_x, w_vel_y, w_vel_z, \
-               depth_data, q_cells, orig_start_edge, invalid_data, cell_depth, left_geometry, \
-               right_geometry
+        return data_transects
 
-    @staticmethod
-    def compute_coef(x_raw_coordinates, y_raw_coordinates):
-        """ Compute average cross-section
-
-        Parameters
-        ----------
-        x_raw_coordinates: list(np.array(float))
-            List of 1D arrays of East boat coordinates from selected transects
-        y_raw_coordinates: list(np.array(float))
-            List of 1D arrays of North boat coordinates from selected transects
-
-        Returns
-        -------
-        alpha: float
-            Slope of the line which define the average cross_section
-        beta: float
-            y-intercept of the line which define the average cross_section
-        direction_meas: float
-            Direction normal to the average cross-section
+    def compute_coef(self):
+        """ Compute straight average cross-section.
         """
 
-        x_start = [item[0] for item in x_raw_coordinates]
-        x_end = [item[-1] for item in x_raw_coordinates]
-        y_start = [item[0] for item in y_raw_coordinates]
-        y_end = [item[-1] for item in y_raw_coordinates]
+        x_left = [item[0] for item in self.x_raw_coordinates]
+        x_right = [item[-1] for item in self.x_raw_coordinates]
+        y_left = [item[0] for item in self.y_raw_coordinates]
+        y_right = [item[-1] for item in self.y_raw_coordinates]
 
-        alpha = (np.nanmedian(y_end) - np.nanmedian(y_start)) / (np.nanmedian(x_end) - np.nanmedian(x_start))
-        beta = np.nanmedian(y_start) - alpha * np.nanmedian(x_start)
+        x_med_left = np.nanmedian(x_left)
+        y_med_left = np.nanmedian(y_left)
+        self.slope = (np.nanmedian(y_right) - y_med_left) / (np.nanmedian(x_right) - x_med_left)
+        self.intercept = y_med_left - self.slope * x_med_left
 
-        direction_meas = np.arctan2(-1, alpha)
-
-        return alpha, beta, direction_meas
+        return (x_med_left, y_med_left)
 
     @staticmethod
-    def project_transect(alpha, beta, x_raw_coordinates, y_raw_coordinates):
-        """ Project transects on the average cross-section
+    def haversine(coord1, coord2):
+        R = 6372800  # Earth radius in meters
+        lat1, lon1 = coord1
+        lat2, lon2 = coord2
 
-        Parameters
-        ----------
-        alpha: float
-            Slope of the line which define the average cross_section
-        beta: float
-            y-intercept of the line which define the average cross_section
-        meas: Measurement
-            Object of Measurement class
-        x_raw_coordinates: list(np.array(float))
-            List of 1D arrays of East boat coordinates from selected transects
-        y_raw_coordinates: list(np.array(float))
-            List of 1D arrays of North boat coordinates from selected transects
-        navigation_reference: str
-            Indicated selected navigation reference 'bt_vel' (Bottom trakc) or 'gga_vel' (GGA)
+        phi1, phi2 = np.radians(lat1), np.radians(lat2)
+        dphi = np.radians(lat2 - lat1)
+        dlambda = np.radians(lon2 - lon1)
 
+        a = np.sin(dphi / 2) ** 2 + \
+            np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2) ** 2
+
+        return 2 * R * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+
+
+    def project_transect(self, left_coord, nav_ref):
+        """ Project transects on the average cross-section.
         Returns
         -------
-        x_projected: list(np.array(float))
-            List of 1D arrays of the projection on the average cross-section of the East coordinates
-        y_projected: list(np.array(float))
-            List of 1D arrays of the projection on the average cross-section of the North coordinates
         acs_distance: list(np.array(float))
-            List of 1D arrays to the left_most point distance on the average cross-section
+            List of 1D arrays of the distance (uncorrected) from left bank on the average cross-section
         """
-        x_projected = list()
-        y_projected = list()
-        x_left = list()
-        y_left = list()
+        self.x_projected = list()
+        self.y_projected = list()
+
+        # direction_meas = np.arctan2(-1, self.slope)
 
         # Project transect
-        for i in range(len(x_raw_coordinates)):
+        for i in range(len(self.x_raw_coordinates)):
             # Project x and y coordinates on the cross-section
-            x_projected.append((x_raw_coordinates[i] - alpha * beta + alpha * y_raw_coordinates[i]) / (alpha ** 2 + 1))
-            y_projected.append(
-                (beta + alpha * x_raw_coordinates[i] + alpha ** 2 * y_raw_coordinates[i]) / (alpha ** 2 + 1))
+            self.x_projected.append(
+                (self.x_raw_coordinates[i] - self.slope * self.intercept + self.slope * self.y_raw_coordinates[i]) / (
+                        self.slope ** 2 + 1))
+            self.y_projected.append(
+                (self.intercept + self.slope * self.x_raw_coordinates[i] + self.slope ** 2 * self.y_raw_coordinates[
+                    i]) / (self.slope ** 2 + 1))
 
-            x_left.append(x_projected[i][0])
-            y_left.append(y_projected[i][0])
+        # Boundaries on x and y coordinates for the selected transects
+        x_boundaries = [min([min(l) for l in self.x_projected]), max([max(l) for l in self.x_projected])]
+        y_boundaries = [min([min(l) for l in self.y_projected]), max([max(l) for l in self.y_projected])]
 
-            # Boundaries on x and y coordinates for the selected transects
-            x_boundaries = [min([min(l) for l in x_projected]), max([max(l) for l in x_projected])]
-            y_boundaries = [min([min(l) for l in y_projected]), max([max(l) for l in y_projected])]
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # ax.scatter(x_boundaries, y_boundaries, color='k', label='boundaries')
+        # ax.scatter(x_start, y_start, color='r', label='left')
+        # ax.scatter(x_end, y_end, color='blue', label='right')
+        #
+        # ax.scatter([min(x_boundaries, key=lambda x: abs(x - np.median(x_start)))],
+        #            [min(y_boundaries, key=lambda x: abs(x - np.median(y_start)))],
+        #            color='green')
+        # ax.legend()
 
         # Compute distance on the average cross-section
         acs_distance = list()
-        x_distance = x_projected - min(x_boundaries, key=abs)
-        y_distance = y_projected - min(y_boundaries, key=abs)
-        for i in range(len(x_projected)):
+        x_distance = np.array(self.x_projected, dtype=object) - min(x_boundaries, key=abs)
+        y_distance = np.array(self.y_projected, dtype=object) - min(y_boundaries, key=abs)
+        for i in range(len(self.x_projected)):
             acs_distance.append(np.sqrt(x_distance[i] ** 2 + y_distance[i] ** 2))
 
-        return x_projected, y_projected, acs_distance
+        # if nav_ref == 'gga_vel':
+        #     x_left = [min(x_boundaries, key=lambda x: abs(x - left_coord[0]))]
+        #     y_left = [min(y_boundaries, key=lambda x: abs(x - left_coord[1]))]
+        #     for j in range(len(self.x_projected)):
+        #         distance_transect = np.tile(np.nan, len(self.x_projected[j]))
+        #         for i in range(len(self.x_projected[j])):
+        #             distance_transect[i] = self.haversine((self.y_projected[j][i], self.x_projected[j][i]),
+        #                                                  (y_left, x_left))
+        #         acs_distance.append(distance_transect)
+        # else:
+        #     x_distance = self.x_projected - min(x_boundaries, key=abs)
+        #     y_distance = self.y_projected - min(y_boundaries, key=abs)
+        #     for i in range(len(self.x_projected)):
+        #         acs_distance.append(np.sqrt(x_distance[i] ** 2 + y_distance[i] ** 2))
 
-    @staticmethod
-    def translated_transects(acs_distance_raw, depth_data):
-        """ Compare bathymetry and translate transects on average cross-section if needed
+        return acs_distance
 
-        Parameters
+    def translated_transects(self, acs_distance_raw, depth_data):
+        """ Compare bathymetry and translate transects on average cross-section if needed.
+        Attributes
         ----------
         acs_distance_raw: list(np.array(float))
-            List of 1D arrays of the distance on the average cross-section
+            List of 1D arrays of the distance (uncorrected) from left bank on the average cross-section
         depth_data: list(np.array(float))
             List of 1D arrays of bathymetry from selected transects
-
-        Returns
-        -------
-        acs_translated: list(np.array(float))
-            List of 1D arrays of the corrected distance depending on the bathymetry
         """
+
         acs_translated = list()
-        # Use the first transect as reference and define a homogeneous x grid across measurement
+        # Use the first transect as reference and define an homogeneous x grid across measurement
         acs_translated.append(copy.deepcopy(acs_distance_raw[0]))
-        max_acs = max([max(l) for l in acs_distance_raw])
-        min_acs = min([min(l) for l in acs_distance_raw])
-        grid_acs = np.arange(min_acs, max_acs, (max_acs - min_acs) / 100)
-        acs_depth_ref = sc.interpolate.griddata(acs_distance_raw[0], depth_data[0], grid_acs)
+        max_tr = [max(l) for l in acs_distance_raw]
+        min_tr = [min(l) for l in acs_distance_raw]
+        id_max = np.argmax([max_i - min_i for max_i, min_i in zip(max_tr, min_tr)])
+        grid_acs = np.arange(min([min(l) for l in acs_distance_raw]), max([max(l) for l in acs_distance_raw]),
+                             (max([max(l) for l in acs_distance_raw]) - min([min(l) for l in acs_distance_raw])) / 100)
+        acs_depth_ref = sc.interpolate.griddata(acs_distance_raw[id_max], depth_data[id_max], grid_acs)
 
         for i in range(1, len(acs_distance_raw)):
+            if i == id_max:
+                acs_translated.append(acs_distance_raw[i])
+                continue
             # Interpolate depth on x grid
             acs_depth = sc.interpolate.griddata(acs_distance_raw[i], depth_data[i], grid_acs)
             if not np.all(np.isnan(acs_depth)):
@@ -488,25 +443,23 @@ class MAP(object):
         for i in range(len(acs_translated)):
             acs_translated[i] -= min_dist
 
-        return acs_translated
+        self.acs_distance = acs_translated
 
-    @staticmethod
-    def compute_node_size(cell_depth, acs_distance, depth_data, node_horizontal_user, node_vertical_user, top_cell):
+    def compute_node_size(self, meas, data_transects, node_horizontal_user, node_vertical_user, extrap_option):
         """ Define horizontal and vertical mesh
 
-        Parameters
+        Attributes
         ----------
-        cell_depth: list(np.array(float))
-            Depth to centerline of depth cells in meters
-        acs_distance: list(np.array(float))
-            List of 1D arrays of the corrected distance on the average cross-section
-        depth_data: list(np.array(float))
-            List of 1D arrays of bathymetry from selected transects
+        meas: Measurement
+            Object of Measurement class
+        data_transects: dic
+            Dictionary of transects data necessary to MAP
         node_horizontal_user: float
             Horizontal size of the mesh define by the user
         node_vertical_user: float
             Vertical size of the mesh define by the user
-
+        extrap_option: bool
+            Indicates if top/bottom extrapolation should be applied
         Returns
         -------
         borders_ens: list(float)
@@ -514,6 +467,9 @@ class MAP(object):
         nodes_depth: list(float)
             Vertical grid depth from the free-surface
         """
+
+        # Meshs widths
+        acs_distance = self.acs_distance
         # Define number of meshs on the average cross-section
         acs_total = max([max(l) for l in acs_distance]) - min([min(l) for l in acs_distance])
         if node_horizontal_user is None:
@@ -523,72 +479,66 @@ class MAP(object):
 
         # Divise total length in same size meshs
         # TODO see logspace
-        nb_horz = int(acs_total / node_horz)
-        borders_ens = np.linspace(min([min(l) for l in acs_distance]),
-                                  max([max(l) for l in acs_distance]) + 10 ** -5,
-                                  nb_horz)
+        if not extrap_option:
+            transect = meas.transects[meas.checked_transect_idx[0]]
+            top_cell = np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :]) - \
+                       np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
+        else:
+            top_cell = 0
 
-        # Define mesh vertical size
+        nb_horz = int(acs_total / node_horz)
+        self.borders_ens = np.linspace(min([min(l) for l in acs_distance]),
+                                       max([max(l) for l in acs_distance]) + 10 ** -5,
+                                       nb_horz)
+
+        # Meshs height
+        cell_depth = data_transects['cell_depth']
+        depth_data = data_transects['depth_data']
         all_depth = np.array([item for subarray in depth_data for item in subarray])
         if node_vertical_user:
-            nodes_depth = np.round(np.arange(top_cell, np.nanmax(all_depth) + node_vertical_user,
-                                             node_vertical_user).tolist(), 3)
+            self.main_depth_layers = np.round(np.arange(top_cell, np.nanmax(all_depth) + node_vertical_user,
+                                                        node_vertical_user).tolist(), 3)
         else:
             lag = np.nanmax([0.1, 2 * (cell_depth[0][1, 0] - cell_depth[0][0, 0])])
-            nodes_depth = np.arange(top_cell, np.nanmax(all_depth) + lag, lag)
+            self.main_depth_layers = np.arange(top_cell, np.nanmax(all_depth) + lag, lag)
 
-        return borders_ens, nodes_depth
-
-    @staticmethod
-    def compute_nodes_velocity(checked_transect_idx, w_vel_x, w_vel_y, w_vel_z,
-                               cell_depth, depth_data, acs_distance, borders_ens_raw,
-                               nodes_depth_raw, orig_start_edge):
+    def compute_nodes_velocity(self, checked_transect_idx, data_transects):
         """ Compute transect median velocity on each mesh (North, East and vertical velocities)
         and depth on each vertical
 
-        Parameters
+        Attributes
         ----------
-        navigation_reference: str
-            Object TransectData
         checked_transect_idx: list(int)
             List of selected transects
-        w_vel_x: list(np.array(float))
-            List of arrays of cells East velocity from selected transects
-        w_vel_y: list(np.array(float))
-            List of arrays of cells North velocity from selected transects
-        w_vel_z: list(np.array(float))
-            List of arrays of cells vertical velocity from selected transects
-        cell_depth:
-
-        depth_data: list(np.array(float))
-            List of 1D arrays of bathymetry from selected transects
-        acs_distance: list(np.array(float))
-            List of 1D arrays of the corrected distance on the average cross-section
-        borders_ens_raw: list(float)
-            Horizontal grid length on the average cross-section
-        nodes_depth_raw: list(float)
-            Vertical grid depth from the free-surface
-        orig_start_edge: list(str)
-            List of original starting edge of transect looking downstream (Left or Right) from
-            selected transects
+        data_transects: dic
+            Dictionary of transects data necessary to MAP
 
         Returns
         -------
-        borders_ens: list(float)
+        tr_nodes_data: dic
             Horizontal grid length on the average cross-section
-        nodes_depth: list(float)
-            Vertical grid depth from the free-surface
         """
 
-        node_mid = (borders_ens_raw[1:] + borders_ens_raw[:-1]) / 2
+        w_vel_x = data_transects['w_vel_x']
+        w_vel_y = data_transects['w_vel_y']
+        w_vel_z = data_transects['w_vel_z']
+        cell_depth = data_transects['cell_depth']
+        depth_data = data_transects['depth_data']
+        acs_distance = self.acs_distance
+        # borders_ens = self.borders_ens
+        # main_depth_layers = self.main_depth_layers
+        orig_start_edge = data_transects['orig_start_edge']
+
+        node_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
         # Create list to save transects interpolated on mesh grid
         transects_nodes = list()
         transects_node_x_velocity = np.tile(np.nan,
-                                            (len(checked_transect_idx), len(nodes_depth_raw) - 1, len(node_mid)))
+                                            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)))
         transects_node_y_velocity = np.tile(np.nan,
-                                            (len(checked_transect_idx), len(nodes_depth_raw) - 1, len(node_mid)))
+                                            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)))
         transects_node_vertical_velocity = np.tile(np.nan,
-                                                   (len(checked_transect_idx), len(nodes_depth_raw) - 1, len(node_mid)))
+                                                   (len(checked_transect_idx), len(self.main_depth_layers) - 1,
+                                                    len(node_mid)))
         transects_node_depth = np.tile(np.nan, (len(checked_transect_idx), len(node_mid)))
 
         for id_transect in checked_transect_idx:
@@ -599,15 +549,14 @@ class MAP(object):
             w_vel_z_tr = w_vel_z[index_transect]
             cell_depth_tr = cell_depth[index_transect]
             depth_ens_tr = depth_data[index_transect]
-            if orig_start_edge[index_transect] == 'Right':
-                cell_depth_tr = np.flip(cell_depth_tr, axis=1)
-                w_vel_x_tr = np.flip(w_vel_x_tr, axis=1)
-                w_vel_y_tr = np.flip(w_vel_y_tr, axis=1)
-                w_vel_z_tr = np.flip(w_vel_z_tr, axis=1)
+            # if orig_start_edge[index_transect] == 'Right':
+            #     cell_depth_tr = np.flip(cell_depth_tr, axis=1)
+            #     w_vel_x_tr = np.flip(w_vel_x_tr, axis=1)
+            #     w_vel_y_tr = np.flip(w_vel_y_tr, axis=1)
+            #     w_vel_z_tr = np.flip(w_vel_z_tr, axis=1)
 
             # Find the representative mesh of each transect's vertical
-            lag_distance = borders_ens_raw[1] - borders_ens_raw[0]
-
+            lag_distance = self.borders_ens[1] - self.borders_ens[0]
             data = {'Index_ensemble': np.arange(len(acs_distance[index_transect])),
                     'Index_Node': [int(i) for i in acs_distance[index_transect] / lag_distance],
                     'Distance_ensemble': acs_distance[index_transect]}
@@ -628,22 +577,24 @@ class MAP(object):
 
                 transects_node_depth[index_transect, node] = np.nanmedian(depth_node)
                 # Determine every transect's cells in the mesh
-                for id_vert in range(len(nodes_depth_raw) - 1):
-                    (id_x, id_y) = np.where(np.logical_and(mid_cell_node >= nodes_depth_raw[id_vert], \
-                                                           mid_cell_node < nodes_depth_raw[id_vert + 1]))
+                for id_vert in range(len(self.main_depth_layers) - 1):
+                    (id_x, id_y) = np.where(np.logical_and(mid_cell_node >= self.main_depth_layers[id_vert],
+                                                           mid_cell_node < self.main_depth_layers[id_vert + 1]))
                     w_vel_x_loc = w_vel_x_node[id_x, id_y]
                     w_vel_y_loc = w_vel_y_node[id_x, id_y]
                     w_vel_z_loc = w_vel_z_node[id_x, id_y]
 
-                    transects_node_x_velocity[index_transect, id_vert, node] = np.nanmean(w_vel_x_loc)
-                    transects_node_y_velocity[index_transect, id_vert, node] = np.nanmean(w_vel_y_loc)
+                    transects_node_x_velocity[index_transect, id_vert, node] = np.nanmedian(w_vel_x_loc)
+                    transects_node_y_velocity[index_transect, id_vert, node] = np.nanmedian(w_vel_y_loc)
                     transects_node_vertical_velocity[index_transect, id_vert, node] = np.nanmedian(w_vel_z_loc)
 
-        return transects_node_x_velocity, transects_node_y_velocity, transects_node_vertical_velocity, \
-               transects_node_depth, transects_nodes
+        tr_nodes_data = {'x_velocity': transects_node_x_velocity, 'y_velocity': transects_node_y_velocity,
+                         'vertical_velocity': transects_node_vertical_velocity, 'depth': transects_node_depth,
+                         'nodes': transects_nodes}
 
-    def compute_mean(self, transects_nodes, transects_node_x_velocity, transects_node_y_velocity,
-                     transects_node_vertical_velocity, transects_node_depth, borders_ens_raw, nodes_depth_raw):
+        return tr_nodes_data
+
+    def compute_mean(self, tr_nodes_data, n_burn):
         """ Compute mesh mean value of selected transects
 
         Parameters
@@ -658,9 +609,9 @@ class MAP(object):
             Median vertical velocity on each mesh of each transect
        transects_node_depth: np.array(np.array(float))
             Array of 1D arrays of depth values on each vertical for each transects
-        borders_ens_raw: list(float)
+        borders_ens: list(float)
             Horizontal length values on the average cross-section
-        nodes_depth_raw: list(float)
+        main_depth_layers: list(float)
             Vertical depth values from the free-surface
 
         Returns
@@ -670,10 +621,19 @@ class MAP(object):
         map_y_velocity: np.array
             North velocity on each cell of the MAP section
         """
+
+        transects_nodes = tr_nodes_data['nodes']
+        transects_node_x_velocity = tr_nodes_data['x_velocity']
+        transects_node_y_velocity = tr_nodes_data['y_velocity']
+        transects_node_vertical_velocity = tr_nodes_data['vertical_velocity']
+        transects_node_depth = tr_nodes_data['depth']
+
         # Define meshs detected by enough transects
         unique_node = list(np.unique([x for l in transects_nodes for x in l]))
         node_selected = copy.deepcopy(unique_node)
-        valid_cell = max(int(len(transects_nodes) / 3), 1)
+        if n_burn is None:
+            n_burn = int(len(transects_nodes) / 3)
+        valid_cell = max(n_burn, 1)
         for node in unique_node:
             if sum(x.count(node) for x in transects_nodes) < valid_cell or \
                     np.isnan(transects_node_depth[:, node]).all():
@@ -684,17 +644,18 @@ class MAP(object):
         node_range = list(range(node_min, node_max + 1))
         node_range_border = list(range(node_min, node_max + 2))
 
-        borders_ens = borders_ens_raw[node_range_border]
+        borders_ens = self.borders_ens[node_range_border]
         borders_ens -= min(borders_ens)
 
-        map_depth_cells_border = np.tile(np.nan, (len(nodes_depth_raw), len(node_range)))
+        map_depth_cells_border = np.tile(np.nan, (len(self.main_depth_layers), len(node_range)))
         for i in range(len(node_range)):
-            map_depth_cells_border[:, i] = nodes_depth_raw
+            map_depth_cells_border[:, i] = self.main_depth_layers
 
-        map_x_velocity = np.tile(np.nan, (len(nodes_depth_raw) - 1, len(node_range)))
-        map_y_velocity = np.tile(np.nan, (len(nodes_depth_raw) - 1, len(node_range)))
-        map_vertical_velocity = np.tile(np.nan, (len(nodes_depth_raw) - 1, len(node_range)))
+        map_x_velocity = np.tile(np.nan, (len(self.main_depth_layers) - 1, len(node_range)))
+        map_y_velocity = np.tile(np.nan, (len(self.main_depth_layers) - 1, len(node_range)))
+        map_vertical_velocity = np.tile(np.nan, (len(self.main_depth_layers) - 1, len(node_range)))
         map_depth = np.tile(np.nan, len(node_range))
+        map_count = np.tile(np.nan, (len(self.main_depth_layers) - 1, len(node_range)))
 
         for node in node_selected:
             index_node = node_range.index(node)
@@ -711,19 +672,23 @@ class MAP(object):
             if np.isnan(map_depth[index_node]):
                 depth_limit = 0
             else:
-                depth_limit = next(x[0] for x in enumerate(nodes_depth_raw) if x[1] > map_depth[index_node])
+                depth_limit = next(x[0] for x in enumerate(self.main_depth_layers) if x[1] > map_depth[index_node])
 
             x_map_cell[:, depth_limit:] = np.nan
             y_map_cell[:, depth_limit:] = np.nan
             vertical_map_cell[:, depth_limit:] = np.nan
 
             # Cut value if not detected by enough transects
-            # map_x_velocity[np.count_nonzero(~np.isnan(x_map_cell), axis = 0) > valid_cell,index_node] = np.nanmedian(x_map_cell[:,
-            #                 np.count_nonzero(~np.isnan(x_map_cell), axis = 0) > valid_cell], axis = 0)
-            # map_y_velocity[np.count_nonzero(~np.isnan(y_map_cell), axis = 0) > valid_cell,index_node] = np.nanmedian(y_map_cell[:,
-            #                 np.count_nonzero(~np.isnan(y_map_cell), axis = 0) > valid_cell], axis = 0)
-            # map_vertical_velocity[np.count_nonzero(~np.isnan(vertical_map_cell), axis = 0) > valid_cell,index_node] = np.nanmedian(vertical_map_cell[:,
-            #                 np.count_nonzero(~np.isnan(vertical_map_cell), axis = 0) > valid_cell], axis = 0)
+            map_x_velocity[np.count_nonzero(~np.isnan(x_map_cell), axis=0) > valid_cell, index_node] = np.nanmedian(
+                x_map_cell[:,
+                np.count_nonzero(~np.isnan(x_map_cell), axis=0) > valid_cell], axis=0)
+            map_y_velocity[np.count_nonzero(~np.isnan(y_map_cell), axis=0) > valid_cell, index_node] = np.nanmedian(
+                y_map_cell[:,
+                np.count_nonzero(~np.isnan(y_map_cell), axis=0) > valid_cell], axis=0)
+            map_vertical_velocity[
+                np.count_nonzero(~np.isnan(vertical_map_cell), axis=0) > valid_cell, index_node] = np.nanmedian(
+                vertical_map_cell[:,
+                np.count_nonzero(~np.isnan(vertical_map_cell), axis=0) > valid_cell], axis=0)
 
             map_x_velocity[:, index_node] = np.nanmean(x_map_cell, axis=0)
             map_y_velocity[:, index_node] = np.nanmean(y_map_cell, axis=0)
@@ -734,7 +699,15 @@ class MAP(object):
         self.vertical_velocity = map_vertical_velocity
         self.depths = map_depth
         self.depth_cells_border = map_depth_cells_border
+        self.depth_cells_center = (map_depth_cells_border[1:] + map_depth_cells_border[:-1]) / 2
         self.borders_ens = borders_ens
+        self.distance_cells_center = np.tile([(borders_ens[1:] + borders_ens[:-1]) / 2],
+                                             (self.depth_cells_center.shape[0], 1))
+
+        distance = (self.borders_ens[1:] - self.borders_ens[:-1])
+        depth = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
+
+        self.cells_area = distance * depth
 
         return map_x_velocity, map_y_velocity
 
@@ -772,20 +745,18 @@ class MAP(object):
 
         self.primary_velocity = w_vel_prim
         self.secondary_velocity = w_vel_sec
+        self.direction_ens = direction
 
-        return direction
-
-    def compute_extrap_velocity(self, nodes_depth_raw, settings, extrap_option):
+    def compute_extrap_velocity(self, settings):
         """ Compute top/bottom extrapolation according QRevInt velocity exponent
 
         Parameters
         ----------
-        nodes_depth_raw: list(float)
+        main_depth_layers: list(float)
             Vertical grid depth from the free-surface
         settings: dict
             Measurement current settings
-        extrap_option: bool
-            Option to define if extrapolation should be applied
+
         Returns
         -------
         idx_bot: np.array(int)
@@ -793,21 +764,17 @@ class MAP(object):
         idx_top: np.array(int)
             Index to the top most valid depth cell in each ensemble
         """
-        # Parameter to return nan in extrap value if extrapolation is not selected
-        if extrap_option:
-            units = 1
-        else:
-            units = np.nan
-
         depths = self.depths
         depth_cells_border = self.depth_cells_border
+        depth_cells_center = self.depth_cells_center
+        mid_bed_cells = depths - depth_cells_center
         w_vel_prim_extrap = np.copy(self.primary_velocity)
         w_vel_sec_extrap = np.copy(self.secondary_velocity)
         w_vel_z_extrap = np.copy(self.vertical_velocity)
 
         map_depth_cells_border = np.tile(np.nan, depth_cells_border.shape)
         for i in range(depth_cells_border.shape[1]):
-            map_depth_cells_border[:, i] = nodes_depth_raw
+            map_depth_cells_border[:, i] = self.main_depth_layers
 
         map_depth_cells_center = (map_depth_cells_border[1:, :] + map_depth_cells_border[:-1, :]) / 2
 
@@ -825,6 +792,7 @@ class MAP(object):
         n_ensembles = valid_data.shape[1]
         idx_bot = np.tile(-1, (valid_data.shape[1])).astype(int)
         idx_top = np.tile(-1, valid_data.shape[1]).astype(int)
+        idx_top_3 = np.tile(-1, (3, valid_data.shape[1])).astype(int)
 
         for n in range(n_ensembles):
             # Identifying bottom most valid cell
@@ -832,6 +800,8 @@ class MAP(object):
             if len(idx_temp) > 0:
                 idx_top[n] = idx_temp[0]
                 idx_bot[n] = idx_temp[-1]
+                if len(idx_temp) > 2:
+                    idx_top_3[:, n] = idx_temp[0:3]
             else:
                 idx_top[n] = 0
 
@@ -841,11 +811,9 @@ class MAP(object):
         top_method = settings['extrapTop']
         exponent = settings['extrapExp']
 
-        depth_cells_center = (depth_cells_border[1:] + depth_cells_border[:-1]) / 2
-        mid_bed_cells = depths - depth_cells_center
-
         if bot_method == 'Power':
             coef_primary_bot = np.nanmean(w_vel_prim_extrap, 0)
+
         elif bot_method == 'No Slip':
             cutoff_depth = 0.8 * depths
             depth_ok = (nan_greater(depth_cells_center, np.tile(cutoff_depth, (depth_cells_center.shape[0], 1))))
@@ -870,13 +838,13 @@ class MAP(object):
                 # Extrapolation for Primary velocity
                 bot_prim_value = coef_primary_bot[n] * ((1 + 1 / exponent) / (1 / exponent)) * (
                         (bot_depth / depths[n]) ** exponent)
-                w_vel_prim_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = bot_prim_value * units
+                w_vel_prim_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = bot_prim_value
 
                 # Constant extrapolation for Secondary velocity
-                w_vel_sec_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = w_vel_sec_extrap[idx_bot[n], n] * units
+                w_vel_sec_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = w_vel_sec_extrap[idx_bot[n], n]
                 # Linear extrapolation to 0 at streambed for Vertical velocity
                 try:
-                    w_vel_z_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = units * sc.interpolate.griddata(
+                    w_vel_z_extrap[(idx_bot[n] + 1):(idx_bed[n]), n] = sc.interpolate.griddata(
                         np.append(mid_bed_cells[idx_bot[n], n], 0), np.append(self.vertical_velocity[idx_bot[n], n], 0),
                         mid_bed_cells[(idx_bot[n] + 1):(idx_bed[n]), n])
                 except Exception:
@@ -889,44 +857,63 @@ class MAP(object):
                 top_depth = mid_bed_cells[:idx_top[n], n]
                 top_prim_value = coef_primary_top[n] * ((1 + 1 / exponent) / (1 / exponent)) * (
                         (top_depth / depths[n]) ** exponent)
-                w_vel_prim_extrap[:idx_top[n], n] = top_prim_value * units
+                w_vel_prim_extrap[:idx_top[n], n] = top_prim_value
 
         # Top constant extrapolation (primary)
         elif top_method == 'Constant':
             n_ensembles = len(idx_top)
             for n in range(n_ensembles):
                 if idx_top[n] >= 0:
-                    w_vel_prim_extrap[:idx_top[n], n] = w_vel_prim_extrap[idx_top[n], n] * units
+                    w_vel_prim_extrap[:idx_top[n], n] = w_vel_prim_extrap[idx_top[n], n]
+
+        elif top_method == '3-Point':
+            # Determine number of bins available in each profile
+            valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
+            n_bins = np.nansum(valid_data, 0)
+            # Determine number of ensembles
+            n_ensembles = len(idx_top)
+
+            for j in range(n_ensembles):
+                if (n_bins[j] < 6) and (n_bins[j] > 0) and (idx_top[j] >= 0):
+                    w_vel_prim_extrap[:idx_top[n], n] = w_vel_prim_extrap[idx_top[n], n]
+
+                # If 6 or more bins use 3-pt at top
+                if n_bins[j] > 5:
+                    top_depth = depth_cells_center[:idx_top[j], j]
+                    top_3_depth = depth_cells_center[idx_top_3[0:3, j], j]
+                    top_3_vel = w_vel_prim_extrap[idx_top_3[0:3, j], j]
+                    WLS = LinearRegression()
+                    WLS.fit(top_3_depth.reshape(-1, 1), top_3_vel.reshape(-1, 1))
+                    w_vel_prim_extrap[:idx_top[n], n] = WLS.coef_ * top_depth + WLS.intercept_
 
         # Extrap top for second and vertical velocities
         for n in range(len(idx_top)):
             if idx_top[n] >= 0:
-                w_vel_sec_extrap[:idx_top[n], n] = w_vel_sec_extrap[idx_top[n], n] * units
+                w_vel_sec_extrap[:idx_top[n], n] = w_vel_sec_extrap[idx_top[n], n]
                 try:
                     top_z_value = sc.interpolate.griddata(np.append(mid_bed_cells[idx_top[n], n], self.depths[n]),
                                                           np.append(w_vel_z_extrap[idx_top[n], n], 0),
                                                           mid_bed_cells[:idx_top[n], n])
-                    w_vel_z_extrap[:idx_top[n], n] = top_z_value * units
+                    w_vel_z_extrap[:idx_top[n], n] = top_z_value
                 except Exception:
                     pass
 
-        self.depth_cells_center = depth_cells_center
-        self.extrap_primary_velocity = w_vel_prim_extrap
-        self.extrap_secondary_velocity = w_vel_sec_extrap
-        self.extrap_vertical_velocity = w_vel_z_extrap
+        self.primary_velocity = w_vel_prim_extrap
+        self.secondary_velocity = w_vel_sec_extrap
+        self.vertical_velocity = w_vel_z_extrap
 
-    def compute_edges(self, borders_ens_raw, mid_direction, settings, edge_constant):
+    def compute_edges(self, data_transects, settings):
         """ Compute edge extrapolation
 
         Parameters
         ----------
-        borders_ens_raw: list(float)
+        borders_ens: list(float)
             Horizontal grid length on the average cross-section
         mid_direction: np.array
             1D array of mean velocity direction of each MAP vertical
         settings: dict
             Measurement current settings
-        edge_constant: bool
+        edges_option: bool
             Option to define if edge's meshs should share the exact same length or if they should be
             the same length as those in the middle (except the last vertical which is shorter)
 
@@ -941,19 +928,11 @@ class MAP(object):
         left_mid_cells_y/right_mid_cells_y: np.array
             Depth position of the middle of each cell
         """
-        extrap_exp = 1 / settings['extrapExp']
-        self.left_primary_velocity, self.left_secondary_velocity, self.left_vertical_velocity, \
-        self.left_borders, left_direction, left_mid_cells_x, left_mid_cells_y, \
-        self.left_area = self.edge_velocity(self.left_distance, self.left_coef, 'left', borders_ens_raw, mid_direction,
-                                       extrap_exp, edge_constant)
+        left_distance, left_coef = self.left_geometry
+        self.edge_velocity('left', left_distance, left_coef, settings)
 
-        self.right_primary_velocity, self.right_secondary_velocity, self.right_vertical_velocity, \
-        self.right_borders, right_direction, right_mid_cells_x, right_mid_cells_y, \
-        self.right_area = self.edge_velocity(self.right_distance, self.right_coef, 'right', borders_ens_raw, mid_direction,
-                                        extrap_exp, edge_constant)
-
-        return left_direction, right_direction, left_mid_cells_x, \
-               right_mid_cells_x, left_mid_cells_y, right_mid_cells_y
+        right_distance, right_coef = self.right_geometry
+        self.edge_velocity('right', right_distance, right_coef, settings)
 
     @staticmethod
     def interpolation(data1, data2, data1_interp_value, style='linear'):
@@ -974,8 +953,7 @@ class MAP(object):
                 value = np.nan
         return value
 
-    def edge_velocity(self, edge_distance, edge_coef, edge, borders_ens_raw, mid_direction,
-                      extrap_exp, edge_constant):
+    def edge_velocity(self, edge, edge_distance, edge_coef, settings):
         """ Compute edge extrapolation
 
         Parameters
@@ -986,13 +964,13 @@ class MAP(object):
             Shape coefficient of the edge
         edge: str
             'left' or 'right'
-        borders_ens_raw: list(float)
+        borders_ens: list(float)
             Horizontal grid length on the average cross-section
         mid_direction: np.array
             1D array of mean velocity direction of each MAP vertical
         extrap_exp: float
             QRevInt exponent power law value
-        edge_constant: bool
+        edges_option: bool
             Option to define if edge's meshs should share the exact same length or if they should be
             the same length as those in the middle (except the last vertical which is shorter)
 
@@ -1015,20 +993,18 @@ class MAP(object):
         area: np.array
             Area of edge's cells
         """
+        extrap_exp = 1 / settings['extrapExp']
+
         if edge == 'left':
             id_edge = 0
-            node_size = abs(borders_ens_raw[1] - borders_ens_raw[0])
+            node_size = abs(self.borders_ens[1] - self.borders_ens[0])
         elif edge == 'right':
             id_edge = -1
-            node_size = abs(borders_ens_raw[-1] - borders_ens_raw[-2])
+            node_size = abs(self.borders_ens[-1] - self.borders_ens[-2])
 
-        if edge_constant:
-            nb_nodes = int(np.round(0.5 + edge_distance / node_size))
-            nodes = np.linspace(0, edge_distance, nb_nodes + 1)
-        else:
-            nodes = edge_distance - np.arange(0, edge_distance, node_size)[::-1]
-            nodes = np.insert(nodes, 0, 0)
-            nb_nodes = len(nodes) - 1
+        nodes = edge_distance - np.arange(0, edge_distance, node_size)[::-1]
+        nodes = np.insert(nodes, 0, 0)
+        nb_nodes = len(nodes) - 1
 
         nodes_mid = (nodes[1:] + nodes[:-1]) / 2
         edge_size_raw = self.depth_cells_border[:, id_edge]
@@ -1093,6 +1069,7 @@ class MAP(object):
             is_edge = True
 
         elif edge_coef == 0.91 and edge_distance > 0:
+            border_depths = np.tile(self.depths[id_edge], len(nodes))
             mid_cells_x = np.tile([nodes_mid], (len(edge_size_raw) - 1, 1))
             mid_cells_y = np.transpose([self.depth_cells_center[:, id_edge]] * nb_nodes)
 
@@ -1107,6 +1084,7 @@ class MAP(object):
             is_edge = True
 
         else:
+            border_depths = np.tile(np.nan, len(nodes))
             mid_cells_x = np.tile([np.nan], (len(edge_size_raw) - 1, nb_nodes))
             mid_cells_y = np.tile([np.nan], (len(edge_size_raw) - 1, nb_nodes))
 
@@ -1128,7 +1106,7 @@ class MAP(object):
         else:
             ## Primary velocity : Power_power extrapolation from first ensemble
             # Mean velocity on the first valid ensemble
-            primary_mean_valid = np.nanmean(self.extrap_primary_velocity[:, id_edge])
+            primary_mean_valid = np.nanmean(self.primary_velocity[:, id_edge])
             # Compute mean velocity according power law at middle_distance position
             vp_mean = primary_mean_valid * (mid_cells_x / edge_distance) ** (1 / edge_exp)
             # Compute velocity according power law on the chosen vertical
@@ -1137,7 +1115,7 @@ class MAP(object):
                     (vertical_depth - mid_cells_y) / vertical_depth) ** (1 / extrap_exp)
 
             # Vertical velocity : linear extrapolation from first ensemble vertical distribution
-            vertical_vel_first = np.insert(self.extrap_vertical_velocity[:, id_edge], 0, 0)
+            vertical_vel_first = np.insert(self.vertical_velocity[:, id_edge], 0, 0)
             vertical_vel_first = np.append(vertical_vel_first, 0)
             norm_depth_first = np.insert(self.depth_cells_center[:, id_edge] / self.depths[id_edge], 0, 0)
             norm_depth_first = np.append(norm_depth_first, 1)
@@ -1145,7 +1123,7 @@ class MAP(object):
             edge_vertical_velocity = sc.interpolate.griddata(norm_depth_first, vertical_vel_first, norm_depth_edge)
 
             # Secondary velocity : linear interpolation to 0 at edge
-            secondary_vel_first = np.insert(self.extrap_secondary_velocity[:, id_edge], 0,
+            secondary_vel_first = np.insert(self.secondary_velocity[:, id_edge], 0,
                                             self.secondary_velocity[0, id_edge])
             secondary_vel_first = np.append(secondary_vel_first,
                                             secondary_vel_first[np.where(~np.isnan(secondary_vel_first))[-1][-1]])
@@ -1158,24 +1136,51 @@ class MAP(object):
             for j in range(edge_primary_velocity.shape[1]):
                 for i in range(np.count_nonzero(~np.isnan(edge_secondary_vel_interp[:, j]))):
                     edge_secondary_velocity[i, j] = MAP.interpolation(np.array([bed_distance[i, j], edge_distance]),
-                                                                  np.array([0, edge_secondary_vel_interp[i, j]]),
-                                                                  mid_cells_x[i, j])
+                                                                      np.array([0, edge_secondary_vel_interp[i, j]]),
+                                                                      mid_cells_x[i, j])
 
+        print(edge)
+        print(edge_distance)
+        print(nodes)
         if edge == 'right':
-            edge_primary_velocity = edge_primary_velocity[:, ::-1]
-            edge_secondary_velocity = edge_secondary_velocity[:, ::-1]
-            edge_vertical_velocity = edge_vertical_velocity[:, ::-1]
-            mid_cells_x = abs(edge_distance - mid_cells_x[:, ::-1])
-            mid_cells_y = mid_cells_y[:, ::-1]
-            area = area[:, ::-1]
-            nodes = abs(edge_distance - nodes[::-1])
+            self.primary_velocity = np.c_[self.primary_velocity, edge_primary_velocity[:, ::-1]]
+            self.secondary_velocity = np.c_[self.secondary_velocity, edge_secondary_velocity[:, ::-1]]
+            self.vertical_velocity = np.c_[self.vertical_velocity, edge_vertical_velocity[:, ::-1]]
+            self.direction_ens = np.append(self.direction_ens,
+                                           np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]))
 
-        edge_direction = np.tile(mid_direction[id_edge], edge_primary_velocity.shape[1])
+            depth = (border_depths[1:] + border_depths[:-1]) / 2
+            self.depths = np.append(self.depths, depth[::-1])
+            self.depth_cells_center = np.c_[self.depth_cells_center, mid_cells_y[:, ::-1]]
 
-        return edge_primary_velocity, edge_secondary_velocity, edge_vertical_velocity, nodes, \
-               edge_direction, mid_cells_x, mid_cells_y, area
+            max_dist = self.borders_ens[-1]
 
-    def compute_discharge(self, direction_meas, mid_direction, extrap_option, left_direction=0, right_direction=0):
+            self.borders_ens = np.append(self.borders_ens, max_dist + abs(edge_distance - nodes[:-1][::-1]))
+            self.distance_cells_center = np.c_[self.distance_cells_center,
+                                               max_dist + abs(edge_distance - mid_cells_x[:, ::-1])]
+
+            self.cells_area = np.c_[self.cells_area, area[:, ::-1]]
+
+        else:
+            self.primary_velocity = np.c_[edge_primary_velocity, self.primary_velocity]
+            self.secondary_velocity = np.c_[edge_secondary_velocity, self.secondary_velocity]
+            self.vertical_velocity = np.c_[edge_vertical_velocity, self.vertical_velocity]
+
+            self.direction_ens = np.insert(self.direction_ens, 0,
+                                           np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]))
+
+            depth = (border_depths[1:] + border_depths[:-1]) / 2
+            self.depths = np.insert(self.depths, 0, depth)
+
+            self.depth_cells_center = np.c_[mid_cells_y, self.depth_cells_center]
+
+            self.borders_ens = np.insert(self.borders_ens + edge_distance, 0, nodes[:-1])
+
+            self.distance_cells_center = np.c_[mid_cells_x, self.distance_cells_center + edge_distance]
+
+            self.cells_area = np.c_[area, self.cells_area]
+
+    def compute_discharge(self):
         """ Compute discharge
 
         Parameters
@@ -1196,53 +1201,21 @@ class MAP(object):
             Right area of edge's cells
         """
 
-        distance = (self.borders_ens[1:] - self.borders_ens[:-1])
-        depth = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
+        direction_meas = np.arctan2(-1, self.slope)
 
-        self.mid_area = distance * depth
+        self.streamwise_velocity = self.primary_velocity * np.cos(self.direction_ens - direction_meas) + \
+                                   self.secondary_velocity * np.sin(self.direction_ens - direction_meas)
 
-        if extrap_option:
-            downstream_velocity_mid = self.extrap_primary_velocity * np.cos(mid_direction - direction_meas) + \
-                                      self.extrap_secondary_velocity * np.sin(mid_direction - direction_meas)
+        self.transverse_velocity = self.primary_velocity * np.sin(self.direction_ens - direction_meas) - \
+                                   self.secondary_velocity * np.cos(self.direction_ens - direction_meas)
 
-            downstream_velocity_left = self.left_primary_velocity * np.cos(left_direction - direction_meas) + \
-                                       self.left_secondary_velocity * np.sin(left_direction - direction_meas)
+        cells_discharge = self.cells_area * self.streamwise_velocity
+        total_discharge = np.nansum(cells_discharge)
 
-            downstream_velocity_right = self.right_primary_velocity * np.cos(right_direction - direction_meas) + \
-                                        self.right_secondary_velocity * np.sin(right_direction - direction_meas)
-
-            middle_cells_discharge = self.mid_area * downstream_velocity_mid
-            middle_discharge = np.nansum(middle_cells_discharge)
-
-            if middle_discharge < 0:
-                unit = -1
-            else:
-                unit = 1
-
-            self.middle_cells_discharge = middle_cells_discharge * unit
-            self.middle_discharge = middle_discharge * unit
-
-            self.left_cells_discharge = downstream_velocity_left * self.left_area * unit
-            self.right_cells_discharge = downstream_velocity_right * self.right_area * unit
-
-            self.left_discharge = np.nansum(self.left_cells_discharge)
-            self.right_discharge = np.nansum(self.right_cells_discharge)
-
-            self.total_discharge = self.left_discharge + self.middle_discharge + self.right_discharge
-
+        if total_discharge < 0:
+            unit = -1
         else:
-            downstream_velocity_mid = self.primary_velocity * np.cos(mid_direction - direction_meas) + \
-                                      self.secondary_velocity * np.sin(mid_direction - direction_meas)
+            unit = 1
 
-            middle_cells_discharge = self.mid_area * downstream_velocity_mid
-            middle_discharge = np.nansum(middle_cells_discharge)
-
-            if middle_discharge < 0:
-                unit = -1
-            else:
-                unit = 1
-
-            self.middle_cells_discharge = middle_cells_discharge * unit
-            self.middle_discharge = middle_discharge * unit
-            self.total_discharge = middle_discharge * unit
-
+        self.cells_discharge = cells_discharge * unit
+        self.total_discharge = total_discharge * unit

@@ -1997,14 +1997,16 @@ class Measurement(object):
                                        user_advanced_settings=user_advanced_settings,
                                        u_measurement_user=u_measurement_user)
 
-    def compute_map(self):
+    def compute_map(self, node_horizontal_user=None, node_vertical_user=None, extrap_option=True,
+                      edges_option=False, interp_option=True):
         """Computes uncertainty using QRev model and Oursin model if selected.
         """
         if all(deg == 0 for deg in self.transects[self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
             self.map = None
         else:
             self.map = MAP()
-            self.map.populate_data(self)
+            self.map.populate_data(self, node_horizontal_user, node_vertical_user, extrap_option,
+                                   edges_option, interp_option)
 
 
     @staticmethod
