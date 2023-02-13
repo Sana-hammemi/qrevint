@@ -186,7 +186,7 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
             Filename with path to save file.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, save_type='QRev'):
         """Initializes settings and connections.
 
         Parameters
@@ -207,15 +207,25 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
             else:
                 folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
-        # Create default file name
-        file_name = os.path.join(folder, datetime.datetime.today().strftime('%Y%m%d_%H%M%S_' + version + '_QRev.mat'))
+        if save_type == 'QRev':
+            # Create default file name
+            file_name = os.path.join(folder, datetime.datetime.today().strftime('%Y%m%d_%H%M%S_' + version + '_QRev.mat'))
+            title = self.tr('Save File')
+            filetype = self.tr('QRev File (*_QRev.mat)')
+        elif save_type == 'fig':
+            file_name = folder + '/' + (folder).split('/')[-1]
+            title = self.tr('Save figure')
+            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;{self.tr('All Files')} (*)"
         # Get the full names (path + file) of the selected file
-        self.full_Name = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr('Save File'), file_name,
-            self.tr('QRev File (*_QRev.mat)'))[0]
-        if len(self.full_Name) > 0:
-            if self.full_Name[-4:] != '.mat':
-                self.full_Name = self.full_Name + '.mat'
+        file_save = QtWidgets.QFileDialog.getSaveFileName(
+            self, title, file_name, filetype)
+
+        if file_save is not None:
+            self.full_Name, fig_type = file_save
+            fig_extension = (fig_type).split('*')[-1][:-1]
+            if len(self.full_Name) > 0:
+                if self.full_Name[-len(fig_extension):] != fig_extension:
+                    self.full_Name = self.full_Name + fig_extension
 
     @staticmethod
     def default_folder(settings):

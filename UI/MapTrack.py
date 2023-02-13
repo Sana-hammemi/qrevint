@@ -1,6 +1,6 @@
 import warnings
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMenu
 
 
 class Maptrack(object):
@@ -64,6 +64,8 @@ class Maptrack(object):
         self.vector_ref = None
         self.hover_connection = None
         self.annot = None
+
+        self.clicked_connection = None
 
     def create(self, map_data, units):
         """Create the axes and lines for the figure.
@@ -164,14 +166,13 @@ class Maptrack(object):
         vis = self.annot.get_visible()
 
         # Determine if mouse location references a data point in the plot and update the annotation.
-        if event.inaxes == self.fig.ax:
+        if event.inaxes == self.fig.ax and event.button != 3:
             cont = False
             ind = None
             plotted_line = None
 
             # Find the transect(line) that contains the mouse click
             for plotted_line in self.fig.ax.lines:
-                print(self.fig.ax.lines)
                 cont, ind = plotted_line.contains(event)
                 if cont:
                     break

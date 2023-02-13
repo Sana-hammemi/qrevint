@@ -24,7 +24,7 @@ from Classes.CoordError import CoordError
 from Classes.Oursin import Oursin
 from Classes.MAP import MAP
 import UI.QRev_gui as QRev_gui
-from UI.selectFile import SaveMeasurementDialog
+from UI.selectFile import SaveDialog
 from UI.OpenMeasurementDialog import OpenMeasurementDialog
 from UI.Comment import Comment
 from UI.Transects2Use import Transects2Use
@@ -811,6 +811,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_wt_contour_canvas = None
         self.map_wt_contour_toolbar = None
         self.map_wt_contour_fig = None
+        self.current_fig = None
 
         self.mb_row = 0
         self.show_below_sl = False
@@ -1136,7 +1137,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.user_rating = rating
                     self.set_user_rating()
 
-            save_file = SaveMeasurementDialog(parent=self)
+            save_file = SaveDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
                 # Add comment when saving file
@@ -11794,6 +11795,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_shiptrack()
         self.map_wt_contour()
 
+        self.ui_parents = [self.graphics_map_track, self.graphics_map_wt_contour]
         self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
         self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
         self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
@@ -11804,15 +11806,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.pb_map_apply.clicked.connect(self.update_map)
             self.map_initialized = True
 
-        # self.advanced_settings_table()
-        # self.uncertainty_meas_q_plot()
-        # self.uncertainty_measurement_plot()
-        # self.uncertainty_comments_messages()
-        #
-        # # Setup list for use by graphics controls
-        # self.canvases = [self.uncertainty_meas_q_canvas, self.uncertainty_measurement_canvas]
-        # self.figs = [self.uncertainty_meas_q_fig, self.uncertainty_measurement_fig]
-        # self.toolbars = [self.uncertainty_meas_q_toolbar, self.uncertainty_measurement_toolbar]
+            # self.figsMenu = QtWidgets.QMenu(self.map_shiptrack_fig.canvas)
+            self.figsMenu = QtWidgets.QMenu(self)
+            self.figsMenu.addAction("Save graphic", self.saveFig)
+            self.figsMenu.addAction("Save data", self.saveData)
+
+            self.menuConnection()
 
     def map_wt_contour(self):
         """Creates boat speed plot for data in transect.
@@ -12072,12 +12071,45 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.map_shiptrack_canvas.draw()
 
+        # self.graphics_map_track.installEventFilter(self)
+        # self.map_shiptrack_canvas.parent().installEventFilter(self)
+
+    # Graphics save
+    # =================
+    def menuConnection(self):
+        for fig in self.figs:
+            fig.canvas.parent().installEventFilter(self)
+        
+    def eventFilter(self, source, event):
+        if event.type() == QtCore.QEvent.ContextMenu:
+            if source in self.ui_parents:
+                self.current_fig = self.figs[self.ui_parents.index(source)]
+                self.figsMenu.exec_(event.globalPos())
+                return True
+        return super().eventFilter(source, event)
+    
+    def saveFig(self):
+        print("we save plot here")
+        # map_wt_contour_fig.fig.savefig(path_results + '\\MAP_Profile_' + name_meas + '.png', dpi=300,
+        #                                bbox_inches='tight')
+        if self.current_fig is not None:
+            # Get the current folder setting.
+            save_fig = SaveDialog(parent=self, save_type='fig')
+            if len(save_fig.full_Name) > 0:
+                print(save_fig.full_Name)
+                try:
+                    self.current_fig.fig.savefig(save_fig.full_Name, dpi=300, bbox_inches='tight')
+                except Exception:
+                    print("we have a problem")
+
+    def saveData(self):
+        print("we save data here")
+
     # Graphics controls
     # =================
     def clear_zphd(self):
         """Clears the graphics user controls.
         """
-
         try:
             self.actionData_Cursor.setChecked(False)
             for fig in self.figs:
@@ -12312,7 +12344,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create default file name
         if rating_entered:
             self.meas.user_rating = rating
-            save_file = SaveMeasurementDialog(parent=self)
+            save_file = SaveDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
 

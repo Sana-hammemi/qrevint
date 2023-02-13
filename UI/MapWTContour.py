@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
 from datetime import datetime
+from PyQt5 import QtCore
+from PyQt5.QtGui import QMouseEvent
 
 
 class MapWTContour(object):
@@ -104,7 +106,6 @@ class MapWTContour(object):
         elif x_axis_type == 'MAP':
             x = (transect.borders_ens[1:] + transect.borders_ens[:-1]) / 2 * units['L']
 
-
         if n_ensembles is None or n_ensembles > 0:
             if edge_start is None:
                 x_plt, cell_plt, speed_plt, ensembles, depth = self.color_contour_data_prep(transect=transect,
@@ -189,11 +190,10 @@ class MapWTContour(object):
                 if data_quiver['scale'] is not None:
                     q = self.fig.ax.quiver(data_quiver['x'] * units['L'], data_quiver['z'] * units['L'],
                                            data_quiver['vx'] * units['V'], data_quiver['vz'] * units['V'],
-                                           units='inches', scale=5*data_quiver['scale']*units['V'], pivot='tail')
+                                           units='inches', scale=5*data_quiver['scale'], pivot='tail')
 
-                    self.fig.ax.quiverkey(q, X=1, Y=-0.12, U=data_quiver['scale'] * units['V'],
-                                          label=data_quiver['label'] + '\n' + str(data_quiver['scale'] * units['V']) +
-                                          ' ' + units['label_V'],
+                    self.fig.ax.quiverkey(q, X=0.95, Y=-0.042, U=data_quiver['scale'], label=data_quiver['label'] + '\n' +
+                                          str(data_quiver['scale']) + ' ' + units['label_V'],
                                           labelpos='E', coordinates='axes', fontproperties={'size': 12})
                 axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
                 x_fill = np.insert(x, 0, x[0] - axis_buffer * 0.02)
@@ -227,8 +227,8 @@ class MapWTContour(object):
 
             if bed_profiles is not None:
                 for i in range(len(bed_profiles['x'])):
-                    self.fig.ax.plot(bed_profiles['x'][i], bed_profiles['depth'][i] * units['L'], color='grey',
-                                     linewidth=1)
+                    self.fig.ax.plot(bed_profiles['x'][i] * units['L'], bed_profiles['depth'][i] * units['L'],
+                                     color='grey', linewidth=1)
 
             # Label and limits for y axis
             self.fig.ax.set_ylabel(self.canvas.tr('Depth ') + units['label_L'])
@@ -351,7 +351,7 @@ class MapWTContour(object):
                 cell_depth = np.tile(np.nan, transect.depth_cells_center.shape)
                 cell_size = np.tile(np.nan, cell_depth.shape)
                 size = transect.main_depth_layers[1:] - transect.main_depth_layers[:-1]
-                d = (transect.main_depth_layers[1:] + transect.main_depth_layers[:-1])/2
+                d = (transect.main_depth_layers[1:] + transect.main_depth_layers[:-1]) / 2
                 for n in range(cell_depth.shape[1]):
                     cell_depth[:, n] = d
                     cell_size[:, n] = size
@@ -589,4 +589,10 @@ class MapWTContour(object):
 
         self.annot.set_text(text)
 
-
+    def mousePressEvent(self, QMouseEvent):
+        print(QMouseEvent)
+        if QMouseEvent.button() == QtCore.Qt.LeftButton:
+            print("Left Button Clicked")
+        elif QMouseEvent.button() == QtCore.Qt.RightButton:
+            # do what you want here
+            print("Right Button Clicked")
