@@ -172,7 +172,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         self.close()
 
 
-class SaveMeasurementDialog(QtWidgets.QDialog):
+class SaveDialog(QtWidgets.QDialog):
     """Dialog to allow users to select measurement files for processing.
 
         Parameters
@@ -194,7 +194,7 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         parent
             Identifies parent GUI.
         """
-        super(SaveMeasurementDialog, self).__init__(parent)
+        super(SaveDialog, self).__init__(parent)
         # self.setupUi(self)
 
         # Create settings object which contains the default folder

@@ -642,6 +642,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs = []
         self.canvases = []
         self.toolbars = []
+        self.ui_parents = []
+
+        # Save figure menu with Right click
+        self.figsMenu = QtWidgets.QMenu(self)
+        self.figsMenu.addAction("Save graphic", self.saveFig)
 
         # Connect a change in selected tab to the tab manager
         self.tab_all.currentChanged.connect(self.tab_manager)
@@ -1727,6 +1732,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                              self.main_discharge_fig, self.uncertainty_lollipop_fig]
                 self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar, self.main_extrap_toolbar,
                                  self.main_discharge_toolbar, self.uncertainty_lollipop_toolbar]
+                self.ui_parents = [i.parent() for i in self.canvases]
+                self.figsMenuConnection()
 
                 # Toggles changes indicating the main has been updated
                 self.change = False
@@ -3648,6 +3655,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.heading_canvas, self.pr_canvas]
         self.figs = [self.heading_fig, self.pr_fig]
         self.toolbars = [self.heading_toolbar, self.pr_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         # Initialize the calibration/evaluation tab
         self.compass_cal_eval(idx_eval=0)
@@ -4346,6 +4355,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.tts_canvas]
         self.toolbars = [self.tts_toolbar]
         self.figs = [self.tts_fig]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_tempsal_tab(self, tbl, old_discharge, new_discharge):
         """Updates all data displayed on the tempsal tab.
@@ -5220,6 +5231,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.canvases = [self.mb_shiptrack_canvas, self.mb_ts_canvas]
             self.figs = [self.mb_shiptrack_fig, self.mb_ts_fig]
             self.toolbars = [self.mb_shiptrack_toolbar, self.mb_ts_toolbar]
+            self.ui_parents = [i.parent() for i in self.canvases]
+            self.figsMenuConnection()
+
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
                 self.data_cursor()
@@ -5560,6 +5574,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.bt_shiptrack_canvas, self.bt_ts_canvas]
         self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
         self.toolbars = [self.bt_shiptrack_toolbar, self.bt_ts_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         # Turn signals on
         self.cb_bt_bt.blockSignals(False)
@@ -6349,6 +6365,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.gps_shiptrack_canvas, self.gps_ts_canvas]
         self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
         self.toolbars = [self.gps_shiptrack_toolbar, self.gps_ts_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         if not self.gps_initialized:
             tbl.cellClicked.connect(self.gps_table_clicked)
@@ -7635,6 +7653,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.depth_canvas]
         self.figs = [self.depth_fig]
         self.toolbars = [self.depth_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_depth_table(self, old_discharge, new_discharge):
         """Updates the depth table with new or reprocessed data.
@@ -8236,6 +8256,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.wt_shiptrack_canvas, self.wt_filter_canvas]
         self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
         self.toolbars = [self.wt_shiptrack_toolbar, self.wt_filter_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_wt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
@@ -9037,6 +9059,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.extrap_canvas]
         self.figs = [self.extrap_fig]
         self.toolbars = [self.extrap_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def extrap_update(self):
         """Update the extrapolation tab.
@@ -9775,6 +9799,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                      self.right_edge_st_fig]
         self.toolbars = [self.left_edge_contour_toolbar, self.right_edge_contour_toolbar, self.left_edge_st_toolbar,
                          self.right_edge_st_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_edges_table(self):
         """Populates the edges table with the latest data and also updates the messages tab.
@@ -10568,6 +10594,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.uncertainty_meas_q_canvas, self.uncertainty_measurement_canvas]
         self.figs = [self.uncertainty_meas_q_fig, self.uncertainty_measurement_fig]
         self.toolbars = [self.uncertainty_meas_q_toolbar, self.uncertainty_measurement_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def uncertainty_results_table(self):
         """Create and populate uncertainty results table.
@@ -11613,6 +11641,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.adv_graph_canvas]
         self.figs = [self.adv_graph_fig]
         self.toolbars = [self.adv_graph_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def adv_graph_transect_select(self):
         """Updates advanced graphics with newly selected transect.
@@ -11752,6 +11782,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Update list of figs
         self.figs = [self.adv_graph_fig]
         self.toolbars = [self.adv_graph_toolbar]
+
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
@@ -11795,10 +11826,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_shiptrack()
         self.map_wt_contour()
 
-        self.ui_parents = [self.graphics_map_track, self.graphics_map_wt_contour]
         self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
         self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
         self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         if not self.map_initialized:
             # Configure dictionary of plot options
@@ -11807,11 +11839,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_initialized = True
 
             # self.figsMenu = QtWidgets.QMenu(self.map_shiptrack_fig.canvas)
-            self.figsMenu = QtWidgets.QMenu(self)
-            self.figsMenu.addAction("Save graphic", self.saveFig)
-            self.figsMenu.addAction("Save data", self.saveData)
-
-            self.menuConnection()
+            # self.figsMenu = QtWidgets.QMenu(self)
+            # self.figsMenu.addAction("Save graphic", self.saveFig)
+            # self.figsMenu.addAction("Save data", self.saveData)
+            # # self.figsMenu.removeAction()
+            #
+            # self.figsMenuConnection()
 
     def map_wt_contour(self):
         """Creates boat speed plot for data in transect.
@@ -12076,13 +12109,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     # Graphics save
     # =================
-    def menuConnection(self):
+    def figsMenuConnection(self):
         for fig in self.figs:
             fig.canvas.parent().installEventFilter(self)
         
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.ContextMenu:
+            print("Event is contextMenu")
             if source in self.ui_parents:
+                print('source in ui_parents')
                 self.current_fig = self.figs[self.ui_parents.index(source)]
                 self.figsMenu.exec_(event.globalPos())
                 return True
@@ -12090,17 +12125,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     
     def saveFig(self):
         print("we save plot here")
-        # map_wt_contour_fig.fig.savefig(path_results + '\\MAP_Profile_' + name_meas + '.png', dpi=300,
-        #                                bbox_inches='tight')
         if self.current_fig is not None:
             # Get the current folder setting.
             save_fig = SaveDialog(parent=self, save_type='fig')
             if len(save_fig.full_Name) > 0:
-                print(save_fig.full_Name)
-                try:
-                    self.current_fig.fig.savefig(save_fig.full_Name, dpi=300, bbox_inches='tight')
-                except Exception:
-                    print("we have a problem")
+                self.current_fig.fig.savefig(save_fig.full_Name, dpi=300, bbox_inches='tight')
 
     def saveData(self):
         print("we save data here")
