@@ -20,6 +20,8 @@ from Classes.Oursin import Oursin
 from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
+
+
 # from profilehooks import profile, timecall
 
 
@@ -407,7 +409,7 @@ class Measurement(object):
                 cc.populate_data(mmt.qaqc['Compass_Calibration_TimeStamp'][n],
                                  mmt.qaqc['Compass_Calibration'][n], 'TCC')
                 self.compass_cal.append(cc)
-            
+
         # Compass evaluation
         if 'Compass_Evaluation' in mmt.qaqc:
             for n in range(len(mmt.qaqc['Compass_Evaluation'])):
@@ -418,7 +420,7 @@ class Measurement(object):
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
-            
+
             # Create transect objects
             transects = self.allocate_transects(mmt, transect_type='MB')
 
@@ -431,7 +433,7 @@ class Measurement(object):
                     mb_test = MovingBedTests()
                     mb_test.populate_data('TRDI', transects[n],
                                           mmt.mbt_transects[n].moving_bed_type)
-                    
+
                     # Save notes from mmt files in comments
                     notes = getattr(mmt.mbt_transects[n], 'Notes')
                     for note in notes:
@@ -532,7 +534,6 @@ class Measurement(object):
                 self.stage_end_m = rsdata.Setup.endGaugeHeight / 10000.
 
             self.stage_meas_m = (self.stage_start_m + self.stage_end_m) / 2.
-
 
         self.qaqc_sontek(pathname)
 
@@ -929,7 +930,7 @@ class Measurement(object):
             num_beam_wt_out = 4
         else:
             num_beam_wt_out = 3
-            
+
         return num_beam_wt_out
 
     @staticmethod
@@ -970,7 +971,7 @@ class Measurement(object):
         """
 
         depth_weighting = mmt_transect.active_config['Proc_Use_Weighted_Mean_Depth']
-        
+
         if depth_weighting == 0:
             depth_weighting_setting = 'Simple'
         else:
@@ -998,9 +999,9 @@ class Measurement(object):
             depth_screening_setting = 'None'
         else:
             depth_screening_setting = 'TRDI'
-        
+
         return depth_screening_setting
-        
+
     def change_sos(self, transect_idx=None, parameter=None, salinity=None, temperature=None, selected=None, speed=None):
         """Applies a change in speed of sound to one or all transects
         and update the discharge and uncertainty computations
@@ -1020,7 +1021,7 @@ class Measurement(object):
         speed: float
             Manually supplied speed of sound for 'user' source
         """
-        
+
         s = self.current_settings()
         if transect_idx is None:
             # Apply to all transects
@@ -1282,10 +1283,10 @@ class Measurement(object):
             else:
                 bt_kwargs['vertical'] = settings['BTwFilter']
 
-            # Apply beam filter
+                # Apply beam filter
                 bt_kwargs['beam'] = settings['BTbeamFilter']
 
-            # Apply smooth filter
+                # Apply smooth filter
                 bt_kwargs['other'] = settings['BTsmoothFilter']
 
             transect.boat_vel.bt_vel.use_measurement_thresholds = settings['UseMeasurementThresholds']
@@ -1428,7 +1429,6 @@ class Measurement(object):
                                       use_weighted=settings['UseWeighted'])
 
         for transect in self.transects:
-
             # Water track interpolations
             transect.w_vel.apply_interpolation(transect=transect,
                                                ens_interp=settings['WTEnsInterpolation'],
@@ -1638,13 +1638,13 @@ class Measurement(object):
         else:
             ref_transect = 0
         transect = self.transects[ref_transect]
-        
+
         # Navigation reference
         settings['NavRef'] = transect.boat_vel.selected
-        
+
         # Composite tracks
         settings['CompTracks'] = transect.boat_vel.composite
-        
+
         # Water track settings
         settings['WTbeamFilter'] = transect.w_vel.beam_filter
         settings['WTdFilter'] = transect.w_vel.d_filter
@@ -1657,7 +1657,7 @@ class Measurement(object):
         settings['WTEnsInterpolation'] = transect.w_vel.interpolate_ens
         settings['WTCellInterpolation'] = transect.w_vel.interpolate_cells
         settings['WTExcludedDistance'] = transect.w_vel.excluded_dist_m
-        
+
         # Bottom track settings
         settings['BTbeamFilter'] = transect.boat_vel.bt_vel.beam_filter
         settings['BTdFilter'] = transect.boat_vel.bt_vel.d_filter
@@ -1666,7 +1666,7 @@ class Measurement(object):
         settings['BTwFilterThreshold'] = transect.boat_vel.bt_vel.w_filter_thresholds
         settings['BTsmoothFilter'] = transect.boat_vel.bt_vel.smooth_filter
         settings['BTInterpolation'] = transect.boat_vel.bt_vel.interpolate
-        
+
         # Gps Settings
         # if transect.gps is not None:
 
@@ -1721,7 +1721,7 @@ class Measurement(object):
         # Depth Settings
         settings['depthAvgMethod'] = transect.depths.bt_depths.avg_method
         settings['depthValidMethod'] = transect.depths.bt_depths.valid_data_method
-        
+
         # Depth settings are always applied to all available depth sources.
         # Only those saved in the bt_depths are used here but are applied to all sources
         settings['depthFilterType'] = transect.depths.bt_depths.filter_type
@@ -1729,7 +1729,7 @@ class Measurement(object):
         settings['depthComposite'] = transect.depths.composite
         select = getattr(transect.depths, transect.depths.selected)
         settings['depthInterpolation'] = select.interp_type
-        
+
         # Extrap Settings
         if self.extrap_fit is None:
             settings['extrapTop'] = transect.extrap.top_method
@@ -1998,8 +1998,20 @@ class Measurement(object):
                                        u_measurement_user=u_measurement_user)
 
     def compute_map(self, node_horizontal_user=None, node_vertical_user=None, extrap_option=True,
-                      edges_option=False, interp_option=True):
-        """Computes uncertainty using QRev model and Oursin model if selected.
+                    edges_option=True, interp_option=True):
+        """Computes Multi-transect Average Profile
+        Parameters
+        ----------
+        node_horizontal_user: float
+            Width of MAP cell (in m)
+        node_vertical_user: float
+            Height of MAP cell (in m)
+        extrap_option: bool
+            Boolean indicating if top/bottom extrapolation should be apply
+        edges_option: bool
+            Boolean indicating if edges extrapolation should be apply
+        interp_option: bool
+            Boolean indicating if interpolated data should be used
         """
         if all(deg == 0 for deg in self.transects[self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
             self.map = None
@@ -2007,7 +2019,6 @@ class Measurement(object):
             self.map = MAP()
             self.map.populate_data(self, node_horizontal_user, node_vertical_user, extrap_option,
                                    edges_option, interp_option)
-
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):
@@ -2093,7 +2104,7 @@ class Measurement(object):
             # about the selected ensemble
             u = np.nanmean(transect.w_vel.u_processed_mps[:, ensemble - n_pts_in_avg: ensemble + n_pts_in_avg + 1], 1)
             v = np.nanmean(transect.w_vel.v_processed_mps[:, ensemble - n_pts_in_avg: ensemble + n_pts_in_avg + 1], 1)
-            velocity.append(np.sqrt(np.nanmean(u)**2 + np.nanmean(v)**2))
+            velocity.append(np.sqrt(np.nanmean(u) ** 2 + np.nanmean(v) ** 2))
 
         # Save computed results in a dictionary
         edi_results = {'percent': percents, 'target_q': q_target, 'actual_q': q_actual, 'distance': distance,
@@ -2303,7 +2314,7 @@ class Measurement(object):
                 # Compute boat course and mean speed
                 [course_radians, dmg] = cart2pol(boat_track['track_x_m'][-1], boat_track['track_y_m'][-1])
                 trans_prop['avg_boat_course'][n] = rad2azdeg(course_radians)
-                trans_prop['avg_boat_speed'][n] = np.nanmean(np.sqrt(u_boat**2 + v_boat**2))
+                trans_prop['avg_boat_speed'][n] = np.nanmean(np.sqrt(u_boat ** 2 + v_boat ** 2))
 
                 # Compute width
                 trans_prop['width'][n] = np.nansum([dmg, transect.edges.left.distance_m,
@@ -2315,7 +2326,7 @@ class Measurement(object):
                 dot_prod = bt @ np.array([unit_x, unit_y])
                 projected_x = dot_prod * unit_x
                 projected_y = dot_prod * unit_y
-                station = np.sqrt(projected_x**2 + projected_y**2)
+                station = np.sqrt(projected_x ** 2 + projected_y ** 2)
 
                 # Get selected depth object
                 depth = getattr(transect.depths, transect.depths.selected)
@@ -2376,7 +2387,7 @@ class Measurement(object):
                 trans_prop['max_depth'][n] = np.nanmax(depth.depth_processed_m[in_transect_idx])
 
                 # Compute max water speed using the 99th percentile
-                water_speed = np.sqrt(u_water**2 + v_water**2)
+                water_speed = np.sqrt(u_water ** 2 + v_water ** 2)
                 trans_prop['max_water_speed'][n] = np.nanpercentile(water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)

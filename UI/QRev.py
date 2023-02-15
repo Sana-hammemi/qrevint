@@ -36,7 +36,7 @@ from UI.SOSSource import SOSSource
 from UI.TempSource import TempSource
 from UI.Salinity import Salinity
 from UI.ShipTrack import Shiptrack
-from UI.MapWTContour import MapWTContour
+# from UI.MapWTContour import MapWTContour
 from UI.MapTrack import Maptrack
 from UI.BoatSpeed import BoatSpeed
 from UI.Draft import Draft
@@ -646,7 +646,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Save figure menu with Right click
         self.figsMenu = QtWidgets.QMenu(self)
-        self.figsMenu.addAction("Save graphic", self.saveFig)
+        self.figsMenu.addAction("Save figure", self.saveFig)
 
         # Connect a change in selected tab to the tab manager
         self.tab_all.currentChanged.connect(self.tab_manager)
@@ -1723,6 +1723,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_shiptrack_canvas.draw()
 
                 self.update_main_uncertainty()
+                self.map_tab()
                 self.set_user_rating()
 
                 # Setup list for use by graphics controls
@@ -11810,55 +11811,60 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # MAP tab (Multi-transects Average Profile)
     # ==============
     def map_tab(self):
-        """Initializes and configures map tab.
+        """Initializes and configures MAP tab.
         """
+        if self.meas.map is not None:
+            # Save MAP parameters as dic
+            self.map_parameters = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
+                                   'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
+                                   'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
+                                   'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
+                                   'cb_map_edges': self.cb_map_edges.isChecked(),
+                                   'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
+                                   'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
+                                   'combo_map_data': self.combo_map_data.currentText()}
 
-        self.map_parameters = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
-                               'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
-                               'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
-                               'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
-                               'cb_map_edges': self.cb_map_edges.isChecked(),
-                               'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
-                               'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
-                               'combo_map_data': self.combo_map_data.currentText()}
+            # MAP table
+            self.map_table()
 
-        self.map_table()
-        self.map_shiptrack()
-        self.map_wt_contour()
+            # MAP figures
+            self.map_shiptrack()
+            self.map_wt_contour()
 
-        self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
-        self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
-        self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
-        self.ui_parents = [i.parent() for i in self.canvases]
-        self.figsMenuConnection()
+            self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
+            self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+            self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
+            self.ui_parents = [i.parent() for i in self.canvases]
+            self.figsMenuConnection()
 
-        if not self.map_initialized:
-            # Configure dictionary of plot options
-            self.map_previous_parameters = self.map_parameters
-            self.pb_map_apply.clicked.connect(self.update_map)
-            self.map_initialized = True
-
-            # self.figsMenu = QtWidgets.QMenu(self.map_shiptrack_fig.canvas)
-            # self.figsMenu = QtWidgets.QMenu(self)
-            # self.figsMenu.addAction("Save graphic", self.saveFig)
-            # self.figsMenu.addAction("Save data", self.saveData)
-            # # self.figsMenu.removeAction()
-            #
-            # self.figsMenuConnection()
+            if not self.map_initialized:
+                # Configure dictionary of plot options
+                self.map_current_parameters = self.map_parameters
+                self.pb_map_apply.clicked.connect(self.update_map)
+                self.pb_map_save.clicked.connect(self.map_save_data)
+                # Disable MAP open Earth button while it's not set up
+                self.pb_map_open_earth.setEnabled(False)
+                # self.pb_map_open_earth.connect()
+                self.map_initialized = True
+            elif self.change:
+                # Reset settings if change
+                self.cb_map_interpolation.setChecked(True)
+                self.cb_map_top_bottom.setChecked(True)
+                self.cb_map_edges.setChecked(True)
+                self.cb_map_bed_profiles.setChecked(False)
+                self.ed_map_cell_width.setText("")
+                self.ed_map_cell_height.setText("")
+                self.ed_map_secondary_velocity.setText("")
+                self.combo_map_data.setCurrentIndex(0)
 
     def map_wt_contour(self):
-        """Creates boat speed plot for data in transect.
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
+        """Creates water track profile on MAP data.
         """
 
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.map_wt_contour_canvas is None:
             # Create the canvas
-            self.map_wt_contour_canvas = MplCanvas(parent=self.graphics_map_wt_contour, width=12, height=2, dpi=80)
+            self.map_wt_contour_canvas = MplCanvas(parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80)
             # Assign layout to widget to allow auto scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_map_wt_contour)
             # Adjust margins of layout to maximize graphic area
@@ -11870,23 +11876,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_wt_contour_toolbar.hide()
 
         # Initialize the boat speed figure and assign to the canvas
-        self.map_wt_contour_fig = MapWTContour(canvas=self.map_wt_contour_canvas)
-        # Create the figure with the specified data
+        self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
 
+        # Quiver parameters
         if self.map_parameters['combo_map_data'] == "Primary velocity":
-            vx = self.meas.map.secondary_velocity
+            vy = self.meas.map.secondary_velocity
             quiver_label = "Secondary velocity"
         else:
-            vx = self.meas.map.transverse_velocity
+            vy = self.meas.map.transverse_velocity
             quiver_label = "Transverse velocity"
-
         data_quiver = {'x': self.meas.map.distance_cells_center,
                        'z': self.meas.map.depth_cells_center,
-                       'vx': vx,
+                       'vy': vy,
                        'vz': self.meas.map.vertical_velocity,
                        'scale': self.map_parameters['ed_map_secondary_velocity'],
                        'label': quiver_label}
 
+        # Bed profiles of transects
         if self.map_parameters['cb_map_bed_profiles']:
             bed_profiles = {'x': self.meas.map.acs_distance, 'depth': self.meas.map.depth_by_transect}
         else:
@@ -11899,19 +11905,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                        bed_profiles=bed_profiles,
                                        color_map=self.color_map,
                                        x_axis_type="MAP")
-        self.map_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0)
+        self.map_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0)
         # Draw canvas
         self.map_wt_contour_canvas.draw()
 
     def update_map(self):
-        """Coordinates user initiated changing the top method.
-
-        Parameters
-        ----------
-        text: str
-         User selection from combo box
+        """Updates MAP with user's parameters.
         """
 
+        # Load MAP parameters and check if there is any change
         with self.wait_cursor():
             change_data = False
             change_plot = False
@@ -11923,10 +11925,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                    'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
                                    'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
                                    'combo_map_data': self.combo_map_data.currentText()}
-            print(self.map_parameters)
             for key in self.map_parameters:
-                if self.map_parameters[key] != self.map_previous_parameters[key]:
-                    print(f"{key} CHANGE TO : {self.map_parameters[key]}")
+                if self.map_parameters[key] != self.map_current_parameters[key]:
                     if key in ['cb_map_interpolation', 'ed_map_cell_width', 'ed_map_cell_height', 'cb_map_top_bottom',
                                'cb_map_edges']:
                         change_data = True
@@ -11935,25 +11935,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         change_plot = True
 
-            self.map_previous_parameters = self.map_parameters
+            # Save current parameters
+            self.map_current_parameters = self.map_parameters
+
+            # Apply changes
             if change_data or change_plot:
-                print("CHANGE")
                 if change_data:
                     self.meas.compute_map(node_horizontal_user=self.map_parameters['ed_map_cell_width'],
                                           node_vertical_user=self.map_parameters['ed_map_cell_height'],
                                           extrap_option=self.map_parameters['cb_map_top_bottom'],
                                           edges_option=self.map_parameters['cb_map_edges'],
                                           interp_option=self.map_parameters['cb_map_interpolation'])
-                    print('change data')
-                if change_plot:
-                    self.map_table()
-                    self.map_wt_contour()
+                self.map_table(update=True)
+                self.map_wt_contour()
+
+                self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+
+                # Reset data cursor to work with new figure
+                if self.actionData_Cursor.isChecked():
+                    self.data_cursor()
+
+
 
     def map_table(self, update=False):
-        """Create and populate map results table.
+        """Create and populate MAP results table.
         """
-
         # Setup table
+        n_transects = len(self.meas.transects)
         tbl = self.table_map_results
         if not update:
             map_header = [self.tr('MAP'), self.tr('Meas.'), self.tr('Delta (%)')]
@@ -11964,7 +11972,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setRowCount(0)
             ncols = len(map_header)
             nrows = len(map_rows)
-            n_transects = len(self.meas.transects)
             tbl.setRowCount(nrows)
             tbl.setColumnCount(ncols)
 
@@ -12007,12 +12014,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             map_area = np.nansum(self.meas.map.cells_area)
             map_v = map_q / map_area * self.units['V']
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_v))))
-
             # Meas. mean v
             col += 1
             meas_v = trans_prop['avg_water_speed'][n_transects] * self.units['V']
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_v))))
-
             # Delta v
             col += 1
             per_diff = 100 * (map_v - meas_v) / meas_v
@@ -12027,7 +12032,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             map_d = np.nanmean(self.meas.map.depths)
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(
                 scientific_notation(map_d *self.units['L']))))
-
             # Meas. mean depth
             col += 1
             depth_meas = []
@@ -12038,7 +12042,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             meas_d = np.nanmean(every_depth)
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_d *
                                                                                                self.units['L']))))
-
             # Delta mean depth
             col += 1
             per_diff = 100 * (map_d - meas_d) / meas_d
@@ -12052,12 +12055,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col = 0
             map_width = self.meas.map.borders_ens[-1]
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_width))))
-
             # Meas. width
             col += 1
             meas_width = trans_prop['width'][n_transects] * self.units['L']
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_width))))
-
             # Delta mean depth
             col += 1
             per_diff = 100 * (map_width - meas_width) / meas_width
@@ -12072,17 +12073,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(3, 0).setFont(self.font_bold)
 
     def map_shiptrack(self):
-        """Creates shiptrack plot for data in transect.
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
+        """Creates shiptrack plot for MAP cross-section and transects' track.
         """
 
         # If the canvas has not been previously created, create the canvas and add the widget.
         if self.map_shiptrack_canvas is None:
-            print('map shiptrack is none')
             # Create the canvas
             self.map_shiptrack_canvas = MplCanvas(parent=self.graphics_map_track, width=4, height=3, dpi=80)
             # Assign layout to widget to allow auto scaling
@@ -12094,7 +12089,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Initialize hidden toolbar for use by graphics controls
             self.map_shiptrack_toolbar = NavigationToolbar(self.map_shiptrack_canvas, self)
             self.map_shiptrack_toolbar.hide()
-            print('OVER')
 
         # Initialize the shiptrack figure and assign to the canvas
         self.map_shiptrack_fig = Maptrack(canvas=self.map_shiptrack_canvas)
@@ -12104,35 +12098,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.map_shiptrack_canvas.draw()
 
-        # self.graphics_map_track.installEventFilter(self)
-        # self.map_shiptrack_canvas.parent().installEventFilter(self)
+    def map_save_data(self):
+        print("we save data here")
 
     # Graphics save
     # =================
     def figsMenuConnection(self):
+        """ Connect ui to event filter for current figures.
+        """
         for fig in self.figs:
             fig.canvas.parent().installEventFilter(self)
         
     def eventFilter(self, source, event):
+        """ Load events.
+        """
         if event.type() == QtCore.QEvent.ContextMenu:
-            print("Event is contextMenu")
             if source in self.ui_parents:
-                print('source in ui_parents')
                 self.current_fig = self.figs[self.ui_parents.index(source)]
                 self.figsMenu.exec_(event.globalPos())
                 return True
         return super().eventFilter(source, event)
     
     def saveFig(self):
-        print("we save plot here")
+        """ Save selected figure.
+        """
         if self.current_fig is not None:
             # Get the current folder setting.
             save_fig = SaveDialog(parent=self, save_type='fig')
+            # Save figure in user format
             if len(save_fig.full_Name) > 0:
                 self.current_fig.fig.savefig(save_fig.full_Name, dpi=300, bbox_inches='tight')
 
-    def saveData(self):
-        print("we save data here")
 
     # Graphics controls
     # =================
@@ -12866,8 +12862,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if len(heading) > 1 and np.any(np.not_equal(heading, 0)):
             self.tab_all.setTabEnabled(2, True)
+            self.tab_all.setTabEnabled(13, True)
         else:
             self.tab_all.setTabEnabled(2, False)
+            self.tab_all.setTabEnabled(13, False)
 
         self.tab_all.setCurrentIndex(0)
 

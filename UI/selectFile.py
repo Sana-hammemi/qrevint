@@ -173,7 +173,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
 
 
 class SaveDialog(QtWidgets.QDialog):
-    """Dialog to allow users to select measurement files for processing.
+    """Dialog to allow users to specify file for saving (_QRev.mat or figure)
 
         Parameters
         ----------
@@ -215,7 +215,7 @@ class SaveDialog(QtWidgets.QDialog):
         elif save_type == 'fig':
             file_name = folder + '/' + (folder).split('/')[-1]
             title = self.tr('Save figure')
-            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;{self.tr('All Files')} (*)"
+            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
         # Get the full names (path + file) of the selected file
         file_save = QtWidgets.QFileDialog.getSaveFileName(
             self, title, file_name, filetype)
