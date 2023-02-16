@@ -228,8 +228,13 @@ class CrossSectionComp(object):
         y_array = np.concatenate(y_list)
 
         # remove nan values to avoid convergence crash
-        x_array = x_array[~np.isnan(x_array)]
-        y_array = y_array[~np.isnan(y_array)]
+        idx = np.argwhere(np.isnan(x_array))
+        x_array = np.delete(x_array, idx)
+        y_array = np.delete(y_array, idx)
+
+        idx = np.argwhere(np.isnan(y_array))
+        x_array = np.delete(x_array, idx)
+        y_array = np.delete(y_array, idx)
 
         # Find ranges and extremes
         x_w = np.amin(x_array)

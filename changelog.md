@@ -1,5 +1,14 @@
 # QRev Change Log
 
+### [**Version 4.3X**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.3X)
+
+**Status**: *Recommended*
+
+**Changes:**
+- Updated Export Mean Cross-Option signal
+- Fixed XML export fail related to Mean XS comp fail due to invalid data in 
+  the XY data during the projection.
+
 ### [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
 **Status**: *Recommended*

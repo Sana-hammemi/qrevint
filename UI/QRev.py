@@ -1059,7 +1059,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options['QA'][
                                 'MinTransects'],
                             min_duration=self.agency_options['QA'][
-                                'MinDuration'])
+                                'MinDuration'], export_xs=self.xs_export)
                     except CoordError as error:
                         self.popup_message(error.text)
 
@@ -1080,7 +1080,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.use_measurement_thresholds,
                         min_transects=self.agency_options['QA'][
                             'MinTransects'],
-                        min_duration=self.agency_options['QA']['MinDuration'])
+                        min_duration=self.agency_options['QA']['MinDuration'],
+                        export_xs=self.xs_export)
 
             # Load and process TRDI data
             elif select.type == 'TRDI':
@@ -1100,7 +1101,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.use_measurement_thresholds,
                         min_transects=self.agency_options['QA'][
                             'MinTransects'],
-                        min_duration=self.agency_options['QA']['MinDuration'])
+                        min_duration=self.agency_options['QA']['MinDuration'],
+                        export_xs=self.xs_export)
 
             # Load QRev data
             elif select.type == 'QRev':
@@ -1147,7 +1149,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if msg_box.clickedButton() == view_btn:
                         self.meas = Measurement(in_file=mat_data,
                                                 source='QRev',
-                                                proc_type='None')
+                                                proc_type='None',
+                                                export_xs=self.xs_export)
                     elif msg_box.clickedButton() == reprocess_btn:
                         self.meas = Measurement(
                             in_file=mat_data,
@@ -1160,7 +1163,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options['QA'][
                                 'MinTransects'],
                             min_duration=self.agency_options['QA'][
-                                'MinDuration'])
+                                'MinDuration'],
+                            export_xs=self.xs_export)
 
                 # Settings based on measurement settings
                 self.use_weighted = self.meas.use_weighted
@@ -1771,12 +1775,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Export mean XS
                 if options.cb_xs_export.isChecked():
                     self.xs_export = True
+                    self.meas.export_xs = True
                     try:
                         self.sticky_settings.set('XsExport', True)
                     except KeyError:
                         self.sticky_settings.new('XsExport', True)
                 else:
                     self.xs_export = False
+                    self.meas.export_xs = False
                     try:
                         self.sticky_settings.set('XsExport', False)
                     except KeyError:
