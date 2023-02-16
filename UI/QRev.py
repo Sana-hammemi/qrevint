@@ -1257,17 +1257,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Changes the navigation reference to GPS GGA
         """
         if self.meas is not None:
-            with self.wait_cursor():
-                # Get all current settings
-                settings = Measurement.current_settings(self.meas)
-                old_discharge = self.meas.discharge
-                # Change NavRef to selected setting
-                settings['NavRef'] = 'GGA'
-                # Update measurement and GUI
-                Measurement.apply_settings(self.meas, settings)
-                self.update_toolbar_nav_ref()
-                self.change = True
-                self.tab_manager(old_discharge=old_discharge)
+            # Get all current settings
+            settings = Measurement.current_settings(self.meas)
+            invalid_gga_idx = []
+            # Check if gga quality is fine
+            for idx in self.checked_transects_idx:
+                if self.meas.transects[idx].boat_vel.gga_vel is not None:
+                    if (self.meas.transects[idx].gps.diff_qual_ens[~np.isnan(
+                            self.meas.transects[idx].gps.diff_qual_ens)] <= settings['ggaDiffQualFilter']).all():
+                        invalid_gga_idx.append(idx)
+            if len(invalid_gga_idx) > 0:
+                error_gga = QtWidgets.QMessageBox()
+                error_gga.setIcon(QtWidgets.QMessageBox.Warning)
+                error_gga.setWindowTitle(self.tr("GGA Error"))
+                error_gga.setText(self.tr(f"GGA quality is too low for transects {', '.join(map(str, invalid_gga_idx))}. "
+                                          f"\nPlease change settings or selected transects."))
+                error_gga.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                error_gga = error_gga.exec()
+            else:
+                with self.wait_cursor():
+                    old_discharge = self.meas.discharge
+                    # Change NavRef to selected setting
+                    settings['NavRef'] = 'GGA'
+                    # Update measurement and GUI
+                    Measurement.apply_settings(self.meas, settings)
+                    self.update_toolbar_nav_ref()
+                    self.change = True
+                    self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_vtg(self):
         """Changes the navigation reference to GPS VTG
@@ -11815,14 +11831,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         if self.meas.map is not None:
             # Save MAP parameters as dic
-            self.map_parameters = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
-                                   'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
-                                   'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
-                                   'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
-                                   'cb_map_edges': self.cb_map_edges.isChecked(),
-                                   'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
-                                   'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
-                                   'combo_map_data': self.combo_map_data.currentText()}
+            self.map_settings = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
+                                 'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
+                                 'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
+                                 'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
+                                 'cb_map_edges': self.cb_map_edges.isChecked(),
+                                 'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
+                                 'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
+                                 'combo_map_data': self.combo_map_data.currentText()}
 
             # MAP table
             self.map_table()
@@ -11839,7 +11855,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             if not self.map_initialized:
                 # Configure dictionary of plot options
-                self.map_current_parameters = self.map_parameters
+                self.map_current_settings = self.map_settings
                 self.pb_map_apply.clicked.connect(self.update_map)
                 self.pb_map_save.clicked.connect(self.map_save_data)
                 # Disable MAP open Earth button while it's not set up
@@ -11879,7 +11895,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
 
         # Quiver parameters
-        if self.map_parameters['combo_map_data'] == "Primary velocity":
+        if self.map_settings['combo_map_data'] == "Primary velocity":
             vy = self.meas.map.secondary_velocity
             quiver_label = "Secondary velocity"
         else:
@@ -11889,18 +11905,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                        'z': self.meas.map.depth_cells_center,
                        'vy': vy,
                        'vz': self.meas.map.vertical_velocity,
-                       'scale': self.map_parameters['ed_map_secondary_velocity'],
+                       'scale': self.map_settings['ed_map_secondary_velocity'],
                        'label': quiver_label}
 
         # Bed profiles of transects
-        if self.map_parameters['cb_map_bed_profiles']:
+        if self.map_settings['cb_map_bed_profiles']:
             bed_profiles = {'x': self.meas.map.acs_distance, 'depth': self.meas.map.depth_by_transect}
         else:
             bed_profiles = None
 
         self.map_wt_contour_fig.create(transect=self.meas.map,
                                        units=self.units,
-                                       data_type=self.map_parameters['combo_map_data'],
+                                       data_type=self.map_settings['combo_map_data'],
                                        data_quiver=data_quiver,
                                        bed_profiles=bed_profiles,
                                        color_map=self.color_map,
@@ -11917,7 +11933,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         with self.wait_cursor():
             change_data = False
             change_plot = False
-            self.map_parameters = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
+            self.map_settings = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
                                    'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
                                    'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
                                    'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
@@ -11925,8 +11941,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                    'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
                                    'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
                                    'combo_map_data': self.combo_map_data.currentText()}
-            for key in self.map_parameters:
-                if self.map_parameters[key] != self.map_current_parameters[key]:
+            for key in self.map_settings:
+                if self.map_settings[key] != self.map_current_settings[key]:
                     if key in ['cb_map_interpolation', 'ed_map_cell_width', 'ed_map_cell_height', 'cb_map_top_bottom',
                                'cb_map_edges']:
                         change_data = True
@@ -11936,16 +11952,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         change_plot = True
 
             # Save current parameters
-            self.map_current_parameters = self.map_parameters
+            self.map_current_settings = self.map_settings
 
             # Apply changes
             if change_data or change_plot:
                 if change_data:
-                    self.meas.compute_map(node_horizontal_user=self.map_parameters['ed_map_cell_width'],
-                                          node_vertical_user=self.map_parameters['ed_map_cell_height'],
-                                          extrap_option=self.map_parameters['cb_map_top_bottom'],
-                                          edges_option=self.map_parameters['cb_map_edges'],
-                                          interp_option=self.map_parameters['cb_map_interpolation'])
+                    self.meas.compute_map(node_horizontal_user=self.map_settings['ed_map_cell_width'],
+                                          node_vertical_user=self.map_settings['ed_map_cell_height'],
+                                          extrap_option=self.map_settings['cb_map_top_bottom'],
+                                          edges_option=self.map_settings['cb_map_edges'],
+                                          interp_option=self.map_settings['cb_map_interpolation'])
                 self.map_table(update=True)
                 self.map_wt_contour()
 
