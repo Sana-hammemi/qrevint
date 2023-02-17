@@ -7,6 +7,7 @@ import webbrowser
 import getpass
 import json
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal, QRegExp
@@ -1264,14 +1265,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             for idx in self.checked_transects_idx:
                 if self.meas.transects[idx].boat_vel.gga_vel is not None:
                     if (self.meas.transects[idx].gps.diff_qual_ens[~np.isnan(
-                            self.meas.transects[idx].gps.diff_qual_ens)] <= settings['ggaDiffQualFilter']).all():
+                            self.meas.transects[idx].gps.diff_qual_ens)] < settings['ggaDiffQualFilter']).all():
                         invalid_gga_idx.append(idx)
             if len(invalid_gga_idx) > 0:
                 error_gga = QtWidgets.QMessageBox()
                 error_gga.setIcon(QtWidgets.QMessageBox.Warning)
                 error_gga.setWindowTitle(self.tr("GGA Error"))
-                error_gga.setText(self.tr(f"GGA quality is too low for transects {', '.join(map(str, invalid_gga_idx))}. "
-                                          f"\nPlease change settings or selected transects."))
+                error_gga.setText(
+                    self.tr(f"GGA quality is too low for transects {', '.join(map(str, invalid_gga_idx))}. "
+                            f"\nPlease change settings or selected transects."))
                 error_gga.setStandardButtons(QtWidgets.QMessageBox.Ok)
                 error_gga = error_gga.exec()
             else:
@@ -11934,13 +11936,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             change_data = False
             change_plot = False
             self.map_settings = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
-                                   'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
-                                   'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
-                                   'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
-                                   'cb_map_edges': self.cb_map_edges.isChecked(),
-                                   'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
-                                   'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
-                                   'combo_map_data': self.combo_map_data.currentText()}
+                                 'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
+                                 'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
+                                 'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
+                                 'cb_map_edges': self.cb_map_edges.isChecked(),
+                                 'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
+                                 'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
+                                 'combo_map_data': self.combo_map_data.currentText()}
             for key in self.map_settings:
                 if self.map_settings[key] != self.map_current_settings[key]:
                     if key in ['cb_map_interpolation', 'ed_map_cell_width', 'ed_map_cell_height', 'cb_map_top_bottom',
@@ -11970,8 +11972,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Reset data cursor to work with new figure
                 if self.actionData_Cursor.isChecked():
                     self.data_cursor()
-
-
 
     def map_table(self, update=False):
         """Create and populate MAP results table.
@@ -12047,7 +12047,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col = 0
             map_d = np.nanmean(self.meas.map.depths)
             tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(
-                scientific_notation(map_d *self.units['L']))))
+                scientific_notation(map_d * self.units['L']))))
             # Meas. mean depth
             col += 1
             depth_meas = []
@@ -12115,7 +12115,43 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_shiptrack_canvas.draw()
 
     def map_save_data(self):
-        print("we save data here")
+        map_data = self.meas.map
+        if map_data is not None:
+            row, col = map_data.primary_velocity.shape
+            ens_mid = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) * 0.5
+            data = {'Distance (Left bank) ' + self.units['label_L']: np.repeat(ens_mid, row) * self.units['L'],
+                    'Primary velocity ' + self.units['label_V']: map_data.primary_velocity.ravel(order='F') *
+                                                                 self.units['V'],
+                    'Secondary velocity ' + self.units['label_V']: map_data.secondary_velocity.ravel(order='F') *
+                                                                   self.units['V'],
+                    'Streamwise velocity ' + self.units['label_V']: map_data.streamwise_velocity.ravel(order='F') *
+                                                                    self.units['V'],
+                    'Transverse velocity (Left to Right) ' + self.units['label_V']:
+                        map_data.transverse_velocity.ravel(order='F') * self.units['V'],
+                    'Vertical velocity ' + self.units['label_V']: map_data.primary_velocity.ravel(order='F') *
+                                                                  self.units['V'],
+                    'Depth ' + self.units['label_L']: np.repeat(map_data.depths, row) * self.units['L'],
+                    'Cells discharge ' + self.units['label_Q']: map_data.cells_discharge.ravel(order='F') *
+                                                                self.units['Q'],
+                    'Cells area ' + self.units['label_A']: map_data.cells_area.ravel(order='F') *
+                                                           self.units['A'],
+                    'Distance cells center ' + self.units['label_L']: map_data.distance_cells_center.ravel(order='F') *
+                                                                      self.units['L'],
+                    'Depth cells center ' + self.units['label_L']: map_data.depth_cells_center.ravel(order='F') *
+                                                                   self.units['L']
+                    }
+
+            df = pd.DataFrame(data)
+            df = df[df['Cells discharge ' + self.units['label_Q']].notna()]
+            save_map = SaveDialog(parent=self, save_type='MAP')
+            if len(save_map.full_Name) > 0:
+                try:
+                    if save_map.file_extension == '.csv':
+                        df.to_csv(save_map.full_Name, sep=';', index=False, header=True)
+                    elif save_map.file_extension == '.txt':
+                        df.to_csv(save_map.full_Name, sep=' ', index=False, header=True)
+                except Exception:
+                    self.popup_message(self.tr("Impossible to save MAP data."))
 
     # Graphics save
     # =================
@@ -12124,7 +12160,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
         for fig in self.figs:
             fig.canvas.parent().installEventFilter(self)
-        
+
     def eventFilter(self, source, event):
         """ Load events.
         """
@@ -12134,7 +12170,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.figsMenu.exec_(event.globalPos())
                 return True
         return super().eventFilter(source, event)
-    
+
     def saveFig(self):
         """ Save selected figure.
         """
@@ -12144,7 +12180,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Save figure in user format
             if len(save_fig.full_Name) > 0:
                 self.current_fig.fig.savefig(save_fig.full_Name, dpi=300, bbox_inches='tight')
-
 
     # Graphics controls
     # =================
@@ -12253,7 +12288,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Adv. Graph
             elif tab_idx == 'Adv. Graph':
                 self.adv_graph_tab()
-
 
     def x_axis_time(self):
         """Changes the x-axis type to time

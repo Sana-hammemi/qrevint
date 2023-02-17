@@ -929,7 +929,7 @@ class DepthData(object):
                 np.divide((rng * w),
                     np.nansum(w, 0),
                     out=np.zeros_like(rng),
-                    where = np.nansum(w, 0) != 0)
+                    where=np.nansum(w, 0) != 0)
                 , 0)
             avg_depth[avg_depth == draft] = np.nan
 

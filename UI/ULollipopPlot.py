@@ -29,11 +29,10 @@ class ULollipopPlot(object):
         meas: Measurement
             Object of class Measurement
         """
+        self.fig.clear()
 
         # Configure axis
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
-
-        self.fig.ax.clear()
 
         if meas.run_oursin:
             # Set margins and padding for figure

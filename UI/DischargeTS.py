@@ -49,13 +49,14 @@ class DischargeTS(object):
             Dictionary of units conversion factors
         """
 
+        self.fig.clear()
+
         # Configure axis
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
-        self.fig.ax.clear()
-
         # Set margins and padding for figure
         self.fig.subplots_adjust(left=0.2, bottom=0.15, right=0.98, top=0.98, wspace=0.1, hspace=0)
+
 
         # Plot each transects discharge as a horizontal line from start time to end time
         for idx in checked:
