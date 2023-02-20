@@ -827,6 +827,8 @@ class Measurement(object):
         self.use_measurement_thresholds = \
             self.transects[self.checked_transect_idx[0]].boat_vel.bt_vel.use_measurement_thresholds
 
+        self.compute_map()
+
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and vertical velocities and compute the thresholds
         using these composites.
@@ -2014,6 +2016,7 @@ class Measurement(object):
             Boolean indicating if interpolated data should be used
         """
         if all(deg == 0 for deg in self.transects[self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
+
             self.map = None
         else:
             self.map = MAP()

@@ -220,7 +220,7 @@ class SaveDialog(QtWidgets.QDialog):
         elif save_type == 'MAP':
             file_name = folder + '/MAP_' + (folder).split('/')[-1]
             title = self.tr('Save MAP')
-            filetype = f"{self.tr('csv(separator: ;)')}( *.csv);;" \
+            filetype = f"{self.tr('csv (separator: semicolon)')}( *.csv);;" \
                        f"{self.tr('text (separator: space)')}(*.txt);;" \
                        f"{self.tr('All Files')} (*)"
 

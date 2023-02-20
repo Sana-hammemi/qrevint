@@ -2,6 +2,7 @@ import sys
 import copy
 import os
 import shutil
+import utm
 import simplekml
 import webbrowser
 import getpass
@@ -11832,6 +11833,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Initializes and configures MAP tab.
         """
         if self.meas.map is not None:
+            if self.change:
+                # Reset settings if change
+                self.cb_map_interpolation.setChecked(True)
+                self.cb_map_top_bottom.setChecked(True)
+                self.cb_map_edges.setChecked(True)
+                self.cb_map_bed_profiles.setChecked(False)
+                self.ed_map_cell_width.setText("")
+                self.ed_map_cell_height.setText("")
+                self.ed_map_secondary_velocity.setText("")
+                self.combo_map_data.setCurrentIndex(0)
+
+            # Disable MAP open Earth button if not GGA
+            settings = Measurement.current_settings(self.meas)
+            if settings['NavRef'] == 'gga_vel':
+                self.pb_map_open_earth.setEnabled(True)
+            else:
+                self.pb_map_open_earth.setEnabled(False)
+
             # Save MAP parameters as dic
             self.map_settings = {'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
                                  'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
@@ -11860,72 +11879,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.map_current_settings = self.map_settings
                 self.pb_map_apply.clicked.connect(self.update_map)
                 self.pb_map_save.clicked.connect(self.map_save_data)
-                # Disable MAP open Earth button while it's not set up
-                self.pb_map_open_earth.setEnabled(False)
-                # self.pb_map_open_earth.connect()
+                self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
                 self.map_initialized = True
-            elif self.change:
-                # Reset settings if change
-                self.cb_map_interpolation.setChecked(True)
-                self.cb_map_top_bottom.setChecked(True)
-                self.cb_map_edges.setChecked(True)
-                self.cb_map_bed_profiles.setChecked(False)
-                self.ed_map_cell_width.setText("")
-                self.ed_map_cell_height.setText("")
-                self.ed_map_secondary_velocity.setText("")
-                self.combo_map_data.setCurrentIndex(0)
-
-    def map_wt_contour(self):
-        """Creates water track profile on MAP data.
-        """
-
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.map_wt_contour_canvas is None:
-            # Create the canvas
-            self.map_wt_contour_canvas = MplCanvas(parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80)
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graphics_map_wt_contour)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.map_wt_contour_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.map_wt_contour_toolbar = NavigationToolbar(self.map_wt_contour_canvas, self)
-            self.map_wt_contour_toolbar.hide()
-
-        # Initialize the boat speed figure and assign to the canvas
-        self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
-
-        # Quiver parameters
-        if self.map_settings['combo_map_data'] == "Primary velocity":
-            vy = self.meas.map.secondary_velocity
-            quiver_label = "Secondary velocity"
-        else:
-            vy = self.meas.map.transverse_velocity
-            quiver_label = "Transverse velocity"
-        data_quiver = {'x': self.meas.map.distance_cells_center,
-                       'z': self.meas.map.depth_cells_center,
-                       'vy': vy,
-                       'vz': self.meas.map.vertical_velocity,
-                       'scale': self.map_settings['ed_map_secondary_velocity'],
-                       'label': quiver_label}
-
-        # Bed profiles of transects
-        if self.map_settings['cb_map_bed_profiles']:
-            bed_profiles = {'x': self.meas.map.acs_distance, 'depth': self.meas.map.depth_by_transect}
-        else:
-            bed_profiles = None
-
-        self.map_wt_contour_fig.create(transect=self.meas.map,
-                                       units=self.units,
-                                       data_type=self.map_settings['combo_map_data'],
-                                       data_quiver=data_quiver,
-                                       bed_profiles=bed_profiles,
-                                       color_map=self.color_map,
-                                       x_axis_type="MAP")
-        self.map_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0)
-        # Draw canvas
-        self.map_wt_contour_canvas.draw()
 
     def update_map(self):
         """Updates MAP with user's parameters.
@@ -12018,7 +11973,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                                                                self.units['Q']))))
             # Delta Q
             col += 1
-            per_diff = 100 * (map_q - discharge['total_mean']) / discharge['total_mean']
+            if discharge['total_mean'] != 0:
+                per_diff = 100 * (map_q - discharge['total_mean']) / discharge['total_mean']
+            else:
+                per_diff = np.nan
             if np.isnan(per_diff):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             else:
@@ -12029,14 +11987,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col = 0
             map_area = np.nansum(self.meas.map.cells_area)
             map_v = map_q / map_area * self.units['V']
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_v))))
+            if np.isnan(map_v):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_v))))
             # Meas. mean v
             col += 1
             meas_v = trans_prop['avg_water_speed'][n_transects] * self.units['V']
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_v))))
+            if np.isnan(meas_v):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_v))))
             # Delta v
             col += 1
-            per_diff = 100 * (map_v - meas_v) / meas_v
+            if meas_v != 0:
+                per_diff = 100 * (map_v - meas_v) / meas_v
+            else:
+                per_diff = np.nan
             if np.isnan(per_diff):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             else:
@@ -12046,8 +12013,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # MAP mean depth
             col = 0
             map_d = np.nanmean(self.meas.map.depths)
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(
-                scientific_notation(map_d * self.units['L']))))
+            if np.isnan(map_d):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(
+                    scientific_notation(map_d * self.units['L']))))
             # Meas. mean depth
             col += 1
             depth_meas = []
@@ -12056,11 +12026,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 depth_meas.append(transect.depths.bt_depths.depth_processed_m)
             every_depth = np.array([item for subarray in depth_meas for item in subarray])
             meas_d = np.nanmean(every_depth)
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_d *
+            if np.isnan(meas_d):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_d *
                                                                                                self.units['L']))))
             # Delta mean depth
             col += 1
-            per_diff = 100 * (map_d - meas_d) / meas_d
+            if meas_d != 0:
+                per_diff = 100 * (map_d - meas_d) / meas_d
+            else:
+                per_diff = np.nan
             if np.isnan(per_diff):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             else:
@@ -12070,14 +12046,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # MAP width
             col = 0
             map_width = self.meas.map.borders_ens[-1]
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_width))))
+            if np.isnan(map_width):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(map_width))))
             # Meas. width
             col += 1
             meas_width = trans_prop['width'][n_transects] * self.units['L']
-            tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_width))))
+            if np.isnan(meas_width):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
+            else:
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_width))))
             # Delta mean depth
             col += 1
-            per_diff = 100 * (map_width - meas_width) / meas_width
+            if meas_width != 0:
+                per_diff = 100 * (map_width - meas_width) / meas_width
+            else:
+                per_diff = np.nan
             if np.isnan(per_diff):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             else:
@@ -12087,6 +12072,58 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(1, 0).setFont(self.font_bold)
             tbl.item(2, 0).setFont(self.font_bold)
             tbl.item(3, 0).setFont(self.font_bold)
+
+    def map_wt_contour(self):
+        """Creates water track profile on MAP data.
+        """
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.map_wt_contour_canvas is None:
+            # Create the canvas
+            self.map_wt_contour_canvas = MplCanvas(parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80)
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graphics_map_wt_contour)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(1, 1, 1, 1)
+            # Add the canvas
+            layout.addWidget(self.map_wt_contour_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.map_wt_contour_toolbar = NavigationToolbar(self.map_wt_contour_canvas, self)
+            self.map_wt_contour_toolbar.hide()
+
+        # Initialize the boat speed figure and assign to the canvas
+        self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
+
+        # Quiver parameters
+        if self.map_settings['combo_map_data'] == "Primary velocity":
+            vy = self.meas.map.secondary_velocity
+            quiver_label = "Secondary velocity"
+        else:
+            vy = self.meas.map.transverse_velocity
+            quiver_label = "Transverse velocity"
+        data_quiver = {'x': self.meas.map.distance_cells_center,
+                       'z': self.meas.map.depth_cells_center,
+                       'vy': vy,
+                       'vz': self.meas.map.vertical_velocity,
+                       'scale': self.map_settings['ed_map_secondary_velocity'],
+                       'label': quiver_label}
+
+        # Bed profiles of transects
+        if self.map_settings['cb_map_bed_profiles']:
+            bed_profiles = {'x': self.meas.map.acs_distance, 'depth': self.meas.map.depth_by_transect}
+        else:
+            bed_profiles = None
+
+        self.map_wt_contour_fig.create(transect=self.meas.map,
+                                       units=self.units,
+                                       data_type=self.map_settings['combo_map_data'],
+                                       data_quiver=data_quiver,
+                                       bed_profiles=bed_profiles,
+                                       color_map=self.color_map,
+                                       x_axis_type="MAP")
+        self.map_wt_contour_fig.fig.subplots_adjust(left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0)
+        # Draw canvas
+        self.map_wt_contour_canvas.draw()
 
     def map_shiptrack(self):
         """Creates shiptrack plot for MAP cross-section and transects' track.
@@ -12109,7 +12146,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Initialize the shiptrack figure and assign to the canvas
         self.map_shiptrack_fig = Maptrack(canvas=self.map_shiptrack_canvas)
         # Create the figure with the specified data
-        self.map_shiptrack_fig.create(map_data=self.meas.map, units=self.units)
+        settings = Measurement.current_settings(self.meas)
+        self.map_shiptrack_fig.create(map_data=self.meas.map, units=self.units, nav_ref=settings['NavRef'])
 
         # Draw canvas
         self.map_shiptrack_canvas.draw()
@@ -12152,6 +12190,45 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         df.to_csv(save_map.full_Name, sep=' ', index=False, header=True)
                 except Exception:
                     self.popup_message(self.tr("Impossible to save MAP data."))
+
+    def plot_map_google_earth(self):
+        """Creates line plots of transects in Google Earth using GGA coordinates and MAP average ship track.
+        """
+        kml = simplekml.Kml(open=1)
+        # Create a shiptrack for each checked transect
+        for transect_idx in self.checked_transects_idx:
+            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
+            lon = lon[np.logical_not(np.isnan(lon))]
+            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
+            lat = lat[np.logical_not(np.isnan(lat))]
+            line_name = self.meas.transects[transect_idx].file_name[:-4]
+            lon_lat = tuple(zip(lon, lat))
+            _ = kml.newlinestring(name=line_name, coords=lon_lat)
+
+        # Get utm zone
+        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
+        # Define average ship track
+        left_x = np.nanmedian([item[0] for item in self.meas.map.x_raw_coordinates])
+        x_boundaries = [min([min(l) for l in self.meas.map.x_projected]),
+                        max([max(l) for l in self.meas.map.x_projected])]
+
+        x_utm = np.array([min(x_boundaries, key=lambda x: abs(x - left_x)),
+                          max(x_boundaries, key=lambda x: abs(x - left_x))])
+        y_utm = np.array([i * self.meas.map.slope + self.meas.map.intercept for i in x_utm])
+
+        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
+        line_name = 'MAP average ship track'
+        lon_lat = tuple(zip(lon, lat))
+        lin = kml.newlinestring(name=line_name, coords=lon_lat)
+        lin.style.linestyle.color = 'ff0000ff'
+
+        fullname = os.path.join(self.sticky_settings.get('Folder'),
+                                datetime.today().strftime('MAP_%Y%m%d_%H%M%S_QRev.kml'))
+        kml.save(fullname)
+        try:
+            os.startfile(fullname)
+        except os.error:
+            self.popup_message(text=self.tr('Google Earth is not installed or is not associated with kml files.'))
 
     # Graphics save
     # =================

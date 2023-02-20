@@ -1,11 +1,8 @@
-import warnings
 import numpy as np
-from PyQt5.QtWidgets import QMenu
 
 
 class Maptrack(object):
-    """Class to generate shiptrack plot. If checkboxes for the boat reference
-        (BT, GGA, VTG) are available they can be used to control what references are plotted.
+    """Class to generate shiptrack plot from MAP profile.
 
         Attributes
         ----------
@@ -15,24 +12,6 @@ class Maptrack(object):
             Figure object of the canvas
         units: dict
             Dictionary of units conversions
-        cb: bool
-            Boolean to determine if checkboxes to control the boat speed reference are to be used
-        cb_bt: QCheckBox
-            Name of QCheckBox for bottom track
-        cb_gga: QCheckBox
-            Name of QCheckBox for GGA
-        cb_vtg: QCheckBox
-            Name of QCheckBox for VTG
-        cb_vectors: QCheckBox
-            Name of QCheckBox for vectors
-        bt: list
-            Plot reference for bottom track
-        gga: list
-            Plot reference for GGA
-        vtg: list
-            Plot reference for VTG
-        vectors: list
-            Plot reference for vectors
         hover_connection: int
             Index to data cursor connection
         annot: Annotation
@@ -52,44 +31,19 @@ class Maptrack(object):
         self.canvas = canvas
         self.fig = canvas.fig
         self.units = None
-        self.cb = None
-        self.cb_bt = None
-        self.cb_gga = None
-        self.cb_vtg = None
-        self.cb_vectors = None
-        self.bt = None
-        self.gga = None
-        self.vtg = None
-        self.vectors = None
-        self.vector_ref = None
+        self.acs = None
         self.hover_connection = None
         self.annot = None
 
-        self.clicked_connection = None
-
-    def create(self, map_data, units):
+    def create(self, map_data, units, nav_ref):
         """Create the axes and lines for the figure.
 
         Parameters
         ----------
-        transect: TransectData
-            Object of TransectData containing boat speeds to be plotted
+        map_data: MAP
+            Object of MAP from Measurement
         units: dict
-            Dictionary of units conversions
-        cb: bool
-            Boolean to determine if checkboxes to control the boat speed reference are to be used
-        cb_bt: QCheckBox
-            Name of QCheckBox for bottom track
-        cb_gga: QCheckBox
-            Name of QCheckBox for GGA
-        cb_vtg: QCheckBox
-            Name of QCheckBox for VTG
-        cb_vectors: QCheckBox
-            Name of QCheckBox for vectors
-        n_ensembles: int
-            Number of ensembles to plot. Used in edges tab.
-        edge_start: int
-            Ensemble to start plotting. Used in edges tab.
+            Dictionary of units conversions.
         """
 
         # Assign and save parameters
@@ -103,44 +57,32 @@ class Maptrack(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.18, bottom=0.18, right=0.98, top=0.98, wspace=0.1, hspace=0)
+        self.fig.subplots_adjust(left=0.15, bottom=0.1, right=0.98, top=0.95, wspace=0.1, hspace=0)
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
 
-        x_boundaries0 = [min([min(l) for l in map_data.x_projected]), max([max(l) for l in map_data.x_projected])]
-        x_boundaries1 = [min([min(l) for l in map_data.x_raw_coordinates]), max([max(l) for l in map_data.x_raw_coordinates])]
-        x_boundaries = [min([x_boundaries0[0], x_boundaries1[0]]), max([x_boundaries0[1], x_boundaries1[1]])]
-        y_boundaries0 = [min([min(l) for l in map_data.y_projected]), max([max(l) for l in map_data.y_projected])]
-        y_boundaries1 = [min([min(l) for l in map_data.y_raw_coordinates]), max([max(l) for l in map_data.y_raw_coordinates])]
-        y_boundaries = [min([y_boundaries0[0], y_boundaries1[0]]), max([y_boundaries0[1], y_boundaries1[1]])]
-        x_mean = np.nanmean(x_boundaries)
-        y_mean = np.nanmean(y_boundaries)
-        x2 = abs(x_boundaries[1] - x_boundaries[0]) / 2
-        y2 = abs(y_boundaries[1] - y_boundaries[0]) / 2
-        dist = np.nanmax([x2, y2])
+        # Boundaries on x and y coordinates for the selected transects
+        x_plt = [min([min(l) for l in map_data.x_projected]), max([max(l) for l in map_data.x_projected])]
+        y_plt = [i * map_data.slope + map_data.intercept for i in x_plt]
 
-
-        self.acs = self.fig.ax.plot(x_boundaries, [map_data.slope * l + map_data.intercept for l in x_boundaries],
-                                    color='firebrick', linewidth=2, label='MAP Average course', zorder=2)
+        self.acs = self.fig.ax.plot(x_plt, y_plt, color='firebrick', linewidth=2, label='MAP Average course', zorder=1)
         for i in range(len(map_data.x_raw_coordinates)):
-            self.fig.ax.plot(map_data.x_raw_coordinates[i], map_data.y_raw_coordinates[i], color='grey', linewidth=1)
-        self.fig.ax.plot(np.nan, np.nan, color='grey', linewidth=1, label='Transect boat track')
+            self.fig.ax.plot(map_data.x_raw_coordinates[i], map_data.y_raw_coordinates[i], color='grey', linewidth=1,
+                             zorder=0)
 
         # Customize axes
-        self.fig.ax.set_xlabel(self.canvas.tr('Distance East ') + units['label_L'])
-        self.fig.ax.set_ylabel(self.canvas.tr('Distance North ') + units['label_L'])
+        if nav_ref == 'gga_vel':
+            self.fig.ax.set_xlabel(self.canvas.tr('UTM East coordinates ') + units['label_L'])
+            self.fig.ax.set_ylabel(self.canvas.tr('UTM North coordinates ') + units['label_L'])
+        else:
+            self.fig.ax.set_xlabel(self.canvas.tr('Distance East ') + units['label_L'])
+            self.fig.ax.set_ylabel(self.canvas.tr('Distance North ') + units['label_L'])
 
         self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
         self.fig.ax.grid()
         self.fig.ax.axis('equal')
         for label in (self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels()):
             label.set_fontsize(10)
-
-
-        self.fig.ax.set_ylim(y_mean - dist, y_mean + dist)
-        self.fig.ax.set_xlim(x_mean - dist, x_mean + dist)
-        # self.fig.ax.gca().set_aspect('equal', adjustable='box')
-        # self.fig.ax.legend(loc='best')
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",

@@ -198,7 +198,7 @@ class WTContour(object):
                                            data_quiver['vy'] * units['V'], data_quiver['vz'] * units['V'],
                                            units='inches', scale=5*data_quiver['scale'], pivot='tail')
 
-                    self.fig.ax.quiverkey(q, X=0.95, Y=-0.042, U=data_quiver['scale'], label=data_quiver['label'] + '\n' +
+                    self.fig.ax.quiverkey(q, X=0.95, Y=-0.046, U=data_quiver['scale'], label=data_quiver['label'] + '\n' +
                                           str(data_quiver['scale']) + ' ' + units['label_V'],
                                           labelpos='E', coordinates='axes', fontproperties={'size': 12})
                 self.data_quiver = data_quiver
@@ -209,7 +209,7 @@ class WTContour(object):
                 # x_fill = np.append(x_fill, x[-1] + axis_buffer * 0.02)
                 depth_fill = np.insert(depth, 0, depth[0])
                 depth_fill = np.append(depth_fill, depth[-1])
-                self.fig.ax.fill_between(x_fill, np.ceil(np.nanmax(depth * units['L'])), depth_fill * units['L'],
+                self.fig.ax.fill_between(x_fill, 1.15*np.ceil(np.nanmax(self.cell_plt)), depth_fill * units['L'],
                                          color='w')
                 # TODO fix pcolormesh (bug?) which make higher/lower cells too wide
                 self.fig.ax.fill_between(x_fill, np.tile(-self.cell_plt[1, 0]*0.5, len(x_fill)),
@@ -246,7 +246,7 @@ class WTContour(object):
             self.fig.ax.xaxis.label.set_fontsize(12)
             self.fig.ax.yaxis.label.set_fontsize(12)
             self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
-            self.fig.ax.set_ylim(top=0, bottom=np.ceil(np.nanmax(depth * units['L'])))
+            self.fig.ax.set_ylim(top=0, bottom=1.1*np.nanmax(depth * units['L']))
 
             # Label and limits for x axis
             if x_axis_type == 'L':

@@ -209,8 +209,6 @@ class MAP(object):
             if transect.orig_start_edge == 'Right':
                 # Reverse transects in ordred to start at 0 on left edge
                 valid = transect.depths.bt_depths.valid_data[::-1]
-                # Track
-                dmg_ind = np.where(abs(ship_data['dmg_m']) == max(abs(ship_data['dmg_m'])))[0][0]
                 if nav_ref == 'gga_vel':
                     nan_idx = np.argwhere(np.isnan(
                         transect.gps.gga_lat_ens_deg[::-1]+transect.gps.gga_lon_ens_deg[::-1]))
@@ -220,6 +218,7 @@ class MAP(object):
                     lon = transect.gps.gga_lon_ens_deg[::-1][valid]
                     x_transect, y_transect, _, _ = utm.from_latlon(lat, lon)
                 else:
+                    dmg_ind = np.where(abs(ship_data['dmg_m']) == max(abs(ship_data['dmg_m'])))[0][0]
                     x_track = ship_data['track_x_m'] - ship_data['track_x_m'][dmg_ind]
                     y_track = ship_data['track_y_m'] - ship_data['track_y_m'][dmg_ind]
                     x_transect = x_track[::-1]
@@ -284,12 +283,18 @@ class MAP(object):
             invalid_data.append(invalid[:, valid])
 
             # Edges parameters
-            left_param[index_transect, :] = [meas.transects[id_transect].edges.left.distance_m,
-                                             meas.discharge[id_transect].edge_coef('left',
-                                                                                   meas.transects[id_transect])]
-            right_param[index_transect, :] = [meas.transects[id_transect].edges.right.distance_m,
-                                              meas.discharge[id_transect].edge_coef('right',
-                                                                                    meas.transects[id_transect])]
+            left = [meas.transects[id_transect].edges.left.distance_m,
+                    meas.discharge[id_transect].edge_coef('left', meas.transects[id_transect])]
+            if isinstance(left[1], list):
+                left[1] = np.nan
+            left_param[index_transect, :] = left
+
+            right = [meas.transects[id_transect].edges.right.distance_m,
+                    meas.discharge[id_transect].edge_coef('right', meas.transects[id_transect])]
+            if isinstance(right[1], list):
+                right[1] = np.nan
+            right_param[index_transect, :] = right
+
             self.left_geometry = np.nanmedian(left_param, axis=0)
             self.right_geometry = np.nanmedian(right_param, axis=0)
 
@@ -352,6 +357,21 @@ class MAP(object):
         # y_distance = np.array(self.y_projected, dtype=object) - min(y_boundaries, key=abs)
         for i in range(len(self.x_projected)):
             acs_distance.append((x_distance[i] ** 2 + y_distance[i] ** 2)**0.5)
+
+        # left_x = np.nanmedian([item[0] for item in self.x_raw_coordinates])
+        # left_y = np.nanmedian([item[0] for item in self.y_raw_coordinates])
+        # # Boundaries on x and y coordinates for the selected transects
+        # x_boundaries = [min([min(l) for l in self.x_projected]), max([max(l) for l in self.x_projected])]
+        # x_plt = x_boundaries
+        # y_plt = [i * self.slope + self.intercept for i in x_plt]
+
+        # fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+        # for i in range(len(self.x_projected)):
+        #     ax.plot(self.x_raw_coordinates[i], self.y_raw_coordinates[i], color='grey', linewidth=1)
+        #     ax.scatter(self.x_projected[i], self.y_projected[i], color='r')
+        # ax.plot(x_plt, y_plt, color='k', linewidth=4)
+        # fig.savefig(r'C:\Users\blaise.calmel\Documents\20_Data\2022_Intercomp_Vranov\A_CHMIOV_M9_0811\test_track.png')
+
 
         return acs_distance
 
@@ -448,8 +468,11 @@ class MAP(object):
         self.borders_ens = np.linspace(min([min(l) for l in acs_distance]),
                                        max([max(l) for l in acs_distance]) + 10 ** -5,
                                        nb_horz)
+        # self.borders_ens = np.round(np.arange(min([min(l) for l in acs_distance]),
+        #                                       max([max(l) for l in acs_distance]) + node_vertical_user,
+        #                                       node_vertical_user).tolist(), 3)
 
-        # Meshs height
+        # Meshes height
         cell_depth = data_transects['cell_depth']
         depth_data = data_transects['depth_data']
         all_depth = np.array([item for subarray in depth_data for item in subarray])
@@ -807,15 +830,15 @@ class MAP(object):
             # Determine number of ensembles
             n_ensembles = len(idx_top)
 
-            for j in range(n_ensembles):
-                if (n_bins[j] < 6) and (n_bins[j] > 0) and (idx_top[j] >= 0):
+            for n in range(n_ensembles):
+                if (n_bins[n] < 6) and (n_bins[n] > 0) and (idx_top[n] >= 0):
                     w_vel_prim_extrap[:idx_top[n], n] = w_vel_prim_extrap[idx_top[n], n]
 
                 # If 6 or more bins use 3-pt at top
-                if n_bins[j] > 5:
-                    top_depth = depth_cells_center[:idx_top[j], j]
-                    top_3_depth = depth_cells_center[idx_top_3[0:3, j], j]
-                    top_3_vel = w_vel_prim_extrap[idx_top_3[0:3, j], j]
+                if n_bins[n] > 5:
+                    top_depth = depth_cells_center[:idx_top[n], n]
+                    top_3_depth = depth_cells_center[idx_top_3[0:3, n], n]
+                    top_3_vel = w_vel_prim_extrap[idx_top_3[0:3, n], n]
                     WLS = LinearRegression()
                     WLS.fit(top_3_depth.reshape(-1, 1), top_3_vel.reshape(-1, 1))
                     w_vel_prim_extrap[:idx_top[n], n] = WLS.coef_ * top_depth + WLS.intercept_
@@ -862,11 +885,13 @@ class MAP(object):
         left_mid_cells_y/right_mid_cells_y: np.array
             Depth position of the middle of each cell
         """
+        exponent = settings['extrapExp']
+
         left_distance, left_coef = self.left_geometry
-        self.edge_velocity('left', left_distance, left_coef, settings)
+        self.edge_velocity('left', left_distance, left_coef, exponent)
 
         right_distance, right_coef = self.right_geometry
-        self.edge_velocity('right', right_distance, right_coef, settings)
+        self.edge_velocity('right', right_distance, right_coef, exponent)
 
     @staticmethod
     def interpolation(data1, data2, data1_interp_value, style='linear'):
@@ -887,7 +912,7 @@ class MAP(object):
                 value = np.nan
         return value
 
-    def edge_velocity(self, edge, edge_distance, edge_coef, settings):
+    def edge_velocity(self, edge, edge_distance, edge_coef, exponent):
         """ Compute edge extrapolation
 
         Parameters
@@ -898,10 +923,7 @@ class MAP(object):
             Edge distance
         edge_coef: float
             Shape coefficient of the edge
-        settings: dict
-            Dictionary of reference and filter settings
         """
-        extrap_exp = 1 / settings['extrapExp']
 
         if edge == 'left':
             id_edge = 0
@@ -1015,16 +1037,14 @@ class MAP(object):
             edge_vertical_velocity = np.tile([np.nan], (len(edge_size_raw) - 1, nb_nodes))
 
         else:
-
             ## Primary velocity : Power_power extrapolation from first ensemble
             # Mean velocity on the first valid ensemble
             primary_mean_valid = np.nanmean(self.primary_velocity[:, id_edge])
             # Compute mean velocity according power law at middle_distance position
             vp_mean = primary_mean_valid * (mid_cells_x / edge_distance) ** (1 / edge_exp)
             # Compute velocity according power law on the chosen vertical
-            # TODO Select QRevInt law and exp
-            edge_primary_velocity = vp_mean * ((extrap_exp + 1) / extrap_exp) * (
-                    (vertical_depth - mid_cells_y) / vertical_depth) ** (1 / extrap_exp)
+            edge_primary_velocity = vp_mean * (((1/exponent) + 1) / (1/exponent)) * (
+                    (vertical_depth - mid_cells_y) / vertical_depth) ** exponent
 
             # Vertical velocity : linear extrapolation from first ensemble vertical distribution
             vertical_vel_first = np.insert(self.vertical_velocity[:, id_edge], 0, 0)
