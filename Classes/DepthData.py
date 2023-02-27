@@ -81,7 +81,7 @@ class DepthData(object):
         self.depth_cell_size_m = None  # Size of depth cells in meters
         self.smooth_depth = None  # Smoothed beam depth
         self.smooth_upper_limit = None  # Smooth function upper limit of window
-        self.smooth_lower_limit = None  # Smooth function lowerl limit or window
+        self.smooth_lower_limit = None  # Smooth function lower limit or window
         self.avg_method = None  # Defines averaging method: "Simple", "IDW"
         self.filter_type = None  # Type of filter: "None", "TRDI", "Smooth"
         self.interp_type = None  # Type of interpolation: "None", "Linear", "Smooth"

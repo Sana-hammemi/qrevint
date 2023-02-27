@@ -2016,7 +2016,6 @@ class Measurement(object):
             Boolean indicating if interpolated data should be used
         """
         if all(deg == 0 for deg in self.transects[self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
-
             self.map = None
         else:
             self.map = MAP()

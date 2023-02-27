@@ -11843,6 +11843,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_map_cell_height.setText("")
                 self.ed_map_secondary_velocity.setText("")
                 self.combo_map_data.setCurrentIndex(0)
+                self.map_current_settings = {
+                    'cb_map_interpolation': self.cb_map_interpolation.isChecked(),
+                    'ed_map_cell_width': self.check_numeric_input(self.ed_map_cell_width),
+                    'ed_map_cell_height': self.check_numeric_input(self.ed_map_cell_height),
+                    'cb_map_top_bottom': self.cb_map_top_bottom.isChecked(),
+                    'cb_map_edges': self.cb_map_edges.isChecked(),
+                    'ed_map_secondary_velocity': self.check_numeric_input(self.ed_map_secondary_velocity),
+                    'cb_map_bed_profiles': self.cb_map_bed_profiles.isChecked(),
+                    'combo_map_data': self.combo_map_data.currentText()
+                }
 
             # Disable MAP open Earth button if not GGA
             settings = Measurement.current_settings(self.meas)
@@ -12030,7 +12040,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('N/A'))
             else:
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem('{:8}'.format(scientific_notation(meas_d *
-                                                                                               self.units['L']))))
+                                                                                                   self.units['L']))))
             # Delta mean depth
             col += 1
             if meas_d != 0:
@@ -12153,6 +12163,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_shiptrack_canvas.draw()
 
     def map_save_data(self):
+        """ Save MAP data as csv or txt.
+        """
         map_data = self.meas.map
         if map_data is not None:
             row, col = map_data.primary_velocity.shape
