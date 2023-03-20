@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Comment(object):
     def setupUi(self, Comment):
         Comment.setObjectName("Comment")
@@ -16,7 +17,9 @@ class Ui_Comment(object):
         self.buttonBox = QtWidgets.QDialogButtonBox(Comment)
         self.buttonBox.setGeometry(QtCore.QRect(270, 120, 341, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.text_edit_comment = QtWidgets.QPlainTextEdit(Comment)
         self.text_edit_comment.setGeometry(QtCore.QRect(10, 10, 611, 101))
@@ -27,7 +30,6 @@ class Ui_Comment(object):
         self.buttonBox.rejected.connect(Comment.reject)
         QtCore.QMetaObject.connectSlotsByName(Comment)
 
-
     def retranslateUi(self, Comment):
         _translate = QtCore.QCoreApplication.translate
         Comment.setWindowTitle(_translate("Comment", "Enter Comment"))
@@ -35,10 +37,10 @@ class Ui_Comment(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Comment = QtWidgets.QDialog()
     ui = Ui_Comment()
     ui.setupUi(Comment)
     Comment.show()
     sys.exit(app.exec_())
-

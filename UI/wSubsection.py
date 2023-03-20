@@ -19,11 +19,15 @@ class Ui_subsection(object):
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem1)
         self.subsection_label = QtWidgets.QLabel(subsection)
         font = QtGui.QFont()
@@ -33,13 +37,17 @@ class Ui_subsection(object):
         self.subsection_label.setFont(font)
         self.subsection_label.setObjectName("subsection_label")
         self.horizontalLayout_2.addWidget(self.subsection_label)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem2)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.start_label = QtWidgets.QLabel(subsection)
-        self.start_label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.start_label.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.start_label.setObjectName("start_label")
         self.horizontalLayout.addWidget(self.start_label)
         self.start_value = QtWidgets.QLineEdit(subsection)
@@ -49,7 +57,9 @@ class Ui_subsection(object):
         self.start_units.setObjectName("start_units")
         self.horizontalLayout.addWidget(self.start_units)
         self.end_lable = QtWidgets.QLabel(subsection)
-        self.end_lable.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.end_lable.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.end_lable.setObjectName("end_lable")
         self.horizontalLayout.addWidget(self.end_lable)
         self.end_value = QtWidgets.QLineEdit(subsection)
@@ -67,7 +77,9 @@ class Ui_subsection(object):
         self.horizontalLayout.setStretch(4, 1)
         self.horizontalLayout.setStretch(5, 1)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem3)
         self.horizontalLayout_3.addLayout(self.verticalLayout_2)
         self.gb_hoffset = QtWidgets.QGroupBox(subsection)
@@ -103,7 +115,9 @@ class Ui_subsection(object):
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
         self.buttonBox = QtWidgets.QDialogButtonBox(subsection)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
@@ -115,7 +129,9 @@ class Ui_subsection(object):
     def retranslateUi(self, subsection):
         _translate = QtCore.QCoreApplication.translate
         subsection.setWindowTitle(_translate("subsection", "Extrap Subsection"))
-        self.subsection_label.setText(_translate("subsection", "Subsection in Percentage"))
+        self.subsection_label.setText(
+            _translate("subsection", "Subsection in Percentage")
+        )
         self.start_label.setText(_translate("subsection", "Start"))
         self.start_units.setText(_translate("subsection", "%"))
         self.end_lable.setText(_translate("subsection", "End"))
@@ -125,10 +141,9 @@ class Ui_subsection(object):
         self.rb_default.setText(_translate("subsection", "Default (0 / 100 %)"))
 
 
-
-
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     subsection = QtWidgets.QDialog()
     ui = Ui_subsection()

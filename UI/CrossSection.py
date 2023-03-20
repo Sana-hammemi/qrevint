@@ -3,6 +3,7 @@ from PyQt5 import QtCore
 from matplotlib.dates import DateFormatter, num2date
 from datetime import datetime
 
+
 class CrossSection(object):
     """Class to generate final cross sections using the user settings.
     What cross sections are plotted are controlled by the user through checkboxes.
@@ -36,7 +37,7 @@ class CrossSection(object):
     annot: Annotation
         Annotation object for data cursor
     x_axis_type: str
-        Identifies x-axis type (L-lenght, E-ensemble, T-time)
+        Identifies x-axis type (L-length, E-ensemble, T-time)
     """
 
     def __init__(self, canvas):
@@ -62,10 +63,18 @@ class CrossSection(object):
         self.final_cs = None
         self.hover_connection = None
         self.annot = None
-        self.x_axis_type = 'L'
+        self.x_axis_type = "L"
 
-    def create(self, transect, units, cb_beam_cs=None, cb_vert_cs=None, cb_ds_cs=None, cb_final_cs=None,
-               x_axis_type=None):
+    def create(
+        self,
+        transect,
+        units,
+        cb_beam_cs=None,
+        cb_vert_cs=None,
+        cb_ds_cs=None,
+        cb_final_cs=None,
+        x_axis_type=None,
+    ):
 
         """Create the axes and lines for the figure.
 
@@ -89,7 +98,7 @@ class CrossSection(object):
 
         # Set default axis
         if x_axis_type is None:
-            x_axis_type = 'L'
+            x_axis_type = "L"
         self.x_axis_type = x_axis_type
 
         # Assign and save parameters
@@ -105,12 +114,16 @@ class CrossSection(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_ylabel(self.canvas.tr('Depth' + units['label_L']))
+        self.fig.subplots_adjust(
+            left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0
+        )
+        self.fig.ax.set_ylabel(self.canvas.tr("Depth" + units["label_L"]))
         self.fig.ax.grid()
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
 
         # Initialize max trackers
         max_vb = np.nan
@@ -118,14 +131,17 @@ class CrossSection(object):
 
         # Compute x axis data
         x = None
-        if x_axis_type == 'L':
+        if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
-            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
-                x = boat_track['distance_m'] * units['L']
-        elif x_axis_type == 'E':
+            if not np.alltrue(np.isnan(boat_track["track_x_m"])):
+                x = boat_track["distance_m"] * units["L"]
+        elif x_axis_type == "E":
             x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
-        elif x_axis_type == 'T':
-            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+        elif x_axis_type == "T":
+            timestamp = (
+                np.nancumsum(transect.date_time.ens_duration_sec)
+                + transect.date_time.start_serial_time
+            )
             x = []
             for stamp in timestamp:
                 x.append(datetime.utcfromtimestamp(stamp))
@@ -137,35 +153,53 @@ class CrossSection(object):
             beam_depths = depth_selected.depth_processed_m
 
             # Plot Final
-            self.final_cs = self.fig.ax.plot(x,
-                                             beam_depths * units['L'],
-                                             linestyle='-', marker='o', color='k', markersize=4)
+            self.final_cs = self.fig.ax.plot(
+                x,
+                beam_depths * units["L"],
+                linestyle="-",
+                marker="o",
+                color="k",
+                markersize=4,
+            )
             max_final = np.nanmax(beam_depths)
 
             # Plot 4 beam average
             beam_depths = transect.depths.bt_depths.depth_processed_m
-            self.beam_cs = self.fig.ax.plot(x,
-                                            beam_depths * units['L'],
-                                            linestyle='-', marker='o', color='r', markersize=4)
+            self.beam_cs = self.fig.ax.plot(
+                x,
+                beam_depths * units["L"],
+                linestyle="-",
+                marker="o",
+                color="r",
+                markersize=4,
+            )
 
             max_beam = np.nanmax(beam_depths)
 
             # Plot vertical beam
             if transect.depths.vb_depths is not None:
                 beam_depths = transect.depths.vb_depths.depth_processed_m
-                self.vb_cs = self.fig.ax.plot(x,
-                                              beam_depths * units['L'],
-                                              color='#aa00ff',
-                                              linestyle='-', marker='o', markersize=4)
+                self.vb_cs = self.fig.ax.plot(
+                    x,
+                    beam_depths * units["L"],
+                    color="#aa00ff",
+                    linestyle="-",
+                    marker="o",
+                    markersize=4,
+                )
                 max_vb = np.nanmax(beam_depths)
 
             # Plot depth sounder
             if transect.depths.ds_depths is not None:
                 beam_depths = transect.depths.ds_depths.depth_processed_m
-                self.ds_cs = self.fig.ax.plot(x,
-                                              beam_depths * units['L'],
-                                              color='#00aaff',
-                                              linestyle='-', marker='o', markersize=4)
+                self.ds_cs = self.fig.ax.plot(
+                    x,
+                    beam_depths * units["L"],
+                    color="#00aaff",
+                    linestyle="-",
+                    marker="o",
+                    markersize=4,
+                )
                 max_ds = np.nanmax(beam_depths)
 
             # Based on checkbox control make cross sections visible or not
@@ -195,47 +229,61 @@ class CrossSection(object):
             # Set axis limits
             max_y = np.nanmax([max_beam, max_vb, max_ds, max_final]) * 1.1
             self.fig.ax.invert_yaxis()
-            self.fig.ax.set_ylim(bottom=np.ceil(max_y * units['L']), top=0)
+            self.fig.ax.set_ylim(bottom=np.ceil(max_y * units["L"]), top=0)
 
-            if x_axis_type == 'L':
-                if transect.start_edge == 'Right':
+            if x_axis_type == "L":
+                if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+                    self.fig.ax.set_xlim(
+                        right=-1 * x[-1] * 0.02 * units["L"],
+                        left=x[-1] * 1.02 * units["L"],
+                    )
                 else:
-                    self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
-                self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
-            elif x_axis_type == 'E':
-                if transect.start_edge == 'Right':
+                    self.fig.ax.set_xlim(
+                        left=-1 * x[-1] * 0.02 * units["L"],
+                        right=x[-1] * 1.02 * units["L"],
+                    )
+                self.fig.ax.set_xlabel(self.canvas.tr("Length" + units["label_L"]))
+            elif x_axis_type == "E":
+                if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
                 else:
                     self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
-                self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
-            elif x_axis_type == 'T':
+                self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
+            elif x_axis_type == "T":
                 axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
-                if transect.start_edge == 'Right':
+                if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                                         left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+                    self.fig.ax.set_xlim(
+                        right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                        left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                    )
                 else:
-                    self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                                         right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
-                date_form = DateFormatter('%H:%M:%S')
+                    self.fig.ax.set_xlim(
+                        left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                        right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                    )
+                date_form = DateFormatter("%H:%M:%S")
                 self.fig.ax.xaxis.set_major_formatter(date_form)
-                self.fig.ax.set_xlabel(self.canvas.tr('Time'))
+                self.fig.ax.set_xlabel(self.canvas.tr("Time"))
 
             # Initialize annotation for data cursor
-            self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                              bbox=dict(boxstyle="round", fc="w"),
-                                              arrowprops=dict(arrowstyle="->"))
+            self.annot = self.fig.ax.annotate(
+                "",
+                xy=(0, 0),
+                xytext=(-20, 20),
+                textcoords="offset points",
+                bbox=dict(boxstyle="round", fc="w"),
+                arrowprops=dict(arrowstyle="->"),
+            )
 
             self.annot.set_visible(False)
 
             self.canvas.draw()
 
     def change(self):
-        """Changes the visibility of the available beams based on user input via checkboxes.
-        """
+        """Changes the visibility of the available beams based on user input via checkboxes."""
 
         # Set visibility of beams based on user input
         if self.cb_beam_cs.checkState() == QtCore.Qt.Checked:
@@ -290,12 +338,26 @@ class CrossSection(object):
         # Shift annotation box left or right depending on which half of the axis the pos x is located and the
         # direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
@@ -303,23 +365,37 @@ class CrossSection(object):
         # Shift annotation box up or down depending on which half of the axis the pos y is located and the
         # direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
         self.annot.xy = pos
 
         # Format and display text
-        if self.x_axis_type == 'T':
-            x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
-            text = 'x: {}, {}: {:.2f}'.format(x_label, ref_label, pos[1])
+        if self.x_axis_type == "T":
+            x_label = num2date(pos[0]).strftime("%H:%M:%S.%f")[:-4]
+            text = "x: {}, {}: {:.2f}".format(x_label, ref_label, pos[1])
         else:
-            text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
+            text = "x: {:.2f}, {}: {:.2f}".format(pos[0], ref_label, pos[1])
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -357,19 +433,19 @@ class CrossSection(object):
                 cont_4b, ind_4b = self.beam_cs[0].contains(event)
 
             if cont_final and self.final_cs[0].get_visible():
-                self.update_annot(ind_final, self.final_cs[0], 'Final')
+                self.update_annot(ind_final, self.final_cs[0], "Final")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             elif cont_vb and self.vb_cs[0].get_visible():
-                self.update_annot(ind_vb, self.vb_cs[0], 'VB')
+                self.update_annot(ind_vb, self.vb_cs[0], "VB")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             elif cont_ds and self.ds_cs[0].get_visible():
-                self.update_annot(ind_ds, self.ds_cs[0], 'DS')
+                self.update_annot(ind_ds, self.ds_cs[0], "DS")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             elif cont_4b and self.beam_cs[0].get_visible():
-                self.update_annot(ind_4b, self.beam_cs[0], 'DS')
+                self.update_annot(ind_4b, self.beam_cs[0], "DS")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:
@@ -388,7 +464,9 @@ class CrossSection(object):
         """
         if setting and self.hover_connection is None:
             # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

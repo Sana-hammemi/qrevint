@@ -15,7 +15,7 @@ import numpy as np
 from numba import jit, njit
 
 # Set constants used in multiple functions
-eps = np.finfo('float').eps
+eps = np.finfo("float").eps
 seps = np.sqrt(eps)
 
 # @jit(cache=True, nopython=True)
@@ -55,14 +55,17 @@ def nearest_neighbors(num_neighbors, idx, x, valid_x):
         close = np.less_equal(distance, distance_neighbors)
 
         # Find the indices of x that are both close and valid
-        neighbors_idx = np.where(np.equal(np.logical_and(close, valid_x), np.repeat(True, len(valid_x))))[0]
+        neighbors_idx = np.where(
+            np.equal(np.logical_and(close, valid_x), np.repeat(True, len(valid_x)))
+        )[0]
 
     return neighbors_idx
+
 
 # @jit(cache=True, nopython=True)
 @njit
 def tricube_weights(distance):
-    """ Convert distances into weights using tri-cubic weight function.
+    """Convert distances into weights using tri-cubic weight function.
     Note for Matlab: This function returns the square-root of the weights.
 
     Parameters
@@ -79,8 +82,9 @@ def tricube_weights(distance):
     max_distance = np.max(distance)
     if max_distance > 0:
         distance = distance / max_distance
-    weights = (1 - distance ** 3) ** 1.5
+    weights = (1 - distance**3) ** 1.5
     return weights
+
 
 # @jit(cache=True, nopython=True)
 @njit
@@ -100,11 +104,12 @@ def bisquare(data):
     """
     weights = np.zeros(data.shape)
     d3 = 1 - np.abs(data)
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     idx = d3 > 0
     # idx = nan_less(np.abs(data), 1)
     weights[idx] = np.abs(1 - data[idx] ** 2)
     return weights
+
 
 # @jit(cache=True, nopython=True)
 @njit
@@ -132,6 +137,7 @@ def robust_weights(residuals, max_eps):
     weights[np.isnan(residuals)] = 0
 
     return weights
+
 
 # @jit(cache=True, nopython=True)
 @njit
@@ -174,8 +180,13 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
             weights = weights * r_weights[neighbors_idx]
 
         weighted_x_matrix = np.vstack((np.ones(distances.shape), distances))
-        weighted_x_matrix = np.vstack((weighted_x_matrix, np.expand_dims(distances * distances, axis=0)))
-        weighted_x_matrix = weights.repeat(weighted_x_matrix.shape[0]).reshape(-1, 3).T * weighted_x_matrix
+        weighted_x_matrix = np.vstack(
+            (weighted_x_matrix, np.expand_dims(distances * distances, axis=0))
+        )
+        weighted_x_matrix = (
+            weights.repeat(weighted_x_matrix.shape[0]).reshape(-1, 3).T
+            * weighted_x_matrix
+        )
         neighbors_y = weights * neighbors_y
 
         # Solve using least squares
@@ -184,12 +195,12 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
         #     smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T[mask],
         #                                                neighbors_y.T[mask], rcond=None)
         # except (IndexError, ValueError):
-        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T,
-                                                   neighbors_y.T)
+        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T, neighbors_y.T)
         smoothed_value = smoothed_values[0]
     else:
         smoothed_value = np.nan
     return smoothed_value
+
 
 # @jit(cache=True, nopython=True)
 @njit
@@ -236,9 +247,9 @@ def rloess(x, y, span):
             # if x[i] and x[i-1] are equal just use previous fit
             if the_diffs[n] == 0:
 
-                smoothed_values[n] = smoothed_values[n-1]
-                lower_bound[n] = int(lower_bound[n-1])
-                upper_bound[n] = int(upper_bound[n-1])
+                smoothed_values[n] = smoothed_values[n - 1]
+                lower_bound[n] = int(lower_bound[n - 1])
+                upper_bound[n] = int(upper_bound[n - 1])
 
             else:
 
@@ -264,17 +275,25 @@ def rloess(x, y, span):
 
             # Find new value for each point
             for n in range(n_points):
-                if n > 0 and x[n] == x[n-1]:
-                    smoothed_values[n] = smoothed_values[n-1]
+                if n > 0 and x[n] == x[n - 1]:
+                    smoothed_values[n] = smoothed_values[n - 1]
                 else:
                     if not np.isnan(smoothed_values[n]):
-                        neighbors_idx = np.array(list(range(lower_bound[n], upper_bound[n] + 1)))
+                        neighbors_idx = np.array(
+                            list(range(lower_bound[n], upper_bound[n] + 1))
+                        )
 
                         if any_nans:
-                            neighbors_idx = neighbors_idx[np.logical_not(y_nan[neighbors_idx])]
+                            neighbors_idx = neighbors_idx[
+                                np.logical_not(y_nan[neighbors_idx])
+                            ]
 
                         if np.any(r_weights[neighbors_idx] <= 0):
-                            neighbors_idx = nearest_neighbors(span, n, x, (r_weights > 0))
+                            neighbors_idx = nearest_neighbors(
+                                span, n, x, (r_weights > 0)
+                            )
 
-                        smoothed_values[n] = compute_loess(x, y, neighbors_idx, n, r_weights)
+                        smoothed_values[n] = compute_loess(
+                            x, y, neighbors_idx, n, r_weights
+                        )
     return smoothed_values

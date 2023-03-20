@@ -21,7 +21,7 @@ class Ui_Options(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 390, 918))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 394, 929))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setObjectName("gridLayout")
@@ -171,6 +171,19 @@ class Ui_Options(object):
         self.cb_stylesheet.setFont(font)
         self.cb_stylesheet.setObjectName("cb_stylesheet")
         self.verticalLayout.addWidget(self.cb_stylesheet)
+        self.line_3 = QtWidgets.QFrame(self.gb_save_options)
+        self.line_3.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_3.setObjectName("line_3")
+        self.verticalLayout.addWidget(self.line_3)
+        self.cb_xs_export = QtWidgets.QCheckBox(self.gb_save_options)
+        font = QtGui.QFont()
+        font.setBold(False)
+        font.setWeight(50)
+        self.cb_xs_export.setFont(font)
+        self.cb_xs_export.setChecked(True)
+        self.cb_xs_export.setObjectName("cb_xs_export")
+        self.verticalLayout.addWidget(self.cb_xs_export)
         self.verticalLayout_3.addWidget(self.gb_save_options)
         self.gb_extrap_weighted = QtWidgets.QGroupBox(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
@@ -276,7 +289,9 @@ class Ui_Options(object):
         font.setPointSize(12)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout_10.addWidget(self.buttonBox)
 
@@ -303,6 +318,7 @@ class Ui_Options(object):
         self.rb_checked.setText(_translate("Options", "Only Checked Transects"))
         self.cb_rating.setText(_translate("Options", "Prompt for rating on save"))
         self.cb_stylesheet.setText(_translate("Options", "Save style sheet with data"))
+        self.cb_xs_export.setText(_translate("Options", "Export Mean Cross-Section"))
         self.gb_extrap_weighted.setTitle(_translate("Options", "Extrapolation"))
         self.cb_weighted_extrap.setText(_translate("Options", "Discharge weighted"))
         self.gb_filters.setTitle(_translate("Options", "WT, BT Filters"))
@@ -312,11 +328,14 @@ class Ui_Options(object):
         self.rb_qrev_u.setText(_translate("Options", "QRev Original"))
         self.rb_oursin_u.setText(_translate("Options", "Oursin"))
         self.gb_moving_bed_option.setTitle(_translate("Options", "Moving Bed"))
-        self.cb_allow_manual_no_mb.setText(_translate("Options", "Allow observed no moving-bed"))
+        self.cb_allow_manual_no_mb.setText(
+            _translate("Options", "Allow observed no moving-bed")
+        )
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Options = QtWidgets.QDialog()
     ui = Ui_Options()

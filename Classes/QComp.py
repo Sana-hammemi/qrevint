@@ -2,6 +2,7 @@ import numpy as np
 from Classes.TransectData import TransectData
 from Classes.BoatStructure import BoatStructure
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_greater
+
 # from profilehooks import profile
 from DischargeFunctions.top_discharge_extrapolation import extrapolate_top
 from DischargeFunctions.bottom_discharge_extrapolation import extrapolate_bot
@@ -41,38 +42,54 @@ class QComp(object):
     correction_factor: float
         Moving-bed correction factor, if required
     int_cells: float
-        Total discharge computed for invalid depth cells excluding invalid ensembles
+        Total discharge computed for invalid depth cells excluding invalid
+        ensembles
     int_ens: float
         Total discharge computed for invalid ensembles
     """
-    
+
     def __init__(self):
         """Initialize class and instance variables."""
 
         self.top = None  # Transect total extrapolated top discharge
-        self.middle = None  # Transect toal measured middle discharge including interpolations
+        self.middle = None  # Transect toal measured middle discharge
+        # including interpolations
         self.bottom = None  # ETransect total extrapolated bottom discharge
         self.top_ens = None  # Extrapolated top discharge by ensemble
-        self.middle_cells = None  # Measured middle discharge including interpolation by cell
-        self.middle_ens = None  # Measured middle discharge including interpolation by ensemble
+        self.middle_cells = None  # Measured middle discharge including
+        # interpolation by cell
+        self.middle_ens = None  # Measured middle discharge including
+        # interpolation by ensemble
         self.bottom_ens = None  # Extrapolate bottom discharge by ensemble
         self.left = None  # Left edge discharge
         self.left_idx = []  # Ensembles used for left edge
         self.right = None  # Right edge discharge
         self.right_idx = []  # Ensembles used for right edge
-        self.total_uncorrected = None  # Total discharge for transect uncorrected for moving-bed, if required
-        self.total = None  # Total discharge with moving-bed correction applied if necessary
+        self.total_uncorrected = None  # Total discharge for transect
+        # uncorrected for moving-bed, if required
+        self.total = None  # Total discharge with moving-bed correction
+        # applied if necessary
         self.correction_factor = 1  # Moving-bed correction factor, if required
-        self.int_cells = None  # Total discharge computed for invalid depth cells excluding invalid ensembles
+        self.int_cells = None  # Total discharge computed for invalid depth
+        # cells excluding invalid ensembles
         self.int_ens = None  # Total discharge computed for invalid ensembles
 
     # @profile
-    def populate_data(self, data_in, moving_bed_data=None, top_method=None, bot_method=None, exponent=None):
+    def populate_data(
+        self,
+        data_in,
+        moving_bed_data=None,
+        top_method=None,
+        bot_method=None,
+        exponent=None,
+    ):
         """Discharge is computed using the data provided to the method.
-        Water data provided are assumed to be corrected for the navigation reference.
+        Water data provided are assumed to be corrected for the navigation
+        reference.
         If a moving-bed correction is to be applied it is computed and applied.
-        The TRDI method using expanded delta time is applied if the processing method is WR2.
-        
+        The TRDI method using expanded delta time is applied if the
+        processing method is WR2.
+
         Parameters
         ----------
         data_in: TransectData
@@ -87,31 +104,37 @@ class QComp(object):
             Extrapolation exponent
         """
 
-        # Use bottom track interpolation settings to determine the appropriate algorithms to apply
-        if data_in.boat_vel.bt_vel.interpolate == 'None':
-            processing = 'WR2'
-        elif data_in.boat_vel.bt_vel.interpolate == 'Linear':
-            processing = 'QRev'
+        # Use bottom track interpolation settings to determine the
+        # appropriate algorithms to apply
+        if data_in.boat_vel.bt_vel.interpolate == "None":
+            processing = "WR2"
+        elif data_in.boat_vel.bt_vel.interpolate == "Linear":
+            processing = "QRev"
         else:
-            processing = 'RSL'
+            processing = "RSL"
 
         # Compute cross product
         x_prod = QComp.cross_product(data_in)
-        
+
         # Get index of ensembles in moving-boat portion of transect
         in_transect_idx = data_in.in_transect_idx
-        
-        if processing == 'WR2':
-            # TRDI uses expanded delta time to handle invalid ensembles which can be caused by invalid BT
-            # WT, or depth.  QRev by default handles this invalid data through linear interpolation of the
-            # invalid data through linear interpolation of the invalid data type.  This if statement and
-            # associated code is required to maintain compatibility with WinRiver II discharge computations.
-            
+
+        if processing == "WR2":
+            # TRDI uses expanded delta time to handle invalid ensembles
+            # which can be caused by invalid BT
+            # WT, or depth.  QRev by default handles this invalid data
+            # through linear interpolation of the
+            # invalid data through linear interpolation of the invalid data
+            # type.  This if statement and
+            # associated code is required to maintain compatibility with
+            # WinRiver II discharge computations.
+
             # Determine valid ensembles
             valid_ens = np.any(np.logical_not(np.isnan(x_prod)))
             valid_ens = valid_ens[in_transect_idx]
-            
-            # Compute the ensemble duration using TRDI approach of expanding delta time to compensate
+
+            # Compute the ensemble duration using TRDI approach of expanding
+            # delta time to compensate
             # for invalid ensembles
             n_ens = len(valid_ens)
             ens_dur = data_in.date_time.ens_duration_sec[in_transect_idx]
@@ -123,67 +146,85 @@ class QComp(object):
                 if valid_ens[j]:
                     delta_t[j] = cum_dur
                     cum_dur = 0
-                    
+
         else:
             # For non-WR2 processing use actual ensemble duration
             delta_t = data_in.date_time.ens_duration_sec[in_transect_idx]
-            
+
         # Compute measured or middle discharge
         self.middle_cells = QComp.discharge_middle_cells(x_prod, data_in, delta_t)
         self.middle_ens = np.nansum(self.middle_cells, 0)
         self.middle = np.nansum(self.middle_ens)
-        
+
         # Compute the top discharge
         trans_select = getattr(data_in.depths, data_in.depths.selected)
-        num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
-        self.top_ens = extrapolate_top(x_prod, data_in.w_vel.valid_data[0, :, :],
-                                       num_top_method[data_in.extrap.top_method],
-                                       data_in.extrap.exponent, data_in.in_transect_idx, trans_select.depth_cell_size_m,
-                                       trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                       num_top_method[top_method], exponent)
+        num_top_method = {"Power": 0, "Constant": 1, "3-Point": 2, None: -1}
+        self.top_ens = extrapolate_top(
+            x_prod,
+            data_in.w_vel.valid_data[0, :, :],
+            num_top_method[data_in.extrap.top_method],
+            data_in.extrap.exponent,
+            data_in.in_transect_idx,
+            trans_select.depth_cell_size_m,
+            trans_select.depth_cell_depth_m,
+            trans_select.depth_processed_m,
+            delta_t,
+            num_top_method[top_method],
+            exponent,
+        )
         self.top = np.nansum(self.top_ens)
 
         # Compute the bottom discharge
-        num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
-        self.bottom_ens = extrapolate_bot(x_prod,
-                                          data_in.w_vel.valid_data[0, :, :],
-                                          num_bot_method[data_in.extrap.bot_method],
-                                          data_in.extrap.exponent,
-                                          data_in.in_transect_idx,
-                                          trans_select.depth_cell_size_m,
-                                          trans_select.depth_cell_depth_m,
-                                          trans_select.depth_processed_m, delta_t,
-                                          num_bot_method[bot_method],
-                                          exponent)
+        num_bot_method = {"Power": 0, "No Slip": 1, None: -1}
+        self.bottom_ens = extrapolate_bot(
+            x_prod,
+            data_in.w_vel.valid_data[0, :, :],
+            num_bot_method[data_in.extrap.bot_method],
+            data_in.extrap.exponent,
+            data_in.in_transect_idx,
+            trans_select.depth_cell_size_m,
+            trans_select.depth_cell_depth_m,
+            trans_select.depth_processed_m,
+            delta_t,
+            num_bot_method[bot_method],
+            exponent,
+        )
         self.bottom = np.nansum(self.bottom_ens)
 
         # Compute interpolated cell and ensemble discharge from computed
         # measured discharge
         self.interpolate_no_cells(data_in)
         self.middle = np.nansum(self.middle_ens)
-        self.int_cells, self.int_ens = QComp.discharge_interpolated(self.top_ens, self.middle_cells,
-                                                                    self.bottom_ens, data_in)
-        
+        self.int_cells, self.int_ens = QComp.discharge_interpolated(
+            self.top_ens, self.middle_cells, self.bottom_ens, data_in
+        )
+
         # Compute right edge discharge
-        if data_in.edges.right.type != 'User Q':
-            self.right, self.right_idx = QComp.discharge_edge('right', data_in, top_method, bot_method, exponent)
+        if data_in.edges.right.type != "User Q":
+            self.right, self.right_idx = QComp.discharge_edge(
+                "right", data_in, top_method, bot_method, exponent
+            )
         else:
             self.right = data_in.edges.right.user_discharge_cms
             self.right_idx = []
 
         # Compute left edge discharge
-        if data_in.edges.left.type != 'User Q':
-            self.left, self.left_idx = QComp.discharge_edge('left', data_in, top_method, bot_method, exponent)
+        if data_in.edges.left.type != "User Q":
+            self.left, self.left_idx = QComp.discharge_edge(
+                "left", data_in, top_method, bot_method, exponent
+            )
         else:
             self.left = data_in.edges.left.user_discharge_cms
             self.left_idx = []
-            
-        # Compute moving-bed correction, if applicable.  Two checks are used to account for the
+
+        # Compute moving-bed correction, if applicable.  Two checks are used
+        # to account for the
         # way the meas object is created.
 
-        # Moving-bed corrections are only applied to bottom track referenced computations
+        # Moving-bed corrections are only applied to bottom track referenced
+        # computations
         mb_type = None
-        if data_in.boat_vel.selected == 'bt_vel':
+        if data_in.boat_vel.selected == "bt_vel":
             if moving_bed_data is not None:
 
                 # Determine if a moving-bed test is to be used for correction
@@ -196,30 +237,49 @@ class QComp(object):
                 if any(use_2_correct):
 
                     # Make sure composite tracks are turned off
-                    if data_in.boat_vel.composite == 'Off':
+                    if data_in.boat_vel.composite == "Off":
                         # Apply appropriate moving-bed test correction method
-                        if mb_type == 'Stationary':
-                            self.correction_factor = self.stationary_correction_factor(self.top, self.middle,
-                                                                                       self.bottom, data_in,
-                                                                                       moving_bed_data, delta_t)
+                        if mb_type == "Stationary":
+                            self.correction_factor = self.stationary_correction_factor(
+                                self.top,
+                                self.middle,
+                                self.bottom,
+                                data_in,
+                                moving_bed_data,
+                                delta_t,
+                            )
                         else:
-                            self.correction_factor = \
-                                self.loop_correction_factor(self.top, self.middle,
-                                                            self.bottom, data_in,
-                                                            moving_bed_data[use_2_correct.index(True)],
-                                                            delta_t)
+                            self.correction_factor = self.loop_correction_factor(
+                                self.top,
+                                self.middle,
+                                self.bottom,
+                                data_in,
+                                moving_bed_data[use_2_correct.index(True)],
+                                delta_t,
+                            )
 
-        self.total_uncorrected = self.left + self.right + self.middle + self.bottom + self.top
+        self.total_uncorrected = (
+            self.left + self.right + self.middle + self.bottom + self.top
+        )
 
         # Compute final discharge using correction if applicable
-        if self.correction_factor is None or self.correction_factor == 1 or np.isnan(self.correction_factor):
+        if (
+            self.correction_factor is None
+            or self.correction_factor == 1
+            or np.isnan(self.correction_factor)
+        ):
             self.total = self.total_uncorrected
         else:
-            self.total = self.left + self.right + (self.middle + self.bottom + self.top) * self.correction_factor
+            self.total = (
+                self.left
+                + self.right
+                + (self.middle + self.bottom + self.top) * self.correction_factor
+            )
 
     @staticmethod
     def qrev_mat_in(meas_struct):
-        """Processes the Matlab data structure to obtain a list of QComp objects containing the discharge data from the
+        """Processes the Matlab data structure to obtain a list of QComp
+        objects containing the discharge data from the
         Matlab data structure.
 
         Parameters
@@ -234,7 +294,7 @@ class QComp(object):
         """
 
         discharge = []
-        if hasattr(meas_struct.discharge, 'bottom'):
+        if hasattr(meas_struct.discharge, "bottom"):
             # Measurement has discharge data from only one transect
             q = QComp()
             q.populate_from_qrev_mat(meas_struct.discharge)
@@ -279,15 +339,18 @@ class QComp(object):
                 # One ensemble, multiple cells
                 self.middle_cells = self.middle_cells[:, np.newaxis]
 
-        # If only one value, it will be read in as int but needs to be an array of len 1
+        # If only one value, it will be read in as int but needs to be an
+        # array of len 1
         self.left = q_in.left
-        # If only one value, it will be read in as int but needs to be an array of len 1
+        # If only one value, it will be read in as int but needs to be an
+        # array of len 1
         if type(q_in.leftidx) is int:
             self.left_idx = np.array([q_in.leftidx])
         else:
             self.left_idx = q_in.leftidx
         self.right = q_in.right
-        # If only one value, it will be read in as int but needs to be an array of len 1
+        # If only one value, it will be read in as int but needs to be an
+        # array of len 1
         if type(q_in.rightidx) is int:
             self.right_idx = np.array([q_in.rightidx])
         else:
@@ -305,19 +368,19 @@ class QComp(object):
 
     def interpolate_no_cells(self, transect_data):
         """Computes discharge for ensembles where the depth is too
-           shallow for any valid depth cells. The computation is done
-           using interpolation of unit discharge defined as the ensemble
-           discharge divided by the depth of the ensemble and the
-           duration of the ensemble. The independent variable for the
-           interpolation is the track distance. After interpolation the
-           discharge for the interpolated ensembles is computed by
-           multiplying the interpolated value by the depth and duration
-           of those ensembles to achieve discharge for those ensembles.
+        shallow for any valid depth cells. The computation is done
+        using interpolation of unit discharge defined as the ensemble
+        discharge divided by the depth of the ensemble and the
+        duration of the ensemble. The independent variable for the
+        interpolation is the track distance. After interpolation the
+        discharge for the interpolated ensembles is computed by
+        multiplying the interpolated value by the depth and duration
+        of those ensembles to achieve discharge for those ensembles.
 
-           Parameters
-           ----------
-           transect_data: TransectData
-                Object of TransectData
+        Parameters
+        ----------
+        transect_data: TransectData
+             Object of TransectData
         """
 
         # Compute the discharge in each ensemble
@@ -329,16 +392,24 @@ class QComp(object):
             if len(idx) > 0:
 
                 # Compute the unit discharge by depth for each ensemble
-                depth_selected = getattr(transect_data.depths, transect_data.depths.selected)
-                unit_q_depth = (q_ensemble / depth_selected.depth_processed_m[transect_data.in_transect_idx]) \
-                    / transect_data.date_time.ens_duration_sec[transect_data.in_transect_idx]
+                depth_selected = getattr(
+                    transect_data.depths, transect_data.depths.selected
+                )
+                unit_q_depth = (
+                    q_ensemble
+                    / depth_selected.depth_processed_m[transect_data.in_transect_idx]
+                ) / transect_data.date_time.ens_duration_sec[
+                    transect_data.in_transect_idx
+                ]
 
                 # Compute boat track
-                boat_track = BoatStructure.compute_boat_track(transect_data, transect_data.boat_vel.selected)
+                boat_track = BoatStructure.compute_boat_track(
+                    transect_data, transect_data.boat_vel.selected
+                )
 
                 # Create strict monotonic vector for 1-D interpolation
                 q_mono = unit_q_depth
-                x_mono = boat_track['distance_m'][transect_data.in_transect_idx]
+                x_mono = boat_track["distance_m"][transect_data.in_transect_idx]
 
                 # Identify duplicate values, and replace with an average
                 dups = self.group_consecutives(x_mono)
@@ -355,20 +426,30 @@ class QComp(object):
 
                 # Interpolate unit q
                 if np.any(valid):
-                    unit_q_int = np.interp(boat_track['distance_m'][transect_data.in_transect_idx], x_mono[valid],
-                                           q_mono[valid], left=np.nan, right=np.nan)
+                    unit_q_int = np.interp(
+                        boat_track["distance_m"][transect_data.in_transect_idx],
+                        x_mono[valid],
+                        q_mono[valid],
+                        left=np.nan,
+                        right=np.nan,
+                    )
                 else:
                     unit_q_int = 0
 
-                # Compute the discharge in each ensemble based on interpolated data
-                q_int = unit_q_int * depth_selected.depth_processed_m[transect_data.in_transect_idx] \
-                    * transect_data.date_time.ens_duration_sec[transect_data.in_transect_idx]
+                # Compute the discharge in each ensemble based on
+                # interpolated data
+                q_int = (
+                    unit_q_int
+                    * depth_selected.depth_processed_m[transect_data.in_transect_idx]
+                    * transect_data.date_time.ens_duration_sec[
+                        transect_data.in_transect_idx
+                    ]
+                )
                 self.middle_ens[idx] = q_int[idx]
 
     @staticmethod
     def group_consecutives(vals):
-        """Return list of consecutive lists of numbers from vals (number list).
-        """
+        """Return list of consecutive lists of numbers from vals (number list)."""
 
         run = []
         result = []
@@ -380,7 +461,7 @@ class QComp(object):
                 if j > 1:
                     run.append(n)
                 elif j > 0:
-                    run.append(n-1)
+                    run.append(n - 1)
                     run.append(n)
             elif j > 0:
                 result.append(run)
@@ -390,10 +471,18 @@ class QComp(object):
         return result
 
     @staticmethod
-    def cross_product(transect=None, w_vel_x=None, w_vel_y=None, b_vel_x=None, b_vel_y=None, start_edge=None):
+    def cross_product(
+        transect=None,
+        w_vel_x=None,
+        w_vel_y=None,
+        b_vel_x=None,
+        b_vel_y=None,
+        start_edge=None,
+    ):
         """Computes the cross product of the water and boat velocity.
 
-        Input data can be a transect or component vectors for the water and boat velocities with the start edge.
+        Input data can be a transect or component vectors for the water and
+        boat velocities with the start edge.
 
         Parameters
         ----------
@@ -429,8 +518,12 @@ class QComp(object):
                 b_vel_x = trans_select.u_processed_mps
                 b_vel_y = trans_select.v_processed_mps
             else:
-                b_vel_x = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps.shape)
-                b_vel_y = np.tile([np.nan], transect.boat_vel.bt_vel.v_processed_mps.shape)
+                b_vel_x = np.tile(
+                    [np.nan], transect.boat_vel.bt_vel.u_processed_mps.shape
+                )
+                b_vel_y = np.tile(
+                    [np.nan], transect.boat_vel.bt_vel.v_processed_mps.shape
+                )
 
             start_edge = transect.start_edge
 
@@ -438,7 +531,7 @@ class QComp(object):
         xprod = np.multiply(w_vel_x, b_vel_y) - np.multiply(w_vel_y, b_vel_x)
 
         # Correct the sign of the cross product based on the start edge
-        if start_edge == 'Right':
+        if start_edge == "Right":
             direction = 1
         else:
             direction = -1
@@ -448,7 +541,8 @@ class QComp(object):
 
     @staticmethod
     def discharge_middle_cells(xprod, transect, delta_t):
-        """Computes the discharge in the measured or middle portion of the cross section.
+        """Computes the discharge in the measured or middle portion of the
+        cross section.
 
         Parameters
         ----------
@@ -471,12 +565,16 @@ class QComp(object):
         cell_size = trans_select.depth_cell_size_m
 
         # Determine is xprod contains edge data and process appropriately
-        q_mid_cells = np.multiply(xprod[:, in_transect_idx] * cell_size[:, in_transect_idx], delta_t)
+        q_mid_cells = np.multiply(
+            xprod[:, in_transect_idx] * cell_size[:, in_transect_idx], delta_t
+        )
 
         return q_mid_cells
 
     @staticmethod
-    def discharge_edge(edge_loc, transect, top_method=None, bot_method=None, exponent=None):
+    def discharge_edge(
+        edge_loc, transect, top_method=None, bot_method=None, exponent=None
+    ):
         """Computes edge discharge.
 
         Parameters
@@ -514,7 +612,9 @@ class QComp(object):
         edge_dist = edge_selected.distance_m
 
         # Compute edge velocity and sign
-        edge_vel_sign, edge_vel_mag = QComp.edge_velocity(edge_idx, transect, top_method, bot_method, exponent)
+        edge_vel_sign, edge_vel_mag = QComp.edge_velocity(
+            edge_idx, transect, top_method, bot_method, exponent
+        )
 
         # Compute edge coefficient
         coef = QComp.edge_coef(edge_loc, transect)
@@ -528,10 +628,13 @@ class QComp(object):
 
     @staticmethod
     def edge_ensembles(edge_loc, transect):
-        """This function computes the starting and ending ensemble numbers for an edge.
+        """This function computes the starting and ending ensemble numbers
+        for an edge.
 
-         This method uses either the method used by TRDI which used the specified number of valid ensembles or SonTek
-        which uses the specified number of ensembles prior to screening for valid data
+         This method uses either the method used by TRDI which used the
+         specified number of valid ensembles or SonTek
+        which uses the specified number of ensembles prior to screening for
+        valid data
 
         Parameters
         ----------
@@ -551,7 +654,7 @@ class QComp(object):
         num_edge_ens = int(edge_select.number_ensembles)
 
         # TRDI method
-        if transect.adcp.manufacturer == 'TRDI':
+        if transect.adcp.manufacturer == "TRDI":
             # Determine the indices of the edge ensembles which contain
             # the specified number of valid ensembles
             # noinspection PyTypeChecker
@@ -565,7 +668,8 @@ class QComp(object):
 
         # Sontek Method
         else:
-            # Determine the indices of the edge ensembles as collected by RiverSurveyor.  There
+            # Determine the indices of the edge ensembles as collected by
+            # RiverSurveyor.  There
             # is no check as to whether the ensembles contain valid data
             trans_select = getattr(transect.depths, transect.depths.selected)
             n_ensembles = len(trans_select.depth_processed_m)
@@ -579,7 +683,9 @@ class QComp(object):
         return edge_idx
 
     @staticmethod
-    def edge_velocity(edge_idx, transect, top_method=None, bot_method=None, exponent=None):
+    def edge_velocity(
+        edge_idx, transect, top_method=None, bot_method=None, exponent=None
+    ):
         """Computes the edge velocity.
 
         Different methods may be used depending on settings in transect.
@@ -614,17 +720,22 @@ class QComp(object):
 
             # Compute edge velocity using specified method
             # Used by TRDI
-            if transect.edges.vel_method == 'MeasMag':
-                edge_vel_mag, edge_vel_sign = QComp.edge_velocity_trdi(edge_idx, transect)
+            if transect.edges.vel_method == "MeasMag":
+                edge_vel_mag, edge_vel_sign = QComp.edge_velocity_trdi(
+                    edge_idx, transect
+                )
 
             # Used by Sontek
-            elif transect.edges.vel_method == 'VectorProf':
-                edge_val_mag, edge_vel_sign = QComp.edge_velocity_sontek(edge_idx, transect, top_method,
-                                                                         bot_method, exponent)
+            elif transect.edges.vel_method == "VectorProf":
+                edge_val_mag, edge_vel_sign = QComp.edge_velocity_sontek(
+                    edge_idx, transect, top_method, bot_method, exponent
+                )
 
             # USGS proposed method
-            elif transect.edges.vel_method == 'Profile':
-                edge_vel_mag, edge_vel_sign = QComp.edge_velocity_profile(edge_idx, transect)
+            elif transect.edges.vel_method == "Profile":
+                edge_vel_mag, edge_vel_sign = QComp.edge_velocity_profile(
+                    edge_idx, transect
+                )
 
         return edge_vel_sign, edge_vel_mag
 
@@ -667,7 +778,7 @@ class QComp(object):
 
         # Compute unit vector to help determine sign
         unit_water_x, unit_water_y = pol2cart(edge_dir, 1)
-        if transect.start_edge == 'Right':
+        if transect.start_edge == "Right":
             dir_sign = 1
         else:
             dir_sign = -1
@@ -683,21 +794,31 @@ class QComp(object):
             b_vel_x = np.tile([np.nan], transect.boat_vel.bt_vel.u_processed_mps.shape)
             b_vel_y = np.tile([np.nan], transect.boat_vel.bt_vel.v_processed_mps.shape)
 
-        track_x = np.nancumsum(b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx])
-        track_y = np.nancumsum(b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx])
+        track_x = np.nancumsum(
+            b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
+        track_y = np.nancumsum(
+            b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
         boat_dir, boat_mag = cart2pol(track_x[-1], track_y[-1])
         unit_track_x, unit_track_y = pol2cart(boat_dir, 1)
-        unit_x_prod = (unit_water_x * unit_track_y - unit_water_y * unit_track_x) * dir_sign
+        unit_x_prod = (
+            unit_water_x * unit_track_y - unit_water_y * unit_track_x
+        ) * dir_sign
         edge_vel_sign = np.sign(unit_x_prod)
 
         return edge_vel_mag, edge_vel_sign
 
     @staticmethod
-    def edge_velocity_sontek(edge_idx, transect, top_method=None, bot_method=None, exponent=None):
+    def edge_velocity_sontek(
+        edge_idx, transect, top_method=None, bot_method=None, exponent=None
+    ):
         """Computes the edge velocity using SonTek's method.
 
-        SonTek's method uses the profile extrapolation to estimate the velocities in the
-        unmeasured top and bottom and then projects the velocity perpendicular to the
+        SonTek's method uses the profile extrapolation to estimate the
+        velocities in the
+        unmeasured top and bottom and then projects the velocity
+        perpendicular to the
         course made good.
 
         Parameters
@@ -740,8 +861,12 @@ class QComp(object):
             b_vel_x = np.tile([np.nan], transect.boat_vel.u_processed_mps.shape)
             b_vel_y = np.tile([np.nan], transect.boat_vel.v_processed_mps.shape)
 
-        track_x = np.nancumsum(b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx])
-        track_y = np.nancumsum(b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx])
+        track_x = np.nancumsum(
+            b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
+        track_y = np.nancumsum(
+            b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
 
         # Compute the unit vector for the boat track
         boat_dir, boat_mag = cart2pol(track_x[-1], track_y[-1])
@@ -789,14 +914,17 @@ class QComp(object):
                 cell_depth[:, np.logical_not(valid)] = np.nan
                 cell_depth_edge = np.nanmean(cell_size, 1)
 
-                # SonTek cuts off the mean profile based on the side lobe cutoff of
+                # SonTek cuts off the mean profile based on the side lobe
+                # cutoff of
                 # the mean of the shallowest beams in the edge ensembles.
 
                 # Determine valid original beam and cell depths
                 depth_bt_beam_orig = transect.depths.bt_depths.depth_orig_m[:, edge_idx]
                 depth_bt_beam_orig[:, np.logical_not(valid)] = np.nan
                 draft_bt_beam_orig = transect.depths.bt_depths.draft_orig_m
-                depth_cell_depth_orig = transect.depths.bt_depths.depth_cell_depth_orig_m[:, edge_idx]
+                depth_cell_depth_orig = (
+                    transect.depths.bt_depths.depth_cell_depth_orig_m[:, edge_idx]
+                )
                 depth_cell_depth_orig[:, np.logical_not(valid)] = np.nan
 
                 # Compute minimum mean depth
@@ -804,25 +932,34 @@ class QComp(object):
                 min_depth = np.nanmin(min_raw_depths)
                 min_depth = min_depth - draft_bt_beam_orig
 
-                # Compute last valid cell by computing the side lobe cutoff based
+                # Compute last valid cell by computing the side lobe cutoff
+                # based
                 # on the mean of the minimum beam depths of the valid edge
                 # ensembles
-                if transect.w_vel.sl_cutoff_type == 'Percent':
-                    sl_depth = min_depth - ((transect.w_vel.sl_cutoff_percent / 100.) * min_depth)
+                if transect.w_vel.sl_cutoff_type == "Percent":
+                    sl_depth = min_depth - (
+                        (transect.w_vel.sl_cutoff_percent / 100.0) * min_depth
+                    )
                 else:
-                    sl_depth = min_depth - ((transect.w_vel.sl_cutoff_percent / 100.) * min_depth) \
+                    sl_depth = (
+                        min_depth
+                        - ((transect.w_vel.sl_cutoff_percent / 100.0) * min_depth)
                         - (transect.w_vel.sl_cutoff_number * cell_size[0, 0])
+                    )
 
                 # Adjust side lobe depth for draft
                 sl_depth = sl_depth + draft_bt_beam_orig
                 above_sl = cell_depth < (sl_depth + np.nanmax(cell_size))
                 above_sl_profile = np.nansum(above_sl, 1)
                 # TODO this line doesn't make sense to me
-                valid_idx = np.logical_and(np.less(above_sl_profile, np.nanmax(above_sl_profile)+1),
-                                           np.greater(above_sl_profile, 0))
+                valid_idx = np.logical_and(
+                    np.less(above_sl_profile, np.nanmax(above_sl_profile) + 1),
+                    np.greater(above_sl_profile, 0),
+                )
 
                 # Compute the number of cells above the side lobe cutoff
-                # remaining_depth = sl_depth - cell_depth_edge[idx_first_valid_cell]
+                # remaining_depth = sl_depth - cell_depth_edge[
+                # idx_first_valid_cell]
                 idx = np.where(np.logical_not(np.isnan(cell_size)))[0]
                 # TODO this is not consistent with Matlab code
                 n_cells = 0
@@ -837,15 +974,20 @@ class QComp(object):
                     x_profile[not valid_idx] = np.nan
                     y_profile[not valid_idx] = np.nan
                 else:
-                    idx_last_valid_cell = np.where(np.logical_not(np.isnan(x_profile[:idx_last_valid_cell])))[0][0]
+                    idx_last_valid_cell = np.where(
+                        np.logical_not(np.isnan(x_profile[:idx_last_valid_cell]))
+                    )[0][0]
                     # Mark the cells in the profile below the sidelobe invalid
-                    x_profile[(idx_last_valid_cell+1):] = np.nan
-                    y_profile[(idx_last_valid_cell + 1):] = np.nan
+                    x_profile[(idx_last_valid_cell + 1) :] = np.nan
+                    y_profile[(idx_last_valid_cell + 1) :] = np.nan
 
                 # Find the top most 3 valid cells
-                idx_first_3_valid_cells = np.where(np.logical_not(np.isnan(x_profile)))[0][:3]
+                idx_first_3_valid_cells = np.where(np.logical_not(np.isnan(x_profile)))[
+                    0
+                ][:3]
 
-                # Compute the mean measured velocity components for the edge profile
+                # Compute the mean measured velocity components for the edge
+                # profile
                 x_profile_mean = np.nanmean(x_profile)
                 y_profile_mean = np.nanmean(y_profile)
 
@@ -855,85 +997,110 @@ class QComp(object):
                 depth_avg = np.nanmean(depth_ens)
 
                 # Determine top, mid, bottom range for the profile
-                top_rng_edge = cell_depth_edge[idx_first_valid_cell] - 0.5 * ref_cell_size
+                top_rng_edge = (
+                    cell_depth_edge[idx_first_valid_cell] - 0.5 * ref_cell_size
+                )
                 if idx_last_valid_cell > len(x_profile):
                     mid_rng_edge = np.nansum(cell_size_edge[valid_idx])
                 else:
-                    mid_rng_edge = np.nansum(cell_size_edge[idx_first_valid_cell:idx_last_valid_cell+1])
+                    mid_rng_edge = np.nansum(
+                        cell_size_edge[idx_first_valid_cell : idx_last_valid_cell + 1]
+                    )
 
                 # Compute z
                 z_edge = depth_avg - cell_depth_edge
-                z_edge[idx_last_valid_cell+1:] = np.nan
+                z_edge[idx_last_valid_cell + 1 :] = np.nan
                 z_edge[z_edge > 0] = np.nan
                 idx_last_valid_cell = np.where(np.logical_not(np.isnan(z_edge)))[0][-1]
-                bot_rng_edge = depth_avg - cell_depth_edge[idx_last_valid_cell] - 0.5 * \
-                    cell_size_edge[idx_last_valid_cell]
+                bot_rng_edge = (
+                    depth_avg
+                    - cell_depth_edge[idx_last_valid_cell]
+                    - 0.5 * cell_size_edge[idx_last_valid_cell]
+                )
 
                 # Compute the top extrapolation for x-component
-                top_vel_x = QComp.discharge_top(top_method=top_method,
-                                                exponent=exponent,
-                                                idx_top=idx_first_valid_cell,
-                                                idx_top_3=idx_first_3_valid_cells,
-                                                top_rng=top_rng_edge,
-                                                component=x_profile,
-                                                cell_size=cell_size_edge,
-                                                cell_depth=cell_depth_edge,
-                                                depth_ens=depth_avg,
-                                                delta_t=1,
-                                                z=z_edge)
+                top_vel_x = QComp.discharge_top(
+                    top_method=top_method,
+                    exponent=exponent,
+                    idx_top=idx_first_valid_cell,
+                    idx_top_3=idx_first_3_valid_cells,
+                    top_rng=top_rng_edge,
+                    component=x_profile,
+                    cell_size=cell_size_edge,
+                    cell_depth=cell_depth_edge,
+                    depth_ens=depth_avg,
+                    delta_t=1,
+                    z=z_edge,
+                )
                 top_vel_x = top_vel_x / top_rng_edge
 
                 # Compute the bottom extrapolation for x-component
-                bot_vel_x = QComp.discharge_bot(bot_method=bot_method,
-                                                exponent=exponent,
-                                                idx_bot=idx_last_valid_cell,
-                                                bot_rng=bot_rng_edge,
-                                                component=x_profile,
-                                                cell_size=cell_size_edge,
-                                                cell_depth=cell_depth_edge,
-                                                depth_ens=depth_avg,
-                                                delta_t=1,
-                                                z=z_edge)
+                bot_vel_x = QComp.discharge_bot(
+                    bot_method=bot_method,
+                    exponent=exponent,
+                    idx_bot=idx_last_valid_cell,
+                    bot_rng=bot_rng_edge,
+                    component=x_profile,
+                    cell_size=cell_size_edge,
+                    cell_depth=cell_depth_edge,
+                    depth_ens=depth_avg,
+                    delta_t=1,
+                    z=z_edge,
+                )
                 bot_vel_x = bot_vel_x / bot_rng_edge
 
                 # Compute the top extrapolation for the y-component
-                top_vel_y = QComp.discharge_top(top_method=top_method,
-                                                exponent=exponent,
-                                                idx_top=idx_first_valid_cell,
-                                                idx_top_3=idx_first_3_valid_cells,
-                                                top_rng=top_rng_edge,
-                                                component=y_profile,
-                                                cell_size=cell_size_edge,
-                                                cell_depth=cell_depth_edge,
-                                                depth_ens=depth_avg,
-                                                delta_t=1,
-                                                z=z_edge)
+                top_vel_y = QComp.discharge_top(
+                    top_method=top_method,
+                    exponent=exponent,
+                    idx_top=idx_first_valid_cell,
+                    idx_top_3=idx_first_3_valid_cells,
+                    top_rng=top_rng_edge,
+                    component=y_profile,
+                    cell_size=cell_size_edge,
+                    cell_depth=cell_depth_edge,
+                    depth_ens=depth_avg,
+                    delta_t=1,
+                    z=z_edge,
+                )
                 top_vel_y = top_vel_y / top_rng_edge
 
                 # Compute the bottom extrapolation for y-component
-                bot_vel_y = QComp.discharge_bot(bot_method=bot_method,
-                                                exponent=exponent,
-                                                idx_bot=idx_last_valid_cell,
-                                                bot_rng=bot_rng_edge,
-                                                component=y_profile,
-                                                cell_size=cell_size_edge,
-                                                cell_depth=cell_depth_edge,
-                                                depth_ens=depth_avg,
-                                                delta_t=1,
-                                                z=z_edge)
+                bot_vel_y = QComp.discharge_bot(
+                    bot_method=bot_method,
+                    exponent=exponent,
+                    idx_bot=idx_last_valid_cell,
+                    bot_rng=bot_rng_edge,
+                    component=y_profile,
+                    cell_size=cell_size_edge,
+                    cell_depth=cell_depth_edge,
+                    depth_ens=depth_avg,
+                    delta_t=1,
+                    z=z_edge,
+                )
                 bot_vel_y = bot_vel_y / bot_rng_edge
 
-                # Compute edge velocity vector including extrapolated velocities
-                v_edge_x = ((top_vel_x * top_rng_edge) + (x_profile_mean * mid_rng_edge) + (bot_vel_x * bot_rng_edge)
-                            / depth_avg)
-                v_edge_y = ((top_vel_y * top_rng_edge) + (y_profile_mean * mid_rng_edge) + (bot_vel_y * bot_rng_edge)
-                            / depth_avg)
+                # Compute edge velocity vector including extrapolated
+                # velocities
+                v_edge_x = (
+                    (top_vel_x * top_rng_edge)
+                    + (x_profile_mean * mid_rng_edge)
+                    + (bot_vel_x * bot_rng_edge) / depth_avg
+                )
+                v_edge_y = (
+                    (top_vel_y * top_rng_edge)
+                    + (y_profile_mean * mid_rng_edge)
+                    + (bot_vel_y * bot_rng_edge) / depth_avg
+                )
 
-                # Compute magnitude of edge velocity perpendicular to course made good
-                edge_vel_mag = (v_edge_x * -1 * unit_track_y) + (v_edge_y * unit_track_x)
+                # Compute magnitude of edge velocity perpendicular to course
+                # made good
+                edge_vel_mag = (v_edge_x * -1 * unit_track_y) + (
+                    v_edge_y * unit_track_x
+                )
 
                 # Determine edge sign
-                if transect.start_edge == 'Right':
+                if transect.start_edge == "Right":
                     edge_vel_sign = -1
                 else:
                     edge_vel_sign = 1
@@ -948,7 +1115,8 @@ class QComp(object):
 
     @staticmethod
     def edge_velocity_profile(edge_idx, transect):
-        """Compute edge velocity magnitude using the mean velocity of each ensemble.
+        """Compute edge velocity magnitude using the mean velocity of each
+        ensemble.
 
         The mean velocity of each ensemble is computed by first
         computing the mean direction of the velocities in the ensemble,
@@ -1005,9 +1173,15 @@ class QComp(object):
                 # Setup variables
                 v_x = x_vel[:, n]
                 v_y = y_vel[:, n]
-                depth_cell_size = transect.depths.bt_depths.depth_cell_size_m[:, selected_ensemble]
-                depth_cell_depth = transect.depths.bt_depths.depth_cell_depth_m[:, selected_ensemble]
-                depth = transect.depths.bt_depths.depth_processed_m[:, selected_ensemble]
+                depth_cell_size = transect.depths.bt_depths.depth_cell_size_m[
+                    :, selected_ensemble
+                ]
+                depth_cell_depth = transect.depths.bt_depths.depth_cell_depth_m[
+                    :, selected_ensemble
+                ]
+                depth = transect.depths.bt_depths.depth_processed_m[
+                    :, selected_ensemble
+                ]
                 depth_cell_size[np.isnan(v_x)] = np.nan
                 depth_cell_depth[np.isnan(v_x)] = np.nan
 
@@ -1016,22 +1190,31 @@ class QComp(object):
                 v_y_avg = np.nansum(v_y * depth_cell_size) / np.nansum(depth_cell_size)
                 ens_dir, _ = cart2pol(v_x_avg, v_y_avg)
                 v_unit[0], v_unit[1] = pol2cart(ens_dir, 1)
-                v_projected_mag = np.dot(np.hstack([v_x, v_y]), np.tile(v_unit, v_x.shape))
+                v_projected_mag = np.dot(
+                    np.hstack([v_x, v_y]), np.tile(v_unit, v_x.shape)
+                )
 
                 # Compute z value for each cell
-                z = (depth - depth_cell_depth)
+                z = depth - depth_cell_depth
                 z[np.isnan(v_projected_mag)] = np.nan
 
                 # Compute coefficient for 1/6th power curve
                 b = 1.0 / 6.0
-                a = (b + 1) * (np.nansum((v_projected_mag * depth_cell_size))
-                               / (np.nansum(((z + 0.5 * depth_cell_size)**(b + 1))
-                                  - ((z - 0.5 * depth_cell_size)**(b + 1)))))
+                a = (b + 1) * (
+                    np.nansum((v_projected_mag * depth_cell_size))
+                    / (
+                        np.nansum(
+                            ((z + 0.5 * depth_cell_size) ** (b + 1))
+                            - ((z - 0.5 * depth_cell_size) ** (b + 1))
+                        )
+                    )
+                )
 
                 # Compute mean water speed by integrating power curve
-                vel_ensembles[n] = ((a / (b + 1)) * (depth**(b + 1))) / depth
+                vel_ensembles[n] = ((a / (b + 1)) * (depth ** (b + 1))) / depth
 
-                # Compute the mean velocity components from the mean water speed and direction
+                # Compute the mean velocity components from the mean water
+                # speed and direction
                 u[n], v[n] = pol2cart(ens_dir, vel_ensembles)
 
             else:
@@ -1041,7 +1224,8 @@ class QComp(object):
                 u[n] = np.nan
                 v[n] = np.nan
 
-        # Compute the mean velocity components of the edge velocity as the mean of the mean ensemble components
+        # Compute the mean velocity components of the edge velocity as the
+        # mean of the mean ensemble components
         u_avg = np.nanmean(u)
         v_avg = np.nanmean(v)
 
@@ -1053,7 +1237,7 @@ class QComp(object):
         unit_water_x, unit_water_y = pol2cart(edge_vel_dir, 1)
 
         # Account for direction of boat travel
-        if transect.start_edge == 'Right':
+        if transect.start_edge == "Right":
             dir_sign = 1
         else:
             dir_sign = -1
@@ -1069,13 +1253,19 @@ class QComp(object):
             b_vel_x = np.tile([np.nan], transect.boat_vel.u_processed_mps.shape)
             b_vel_y = np.tile([np.nan], transect.boat_vel.v_processed_mps.shape)
 
-        track_x = np.nancumsum(b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx])
-        track_y = np.nancumsum(b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx])
+        track_x = np.nancumsum(
+            b_vel_x[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
+        track_y = np.nancumsum(
+            b_vel_y[in_transect_idx] * ens_delta_time[in_transect_idx]
+        )
         boat_dir, boat_mag = cart2pol(track_x[-1], track_y[-1])
         unit_track_x, unit_track_y = pol2cart(boat_dir, 1)
 
         # Compute cross product from unit vectors
-        unit_x_prod = (unit_water_x * unit_track_y - unit_water_y * unit_track_x) * dir_sign
+        unit_x_prod = (
+            unit_water_x * unit_track_y - unit_water_y * unit_track_x
+        ) * dir_sign
 
         # Determine sign
         edge_vel_sign = np.sign(unit_x_prod)
@@ -1084,7 +1274,8 @@ class QComp(object):
 
     @staticmethod
     def edge_coef(edge_loc, transect):
-        """Returns the edge coefficient based on the edge settings and transect object.
+        """Returns the edge coefficient based on the edge settings and
+        transect object.
 
         Parameters
         ----------
@@ -1096,20 +1287,21 @@ class QComp(object):
         Returns
         -------
         coef: float
-            Edge coefficient for accounting for velocity distribution and edge shape
+            Edge coefficient for accounting for velocity distribution and
+            edge shape
         """
 
         # Process appropriate edge type
         edge_select = getattr(transect.edges, edge_loc)
-        if edge_select.type == 'Triangular':
+        if edge_select.type == "Triangular":
             coef = 0.3535
 
-        elif edge_select.type == 'Rectangular':
+        elif edge_select.type == "Rectangular":
             # Rectangular edge coefficient depends on the rec_edge_method.
             # 'Fixed' is compatible with the method used by TRDI.
             # 'Variable is compatible with the method used by SonTek
 
-            if transect.edges.rec_edge_method == 'Fixed':
+            if transect.edges.rec_edge_method == "Fixed":
                 # Fixed Method
                 coef = 0.91
 
@@ -1125,11 +1317,18 @@ class QComp(object):
                 trans_select = getattr(transect.depths, transect.depths.selected)
                 depth_edge = np.nanmean(trans_select.depth_processed_m[edge_idx])
 
-                # Compute coefficient using equation 34 from Principle of River Discharge Measurement, SonTek, 2003
-                coef = (1 - ((0.35 / 4) * (depth_edge / dist) * (1 - np.exp(-4 * (dist / depth_edge))))) / \
-                    (1 - 0.35 * np.exp(-4 * (dist / depth_edge)))
+                # Compute coefficient using equation 34 from Principle of
+                # River Discharge Measurement, SonTek, 2003
+                coef = (
+                    1
+                    - (
+                        (0.35 / 4)
+                        * (depth_edge / dist)
+                        * (1 - np.exp(-4 * (dist / depth_edge)))
+                    )
+                ) / (1 - 0.35 * np.exp(-4 * (dist / depth_edge)))
 
-        elif edge_select.type == 'Custom':
+        elif edge_select.type == "Custom":
             # Custom user supplied coefficient
             coef = edge_select.cust_coef
 
@@ -1160,7 +1359,8 @@ class QComp(object):
         Returns
         -------
         correction_factor: float
-            Correction factor to be applied to the discharge to correct for moving-bed effects
+            Correction factor to be applied to the discharge to correct for
+            moving-bed effects
         """
 
         # Assign object properties to local variables
@@ -1180,7 +1380,9 @@ class QComp(object):
 
         if q_orig != 0:
             # Compute near-bed velocities
-            nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(u, v, depth, depth_cell_depth)
+            nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(
+                u, v, depth, depth_cell_depth
+            )
             nb_speed = np.sqrt(nb_u**2 + nb_v**2)
             nb_u_mean = np.nanmean(nb_u)
             nb_v_mean = np.nanmean(nb_v)
@@ -1198,31 +1400,53 @@ class QComp(object):
 
             # Compute corrected cross product
             xprod = QComp.cross_product(transect=trans_data)
-            xprod_in = QComp.cross_product(w_vel_x=u_adj,
-                                           w_vel_y=v_adj,
-                                           b_vel_x=bt_u_adj,
-                                           b_vel_y=bt_v_adj,
-                                           start_edge=trans_data.start_edge)
+            xprod_in = QComp.cross_product(
+                w_vel_x=u_adj,
+                w_vel_y=v_adj,
+                b_vel_x=bt_u_adj,
+                b_vel_y=bt_v_adj,
+                start_edge=trans_data.start_edge,
+            )
             xprod[:, in_transect_idx] = xprod_in
 
             # Compute corrected discharges
-            q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
+            q_middle_cells = QComp.discharge_middle_cells(
+                xprod=xprod, transect=trans_data, delta_t=delta_t
+            )
             trans_select = getattr(trans_data.depths, trans_data.depths.selected)
-            num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
-            q_top = extrapolate_top(xprod, trans_data.w_vel.valid_data[0, :, :],
-                                    num_top_method[trans_data.extrap.top_method],
-                                    trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                    trans_select.depth_cell_size_m,
-                                    trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                    -1, 0.1667)
-            num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
-            q_bot = extrapolate_bot(xprod, trans_data.w_vel.valid_data[0, :, :],
-                                    num_bot_method[trans_data.extrap.bot_method],
-                                    trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                    trans_select.depth_cell_size_m,
-                                    trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                    -1, 0.1667)
-            q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
+            num_top_method = {"Power": 0, "Constant": 1, "3-Point": 2, None: -1}
+            q_top = extrapolate_top(
+                xprod,
+                trans_data.w_vel.valid_data[0, :, :],
+                num_top_method[trans_data.extrap.top_method],
+                trans_data.extrap.exponent,
+                trans_data.in_transect_idx,
+                trans_select.depth_cell_size_m,
+                trans_select.depth_cell_depth_m,
+                trans_select.depth_processed_m,
+                delta_t,
+                -1,
+                0.1667,
+            )
+            num_bot_method = {"Power": 0, "No Slip": 1, None: -1}
+            q_bot = extrapolate_bot(
+                xprod,
+                trans_data.w_vel.valid_data[0, :, :],
+                num_bot_method[trans_data.extrap.bot_method],
+                trans_data.extrap.exponent,
+                trans_data.in_transect_idx,
+                trans_select.depth_cell_size_m,
+                trans_select.depth_cell_depth_m,
+                trans_select.depth_processed_m,
+                delta_t,
+                -1,
+                0.1667,
+            )
+            q_adj = (
+                np.nansum(np.nansum(q_middle_cells))
+                + np.nansum(q_top)
+                + np.nansum(q_bot)
+            )
 
             # Compute correction factor
             correction_factor = q_adj / q_orig
@@ -1230,10 +1454,13 @@ class QComp(object):
             correction_factor = 1.0
 
         return correction_factor
-        
+
     @staticmethod
-    def stationary_correction_factor(top_q, middle_q, bottom_q, trans_data, mb_data, delta_t):
-        """Computes the discharge correction factor from stationary moving-bed tests.
+    def stationary_correction_factor(
+        top_q, middle_q, bottom_q, trans_data, mb_data, delta_t
+    ):
+        """Computes the discharge correction factor from stationary
+        moving-bed tests.
 
         Parameters
         ----------
@@ -1253,22 +1480,26 @@ class QComp(object):
         Returns
         -------
         correction_factor: float
-            Correction factor to be applied to the discharge to correct for moving-bed effects
+            Correction factor to be applied to the discharge to correct for
+            moving-bed effects
         """
-                
+
         n_mb_tests = len(mb_data)
         n_sta_tests = 0
         mb_speed = np.array([0])
         near_bed_speed = np.array([0])
         for n in range(n_mb_tests):
-            if (mb_data[n].type == 'Stationary') and mb_data[n].use_2_correct:
+            if (mb_data[n].type == "Stationary") and mb_data[n].use_2_correct:
                 n_sta_tests += 1
                 mb_speed = np.append(mb_speed, mb_data[n].mb_spd_mps)
-                near_bed_speed = np.append(near_bed_speed, mb_data[n].near_bed_speed_mps)
+                near_bed_speed = np.append(
+                    near_bed_speed, mb_data[n].near_bed_speed_mps
+                )
 
         if n_sta_tests > 0:
 
-            # Compute linear regression coefficient forcing through zero to relate
+            # Compute linear regression coefficient forcing through zero to
+            # relate
             # near-bed velocity to moving-bed velocity
             x = np.vstack(near_bed_speed)
             corr_coef = np.linalg.lstsq(x, mb_speed, rcond=None)[0]
@@ -1285,7 +1516,9 @@ class QComp(object):
             bt_v = trans_data.boat_vel.bt_vel.v_processed_mps[in_transect_idx]
 
             # Compute near-bed velocities
-            nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(u, v, depth, depth_cell_depth)
+            nb_u, nb_v, unit_nb_u, unit_nb_v = QComp.near_bed_velocity(
+                u, v, depth, depth_cell_depth
+            )
 
             # Compute moving-bed vector for each ensemble
             mb_u = corr_coef * nb_u
@@ -1303,33 +1536,53 @@ class QComp(object):
                 # Compute corrected discharge excluding edges
                 # Compute corrected cross product
                 xprod = QComp.cross_product(transect=trans_data)
-                xprod_in = QComp.cross_product(w_vel_x=u_adj,
-                                               w_vel_y=v_adj,
-                                               b_vel_x=bt_u_adj,
-                                               b_vel_y=bt_v_adj,
-                                               start_edge=trans_data.start_edge)
+                xprod_in = QComp.cross_product(
+                    w_vel_x=u_adj,
+                    w_vel_y=v_adj,
+                    b_vel_x=bt_u_adj,
+                    b_vel_y=bt_v_adj,
+                    start_edge=trans_data.start_edge,
+                )
                 xprod[:, in_transect_idx] = xprod_in
 
                 # Compute corrected discharges
-                q_middle_cells = QComp.discharge_middle_cells(xprod=xprod, transect=trans_data, delta_t=delta_t)
+                q_middle_cells = QComp.discharge_middle_cells(
+                    xprod=xprod, transect=trans_data, delta_t=delta_t
+                )
                 trans_select = getattr(trans_data.depths, trans_data.depths.selected)
-                num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
-                q_top = extrapolate_top(xprod,
-                                        trans_data.w_vel.valid_data[0, :, :],
-                                        num_top_method[trans_data.extrap.top_method],
-                                        trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                        trans_select.depth_cell_size_m,
-                                        trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                        -1, 0.1667)
-                num_bot_method = {'Power': 0, 'No Slip': 1, None: -1}
-                q_bot = extrapolate_bot(xprod,
-                                        trans_data.w_vel.valid_data[0, :, :],
-                                        num_bot_method[trans_data.extrap.bot_method],
-                                        trans_data.extrap.exponent, trans_data.in_transect_idx,
-                                        trans_select.depth_cell_size_m,
-                                        trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
-                                        -1, 0.1667)
-                q_adj = np.nansum(np.nansum(q_middle_cells)) + np.nansum(q_top) + np.nansum(q_bot)
+                num_top_method = {"Power": 0, "Constant": 1, "3-Point": 2, None: -1}
+                q_top = extrapolate_top(
+                    xprod,
+                    trans_data.w_vel.valid_data[0, :, :],
+                    num_top_method[trans_data.extrap.top_method],
+                    trans_data.extrap.exponent,
+                    trans_data.in_transect_idx,
+                    trans_select.depth_cell_size_m,
+                    trans_select.depth_cell_depth_m,
+                    trans_select.depth_processed_m,
+                    delta_t,
+                    -1,
+                    0.1667,
+                )
+                num_bot_method = {"Power": 0, "No Slip": 1, None: -1}
+                q_bot = extrapolate_bot(
+                    xprod,
+                    trans_data.w_vel.valid_data[0, :, :],
+                    num_bot_method[trans_data.extrap.bot_method],
+                    trans_data.extrap.exponent,
+                    trans_data.in_transect_idx,
+                    trans_select.depth_cell_size_m,
+                    trans_select.depth_cell_depth_m,
+                    trans_select.depth_processed_m,
+                    delta_t,
+                    -1,
+                    0.1667,
+                )
+                q_adj = (
+                    np.nansum(np.nansum(q_middle_cells))
+                    + np.nansum(q_top)
+                    + np.nansum(q_bot)
+                )
 
                 # Compute correction factor
                 correction_factor = q_adj / q_orig
@@ -1387,8 +1640,12 @@ class QComp(object):
                 z_depth[n] = depth[n] - np.nanmean(bin_depth[idx, n], 0)
                 u_mean[n] = np.nanmean(u[idx, n], 0)
                 v_mean[n] = np.nanmean(v[idx, n], 0)
-                nb_u[n] = (u_mean[n] / z_depth[n] ** (1. / 6.)) * (z_near_bed[n] ** (1. / 6.))
-                nb_v[n] = (v_mean[n] / z_depth[n] ** (1. / 6.)) * (z_near_bed[n] ** (1. / 6.))
+                nb_u[n] = (u_mean[n] / z_depth[n] ** (1.0 / 6.0)) * (
+                    z_near_bed[n] ** (1.0 / 6.0)
+                )
+                nb_v[n] = (v_mean[n] / z_depth[n] ** (1.0 / 6.0)) * (
+                    z_near_bed[n] ** (1.0 / 6.0)
+                )
                 speed_near_bed[n] = np.sqrt(nb_u[n] ** 2 + nb_v[n] ** 2)
                 unit_nbu[n] = nb_u[n] / speed_near_bed[n]
                 unit_nbv[n] = nb_v[n] / speed_near_bed[n]
@@ -1397,16 +1654,17 @@ class QComp(object):
 
     @staticmethod
     def valid_edge_ens(trans_data):
-        """Determines which ensembles contain sufficient valid data to allow computation of discharge.
-        
+        """Determines which ensembles contain sufficient valid data to allow
+        computation of discharge.
+
         Allows interpolated depth and boat velocity but requires valid
         non-interpolated water velocity.
-        
+
         Parameters
         ----------
         trans_data: TransectData
             Object of TransectData
-        
+
         Returns
         -------
         validEns: np.array(bool)
@@ -1420,16 +1678,20 @@ class QComp(object):
 
         boat_vel_selected = getattr(trans_data.boat_vel, trans_data.boat_vel.selected)
 
-        # Depending on type of interpolation determine the valid navigation ensembles
+        # Depending on type of interpolation determine the valid navigation
+        # ensembles
         if boat_vel_selected is not None and len(boat_vel_selected.u_processed_mps) > 0:
-            if boat_vel_selected.interpolate == 'TRDI':
+            if boat_vel_selected.interpolate == "TRDI":
                 nav_valid = boat_vel_selected.valid_data[0, in_transect_idx]
             else:
-                nav_valid = np.logical_not(np.isnan(boat_vel_selected.u_processed_mps[in_transect_idx]))
+                nav_valid = np.logical_not(
+                    np.isnan(boat_vel_selected.u_processed_mps[in_transect_idx])
+                )
         else:
             nav_valid = np.tile(False, len(in_transect_idx))
 
-        # Depending on type of interpolation determine the valid water track ensembles
+        # Depending on type of interpolation determine the valid water track
+        # ensembles
         if len(in_transect_idx) > 1:
             water_valid = np.any(trans_data.w_vel.valid_data[0, :, in_transect_idx], 1)
         else:
@@ -1438,9 +1700,12 @@ class QComp(object):
         # Determine the ensembles with valid depth
         depths_select = getattr(trans_data.depths, trans_data.depths.selected)
         if depths_select is not None:
-            depth_valid = np.logical_not(np.isnan(depths_select.depth_processed_m[in_transect_idx]))
+            depth_valid = np.logical_not(
+                np.isnan(depths_select.depth_processed_m[in_transect_idx])
+            )
 
-            # Determine the ensembles with valid depth, navigation, and water data
+            # Determine the ensembles with valid depth, navigation,
+            # and water data
             valid_ens = np.all(np.vstack((nav_valid, water_valid, depth_valid)), 0)
         else:
             valid_ens = []
@@ -1449,7 +1714,8 @@ class QComp(object):
 
     @staticmethod
     def discharge_interpolated(q_top_ens, q_mid_cells, q_bot_ens, transect):
-        """Determines the amount of discharge in interpolated cells and ensembles.
+        """Determines the amount of discharge in interpolated cells and
+        ensembles.
 
         Parameters
         ----------
@@ -1477,8 +1743,9 @@ class QComp(object):
         #  Method to compute invalid ensemble discharge depends on if
         # navigation data are interpolated (QRev) or if expanded delta
         # time is used to compute discharge for invalid ensembles(TRDI)
-        if transect.boat_vel.bt_vel.interpolate == 'None':
-            # Compute discharge in invalid ensembles for expanded delta time situation
+        if transect.boat_vel.bt_vel.interpolate == "None":
+            # Compute discharge in invalid ensembles for expanded delta time
+            # situation
             # Find index of invalid ensembles followed by a valid ensemble
             idx_next_valid = np.where(np.diff(np.hstack((-2, valid_ens))) == 1)[0]
             if len(idx_next_valid) == 0:
@@ -1488,30 +1755,42 @@ class QComp(object):
                 idx_next_valid += 1
 
                 # Sum discharge in valid ensembles following invalid ensemble
-                q_int_ens = np.nansum(q_mid_cells[:, idx_next_valid]) \
-                    + q_bot_ens[idx_next_valid] + q_top_ens[idx_next_valid]
+                q_int_ens = (
+                    np.nansum(q_mid_cells[:, idx_next_valid])
+                    + q_bot_ens[idx_next_valid]
+                    + q_top_ens[idx_next_valid]
+                )
 
-                # Determine number of invalid ensembles preceding valid ensemble
+                # Determine number of invalid ensembles preceding valid
+                # ensemble
                 run_length_false, _ = QComp.compute_run_length(valid_ens)
 
-                # Adjust run_length_false for situation where the transect ends with invalid ensembles
+                # Adjust run_length_false for situation where the transect
+                # ends with invalid ensembles
                 if len(run_length_false) > len(q_int_ens):
                     run_length_false = run_length_false[:-1]
 
-                # Adjust discharge to remove the discharge that would have been measured in the valid ensemble
-                q_int_ens = np.nansum(q_int_ens * (run_length_false / (run_length_false+1)))
+                # Adjust discharge to remove the discharge that would have
+                # been measured in the valid ensemble
+                q_int_ens = np.nansum(
+                    q_int_ens * (run_length_false / (run_length_false + 1))
+                )
 
         else:
-            # Compute discharge in invalid ensembles where all data were interpolated
-            q_int_ens = np.nansum(np.nansum(q_mid_cells[:, np.logical_not(valid_ens)])) \
-                        + np.nansum(q_top_ens[np.logical_not(valid_ens)]) \
-                        + np.nansum(q_bot_ens[np.logical_not(valid_ens)])
+            # Compute discharge in invalid ensembles where all data were
+            # interpolated
+            q_int_ens = (
+                np.nansum(np.nansum(q_mid_cells[:, np.logical_not(valid_ens)]))
+                + np.nansum(q_top_ens[np.logical_not(valid_ens)])
+                + np.nansum(q_bot_ens[np.logical_not(valid_ens)])
+            )
 
         return q_int_cells, q_int_ens
 
     @staticmethod
     def compute_run_length(bool_vector):
-        """Compute how many false or true consecutive values are in every run of true or false in the
+        """Compute how many false or true consecutive values are in every
+        run of true or false in the
         provided boolean vector.
 
         Parameters
@@ -1539,18 +1818,21 @@ class QComp(object):
         else:
             true_start = 1
             false_start = 0
-        run_length_false = run_length[bool_vector[false_start]::2]
-        run_length_true = run_length[bool_vector[true_start]::2]
+        run_length_false = run_length[bool_vector[false_start] :: 2]
+        run_length_true = run_length[bool_vector[true_start] :: 2]
 
         return run_length_false, run_length_true
 
-    # ============================================================================================
+    # ========================================================================
     # The methods below are not being used in the discharge computations.
-    # The methods for extrapolating the top and bottom discharge have been moved to separate files
-    # and compiled using Numba AOT. The methods below are included here for historical purposes
-    # and may provide an easier approach to adding new features/algorithms prior to recoding
+    # The methods for extrapolating the top and bottom discharge have been
+    # moved to separate files
+    # and compiled using Numba AOT. The methods below are included here for
+    # historical purposes
+    # and may provide an easier approach to adding new features/algorithms
+    # prior to recoding
     # them in a manner that can be compiled using Numba AOT.
-    # =============================================================================================
+    # ========================================================================
 
     @staticmethod
     def extrapolate_top(xprod, transect, delta_t, top_method=None, exponent=None):
@@ -1604,15 +1886,36 @@ class QComp(object):
         cell_depth[np.logical_not(valid_data)] = np.nan
 
         # Compute top discharge
-        q_top = QComp.discharge_top(top_method, exponent, idx_top, idx_top3, top_rng,
-                                    xprod[:, in_transect_idx], cell_size, cell_depth,
-                                    depth_ens, delta_t, z)
+        q_top = QComp.discharge_top(
+            top_method,
+            exponent,
+            idx_top,
+            idx_top3,
+            top_rng,
+            xprod[:, in_transect_idx],
+            cell_size,
+            cell_depth,
+            depth_ens,
+            delta_t,
+            z,
+        )
 
         return q_top
 
     @staticmethod
-    def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, cell_size, cell_depth,
-                      depth_ens, delta_t, z):
+    def discharge_top(
+        top_method,
+        exponent,
+        idx_top,
+        idx_top_3,
+        top_rng,
+        component,
+        cell_size,
+        cell_depth,
+        depth_ens,
+        delta_t,
+        z,
+    ):
         """Computes the top extrapolated value of the provided component.
 
         Parameters
@@ -1638,27 +1941,39 @@ class QComp(object):
         delta_t: np.array(float)
             Duration of each ensemble compute by QComp
         z: np.array(float)
-            Relative depth from the bottom of each depth cell computed in discharge top method
+            Relative depth from the bottom of each depth cell computed in
+            discharge top method
 
         Returns
         -------
-        top_value: total for the specified component integrated over the top range
+        top_value: total for the specified component integrated over the top
+        range
         """
 
         # Initialize return
         top_value = 0
 
         # Top power extrapolation
-        if top_method == 'Power':
-            numerator = ((exponent + 1) * np.nansum(component * cell_size, 0))
-            denominator = np.nansum(((z + 0.5 * cell_size)**(exponent+1)) - ((z - 0.5 * cell_size)**(exponent+1)), 0)
+        if top_method == "Power":
+            numerator = (exponent + 1) * np.nansum(component * cell_size, 0)
+            denominator = np.nansum(
+                ((z + 0.5 * cell_size) ** (exponent + 1))
+                - ((z - 0.5 * cell_size) ** (exponent + 1)),
+                0,
+            )
             coef = np.divide(numerator, denominator, where=denominator != 0)
             coef[denominator == 0] = np.nan
-            top_value = delta_t * (coef / (exponent + 1)) * \
-                (depth_ens**(exponent + 1) - (depth_ens-top_rng)**(exponent + 1))
+            top_value = (
+                delta_t
+                * (coef / (exponent + 1))
+                * (
+                    depth_ens ** (exponent + 1)
+                    - (depth_ens - top_rng) ** (exponent + 1)
+                )
+            )
 
         # Top constant extrapolation
-        elif top_method == 'Constant':
+        elif top_method == "Constant":
             n_ensembles = len(delta_t)
             top_value = np.tile([np.nan], n_ensembles)
             for j in range(n_ensembles):
@@ -1666,7 +1981,7 @@ class QComp(object):
                     top_value[j] = delta_t[j] * component[idx_top[j], j] * top_rng[j]
 
         # Top 3-point extrapolation
-        elif top_method == '3-Point':
+        elif top_method == "3-Point":
             # Determine number of bins available in each profile
             valid_data = np.logical_not(np.isnan(component))
             n_bins = np.nansum(valid_data, 0)
@@ -1683,21 +1998,25 @@ class QComp(object):
                 # If 6 or more bins use 3-pt at top
                 if n_bins[j] > 5:
                     sumd = np.nansum(cell_depth[idx_top_3[0:3, j], j])
-                    sumd2 = np.nansum(cell_depth[idx_top_3[0:3, j], j]**2)
+                    sumd2 = np.nansum(cell_depth[idx_top_3[0:3, j], j] ** 2)
                     sumq = np.nansum(component[idx_top_3[0:3, j], j])
-                    sumqd = np.nansum(component[idx_top_3[0:3, j], j] * cell_depth[idx_top_3[0:3, j], j])
+                    sumqd = np.nansum(
+                        component[idx_top_3[0:3, j], j]
+                        * cell_depth[idx_top_3[0:3, j], j]
+                    )
                     delta = 3 * sumd2 - sumd**2
                     a = (3 * sumqd - sumq * sumd) / delta
                     b = (sumq * sumd2 - sumqd * sumd) / delta
                     # Compute discharge for 3-pt fit
-                    qo = (a * top_rng[j]**2) / 2 + b * top_rng[j]
+                    qo = (a * top_rng[j] ** 2) / 2 + b * top_rng[j]
                     top_value[j] = delta_t[j] * qo
 
         return top_value
 
     @staticmethod
     def top_variables(xprod, transect):
-        """Computes the index to the top and top three valid cells in each ensemble and
+        """Computes the index to the top and top three valid cells in each
+        ensemble and
         the range from the water surface to the top of the topmost cell.
 
         Parameters
@@ -1796,14 +2115,34 @@ class QComp(object):
         cell_size[np.logical_not(valid_data)] = np.nan
         cell_depth[np.logical_not(valid_data)] = np.nan
         # Compute bottom discharge
-        q_bot = QComp.discharge_bot(bot_method, exponent, idx_bot, bot_rng, xprod,
-                                    cell_size, cell_depth, depth_ens, delta_t, z)
+        q_bot = QComp.discharge_bot(
+            bot_method,
+            exponent,
+            idx_bot,
+            bot_rng,
+            xprod,
+            cell_size,
+            cell_depth,
+            depth_ens,
+            delta_t,
+            z,
+        )
 
         return q_bot
 
     @staticmethod
-    def discharge_bot(bot_method, exponent, idx_bot, bot_rng, component,
-                      cell_size, cell_depth, depth_ens, delta_t, z):
+    def discharge_bot(
+        bot_method,
+        exponent,
+        idx_bot,
+        bot_rng,
+        component,
+        cell_size,
+        cell_depth,
+        depth_ens,
+        delta_t,
+        z,
+    ):
         """Computes the bottom extrapolated value of the provided component.
 
         Parameters
@@ -1832,25 +2171,33 @@ class QComp(object):
         Returns
         -------
         bot_value: np.array(float)
-            Total for the specified component integrated over the bottom range for each ensemble
+            Total for the specified component integrated over the bottom
+            range for each ensemble
         """
 
         # Initialize
         coef = 0
 
         # Bottom power extrapolation
-        if bot_method == 'Power':
-            numerator = ((exponent+1) * np.nansum(component * cell_size, 0))
-            denominator = np.nansum(((z + 0.5 * cell_size)**(exponent + 1)) - (z - 0.5 * cell_size)**(exponent + 1), 0)
+        if bot_method == "Power":
+            numerator = (exponent + 1) * np.nansum(component * cell_size, 0)
+            denominator = np.nansum(
+                ((z + 0.5 * cell_size) ** (exponent + 1))
+                - (z - 0.5 * cell_size) ** (exponent + 1),
+                0,
+            )
             coef = np.divide(numerator, denominator, where=denominator != 0)
             coef[denominator == 0] = np.nan
 
         # Bottom no slip extrapolation
-        elif bot_method == 'No Slip':
+        elif bot_method == "No Slip":
             # Valid data in the lower 20% of the water column or
-            # the last valid depth cell are used to compute the no slip power fit
+            # the last valid depth cell are used to compute the no slip
+            # power fit
             cutoff_depth = 0.8 * depth_ens
-            depth_ok = (nan_greater(cell_depth, np.tile(cutoff_depth, (cell_depth.shape[0], 1))))
+            depth_ok = nan_greater(
+                cell_depth, np.tile(cutoff_depth, (cell_depth.shape[0], 1))
+            )
             component_ok = np.logical_not(np.isnan(component))
             use_ns = depth_ok * component_ok
             for j in range(len(delta_t)):
@@ -1863,21 +2210,24 @@ class QComp(object):
             component_ns[np.logical_not(use_ns)] = np.nan
             z_ns = np.copy(z)
             z_ns[np.logical_not(use_ns)] = np.nan
-            numerator = ((exponent + 1) * np.nansum(component_ns * cell_size, 0))
-            denominator = np.nansum(((z_ns + 0.5 * cell_size) ** (exponent + 1))
-                                    - ((z_ns - 0.5 * cell_size) ** (exponent + 1)), 0)
+            numerator = (exponent + 1) * np.nansum(component_ns * cell_size, 0)
+            denominator = np.nansum(
+                ((z_ns + 0.5 * cell_size) ** (exponent + 1))
+                - ((z_ns - 0.5 * cell_size) ** (exponent + 1)),
+                0,
+            )
             coef = np.divide(numerator, denominator, where=denominator != 0)
             coef[denominator == 0] = np.nan
 
         # Compute the bottom discharge of each profile
-        bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng**(exponent + 1))
+        bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng ** (exponent + 1))
 
         return bot_value
 
     @staticmethod
     def bot_variables(x_prod, transect):
-        """Computes the index to the bottom most valid cell in each ensemble and the range from
-        the bottom to the bottom of the bottom most cell.
+        """Computes the index to the bottom most valid cell in each ensemble
+        and the range from the bottom to the bottom of the bottom most cell.
 
         Parameters
         ----------
@@ -1918,7 +2268,11 @@ class QComp(object):
                 idx_temp = idx_temp[-1]
                 idx_bot[n] = idx_temp
                 # Compute bottom range
-                bot_rng[n] = depth_ens[n] - cell_depth[idx_bot[n], n] - 0.5 * cell_size[idx_bot[n], n]
+                bot_rng[n] = (
+                    depth_ens[n]
+                    - cell_depth[idx_bot[n], n]
+                    - 0.5 * cell_size[idx_bot[n], n]
+                )
             else:
                 bot_rng[n] = 0
 

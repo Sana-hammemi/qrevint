@@ -18,7 +18,7 @@ class Comment(QtWidgets.QDialog, wComment.Ui_Comment):
         Text in text edit box
     """
 
-    def __init__(self, tab_name= None, parent=None):
+    def __init__(self, tab_name=None, parent=None):
         super(Comment, self).__init__(parent)
         self.setupUi(self)
 
@@ -28,12 +28,12 @@ class Comment(QtWidgets.QDialog, wComment.Ui_Comment):
         self.text_edit_comment.setFont(font)
 
         # Create and add default information
-        time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         user_name = getpass.getuser()
         if tab_name is not None:
-            self.text = '[' + tab_name + ', '+ time_stamp + ', ' + user_name + ']:  '
+            self.text = "[" + tab_name + ", " + time_stamp + ", " + user_name + "]:  "
         else:
-            self.text = '[' + time_stamp + ', ' + user_name + ']:  '
+            self.text = "[" + time_stamp + ", " + user_name + "]:  "
         self.text_edit_comment.setPlainText(self.text)
 
         self.text_edit_comment.setFocus()

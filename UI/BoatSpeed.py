@@ -3,9 +3,12 @@ from PyQt5 import QtCore
 from matplotlib.dates import DateFormatter, num2date
 from datetime import datetime
 
+
 class BoatSpeed(object):
-    """Class to generate boat speed time series plot. If checkboxes for the boat speed reference
-    (BT, GGA, VTG) are available they can be used to control what references are plotted.
+    """Class to generate boat speed time series plot. If checkboxes for the
+    boat speed reference
+    (BT, GGA, VTG) are available they can be used to control what references
+    are plotted.
 
     Attributes
     ----------
@@ -16,7 +19,8 @@ class BoatSpeed(object):
     units: dict
         Dictionary of units conversions
     cb: bool
-        Boolean to determine if checkboxes to control the boat speed reference are to be used
+        Boolean to determine if checkboxes to control the boat speed reference
+        are to be used
     cb_bt: QCheckBox
         Name of QCheckBox for bottom track
     cb_gga: QCheckBox
@@ -59,10 +63,18 @@ class BoatSpeed(object):
         self.vtg = None
         self.hover_connection = None
         self.annot = None
-        self.x_axis_type = 'E'
+        self.x_axis_type = "E"
 
-    def create(self, transect, units,
-               cb=False, cb_bt=None, cb_gga=None, cb_vtg=None, x_axis_type=None):
+    def create(
+        self,
+        transect,
+        units,
+        cb=False,
+        cb_bt=None,
+        cb_gga=None,
+        cb_vtg=None,
+        x_axis_type=None,
+    ):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -72,7 +84,8 @@ class BoatSpeed(object):
         units: dict
             Dictionary of units conversions
         cb: bool
-            Boolean to determine if checkboxes to control the boat speed reference are to be used
+            Boolean to determine if checkboxes to control the boat speed
+            reference are to be used
         cb_bt: QCheckBox
             Name of QCheckBox for bottom track
         cb_gga: QCheckBox
@@ -85,7 +98,7 @@ class BoatSpeed(object):
 
         # Set default axis
         if x_axis_type is None:
-            x_axis_type = 'E'
+            x_axis_type = "E"
         self.x_axis_type = x_axis_type
 
         # Assign and save parameters
@@ -105,12 +118,16 @@ class BoatSpeed(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_ylabel(self.canvas.tr('Boat speed' + units['label_V']))
+        self.fig.subplots_adjust(
+            left=0.08, bottom=0.2, right=0.98, top=0.98, wspace=0.1, hspace=0
+        )
+        self.fig.ax.set_ylabel(self.canvas.tr("Boat speed" + units["label_V"]))
         self.fig.ax.grid()
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
 
         # Initialize max trackers
         max_gga = np.nan
@@ -118,45 +135,90 @@ class BoatSpeed(object):
 
         # Compute x axis data
         x = None
-        if x_axis_type == 'L':
+        if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
-            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
-                x = boat_track['distance_m'] * units['L']
-        elif x_axis_type == 'E':
+            if not np.alltrue(np.isnan(boat_track["track_x_m"])):
+                x = boat_track["distance_m"] * units["L"]
+        elif x_axis_type == "E":
             x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
-        elif x_axis_type == 'T':
-            timestamp = np.nancumsum(transect.date_time.ens_duration_sec) + transect.date_time.start_serial_time
+        elif x_axis_type == "T":
+            timestamp = (
+                np.nancumsum(transect.date_time.ens_duration_sec)
+                + transect.date_time.start_serial_time
+            )
             x = []
             for stamp in timestamp:
                 x.append(datetime.utcfromtimestamp(stamp))
             x = np.array(x)
 
         # Plot bottom track boat speed
-        speed = np.sqrt(transect.boat_vel.bt_vel.u_processed_mps[transect.in_transect_idx] ** 2
-                        + transect.boat_vel.bt_vel.v_processed_mps[transect.in_transect_idx] ** 2)
-        self.bt = self.fig.ax.plot(x, speed * units['V'], 'r-')
+        speed = np.sqrt(
+            transect.boat_vel.bt_vel.u_processed_mps[transect.in_transect_idx] ** 2
+            + transect.boat_vel.bt_vel.v_processed_mps[transect.in_transect_idx] ** 2
+        )
+        self.bt = self.fig.ax.plot(x, speed * units["V"], "r-")
 
-        # Plot invalid data points using a symbol to represent what caused the data to be invalid
-        invalid_bt = np.logical_not(transect.boat_vel.bt_vel.valid_data[:, transect.in_transect_idx])
+        # Plot invalid data points using a symbol to represent what caused the
+        # data to be invalid
+        invalid_bt = np.logical_not(
+            transect.boat_vel.bt_vel.valid_data[:, transect.in_transect_idx]
+        )
         if invalid_bt is not None:
-            speed = np.sqrt(transect.boat_vel.bt_vel.u_mps[transect.in_transect_idx] ** 2
-                            + transect.boat_vel.bt_vel.v_mps[transect.in_transect_idx] ** 2)
+            speed = np.sqrt(
+                transect.boat_vel.bt_vel.u_mps[transect.in_transect_idx] ** 2
+                + transect.boat_vel.bt_vel.v_mps[transect.in_transect_idx] ** 2
+            )
             speed[np.isnan(speed)] = 0
-            self.bt.append(self.fig.ax.plot(x[invalid_bt[1]], speed[invalid_bt[1]] * units['V'],
-                                            'k', linestyle='', marker='$O$')[0])
-            self.bt.append(self.fig.ax.plot(x[invalid_bt[2]], speed[invalid_bt[2]] * units['V'],
-                                            'k', linestyle='', marker='$E$')[0])
-            self.bt.append(self.fig.ax.plot(x[invalid_bt[3]], speed[invalid_bt[3]] * units['V'],
-                                            'k', linestyle='', marker='$V$')[0])
-            self.bt.append(self.fig.ax.plot(x[invalid_bt[4]], speed[invalid_bt[4]] * units['V'],
-                                            'k', linestyle='', marker='$S$')[0])
-            self.bt.append(self.fig.ax.plot(x[invalid_bt[5]], speed[invalid_bt[5]] * units['V'],
-                                            'k', linestyle='', marker='$B$')[0])
+            self.bt.append(
+                self.fig.ax.plot(
+                    x[invalid_bt[1]],
+                    speed[invalid_bt[1]] * units["V"],
+                    "k",
+                    linestyle="",
+                    marker="$O$",
+                )[0]
+            )
+            self.bt.append(
+                self.fig.ax.plot(
+                    x[invalid_bt[2]],
+                    speed[invalid_bt[2]] * units["V"],
+                    "k",
+                    linestyle="",
+                    marker="$E$",
+                )[0]
+            )
+            self.bt.append(
+                self.fig.ax.plot(
+                    x[invalid_bt[3]],
+                    speed[invalid_bt[3]] * units["V"],
+                    "k",
+                    linestyle="",
+                    marker="$V$",
+                )[0]
+            )
+            self.bt.append(
+                self.fig.ax.plot(
+                    x[invalid_bt[4]],
+                    speed[invalid_bt[4]] * units["V"],
+                    "k",
+                    linestyle="",
+                    marker="$S$",
+                )[0]
+            )
+            self.bt.append(
+                self.fig.ax.plot(
+                    x[invalid_bt[5]],
+                    speed[invalid_bt[5]] * units["V"],
+                    "k",
+                    linestyle="",
+                    marker="$B$",
+                )[0]
+            )
 
         max_bt = np.nanmax(speed)
 
         # Based on checkbox control make bt visible or not
-        if control['bt']:
+        if control["bt"]:
             for item in self.bt:
                 item.set_visible(True)
         else:
@@ -165,26 +227,55 @@ class BoatSpeed(object):
 
         # Plot VTG boat speed
         if transect.boat_vel.vtg_vel is not None:
-            speed = np.sqrt(transect.boat_vel.vtg_vel.u_processed_mps[transect.in_transect_idx] ** 2
-                            + transect.boat_vel.vtg_vel.v_processed_mps[transect.in_transect_idx] ** 2)
-            self.vtg = self.fig.ax.plot(x, speed * units['V'], 'g-')
+            speed = np.sqrt(
+                transect.boat_vel.vtg_vel.u_processed_mps[transect.in_transect_idx] ** 2
+                + transect.boat_vel.vtg_vel.v_processed_mps[transect.in_transect_idx]
+                ** 2
+            )
+            self.vtg = self.fig.ax.plot(x, speed * units["V"], "g-")
 
-            # Plot invalid data points using a symbol to represent what caused the data to be invalid
-            invalid_gps = np.logical_not(transect.boat_vel.vtg_vel.valid_data[:, transect.in_transect_idx])
+            # Plot invalid data points using a symbol to represent what
+            # caused the data to be invalid
+            invalid_gps = np.logical_not(
+                transect.boat_vel.vtg_vel.valid_data[:, transect.in_transect_idx]
+            )
             # if invalid_gps is not None:
             if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
-                speed = np.sqrt(transect.boat_vel.vtg_vel.u_mps[transect.in_transect_idx] ** 2
-                                + transect.boat_vel.vtg_vel.v_mps[transect.in_transect_idx] ** 2)
+                speed = np.sqrt(
+                    transect.boat_vel.vtg_vel.u_mps[transect.in_transect_idx] ** 2
+                    + transect.boat_vel.vtg_vel.v_mps[transect.in_transect_idx] ** 2
+                )
                 speed[np.isnan(speed)] = 0
-                self.vtg.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
-                                                 'k', linestyle='', marker='$O$')[0])
-                self.vtg.append(self.fig.ax.plot(x[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
-                                                 'k', linestyle='', marker='$H$')[0])
-                self.vtg.append(self.fig.ax.plot(x[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
-                                                 'k', linestyle='', marker='$S$')[0])
+                self.vtg.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[1]],
+                        speed[invalid_gps[1]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$O$",
+                    )[0]
+                )
+                self.vtg.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[5]],
+                        speed[invalid_gps[5]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$H$",
+                    )[0]
+                )
+                self.vtg.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[4]],
+                        speed[invalid_gps[4]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$S$",
+                    )[0]
+                )
 
             max_vtg = np.nanmax(speed)
-            if control['vtg']:
+            if control["vtg"]:
                 for item in self.vtg:
                     item.set_visible(True)
             else:
@@ -193,29 +284,72 @@ class BoatSpeed(object):
 
         # Plot GGA boat speed
         if transect.boat_vel.gga_vel is not None:
-            speed = np.sqrt(transect.boat_vel.gga_vel.u_processed_mps[transect.in_transect_idx] ** 2
-                            + transect.boat_vel.gga_vel.v_processed_mps[transect.in_transect_idx] ** 2)
-            self.gga = self.fig.ax.plot(x, speed * units['V'], 'b-')
+            speed = np.sqrt(
+                transect.boat_vel.gga_vel.u_processed_mps[transect.in_transect_idx] ** 2
+                + transect.boat_vel.gga_vel.v_processed_mps[transect.in_transect_idx]
+                ** 2
+            )
+            self.gga = self.fig.ax.plot(x, speed * units["V"], "b-")
 
-            # Plot invalid data points using a symbol to represent what caused the data to be invalid
-            invalid_gps = np.logical_not(transect.boat_vel.gga_vel.valid_data[:, transect.in_transect_idx])
+            # Plot invalid data points using a symbol to represent what caused
+            # the data to be invalid
+            invalid_gps = np.logical_not(
+                transect.boat_vel.gga_vel.valid_data[:, transect.in_transect_idx]
+            )
             if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
-                speed = np.sqrt(transect.boat_vel.gga_vel.u_mps[transect.in_transect_idx] ** 2
-                                + transect.boat_vel.gga_vel.v_mps[transect.in_transect_idx] ** 2)
+                speed = np.sqrt(
+                    transect.boat_vel.gga_vel.u_mps[transect.in_transect_idx] ** 2
+                    + transect.boat_vel.gga_vel.v_mps[transect.in_transect_idx] ** 2
+                )
                 speed[np.isnan(speed)] = 0
-                self.gga.append(self.fig.ax.plot(x[invalid_gps[1]], speed[invalid_gps[1]] * units['V'],
-                                                 'k', linestyle='', marker='$O$')[0])
-                self.gga.append(self.fig.ax.plot(x[invalid_gps[2]], speed[invalid_gps[2]] * units['V'],
-                                                 'k', linestyle='', marker='$Q$')[0])
-                self.gga.append(self.fig.ax.plot(x[invalid_gps[3]], speed[invalid_gps[3]] * units['V'],
-                                                 'k', linestyle='', marker='$A$')[0])
-                self.gga.append(self.fig.ax.plot(x[invalid_gps[5]], speed[invalid_gps[5]] * units['V'],
-                                                 'k', linestyle='', marker='$H$')[0])
-                self.gga.append(self.fig.ax.plot(x[invalid_gps[4]], speed[invalid_gps[4]] * units['V'],
-                                                 'k', linestyle='', marker='$S$')[0])
+                self.gga.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[1]],
+                        speed[invalid_gps[1]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$O$",
+                    )[0]
+                )
+                self.gga.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[2]],
+                        speed[invalid_gps[2]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$Q$",
+                    )[0]
+                )
+                self.gga.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[3]],
+                        speed[invalid_gps[3]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$A$",
+                    )[0]
+                )
+                self.gga.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[5]],
+                        speed[invalid_gps[5]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$H$",
+                    )[0]
+                )
+                self.gga.append(
+                    self.fig.ax.plot(
+                        x[invalid_gps[4]],
+                        speed[invalid_gps[4]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$S$",
+                    )[0]
+                )
 
             max_gga = np.nanmax(speed)
-            if control['gga']:
+            if control["gga"]:
                 for item in self.gga:
                     item.set_visible(True)
             else:
@@ -224,39 +358,52 @@ class BoatSpeed(object):
 
         # Set axis limits
         max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
-        self.fig.ax.set_ylim(top=np.ceil(max_y * units['L']), bottom=-0.5)
+        self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
         x = x[transect.in_transect_idx]
-        if x_axis_type == 'L':
-            if transect.start_edge == 'Right':
+        if x_axis_type == "L":
+            if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(right=-1 * x[-1] * 0.02 * units['L'], left=x[-1] * 1.02 * units['L'])
+                self.fig.ax.set_xlim(
+                    right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02 * units["L"]
+                )
             else:
-                self.fig.ax.set_xlim(left=-1 * x[-1] * 0.02 * units['L'], right=x[-1] * 1.02 * units['L'])
-            self.fig.ax.set_xlabel(self.canvas.tr('Length' + units['label_L']))
-        elif x_axis_type == 'E':
-            if transect.start_edge == 'Right':
+                self.fig.ax.set_xlim(
+                    left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02 * units["L"]
+                )
+            self.fig.ax.set_xlabel(self.canvas.tr("Length" + units["label_L"]))
+        elif x_axis_type == "E":
+            if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()
                 self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
             else:
                 self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
-            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles'))
-        elif x_axis_type == 'T':
+            self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
+        elif x_axis_type == "T":
             axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
-            if transect.start_edge == 'Right':
+            if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                                     left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
+                self.fig.ax.set_xlim(
+                    right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                    left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                )
             else:
-                self.fig.ax.set_xlim(left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                                     right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer))
-            date_form = DateFormatter('%H:%M:%S')
+                self.fig.ax.set_xlim(
+                    left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
+                    right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                )
+            date_form = DateFormatter("%H:%M:%S")
             self.fig.ax.xaxis.set_major_formatter(date_form)
-            self.fig.ax.set_xlabel(self.canvas.tr('Time'))
+            self.fig.ax.set_xlabel(self.canvas.tr("Time"))
 
         # Initialize annotation for data cursor
-        self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                          bbox=dict(boxstyle="round", fc="w"),
-                                          arrowprops=dict(arrowstyle="->"))
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
 
         self.annot.set_visible(False)
 
@@ -272,9 +419,10 @@ class BoatSpeed(object):
         """
 
         # Initialize control dictionary
-        control = {'bt': True, 'gga': True, 'vtg': True, 'vectors': True}
+        control = {"bt": True, "gga": True, "vtg": True, "vectors": True}
 
-        # If checkboxes are available, enable the checkboxes if transect contains that type of data
+        # If checkboxes are available, enable the checkboxes if transect
+        # contains that type of data
         if self.cb:
             # Enable check boxes as data is available
             if transect.boat_vel.gga_vel is not None:
@@ -292,26 +440,28 @@ class BoatSpeed(object):
             # Get checkbox status
             # BT
             if self.cb_bt.checkState() == QtCore.Qt.Checked:
-                control['bt'] = True
+                control["bt"] = True
             else:
-                control['bt'] = False
+                control["bt"] = False
             # GGA
             if self.cb_gga.checkState() == QtCore.Qt.Checked:
-                control['gga'] = True
+                control["gga"] = True
             else:
-                control['gga'] = False
+                control["gga"] = False
             # VTG
             if self.cb_vtg.checkState() == QtCore.Qt.Checked:
-                control['vtg'] = True
+                control["vtg"] = True
             else:
-                control['vtg'] = False
+                control["vtg"] = False
         return control
 
     def change(self):
-        """Changes the visibility of the various boat speed references based on user input via checkboxes.
+        """Changes the visibility of the various boat speed references based
+        on user input via checkboxes.
         """
 
-        # If checkboxes are available, check status and set boat speed reference line visibility accordingly.
+        # If checkboxes are available, check status and set boat speed
+        # reference line visibility accordingly.
         if self.cb:
             if self.cb_bt.checkState() == QtCore.Qt.Checked:
                 for item in self.bt:
@@ -342,7 +492,8 @@ class BoatSpeed(object):
             self.canvas.draw()
 
     def update_annot(self, ind, plt_ref, ref_label):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously
+        initialized and hidden annotation.
 
         Parameters
         ----------
@@ -357,28 +508,58 @@ class BoatSpeed(object):
         # Get selected data coordinates
         pos = plt_ref._xy[ind["ind"][0]]
 
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
+        # Shift annotation box left or right depending on which half of the
+        # axis the pos x is located and the
         # direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the
         # direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
@@ -386,16 +567,17 @@ class BoatSpeed(object):
         self.annot.xy = pos
 
         # Format and display text
-        if self.x_axis_type == 'T':
-            x_label = num2date(pos[0]).strftime('%H:%M:%S.%f')[:-4]
-            text = 'x: {}, {}: {:.2f}'.format(x_label, ref_label, pos[1])
+        if self.x_axis_type == "T":
+            x_label = num2date(pos[0]).strftime("%H:%M:%S.%f")[:-4]
+            text = "x: {}, {}: {:.2f}".format(x_label, ref_label, pos[1])
         else:
-            text = 'x: {:.2f}, {}: {:.2f}'.format(pos[0], ref_label, pos[1])
+            text = "x: {:.2f}, {}: {:.2f}".format(pos[0], ref_label, pos[1])
         self.annot.set_text(text)
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
-        annotation visible and calls method to update the text of the annotation. If the
+        annotation visible and calls method to update the text of the
+        annotation. If the
         location is not valid the existing annotation is hidden.
 
         Parameters
@@ -407,7 +589,8 @@ class BoatSpeed(object):
         # Set annotation to visible
         vis = self.annot.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.ax:
             cont_bt = False
             cont_gga = False
@@ -423,19 +606,20 @@ class BoatSpeed(object):
             if self.vtg is not None:
                 cont_vtg, ind_vtg = self.vtg[0].contains(event)
             if cont_bt and self.bt[0].get_visible():
-                self.update_annot(ind_bt, self.bt[0], 'BT')
+                self.update_annot(ind_bt, self.bt[0], "BT")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             elif cont_gga and self.gga[0].get_visible():
-                self.update_annot(ind_gga, self.gga[0], 'GGA')
+                self.update_annot(ind_gga, self.gga[0], "GGA")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             elif cont_vtg and self.vtg[0].get_visible():
-                self.update_annot(ind_vtg, self.vtg[0], 'VTG')
+                self.update_annot(ind_vtg, self.vtg[0], "VTG")
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:
-                # If the cursor location is not associated with the plotted data hide the annotation.
+                # If the cursor location is not associated with the plotted
+                # data hide the annotation.
                 if vis:
                     self.annot.set_visible(False)
                     self.canvas.draw_idle()
@@ -446,11 +630,14 @@ class BoatSpeed(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

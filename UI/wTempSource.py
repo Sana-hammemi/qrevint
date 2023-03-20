@@ -47,7 +47,9 @@ class Ui_temp_source(object):
         self.ed_user_temp = QtWidgets.QLineEdit(self.gb_source)
         self.ed_user_temp.setObjectName("ed_user_temp")
         self.horizontalLayout_2.addWidget(self.ed_user_temp)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2.setStretch(0, 1)
         self.horizontalLayout_2.setStretch(1, 1)
@@ -89,7 +91,9 @@ class Ui_temp_source(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout)
         self.buttonBox = QtWidgets.QDialogButtonBox(temp_source)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout_3.addWidget(self.buttonBox)
         self.gridLayout_2.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
@@ -110,10 +114,9 @@ class Ui_temp_source(object):
         self.rb_transect.setText(_translate("temp_source", "Transect Only"))
 
 
-
-
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     temp_source = QtWidgets.QDialog()
     ui = Ui_temp_source()
