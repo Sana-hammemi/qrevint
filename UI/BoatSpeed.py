@@ -6,9 +6,8 @@ from datetime import datetime
 
 class BoatSpeed(object):
     """Class to generate boat speed time series plot. If checkboxes for the
-    boat speed reference
-    (BT, GGA, VTG) are available they can be used to control what references
-    are plotted.
+    boat speed reference (BT, GGA, VTG) are available they can be used to
+    control what references are plotted.
 
     Attributes
     ----------
@@ -239,7 +238,7 @@ class BoatSpeed(object):
             invalid_gps = np.logical_not(
                 transect.boat_vel.vtg_vel.valid_data[:, transect.in_transect_idx]
             )
-            # if invalid_gps is not None:
+
             if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
                 speed = np.sqrt(
                     transect.boat_vel.vtg_vel.u_mps[transect.in_transect_idx] ** 2
@@ -473,20 +472,16 @@ class BoatSpeed(object):
             if self.cb_gga.checkState() == QtCore.Qt.Checked:
                 for item in self.gga:
                     item.set_visible(True)
-                # self.gga[0].set_visible(True)
             elif self.gga is not None:
                 for item in self.gga:
                     item.set_visible(False)
-                # self.gga[0].set_visible(False)
             # VTG
             if self.cb_vtg.checkState() == QtCore.Qt.Checked:
                 for item in self.vtg:
                     item.set_visible(True)
-                # self.vtg[0].set_visible(True)
             elif self.vtg is not None:
                 for item in self.vtg:
                     item.set_visible(False)
-                # self.vtg[0].set_visible(False)
 
             # Draw canvas
             self.canvas.draw()
@@ -509,8 +504,7 @@ class BoatSpeed(object):
         pos = plt_ref._xy[ind["ind"][0]]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
+        # axis the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -537,8 +531,7 @@ class BoatSpeed(object):
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -577,8 +570,7 @@ class BoatSpeed(object):
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------

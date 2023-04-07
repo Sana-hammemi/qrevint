@@ -97,8 +97,7 @@ class PRTS(object):
                     pitch = np.copy(
                         meas.transects[checked[row]].sensors.pitch_deg.internal.data
                     )
-                    # Arrange data from left to right
-                    flip = False
+
                     # Arrange data from left to right
                     flip = False
                     if meas.transects[checked[row]].start_edge == "Right":
@@ -120,8 +119,7 @@ class PRTS(object):
                     roll = np.copy(
                         meas.transects[checked[row]].sensors.roll_deg.internal.data
                     )
-                    # Arrange data from left to right
-                    flip = False
+
                     # Arrange data from left to right
                     flip = False
                     if meas.transects[checked[row]].start_edge == "Right":
@@ -294,8 +292,7 @@ class PRTS(object):
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -331,7 +328,7 @@ class PRTS(object):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
         annotation.If the location is not valid the existing annotation is
-         hidden.
+        hidden.
 
         Parameters
         ----------
@@ -381,8 +378,6 @@ class PRTS(object):
         """
 
         if setting and self.hover_connection is None:
-            # self.hover_connection =
-            # self.canvas.mpl_connect("motion_notify_event", self.hover)
             self.hover_connection = self.canvas.mpl_connect(
                 "button_press_event", self.hover
             )

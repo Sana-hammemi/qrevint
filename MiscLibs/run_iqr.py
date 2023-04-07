@@ -19,7 +19,8 @@ def run_iqr(half_width, data):
     Parameters
     ----------
     half_width: int
-        Number of ensembles before and after current ensemble which are used to compute the IQR
+        Number of ensembles before and after current ensemble which are used
+        to compute the IQR
     data: np.array(float)
         Data for which the IQR is computed
     """

@@ -52,7 +52,8 @@ class ExtrapPlot(object):
         cb_meas_fit=True,
         auto=False,
     ):
-        """Creates figure for extrapolation plot and calls associated methods to added data to the axes.
+        """Creates figure for extrapolation plot and calls associated methods to
+        added data to the axes.
 
         Parameters
         ----------
@@ -354,7 +355,8 @@ class ExtrapPlot(object):
 
         # If sel_fit is a single data set
         else:
-            # If the data set is a composite for the measurement plot in black otherwise use start bank
+            # If the data set is a composite for the measurement plot in black
+            # otherwise use start bank
             if idx == -1:
                 line_color = "k"
             elif self.meas.transects[idx].start_edge == "Left":
@@ -368,8 +370,8 @@ class ExtrapPlot(object):
             self.fig.ax.plot(sel_fit.u, sel_fit.z, color=line_color, linewidth=2)
 
     def extrap_plot_data(self, norm_data):
-        """Plot normalized data for each depth cell. These data will be either for a single transect or for the
-        composite for the whole measurement.
+        """Plot normalized data for each depth cell. These data will be either for a
+        single transect or for the composite for the whole measurement.
 
         Parameters
         ----------
@@ -379,8 +381,6 @@ class ExtrapPlot(object):
         """
 
         if norm_data.weights is not None and norm_data.weights.size > 0:
-            # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
-            #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
             cmap = cm.get_cmap("Blues")
             idx = np.argsort(np.abs(np.nan_to_num(norm_data.weights)), axis=None)
             self.fig.ax.scatter(
@@ -403,8 +403,9 @@ class ExtrapPlot(object):
             )
 
     def extrap_plot_surface(self, norm_data):
-        """Highlights the depth cell data representing the topmost depth cell. These data will be either for a
-        single transect or for the composite for the whole measurement.
+        """Highlights the depth cell data representing the topmost depth cell.
+        These data will be either for a single transect or for the composite
+        for the whole measurement.
 
         Parameters
         ----------
@@ -437,18 +438,7 @@ class ExtrapPlot(object):
         """
 
         # If composite measurement the color is black otherwise use start bank
-        # line_color = '#ffff00'
-        # line_color = '#ffcc00'
         line_color = "#ff8000"
-        # # All median values in red
-        # self.fig.ax.plot(norm_data.unit_normalized_med, norm_data.unit_normalized_z, 'rs',
-        #                  markerfacecolor='#ff9999', linestyle='None')
-        #
-        # # All error bars in red
-        # for n in range(len(norm_data.unit_normalized_25)):
-        #     self.fig.ax.plot([norm_data.unit_normalized_25[n], norm_data.unit_normalized_75[n]],
-        #                      [norm_data.unit_normalized_z[n], norm_data.unit_normalized_z[n]],
-        #                      'r-')
 
         # Valid median values
         self.fig.ax.plot(
@@ -459,12 +449,6 @@ class ExtrapPlot(object):
             markerfacecolor=line_color,
             linestyle="None",
         )
-
-        # # Valid error bars
-        # for idx in norm_data.valid_data:
-        #     self.fig.ax.plot([norm_data.unit_normalized_25[idx], norm_data.unit_normalized_75[idx]],
-        #                      [norm_data.unit_normalized_z[idx], norm_data.unit_normalized_z[idx]],
-        #                      color=line_color)
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
@@ -480,7 +464,8 @@ class ExtrapPlot(object):
         # Set annotation to visible
         vis = self.annot.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.ax:
             cont_fig = False
             if self.fig is not None:
@@ -501,7 +486,8 @@ class ExtrapPlot(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
@@ -515,7 +501,8 @@ class ExtrapPlot(object):
             self.canvas.draw_idle()
 
     def update_annot(self, x, y):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously initialized
+        and hidden annotation.
 
         Parameters
         ----------
@@ -527,8 +514,8 @@ class ExtrapPlot(object):
 
         plt_ref = self.fig
         pos = [x, y]
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
-        # direction of x increasing.
+        # Shift annotation box left or right depending on which half of the axis
+        # the pos x is located and the direction of x increasing.
         if plt_ref.ax.viewLim.intervalx[0] < plt_ref.ax.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -548,8 +535,8 @@ class ExtrapPlot(object):
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
-        # direction of y increasing.
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the direction of y increasing.
         if plt_ref.ax.viewLim.intervaly[0] < plt_ref.ax.viewLim.intervaly[1]:
             if (
                 pos[1]

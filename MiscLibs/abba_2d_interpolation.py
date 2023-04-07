@@ -1,19 +1,24 @@
 """abba_2d_interpolation
 
-This module performs 2-D interpolation on data that is assumed to be arranged in row-column format rather
-than in a random pattern. The rows represent vertical location or y-coordinate of each cell
-in the data array. The columns represent a horizontal location or x-coordinate of the data.
-The cell size and thus the y-coordinate of a cell can change from cell to cell or ensemble to ensemble.
-The interpolation algorithm searches for the all valid cells above, below, before, and after
-that touch the cell to be interpolated. Bathymetry is honored by checking to see if the depth of the streambed
-of the cell before or after is greater than the bottom of the target cell. When searching before or after, if the
-streambed is encountered before a valid cell then no valid cell is used in that direction.
+This module performs 2-D interpolation on data that is assumed to be arranged
+in row-column format rather than in a random pattern. The rows represent vertical
+location or y-coordinate of each cell in the data array. The columns represent a
+horizontal location or x-coordinate of the data. The cell size and thus the
+y-coordinate of a cell can change from cell to cell or ensemble to ensemble.
+The interpolation algorithm searches for the all valid cells above, below,
+before, and after that touch the cell to be interpolated. Bathymetry is honored
+by checking to see if the depth of the streambed of the cell before or after is
+greater than the bottom of the target cell. When searching before or after,
+if thestreambed is encountered before a valid cell then no valid cell is used
+in that direction.
 
-The methods provide the flexibility to determine neighbors based on either a raw vertical location
-or a normalized location. To use a normalized location set normalize to True.
+The methods provide the flexibility to determine neighbors based on either
+a raw vertical location or a normalized location. To use a normalized location
+set normalize to True.
 
-For efficiency the data_list can contain multiple types of data that lie on the same x-y locations.
-This allows multiple interpolations without having to recompute neighbors and distances.
+For efficiency the data_list can contain multiple types of data that lie on
+the same x-y locations. This allows multiple interpolations without having to
+recompute neighbors and distances.
 
 Example
 -------
@@ -45,8 +50,8 @@ def find_neighbors(
     search_loc,
     normalize=False,
 ):
-    """Finds the nearest valid cells above, below, before, and after each invalid cell. The before and after
-    Cells must have data in the same y range as the invalid cell.
+    """Finds the nearest valid cells above, below, before, and after each invalid cell.
+    The before and after cells must have data in the same y range as the invalid cell.
 
     Parameters
     ----------
@@ -59,8 +64,8 @@ def find_neighbors(
     y_cell_size: np.array(float)
         Size of each cell in the y-direction
     y_depth: np.array(float)
-        1-D array containing values that will be used to normalize the data and specifying the lower boundary for
-        identifying neighbors
+        1-D array containing values that will be used to normalize the data and
+        specifying the lower boundary for identifying neighbors
     search_loc: list
         Identifies location to search (above, below, before, after)
     normalize: bool
@@ -69,7 +74,8 @@ def find_neighbors(
     Returns
     -------
     neighbors: list
-        List of dictionaries providing the indices of the above, below, before, and after valid cells.
+        List of dictionaries providing the indices of the above, below,
+        before, and after valid cells.
     """
 
     # Compute cell extents
@@ -105,7 +111,8 @@ def find_neighbors(
             if below is not None:
                 points.append(below)
 
-        # Find all cells in ensembles before or after the target ensemble that overlap the target cell
+        # Find all cells in ensembles before or after the target ensemble
+        # that overlap the target cell.
         # This is a change implemented on 2/27/2020 - dsm
         y_match = np.logical_and(y_top[target] <= y_bottom, y_bottom[target] >= y_top)
         y_match = np.logical_and(y_match, valid_data)
@@ -188,7 +195,8 @@ def find_below(target, valid_data):
 
 
 def find_before(target, y_match, y_depth, y_bottom):
-    """Finds the nearest ensemble before the target that has valid cells within the vertical range of the target
+    """Finds the nearest ensemble before the target that has valid cells within the
+    vertical range of the target
 
     Parameters
     ----------
@@ -197,24 +205,25 @@ def find_before(target, y_match, y_depth, y_bottom):
     y_match: np.array(logical)
         2-D array of all cells that are within the vertical range of the target cell
     y_depth: np.array(float)
-        1-D array containing values that will be used to normalize the data and specifying the lower boundary for
-        identifying neighbors
+        1-D array containing values that will be used to normalize the data and
+        specifying the lower boundary for identifying neighbors
     y_bottom: np.array(float)
         Bottom depth of each cell
 
     Returns
     -------
     before_idx: list
-        List of tuples of indices of all cells in the nearest ensemble before that target that are within
-        the vertical range of the target cell
+        List of tuples of indices of all cells in the nearest ensemble before
+        that target that are within the vertical range of the target cell
     """
 
     # Initialize ensemble counter
     before_ens = target[1] - 1
 
-    # Loop until an ensemble is found that has valid data within the vertical range of the target while honoring
-    # the bathymetry. If the streambed is encountered while searching for a previously valid ensemble then
-    # it is determined that there is no available valid data before the target that can be used.
+    # Loop until an ensemble is found that has valid data within the vertical range
+    # of the target while honoring the bathymetry. If the streambed is encountered
+    # while searching for a previously valid ensemble then it is determined that
+    # there is no available valid data before the target that can be used.
     found = False
 
     while (before_ens >= 0) and not found:
@@ -240,7 +249,8 @@ def find_before(target, y_match, y_depth, y_bottom):
 
 
 def find_after(target, y_match, y_depth, y_bottom):
-    """Finds the nearest ensemble after the target that has valid cells within the vertical range of the target
+    """Finds the nearest ensemble after the target that has valid cells within the
+    vertical range of the target
 
     Parameters
     ----------
@@ -249,23 +259,24 @@ def find_after(target, y_match, y_depth, y_bottom):
     y_match: np.array(logical)
         2-D array of all cells that are within the vertical range of the target cell
     y_depth: np.array(float)
-        1-D array containing values that will be used to normalize the data and specifying the lower boundary for
-        identifying neighbors
+        1-D array containing values that will be used to normalize the data and
+        specifying the lower boundary for identifying neighbors
     y_bottom: np.array(float)
         Bottom depth of each cell
     Returns
     -------
     after_idx: list
-        List of tuples of indices of all cells in the nearest ensemble after that target that are within
-        the vertical range of the target cell
+        List of tuples of indices of all cells in the nearest ensemble after
+        that target that are within the vertical range of the target cell
     """
 
     # Initialize ensemble counter
     after_ens = target[1] + 1
 
-    # Loop until an ensemble is found that has valid data within the vertical range of the target while honoring
-    # the bathymetry. If the streambed is encountered while searching for a next valid ensemble then
-    # it is determined that there is no available valid data after the target that can be used.
+    # Loop until an ensemble is found that has valid data within the vertical range
+    # of the target while honoring the bathymetry. If the streambed is encountered
+    # while searching for a next valid ensemble then it is determined that there is
+    # no available valid data after the target that can be used.
     found = False
 
     while (after_ens <= y_match.shape[1] - 1) and not found:
@@ -370,8 +381,8 @@ def abba_idw_interpolation(
     normalize,
     search_loc=("above", "below", "before", "after"),
 ):
-    """Interpolates values for invalid cells using the neighboring cells above, below, before, and after and
-    and inverse distance averaging.
+    """Interpolates values for invalid cells using the neighboring cells above,
+    below, before, and after and and inverse distance averaging.
 
     Parameters
     ----------
@@ -386,8 +397,8 @@ def abba_idw_interpolation(
     y_cell_size: np.array(float)
         Size of each cell in the y-direction
     y_depth: np.array(float)
-        1-D array containing values that will be used to normalize the data and specifying the lower boundary for
-        identifying neighbors
+        1-D array containing values that will be used to normalize the data and
+        specifying the lower boundary for identifying neighbors
     x_shiptrack: np.array(float)
         X coordinate of cumulative shiptrack
     normalize: bool

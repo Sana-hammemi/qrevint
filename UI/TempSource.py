@@ -13,5 +13,6 @@ class TempSource(QtWidgets.QDialog, wTempSource.Ui_temp_source):
 
     def __init__(self, parent=None):
         """Initialize dialog"""
+
         super(TempSource, self).__init__(parent)
         self.setupUi(self)

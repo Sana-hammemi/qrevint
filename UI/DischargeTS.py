@@ -103,7 +103,8 @@ class DischargeTS(object):
         self.canvas.draw()
 
     def update_annot(self, ind, plt_ref):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously initialized
+        and hidden annotation.
 
         Parameters
         ----------
@@ -116,8 +117,8 @@ class DischargeTS(object):
         # Get selected data coordinates
         pos = plt_ref._xy[ind["ind"][0]]
 
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
-        # direction of x increasing.
+        # Shift annotation box left or right depending on which half of the axis
+        # the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -143,8 +144,8 @@ class DischargeTS(object):
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
-        # direction of y increasing.
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -191,7 +192,8 @@ class DischargeTS(object):
         # Set annotation to visible
         vis = self.annot.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.ax:
             cont = False
             ind = None
@@ -207,7 +209,8 @@ class DischargeTS(object):
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:
-                # If the cursor location is not associated with the plotted data hide the annotation.
+                # If the cursor location is not associated with the plotted data
+                # hide the annotation.
                 if vis:
                     self.annot.set_visible(False)
                     self.canvas.draw_idle()
@@ -218,11 +221,11 @@ class DischargeTS(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
-            # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
             self.hover_connection = self.canvas.mpl_connect(
                 "button_press_event", self.hover
             )

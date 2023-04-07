@@ -144,9 +144,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         """Get filename and pathname of QRev file.
 
         Allows the user to select a QRev file for viewing or
-        reprocessing.
-        The selected folder becomes the default folder for subsequent
-        selectFile requests.
+        reprocessing. The selected folder becomes the default
+        folder for subsequent selectFile requests.
         """
 
         # Get the current folder setting.

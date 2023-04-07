@@ -187,8 +187,7 @@ class HeadingTS(object):
                             checked[row]
                         ].sensors.heading_deg.internal.mag_error
                     )
-                    # Arrange data left to right
-                    flip = False
+
                     # Arrange data left to right
                     flip = False
                     if meas.transects[checked[row]].start_edge == "Right":
@@ -309,8 +308,7 @@ class HeadingTS(object):
         pos = plt_ref._xy[ind["ind"][0]]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
+        # axis the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -337,8 +335,7 @@ class HeadingTS(object):
                 annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -374,8 +371,7 @@ class HeadingTS(object):
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------

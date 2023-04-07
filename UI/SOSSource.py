@@ -32,16 +32,18 @@ class SOSSource(QtWidgets.QDialog, wSOSSource.Ui_sos_source):
             self.ed_sos_user.setText("{:6.1f}".format(sos * units["V"]))
         self.rb_user.toggled.connect(self.user)
         self.rb_internal.toggled.connect(self.internal)
-        # self.ed_sos_user.editingFinished.connect(self.user_entered)
+
 
     @QtCore.pyqtSlot()
     def user(self):
         """Enables edit box for speed of sound if User is selected."""
+
         if self.rb_user.isChecked():
             self.ed_sos_user.setEnabled(True)
 
     @QtCore.pyqtSlot()
     def internal(self):
         """Disables edit box for speed of sound if Internal is selected."""
+
         if self.rb_internal.isChecked():
             self.ed_sos_user.setEnabled(False)

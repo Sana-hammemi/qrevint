@@ -185,8 +185,7 @@ class UMeasurement(object):
         pos = [event.xdata, event.ydata]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
+        # axis the pos x is located and the direction of x increasing.
         if self.fig.ax.viewLim.intervalx[0] < self.fig.ax.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -210,8 +209,7 @@ class UMeasurement(object):
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if self.fig.ax.viewLim.intervaly[0] < self.fig.ax.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -240,8 +238,7 @@ class UMeasurement(object):
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------

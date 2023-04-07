@@ -7,9 +7,9 @@ from datetime import datetime
 
 
 class RIVRS_Demo(QtWidgets.QMainWindow, wRIVRS_Demo.Ui_RIVRS_Demo):
-    """This is a class used as a substitute of the real RIVRS QMainWindow class to demonstrate how to integrate
-    RIVRS and QRev through the use of a controller class (RIVRS_Controller).
-
+    """This is a class used as a substitute of the real RIVRS QMainWindow class to
+    demonstrate how to integrate RIVRS and QRev through the use of a controller
+    class (RIVRS_Controller).
     """
 
     def __init__(self, parent=None, caller=None):
@@ -29,13 +29,15 @@ class RIVRS_Demo(QtWidgets.QMainWindow, wRIVRS_Demo.Ui_RIVRS_Demo):
         # Create connections for buttons
         self.pb_load.clicked.connect(self.load_files)
         if caller is not None:
-            # If the caller is identified then the grouping is complete and the button to open QRev is connected
-            # to the caller's(RIVRS_Controller) Show_QRev function
+            # If the caller is identified then the grouping is complete and
+            # the button to open QRev is connected to the caller's(RIVRS_Controller)
+            # Show_QRev function
             self.pb_qrev.clicked.connect(caller.Show_QRev)
 
     def load_files(self):
-        """Opens a file open dialog to allow the user to select the measurement file(s) for processing.
-        The measurement is processed using the automatic settings in QRev."""
+        """Opens a file open dialog to allow the user to select the measurement file(s)
+        for processing. The measurement is processed using the automatic settings
+        in QRev."""
 
         # Disable QRev button until the groupings list is created
         self.pb_qrev.setEnabled(False)
@@ -64,18 +66,20 @@ class RIVRS_Demo(QtWidgets.QMainWindow, wRIVRS_Demo.Ui_RIVRS_Demo):
             # NOTE: Loading QRev files is currently not supported in QRev
             self.meas = Measurement(in_file=select.fullName[0], source="QRev")
 
-        # groupings would be determined by the user using the RIVRS interface. These are provided as a demo test.
+        # groupings would be determined by the user using the RIVRS interface.
+        # These are provided as a demo test.
         self.groupings = [[0, 1], [2, 3], [4, 5]]
 
-        # This is to show the processed transects are available to RIVRS. Demo purposes only.
+        # This is to show the processed transects are available to RIVRS.
+        # Demo purposes only.
         self.raw_data_table()
 
         # Enable QRev button
         self.pb_qrev.setEnabled(True)
 
     def raw_data_table(self):
-        """Creates a table to demonstrate the results of the initial processing of the measurement transects
-        prior to grouping.
+        """Creates a table to demonstrate the results of the initial processing
+        of the measurement transects prior to grouping.
         """
 
         # Setup table
@@ -242,8 +246,8 @@ class RIVRS_Demo(QtWidgets.QMainWindow, wRIVRS_Demo.Ui_RIVRS_Demo):
         tbl.resizeRowsToContents()
 
     def processed_transect_table(self, data):
-        """Creates a table to demonstrate the results of the initial processing of the measurement transects
-        prior to grouping.
+        """Creates a table to demonstrate the results of the initial processing of
+        the measurement transects prior to grouping.
         """
 
         # Setup table

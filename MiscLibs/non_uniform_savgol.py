@@ -6,7 +6,8 @@ def non_uniform_savgol(x, y, window, polynom):
     Applies a Savitzky-Golay filter to y with non-uniform spacing
     as defined in x
 
-    This is based on https://dsp.stackexchange.com/questions/1676/savitzky-golay-smoothing-filter-for-not-equally-spaced-data
+    This is based on https://dsp.stackexchange.com/questions/1676
+    /savitzky-golay-smoothing-filter-for-not-equally-spaced-data
     The borders are interpolated like scipy.signal.savgol_filter would do
 
     Parameters

@@ -50,8 +50,8 @@ def nearest_neighbors(num_neighbors, idx, x, valid_x):
         distance_sorted = np.sort(distance[valid_x])
         distance_neighbors = distance_sorted[num_neighbors - 1]
 
-        # Find all points that are as close as or closer than the num_neighbors closest points
-        # close = np.array(distance <= distance_neighbors)
+        # Find all points that are as close as or closer than the num_neighbors
+        # closest points close = np.array(distance <= distance_neighbors)
         close = np.less_equal(distance, distance_neighbors)
 
         # Find the indices of x that are both close and valid
@@ -89,7 +89,8 @@ def tricube_weights(distance):
 # @jit(cache=True, nopython=True)
 @njit
 def bisquare(data):
-    """Bisqure weight function which for values greater than are equal to 1 are set to zero.
+    """Bisqure weight function which for values greater than are equal
+    to 1 are set to zero.
 
     Parameters
     ----------
@@ -142,7 +143,8 @@ def robust_weights(residuals, max_eps):
 # @jit(cache=True, nopython=True)
 @njit
 def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
-    """Computes the loess smooth for the specified point x[i]. If robust weights are specified the computed weights
+    """Computes the loess smooth for the specified point x[i].
+    If robust weights are specified the computed weights
     are adjusted by the robust weights.
 
     Parameters
@@ -190,11 +192,6 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
         neighbors_y = weights * neighbors_y
 
         # Solve using least squares
-        # try:
-        #     mask = ~np.isnan(weighted_x_matrix.T) & ~np.isnan(neighbors_y.T)
-        #     smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T[mask],
-        #                                                neighbors_y.T[mask], rcond=None)
-        # except (IndexError, ValueError):
         smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T, neighbors_y.T)
         smoothed_value = smoothed_values[0]
     else:

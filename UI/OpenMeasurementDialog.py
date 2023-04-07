@@ -42,9 +42,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
         """Get filenames and pathname for file(s) to be processed
 
         Allows the user to select one *.mmt or one *_QRev.mat or one or more
-        SonTek *.mat files for
-        processing. The selected folder becomes the default folder for
-        subsequent selectFile requests.
+        SonTek *.mat files for processing. The selected folder becomes the
+        default folder for subsequent selectFile requests.
         """
 
         # Get the current folder setting.
@@ -73,8 +72,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
 
     def process_names(self):
         """Parses fullnames into filenames and pathnames, sets default folder,
-         determines the type of files selected,
-        checks that the files selected are consistent with the type of files.
+        determines the type of files selected, checks that the files selected
+        are consistent with the type of files.
         """
         # Parse filenames and pathname from fullName
         if isinstance(self.fullName, str):
@@ -162,8 +161,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
         """Returns default folder.
 
         Returns the folder stored in settings or if no folder is stored,
-        then the current
-        working folder is returned.
+        then the current working folder is returned.
         """
         try:
             folder = self.settings.get("Folder")

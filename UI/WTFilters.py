@@ -598,10 +598,9 @@ class WTFilters(object):
 
     def update_annot(self, ind, plt_ref):
 
-        # pos = plt_ref.get_offsets()[ind["ind"][0]]
         pos = plt_ref._xy[ind["ind"][0]]
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
-        # direction of x increasing.
+        # Shift annotation box left or right depending on which half of the axis
+        # the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -627,8 +626,8 @@ class WTFilters(object):
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
-        # direction of y increasing.
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -673,7 +672,6 @@ class WTFilters(object):
             cont_speed = False
             cont_snr = False
             if self.beam is not None:
-                # cont_beam, ind_beam = self.beam[0].contains(event)
                 for n, beam in enumerate(self.beam):
                     cont_beam, ind_beam = beam.contains(event)
                     if cont_beam:
@@ -684,7 +682,6 @@ class WTFilters(object):
                     if cont_error:
                         break
             elif self.vert is not None:
-                # cont_vert, ind_vert = self.vert[0].contains(event)
                 for n, vert in enumerate(self.vert):
                     cont_vert, ind_vert = vert.contains(event)
                     if cont_vert:
@@ -722,7 +719,6 @@ class WTFilters(object):
     def set_hover_connection(self, setting):
 
         if setting and self.hover_connection is None:
-            # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
             self.hover_connection = self.canvas.mpl_connect(
                 "button_press_event", self.hover
             )

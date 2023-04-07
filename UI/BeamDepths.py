@@ -410,7 +410,8 @@ class BeamDepths(object):
             self.canvas.draw()
 
     def change(self):
-        """Changes the visibility of the available beams based on user input via checkboxes."""
+        """Changes the visibility of the available beams based on user
+        input via checkboxes."""
 
         # Set visibility of beams based on user input
         if self.cb_beam1.checkState() == QtCore.Qt.Checked:
@@ -476,8 +477,8 @@ class BeamDepths(object):
 
         pos = plt_ref._xy[ind["ind"][0]]
 
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
-        # direction of x increasing.
+        # Shift annotation box left or right depending on which half of the axis
+        # the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -503,8 +504,8 @@ class BeamDepths(object):
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
-        # direction of y increasing.
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]
@@ -614,6 +615,7 @@ class BeamDepths(object):
 
     def set_hover_connection(self, setting):
         """Provides connection between data cursor and canvas.
+
         Parameters
         ----------
         setting: bool

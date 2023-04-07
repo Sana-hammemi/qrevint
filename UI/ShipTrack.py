@@ -239,7 +239,7 @@ class Shiptrack(object):
             )
 
         ship_data = ship_data_bt
-        # if len(ship_data_bt['track_x_m']) > 0:
+
         if not np.alltrue(np.isnan(ship_data_bt["track_x_m"])):
             max_x_bt = np.nanmax(ship_data_bt["track_x_m"])
             max_y_bt = np.nanmax(ship_data_bt["track_y_m"])
@@ -397,7 +397,6 @@ class Shiptrack(object):
 
                     # Plot invalid data points using a symbol to represent
                     # what caused the data to be invalid
-
                     if invalid_gps is not None and not np.alltrue(
                         np.isnan(ship_data_gga["track_x_m"])
                     ):
@@ -635,13 +634,6 @@ class Shiptrack(object):
             Identifies start bank
         """
 
-        # if np.all(np.isnan(data)):
-        #     data_out = data
-        # else:
-        #     if edge_start:
-        #         data_out = data[:int(n_ensembles)]
-        #     else:
-        #         data_out = data[-int(n_ensembles):]
         if n_ensembles > 0:
             if data is not np.nan and len(data) > int(n_ensembles):
                 if edge_start:
@@ -730,8 +722,7 @@ class Shiptrack(object):
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-         annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------
@@ -816,8 +807,7 @@ class Shiptrack(object):
         pos = plt_ref._xy[ind["ind"][0]]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
+        # axis the pos x is located and the direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
             if (
                 pos[0]
@@ -844,8 +834,7 @@ class Shiptrack(object):
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the
-        # axis the pos y is located and the
-        # direction of y increasing.
+        # axis the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
             if (
                 pos[1]

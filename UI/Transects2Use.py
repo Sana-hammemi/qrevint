@@ -11,14 +11,11 @@ class Transects2Use(QtWidgets.QDialog, wTransects2Use.Ui_Transects2Use):
     ----------
     wTransects2Use.Ui_Transects2Use : QDialog
         Dialog window with options for users
-
-    Attributes
-    ----------
-
     """
 
     def __init__(self, parent=None):
         """Initialize dialog"""
+
         super(Transects2Use, self).__init__(parent)
         self.setupUi(self)
         self.parent = parent
@@ -32,18 +29,21 @@ class Transects2Use(QtWidgets.QDialog, wTransects2Use.Ui_Transects2Use):
 
     def check_all(self):
         """Checks all transects for use."""
+
         for transect in self.parent.meas.transects:
             transect.checked = True
         self.summary_table()
 
     def uncheck_all(self):
         """Unchecks all transects for user."""
+
         for transect in self.parent.meas.transects:
             transect.checked = False
         self.summary_table()
 
     def summary_table(self):
         """Create and populate main summary table."""
+
         parent = self.parent
         tbl = self.tableSelect
         units = parent.units

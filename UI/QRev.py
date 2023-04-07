@@ -6,19 +6,16 @@ import webbrowser
 import multiprocessing as mp
 import getpass
 import json
+import simplekml
 from contextlib import contextmanager
 from datetime import datetime
-
 import numpy as np
 import scipy.io as sio
-import simplekml
+import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-
 from Classes.createconfig import Config
-
-import UI.QRev_gui as QRev_gui
 from Classes.stickysettings import StickySettings as SSet
 from Classes.Measurement import Measurement
 from Classes.TransectData import TransectData
@@ -348,31 +345,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Advanced plots show data below sidelobe cutoff if available.
     adv_graph_types: list
         List of available graphs
-    self.sc_bt: QtWidgets.QShortcut
+    sc_bt: QtWidgets.QShortcut
         Shortcut to set BT reference
-    self.sc_weighted: QtWidgets.QShortcut
+    sc_weighted: QtWidgets.QShortcut
         Shortcut to toggle discharge weighted extrapolation
-    self.sc_options: QtWidgets.QShortcut
+    sc_options: QtWidgets.QShortcut
         Shortcut to open Options dialog
-    self.sc_comment: QtWidgets.QShortcut
+    sc_comment: QtWidgets.QShortcut
         Shortcut to open Comments dialog
-    self.sc_select_transects: QtWidgets.QShortcut
+    sc_select_transects: QtWidgets.QShortcut
         Shortcut to open select transects dialog
-    self.sc_save: QtWidgets.QShortcut
+    sc_save: QtWidgets.QShortcut
         Shortcut to save file
-    self.sc_x_time: QtWidgets.QShortcut
+    sc_x_time: QtWidgets.QShortcut
         Shortcut to change x-axis to time
-    self.sc_x_length: QtWidgets.QShortcut
+    sc_x_length: QtWidgets.QShortcut
         Shortcut to change x-axis to length
-    self.sc_x_ensembles: QtWidgets.QShortcut
+    sc_x_ensembles: QtWidgets.QShortcut
         Shortcut to change x-asix to ensembles
-    self.sc_advanced: QtWidgets.QShortcut
+    sc_advanced: QtWidgets.QShortcut
         Shortcut to show data below sidelobe
-    self.sc_gga: QtWidgets.QShortcut
+    sc_gga: QtWidgets.QShortcut
         Shortcut to set gga reference
-    self.sc_vtg: QtWidgets.QShortcut
+    sc_vtg: QtWidgets.QShortcut
         Shortcut to set vtg reference
-    self.path: str
+    path: str
         Path to loaded data file(s)
     xs_export: bool
         Indicates that the mean cross-section should be computed and included
@@ -850,6 +847,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
 
         # Intialize attributes
+        self.path = ''
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False
@@ -1277,7 +1275,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         rating_dialog.rb_fair.setChecked(True)
                     else:
                         rating_dialog.rb_poor.setChecked(True)
-                    # rating_entered = rating_dialog.exec_()
 
                 elif "Excellent" in self.meas.user_rating:
                     rating_dialog.rb_excellent.setChecked(True)
@@ -1378,7 +1375,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def add_comment(self):
         """Add comment triggered by actionComment
-        comment_entered = comment.exec_()
         """
 
         if self.meas is not None:
@@ -1444,6 +1440,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def set_ref_bt(self):
         """Changes the navigation reference to Bottom Track"""
+
         if self.meas is not None:
             with self.wait_cursor():
                 # Get all current settings
@@ -1459,6 +1456,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def set_ref_gga(self):
         """Changes the navigation reference to GPS GGA"""
+
         if self.meas is not None:
             with self.wait_cursor():
                 # Get all current settings
@@ -1474,6 +1472,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def set_ref_vtg(self):
         """Changes the navigation reference to GPS VTG"""
+
         if self.meas is not None:
             with self.wait_cursor():
                 # Get all current settings
@@ -1491,6 +1490,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Change composite tracks setting to On and update measurement and
         display.
         """
+
         with self.wait_cursor():
             composite = True
             # Check to see if discharge is being corrected by a moving bed
@@ -1533,6 +1533,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Change composite tracks setting to Off and update measurement and
         display.
         """
+
         with self.wait_cursor():
             # Get all current settings
             settings = Measurement.current_settings(self.meas)
@@ -1547,7 +1548,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def qrev_options(self):
         """Change options triggered by actionOptions"""
-        # if self.meas is not None:
+
         # Initialize options dialog
         options = Options()
 
@@ -1855,6 +1856,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates line plots of transects in Google Earth using GGA
         coordinates.
         """
+
         kml = simplekml.Kml(open=1)
         # Create a shiptrack for each checked transect
         for transect_idx in self.checked_transects_idx:
@@ -1881,6 +1883,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def help(self):
         """Opens pdf help file user's default pdf viewer."""
+
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Question)
         msg.addButton(self.tr("Users Manual"), msg.ActionRole)
@@ -1943,6 +1946,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ========
     def update_main(self):
         """Update Gui"""
+
         if len(self.checked_transects_idx) > 0:
             with self.wait_cursor():
 
@@ -2075,6 +2079,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_toolbar_trans_select(self):
         """Updates the icon for the select transects on the toolbar."""
+
         if self.meas is not None:
             if len(self.checked_transects_idx) == len(self.meas.transects):
                 self.actionCheck.setIcon(self.icon_allChecked)
@@ -2088,6 +2093,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates the toolbar to reflect the current setting for composite
         tracks.
         """
+
         # Set toolbar composite tracks indicator fonts
         font_bold = QtGui.QFont()
         font_bold.setBold(True)
@@ -2111,6 +2117,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_toolbar_nav_ref(self):
         """Update the display of the navigation reference on the toolbar."""
+
         # Get setting
         if len(self.checked_transects_idx) > 0:
             selected = self.meas.transects[
@@ -2142,6 +2149,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def uncertainty_table(self):
         """Create and populate uncertainty table."""
+
         # Setup table
         tbl = self.table_uncertainty
         tbl.clear()
@@ -2409,10 +2417,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def rating_change(self):
         """Stores the user selected rating."""
+
         self.meas.user_rating = self.cb_user_rating.currentText()
 
     def set_user_rating(self):
         """Sets the user rating from stored data."""
+
         rating = {
             "Excellent": self.tr("Excellent (<3%)"),
             "Good": self.tr("Good (3-5%)"),
@@ -2434,6 +2444,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def qa_table(self):
         """Create and populate quality assurance table."""
+
         # Setup table
         tbl = self.table_qa
         header = ["", self.tr("COV %"), "", self.tr("% Q")]
@@ -2546,12 +2557,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Update contour and shiptrack plots based on transect selected in
         main_summary_table.
 
-            Parameters
-            ----------
-            row: int
-                Row number selected.
-            column: int
-                Column number selected.
+        Parameters
+        ----------
+        row: int
+            Row number selected.
+        column: int
+            Column number selected.
         """
 
         # Transect column was selected
@@ -2712,6 +2723,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def main_uncertainty_plot(self):
         """Creates a lollipop plot for the Oursin uncertainty model."""
+
         # If the canvas has not been previously created, create the canvas and
         # add the widget.
         if self.uncertainty_lollipop_canvas is None:
@@ -2868,6 +2880,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis."""
+
         qa = self.meas.qa
         qa_check_keys = [
             "bt_vel",
@@ -2908,6 +2921,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         status: str
             Quality status for data in that tab
         """
+
         tab_base = self.tab_all
         tab = ""
         # Identify tab name based on key
@@ -3015,7 +3029,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tab_base.setIconSize(QtCore.QSize(15, 15))
 
     def set_tab_color(self):
-
         """Updates tab font to Blue if a setting was changed from the
         default settings."""
 
@@ -3071,6 +3084,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def comments_tab(self):
         """Display comments in comments tab."""
+
         self.display_comments.clear()
         if self.meas is not None:
             self.display_comments.moveCursor(QtGui.QTextCursor.Start)
@@ -3793,6 +3807,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_site_name(self):
         """Sets the station name to the name entered by the user."""
+
         self.meas.station_name = self.ed_site_name.text()
         if len(self.meas.station_name) > 0:
             self.label_site_name.setStyleSheet("background: white")
@@ -3802,6 +3817,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_site_number(self):
         """Sets the station number to the number entered by the user."""
+
         self.meas.station_number = self.ed_site_number.text()
         if len(self.meas.station_number) > 0:
             self.label_site_number.setStyleSheet("background: white")
@@ -3811,16 +3827,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_persons(self):
         """Sets the person(s) to the information entered by the user."""
+
         self.meas.persons = self.ed_persons.text()
         self.main_premeasurement_table()
 
     def update_meas_number(self):
         """Sets the measurement number to the information entered by the user."""
+
         self.meas.meas_number = self.ed_meas_num.text()
         self.main_premeasurement_table()
 
     def update_stage_start(self):
         """Sets the measurement number to the information entered by the user."""
+
         stage = self.check_numeric_input(self.ed_stage_start)
         if stage is not None:
             self.meas.stage_start_m = stage / self.units["L"]
@@ -3831,6 +3850,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_stage_end(self):
         """Sets the measurement number to the information entered by the user."""
+
         stage = self.check_numeric_input(self.ed_stage_end)
         if stage is not None:
             self.meas.stage_end_m = stage / self.units["L"]
@@ -3841,6 +3861,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def update_stage_meas(self):
         """Sets the measurement number to the information entered by the user."""
+
         stage = self.check_numeric_input(self.ed_stage_meas)
         if stage is not None:
             self.meas.stage_meas_m = stage / self.units["L"]
@@ -4307,6 +4328,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ===============
     def system_tab(self, idx_systest=0):
         """Initialize and display data in the systems tab.
+
+        Parameters
+        ----------
         idx_systest: int
             Identifies the system test to display in the text box.
         """
@@ -4538,11 +4562,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Initialize, setup settings, and display initial data in compass
         tabs.
 
-            Parameters
-            ----------
-            old_discharge: list
-                Discharges computed prior to change made while tab is
-                displayed.
+        Parameters
+        ----------
+        old_discharge: list
+            Discharges computed prior to change made while tab is
+            displayed.
         """
 
         # Setup data table
@@ -4640,6 +4664,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def compass_cal_eval(self, idx_cal=None, idx_eval=None):
         """Displays data in the calibration / evaluation tab.
 
+        Parameters
+        ----------
         idx_cal: int
             Index of calibration to display in text box
         idx_eval: int
@@ -4774,6 +4800,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_compass_tab(self, tbl, old_discharge, new_discharge, initial=None):
         """Populates the table and draws the graphs with the current data.
 
+        Parameters
+        ----------
         tbl: QTableWidget
             Reference to the QTableWidget
         old_discharge: list
@@ -5036,6 +5064,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def change_table_data(self, tbl, old_discharge, new_discharge):
         """Populates the table and draws the graphs with the current data.
 
+        Parameters
+        ----------
         tbl: QTableWidget
             Reference to the QTableWidget
         old_discharge: list
@@ -5164,10 +5194,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Manages actions caused by the user right clicking in selected
         columns of the table.
 
-            Parameters
-            ==========
-            pos: QPoint
-                A location in the table
+        Parameters
+        ----------
+        pos: QPoint
+            A location in the table
         """
 
         tbl = self.table_compass_pr
@@ -5190,12 +5220,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Manages actions caused by the user clicking in selected columns
         of the table.
 
-            Parameters
-            ==========
-            row: int
-                row in table clicked by user
-            column: int
-                column in table clicked by user
+        Parameters
+        ----------
+        row: int
+            row in table clicked by user
+        column: int
+            column in table clicked by user
         """
 
         tbl = self.table_compass_pr
@@ -5322,12 +5352,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Displays selected compass calibration.
 
         Parameters
-        ==========
+        ----------
         row: int
             row in table clicked by user
         column: int
             column in table clicked by user
         """
+
         if column == 0:
             with self.wait_cursor():
                 # Set all files to normal font
@@ -5349,7 +5380,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Displays selected compass evaluation.
 
         Parameters
-        ==========
+        ----------
         row: int
             row in table clicked by user
         column: int
@@ -5531,7 +5562,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates all data displayed on the tempsal tab.
 
         Parameters
-        ==========
+        ----------
         tbl: QWidget
             Reference to QTableWidget
         old_discharge: list
@@ -5750,15 +5781,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     @QtCore.pyqtSlot(int, int)
     def tempsal_table_clicked(self, row, column):
         """Coordinates changes to the temperature, salinity, and speed of
-        sound settings based on the column in
-            the table clicked by the user.
+        sound settings based on the column in the table clicked by the user.
 
-            Parameters
-            ----------
-            row: int
-                row clicked by user
-            column: int
-                column clicked by user
+        Parameters
+        ----------
+        row: int
+            row clicked by user
+        column: int
+            column clicked by user
         """
 
         tbl = self.table_tempsal
@@ -6006,8 +6036,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def change_temp_units(self):
         """Updates the display when the user changes the temperature units.
-        Note: changing the units does not
-            change the actual data only the units used to display the data.
+        Note: changing the units does not change the actual data only the units
+        used to display the data.
         """
 
         self.update_tempsal_tab(
@@ -6020,8 +6050,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def apply_user_temp(self):
         """Applies a user entered value for the independent temperature.
-        This change does not affect the measured
-            discharge but could change the automatic QA/QC messages.
+        This change does not affect the measured discharge but could change
+        the automatic QA/QC messages.
         """
 
         # Set cursor focus onto the table to avoid multiple calls the the
@@ -6078,8 +6108,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def apply_adcp_temp(self):
         """Applies a user entered value for the ADCP temperature. This
-        change does not affect the measured
-            discharge but could change the automatic QA/QC messages.
+        change does not affect the measured discharge but could change the
+        automatic QA/QC messages.
         """
 
         # Set cursor focus onto the table to avoid multiple calls the the
@@ -6152,8 +6182,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         nrows = len(self.meas.mb_tests)
 
         # Display option to manually certify there is no moving bed, if the
-        # option is available or
-        # if the loaded data used that option.
+        # option is available or if the loaded data used that option.
         if nrows == 0 and (
             self.allow_observed_no_moving_bed or self.meas.observed_no_moving_bed
         ):
@@ -6377,7 +6406,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Manages actions caused by the user clicking in selected columns of the table.
 
         Parameters
-        ==========
+        ----------
         row: int
             row in table clicked by user
         column: int
@@ -6409,7 +6438,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if self.meas.transects[self.checked_transects_idx[0]].w_vel.nav_ref == "BT":
                 quality = tbl.item(row, 15).text()
                 # Identify a moving-bed condition
-
                 moving_bed_idx = []
                 for n, test in enumerate(self.meas.mb_tests):
                     if test.selected:
@@ -6494,8 +6522,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 reprocess_measurement = False
                                 self.popup_message(
                                     self.tr(
-                                        "Application of mixed moving-bed test types is not allowed."
-                                        "Select only one loop or one or more stationary tests."
+                                        "Application of mixed moving-bed test types is "
+                                        "not allowed.S elect only one loop or one or more"
+                                        "stationary tests."
                                     )
                                 )
                     else:
@@ -6515,8 +6544,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 self.popup_message(
                     self.tr(
-                        "Bottom track is not the selected reference. A moving-bed correction "
-                        "cannot be applied."
+                        "Bottom track is not the selected reference. "
+                        "A moving-bed correction cannot be applied."
                     )
                 )
 
@@ -6748,8 +6777,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Boat speed
         # Note if mb_ts_fig is set to stationary the StationaryGraphs class
-        # has a change method with does nothing,
-        # to maintain compatibility.
+        # has a change method with does nothing, to maintain compatibility.
         self.mb_ts_fig.change()
         self.tab_mbt_2_data.setFocus()
 
@@ -7273,6 +7301,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @staticmethod
     def bt_create_tooltip(self, row, column):
+        """Create bottom track tooltips."""
 
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
@@ -7426,6 +7455,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Identifies a change in radio buttons and calls the plot routine
         to update the graph.
         """
+
         with self.wait_cursor():
             if self.sender().isChecked():
                 self.bt_plots()
@@ -7461,11 +7491,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates the measurement and bottom track tab (table and graphics)
         after a change to settings has been made.
 
-                        Parameters
-                        ----------
-                        s: dict
-                            Dictionary of all process settings for the
-                            measurement
+        Parameters
+        ----------
+        s: dict
+            Dictionary of all process settings for the
+            measurement
         """
 
         # Save discharge from previous settings
@@ -7533,8 +7563,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             s["BTdFilter"] = text
             if text == "Manual":
                 # If Manual enable the line edit box for user input. Updates
-                # are not applied until the user has entered
-                # a value in the line edit box.
+                # are not applied until the user has entered a value in the line edit box.
                 self.ed_bt_error_vel_threshold.setEnabled(True)
             else:
                 # If manual is not selected the line edit box is cleared and
@@ -7566,8 +7595,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             if text == "Manual":
                 # If Manual enable the line edit box for user input. Updates
-                # are not applied until the user has entered
-                # a value in the line edit box.
+                # are not applied until the user has entered a value in the line edit box.
                 self.ed_bt_vert_vel_threshold.setEnabled(True)
             else:
                 # If manual is not selected the line edit box is cleared and
@@ -7622,9 +7650,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Get current settings
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This line checks to see if there was and actual
-                # change.
+                # later focus is changed the method could get twice.
+                # This line checks to see if there was and actual change.
                 compute = False
                 if type(s["BTdFilterThreshold"]) is dict:
                     compute = True
@@ -7645,6 +7672,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     @QtCore.pyqtSlot()
     def change_vert_vel_threshold(self):
         """Coordinates application of a user specified vertical velocity threshold."""
+
         self.ed_bt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
 
@@ -7656,9 +7684,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Get current settings
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This line checks to see if there was and actual
-                # change.
+                # later focus is changed the method could get twice. This line checks
+                # to see if there was and actual change.
                 compute = False
                 if type(s["BTwFilterThreshold"]) is dict:
                     compute = True
@@ -7822,29 +7849,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 QtCore.Qt.MatchFixedString,
             )
             self.combo_gps_hdop.setCurrentIndex(index)
-        # Check for presence of vtg data
-        vtg_transect = None
-        for idx in self.checked_transects_idx:
-            if self.meas.transects[idx].boat_vel.vtg_vel is not None:
-                vtg_transect = self.meas.transects[idx]
-                break
-
-            if s["GPSHDOPFilter"] == "Manual":
-                self.ed_gps_hdop_threshold.setEnabled(True)
-                threshold = "{:3.2f}".format(s["GPSHDOPFilterChange"])
-                self.ed_gps_hdop_threshold.setText(threshold)
-            if vtg_transect is not None:
-                # Set smooth filter from transect data
-                if vtg_transect.boat_vel.vtg_vel.smooth_filter == "Off":
-                    self.combo_gps_other.setCurrentIndex(0)
-                elif vtg_transect.boat_vel.vtg_vel.smooth_filter == "On":
-                    self.combo_gps_other.setCurrentIndex(1)
-
-            # Set smooth filter from transect data
-            if gga_transect.boat_vel.gga_vel.smooth_filter == "Off":
-                self.combo_gps_other.setCurrentIndex(0)
-            elif gga_transect.boat_vel.gga_vel.smooth_filter == "On":
-                self.combo_gps_other.setCurrentIndex(1)
 
         # Check for presence of vtg data
         vtg_transect = None
@@ -8506,6 +8510,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Identifies a change in radio buttons and calls the plot routine
         to update the graph.
         """
+
         with self.wait_cursor():
             if self.sender().isChecked():
                 self.gps_ts_plots()
@@ -8592,11 +8597,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates the measurement and bottom track tab (table and graphics)
         after a change to settings has been made.
 
-                        Parameters
-                        ----------
-                        s: dict
-                            Dictionary of all process settings for the
-                            measurement
+        Parameters
+        ----------
+        s: dict
+            Dictionary of all process settings for the
+            measurement
         """
 
         # Save discharge from previous settings
@@ -8883,20 +8888,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.meas.transects[transect_id], gps_ref="gga_vel"
                     )
 
-                elif self.meas.qa.gga_vel["lag_status"] == "caution":
-                    tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row + 2, col).setToolTip(
-                        "gga: BT and GGA do not appear to be sychronized"
-                    )
-
-                else:
-                    tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 255, 255))
-
-                if self.meas.transects[transect_id].boat_vel.gga_vel is not None:
-                    gga_bt = TransectData.compute_gps_bt(
-                        self.meas.transects[transect_id], gps_ref="gga_vel"
-                    )
-
                     if len(gga_bt) > 0:
                         # GGA BMG-GMG mag
                         col = 2
@@ -8969,21 +8960,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         tbl.item(row + 2, col).setBackground(
                             QtGui.QColor(255, 255, 255)
                         )
-
-                if self.meas.transects[transect_id].boat_vel.vtg_vel is not None:
-                    vtg_bt = TransectData.compute_gps_bt(
-                        self.meas.transects[transect_id], gps_ref="vtg_vel"
-                    )
-
-                elif self.meas.qa.vtg_vel["lag_status"] == "caution":
-
-                    tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row + 2, col).setToolTip(
-                        "vtg: BT and VTG do not appear to be sychronized"
-                    )
-
-                else:
-                    tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 255, 255))
 
                 if self.meas.transects[transect_id].boat_vel.vtg_vel is not None:
                     vtg_bt = TransectData.compute_gps_bt(
@@ -9133,6 +9109,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def gps_bt_shiptrack(self):
         """Creates shiptrack plot for data in transect."""
+
         self.cb_gps_bt_2.blockSignals(True)
         self.cb_gps_gga_2.blockSignals(True)
         self.cb_gps_vtg_2.blockSignals(True)
@@ -9224,6 +9201,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Coordinates changes in what references should be displayed in the
         boat speed and shiptrack plots.
         """
+
         with self.wait_cursor():
             # Shiptrack
             self.gps_bt_shiptrack_fig.change()
@@ -9671,6 +9649,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @staticmethod
     def depth_create_tooltip(self, row, column):
+        """Create tooltips for depth table."""
 
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
@@ -9767,12 +9746,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Changes plotted data to the transect of the transect clicked or
         allows changing of the draft.
 
-                        Parameters
-                        ----------
-                        row: int
-                            Row clicked by user
-                        column: int
-                            Column clicked by user
+        Parameters
+        ----------
+        row: int
+            Row clicked by user
+        column: int
+            Column clicked by user
         """
 
         self.table_depth.blockSignals(True)
@@ -9823,11 +9802,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates the depth tab (table and graphics) after a change to
         settings has been made.
 
-                        Parameters
-                        ----------
-                        s: dict
-                            Dictionary of all process settings for the
-                            measurement
+        Parameters
+        ----------
+        s: dict
+            Dictionary of all process settings for the
+            measurement
         """
 
         # Save discharge from previous settings
@@ -9852,11 +9831,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Coordinates changes in user selected data to be displayed in the
         top plot.
         """
+
         self.depth_plots()
 
     @QtCore.pyqtSlot()
     def depth_bottom_plot_change(self):
-        """Coordinates changes in user selected data to be displayed in the bottom plot."""
+        """Coordinates changes in user selected data to be displayed in
+        the bottom plot."""
+
         self.depth_plots()
 
     @QtCore.pyqtSlot(str)
@@ -10598,6 +10580,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Identifies a change in radio buttons and calls the plot routine
         to update the graph.
         """
+
         with self.wait_cursor():
             if self.sender().isChecked():
                 self.wt_filter_plots()
@@ -10667,6 +10650,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @staticmethod
     def wt_create_tooltip(self, row, column):
+        """Create tooltips for WT table."""
 
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
@@ -10719,11 +10703,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Updates the measurement and water track tab (table and graphics)
         after a change to settings has been made.
 
-                        Parameters
-                        ----------
-                        s: dict
-                            Dictionary of all process settings for the
-                            measurement
+        Parameters
+        ----------
+        s: dict
+            Dictionary of all process settings for the
+            measurement
         """
 
         # Save discharge from previous settings
@@ -10904,8 +10888,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Get current settings
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This checks to see if there was and actual change.
+                # later focus is changed the method could get twice. This checks
+                # to see if there was and actual change.
                 compute = False
                 if type(s["WTwFilterThreshold"]) is dict:
                     compute = True
@@ -10937,9 +10921,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Get current settings
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This line checks to see if there was and actual
-                # change.
+                # later focus is changed the method could get twice. This line
+                # checks to see if there was and actual change.
                 if np.abs(threshold - s["WTExcludedDistance"]) > 0.0001:
                     # Change settings
                     s["WTExcludedDistance"] = threshold
@@ -11137,6 +11120,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         row: int
             Row selected from the fit list table
         """
+
         if row > len(self.checked_transects_idx) - 1:
             self.idx = len(self.meas.transects)
         else:
@@ -11364,11 +11348,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Sets the discharge sensitivity table to show the selected method
         as the reference.
 
-                        Parameters
-                        ----------
-                        reference_row: int
-                            Integer of the row in sensitivity table for the
-                            selected fit parameters
+        Parameters
+        ----------
+        reference_row: int
+            Integer of the row in sensitivity table for the
+            selected fit parameters
         """
 
         # Get table reference
@@ -11415,10 +11399,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Selects data to display and fit from list of transects and
         composite measurements.
 
-                        Parameters
-                        ----------
-                        selected_row: int
-                            Index to selected transect/measurement from list.
+        Parameters
+        ----------
+        selected_row: int
+            Index to selected transect/measurement from list.
         """
 
         with self.wait_cursor():
@@ -11483,6 +11467,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def extrap_set_data(self):
         """Sets UI for data panel"""
+
         if self.meas.extrap_fit.sel_fit[-1].data_type.lower() != "q":
             self.extrap_set_data_manual()
         elif self.meas.extrap_fit.threshold != 20:
@@ -11534,10 +11519,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Coordinates user initiated change to the data from automatic to
         manual.
 
-                        Parameters
-                        ----------
-                        text: str
-                         User selection from combo box
+        Parameters
+        ----------
+        text: str
+         User selection from combo box
         """
 
         with self.wait_cursor():
@@ -11595,6 +11580,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Allows the user to change the subsectioning and then updates the
         data and display.
         """
+
         self.ed_extrap_subsection.editingFinished.disconnect(self.change_subsection)
 
         # If data entered.
@@ -11608,9 +11594,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 sub_list = self.ed_extrap_subsection.text().split(":")
                 subsection = [float(sub_list[0]), float(sub_list[1])]
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This line checks to see if there was and actual
-                # change.
+                # later focus is changed the method could get twice. This line
+                # checks to see if there was and actual change.
                 if (
                     np.abs(subsection[0] - self.meas.extrap_fit.subsection[0]) > 0.0001
                     or np.abs(subsection[1] - self.meas.extrap_fit.subsection[1])
@@ -11740,9 +11725,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             exponent = self.check_numeric_input(self.ed_extrap_exponent)
             if exponent is not None and 0 < exponent < 1.01:
                 # Because editingFinished is used if return is pressed and
-                # later focus is changed the method could get
-                # twice. This line checks to see if there was and actual
-                # change.
+                # later focus is changed the method could get twice. This line
+                # checks to see if there was and actual change.
                 if (
                     np.abs(exponent - self.meas.extrap_fit.sel_fit[self.idx].exponent)
                     > 0.00001
@@ -11768,11 +11752,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Changes the fit based on the row in the discharge sensitivity
         table selected by the user.
 
-                        Parameters
-                        ----------
-                        row: int
-                            Index to selected fit combination from
-                            sensitivity table.
+        Parameters
+        ----------
+        row: int
+            Index to selected fit combination from
+            sensitivity table.
         """
 
         with self.wait_cursor():
@@ -11795,12 +11779,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def compare_medians(self):
         """This method computes and displays the median values for the
-        measurement using an alternative method to allow
-                        comparison. If weighted is used the unweighted are
-                        computed and display. If the unweighted are used
-                        the method computes and displays the weighted. This
-                        method does not affect the computed discharge
-                        only the extrapolation display."""
+        measurement using an alternative method to allow comparison. If weighted
+        is used the unweighted are computed and display. If the unweighted are used
+        the method computes and displays the weighted. This method does not affect
+        the computed discharge only the extrapolation display."""
 
         if self.meas.extrap_fit.norm_data[-1].data_type.lower() == "q":
             # Create a copy of the normalized values of the entire measurement
@@ -11822,6 +11804,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Rest extrapolation to settings that were inplace when the tab was
         opened.
         """
+
         self.meas = copy.deepcopy(self.extrap_meas)
         self.extrap_tab()
         self.change = False
@@ -11996,10 +11979,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Left edge # ens
                 col += 1
                 # This allows the number of edge ensembles to be increased
-                # to obtain total number of ensembles including
-                # invalid ensembles for TRDI and report the specified number
-                # of ensembles (even if all invalid) for
-                # SonTek
+                # to obtain total number of ensembles including invalid ensembles
+                # for TRDI and report the specified number of ensembles
+                # (even if all invalid) for SonTek
                 left_idx = self.meas.discharge[transect_id].left_idx
                 if len(left_idx) > 0:
                     if self.meas.transects[transect_id].start_edge == "Left":
@@ -12120,10 +12102,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Right edge # ens
                 col += 1
                 # This allows the number of edge ensembles to be increased
-                # to obtain total number of ensembles including
-                # invalid ensembles for TRDI and report the specified number
-                # of ensembles (even if all invalid) for
-                # SonTek
+                # to obtain total number of ensembles including invalid ensembles
+                # for TRDI and report the specified number of ensembles
+                # (even if all invalid) for SonTek
                 right_idx = self.meas.discharge[transect_id].right_idx
                 if len(right_idx) > 0:
                     if self.meas.transects[transect_id].start_edge == "Right":
@@ -12608,6 +12589,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def edges_graphics(self):
         """Generate graphs for edges tab."""
+
         self.edges_shiptrack_plots()
         self.edges_contour_plots()
 
@@ -12719,6 +12701,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def edges_shiptrack_plots(self):
         """Create or update the shiptrack graphs for the edges tab."""
+
         transect = self.meas.transects[self.checked_transects_idx[self.transect_row]]
 
         # Left edge
@@ -13804,12 +13787,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if new_value is None:
                 new_value = np.nan
 
-            new_value = self.check_numeric_input(
-                obj=self.table_uncertainty_results.selectedItems()[0], block=False
-            )
-            if new_value is None:
-                new_value = np.nan
-
             # Identify uncertainty variable that was edited.
             col_index = self.table_uncertainty_results.selectedItems()[0].column()
             if col_index == 1:
@@ -14224,8 +14201,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def edi_select_transect(self, row, col):
         """Handles checkbox so only one box can be checked.
-        Updates the GUI to reflect the start bank of the
-        transect selected
+        Updates the GUI to reflect the start bank of the transect selected
 
         Parameters
         ----------
@@ -14260,8 +14236,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def edi_add_row(self):
         """Allows the user to add a row to the results table so that more
-        than 5 verticals
-                        can be defined."""
+        than 5 verticals can be defined."""
 
         # Insert row at bottom
         row_position = self.tbl_edi_results.rowCount()
@@ -14423,8 +14398,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def create_topoquad_file(self):
         """Create an ASCII file that can be loaded into TopoQuads to mark
-        the EDI locations
-                        with a yellow dot.
+        the EDI locations with a yellow dot.
         """
 
         # Get user defined filename
@@ -14903,20 +14877,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # Split functions
     # ==============
     def split_initialization(self, groupings=None, data=None):
-        """Sets the GUI components to support semi-automatic processing of pairings that split a single
-        measurement into multiple measurements. Loads the first pairing.
+        """Sets the GUI components to support semi-automatic processing of pairings
+        that split a single measurement into multiple measurements.
+        Loads the first pairing.
 
         Parameters
         ==========
         groupings: list
-            This a list of lists of transect indices splitting a single measurement into multiple measurements
-            Example groupings = [[0, 1], [2, 3, 4, 5], [8, 9]]
+            This a list of lists of transect indices splitting a single measurement
+            into multiple measurements Example groupings = [[0, 1], [2, 3, 4, 5], [8, 9]]
         data: Measurement
-            Object of class Measurement which contains all of the transects to be grouped into multiple measurements
+            Object of class Measurement which contains all of the transects to be
+            grouped into multiple measurements
         """
 
         if groupings is not None:
-            # GUI settings to allow processing to split measurement into multiple measurements
+            # GUI settings to allow processing to split measurement into
+            # multiple measurements
             self.save_all = False
             self.actionOpen.setEnabled(False)
             self.actionCheck.setEnabled(False)
@@ -14944,8 +14921,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def split_processing(self, group):
         """Creates the measurement based on the transect indices defined in
-        group and updates the main tab with
-        this new measurement data.
+        group and updates the main tab with this new measurement data.
 
         Parameters
         ==========
@@ -14969,9 +14945,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def split_save(self):
         """Saves the current measurement and automatically loads the next
-        measurement based on the pairings. When
-        the last pairing has been completed, returns control to the function
-        initiating QRev.
+        measurement based on the pairings. When the last pairing has been completed,
+        returns control to the function initiating QRev.
         """
 
         # Initialize dialog
@@ -15102,6 +15077,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         run_threshold_warning,
         run_threshold_caution,
     ):
+        """Creates QA message for tooltips."""
 
         text = []
         if cat_idx == 0:
@@ -15320,6 +15296,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     @contextmanager
     def wait_cursor(self):
         """Provide a busy cursor to the user while the code is processing."""
+
         try:
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
             yield

@@ -670,8 +670,8 @@ class AdvGraphs(object):
 
             # Create grid specification
             # Note: the second column of the grid is for the color bar. It is
-            # blank but present even for time series
-            # plots to allow the sharing of the x-axis between all plots
+            # blank but present even for time series plots to allow the sharing of
+            # the x-axis between all plots
             self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
             # Create first subplot
@@ -793,8 +793,8 @@ class AdvGraphs(object):
 
             # Create grid specification
             # Note: the second column of the grid is for the color bar. It is
-            # blank but present even for time series
-            # plots to allow the sharing of the x-axis between all plots
+            # blank but present even for time series plots to allow the sharing
+            # of the x-axis between all plots
             self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
             # Create first subplot
@@ -3226,9 +3226,8 @@ class AdvGraphs(object):
             pass
 
         # Initialize annotation for data cursor. Annotation should only be
-        # associated with one call to
-        # plt_timeseries if figure makes multiple calls to create multiple
-        # lines on the same graph.
+        # associated with one call to plt_timeseries if figure makes multiple
+        # calls to create multiple lines on the same graph.
         if set_annot:
             self.annot.append(
                 ax.annotate(
@@ -3414,8 +3413,7 @@ class AdvGraphs(object):
                 annot_ref._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if plt_ref.viewLim.intervaly[0] < plt_ref.viewLim.intervaly[1]:
             if (
                 pos[1]
