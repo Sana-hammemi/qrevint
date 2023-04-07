@@ -362,10 +362,16 @@ class BoatData(object):
             self.raw_vel_mps = mat_data.rawVel_mps
             # Coordinate transformed data
             self.coord_sys = mat_data.coordSys
-            self.u_mps = mat_data.u_mps
-            self.v_mps = mat_data.v_mps
-            self.w_mps = mat_data.w_mps
-            self.d_mps = mat_data.d_mps
+            self.u_mps = mat_data.u_mps.astype("float64")
+            self.v_mps = mat_data.v_mps.astype("float64")
+            try:
+                self.w_mps = mat_data.w_mps.astype("float64")
+            except AttributeError:
+                self.w_mps = np.array(mat_data.w_mps)
+            try:
+                self.d_mps = mat_data.d_mps.astype("float64")
+            except AttributeError:
+                self.d_mps = np.array(mat_data.d_mps)
 
             if hasattr(mat_data, "corr"):
                 self.corr = mat_data.corr

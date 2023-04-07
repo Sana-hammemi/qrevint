@@ -63,11 +63,11 @@ from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
 
 # if there is a splash screen close it
-# try:
-#     import pyi_splash
-#     pyi_splash.close()
-# except:
-#     pass
+try:
+    import pyi_splash
+    pyi_splash.close()
+except:
+    pass
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
