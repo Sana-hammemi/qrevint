@@ -23,14 +23,11 @@ class DepthStructure(object):
     def __init__(self):
         """Creates object and initializes variables to None"""
 
-        self.selected = None  # name of object DepthData that contains the
-        # depth data for q computation
-        self.bt_depths = None  # object of DepthData for by depth data
-        self.vb_depths = None  # object of DepthData for vertical beam depth
-        # data
-        self.ds_depths = None  # object of DepthData for depth sounder depth
-        # data
-        self.composite = "On"  # Turn composite depths "on" or "off"
+        self.selected = None
+        self.bt_depths = None
+        self.vb_depths = None
+        self.ds_depths = None
+        self.composite = "On"
 
     def add_depth_object(
         self, depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
@@ -51,12 +48,12 @@ class DepthStructure(object):
             Draft of transducer (in meters) used to measure depths.
         cell_depth_in
             Depth of each cell in the profile. If the referenced depth does
-            not have depth cells the depth cell
-            values from the bottom track (BT) depths should be used.
+            not have depth cells the depth cell values from the bottom track
+            (BT) depths should be used.
         cell_size_in
             Size of each depth cell. If the referenced depth does not have
-            depth cells the cell size from
-            the bottom track (BT) depths should be used.
+            depth cells the cell size from the bottom track (BT)
+            depths should be used.
         """
 
         if source_in == "BT":
@@ -126,22 +123,15 @@ class DepthStructure(object):
         """Depth composite is based on the following assumptions
 
         1. If a depth sounder is available the user must have assumed the
-        ADCP beams
-        (BT or vertical) might have problems and it will be the second
-        alternative if
-        not selected as the preferred source
+        ADCP beams (BT or vertical) might have problems
+        and it will be the second alternative if not selected as the preferred source
 
         2. For 4-beam BT depths, if 3 beams are valid the average is
-        considered valid.
-        It may be based on interpolation of the invalid beam.  However,
-        if only 2 beams
-        are valid even though the other two beams may be interpolated and
-        included in the average the
-        average will be replaced by an alternative if available.  If no
-        alternative is
-        available the multi-beam average based on available beams and
-        interpolation will
-        be used.
+        considered valid. It may be based on interpolation of the invalid beam.
+        However, if only 2 beams are valid even though the other two beams may be
+        interpolated and included in the average the average will be replaced by an
+        alternative if available.  If no alternative is available the multi-beam average
+        based on available beams and interpolation will be used.
 
         Parameters
         ----------
@@ -211,8 +201,7 @@ class DepthStructure(object):
                 comp_depth = self.interpolate_composite(
                     transect=transect, composite_depth=comp_depth
                 )
-                # comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                # self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
+
                 comp_source[
                     np.logical_and(
                         (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
@@ -411,19 +400,13 @@ class DepthStructure(object):
         depth_mono = np.copy(composite_depth)
         depth_new = np.copy(composite_depth)
 
-        #       Create strict monotonic arrays for depth and track by
-        #       identifying duplicate
-        #       track values.  The first track value is used and the
-        #       remaining duplicates
-        #       are set to nan.  The depth assigned to that first track
-        #       value is the average
-        #       of all duplicates.  The depths for the duplicates are then
-        #       set to nan.  Only
-        #       valid strictly monotonic track and depth data are used for
-        #       the input in to linear
-        #       interpolation.   Only the interpolated data for invalid
-        #       depths are added
-        #       to the valid depth data to create depth_new
+        # Create strict monotonic arrays for depth and track by identifying duplicate
+        # track values.  The first track value is used and the remaining duplicates
+        # are set to nan.  The depth assigned to that first track value is the average
+        # of all duplicates.  The depths for the duplicates are then set to nan.  Only
+        # valid strictly monotonic track and depth data are used for the input in to
+        # linear interpolation.   Only the interpolated data for invalid
+        # depths are added to the valid depth data to create depth_new
 
         x_mono = x
 

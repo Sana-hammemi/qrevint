@@ -51,28 +51,22 @@ class QComp(object):
     def __init__(self):
         """Initialize class and instance variables."""
 
-        self.top = None  # Transect total extrapolated top discharge
-        self.middle = None  # Transect toal measured middle discharge
-        # including interpolations
-        self.bottom = None  # ETransect total extrapolated bottom discharge
-        self.top_ens = None  # Extrapolated top discharge by ensemble
-        self.middle_cells = None  # Measured middle discharge including
-        # interpolation by cell
-        self.middle_ens = None  # Measured middle discharge including
-        # interpolation by ensemble
-        self.bottom_ens = None  # Extrapolate bottom discharge by ensemble
-        self.left = None  # Left edge discharge
-        self.left_idx = []  # Ensembles used for left edge
-        self.right = None  # Right edge discharge
-        self.right_idx = []  # Ensembles used for right edge
-        self.total_uncorrected = None  # Total discharge for transect
-        # uncorrected for moving-bed, if required
-        self.total = None  # Total discharge with moving-bed correction
-        # applied if necessary
-        self.correction_factor = 1  # Moving-bed correction factor, if required
-        self.int_cells = None  # Total discharge computed for invalid depth
-        # cells excluding invalid ensembles
-        self.int_ens = None  # Total discharge computed for invalid ensembles
+        self.top = None
+        self.middle = None
+        self.bottom = None
+        self.top_ens = None
+        self.middle_cells = None
+        self.middle_ens = None
+        self.bottom_ens = None
+        self.left = None
+        self.left_idx = []
+        self.right = None
+        self.right_idx = []
+        self.total_uncorrected = None
+        self.total = None
+        self.correction_factor = 1
+        self.int_cells = None
+        self.int_ens = None
 
     # @profile
     def populate_data(
@@ -86,7 +80,7 @@ class QComp(object):
         """Discharge is computed using the data provided to the method.
         Water data provided are assumed to be corrected for the navigation
         reference.
-        If a moving-bed correction is to be applied it is computed and applied.
+        If a moving-bed correction is to be applied, it is computed and applied.
         The TRDI method using expanded delta time is applied if the
         processing method is WR2.
 
@@ -121,21 +115,18 @@ class QComp(object):
 
         if processing == "WR2":
             # TRDI uses expanded delta time to handle invalid ensembles
-            # which can be caused by invalid BT
-            # WT, or depth.  QRev by default handles this invalid data
-            # through linear interpolation of the
+            # which can be caused by invalid BT WT, or depth.  QRev by default
+            # handles this invalid data through linear interpolation of the
             # invalid data through linear interpolation of the invalid data
-            # type.  This if statement and
-            # associated code is required to maintain compatibility with
-            # WinRiver II discharge computations.
+            # type.  This if statement and associated code is required to
+            # maintain compatibility with WinRiver II discharge computations.
 
             # Determine valid ensembles
             valid_ens = np.any(np.logical_not(np.isnan(x_prod)))
             valid_ens = valid_ens[in_transect_idx]
 
             # Compute the ensemble duration using TRDI approach of expanding
-            # delta time to compensate
-            # for invalid ensembles
+            # delta time to compensate for invalid ensembles
             n_ens = len(valid_ens)
             ens_dur = data_in.date_time.ens_duration_sec[in_transect_idx]
             delta_t = np.tile([np.nan], n_ens)
@@ -218,8 +209,7 @@ class QComp(object):
             self.left_idx = []
 
         # Compute moving-bed correction, if applicable.  Two checks are used
-        # to account for the
-        # way the meas object is created.
+        # to account for the way the meas object is created.
 
         # Moving-bed corrections are only applied to bottom track referenced
         # computations
@@ -279,8 +269,7 @@ class QComp(object):
     @staticmethod
     def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of QComp
-        objects containing the discharge data from the
-        Matlab data structure.
+        objects containing the discharge data from the Matlab data structure.
 
         Parameters
         ----------
@@ -656,8 +645,7 @@ class QComp(object):
         # TRDI method
         if transect.adcp.manufacturer == "TRDI":
             # Determine the indices of the edge ensembles which contain
-            # the specified number of valid ensembles
-            # noinspection PyTypeChecker
+            # the specified number of valid ensembles noinspection PyTypeChecker
             valid_ens = QComp.valid_edge_ens(transect)
             if num_edge_ens > len(valid_ens):
                 num_edge_ens = len(valid_ens)
@@ -816,10 +804,8 @@ class QComp(object):
         """Computes the edge velocity using SonTek's method.
 
         SonTek's method uses the profile extrapolation to estimate the
-        velocities in the
-        unmeasured top and bottom and then projects the velocity
-        perpendicular to the
-        course made good.
+        velocities in the unmeasured top and bottom and then projects the velocity
+        perpendicular to the course made good.
 
         Parameters
         ----------
@@ -915,8 +901,8 @@ class QComp(object):
                 cell_depth_edge = np.nanmean(cell_size, 1)
 
                 # SonTek cuts off the mean profile based on the side lobe
-                # cutoff of
-                # the mean of the shallowest beams in the edge ensembles.
+                # cutoff of the mean of the shallowest beams in
+                # the edge ensembles.
 
                 # Determine valid original beam and cell depths
                 depth_bt_beam_orig = transect.depths.bt_depths.depth_orig_m[:, edge_idx]
@@ -933,9 +919,8 @@ class QComp(object):
                 min_depth = min_depth - draft_bt_beam_orig
 
                 # Compute last valid cell by computing the side lobe cutoff
-                # based
-                # on the mean of the minimum beam depths of the valid edge
-                # ensembles
+                # based on the mean of the minimum beam depths
+                # of the valid edge ensembles
                 if transect.w_vel.sl_cutoff_type == "Percent":
                     sl_depth = min_depth - (
                         (transect.w_vel.sl_cutoff_percent / 100.0) * min_depth
@@ -1499,8 +1484,7 @@ class QComp(object):
         if n_sta_tests > 0:
 
             # Compute linear regression coefficient forcing through zero to
-            # relate
-            # near-bed velocity to moving-bed velocity
+            # relate near-bed velocity to moving-bed velocity
             x = np.vstack(near_bed_speed)
             corr_coef = np.linalg.lstsq(x, mb_speed, rcond=None)[0]
 
@@ -1533,7 +1517,6 @@ class QComp(object):
             # Compute uncorrected discharge excluding the edges
             q_orig = top_q + middle_q + bottom_q
             if q_orig != 0:
-                # Compute corrected discharge excluding edges
                 # Compute corrected cross product
                 xprod = QComp.cross_product(transect=trans_data)
                 xprod_in = QComp.cross_product(

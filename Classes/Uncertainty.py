@@ -278,9 +278,8 @@ class Uncertainty(object):
             # Inflate the cov to the 95% value
             if n_max == 2:
                 # Use the approximate method as taught in class to reduce the
-                # high coverage factor for 2 transects
-                # and account for prior knowledge related to 720 second
-                # duration analysis
+                # high coverage factor for 2 transects and account for prior
+                # knowledge related to 720 second duration analysis
                 cov_95 = cov * 3.3
             else:
                 # Use Student's t to inflate COV for n > 2

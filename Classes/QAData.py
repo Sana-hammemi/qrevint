@@ -134,9 +134,8 @@ class QAData(object):
         """
 
         # Generate a new QA object using the measurement data and the
-        # current QA code.
-        # When QA checks from the current QA are not available from old QRev
-        # files, these
+        # current QA code. When QA checks from the current QA are not
+        # available from old QRev files, these
         # checks will be included to supplement the old QRev file data.
         new_qa = QAData(meas)
         if hasattr(meas_struct, "qa"):
@@ -485,8 +484,8 @@ class QAData(object):
     @staticmethod
     def create_qa_dict(self, mat_data, ndim=1):
         """Creates the dictionary used to store QA checks associated with
-        the percent of discharge estimated
-        by interpolation. This dictionary is used by BT, GPS, Depth, and WT.
+        the percent of discharge estimated by interpolation. This dictionary
+        is used by BT, GPS, Depth, and WT.
 
         Parameters
         ----------
@@ -2269,8 +2268,7 @@ class QAData(object):
                             if np.nansum(valid.astype(int)) < 1:
                                 self.w_vel["all_invalid"][n] = True
                         # TODO seems like the rest of this should be under
-                        #  else of all invalid or multiple messages
-                        # generated.
+                        #  else of all invalid or multiple messages generated.
 
                         # Compute characteristics
                         q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
@@ -2700,9 +2698,8 @@ class QAData(object):
     @staticmethod
     def invalid_qa(valid, discharge):
         """Computes the total invalid discharge in ensembles that have
-        invalid data. The function also computes
-        the maximum run or cluster of ensembles with the maximum
-        interpolated discharge.
+        invalid data. The function also computes the maximum run or cluster
+        of ensembles with the maximum interpolated discharge.
 
         Parameters
         ----------
@@ -2734,7 +2731,6 @@ class QAData(object):
         ens_invalid = np.sum(invalid)
 
         # Compute the indices of where changes occur
-
         valid_int = np.insert(valid.astype(int), 0, -1)
         valid_int = np.append(valid_int, -1)
         valid_run = np.where(np.diff(valid_int) != 0)[0]
@@ -2834,7 +2830,7 @@ class QAData(object):
     # check for user changes
     def check_bt_setting(self, meas):
         """Checks the bt settings to see if they are still on the default
-                        settings.
+        settings.
 
         Parameters
         ----------
@@ -2873,7 +2869,7 @@ class QAData(object):
 
     def check_wt_settings(self, meas):
         """Checks the wt settings to see if they are still on the default
-                settings.
+        settings.
 
         Parameters
         ----------
@@ -3095,7 +3091,7 @@ class QAData(object):
 
     def check_depth_settings(self, meas):
         """Checks the depth settings to see if they are still on the default
-                settings.
+        settings.
 
         Parameters
         ----------
@@ -3146,7 +3142,7 @@ class QAData(object):
 
     def check_edge_settings(self, meas):
         """Checks the edge settings to see if they are still on the original
-                settings.
+        ettings.
 
         Parameters
         ----------
@@ -3280,7 +3276,7 @@ class QAData(object):
 
     def check_mbt_settings(self, meas):
         """Checks the mbt settings to see if they are still on the original
-                settings.
+        settings.
 
         Parameters
         ----------

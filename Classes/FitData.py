@@ -47,22 +47,20 @@ class FitData(object):
     def __init__(self):
         """Initialize object and instance variables."""
 
-        self.file_name = None  # Name of transect file
-        self.top_method = "Power"  # Top extrapolation method
-        self.bot_method = "Power"  # Bottom extrapolation method
-        self.coef = 0  # Power fit coefficient
-        self.exponent = 0.1667  # Power fit exponent
-        self.u = None  # Fit values of the variable
-        self.u_auto = None  # Fit values from automatic fit
-        self.z_auto = None  # z values for automtic fit
-        self.z = None  # Distance from the streambed for fit variable
-        # Method to determine exponent (default, optimize, or manual)
+        self.file_name = None
+        self.top_method = "Power"
+        self.bot_method = "Power"
+        self.coef = 0
+        self.exponent = 0.1667
+        self.u = None
+        self.u_auto = None
+        self.z_auto = None
+        self.z = None
         self.exp_method = "Power"
-        self.data_type = None  # Type of data (velocity or unit discharge)
-        # 95% confidence intervals for optimized exponent
+        self.data_type = None
         self.exponent_95_ci = 0
-        self.residuals = np.array([])  # Residuals from fit
-        self.r_squared = 0  # R squared of model
+        self.residuals = np.array([])
+        self.r_squared = 0
 
     def populate_data(self, norm_data, top, bot, method, exponent=None):
         """Computes fit and stores associated data.
@@ -97,10 +95,9 @@ class FitData(object):
         if len(idxz) > 0:
             idx_power = idxz
 
-            # Create arrays for data fitting
+            # Create arrays for data fitting.
             # Select median values to use in extrapolation methods selected
-            # and create
-            # methods selected and create fir output data arrays
+            # and create methods selected and create fir output data arrays
 
             # If bottom is No Slip, Power at top is not allowed
             if bot == "No Slip":

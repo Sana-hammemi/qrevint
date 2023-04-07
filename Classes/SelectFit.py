@@ -74,17 +74,16 @@ class SelectFit(object):
         self.z_auto = None
         self.residuals = np.array([])
         self.coef = 0
-        self.bot_method_auto = "Power"  # Selected extrapolation for top
-        self.top_method_auto = "Power"  # Selected extrapolation for bottom
-        self.exponent_auto = 0.1667  # Selected exponent
-        self.top_fit_r2 = 0  # Top fit custom r^2
-        # Maximum difference between power and 3-pt at top
+        self.bot_method_auto = "Power"
+        self.top_method_auto = "Power"
+        self.exponent_auto = 0.1667
+        self.top_fit_r2 = 0
         self.top_max_diff = 0
-        self.bot_diff = 0  # Difference between power and no slop at z = 0.1
-        self.bot_r2 = 0  # Bottom fit r^2
-        self.fit_r2 = 0  # Selected fit of selected power/no slip fit
-        self.ns_exponent = 0.1667  # No slip optimized exponent
-        self.pp_exponent = 0.1667  # Power Power optimized exponent
+        self.bot_diff = 0
+        self.bot_r2 = 0
+        self.fit_r2 = 0
+        self.ns_exponent = 0.1667
+        self.pp_exponent = 0.1667
         self.top_r2 = 0
         self.rsqr = 0
         self.exponent_95_ci = 0
@@ -117,8 +116,7 @@ class SelectFit(object):
 
         if fit_method == "Automatic":
             # Compute power fit with optimized exponent as reference to
-            # determine
-            # if constant no slip will be more appropriate
+            # determine if constant no slip will be more appropriate
             ppobj = FitData()
             ppobj.populate_data(
                 norm_data=normalized, top="Power", bot="Power", method="optimize"
@@ -133,10 +131,8 @@ class SelectFit(object):
             # Begin automatic fit
 
             # More than 6 cells are required to compute an optimized fit.
-            # For fewer
-            # than 7 cells the default power/power fit is selected due to lack
-            # of sufficient
-            # data for a good analysis
+            # For fewer than 7 cells the default power/power fit is selected
+            # due to lack of sufficient data for a good analysis
             if len(self.residuals) > 6:
                 # DSM (6/4/2021) the top and bottom were mislabeled
                 # (even in Matlab). I corrected. The computations
@@ -188,9 +184,8 @@ class SelectFit(object):
 
                 # Evaluate overall fit
                 # If the optimized power fit does not have an r^2 better than
-                # 0.8 or if the optimized
-                # exponent if 0.1667 falls within the 95% confidence interval
-                # of the optimized fit,
+                # 0.8 or if the optimized exponent if 0.1667 falls within the
+                # 95% confidence interval of the optimized fit,
                 # there is insufficient justification to change the exponent
                 # from 0.1667
                 if (ppobj.r_squared < 0.8) or (
@@ -200,9 +195,8 @@ class SelectFit(object):
                     # If an optimized exponent cannot be justified the linear
                     # fit is used to determine if a constant
                     # fit at the top is a better alternative than a power fit.
-                    # If the power fit is the better
-                    # alternative the exponent is set to the default 0.1667
-                    # and the data is refit
+                    # If the power fit is the better alternative the exponent is
+                    # set to the default 0.1667 and the data is refit
                     if np.abs(self.top_fit_r2 < 0.8 or self.top_r2 < 0.9):
                         ppobj = FitData()
                         ppobj.populate_data(
@@ -219,13 +213,12 @@ class SelectFit(object):
                 self.fit_r2 = ppobj.r_squared
 
                 # Compute the difference at the water surface between a linear
-                # fit of the top 4 measured cells
-                # and the best selected power fit of the whole profile
+                # fit of the top 4 measured cells and the best selected
+                # power fit of the whole profile
                 self.top_max_diff = ppobj.u[-1] - np.sum(coeffs)
 
                 # Evaluate the difference at the bottom between power using
-                # the whole profile and power using
-                # only the bottom third
+                # the whole profile and power using only the bottom third
                 ns_fd = FitData()
                 ns_fd.populate_data(normalized, "Constant", "No Slip", "Optimize")
                 self.ns_exponent = ns_fd.exponent
@@ -297,8 +290,8 @@ class SelectFit(object):
                     # Set the bottom to no slip
                     self.bot_method_auto = "No Slip"
                     # If the no slip fit with an optimized exponent does not
-                    # have r^2 better than 0.8 use
-                    # the default 0.1667 for the no slip exponent
+                    # have r^2 better than 0.8 use the default 0.1667 for
+                    # the no slip exponent
                     if ns_fd.r_squared > 0.8:
                         self.exponent_auto = ns_fd.exponent
                         self.fit_r2 = ns_fd.r_squared
@@ -329,8 +322,7 @@ class SelectFit(object):
             else:
 
                 # If the data are insufficient for a valid analysis use the
-                # power/power fit
-                # with the default 0.1667 exponent
+                # power/power fit with the default 0.1667 exponent
                 self.top_method_auto = "Power"
                 self.bot_method_auto = "Power"
                 self.exponent_auto = 0.1667
@@ -381,8 +373,7 @@ class SelectFit(object):
     @staticmethod
     def qrev_mat_in(mat_data):
         """Processes the Matlab data structure to obtain a list of NormData
-         objects containing transect
-            data from the Matlab data structure.
+         objects containing transect data from the Matlab data structure.
 
         Parameters
         ----------

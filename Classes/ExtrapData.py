@@ -21,16 +21,12 @@ class ExtrapData(object):
 
     def __init__(self):
         """Initialize class and set defaults."""
-        self.top_method_orig = None  # Extrapolation method for top of
-        # profile: Power, Constant, 3-Point
-        self.bot_method_orig = None  # Extrapolation method for bottom of
-        # profile: Power, No Slip
-        self.exponent_orig = None  # Exponent for power of no slip methods
-        self.top_method = None  # Extrapolation method for top of profile:
-        # Power, Constant, 3-Point
-        self.bot_method = None  # Extrapolation method for bottom of
-        # profile: Power, No Slip
-        self.exponent = None  # Exponent for power of no slip methods
+        self.top_method_orig = None
+        self.bot_method_orig = None
+        self.exponent_orig = None
+        self.top_method = None
+        self.bot_method = None
+        self.exponent = None
 
     def populate_data(self, top, bot, exp):
         """Store data in class variables.

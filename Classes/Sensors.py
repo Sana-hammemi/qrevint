@@ -24,18 +24,12 @@ class Sensors(object):
     def __init__(self):
         """Initialize class and create variable objects"""
 
-        self.heading_deg = SensorStructure()  # Object of HeadingData
-        self.pitch_deg = SensorStructure()  # Pitch data, object of SensorStructure
-        self.roll_deg = SensorStructure()  # Roll data, object of SensorStructure
-        self.temperature_deg_c = (
-            SensorStructure()
-        )  # Temperature data, object of SensorStructure
-        self.salinity_ppt = (
-            SensorStructure()
-        )  # Salinity data, object of SensorStructure
-        self.speed_of_sound_mps = (
-            SensorStructure()
-        )  # Speed of sound, object of SensorStructure
+        self.heading_deg = SensorStructure()
+        self.pitch_deg = SensorStructure()
+        self.roll_deg = SensorStructure()
+        self.temperature_deg_c = SensorStructure()
+        self.salinity_ppt = SensorStructure()
+        self.speed_of_sound_mps = SensorStructure()
 
     def populate_from_qrev_mat(self, transect):
         """Populates the object using data from previously saved QRev Matlab file.

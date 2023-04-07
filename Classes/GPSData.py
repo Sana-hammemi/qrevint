@@ -104,74 +104,49 @@ class GPSData(object):
         """Initialize instance variables."""
 
         # Raw properties
-        self.raw_gga_lat_deg = None  # self.raw_ latitude, in degress [
-        # ensemble,n]
-        self.raw_gga_lon_deg = None  # self.raw_ longitude, in degrees [
-        # ensemble,n]
-        self.raw_gga_altitude_m = None  # self.raw_ altitude in meters,
-        # [ensemble,n]
-        self.raw_gga_differential = None  # Differential correction
-        # indicator [ensemble,n]
-        self.raw_gga_hdop = None  # Horizontal dilution of precision [
-        # ensemble,n]
-        self.raw_gga_utc = None  # UTC time, in hhmmss.ss [ensemble,n]
-        self.raw_gga_serial_time = None  # UTC time of gga data, in seconds
-        # past midnight [ensemble,n]
-        self.raw_gga_num_sats = None  # Number of satellites reported in gga
-        # sentence [ensemble,n]
-        self.raw_vtg_course_deg = None  # Course, in degress [ensemble,n]
-        self.raw_vtg_speed_mps = None  # Speed, in m/s [ensemble,n]
-        self.raw_vtg_delta_time = None  # vtg delta time, in sec [ensemble,n]
-        self.raw_vtg_mode_indicator = None  # vtg mode indicator [ensemble,n]
-        self.raw_gga_delta_time = None  # gga delta time, in sec [ensemble,n]
+        self.raw_gga_lat_deg = None
+        self.raw_gga_lon_deg = None
+        self.raw_gga_altitude_m = None
+        self.raw_gga_differential = None
+        self.raw_gga_hdop = None
+        self.raw_gga_utc = None
+        self.raw_gga_serial_time = None
+        self.raw_gga_num_sats = None
+        self.raw_vtg_course_deg = None
+        self.raw_vtg_speed_mps = None
+        self.raw_vtg_delta_time = None
+        self.raw_vtg_mode_indicator = None
+        self.raw_gga_delta_time = None
 
         # Manufacturer assigned ensemble values
-        self.ext_gga_lat_deg = None  # Raw latitude, in degrees [1,ensemble]
-        self.ext_gga_lon_deg = None  # Raw longitude, in degrees [1,ensemble]
-        self.ext_gga_altitude_m = None  # Raw altitude, in meters [1,ensemble]
-        self.ext_gga_differential = None  # Differential correction
-        # indicator [1,ensemble]
-        self.ext_gga_hdop = None  # Horizontal dilution of precision [1,
-        # ensemble]
-        self.ext_gga_utc = None  # UTC time, in hhmmss.ss [1, ensemble]
-        self.ext_gga_serial_time = None  # UTC time of gga data, in seconds
-        # past midnight [1,ensemble]
-        self.ext_gga_num_sats = None  # Number of satellites reported by
-        # software [1,ensemble]
-        self.ext_vtg_course_deg = None  # Course, in degress [1, ensemble]
-        self.ext_vtg_speed_mps = None  # Speed, in m/s [1, ensemble]
+        self.ext_gga_lat_deg = None
+        self.ext_gga_lon_deg = None
+        self.ext_gga_altitude_m = None
+        self.ext_gga_differential = None
+        self.ext_gga_hdop = None
+        self.ext_gga_utc = None
+        self.ext_gga_serial_time = None
+        self.ext_gga_num_sats = None
+        self.ext_vtg_course_deg = None
+        self.ext_vtg_speed_mps = None
 
         # User specification
-        self.gga_position_method = None  # Method used to process gga data
-        # for position ('End', 'Average' 'External')
-        self.gga_velocity_method = None  # Method used to process gga data
-        # for velocity ('End','Average' 'External')
-        self.vtg_velocity_method = None  # Method used to process vtg data
-        # for velocity ('Average' 'External)
+        self.gga_position_method = None
+        self.gga_velocity_method = None
+        self.vtg_velocity_method = None
 
         # Computed properties for ensembles
-        self.gga_lat_ens_deg = None  # Processed latitude in degrees,
-        # [ensemble]
-        self.gga_lon_ens_deg = None  # Processed longitude in degrees,
-        # [ensemble]
-        self.utm_ens_m = None  # UTM position from processed gga data, [2,
-        # ensemble]
-        self.gga_velocity_ens_mps = None  # Boat velocity computed from gga
-        # data [2,ensemble]
-        self.gga_serial_time_ens = None  # UTC time of gga data in seconds
-        # past midnight, [ensemble]
-        self.vtg_velocity_ens_mps = None  # Boat velocity computed from vtg
-        # data [2,ensemble]
-        self.per_good_ens = None  # Percentage of available data used to
-        # compute ensemble value [ensemble]
-        self.hdop_ens = None  # HDOP for each ensemble using velocity method
-        # [ensemble]
-        self.num_sats_ens = None  # Number of satellites for each ensemble,
-        # using velocity method [ensemble]
-        self.altitude_ens_m = None  # Altitude for each ensemble,
-        # using velocity method [ensemble]
-        self.diff_qual_ens = None  # Differential quality for each ensemble,
-        # using velocity method [ensemble]
+        self.gga_lat_ens_deg = None
+        self.gga_lon_ens_deg = None
+        self.utm_ens_m = None
+        self.gga_velocity_ens_mps = None
+        self.gga_serial_time_ens = None
+        self.vtg_velocity_ens_mps = None
+        self.per_good_ens = None
+        self.hdop_ens = None
+        self.num_sats_ens = None
+        self.altitude_ens_m = None
+        self.diff_qual_ens = None
 
     def populate_data(
         self,

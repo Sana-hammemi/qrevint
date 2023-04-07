@@ -22,65 +22,65 @@ from Classes.Oursin import Oursin
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 
-# from profilehooks import profile, timecall
+from profilehooks import profile
 
 
 class Measurement(object):
     """Class to hold all measurement details.
 
-        Attributes
-        ----------
-        station_name: str
-            Station name
-        station_number: str
-            Station number
-        meas_number: str
-            Measurement number
-        persons: str
-            Persons collecting and/or processing the measurement
-        transects: list
-            List of transect objects of TransectData
-        mb_tests: list
-            List of moving-bed test objects of MovingBedTests
-        system_tst: list
-            List of system test objects of PreMeasurement
-        compass_cal: list
-            List of compass calibration objects of PreMeasurement
-        compass_eval: list
-            List of compass evaluation objects of PreMeasurement
-        extrap_fit: ComputeExtrap
-            Object of ComputeExtrap
-        processing: str
-            Type of processing, default QRev
-        discharge: list
-            List of discharge objects of QComp
-        uncertainty: Uncertainty
-            Object of Uncertainty
-        initial_settings: dict
-            Dictionary of all initial processing settings
-        qa: QAData
-            Object of QAData
-        user_rating: str
-            Optional user rating
-        comments: list
-            List of all user supplied comments
-        ext_temp_chk: dict
-            Dictionary of external temperature readings
-        use_weighted: bool
-            Indicates the setting for use_weighted to be used for reprocessing
-        use_ping_type: bool
-            Indicates if ping types should be used in BT and WT filters
-        use_measurement_thresholds: bool
-            Indicates if the entire measurement should be used to set filter
-            thresholds
-        stage_start_m: float
-            Stage at start of measurement
-        stage_end_m: float
-            Stage at end of measurement
-        stage_meas_m: float
-            Stage assigned to measurement
-        export_xs: bool
-            Indicates if average cross-section should be computed and exported
+    Attributes
+    ----------
+    station_name: str
+        Station name
+    station_number: str
+        Station number
+    meas_number: str
+        Measurement number
+    persons: str
+        Persons collecting and/or processing the measurement
+    transects: list
+        List of transect objects of TransectData
+    mb_tests: list
+        List of moving-bed test objects of MovingBedTests
+    system_tst: list
+        List of system test objects of PreMeasurement
+    compass_cal: list
+        List of compass calibration objects of PreMeasurement
+    compass_eval: list
+        List of compass evaluation objects of PreMeasurement
+    extrap_fit: ComputeExtrap
+        Object of ComputeExtrap
+    processing: str
+        Type of processing, default QRev
+    discharge: list
+        List of discharge objects of QComp
+    uncertainty: Uncertainty
+        Object of Uncertainty
+    initial_settings: dict
+        Dictionary of all initial processing settings
+    qa: QAData
+        Object of QAData
+    user_rating: str
+        Optional user rating
+    comments: list
+        List of all user supplied comments
+    ext_temp_chk: dict
+        Dictionary of external temperature readings
+    use_weighted: bool
+        Indicates the setting for use_weighted to be used for reprocessing
+    use_ping_type: bool
+        Indicates if ping types should be used in BT and WT filters
+    use_measurement_thresholds: bool
+        Indicates if the entire measurement should be used to set filter
+        thresholds
+    stage_start_m: float
+        Stage at start of measurement
+    stage_end_m: float
+        Stage at end of measurement
+    stage_meas_m: float
+        Stage assigned to measurement
+    export_xs: bool
+        Indicates if average cross-section should be computed and exported
     use_weighted: bool
         Indicates the setting for use_weighted to be used for reprocessing
     use_ping_type: bool
@@ -95,7 +95,7 @@ class Measurement(object):
         Stage assigned to measurement
     """
 
-    # @profile
+    @profile
     def __init__(
         self,
         in_file,
@@ -944,8 +944,7 @@ class Measurement(object):
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and
-        vertical velocities and compute the thresholds
-        using these composites.
+        vertical velocities and compute the thresholds using these composites.
         """
 
         # Initialize dictionaries
@@ -1414,7 +1413,6 @@ class Measurement(object):
                 break
         return external
 
-    # @profile
     def apply_settings(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
 
@@ -1886,8 +1884,8 @@ class Measurement(object):
             wt_kwargs["excluded"] = settings["WTExcludedDistance"]
 
             # Data loaded from old QRev.mat files will be set to use this new
-            # interpolation method. When reprocessing
-            # any data the interpolation method should be 'abba'
+            # interpolation method. When reprocessing any data the interpolation method
+            # should be 'abba'
             if force_abba:
                 transect.w_vel.interpolate_cells = "abba"
                 transect.w_vel.interpolate_ens = "abba"
@@ -1959,8 +1957,6 @@ class Measurement(object):
         settings["BTInterpolation"] = transect.boat_vel.bt_vel.interpolate
 
         # Gps Settings
-        # if transect.gps is not None:
-
         gga_present = False
         for idx in self.checked_transect_idx:
             if self.transects[idx].boat_vel.gga_vel is not None:
@@ -2042,9 +2038,9 @@ class Measurement(object):
             settings["extrapExp"] = self.extrap_fit.sel_fit[-1].exponent
 
         # Use of self.use_weighted allows a QRev mat file to be loaded and
-        # initially processed with the settings from
-        # the QRev file but upon reprocessing the self.use_weights will be
-        # set to the options setting for use_weights
+        # initially processed with the settings from the QRev file but upon
+        # reprocessing the self.use_weights will be set to the options setting
+        # for use_weights
         settings["UseWeighted"] = self.use_weighted
 
         # Edge Settings
@@ -2308,8 +2304,7 @@ class Measurement(object):
     @staticmethod
     def compute_edi(meas, selected_idx, percents):
         """Computes the locations and vertical properties for the user selected
-         transect and
-        flow percentages.
+        transect and flow percentages.
 
         Parameters
         ----------
@@ -2393,8 +2388,7 @@ class Measurement(object):
             depth.append(depth_selected.depth_processed_m[ensemble])
 
             # The velocity is an average velocity for ensembles +/- 1% of the
-            # total ensembles
-            # about the selected ensemble
+            # total ensembles about the selected ensemble
             u = np.nanmean(
                 transect.w_vel.u_processed_mps[
                     :, ensemble - n_pts_in_avg : ensemble + n_pts_in_avg + 1
@@ -2575,8 +2569,7 @@ class Measurement(object):
     @staticmethod
     def compute_measurement_properties(self):
         """Computes characteristics of the transects and measurement that
-        assist in evaluating the consistency
-        of the transects.
+        assist in evaluating the consistency of the transects.
 
         Returns
         -------
@@ -2677,9 +2670,8 @@ class Measurement(object):
                 depth_a = np.copy(depth.depth_processed_m)
                 depth_a[np.isnan(depth_a)] = 0
                 # Compute area of the moving-boat portion of the cross section
-                # using trapezoidal integration.
-                # This method is consistent with AreaComp but is different
-                # from QRev in Matlab
+                # using trapezoidal integration. This method is consistent with
+                # AreaComp but is different from QRev in Matlab
                 area_moving_boat = np.abs(
                     np.trapz(depth_a[in_transect_idx], station[in_transect_idx])
                 )
@@ -2786,8 +2778,7 @@ class Measurement(object):
                 )
 
                 # Compute average water direction using vector coordinates to
-                # avoid the problem of averaging
-                # fluctuations that cross zero degrees
+                # avoid the problem of averaging fluctuations that cross zero degrees
                 x_coord = []
                 y_coord = []
                 for idx in checked_idx:
@@ -4855,8 +4846,7 @@ class Measurement(object):
 
     def allocate_transects(self, mmt, transect_type="Q", checked=False):
         """Method to load transect data. Changed from Matlab approach by Greg
-        to allow possibility
-        of multi-thread approach.
+        to allow possibility of multi-thread approach.
 
         Parameters
         ----------

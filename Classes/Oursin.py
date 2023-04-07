@@ -8,7 +8,7 @@ import numpy as np
 import math
 import scipy.stats
 
-# from profilehooks import profile
+from profilehooks import profile
 from MiscLibs.common_functions import cosd, sind
 from MiscLibs.bayes_cov_compiled import bayes_cov
 
@@ -406,7 +406,7 @@ class Oursin(object):
         self.nb_transects = np.nan
         self.checked_idx = []
 
-        # --- Store results of all simulations in DataFrame
+        # Store results of all simulations in DataFrame
         self.sim_original = pd.DataFrame(
             columns=["q_total", "q_top", "q_bot", "q_left", "q_right", "q_middle"]
         )
@@ -1016,7 +1016,7 @@ class Oursin(object):
             a = a.reshape(1, -1)
         return a
 
-    # @profile
+    @profile
     def compute_oursin(
         self, meas, user_advanced_settings=None, u_measurement_user=None
     ):
@@ -1941,8 +1941,7 @@ class Oursin(object):
 
     def sim_cns_min_max_opt(self, meas):
         """Computes simulations resulting in the min and max discharges
-        for a constant no slip extrapolation
-        fit.
+        for a constant no slip extrapolation fit.
 
         Parameters
         ----------
@@ -2028,8 +2027,7 @@ class Oursin(object):
 
     def sim_pp_min_max_opt(self, meas):
         """Computes simulations resulting in the the min and max discharges
-        for a power power extrapolation
-        fit.
+        for a power power extrapolation fit.
 
         Parameters
         ----------
@@ -2322,8 +2320,7 @@ class Oursin(object):
 
     def sim_shallow_ens(self, meas):
         """Computes simulations assuming no interpolation of discharge for
-        ensembles where depths are too shallow
-        for any valid cells.
+        ensembles where depths are too shallow for any valid cells.
 
         Parameters
         ----------
@@ -2567,8 +2564,7 @@ class Oursin(object):
                 mean_pp = np.nanmean(pp_exp)
 
             # If all transects have confidence intervals, use the mean of
-            # the confidence interval min/max
-            # Otherwise adjust average +/- 0.2
+            # the confidence interval min/max. Otherwise adjust average +/- 0.2
             if np.isnan(exp_95ic_min).any():
                 min_pp = mean_pp - 0.2
             else:
@@ -2694,9 +2690,8 @@ class Oursin(object):
     @staticmethod
     def water_std_by_error_velocity(transect):
         """Compute the relative standard deviation of the water velocity
-        using the fact that the error velocity is
-        scaled so that the standard deviation of the error velocity is the
-        same as the standard deviation
+        using the fact that the error velocity is scaled so that the
+        standard deviation of the error velocity is the same as the standard deviation
         of the horizontal water velocity.
 
         Parameters
@@ -2734,10 +2729,9 @@ class Oursin(object):
     @staticmethod
     def boat_std_by_error_velocity(transect):
         """Compute the relative standard deviation of the boat velocity
-        using the fact that the error velocity is
-        scaled so that the standard deviation of the error velocity is the
-        same as the standard deviation
-        of the horizontal boat velocity.
+        using the fact that the error velocity is scaled so that the
+        standard deviation of the error velocity is the same as the
+        standard deviation of the horizontal boat velocity.
 
         Parameters
         ----------
@@ -2805,8 +2799,7 @@ class Oursin(object):
     @staticmethod
     def bayes_cov(transects_total_q, cov_prior=0.03, cov_prior_u=0.2, nsim=20000):
         """Computes the coefficient of variation using a Bayesian approach
-        and an assumed posterior
-        log-normal distribution.
+        and an assumed posterior log-normal distribution.
 
         Parameters
         ----------
@@ -2984,8 +2977,8 @@ class Oursin(object):
         cov = param[1]
         sigma = cov * true_value  # standard deviation
 
-        # Compute log-likelihood under the model: measures ~ N(true_value,
-        # sigma)
+        # Compute log-likelihood under the model:
+        # measures ~ N(true_value, sigma)
         # You can easily change this model (e.g. lognormal for a positive
         # measurand?)
         # OPTION 1 : the model follows a Normal distribution
@@ -3042,12 +3035,10 @@ class Oursin(object):
     @staticmethod
     def hh_random_meas(meas):
         """Implements the semi-empirical method for computing the random
-        uncertainty of an ADCP discharge transect,
-        as presented in Hening Huang (2018) Estimating uncertainty of
-        streamflow measurements with
+        uncertainty of an ADCP discharge transect, as presented in
+        Hening Huang (2018) Estimating uncertainty of streamflow measurements with
         moving-boat acoustic Doppler current profilers, Hydrological
-        Sciences Journal, 63:3, 353-368,
-        DOI:10.1080/02626667.2018.1433833
+        Sciences Journal, 63:3, 353-368, DOI:10.1080/02626667.2018.1433833
 
         Parameters
         ----------

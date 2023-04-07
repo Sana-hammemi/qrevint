@@ -1,13 +1,10 @@
 import os
-import time
 import warnings
-import concurrent.futures
 import numpy as np
 from datetime import datetime
 from datetime import timezone
 from scipy import signal, fftpack
 
-# from Classes.Pd0TRDI import Pd0TRDI
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from Classes.DepthStructure import DepthStructure
 from Classes.WaterData import WaterData
@@ -73,33 +70,19 @@ class TransectData(object):
     """
 
     def __init__(self):
-        # object of clsInstrument
         self.adcp = None
-        # filename of transect data file
         self.file_name = None
-        # object of clsWaterData
         self.w_vel = None
-        # class for various boat velocity references (btVel, ggaVel, vtgVel)
         self.boat_vel = None
-        # object of clsGPSData
         self.gps = None
-        # object of clsSensorData
         self.sensors = None
-        # object of clsDepthStructure for depth data including cell depths &
-        # ref depths
         self.depths = None
-        # object of clsEdges(left and right object of clsEdgeData)
         self.edges = None
-        # object of clsExtrapData
         self.extrap = None
-        # starting edge of transect looking downstream (Left or Right)
         self.start_edge = None
         self.orig_start_edge = None
-        # object of DateTime
         self.date_time = None
-        # transect was checked for use in mmt file assumed checked for SonTek
         self.checked = None
-        # index of ensemble data associated with the moving-boat portion of the transect
         self.in_transect_idx = None
 
     def trdi(self, mmt_transect, pd0_data, mmt):
@@ -844,8 +827,8 @@ class TransectData(object):
 
     @staticmethod
     def trdi_ping_type(pd0_data):
-        """Determines if the ping is coherent on incoherent based on the lag near bottom. A coherent ping will have
-        the lag near the bottom.
+        """Determines if the ping is coherent on incoherent based on the lag near bottom.
+        A coherent ping will have the lag near the bottom.
 
         Parameters
         ----------
@@ -936,9 +919,8 @@ class TransectData(object):
         ref_coord = None
 
         # The initial coordinate system must be set to earth for early versions
-        # of RiverSurveyor firmware.
-        # This implementation forces all versions to use the earth coordinate
-        # system.
+        # of RiverSurveyor firmware. This implementation forces all versions to use
+        # the earth coordinate system.
         if rsdata.Setup.coordinateSystem == 0:
             # ref_coord = 'Beam'
             raise CoordError(
@@ -957,14 +939,12 @@ class TransectData(object):
         # Speed of Sound Parameters
         # -------------------------
         # In SonTek's Matlab file the BT velocity, VB Depth, and WT Velocity
-        # are not reported as raw data but rather
-        # are reported as processed values based on manual settings of
-        # temperature, salinity, and speed of sound.
+        # are not reported as raw data but rather are reported as processed values
+        # based on manual settings of temperature, salinity, and speed of sound.
         # Note: the 4 beam depths are raw data and are not adjusted.
         # QRev expects raw data to be independent of user settings. Therefore,
-        # manual settings must be identified
-        # and the Matlab data adjusted to reflect the raw data before creating
-        # the data classes in QRev.
+        # manual settings must be identified and the Matlab data adjusted to reflect
+        # the raw data before creating the data classes in QRev.
         # The manual values will then be applied during processing.
 
         self.sensors = Sensors()
@@ -1306,8 +1286,7 @@ class TransectData(object):
         vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
 
         # Convert velocity reference from what was used in RiverSurveyor Live
-        # to None by adding the boat velocity
-        # to the reported water velocity
+        # to None by adding the boat velocity to the reported water velocity
         boat_vel = np.swapaxes(rsdata.Summary.Boat_Vel, 1, 0)
         vel[0, :, :] = vel[0, :, :] + boat_vel[0, :]
         vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
@@ -1745,8 +1724,7 @@ class TransectData(object):
         num_reg_cells = pd0.Wt.vel_mps.shape[1]
 
         # Surf data are to accommodate RiverRay and RiverPro.  pd0_read sets
-        # these
-        # values to nan when reading Rio Grande or StreamPro data
+        # these values to nan when reading Rio Grande or StreamPro data
         no_surf_cells = pd0.Surface.no_cells
         no_surf_cells[np.isnan(no_surf_cells)] = 0
         max_surf_cells = np.nanmax(no_surf_cells)
@@ -1816,8 +1794,7 @@ class TransectData(object):
 
     def change_q_ensembles(self, proc_method):
         """Sets in_transect_idx to all ensembles, except in the case of SonTek
-         data
-        where RSL processing is applied.
+        data where RSL processing is applied.
 
         Parameters
         ----------
@@ -1898,8 +1875,6 @@ class TransectData(object):
             self.w_vel.change_heading(self.boat_vel, magvar_change)
         else:
             self.sensors.heading_deg.internal.set_mag_var(magvar, "internal")
-
-        # self.update_water()
 
     def change_offset(self, h_offset):
         """Change the heading offset (alignment correction). Only affects
@@ -2171,9 +2146,8 @@ class TransectData(object):
 
     def apply_averaging_method(self, setting):
         """Method to apply the selected averaging method to the BT team depths
-         to achieve a single
-        average depth.  It is only applicable to the multiple beams used for
-        BT, not VB or DS.
+        to achieve a single average depth.  It is only applicable to the
+        multiple beams used for BT, not VB or DS.
 
         Input:
         setting: averaging method (IDW, Simple)
@@ -2193,8 +2167,7 @@ class TransectData(object):
         valid_method=None,
     ):
         """Method applies filter, composite, and interpolation settings to
-         depth objects
-        so that all are updated using the same filter and interpolation
+        depth objects so that all are updated using the same filter and interpolation
         settings.
 
         Parameters
@@ -2354,13 +2327,12 @@ class TransectData(object):
             self.sensors.speed_of_sound_mps.user.populate_data(speed, source)
 
         # If called with no input set source to internal and determine whether
-        # computed or calculated based on
-        # availability of user supplied temperature or salinity
+        # computed or calculated based on availability of user supplied
+        # temperature or salinity
         elif selected is None and source is None:
             self.sensors.speed_of_sound_mps.set_selected("internal")
             # If temperature or salinity is set by the user the speed of
-            # sound is computed otherwise it is consider
-            # calculated by the ADCP.
+            # sound is computed otherwise it is consider calculated by the ADCP.
             if (self.sensors.temperature_deg_c.selected == "user") or (
                 self.sensors.salinity_ppt.selected == "user"
             ):

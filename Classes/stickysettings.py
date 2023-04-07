@@ -7,14 +7,13 @@ class StickySettings(object):
     disk.
 
     This class is intended to be used to store simple settings that need to be
-     retained between session of the subject
-    application, such as, last folder opened, or units setting. Any setting
-    that the application needs to know
+    retained between session of the subject application, such as, last folder
+    opened, or units setting. Any setting that the application needs to know
     when it is run again can be stored using the methods in this class.
 
     Data are stored a dictionary which is then written to a json file having
-    the filename provided by the user and
-    stored in the folder defined by the APPDATA environment variable.
+    the filename provided by the user and stored in the folder defined by the
+    APPDATA environment variable.
 
     Note
     ----
@@ -41,7 +40,7 @@ class StickySettings(object):
         ----------
         arg : str
             User supplied filename excluding the suffix. Example 'myFile' but
-             not 'myFile.json'
+            not 'myFile.json'
 
         """
         # Construct filename from user input.

@@ -23,16 +23,15 @@ class BoatStructure(object):
 
     def __init__(self):
 
-        self.selected = None  # Name of BoatData object to be used for
-        # discharge computations
-        self.bt_vel = None  # BoatData object for bottom track velocity
-        self.gga_vel = None  # BoatData object for gga velocity
-        self.vtg_vel = None  # BoatData object for vtg velocity
+        self.selected = None
+        self.bt_vel = None
+        self.gga_vel = None
+        self.vtg_vel = None
 
         # Composite track information is not currently provided by the
         # manufacturers.
         # Future versions may try to determine this setting from SonTek data
-        self.composite = "Off"  # Setting for compositir tracks
+        self.composite = "Off"
 
     def add_boat_object(
         self,
@@ -113,8 +112,7 @@ class BoatStructure(object):
 
     def change_nav_reference(self, reference, transect):
         """This function changes the navigation reference to the specified
-        object reference and recomputes
-        the composite tracks, if necessary.
+        object reference and recomputes the composite tracks, if necessary.
 
         Parameters
         ----------
@@ -234,7 +232,6 @@ class BoatStructure(object):
                 comp_source[np.isnan(u_comp) == False] = 1
 
                 # If BT data are not valid try VTG and set composite source
-                # (BUG HERE DSM)
                 u_comp[np.isnan(u_comp)] = u_vtg[np.isnan(u_comp)]
                 comp_source[
                     np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
@@ -258,12 +255,10 @@ class BoatStructure(object):
                 comp_source[np.isnan(comp_source)] = -1
 
                 # Process v velocity component.  Assume that the composite
-                # source is the same
-                # as the u component
+                # source is the same as the u component
                 v_comp = v_bt
                 v_comp[np.isnan(v_comp)] = v_vtg[np.isnan(v_comp)]
                 v_comp[np.isnan(v_comp)] = v_gga[np.isnan(v_comp)]
-                v_comp[np.isnan(v_comp)] = self.bt_vel.v_processed_mps[np.isnan(v_comp)]
 
                 # Apply the composite settings to the bottom track Boatdata
                 # objects
@@ -285,7 +280,7 @@ class BoatStructure(object):
                     np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
                 ] = 3
 
-                # If there are still invalid boar velocities, try BT and set
+                # If there are still invalid boat velocities, try BT and set
                 # composite source
                 u_comp[np.isnan(u_comp)] = u_bt[np.isnan(u_comp)]
                 comp_source[
@@ -293,8 +288,7 @@ class BoatStructure(object):
                 ] = 1
 
                 # If there are still invalid boat velocities,
-                # use interpolated values,
-                # if present and set composite source
+                # use interpolated values, if present and set composite source
                 comp_source[
                     np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
                 ] = 0
@@ -304,13 +298,10 @@ class BoatStructure(object):
                 comp_source[np.isnan(comp_source)] = -1
 
                 # Process v velocity component.  Assume that the composite
-                # source is the
-                # same as the u component
+                # source is the same as the u component
                 v_comp = v_gga
                 v_comp[np.isnan(v_comp)] = v_vtg[np.isnan(v_comp)]
                 v_comp[np.isnan(v_comp)] = v_bt[np.isnan(v_comp)]
-                # v_comp[np.isnan(v_comp)] = self.gga_vel.v_processed_mps[
-                # np.isnan(v_comp)]
 
                 # Apply the composite settings to the gga BoatData object
                 # For the situation where the transect has no GGA data but
@@ -368,8 +359,6 @@ class BoatStructure(object):
                 # v_comp)] = v_vtg[np.isnan(v_comp)]
                 v_comp[np.isnan(v_comp)] = v_gga[np.isnan(v_comp)]
                 v_comp[np.isnan(v_comp)] = v_bt[np.isnan(v_comp)]
-                # v_comp[np.isnan(v_comp)] = self.vtg_vel.v_processed_mps[
-                # np.isnan(v_comp)]
 
                 # Apply the composite settings to the gga BoatData object
                 # For the situation where the transect has no GGA data but
@@ -412,9 +401,8 @@ class BoatStructure(object):
             # Use only interpolations for gga
             if self.gga_vel is not None:
                 # This if statement handles the situation where there is no
-                # GPS data for a transect but there is GPS
-                # data for other transects and the user has turned on / off
-                # composite tracks.
+                # GPS data for a transect but there is GPS data for other
+                # transects and the user has turned on / off composite tracks.
                 if self.gga_vel.u_mps is not None:
                     self.gga_vel.apply_interpolation(
                         transect=transect,
@@ -440,9 +428,8 @@ class BoatStructure(object):
             # Use only interpolations for vtg
             if self.vtg_vel is not None:
                 # This if statement handles the situation where there is no
-                # GPS data for a transect but there is GPS
-                # data for other transects and the user has turned on / off
-                # composite tracks.
+                # GPS data for a transect but there is GPS data for other
+                # transects and the user has turned on / off composite tracks.
                 if self.vtg_vel.u_mps is not None:
                     self.vtg_vel.apply_interpolation(
                         transect=transect,
@@ -468,8 +455,7 @@ class BoatStructure(object):
     @staticmethod
     def compute_boat_track(transect, ref=None):
         """Computes the shiptrack coordinates, along track distance,
-        and distance made
-        good for the selected boat reference.
+        and distance made good for the selected boat reference.
 
         Parameters
         ----------
@@ -477,7 +463,7 @@ class BoatStructure(object):
             Object of TransectData
         ref: str
             Setting to determine what navigation reference should be used.
-            In None use selected.
+            If None use selected.
 
         Returns
         -------

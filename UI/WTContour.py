@@ -112,21 +112,8 @@ class WTContour(object):
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"] * units["L"]
-        elif x_axis_type == "E":
-            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
-        elif x_axis_type == "T":
-            timestamp = (
-                np.nancumsum(transect.date_time.ens_duration_sec)
-                + transect.date_time.start_serial_time
-            )
-            x = np.copy(timestamp)
-
-        # Compute x axis data
-        x = None
-        if x_axis_type == "L":
-            boat_track = transect.boat_vel.compute_boat_track(transect=transect)
-            if not np.alltrue(np.isnan(boat_track["track_x_m"])):
-                x = boat_track["distance_m"] * units["L"]
+            else:
+                x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
         elif x_axis_type == "E":
             x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
         elif x_axis_type == "T":

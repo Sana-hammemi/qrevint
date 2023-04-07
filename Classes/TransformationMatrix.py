@@ -39,10 +39,8 @@ class TransformationMatrix(object):
 
     def trdi(self, model=None, data_in=None):
         """Processes the data to store the transformation matrix for
-        TRDI ADCPs.
-        If no transformation matrix information is available a nominal
-        transformation
-        matrix for that model is assumed.
+        TRDI ADCPs. If no transformation matrix information is available a nominal
+        transformation matrix for that model is assumed.
 
         Parameters
         ----------

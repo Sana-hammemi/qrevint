@@ -8,8 +8,7 @@ from MiscLibs.run_iqr import run_iqr, compute_quantile
 
 
 class DepthData(object):
-    """Process and store depth data.
-    Supported sources include bottom track
+    """Process and store depth data. Supported sources include bottom track
     vertical beam, and external depth sounder.
 
     Attributes
@@ -68,40 +67,28 @@ class DepthData(object):
     def __init__(self):
         """Initialize attributes."""
 
-        self.depth_orig_m = None  # Original multi-beam depth data from
-        # transect file (includes draft_orig) in meters
-        self.depth_beams_m = None  # Depth data from transect file adjusted
-        # for any draft changes, in meters
-        self.depth_processed_m = None  # Depth data filtered and interpolated
-        self.depth_freq_kHz = None  # Defines ADCP frequency used of each
-        # raw data point
-        self.depth_invalid_index = None  # Index of depths marked invalid
-        self.depth_source = None  # Source of depth data ("BT", "VB", "DS")
-        self.depth_source_ens = None  # Source of each depth value ("BT",
-        # "VB", "DS", "IN")
-        self.draft_orig_m = None  # Original draft from data files, in meters
-        self.draft_use_m = None  # Draft used in computation of
-        # depth_beams_m and depth_cell_depths_m
-        self.depth_cell_depth_orig_m = None  # Depth cell range from the
-        # transducer, in meters
-        self.depth_cell_depth_m = None  # Depth to centerline of depth
-        # cells, in meters
-        self.depth_cell_size_orig_m = None  # Size of depth cells in meters
-        # from raw data
-        self.depth_cell_size_m = None  # Size of depth cells in meters
-        self.smooth_depth = None  # Smoothed beam depth
-        self.smooth_upper_limit = None  # Smooth function upper limit of window
-        self.smooth_lower_limit = None  # Smooth function lowerl limit or
-        # window
-        self.avg_method = None  # Defines averaging method: "Simple", "IDW"
-        self.filter_type = None  # Type of filter: "None", "TRDI", "Smooth"
-        self.interp_type = None  # Type of interpolation: "None", "Linear",
-        # "Smooth"
-        self.valid_data_method = None  # QRev or TRDI
-        self.valid_data = None  # Logical array of valid mean depth for each
-        # ensemble
-        self.valid_beams = None  # Logical array, 1 row for each beam
-        # identifying valid data
+        self.depth_orig_m = None
+        self.depth_beams_m = None
+        self.depth_processed_m = None
+        self.depth_freq_kHz = None
+        self.depth_invalid_index = None
+        self.depth_source = None
+        self.depth_source_ens = None
+        self.draft_orig_m = None
+        self.draft_use_m = None
+        self.depth_cell_depth_orig_m = None
+        self.depth_cell_depth_m = None
+        self.depth_cell_size_orig_m = None
+        self.depth_cell_size_m = None
+        self.smooth_depth = None
+        self.smooth_upper_limit = None
+        self.smooth_lower_limit = None
+        self.avg_method = None
+        self.filter_type = None
+        self.interp_type = None
+        self.valid_data_method = None
+        self.valid_data = None
+        self.valid_beams = None
 
     def populate_data(
         self, depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
@@ -124,8 +111,8 @@ class DepthData(object):
             from bottom track should be used.
         cell_size_in: np.array
             Size of each depth cell, in meters. If source does not have
-            depth cells the depth cell size
-            from bottom track should be used.
+            depth cells the depth cell size from bottom track should be used.
+
         """
 
         self.depth_orig_m = depth_in
@@ -264,8 +251,12 @@ class DepthData(object):
     def change_draft(self, draft):
         """Changes the draft for object
 
-        draft: new draft for object
+        Parameters
+        ----------
+        draft: float
+            New draft for object
         """
+
         # Compute draft change
         draft_change = draft - self.draft_use_m
         self.draft_use_m = draft
@@ -275,7 +266,7 @@ class DepthData(object):
             self.depth_beams_m = self.depth_beams_m + draft_change
             self.depth_processed_m = self.depth_processed_m + draft_change
 
-            # Apply draft to depth cell locations
+        # Apply draft to depth cell locations
         if len(self.depth_cell_depth_m) > 0:
             self.depth_cell_depth_m = self.depth_cell_depth_m + draft_change
 
@@ -477,13 +468,10 @@ class DepthData(object):
 
     def filter_smooth(self, transect):
         """This filter uses a moving InterQuartile Range filter on residuals
-        from a
-        robust Loess smooth of the depths in each beam to identify unnatural
-        spikes in the depth
-        measurements from each beam.  Each beam is filtered independently.
-        The filter
-        criteria are set to be the maximum of the IQR filter, 5% of the
-        measured depth, or 0.1 meter
+        from a robust Loess smooth of the depths in each beam
+        to identify unnatural spikes in the depth measurements from each beam.
+        Each beam is filtered independently. The filter criteria are set
+        to be the maximum of the IQR filter, 5% of the measured depth, or 0.1 meter
 
         Parameters
         ----------
@@ -493,13 +481,11 @@ class DepthData(object):
         Notes
         -----
         half_width - number of points to each side of target point used in
-        computing IQR.
-            This is the raw number of points actual points used may be less
-            if some are bad.
+        computing IQR. This is the raw number of points actual points used may be less
+        if some are bad.
 
         multiplier - number multiplied times the IQR to determine the filter
         criteria
-
         """
 
         # If the smoothed depth has not been computed
@@ -507,9 +493,6 @@ class DepthData(object):
 
             # Set filter characteristics
             self.filter_type = "Smooth"
-            # cycles = 3
-            # half_width = 10
-            # multiplier = 15
 
             # Determine number of beams
             if len(self.depth_orig_m.shape) > 1:
@@ -528,7 +511,6 @@ class DepthData(object):
 
             # Arrays initialized
             depth_smooth = repmat([np.nan], n_beams, n_ensembles)
-            # depth_res = repmat([np.nan], n_beams, n_ensembles)
             upper_limit = repmat([np.nan], n_beams, n_ensembles)
             lower_limit = repmat([np.nan], n_beams, n_ensembles)
             depth_filtered = depth
@@ -618,8 +600,7 @@ class DepthData(object):
         lower_limit = np.nan
 
         # At least 50% of the data in a beam must be valid to apply the smooth
-        # if np.nansum((np.isnan(depth_filtered) == False) / len(
-        # depth_filtered)) > .5:
+        # if np.nansum((np.isnan(depth_filtered) == False) / len( depth_filtered)) > .5:
         # Compute residuals based on robust loess smooth
         if len(x) > 1:
             # Fit smooth
@@ -675,7 +656,6 @@ class DepthData(object):
                 )
             )[0]
             # Update depth matrix
-            # depth_res[bad_idx] = np.nan
             if len(bad_idx) == 0:
                 break
             else:
@@ -693,13 +673,11 @@ class DepthData(object):
 
     def filter_savgol(self, transect):
         """This filter uses a moving InterQuartile Range filter on residuals
-        from a
-        a Savitzky-Golay filter on y with non-uniform spaced x
+        from a Savitzky-Golay filter on y with non-uniform spaced x
         of the depths in each beam to identify unnatural spikes in the depth
         measurements from each beam.  Each beam is filtered independently.
-        The filter
-        criteria are set to be the maximum of the IQR filter, 5% of the
-        measured depth, or 0.1 meter
+        The filter criteria are set to be the maximum of the IQR filter,
+        5% of the measured depth, or 0.1 meter
 
         Parameters
         ----------
@@ -709,13 +687,11 @@ class DepthData(object):
         Notes
         -----
         half_width - number of points to each side of target point used in
-        computing IQR.
-            This is the raw number of points actual points used may be less
-            if some are bad.
+        computing IQR. This is the raw number of points actual points used
+        may be less if some are bad.
 
         multiplier - number multiplied times the IQR to determine the filter
         criteria
-
         """
 
         # Determine number of beams
@@ -951,19 +927,16 @@ class DepthData(object):
         depth_mono = copy.deepcopy(self.depth_beams_m)
         depth_new = copy.deepcopy(self.depth_beams_m)
 
-        #       Create strict monotonic arrays for depth and track by
-        #       identifying duplicate
-        #       track values.  The first track value is used and the
-        #       remaining duplicates
-        #       are set to nan.  The depth assigned to that first track
-        #       value is the average
-        #       of all duplicates.  The depths for the duplicates are then
-        #       set to nan.  Only
-        #       valid strictly monotonic track and depth data are used for
-        #       the input in to linear
-        #       interpolation.   Only the interpolated data for invalid
-        #       depths are added
-        #       to the valid depth data to create depth_new
+        # Create strict monotonic arrays for depth and track by
+        # identifying duplicate track values.
+        # The first track value is used and the remaining duplicates
+        # are set to nan.  The depth assigned to that first track
+        # value is the average of all duplicates.
+        # The depths for the duplicates are then set to nan.  Only
+        # valid strictly monotonic track and depth data are used for
+        # the input in to linear interpolation.
+        # Only the interpolated data for invalid depths are added
+        # to the valid depth data to create depth_new
 
         x_mono = x
 
@@ -1084,8 +1057,7 @@ class DepthData(object):
     # AOT.
     # The methods below are included here for historical purposes
     # and may provide an easier approach to adding new features/algorithms
-    # prior to recoding
-    # them in a manner that can be compiled using Numba AOT.
+    # prior to recoding them in a manner that can be compiled using Numba AOT.
     # ======================================================================
     @staticmethod
     def run_iqr(half_width, data):

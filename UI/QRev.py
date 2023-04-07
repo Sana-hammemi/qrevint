@@ -407,8 +407,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
         show_disclaimer = True
 
-        show_disclaimer = False
-
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
 
@@ -1831,14 +1829,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Export mean XS
                 if options.cb_xs_export.isChecked():
                     self.xs_export = True
-                    self.meas.export_xs = True
+                    if self.meas is not None:
+                        self.meas.export_xs = True
                     try:
                         self.sticky_settings.set("XsExport", True)
                     except KeyError:
                         self.sticky_settings.new("XsExport", True)
                 else:
                     self.xs_export = False
-                    self.meas.export_xs = False
+                    if self.meas is not None:
+                        self.meas.export_xs = False
                     try:
                         self.sticky_settings.set("XsExport", False)
                     except KeyError:

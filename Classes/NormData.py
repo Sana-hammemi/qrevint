@@ -58,23 +58,17 @@ class NormData(object):
 
     def __init__(self):
         """Creates object and initializes instance variables."""
-        self.file_name = None  # Name of transect file
-        self.cell_depth_normalized = None  # Normalized depth of cell
-        self.unit_normalized = None  # Normalized discharge or velocity for
-        # all depth cells
-        self.unit_normalized_med = None  # Median of normalized data within
-        # 5% partitions
-        self.unit_normalized_no = None  # Number of data points in each median
-        self.unit_normalized_z = None  # Relative depth for each median (5%
-        # increments)
-        self.unit_normalized_25 = None  # Value for which 25% of normalized
-        # values are smaller
-        self.unit_normalized_75 = None  # Value for which 75% or normalized
-        # values are larger
-        self.data_type = "q"  # Type of data (v, q, V, or Q)
+        self.file_name = None
+        self.cell_depth_normalized = None
+        self.unit_normalized = None
+        self.unit_normalized_med = None
+        self.unit_normalized_no = None
+        self.unit_normalized_z = None
+        self.unit_normalized_25 = None
+        self.unit_normalized_75 = None
+        self.data_type = "q"
         self.data_extent = None
         self.valid_data = np.array([])
-        # threshold cutoff
         self.weights = np.array([])
         self.use_weighted = True
         self.sub_from_left = False
@@ -213,8 +207,7 @@ class NormData(object):
             unit_vec = np.vstack([unit_vec_1, unit_vec_2])
 
             # Compute the velocity magnitude in the direction of the mean
-            # velocity of each
-            # ensemble using the dot product and unit vector
+            # velocity of each ensemble using the dot product and unit vector
             unit = np.tile([np.nan], w_vel_x.shape)
             for i in range(w_vel_x.shape[0]):
                 unit[i, :] = np.sum(
@@ -289,8 +282,7 @@ class NormData(object):
     @staticmethod
     def qrev_mat_in(mat_data):
         """Processes the Matlab data structure to obtain a list of NormData
-         objects containing transect
-            data from the Matlab data structure.
+         objects containing transect data from the Matlab data structure.
 
         Parameters
         ----------

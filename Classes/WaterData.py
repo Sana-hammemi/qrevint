@@ -16,8 +16,7 @@ class WaterData(object):
     Original data provided to the class:
         raw_vel_mps: np.array(float)
             Contains the raw unfiltered velocity in m/s.  1st index 1-4 are
-             beams 1,2,3,4 if beam or
-            u,v,w,d if otherwise.
+            beams 1,2,3,4 if beam or u,v,w,d if otherwise.
         frequency: np.array(float)
             Defines ADCP frequency used for velocity measurement, in kHz.
         orig_coord_sys: str
@@ -48,19 +47,19 @@ class WaterData(object):
     Data computed in this class:
         u_earth_no_ref_mps: np.array(float)
             Horizontal velocity in x-direction with no boat reference applied,
-             in m/s.
+            in m/s.
         v_earth_no_ref_mps: np.array(float)
             Horizontal velocity in y-direction with no boat reference applied,
-             in m/s.
+            in m/s.
         u_mps: np.array(float)
             Horizontal velocity in x-direction, earth coord, nav referenced,
             in m/s.
         v_mps: np.array(float)
             Horizontal velocity in y-direction, earth coord, nav referenced,
-             in m/s.
+            in m/s.
         u_processed_mps: np.array(float)
             Horizontal velocity in x-direction, earth coord, nav ref,
-             filtered, and interpolated.
+            filtered, and interpolated.
         v_processed_mps: np.array(float)
             Horizontal veloctiy in y-direction, earth coord, nav ref,
             filtered, and interpolated.
@@ -73,7 +72,7 @@ class WaterData(object):
             Index of ensembles with no valid raw velocity data.
         num_invalid: float
             Estimated number of depth cells in ensembles with no valid raw
-             velocity data.
+            velocity data.
         valid_data: np.array(float)
             3-D logical array of valid data
                 Dim1 0 - composite
@@ -99,10 +98,10 @@ class WaterData(object):
             Threshold(s) for vertical velocity filter.
         excluded_dist_m: float
             Distance below transucer for which data are excluded or marked
-             invalid, in m.
+            invalid, in m.
         orig_excluded_dist_m: float
             Original distance below transucer for which data are excluded or
-             marked invalid, in m.
+            marked invalid, in m.
         smooth_filter: str
             Set filter based on smoothing function "On", "Off".
         smooth_speed: np.array(float)
@@ -135,10 +134,10 @@ class WaterData(object):
             Type of cutoff method "Percent" or "Number".
         ping_type: np.array(int)
             Indicates type of ping for each cell: 0-incoherent, 1-coherent,
-             2-surface
+            2-surface
         d_meas_thresholds: list
             Dictionary of difference velocity thresholds computed using the
-             whole measurement by ping type
+            whole measurement by ping type
         w_meas_thresholds: list
             Dictionary of vertical velocity thresholds computed using the
             whole measurement by ping type
@@ -277,10 +276,10 @@ class WaterData(object):
             Surface velocity data for RiverRay, RiverPro, RioPro. Optional.
         surface_rssi_in: np.array(float)
             Returned acoust signal strength for RiverRay, RiverPro, RioPro.
-             Optional.
+            Optional.
         surface_corr_in: np.array(float)
             Surface velocity correlations for RiverRay, RiverPro, RioPro.
-             Optional.
+            Optional.
         surface_num_cells_in: np.array(float)
             Number of surface cells in each ensemble for RiverRay, RiverPro,
             RioPro. Optional.
@@ -642,13 +641,6 @@ class WaterData(object):
                 self.ping_type = np.tile("U", self.d_mps.shape)
 
         self.valid_data = self.valid_data.astype(bool)
-        # Fix for moving-bed transects that did not have 3D array indices
-        # adjusted properly when saved
-        # if self.valid_data.shape[0] == self.u_processed_mps.shape[1]:
-        #     self.valid_data = np.moveaxis(self.valid_data, 0, 2)
-        #     self.raw_vel_mps = np.moveaxis(self.raw_vel_mps, 0, 2)
-        #     self.corr = np.moveaxis(self.corr, 0, 2)
-        #     self.rssi = np.moveaxis(self.rssi, 0, 2)
         self.frequency = transect.wVel.frequency
         self.orig_coord_sys = transect.wVel.origCoordSys
         self.orig_nav_ref = transect.wVel.origNavRef
@@ -880,10 +872,8 @@ class WaterData(object):
                     self.d_mps[:, ii] = temp_thpr[:, 3]
 
                 # Because of padded arrays with zeros and RR has a variable
-                # number of bins,
-                # the raw data may be padded with zeros.  The next 4
-                # statements changes
-                # those to nan
+                # number of bins, the raw data may be padded with zeros.  The next 4
+                # statements changes those to nan
                 find_padded = (
                     np.abs(self.u_mps)
                     + np.abs(self.v_mps)
@@ -1131,6 +1121,7 @@ class WaterData(object):
     ):
         """Coordinates application of specified filters and subsequent
         interpolation.
+
         Parameters
         ----------
         transect: TransectData
@@ -1207,10 +1198,6 @@ class WaterData(object):
             self.filter_snr(setting=self.snr_filter)
             self.filter_beam(setting=self.beam_filter, transect=transect)
 
-        # After filters have been applied, interpolate to estimate values for
-        # invalid data.
-        # self.apply_interpolation(transect=transect)
-
     def sos_correction(self, ratio):
         """Corrects water velocities for a change in speed of sound.
 
@@ -1283,7 +1270,6 @@ class WaterData(object):
                 )
 
         # Find ensembles with at least 1 invalid beam depth
-
         idx = np.where(np.logical_and(n_valid_beams < 4, n_valid_beams > 0))[0]
         if len(idx) > 0:
             if len(self.sl_lag_effect_m) > 1:
@@ -1312,7 +1298,6 @@ class WaterData(object):
         self.all_valid_data()
         self.compute_snr_rng()
         self.apply_filter(transect)
-        # self.apply_interpolation(transect)
 
     def all_valid_data(self):
         """Combines the results of all filters to determine a final set of
@@ -1460,9 +1445,9 @@ class WaterData(object):
         Applies either manual or automatic filtering of the difference (error)
         velocity.  The automatic mode is based on the following:
         This filter is based on the assumption that the water error velocity
-         should follow a gaussian distribution.  Therefore, 5 standard
-         deviations should encompass all of the valid data.
-         The standard deviation and limits (multiplier*std dev) are computed
+        should follow a gaussian distribution.  Therefore, 5 standard
+        deviations should encompass all of the valid data.
+        The standard deviation and limits (multiplier*std dev) are computed
         in an iterative process until filtering out additional data does not
         change the computed standard deviation.
 
@@ -1722,23 +1707,21 @@ class WaterData(object):
         """Applies filter to vertical velocity.
 
         Applies either manual or automatic filter of the difference (error)
-        velocity.  The automatic
-        mode is based on the following: This filter is based on the assumption
-        that the water error
-        velocity should follow a gaussian distribution.  Therefore, 4 standard
-         deviations should
+        velocity.  The automatic mode is based on the following: This filter
+        is based on the assumption that the water error velocity should follow a
+        gaussian distribution.  Therefore, 4 standard deviations should
         encompass all of the valid data.  The standard deviation and limits
-        (multplier * standard deviation)
-        are computed in an iterative process until filtering out additional
-        data does not change
-        the computed standard deviation.
+        (multplier * standard deviation) are computed in an iterative process
+        until filtering out additional data does not change the
+        computed standard deviation.
 
         Parameters
         ---------
         setting: str
             Filter setting (Auto, Off, Manual)
         threshold: float
-            Threshold value for Manual setting."""
+            Threshold value for Manual setting.
+        """
 
         # Set vertical velocity filter properties
         self.w_filter = setting
@@ -1943,10 +1926,8 @@ class WaterData(object):
         """Filters SonTek data based on SNR.
 
         Computes the average SNR for all cells above the side lobe cutoff for
-        each beam in
-        each ensemble. If the range in average SNR in an ensemble is greater
-        than 12 dB the
-        water velocity in that ensemble is considered invalid.
+        each beam in each ensemble. If the range in average SNR in an ensemble is greater
+        than 12 dB the water velocity in that ensemble is considered invalid.
 
         Parameters
         ----------
@@ -2069,8 +2050,7 @@ class WaterData(object):
                 v[interpolated_data[1][n][0]] = interpolated_data[1][n][1]
 
         # Save interpolated data, while retaining of the ensembles including
-        # those that are not
-        # in the in_transect_idx array
+        # those that are not in the in_transect_idx array
         self.u_processed_mps[:, :] = np.nan
         self.v_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
@@ -2311,9 +2291,6 @@ class WaterData(object):
         valid_ens = np.any(valid, 0)
 
         if np.sum(valid_ens) > 1:
-            # Determine the number of ensembles
-            # n_ens = len(valid_ens)
-
             trans_select = getattr(transect.depths, transect.depths.selected)
             # Compute z
             z = np.divide(
@@ -2606,9 +2583,8 @@ class WaterData(object):
             # Use interpolate water velocity of cells with 3 beam solutions
 
             # The following code duplicates Matlab scatteredInterpolant which
-            # seems to only estimate along columns
-            # as long as there is data in the ensemble above and below the
-            # value being estimated.
+            # seems to only estimate along columns as long as there is data in
+            # the ensemble above and below the value being estimated.
             row_numbers = np.linspace(0, valid.shape[0] - 1, valid.shape[0])
             n = 0
             for col in cols_3b:

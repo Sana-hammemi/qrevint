@@ -31,21 +31,16 @@ class EdgeData(object):
     def __init__(self):
         """Initialize EdgeData."""
 
-        self.type = None  # Shape of edge: 'Triangular', 'Rectangular',
-        # 'Custom, 'User Q'
-        self.distance_m = None  # Distance to shore
-        self.cust_coef = None  # Custom coefficient provided by user
-        self.number_ensembles = None  # Number of ensembles to average for
-        # depth and velocities
-        self.user_discharge_cms = None  # User supplied edge discharge.
-
-        self.orig_type = None  # Shape of edge: 'Triangular', 'Rectangular',
-        # 'Custom, 'User Q'
-        self.orig_distance_m = None  # Distance to shore
-        self.orig_cust_coef = None  # Custom coefficient provided by user
-        self.orig_number_ensembles = None  # Number of ensembles to average
-        # for depth and velocities
-        self.orig_user_discharge_cms = None  # User supplied edge discharge.
+        self.type = None
+        self.distance_m = None
+        self.cust_coef = None
+        self.number_ensembles = None
+        self.user_discharge_cms = None
+        self.orig_type = None
+        self.orig_distance_m = None
+        self.orig_cust_coef = None
+        self.orig_number_ensembles = None
+        self.orig_user_discharge_cms = None
 
     def populate_data(
         self,

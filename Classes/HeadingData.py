@@ -35,20 +35,16 @@ class HeadingData(object):
     def __init__(self):
         """Initialize class and set variables to None."""
 
-        self.data = None  # Corrected self.data data
-        self.original_data = None  # original uncorrected self.data data
-        self.source = None  # Source of self.data data (internal, external)
-        self.mag_var_deg = None  # Magnetic variation for these self.data data
-        self.mag_var_orig_deg = None  # Original magnetic variation
-        self.align_correction_deg = None  # Alignment correction to align
-        # compass with instrument
+        self.data = None
+        self.original_data = None
+        self.source = None
+        self.mag_var_deg = None
+        self.mag_var_orig_deg = None
+        self.align_correction_deg = None
         self.align_correction_orig_deg = None
-        self.mag_error = None  # Percent change in mean magnetic field from
-        # calibration`
-        self.pitch_limit = None  # Pitch limit of compass calibration (
-        # SonTek only), in degrees.
-        self.roll_limit = None  # Roll limit of compass calibration (SonTek
-        # only), in degrees.
+        self.mag_error = None
+        self.pitch_limit = None
+        self.roll_limit = None
 
     def populate_data(
         self,
@@ -194,12 +190,9 @@ class HeadingData(object):
     def interp_heading(self):
         """Interpolate invalid headings. Use linear interpolation if there are
         valid values on either side of the invalid heading. If the invalid
-        heading
-        occurs at the beginning of the time series, back fill using the 1st
-        valid.
-        If the invalid heading occurs at the end of the time series, forward
-        fill
-        with the last valid self.data.
+        heading occurs at the beginning of the time series, back fill using the 1st
+        valid. If the invalid heading occurs at the end of the time series, forward
+        fill with the last valid self.data.
         """
 
         idx_invalid = np.where(np.isnan(self.data))[0]

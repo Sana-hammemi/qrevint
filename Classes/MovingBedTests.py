@@ -90,38 +90,27 @@ class MovingBedTests(object):
     def __init__(self):
         """Initialize class and instance variables."""
 
-        self.type = None  # Loop or Stationary
-        self.transect = None  # Object of TransectData
-        self.duration_sec = np.nan  # Duration of test in secs
-        self.percent_invalid_bt = np.nan  # Percent of invalid bottom track
-        self.compass_diff_deg = np.nan  # Difference in heading for out and
-        # back of loop
-        self.flow_dir = np.nan  # Mean flow direction from loop test
-        self.mb_dir = np.nan  # Moving bed or closure error direction
-        self.dist_us_m = np.nan  # Distance moved upstream in m
-        self.flow_spd_mps = np.nan  # Magnitude of water velocity in mps
-        self.mb_spd_mps = np.nan  # Magnitude of moving=bed velocity in mps
-        self.percent_mb = np.nan  # Potential error due to moving bed in
-        # percent
-        self.moving_bed = np.nan  # Moving-bed determined 'Yes' 'No'
-        self.user_valid = True  # Logical to allow user to determine if test
-        # should be considered a valid test
-        self.test_quality = None  # Quality of test 'Valid' 'Warnings' 'Errors'
-        self.use_2_correct = None  # Use this test to correct discharge
-        self.selected = None  # Selected valid moving-bed test to use for
-        # correction or determine moving-bed condition
-        self.messages = None  # Cell array of warning and error messages
-        # based on data processing
-        self.near_bed_speed_mps = np.nan  # Mean near-bed water speed for
-        # test in mps
-        self.stationary_us_track = np.array(
-            []
-        )  # Upstream component of the bottom track referenced ship track
-        self.stationary_cs_track = np.array(
-            []
-        )  # Cross=stream component of the bottom track referenced
-        # ship track
-        self.stationary_mb_vel = np.array([])  # Moving-bed velocity by ensemble
+        self.type = None
+        self.transect = None
+        self.duration_sec = np.nan
+        self.percent_invalid_bt = np.nan
+        self.compass_diff_deg = np.nan
+        self.flow_dir = np.nan
+        self.mb_dir = np.nan
+        self.dist_us_m = np.nan
+        self.flow_spd_mps = np.nan
+        self.mb_spd_mps = np.nan
+        self.percent_mb = np.nan
+        self.moving_bed = np.nan
+        self.user_valid = True
+        self.test_quality = None
+        self.use_2_correct = None
+        self.selected = None
+        self.messages = None
+        self.near_bed_speed_mps = np.nan
+        self.stationary_us_track = np.array([])
+        self.stationary_cs_track = np.array([])
+        self.stationary_mb_vel = np.array([])
         self.ref = "BT"
         self.bt_percent_mb = np.nan
         self.bt_dist_us_m = np.nan
@@ -158,8 +147,6 @@ class MovingBedTests(object):
 
         # Convert to earth coordinates and set the navigation reference to BT
         # for both boat and water data
-        # self.transect.boat_vel.bt_vel.apply_interpolation(
-        # transect=self.transect, interpolation_method='Linear')
         self.transect.change_coord_sys(new_coord_sys="Earth")
         self.transect.change_nav_reference(update=True, new_nav_ref="BT")
 
@@ -180,8 +167,7 @@ class MovingBedTests(object):
     @staticmethod
     def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
-         TransectData objects containing transect
-            data from the Matlab data structure.
+         TransectData objects containing transect data from the Matlab data structure.
 
         Parameters
         ----------
@@ -341,7 +327,8 @@ class MovingBedTests(object):
         file_name: str
             Name of moving-bed test data file
         test_type: str
-            Type of moving-bed test."""
+            Type of moving-bed test.
+        """
         self.type = test_type
 
         # Read Matlab file for moving-bed test
@@ -764,15 +751,13 @@ class MovingBedTests(object):
             # Compute the mean of the ensemble magnitudes
 
             # Mean is computed using magnitudes because if a Streampro with
-            # no compass is the data source the change
-            # in direction could be either real change in water direction or
-            # an uncompensated turn of the floating
-            # platform. This approach is the best compromise when there is
-            # no compass or the compass is unreliable,
+            # no compass is the data source the change in direction could be
+            # either real change in water direction or an uncompensated turn of
+            # the floating platform. This approach is the best compromise when
+            # there is no compass or the compass is unreliable,
             # which is often why the stationary method is used. A weighted
-            # average is used to account for the possible
-            # change in cell size within and ensemble for the RiverRay and
-            # RiverPro.
+            # average is used to account for the possible cell size within and
+            # ensemble for the RiverRay and RiverPro.
 
             mag = np.sqrt(u_corrected**2 + v_corrected**2)
             depth_cell_size = trans_data.depths.bt_depths.depth_cell_size_m[
@@ -1139,10 +1124,6 @@ class MovingBedTests(object):
             lidx_flow_speed = np.array(flow_speed) > 0.25
 
             # Determine if there are valid loop tests
-            # This is the code in matlab but I don't think it is correct. I
-            # the valid loop should also have a valid
-            # flow speed, if not then a stationary test, if available could
-            # be used.
             lidx_loops_2_select = np.all(
                 np.vstack((lidx_flow_speed, lidx_valid_loop)), 0
             )

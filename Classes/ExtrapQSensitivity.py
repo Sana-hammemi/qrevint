@@ -97,68 +97,43 @@ class ExtrapQSensitivity(object):
     def __init__(self):
         """Initialize object and instance variables."""
 
-        self.q_pp_mean = None  # Discharge power power 1/6
-        self.q_pp_opt_mean = None  # discharge power power optimized
-        self.q_cns_mean = None  # Discharge constant no RoutingSlipDelivery
-        self.q_cns_opt_mean = None  # Discharge constant optimized no slip
-        self.q_3p_ns_mean = None  # Discharge 3-pt no slip
-        self.q_3p_ns_opt_mean = None  # Discharge 3-pt optimized no slip
-        self.q_pp_per_diff = None  # Power power 1/6 difference from reference
-        self.q_pp_opt_per_diff = None  # Power power optimized percent
-        # difference from reference
-        self.q_cns_per_diff = None  # Constant no slip percent difference
-        # from reference
-        self.q_cns_opt_per_diff = None  # Constant optimized no slip percent
-        # difference from reference
-        self.q_3p_ns_per_diff = None  # 3-point no skip percent difference
-        # from reference
-        self.q_3p_ns_opt_per_diff = None  # 3-point optimized no slip
-        # percent difference from reference
-        self.pp_exp = None  # Optimized power power exponent
-        self.ns_exp = None  # Optimized no slip Exponent
-        self.man_top = None  # Manually specified top method
-        self.man_bot = None  # Manually specified bottom method
-        self.man_exp = None  # Manually specified exponent
-        self.q_man_mean = None  # Mean discharge for manually specified
-        # extrapolations
-        self.q_man_per_diff = None  # Manually specified extrapolations
-        # percent difference from reference
-        self.q_pp_list = []  # List of single transect discharges base on
-        # default 1/6 power-power law
-        self.q_pp_opt_list = []  # List of single transect discharges base
-        # on optimized power-power law
-        self.q_cns_list = []  # List of single transect discharges base on
-        # default 1/6 constant no slip law
-        self.q_cns_opt_list = []  # List of single transect discharges base
-        # on optimized constant no slip law
-        self.q_3p_ns_list = []  # List of single transect discharges base on
-        # default 3pt no slip
-        self.q_3p_ns_opt_list = []  # List of single transect discharges
-        # base on optimized 3pt no slip
-        self.q_top_pp_list = []  # List of single transect top discharges
-        # base on default 1/6 power-power law
-        self.q_top_pp_opt_list = []  # List of single transect top
-        # discharges base on optimized power-power law
-        self.q_top_cns_list = []  # List of single transect top discharges
-        # base on default 1/6 constant no slip law
-        self.q_top_cns_opt_list = []  # List of single transect top
-        # discharges base on optimized constant no slip law
-        self.q_top_3p_ns_list = []  # List of single transect top discharges
-        # base on default 3pt no slip
-        self.q_top_3p_ns_opt_list = []  # List of single transect top
-        # discharges base on optimized 3pt no slip
-        self.q_bot_pp_list = []  # List of single transect bottom discharges
-        # base on default 1/6 power-power law
-        self.q_bot_pp_opt_list = []  # List of single transect bottom
-        # discharges base on optimized power-power law
-        self.q_bot_cns_list = []  # List of single transect bottom
-        # discharges base on default 1/6 constant no slip law
-        self.q_bot_cns_opt_list = []  # List of single transect bottom
-        # discharges base on optimized constant no slip law
-        self.q_bot_3p_ns_list = []  # List of single transect bottom
-        # discharges base on default 3pt no slip
-        self.q_bot_3p_ns_opt_list = []  # List of single transect bottom
-        # discharges base on optimized 3pt no slip
+        self.q_pp_mean = None
+        self.q_pp_opt_mean = None
+        self.q_cns_mean = None
+        self.q_cns_opt_mean = None
+        self.q_3p_ns_mean = None
+        self.q_3p_ns_opt_mean = None
+        self.q_pp_per_diff = None
+        self.q_pp_opt_per_diff = None
+        self.q_cns_per_diff = None
+        self.q_cns_opt_per_diff = None
+        self.q_3p_ns_per_diff = None
+        self.q_3p_ns_opt_per_diff = None
+        self.pp_exp = None
+        self.ns_exp = None
+        self.man_top = None
+        self.man_bot = None
+        self.man_exp = None
+        self.q_man_mean = None
+        self.q_man_per_diff = None
+        self.q_pp_list = []
+        self.q_pp_opt_list = []
+        self.q_cns_list = []
+        self.q_cns_opt_list = []
+        self.q_3p_ns_list = []
+        self.q_3p_ns_opt_list = []
+        self.q_top_pp_list = []
+        self.q_top_pp_opt_list = []
+        self.q_top_cns_list = []
+        self.q_top_cns_opt_list = []
+        self.q_top_3p_ns_list = []
+        self.q_top_3p_ns_opt_list = []
+        self.q_bot_pp_list = []
+        self.q_bot_pp_opt_list = []
+        self.q_bot_cns_list = []
+        self.q_bot_cns_opt_list = []
+        self.q_bot_3p_ns_list = []
+        self.q_bot_3p_ns_opt_list = []
 
     def populate_data(self, transects, extrap_fits):
         """Compute means and percent differences.

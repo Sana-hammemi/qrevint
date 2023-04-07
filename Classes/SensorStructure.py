@@ -21,11 +21,10 @@ class SensorStructure(object):
     def __init__(self):
         """Initialize class and set variable to None."""
 
-        # The selected sensor reference name ('internal', 'external', 'user')
         self.selected = None
-        self.internal = None  # Contains the data from the internal sensor
-        self.external = None  # Contains the data from an external sensor
-        self.user = None  # Contains user supplied value
+        self.internal = None
+        self.external = None
+        self.user = None
 
     def populate_from_qrev_mat(self, mat_data, heading=False):
         """Populates the object using data from previously saved QRev Matlab file.

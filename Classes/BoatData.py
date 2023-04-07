@@ -131,74 +131,44 @@ class BoatData(object):
         """Initialize instance variables."""
 
         # Variables passed to the constructor
-        # contains the raw unfiltered velocity data in m/s.
         self.raw_vel_mps = None
-        # Defines ADCP frequency used for velocity Measurement
         self.frequency_khz = None
-        # Defines the original raw data velocity Coordinate
         self.orig_coord_sys = None
-        # Defines the original raw data navigation reference
         self.nav_ref = None
         self.corr = np.array([])
         self.rssi = np.array([])
         self.corr = np.array([])
         self.rssi = np.array([])
-
-        # Coordinate transformed data
-        # Defines the current coordinate system "Beam", "Inst", "Ship", "Earth"
         self.coord_sys = None
-        # Horizontal velocity in x-direction, in m/s
         self.u_mps = None
-        # Horizontal velocity in y-direction, in m/s
         self.v_mps = None
-        # Vertical velocity (+ up), m/s
         self.w_mps = None
-        # Difference in vertical velocities compute from opposing beam pairs
-        # in m/s
         self.d_mps = None
-        # Number of ensembles with invalid velocity data
         self.num_invalid = None
-        # BT mode for TRDI, 'Variable' for SonTek
         self.bottom_mode = None
 
         # Processed data
-        # Horizontal velocity in x-direction filtered and interpolated
         self.u_processed_mps = None
-        # Horizontal velocity in y-direction filtered and interpolated
         self.v_processed_mps = None
-        # Source of data, BT, GGA, VTG, INT
         self.processed_source = None
 
         # Filter and interpolation properties
-        # Difference velocity filter "Manual", "Off", "Auto"
         self.d_filter = None
-        # Threshold for difference velocity filter
         self.d_filter_thresholds = {}
-        # Vertical velocity filter "On", "Off"
         self.w_filter = None
-        # Threshold for vertical velocity filter
         self.w_filter_thresholds = {}
-        # Differential correction quality (1,2,4)
         self.gps_diff_qual_filter = None
-        # Change in altitude filter "Auto", "Manual", "Off"
         self.gps_altitude_filter = None
-        # Threshold from mean for altitude filter
         self.gps_altitude_filter_change = None
-        self.gps_HDOP_filter = None  # HDOP filter "Auto", "Manual", "Off"
-        self.gps_HDOP_filter_max = None  # Max acceptable value for HDOP
-        self.gps_HDOP_filter_change = None  # Maximum change allowed from mean
-        self.smooth_filter = None  # Filter based on smoothing function
-        self.smooth_speed = None  # Smoothed boat speed
-        # Smooth function upper limit of window
+        self.gps_HDOP_filter = None
+        self.gps_HDOP_filter_max = None
+        self.gps_HDOP_filter_change = None
+        self.smooth_filter = None
+        self.smooth_speed = None
         self.smooth_upper_limit = None
-        # Smooth function lower limit of window
         self.smooth_lower_limit = None
-        # Type of interpolation: "None", "Linear", "Smooth" etc.
         self.interpolate = None
-        # 3 for 3-beam solutions, 4 for 4-beam SolutionStackDescription
         self.beam_filter = None
-        # Logical array of identifying valid and invalid data for each filter
-        # applied
         self.valid_data = None
         self.ping_type = np.array([])
 
@@ -378,8 +348,6 @@ class BoatData(object):
             if hasattr(mat_data, "rssi"):
                 self.rssi = mat_data.rssi.reshape(mat_data.rssi.shape[0], 1)
 
-            # self.bottom_mode = np.array([mat_data.bottomMode])
-
             # Processed data
             self.u_processed_mps = np.array([mat_data.uProcessed_mps])
             self.v_processed_mps = np.array([mat_data.vProcessed_mps])
@@ -403,8 +371,6 @@ class BoatData(object):
                 self.corr = mat_data.corr
             if hasattr(mat_data, "rssi"):
                 self.rssi = mat_data.rssi
-
-            # self.bottom_mode = mat_data.bottomMode
 
             # Processed data
             self.u_processed_mps = mat_data.uProcessed_mps
@@ -552,10 +518,8 @@ class BoatData(object):
             h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
 
             # Modify the transformation matrix and heading, pitch, and roll
-            # values base on
-            # the original coordinate system so that only the needed values
-            # are used in
-            # computing the new coordinate system
+            # values base on the original coordinate system so that only
+            # the needed values are used in computing the new coordinate system
             if o_coord_sys == "Beam":
                 orig_sys = 1
             elif o_coord_sys == "Inst":
@@ -1042,7 +1006,6 @@ class BoatData(object):
         """
 
         # Get data from object
-
         u = np.copy(self.u_mps)
         v = np.copy(self.v_mps)
         u[self.valid_data[0, :] == False] = np.nan
@@ -1124,12 +1087,13 @@ class BoatData(object):
             diff_time = np.diff(ens_time[valid])
             idx = np.where(diff_time == 0)[0]
             mono_array = np.vstack([ens_time[valid], u[valid], v[valid]])
+
             # Replace non-monotonic times with average values
             for i in idx[::-1]:
                 mono_array[1, i] = np.nanmean(mono_array[1, i : i + 2])
                 mono_array[2, i] = np.nanmean(mono_array[2, i : i + 2])
                 mono_array = np.delete(mono_array, i + 1, 1)
-            # Apply linear interpolation
+
             # Apply linear interpolation
             self.u_processed_mps = np.interp(
                 ens_time, mono_array[0, :], mono_array[1, :]
@@ -1619,6 +1583,7 @@ class BoatData(object):
         # Compute ens_time
         ens_time = np.nancumsum(transect.date_time.ens_duration_sec)
         n_ensembles = len(ens_time)
+
         # Determine if smooth filter should be applied
         if self.smooth_filter == "On":
             # Initialize arrays
@@ -1854,7 +1819,6 @@ class BoatData(object):
 
         # Set all data to valid
         self.valid_data[3, :] = True
-        # self.valid_data[5, :] = True
 
         # Manual or Auto is selected, apply filter
         if not self.gps_altitude_filter == "Off":
@@ -2003,6 +1967,7 @@ class BoatData(object):
         # Develop logical vector of invalid ensembles
         invalid_bool = np.full(test_sum.size, False)
         invalid_bool[test_sum > 3] = True
+
         # Handle first ensemble
         invalid_bool = np.concatenate((np.array([False]), invalid_bool), 0)
         if np.nansum(vel_in[:, 0]) == 0:

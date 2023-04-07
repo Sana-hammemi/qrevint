@@ -66,8 +66,8 @@ class PreMeasurement(object):
     @staticmethod
     def cc_qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
-         Premeasurement objects containing compass calibration
-            data from the Matlab data structure.
+        Premeasurement objects containing compass calibration
+        data from the Matlab data structure.
 
         Parameters
         ----------
@@ -96,8 +96,8 @@ class PreMeasurement(object):
     @staticmethod
     def ce_qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
-         Premeasurement objects containing compass evaluation
-            data from the Matlab data structure.
+        Premeasurement objects containing compass evaluation
+        data from the Matlab data structure.
 
         Parameters
         ----------
@@ -166,7 +166,7 @@ class PreMeasurement(object):
     def sys_test_qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
         Premeasurement objects containing system test data
-           from the Matlab data structure.
+        from the Matlab data structure.
 
            Parameters
            ----------
@@ -622,5 +622,3 @@ class PreMeasurement(object):
             self.result["pt3"] = pt3
         except Exception:
             pass
-        #     pt3 = None
-        # self.result['pt3'] = pt3

@@ -37,16 +37,13 @@ class ComputeExtrap(object):
     def __init__(self):
         """Initialize instance variables."""
 
-        self.threshold = None  # Threshold as a percent for determining if a
-        # median is valid
-        self.subsection = None  # Percent of discharge, does not account for
-        # transect direction
-        self.fit_method = None  # Method used to determine fit.  Automatic
-        # or manual
-        self.norm_data = []  # Object of class norm data
-        self.sel_fit = []  # Object of class SelectFit
-        self.q_sensitivity = None  # Object of class ExtrapQSensitivity
-        self.messages = []  # Variable for messages to UserWarning
+        self.threshold = None
+        self.subsection = None
+        self.fit_method = None
+        self.norm_data = []
+        self.sel_fit = []
+        self.q_sensitivity = None
+        self.messages = []
         self.use_weighted = False
         self.use_q = False
         self.sub_from_left = False
@@ -68,7 +65,7 @@ class ComputeExtrap(object):
         compute_sensitivity: bool
             Determines is sensitivity should be computed.
         use_weighted: bool
-        Specifies if discharge weighted medians are used in extrapolations
+            Specifies if discharge weighted medians are used in extrapolations
         """
 
         self.threshold = 20
@@ -105,14 +102,12 @@ class ComputeExtrap(object):
             self.fit_method = meas_struct.extrapFit.fitMethod
 
             # Check for consistency between transects and norm_data. If only
-            # checked transects were saved, the
-            # normData and selfit will also include unchecked transects
-            # which must be removed prior to
+            # checked transects were saved, the normData and selfit will also
+            # include unchecked transects which must be removed prior to
             # continuing to process.
 
             # If only a single transect the meas_struct.transects will be
-            # structure not an array, so the len method
-            # won't work.
+            # structure not an array, so the len method won't work.
             try:
                 n_transects = len(meas_struct.transects)
             except TypeError:
@@ -299,8 +294,8 @@ class ComputeExtrap(object):
 
     def change_threshold(self, transects, data_type, threshold):
         """Function to change the threshold for accepting the increment
-        median as valid.  The threshold
-        is in percent of the median number of points in all increments.
+        median as valid.  The threshold is in percent of the median number
+        of points in all increments.
 
         Parameters
         ----------
@@ -320,9 +315,8 @@ class ComputeExtrap(object):
 
     def change_extents(self, transects, data_type, extents, use_q, sub_from_left):
         """Function allows the data to be subsection by specifying the
-        percent cumulative discharge
-        for the start and end points.  Currently this function does not
-        consider transect direction.
+        percent cumulative discharge for the start and end points.
+        Currently this function does not consider transect direction.
 
         Parameters
         ----------

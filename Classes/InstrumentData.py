@@ -30,18 +30,15 @@ class InstrumentData(object):
     def __init__(self):
         """Constructor initializes the variables to None."""
 
-        self.serial_num = None  # Serial number of ADCP
-        self.manufacturer = None  # manufacturer of ADCP (SonTek, TRDI)
-        self.model = None  # model of ADCP (Rio Grande, StreamPro, RiverRay,
-        # M9, S5)
-        self.firmware = None  # firmware version
-        self.frequency_khz = None  # frquency of ADCP (could be "Multi")
-        self.beam_angle_deg = None  # angle of beam from vertical
-        self.beam_pattern = None  # pattern of beams
-        self.t_matrix = None  # object of TransformationMatrix
-        self.configuration_commands = np.array(
-            []
-        )  # configuration commands sent to ADCP
+        self.serial_num = None
+        self.manufacturer = None
+        self.model = None
+        self.firmware = None
+        self.frequency_khz = None
+        self.beam_angle_deg = None
+        self.beam_pattern = None
+        self.t_matrix = None
+        self.configuration_commands = np.array([])
 
     def populate_data(self, manufacturer, raw_data, mmt_transect=None, mmt=None):
         """Manages method calls for different manufacturers.

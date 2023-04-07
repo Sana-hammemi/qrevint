@@ -9,8 +9,6 @@ class Config:
     ----------
     config: dict
         Default config view and processing options.
-
-
     """
 
     def __init__(self):

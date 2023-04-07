@@ -1,6 +1,6 @@
 """bottom_discharge_extrapolation
-Computes the extrapolated discharge in the bottom unmeasured portion of an ADCP transect. Methods are consistent with
-equations used by TRDI and SonTek.
+Computes the extrapolated discharge in the bottom unmeasured portion of an ADCP transect.
+Methods are consistent with equations used by TRDI and SonTek.
 
 Example
 -------
