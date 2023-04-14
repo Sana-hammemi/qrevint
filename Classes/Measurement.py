@@ -210,24 +210,6 @@ class Measurement(object):
                 # Save initial settings
                 self.initial_settings = self.current_settings()
 
-                # Process moving-bed tests
-                if len(self.mb_tests) > 0:
-                    # Get navigation reference
-                    select = self.initial_settings["NavRef"]
-                    ref = None
-
-                    if select == "bt_vel":
-                        ref = "BT"
-
-                    elif select == "gga_vel":
-                        ref = "GGA"
-
-                    elif select == "vtg_vel":
-                        ref = "VTG"
-                    self.mb_tests = MovingBedTests.auto_use_2_correct(
-                        moving_bed_tests=self.mb_tests, boat_ref=ref
-                    )
-
                 # Set processing type
                 if proc_type == "QRev":
 
@@ -256,6 +238,23 @@ class Measurement(object):
                         q.populate_data(data_in=transect, moving_bed_data=self.mb_tests)
 
                         self.discharge.append(q)
+
+                # Process moving-bed tests
+                if len(self.mb_tests) > 0:
+                    # Get navigation reference
+                    select = self.initial_settings["NavRef"]
+                    ref = None
+
+                    if select == "bt_vel":
+                        ref = "BT"
+
+                    elif select == "gga_vel":
+                        ref = "GGA"
+
+                    elif select == "vtg_vel":
+                        ref = "VTG"
+                    self.mb_tests = MovingBedTests.auto_use_2_correct(
+                        moving_bed_tests=self.mb_tests, boat_ref=ref)
 
                 self.uncertainty = Uncertainty()
                 self.uncertainty.compute_uncertainty(self)
