@@ -33,7 +33,6 @@ class SOSSource(QtWidgets.QDialog, wSOSSource.Ui_sos_source):
         self.rb_user.toggled.connect(self.user)
         self.rb_internal.toggled.connect(self.internal)
 
-
     @QtCore.pyqtSlot()
     def user(self):
         """Enables edit box for speed of sound if User is selected."""

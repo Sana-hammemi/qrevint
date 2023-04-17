@@ -175,7 +175,8 @@ class QComp(object):
                 trans_select.depth_cell_depth_m,
                 trans_select.depth_processed_m,
                 delta_t,
-                num_top_method[top_method], exponent,
+                num_top_method[top_method],
+                exponent,
             )
         self.top = np.nansum(self.top_ens)
 
@@ -2016,7 +2017,10 @@ class QComp(object):
                     denominator_temp = (
                         (z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)
                     ) - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
-                    if np.logical_not(np.isnan(denominator_temp)) and denominator_temp != 0:
+                    if (
+                        np.logical_not(np.isnan(denominator_temp))
+                        and denominator_temp != 0
+                    ):
                         denominator_valid = True
                         denominator = denominator + denominator_temp
 
@@ -2028,7 +2032,10 @@ class QComp(object):
             top_value = (
                 delta_t
                 * (coef / (exponent + 1))
-                * (depth_ens ** (exponent + 1) - (depth_ens - top_rng) ** (exponent + 1))
+                * (
+                    depth_ens ** (exponent + 1)
+                    - (depth_ens - top_rng) ** (exponent + 1)
+                )
             )
 
         # Top constant extrapolation
@@ -2082,7 +2089,6 @@ class QComp(object):
                     top_value[j] = delta_t[j] * qo
 
         return top_value
-
 
     @staticmethod
     def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
@@ -2145,17 +2151,17 @@ class QComp(object):
 
     @staticmethod
     def extrapolate_bot(
-            xprod,
-            w_valid_data,
-            transect_bot_method,
-            transect_exponent,
-            in_transect_idx,
-            depth_cell_size_m,
-            depth_cell_depth_m,
-            depth_processed_m,
-            delta_t,
-            bot_method=-1,
-            exponent=0.1667,
+        xprod,
+        w_valid_data,
+        transect_bot_method,
+        transect_exponent,
+        in_transect_idx,
+        depth_cell_size_m,
+        depth_cell_depth_m,
+        depth_processed_m,
+        delta_t,
+        bot_method=-1,
+        exponent=0.1667,
     ):
         """Computes the extrapolated bottom discharge
 
@@ -2204,7 +2210,9 @@ class QComp(object):
         delta_t = delta_t[in_transect_idx]
 
         # Compute bottom variables
-        bot_rng = QComp.bot_variables(xprod, w_valid_data, cell_size, cell_depth, depth_ens)
+        bot_rng = QComp.bot_variables(
+            xprod, w_valid_data, cell_size, cell_depth, depth_ens
+        )
 
         # Compute z
         z = np.subtract(depth_ens, cell_depth)
@@ -2219,14 +2227,32 @@ class QComp(object):
                     cell_depth[row, col] = np.nan
 
         # Compute bottom discharge
-        q_bot = QComp.discharge_bot(bot_method, exponent, bot_rng, xprod, cell_size, cell_depth,
-            depth_ens, delta_t, z, )
+        q_bot = QComp.discharge_bot(
+            bot_method,
+            exponent,
+            bot_rng,
+            xprod,
+            cell_size,
+            cell_depth,
+            depth_ens,
+            delta_t,
+            z,
+        )
 
         return q_bot
 
     @staticmethod
-    def discharge_bot(bot_method, exponent, bot_rng, component, cell_size, cell_depth,
-            depth_ens, delta_t, z, ):
+    def discharge_bot(
+        bot_method,
+        exponent,
+        bot_rng,
+        component,
+        cell_size,
+        cell_depth,
+        depth_ens,
+        delta_t,
+        z,
+    ):
         """Computes the bottom extrapolated value of the provided component.
 
         Parameters
@@ -2282,11 +2308,13 @@ class QComp(object):
                         numerator = numerator + numerator_temp
 
                     # Compute the denominator
-                    denominator_temp = ((z[row, col] + 0.5 * cell_size[row, col]) ** (
-                                exponent + 1)) - ((z[row, col] - 0.5 * cell_size[
-                        row, col]) ** (exponent + 1))
-                    if np.logical_not(
-                            np.isnan(denominator_temp)) and denominator_temp != 0:
+                    denominator_temp = (
+                        (z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)
+                    ) - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
+                    if (
+                        np.logical_not(np.isnan(denominator_temp))
+                        and denominator_temp != 0
+                    ):
                         denominator_valid = True
                         denominator = denominator + denominator_temp
 
@@ -2330,20 +2358,25 @@ class QComp(object):
                                 cells_below_cutoff = True
 
                                 # Compute numerator
-                                numerator_temp = component[row, col] * cell_size[row, col]
+                                numerator_temp = (
+                                    component[row, col] * cell_size[row, col]
+                                )
                                 if np.logical_not(np.isnan(numerator_temp)):
                                     numerator_valid = True
                                     numerator = numerator + numerator_temp
 
                                     # If numerator computed, compute denominator
-                                    denominator_temp = ((z[row, col] + 0.5 * cell_size[
-                                        row, col]) ** (exponent + 1)) - ((z[
-                                                                              row, col] - 0.5 *
-                                                                          cell_size[
-                                                                              row, col]) ** (
-                                                                                     exponent + 1))
-                                    if (np.logical_not(np.isnan(
-                                        denominator_temp)) and denominator_temp != 0):
+                                    denominator_temp = (
+                                        (z[row, col] + 0.5 * cell_size[row, col])
+                                        ** (exponent + 1)
+                                    ) - (
+                                        (z[row, col] - 0.5 * cell_size[row, col])
+                                        ** (exponent + 1)
+                                    )
+                                    if (
+                                        np.logical_not(np.isnan(denominator_temp))
+                                        and denominator_temp != 0
+                                    ):
                                         denominator_valid = True
                                         denominator = denominator + denominator_temp
 
@@ -2357,12 +2390,13 @@ class QComp(object):
                                 numerator = numerator + numerator_temp
 
                                 # If numerator computed, compute denominator
-                                denominator_temp = ((last_z + 0.5 * last_cell_size) ** (
-                                            exponent + 1)) - ((
-                                                                          last_z - 0.5 * last_cell_size) ** (
-                                                                          exponent + 1))
-                                if (np.logical_not(np.isnan(
-                                    denominator_temp)) and denominator_temp != 0):
+                                denominator_temp = (
+                                    (last_z + 0.5 * last_cell_size) ** (exponent + 1)
+                                ) - ((last_z - 0.5 * last_cell_size) ** (exponent + 1))
+                                if (
+                                    np.logical_not(np.isnan(denominator_temp))
+                                    and denominator_temp != 0
+                                ):
                                     denominator_valid = True
                                     denominator = denominator + denominator_temp
 
@@ -2418,10 +2452,10 @@ class QComp(object):
             if len(idx_temp) > 0:
                 idx_bot = idx_temp[-1]
                 # Compute bottom range
-                bot_rng[n] = (depth_ens[n] - cell_depth[idx_bot, n] - 0.5 * cell_size[
-                    idx_bot, n])
+                bot_rng[n] = (
+                    depth_ens[n] - cell_depth[idx_bot, n] - 0.5 * cell_size[idx_bot, n]
+                )
             else:
                 bot_rng[n] = 0
 
         return bot_rng
-

@@ -254,7 +254,8 @@ class Measurement(object):
                     elif select == "vtg_vel":
                         ref = "VTG"
                     self.mb_tests = MovingBedTests.auto_use_2_correct(
-                        moving_bed_tests=self.mb_tests, boat_ref=ref)
+                        moving_bed_tests=self.mb_tests, boat_ref=ref
+                    )
 
                 self.uncertainty = Uncertainty()
                 self.uncertainty.compute_uncertainty(self)

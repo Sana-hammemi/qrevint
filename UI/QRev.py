@@ -65,6 +65,7 @@ from UI.ULollipopPlot import ULollipopPlot
 # if there is a splash screen close it
 try:
     import pyi_splash
+
     pyi_splash.close()
 except:
     pass
@@ -847,7 +848,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
 
         # Intialize attributes
-        self.path = ''
+        self.path = ""
         self.checked_transects_idx = []
         self.meas = None
         self.h_external_valid = False
@@ -1374,8 +1375,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
 
     def add_comment(self):
-        """Add comment triggered by actionComment
-        """
+        """Add comment triggered by actionComment"""
 
         if self.meas is not None:
             # Initialize comment dialog

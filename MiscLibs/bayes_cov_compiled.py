@@ -240,9 +240,7 @@ def log_post(param, measures, cov_prior, cov_prior_u):
     logp = log_likelihood + log_prior
     if np.isnan(logp):
         # Used np to eliminate the need for math package
-        logp = (
-            np.NINF
-        )
+        logp = np.NINF
         # returns -Inf rather than NaN's
         # (required by the MCMC sampler used subsequently)
     return logp
