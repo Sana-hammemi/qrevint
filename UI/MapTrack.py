@@ -4,19 +4,19 @@ import numpy as np
 class Maptrack(object):
     """Class to generate shiptrack plot from MAP profile.
 
-        Attributes
-        ----------
-        canvas: MplCanvas
-            Object of MplCanvas a FigureCanvas
-        fig: Object
-            Figure object of the canvas
-        units: dict
-            Dictionary of units conversions
-        hover_connection: int
-            Index to data cursor connection
-        annot: Annotation
-            Annotation object for data cursor
-        """
+    Attributes
+    ----------
+    canvas: MplCanvas
+        Object of MplCanvas a FigureCanvas
+    fig: Object
+        Figure object of the canvas
+    units: dict
+        Dictionary of units conversions
+    hover_connection: int
+        Index to data cursor connection
+    annot: Annotation
+        Annotation object for data cursor
+    """
 
     def __init__(self, canvas):
         """Initialize object using the specified canvas.
@@ -57,37 +57,65 @@ class Maptrack(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.15, bottom=0.1, right=0.98, top=0.95, wspace=0.1, hspace=0)
+        self.fig.subplots_adjust(
+            left=0.15, bottom=0.1, right=0.98, top=0.95, wspace=0.1, hspace=0
+        )
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
 
         # Boundaries on x and y coordinates for the selected transects
-        x_plt = [min([min(l) for l in map_data.x_projected]), max([max(l) for l in map_data.x_projected])]
+        x_plt = [
+            min([min(l) for l in map_data.x_projected]),
+            max([max(l) for l in map_data.x_projected]),
+        ]
         y_plt = [i * map_data.slope + map_data.intercept for i in x_plt]
 
-        self.acs = self.fig.ax.plot(x_plt, y_plt, color='firebrick', linewidth=2, label='MAP Average course', zorder=1)
+        self.acs = self.fig.ax.plot(
+            x_plt,
+            y_plt,
+            color="firebrick",
+            linewidth=2,
+            label="MAP Average course",
+            zorder=1,
+        )
         for i in range(len(map_data.x_raw_coordinates)):
-            self.fig.ax.plot(map_data.x_raw_coordinates[i], map_data.y_raw_coordinates[i], color='grey', linewidth=1,
-                             zorder=0)
+            self.fig.ax.plot(
+                map_data.x_raw_coordinates[i],
+                map_data.y_raw_coordinates[i],
+                color="grey",
+                linewidth=1,
+                zorder=0,
+            )
 
         # Customize axes
-        if nav_ref == 'gga_vel':
-            self.fig.ax.set_xlabel(self.canvas.tr('UTM East coordinates ') + units['label_L'])
-            self.fig.ax.set_ylabel(self.canvas.tr('UTM North coordinates ') + units['label_L'])
+        if nav_ref == "gga_vel":
+            self.fig.ax.set_xlabel(
+                self.canvas.tr("UTM East coordinates ") + units["label_L"]
+            )
+            self.fig.ax.set_ylabel(
+                self.canvas.tr("UTM North coordinates ") + units["label_L"]
+            )
         else:
-            self.fig.ax.set_xlabel(self.canvas.tr('Distance East ') + units['label_L'])
-            self.fig.ax.set_ylabel(self.canvas.tr('Distance North ') + units['label_L'])
+            self.fig.ax.set_xlabel(self.canvas.tr("Distance East ") + units["label_L"])
+            self.fig.ax.set_ylabel(self.canvas.tr("Distance North ") + units["label_L"])
 
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
         self.fig.ax.grid()
-        self.fig.ax.axis('equal')
-        for label in (self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels()):
+        self.fig.ax.axis("equal")
+        for label in self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels():
             label.set_fontsize(10)
 
         # Initialize annotation for data cursor
-        self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                          bbox=dict(boxstyle="round", fc="w"),
-                                          arrowprops=dict(arrowstyle="->"))
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
 
         self.annot.set_visible(False)
 
@@ -148,12 +176,26 @@ class Maptrack(object):
         # Shift annotation box left or right depending on which half of the axis the pos x is located and the
         # direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
@@ -161,18 +203,32 @@ class Maptrack(object):
         # Shift annotation box up or down depending on which half of the axis the pos y is located and the
         # direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
         self.annot.xy = pos
 
-        text = 'x: {:.2f}, y: {:.2f}'.format(pos[0], pos[1])
+        text = "x: {:.2f}, y: {:.2f}".format(pos[0], pos[1])
         self.annot.set_text(text)
 
     def set_hover_connection(self, setting):
@@ -185,10 +241,11 @@ class Maptrack(object):
         """
 
         if setting and self.hover_connection is None:
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None
             self.annot.set_visible(False)
             self.canvas.draw_idle()
-

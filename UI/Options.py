@@ -12,8 +12,7 @@ class Options(QtWidgets.QDialog, wOptions.Ui_Options):
     """
 
     def __init__(self, parent=None):
-        """Initialize options dialog.
-        """
+        """Initialize options dialog."""
         super(Options, self).__init__(parent)
         self.setupUi(self)
 

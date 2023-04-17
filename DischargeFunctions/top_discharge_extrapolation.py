@@ -20,24 +20,29 @@ import numpy as np
 from numba.pycc import CC
 from numba import njit
 
-cc = CC('top_discharge_extrapolation')
+cc = CC("top_discharge_extrapolation")
 
 
 # Top Discharge Extrapolation with Numba
 # ======================================
-@cc.export('extrapolate_top', 'f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
-                              'optional(i8), optional(f8))')
-def extrapolate_top(xprod,
-                    w_valid_data,
-                    transect_top_method,
-                    transect_exponent,
-                    in_transect_idx,
-                    depth_cell_size_m,
-                    depth_cell_depth_m,
-                    depth_processed_m,
-                    delta_t,
-                    top_method=-1,
-                    exponent=0.1667):
+@cc.export(
+    "extrapolate_top",
+    "f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], "
+    "optional(i8), optional(f8))",
+)
+def extrapolate_top(
+    xprod,
+    w_valid_data,
+    transect_top_method,
+    transect_exponent,
+    in_transect_idx,
+    depth_cell_size_m,
+    depth_cell_depth_m,
+    depth_processed_m,
+    delta_t,
+    top_method=-1,
+    exponent=0.1667,
+):
     """Computes the extrapolated top discharge.
 
     Parameters
@@ -76,7 +81,9 @@ def extrapolate_top(xprod,
         exponent = transect_exponent
 
     # Compute top variables
-    idx_top, idx_top3, top_rng = top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m)
+    idx_top, idx_top3, top_rng = top_variables(
+        xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m
+    )
     idx_top = idx_top[in_transect_idx]
     idx_top3 = idx_top3[:, in_transect_idx]
     top_rng = top_rng[in_transect_idx]
@@ -99,18 +106,42 @@ def extrapolate_top(xprod,
                 cell_depth[row, col] = np.nan
 
     # Compute top discharge
-    q_top = discharge_top(top_method, exponent, idx_top, idx_top3, top_rng,
-                          xprod[:, in_transect_idx], cell_size, cell_depth,
-                          depth_ens, delta_t, z)
+    q_top = discharge_top(
+        top_method,
+        exponent,
+        idx_top,
+        idx_top3,
+        top_rng,
+        xprod[:, in_transect_idx],
+        cell_size,
+        cell_depth,
+        depth_ens,
+        delta_t,
+        z,
+    )
 
     return q_top
 
 
 @njit
-@cc.export('discharge_top', 'f8[:](i8, f8, i4[:], i4[:, :], f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], '
-                            'f8[:], f8[:, :])')
-def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, cell_size, cell_depth,
-                  depth_ens, delta_t, z):
+@cc.export(
+    "discharge_top",
+    "f8[:](i8, f8, i4[:], i4[:, :], f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], "
+    "f8[:], f8[:, :])",
+)
+def discharge_top(
+    top_method,
+    exponent,
+    idx_top,
+    idx_top_3,
+    top_rng,
+    component,
+    cell_size,
+    cell_depth,
+    depth_ens,
+    delta_t,
+    z,
+):
     """Computes the top extrapolated value of the provided component.
 
     Parameters
@@ -172,8 +203,9 @@ def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, 
                     numerator = numerator + numerator_temp
 
                 # Compute the denominator
-                denominator_temp = ((z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)) \
-                                   - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
+                denominator_temp = (
+                    (z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)
+                ) - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
                 if np.logical_not(np.isnan(denominator_temp)) and denominator_temp != 0:
                     denominator_valid = True
                     denominator = denominator + denominator_temp
@@ -183,8 +215,11 @@ def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, 
                 coef[col] = (numerator * (1 + exponent)) / denominator
 
         # Compute the top discharge for each ensemble
-        top_value = delta_t * (coef / (exponent + 1)) * \
-            (depth_ens**(exponent + 1) - (depth_ens-top_rng)**(exponent + 1))
+        top_value = (
+            delta_t
+            * (coef / (exponent + 1))
+            * (depth_ens ** (exponent + 1) - (depth_ens - top_rng) ** (exponent + 1))
+        )
 
     # Top constant extrapolation
     elif top_method == 1:
@@ -222,22 +257,25 @@ def discharge_top(top_method, exponent, idx_top, idx_top_3, top_rng, component, 
                 for k in range(3):
                     if np.isnan(cell_depth[idx_top_3[k, j], j]) == False:
                         sumd = sumd + cell_depth[idx_top_3[k, j], j]
-                        sumd2 = sumd2 + cell_depth[idx_top_3[k, j], j]**2
+                        sumd2 = sumd2 + cell_depth[idx_top_3[k, j], j] ** 2
                         sumq = sumq + component[idx_top_3[k, j], j]
-                        sumqd = sumqd + (component[idx_top_3[k, j], j] * cell_depth[idx_top_3[k, j], j])
+                        sumqd = sumqd + (
+                            component[idx_top_3[k, j], j]
+                            * cell_depth[idx_top_3[k, j], j]
+                        )
                 delta = 3 * sumd2 - sumd**2
                 a = (3 * sumqd - sumq * sumd) / delta
                 b = (sumq * sumd2 - sumqd * sumd) / delta
 
                 # Compute discharge for 3-pt fit
-                qo = (a * top_rng[j]**2) / 2 + b * top_rng[j]
+                qo = (a * top_rng[j] ** 2) / 2 + b * top_rng[j]
                 top_value[j] = delta_t[j] * qo
 
     return top_value
 
 
 @njit
-@cc.export('top_variables', '(f8[:, :], b1[:, :], f8[:, :], f8[:, :])')
+@cc.export("top_variables", "(f8[:, :], b1[:, :], f8[:, :], f8[:, :])")
 def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
     """Computes the index to the top and top three valid cells in each ensemble and
     the range from the water surface to the top of the topmost cell.
@@ -286,7 +324,10 @@ def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
                 for k in range(3):
                     idx_top_3[k, n] = idx_temp[k]
             # Compute top range
-            top_rng[n] = depth_cell_depth_m[idx_top[n], n] - 0.5 * depth_cell_size_m[idx_top[n], n]
+            top_rng[n] = (
+                depth_cell_depth_m[idx_top[n], n]
+                - 0.5 * depth_cell_size_m[idx_top[n], n]
+            )
         else:
             top_rng[n] = 0
             idx_top[n] = 0
@@ -294,6 +335,6 @@ def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
     return idx_top, idx_top_3, top_rng
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Used to compile code
     cc.compile()

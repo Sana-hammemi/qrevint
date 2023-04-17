@@ -35,7 +35,7 @@ class Pd0TRDI(object):
     Nmea: Nmea
         Object of Nmea to hold Nmea data
     """
-    
+
     def __init__(self, file_name):
         """Constructor initializing instance variables.
 
@@ -44,7 +44,7 @@ class Pd0TRDI(object):
         file_name: str
             Full name including path of pd0 file to be read
         """
-        
+
         self.file_name = file_name
         self.Hdr = None
         self.Inst = None
@@ -57,10 +57,12 @@ class Pd0TRDI(object):
         self.Surface = None
         self.AutoMode = None
         self.Nmea = None
-        
+
         self.pd0_read(file_name)
-        
-    def create_objects(self, n_ensembles, n_types, n_bins, max_surface_bins, n_velocities, wr2=False):
+
+    def create_objects(
+        self, n_ensembles, n_types, n_bins, max_surface_bins, n_velocities, wr2=False
+    ):
         """Create objects for instance variables.
 
         Parameters
@@ -112,23 +114,23 @@ class Pd0TRDI(object):
 
             if file_info > 0:
                 # Open file for processing
-                with open(fullname, 'rb') as f:
+                with open(fullname, "rb") as f:
 
                     # Read leader ID
                     leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
                     # Leader ID 7f7f marks beginning of ensemble
-                    if leader_id != '0x7f7f':
-                        while leader_id != '0x7f7f':
+                    if leader_id != "0x7f7f":
+                        while leader_id != "0x7f7f":
                             f.seek(-1, 1)
                             leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
 
                     # Read header information
-                    initial_pos = f.tell()-2
+                    initial_pos = f.tell() - 2
                     bytes_per_ens = np.fromfile(f, dtype=np.uint16, count=1)[0]
                     f.seek(1, 1)
                     n_types = np.fromfile(f, np.uint8, count=1)[0]
                     offset = np.fromfile(f, np.uint16, count=1)[0]
-                    f.seek(initial_pos+offset+8, 0)
+                    f.seek(initial_pos + offset + 8, 0)
                     n_beams = np.fromfile(f, np.uint8, count=1)[0]
                     n_bins = np.fromfile(f, np.uint8, count=1)[0]
 
@@ -136,11 +138,13 @@ class Pd0TRDI(object):
                     n_ensembles = Pd0TRDI.number_of_ensembles(f, file_info)
 
                     # Create objects and pre-allocate arrays
-                    self.create_objects(n_ensembles=n_ensembles,
-                                        n_types=n_types,
-                                        n_bins=n_bins,
-                                        max_surface_bins=max_surface_bins,
-                                        n_velocities=n_velocities)
+                    self.create_objects(
+                        n_ensembles=n_ensembles,
+                        n_types=n_types,
+                        n_bins=n_bins,
+                        max_surface_bins=max_surface_bins,
+                        n_velocities=n_velocities,
+                    )
 
                     # Initialize counters and variables
                     i_ens = -1
@@ -161,17 +165,20 @@ class Pd0TRDI(object):
 
                         # Read leader ID
                         leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
-                        if i_data_types >= n_data_types and leader_id != '0x7f7f':
-                            leader_id = '0x9999'
+                        if i_data_types >= n_data_types and leader_id != "0x7f7f":
+                            leader_id = "0x9999"
 
                         # 7f7f marks the beginning of an ensemble
-                        if leader_id == '0x7f7f':
+                        if leader_id == "0x7f7f":
                             i2022 = 0
                             file_loc = f.tell() - 2
 
                             # Check for last ensemble in file
-                            if file_loc+bytes_per_ens > end_file and i_ens >= n_ensembles:
-                                end_file_check = end_file+1
+                            if (
+                                file_loc + bytes_per_ens > end_file
+                                and i_ens >= n_ensembles
+                            ):
+                                end_file_check = end_file + 1
 
                             else:
                                 # Process ensemble
@@ -181,24 +188,33 @@ class Pd0TRDI(object):
 
                                 # Check check_sum
                                 if self.check_sum(f, file_loc, bytes_per_ens):
-                                    f.seek(file_loc+5, 0)
+                                    f.seek(file_loc + 5, 0)
                                     n_data_types = np.fromfile(f, np.uint8, count=1)[0]
-                                    data_offsets = np.fromfile(f, np.uint16, count=n_data_types)
+                                    data_offsets = np.fromfile(
+                                        f, np.uint16, count=n_data_types
+                                    )
 
                                     # Find variable leader ID
-                                    while i_data_types+1 <= n_data_types and leader_id != '0x80':
-                                        f.seek(data_offsets[i_data_types]+file_loc, 0)
-                                        leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
+                                    while (
+                                        i_data_types + 1 <= n_data_types
+                                        and leader_id != "0x80"
+                                    ):
+                                        f.seek(data_offsets[i_data_types] + file_loc, 0)
+                                        leader_id = hex(
+                                            np.fromfile(f, np.uint16, count=1)[0]
+                                        )
                                         i_data_types += 1
 
                                     # Check for consecutive ensemble numbers
-                                    if i_ens > -1 and leader_id == '0x80':
+                                    if i_ens > -1 and leader_id == "0x80":
                                         ens_num = np.fromfile(f, np.uint16, count=1)[0]
                                         ens_num_diff = ens_num - self.Sensor.num[i_ens]
                                         if ens_num_diff > 1:
-                                            for nn in range(0, int(ens_num_diff-1)):
+                                            for nn in range(0, int(ens_num_diff - 1)):
                                                 if i_ens < n_ensembles:
-                                                    self.Sensor.num[i_ens] = self.Sensor.num[i_ens-1]+1
+                                                    self.Sensor.num[i_ens] = (
+                                                        self.Sensor.num[i_ens - 1] + 1
+                                                    )
                                                     i_ens += 1
                                         elif ens_num_diff < 1:
                                             i_ens -= 1
@@ -212,38 +228,57 @@ class Pd0TRDI(object):
                                 i_ens += 1
 
                                 # Read bytes in this ensemble
-                                self.Hdr.bytes_per_ens[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                                self.Hdr.bytes_per_ens[i_ens] = np.fromfile(
+                                    f, np.uint16, count=1
+                                )[0]
 
                                 # If checksum is valid read header data
-                                if self.check_sum(f, file_loc, int(self.Hdr.bytes_per_ens[i_ens])):
+                                if self.check_sum(
+                                    f, file_loc, int(self.Hdr.bytes_per_ens[i_ens])
+                                ):
 
                                     # Read number of data types
-                                    f.seek(file_loc+5, 0)
-                                    self.Hdr.n_data_types[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                                    f.seek(file_loc + 5, 0)
+                                    self.Hdr.n_data_types[i_ens] = np.fromfile(
+                                        f, np.uint8, count=1
+                                    )[0]
 
                                     # Read data offsets
-                                    test = np.fromfile(f, np.uint16, count=int(self.Hdr.n_data_types[i_ens]))
+                                    test = np.fromfile(
+                                        f,
+                                        np.uint16,
+                                        count=int(self.Hdr.n_data_types[i_ens]),
+                                    )
                                     if test.shape[0] > self.Hdr.data_offsets.shape[1]:
-                                        self.Hdr.data_offsets = np.resize(self.Hdr.data_offsets,
-                                                                          (n_ensembles, test.shape[0]))
-                                    self.Hdr.data_offsets[i_ens, 0:int(self.Hdr.n_data_types[i_ens])] = \
-                                        test[0:int(self.Hdr.n_data_types[i_ens])]
+                                        self.Hdr.data_offsets = np.resize(
+                                            self.Hdr.data_offsets,
+                                            (n_ensembles, test.shape[0]),
+                                        )
+                                    self.Hdr.data_offsets[
+                                        i_ens, 0 : int(self.Hdr.n_data_types[i_ens])
+                                    ] = test[0 : int(self.Hdr.n_data_types[i_ens])]
 
                                     # Check for end of data types
-                                    self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                                    self.end_reading(
+                                        f, file_loc, i_data_types, i_ens, bytes_per_ens
+                                    )
                                 else:
                                     self.bad_check_sum(f, file_loc)
                                     i_data_types = -1
 
                         # Read binary fixed leader data
-                        elif leader_id == '0x0':
+                        elif leader_id == "0x0":
                             # Update data types counter
                             i_data_types += 1
 
                             # Read and decode firmware version
-                            self.Inst.firm_ver[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Inst.firm_ver[i_ens] = self.Inst.firm_ver[i_ens] + \
-                                np.fromfile(f, np.uint8, count=1)[0] / 100
+                            self.Inst.firm_ver[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Inst.firm_ver[i_ens] = (
+                                self.Inst.firm_ver[i_ens]
+                                + np.fromfile(f, np.uint8, count=1)[0] / 100
+                            )
 
                             # Read and decode instrument characteristics
                             bitls = np.fromfile(f, np.uint8, count=1)[0]
@@ -267,29 +302,29 @@ class Pd0TRDI(object):
 
                             val = int(bitls[4], 2)
                             if val == 0:
-                                self.Inst.pat[i_ens] = 'Concave'
+                                self.Inst.pat[i_ens] = "Concave"
                             elif val == 1:
-                                self.Inst.pat[i_ens] = 'Convex'
+                                self.Inst.pat[i_ens] = "Convex"
                             else:
-                                self.Inst.pat[i_ens] = 'n/a'
+                                self.Inst.pat[i_ens] = "n/a"
 
                             self.Inst.sensor_CFG[i_ens] = int(bitls[2:3], 2) + 1
 
                             val = int(bitls[1], 2)
                             if val == 0:
-                                self.Inst.xducer[i_ens] = 'Not Attached'
+                                self.Inst.xducer[i_ens] = "Not Attached"
                             elif val == 1:
-                                self.Inst.xducer[i_ens] = 'Attached'
+                                self.Inst.xducer[i_ens] = "Attached"
                             else:
-                                self.Inst.xducer[i_ens] = 'n/a'
+                                self.Inst.xducer[i_ens] = "n/a"
 
                             val = int(bitls[0], 2)
                             if val == 0:
-                                self.Sensor.orient[i_ens] = 'Down'
+                                self.Sensor.orient[i_ens] = "Down"
                             elif val == 1:
-                                self.Sensor.orient[i_ens] = 'Up'
+                                self.Sensor.orient[i_ens] = "Up"
                             else:
-                                self.Sensor.orient[i_ens] = 'n/a'
+                                self.Sensor.orient[i_ens] = "n/a"
 
                             bitms = np.fromfile(f, np.uint8, count=1)[0]
                             bitms = "{0:08b}".format(bitms)
@@ -321,259 +356,418 @@ class Pd0TRDI(object):
 
                             val = np.fromfile(f, np.uint8, count=1)[0]
                             if val == 0:
-                                self.Inst.data_type[i_ens] = 'Real'
+                                self.Inst.data_type[i_ens] = "Real"
                             else:
-                                self.Inst.data_type[i_ens] = 'Simu'
+                                self.Inst.data_type[i_ens] = "Simu"
 
                             # Position file pointer and read configuration information
                             f.seek(1, 1)
-                            self.Cfg.n_beams[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Cfg.n_beams[i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
                             self.Cfg.wn[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.wp[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.ws_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.wf_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.Cfg.ws_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[
+                                0
+                            ]
+                            self.Cfg.wf_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[
+                                0
+                            ]
                             self.Cfg.wm[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.wc[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.code_reps[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.wg_per[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.we_mmps[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.tp_sec[i_ens] = np.sum(np.fromfile(f, np.uint8, count=3) * np.array([60, 1, 0.01]))
+                            self.Cfg.code_reps[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Cfg.wg_per[i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
+                            self.Cfg.we_mmps[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Cfg.tp_sec[i_ens] = np.sum(
+                                np.fromfile(f, np.uint8, count=3)
+                                * np.array([60, 1, 0.01])
+                            )
                             self.Cfg.ex[i_ens] = "{0:08b}".format(ord(f.read(1)))
 
                             val = int(self.Cfg.ex[i_ens][3:5], 2)
                             if val == 0:
-                                self.Cfg.coord_sys[i_ens] = 'Beam'
+                                self.Cfg.coord_sys[i_ens] = "Beam"
                             elif val == 1:
-                                self.Cfg.coord_sys[i_ens] = 'Inst'
+                                self.Cfg.coord_sys[i_ens] = "Inst"
                             elif val == 2:
-                                self.Cfg.coord_sys[i_ens] = 'Ship'
+                                self.Cfg.coord_sys[i_ens] = "Ship"
                             elif val == 3:
-                                self.Cfg.coord_sys[i_ens] = 'Earth'
+                                self.Cfg.coord_sys[i_ens] = "Earth"
                             else:
                                 self.Cfg.coord_sys[i_ens] = "N/a"
 
                             val = int(self.Cfg.ex[i_ens][5], 2)
                             if val == 0:
-                                self.Cfg.use_pr = 'No'
+                                self.Cfg.use_pr = "No"
                             elif val == 1:
-                                self.Cfg.use_pr = 'Yes'
+                                self.Cfg.use_pr = "Yes"
                             else:
-                                self.Cfg.use_pr = 'N/a'
+                                self.Cfg.use_pr = "N/a"
 
                             val = int(self.Cfg.ex[i_ens][6], 2)
                             if val == 0:
-                                self.Cfg.use_3beam = 'No'
+                                self.Cfg.use_3beam = "No"
                             elif val == 1:
-                                self.Cfg.use_3beam = 'Yes'
+                                self.Cfg.use_3beam = "Yes"
                             else:
-                                self.Cfg.use_3beam = 'N/a'
+                                self.Cfg.use_3beam = "N/a"
 
                             val = int(self.Cfg.ex[i_ens][7], 2)
                             if val == 0:
-                                self.Cfg.map_bins = 'No'
+                                self.Cfg.map_bins = "No"
                             elif val == 1:
-                                self.Cfg.map_bins = 'Yes'
+                                self.Cfg.map_bins = "Yes"
                             else:
-                                self.Cfg.map_bins = 'N/a'
+                                self.Cfg.map_bins = "N/a"
 
-                            self.Cfg.ea_deg[i_ens] = np.fromfile(f, np.int16, count=1)[0] * 0.01
-                            self.Cfg.eb_deg[i_ens] = np.fromfile(f, np.uint16, count=1)[0] * 0.01
-                            self.Cfg.ez[i_ens] = "{0:08b}".format(np.fromfile(f, np.uint8, count=1)[0])
+                            self.Cfg.ea_deg[i_ens] = (
+                                np.fromfile(f, np.int16, count=1)[0] * 0.01
+                            )
+                            self.Cfg.eb_deg[i_ens] = (
+                                np.fromfile(f, np.uint16, count=1)[0] * 0.01
+                            )
+                            self.Cfg.ez[i_ens] = "{0:08b}".format(
+                                np.fromfile(f, np.uint8, count=1)[0]
+                            )
 
                             val = int(self.Cfg.ez[i_ens][:2], 2)
                             if val == 0:
-                                self.Cfg.sos_src[i_ens] = 'Manual EC'
+                                self.Cfg.sos_src[i_ens] = "Manual EC"
                             elif val == 1:
-                                self.Cfg.sos_src[i_ens] = 'Calculated'
+                                self.Cfg.sos_src[i_ens] = "Calculated"
                             elif val == 3:
-                                self.Cfg.sos_src[i_ens] = 'SVSS Sensor'
+                                self.Cfg.sos_src[i_ens] = "SVSS Sensor"
                             else:
-                                self.Cfg.sos_src[i_ens] = 'N/a'
+                                self.Cfg.sos_src[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][2], 2)
                             if val == 0:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'Manual ED'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "Manual ED"
                             if val == 1:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'Sensor'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "Sensor"
                             else:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'N/a'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][3], 2)
                             if val == 0:
-                                self.Cfg.head_src[i_ens] = 'Manual EH'
+                                self.Cfg.head_src[i_ens] = "Manual EH"
                             if val == 1:
-                                self.Cfg.head_src[i_ens] = 'Int. Sensor'
+                                self.Cfg.head_src[i_ens] = "Int. Sensor"
                             else:
-                                self.Cfg.head_src[i_ens] = 'N/a'
+                                self.Cfg.head_src[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][4], 2)
                             if val == 0:
-                                self.Cfg.pitch_src[i_ens] = 'Manual EP'
+                                self.Cfg.pitch_src[i_ens] = "Manual EP"
                             if val == 1:
-                                self.Cfg.pitch_src[i_ens] = 'Int. Sensor'
+                                self.Cfg.pitch_src[i_ens] = "Int. Sensor"
                             else:
-                                self.Cfg.pitch_src[i_ens] = 'N/a'
+                                self.Cfg.pitch_src[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][5], 2)
                             if val == 0:
-                                self.Cfg.roll_src[i_ens] = 'Manual ER'
+                                self.Cfg.roll_src[i_ens] = "Manual ER"
                             if val == 1:
-                                self.Cfg.roll_src[i_ens] = 'Int. Sensor'
+                                self.Cfg.roll_src[i_ens] = "Int. Sensor"
                             else:
-                                self.Cfg.roll_src[i_ens] = 'N/a'
+                                self.Cfg.roll_src[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][6], 2)
                             if val == 0:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'Manual ES'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "Manual ES"
                             if val == 1:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'Int. Sensor'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "Int. Sensor"
                             else:
-                                self.Cfg.xdcr_dep_srs[i_ens] = 'N/a'
+                                self.Cfg.xdcr_dep_srs[i_ens] = "N/a"
 
                             val = int(self.Cfg.ez[i_ens][7], 2)
                             if val == 0:
-                                self.Cfg.temp_src[i_ens] = 'Manual ET'
+                                self.Cfg.temp_src[i_ens] = "Manual ET"
                             if val == 1:
-                                self.Cfg.temp_src[i_ens] = 'Int. Sensor'
+                                self.Cfg.temp_src[i_ens] = "Int. Sensor"
                             else:
-                                self.Cfg.temp_src[i_ens] = 'N/a'
+                                self.Cfg.temp_src[i_ens] = "N/a"
 
-                            self.Cfg.sensor_avail[i_ens] = "{0:08b}".format(np.fromfile(f, np.uint8, count=1)[0])
-                            self.Cfg.dist_bin1_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.xmit_pulse_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.ref_lay_str_cell[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.ref_lay_end_cell[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Cfg.sensor_avail[i_ens] = "{0:08b}".format(
+                                np.fromfile(f, np.uint8, count=1)[0]
+                            )
+                            self.Cfg.dist_bin1_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Cfg.xmit_pulse_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Cfg.ref_lay_str_cell[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Cfg.ref_lay_end_cell[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
                             self.Cfg.wa[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.cx[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.lag_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Cfg.cpu_ser_no[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Cfg.lag_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[
+                                0
+                            ]
+                            self.Cfg.cpu_ser_no[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
                             self.Cfg.wb[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.cq[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read variable leader data
-                        elif leader_id == '0x80':
+                        elif leader_id == "0x80":
                             # Update the data types counter
                             i_data_types += 1
 
                             # Read instrument clock and sensor data
-                            self.Sensor.num[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Sensor.date_not_y2k[i_ens, :] = np.fromfile(f, np.uint8, count=3)
-                            self.Sensor.time[i_ens, :] = np.fromfile(f, np.uint8, count=4)
-                            self.Sensor.num_fact[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.num_tot[i_ens] = self.Sensor.num[i_ens] + self.Sensor.num_fact[i_ens]*65535
-                            self.Sensor.bit_test[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Sensor.sos_mps[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Sensor.xdcr_depth_dm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Sensor.heading_deg[i_ens] = np.fromfile(f, np.uint16, count=1)[0] / 100.
-                            self.Sensor.pitch_deg[i_ens] = np.fromfile(f, np.int16, count=1)[0] / 100.
-                            self.Sensor.roll_deg[i_ens] = np.fromfile(f, np.int16, count=1)[0] / 100.
-                            self.Sensor.salinity_ppt[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Sensor.temperature_deg_c[i_ens] = np.fromfile(f, np.int16, count=1)[0] / 100.
-                            self.Sensor.mpt_msc[i_ens, :] = np.fromfile(f, np.uint8, count=3)
-                            self.Sensor.heading_std_dev_deg[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.pitch_std_dev_deg[i_ens] = np.fromfile(f, np.uint8, count=1)[0] / 10.
-                            self.Sensor.roll_std_dev_deg[i_ens] = np.fromfile(f, np.uint8, count=1) / 10.
-                            self.Sensor.xmit_current[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.xmit_voltage[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.ambient_temp[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.pressure_pos[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.pressure_neg[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.attitude_temp[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.attitude[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.contam_sensor[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.error_status_word[i_ens] = ["{0:08b}".format(x)
-                                                                    for x in np.fromfile(f, np.uint8, count=4)]
+                            self.Sensor.num[i_ens] = np.fromfile(f, np.uint16, count=1)[
+                                0
+                            ]
+                            self.Sensor.date_not_y2k[i_ens, :] = np.fromfile(
+                                f, np.uint8, count=3
+                            )
+                            self.Sensor.time[i_ens, :] = np.fromfile(
+                                f, np.uint8, count=4
+                            )
+                            self.Sensor.num_fact[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.num_tot[i_ens] = (
+                                self.Sensor.num[i_ens]
+                                + self.Sensor.num_fact[i_ens] * 65535
+                            )
+                            self.Sensor.bit_test[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Sensor.sos_mps[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Sensor.xdcr_depth_dm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Sensor.heading_deg[i_ens] = (
+                                np.fromfile(f, np.uint16, count=1)[0] / 100.0
+                            )
+                            self.Sensor.pitch_deg[i_ens] = (
+                                np.fromfile(f, np.int16, count=1)[0] / 100.0
+                            )
+                            self.Sensor.roll_deg[i_ens] = (
+                                np.fromfile(f, np.int16, count=1)[0] / 100.0
+                            )
+                            self.Sensor.salinity_ppt[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Sensor.temperature_deg_c[i_ens] = (
+                                np.fromfile(f, np.int16, count=1)[0] / 100.0
+                            )
+                            self.Sensor.mpt_msc[i_ens, :] = np.fromfile(
+                                f, np.uint8, count=3
+                            )
+                            self.Sensor.heading_std_dev_deg[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.pitch_std_dev_deg[i_ens] = (
+                                np.fromfile(f, np.uint8, count=1)[0] / 10.0
+                            )
+                            self.Sensor.roll_std_dev_deg[i_ens] = (
+                                np.fromfile(f, np.uint8, count=1) / 10.0
+                            )
+                            self.Sensor.xmit_current[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.xmit_voltage[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.ambient_temp[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.pressure_pos[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.pressure_neg[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.attitude_temp[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.attitude[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.contam_sensor[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.error_status_word[i_ens] = [
+                                "{0:08b}".format(x)
+                                for x in np.fromfile(f, np.uint8, count=4)
+                            ]
                             f.seek(2, 1)
-                            self.Sensor.pressure_pascal[i_ens] = np.fromfile(f, np.uint32, count=1)[0]
-                            self.Sensor.pressure_var_pascal[i_ens] = np.fromfile(f, np.uint32, count=1)[0]
+                            self.Sensor.pressure_pascal[i_ens] = np.fromfile(
+                                f, np.uint32, count=1
+                            )[0]
+                            self.Sensor.pressure_var_pascal[i_ens] = np.fromfile(
+                                f, np.uint32, count=1
+                            )[0]
 
                             f.seek(1, 1)
-                            self.Sensor.date_y2k[i_ens, :] = np.fromfile(f, np.uint8, count=4)
-                            self.Sensor.time_y2k[i_ens, :] = np.fromfile(f, np.uint8, count=4)
-                            self.Sensor.date[i_ens, :] = self.Sensor.date_not_y2k[i_ens, :]
-                            self.Sensor.date[i_ens, 0] = self.Sensor.date_y2k[i_ens, 0] * 100 + \
-                                self.Sensor.date_y2k[i_ens, 1]
-                            self.Cfg.lag_near_bottom[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Sensor.date_y2k[i_ens, :] = np.fromfile(
+                                f, np.uint8, count=4
+                            )
+                            self.Sensor.time_y2k[i_ens, :] = np.fromfile(
+                                f, np.uint8, count=4
+                            )
+                            self.Sensor.date[i_ens, :] = self.Sensor.date_not_y2k[
+                                i_ens, :
+                            ]
+                            self.Sensor.date[i_ens, 0] = (
+                                self.Sensor.date_y2k[i_ens, 0] * 100
+                                + self.Sensor.date_y2k[i_ens, 1]
+                            )
+                            self.Cfg.lag_near_bottom[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read water-tracking velocity data
-                        elif leader_id == '0x100':
+                        elif leader_id == "0x100":
                             # Update the data types counter
                             i_data_types += 1
 
                             if self.Cfg.wn[i_ens] > self.Wt.vel_mps.shape[1]:
-                                append = np.zeros([self.Wt.vel_mps.shape[0],
-                                                   int(self.Cfg.wn[i_ens] - self.Wt.vel_mps.shape[1]),
-                                                   self.Wt.vel_mps.shape[2]])
+                                append = np.zeros(
+                                    [
+                                        self.Wt.vel_mps.shape[0],
+                                        int(
+                                            self.Cfg.wn[i_ens]
+                                            - self.Wt.vel_mps.shape[1]
+                                        ),
+                                        self.Wt.vel_mps.shape[2],
+                                    ]
+                                )
                                 self.Wt.vel_mps = np.hstack([self.Wt.vel_mps, append])
 
-                            dummy = np.fromfile(f, np.int16, count=int(self.Cfg.wn[i_ens]*4))
-                            dummy = np.reshape(dummy, [int(self.Cfg.wn[i_ens]), n_velocities])
-                            self.Wt.vel_mps[:n_velocities, :int(self.Cfg.wn[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f, np.int16, count=int(self.Cfg.wn[i_ens] * 4)
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Cfg.wn[i_ens]), n_velocities]
+                            )
+                            self.Wt.vel_mps[
+                                :n_velocities, : int(self.Cfg.wn[i_ens]), i_ens
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read correlation magnitude
-                        elif leader_id == '0x200':
+                        elif leader_id == "0x200":
                             # Update the data types counter
                             i_data_types += 1
 
                             if self.Cfg.wn[i_ens] > self.Wt.corr.shape[1]:
-                                append = np.zeros([self.Wt.corr.shape[0],
-                                                   int(self.Cfg.wn[i_ens] - self.Wt.corr.shape[1]),
-                                                   self.Wt.corr.shape[2]])
+                                append = np.zeros(
+                                    [
+                                        self.Wt.corr.shape[0],
+                                        int(self.Cfg.wn[i_ens] - self.Wt.corr.shape[1]),
+                                        self.Wt.corr.shape[2],
+                                    ]
+                                )
                                 self.Wt.corr = np.hstack([self.Wt.corr, append])
 
-                            dummy = np.fromfile(f, np.uint8, count=int(self.Cfg.wn[i_ens]*4))
-                            dummy = np.reshape(dummy, [int(self.Cfg.wn[i_ens]), n_velocities])
-                            self.Wt.corr[:n_velocities, :int(self.Cfg.wn[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f, np.uint8, count=int(self.Cfg.wn[i_ens] * 4)
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Cfg.wn[i_ens]), n_velocities]
+                            )
+                            self.Wt.corr[
+                                :n_velocities, : int(self.Cfg.wn[i_ens]), i_ens
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read echo intensity
-                        elif leader_id == '0x300':
+                        elif leader_id == "0x300":
                             # Update the data types counter
                             i_data_types += 1
 
                             if self.Cfg.wn[i_ens] > self.Wt.rssi.shape[1]:
-                                append = np.zeros([self.Wt.rssi.shape[0],
-                                                   int(self.Cfg.wn[i_ens] - self.Wt.rssi.shape[1]),
-                                                   self.Wt.rssi.shape[2]])
+                                append = np.zeros(
+                                    [
+                                        self.Wt.rssi.shape[0],
+                                        int(self.Cfg.wn[i_ens] - self.Wt.rssi.shape[1]),
+                                        self.Wt.rssi.shape[2],
+                                    ]
+                                )
                                 self.Wt.rssi = np.hstack([self.Wt.rssi, append])
 
-                            dummy = np.fromfile(f, np.uint8, count=int(self.Cfg.wn[i_ens]*4))
-                            dummy = np.reshape(dummy, [int(self.Cfg.wn[i_ens]), n_velocities])
-                            self.Wt.rssi[:n_velocities, :int(self.Cfg.wn[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f, np.uint8, count=int(self.Cfg.wn[i_ens] * 4)
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Cfg.wn[i_ens]), n_velocities]
+                            )
+                            self.Wt.rssi[
+                                :n_velocities, : int(self.Cfg.wn[i_ens]), i_ens
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read percent-good data
-                        elif leader_id == '0x400':
+                        elif leader_id == "0x400":
                             # Update the data types counter
                             i_data_types += 1
 
                             if self.Cfg.wn[i_ens] > self.Wt.pergd.shape[1]:
-                                append = np.zeros([self.Wt.pergd.shape[0],
-                                                   int(self.Cfg.wn[i_ens] - self.Wt.pergd.shape[1]),
-                                                   self.Wt.pergd.shape[2]])
+                                append = np.zeros(
+                                    [
+                                        self.Wt.pergd.shape[0],
+                                        int(
+                                            self.Cfg.wn[i_ens] - self.Wt.pergd.shape[1]
+                                        ),
+                                        self.Wt.pergd.shape[2],
+                                    ]
+                                )
                                 self.Wt.pergd = np.hstack([self.Wt.pergd, append])
-                            dummy = np.fromfile(f, np.uint8, count=int(self.Cfg.wn[i_ens]*4))
-                            dummy = np.reshape(dummy, [int(self.Cfg.wn[i_ens]), n_velocities])
-                            self.Wt.pergd[:n_velocities, :int(self.Cfg.wn[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f, np.uint8, count=int(self.Cfg.wn[i_ens] * 4)
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Cfg.wn[i_ens]), n_velocities]
+                            )
+                            self.Wt.pergd[
+                                :n_velocities, : int(self.Cfg.wn[i_ens]), i_ens
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read bottom track data
-                        elif leader_id == '0x600':
+                        elif leader_id == "0x600":
                             # Update the data types counter
                             i_data_types += 1
 
@@ -584,10 +778,14 @@ class Pd0TRDI(object):
                             self.Cfg.ba[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.bg[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
                             self.Cfg.bm[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Cfg.be_mmps[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.Cfg.be_mmps[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
                             # Read winriver 10.06 format GPS data
-                            self.Gps.lat_deg[i_ens] = (np.fromfile(f, np.int32, count=1)[0]/2**31) * 180
+                            self.Gps.lat_deg[i_ens] = (
+                                np.fromfile(f, np.int32, count=1)[0] / 2**31
+                            ) * 180
 
                             # Read the Least Significant Bytes for beam depths
                             dummy = np.fromfile(f, np.uint16, count=4)
@@ -612,16 +810,20 @@ class Pd0TRDI(object):
                             # Read WinRiver 10.06 format GPS data
                             dummy = np.fromfile(f, np.uint16, count=1)[0]
                             if dummy != -32768:
-                                self.Gps.alt_m[i_ens] = (dummy-32768)/10
+                                self.Gps.alt_m[i_ens] = (dummy - 32768) / 10
                             else:
                                 self.Gps.altm[i_ens] = np.nan
 
                             long2 = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Gps.long_deg[i_ens] = ((long1+long2*2**16)/2**31)*180
+                            self.Gps.long_deg[i_ens] = (
+                                (long1 + long2 * 2**16) / 2**31
+                            ) * 180
                             if self.Gps.long_deg[i_ens] > 180:
                                 self.Gps.long_deg[i_ens] -= 360
 
-                            self.Bt.ext_depth_cm[i_ens] = np.fromfile(f, np.int16, count=1)[0]
+                            self.Bt.ext_depth_cm[i_ens] = np.fromfile(
+                                f, np.int16, count=1
+                            )[0]
                             dummy = np.fromfile(f, np.int16, count=1)[0]
                             if dummy != -32768:
                                 self.Gps.gga_vel_e_mps[i_ens] = dummy * -1 / 1000
@@ -657,27 +859,51 @@ class Pd0TRDI(object):
                                 self.Gps.gga_n_stats[i_ens] = dummy
 
                             f.seek(1, 1)
-                            self.Gps.gsa_sat[i_ens, 4] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Gps.gsa_sat[i_ens, 5] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Gps.gga_diff[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Gps.gsa_sat[i_ens, 4] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Gps.gsa_sat[i_ens, 5] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Gps.gga_diff[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
 
                             dummy = np.fromfile(f, np.uint8, count=1)[0]
                             if dummy != 0:
                                 self.Gps.gga_hdop[i_ens] = dummy / 10
 
-                            self.Gps.gsa_sat[i_ens, 0] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Gps.gsa_sat[i_ens, 1] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Gps.gsa_sat[i_ens, 2] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Gps.gsa_sat[i_ens, 3] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Gps.gsa_sat[i_ens, 0] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Gps.gsa_sat[i_ens, 1] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Gps.gsa_sat[i_ens, 2] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Gps.gsa_sat[i_ens, 3] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
 
                             # Read bx configuration setting
-                            self.Cfg.bx_dm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.Cfg.bx_dm[i_ens] = np.fromfile(f, np.uint16, count=1)[
+                                0
+                            ]
 
                             # Read bottom-tracking RSSI
-                            self.Bt.rssi[0, i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Bt.rssi[1, i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Bt.rssi[2, i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Bt.rssi[3, i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.Bt.rssi[0, i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
+                            self.Bt.rssi[1, i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
+                            self.Bt.rssi[2, i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
+                            self.Bt.rssi[3, i_ens] = np.fromfile(f, np.uint8, count=1)[
+                                0
+                            ]
 
                             # Read wj configuration setting
                             self.Cfg.wj[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
@@ -687,13 +913,15 @@ class Pd0TRDI(object):
                             rr_bt_depth_correction[0:4, i_ens] = dummy.T * 2e16 / 100
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Read  General NMEA Structure
                         # Data type '2022' contains sub data types the identify specfic NMEA
                         # 0183 data types that will be decoded. There may be multiple values
                         # for a single ensemble.
-                        elif leader_id == '0x2022':
+                        elif leader_id == "0x2022":
                             i2022 += 1
                             # Update the data types counter
                             i_data_types += 1
@@ -711,27 +939,49 @@ class Pd0TRDI(object):
 
                                 self.Gps2.gga_delta_time[i_ens, j100] = delta_time
 
-                                self.Gps2.gga_header[i_ens][j100] = ''.join([chr(x) for x in f.read(10)])
+                                self.Gps2.gga_header[i_ens][j100] = "".join(
+                                    [chr(x) for x in f.read(10)]
+                                )
 
                                 try:
-                                    temp = ''.join([chr(x) for x in f.read(10)])
-                                    self.Gps2.utc[i_ens, j100] = float(re.findall('^\d+\.\d+|\d+', temp)[0])
+                                    temp = "".join([chr(x) for x in f.read(10)])
+                                    self.Gps2.utc[i_ens, j100] = float(
+                                        re.findall("^\d+\.\d+|\d+", temp)[0]
+                                    )
                                 except ValueError:
                                     self.Gps2.utc[i_ens, j100] = np.nan
 
-                                self.Gps2.lat_deg[i_ens, j100] = np.fromfile(f, np.float64, count=1)[0]
+                                self.Gps2.lat_deg[i_ens, j100] = np.fromfile(
+                                    f, np.float64, count=1
+                                )[0]
                                 self.Gps2.lat_ref[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.lon_deg[i_ens, j100] = np.fromfile(f, np.float64, count=1)[0]
+                                self.Gps2.lon_deg[i_ens, j100] = np.fromfile(
+                                    f, np.float64, count=1
+                                )[0]
                                 self.Gps2.lon_ref[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.corr_qual[i_ens, j100] = np.fromfile(f, np.uint8, count=1)[0]
-                                self.Gps2.num_sats[i_ens, j100] = np.fromfile(f, np.uint8, count=1)[0]
-                                self.Gps2.hdop[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.alt[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.corr_qual[i_ens, j100] = np.fromfile(
+                                    f, np.uint8, count=1
+                                )[0]
+                                self.Gps2.num_sats[i_ens, j100] = np.fromfile(
+                                    f, np.uint8, count=1
+                                )[0]
+                                self.Gps2.hdop[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.alt[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.alt_unit[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.geoid[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.geoid[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.geoid_unit[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.d_gps_age[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.ref_stat_id[i_ens, j100] = np.fromfile(f, np.int16, count=0)[0]
+                                self.Gps2.d_gps_age[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.ref_stat_id[i_ens, j100] = np.fromfile(
+                                    f, np.int16, count=0
+                                )[0]
 
                             # VTG
                             elif specific_id == 101:
@@ -741,16 +991,32 @@ class Pd0TRDI(object):
                                     self.Gps2.vtg_expand(n_ensembles)
 
                                 self.Gps2.vtg_delta_time[i_ens, j101] = delta_time
-                                self.Gps2.vtg_header[i_ens][j101] = ''.join([chr(x) for x in f.read(10)])
-                                self.Gps2.course_true[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.true_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.course_mag[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.vtg_header[i_ens][j101] = "".join(
+                                    [chr(x) for x in f.read(10)]
+                                )
+                                self.Gps2.course_true[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.true_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
+                                self.Gps2.course_mag[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.mag_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.speed_knots[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.knots_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.speed_kph[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.speed_knots[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.knots_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
+                                self.Gps2.speed_kph[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.kph_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.mode_indicator[i_ens][j101] = chr(f.read(1)[0])
+                                self.Gps2.mode_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # Depth sounder
                             elif specific_id == 102:
@@ -760,13 +1026,23 @@ class Pd0TRDI(object):
                                     self.Gps2.dbt_expand(n_ensembles)
 
                                 self.Gps2.dbt_delta_time[i_ens, j102] = delta_time
-                                self.Gps2.dbt_header[i_ens][j102] = ''.join([chr(x) for x in f.read(10)])
-                                self.Gps2.depth_ft[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.dbt_header[i_ens][j102] = "".join(
+                                    [chr(x) for x in f.read(10)]
+                                )
+                                self.Gps2.depth_ft[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.ft_indicator[i_ens][j102] = chr(f.read(1)[0])
-                                self.Gps2.depth_m[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.depth_m[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.m_indicator[i_ens][j102] = chr(f.read(1)[0])
-                                self.Gps2.depth_fath[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.fath_indicator[i_ens][j102] = chr(f.read(1)[0])
+                                self.Gps2.depth_fath[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.fath_indicator[i_ens][j102] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # External heading
                             elif specific_id == 103:
@@ -776,9 +1052,15 @@ class Pd0TRDI(object):
                                     self.Gps2.hdt_expand(n_ensembles)
 
                                 self.Gps2.hdt_delta_time[i_ens, j103] = delta_time
-                                self.Gps2.hdt_header[i_ens][j103] = ''.join([chr(x) for x in f.read(10)])
-                                self.Gps2.heading_deg[i_ens, j103] = np.fromfile(f, np.double, count=1)[0]
-                                self.Gps2.h_true_indicator[i_ens][j103] = chr(f.read(1)[0])
+                                self.Gps2.hdt_header[i_ens][j103] = "".join(
+                                    [chr(x) for x in f.read(10)]
+                                )
+                                self.Gps2.heading_deg[i_ens, j103] = np.fromfile(
+                                    f, np.double, count=1
+                                )[0]
+                                self.Gps2.h_true_indicator[i_ens][j103] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # GGA
                             elif specific_id == 104:
@@ -789,30 +1071,51 @@ class Pd0TRDI(object):
 
                                 self.Gps2.gga_delta_time[i_ens, j100] = delta_time
                                 try:
-                                    self.Gps2.gga_header[i_ens][j100] = ''.join([chr(x) for x in f.read(7)])
+                                    self.Gps2.gga_header[i_ens][j100] = "".join(
+                                        [chr(x) for x in f.read(7)]
+                                    )
                                 except IndexError:
-                                    self.Gps2.gga_header[i_ens][j100] = '       '
+                                    self.Gps2.gga_header[i_ens][j100] = "       "
 
                                 try:
-                                    temp = ''.join([chr(x) for x in f.read(10)])
-                                    self.Gps2.utc[i_ens, j100] = \
-                                        float(re.findall('^\d+\.\d+|\d+', temp)[0])
+                                    temp = "".join([chr(x) for x in f.read(10)])
+                                    self.Gps2.utc[i_ens, j100] = float(
+                                        re.findall("^\d+\.\d+|\d+", temp)[0]
+                                    )
                                 except (ValueError, AttributeError, IndexError):
                                     self.Gps2.utc[i_ens, j100] = np.nan
 
-                                self.Gps2.lat_deg[i_ens, j100] = np.fromfile(f, np.float64, count=1)[0]
+                                self.Gps2.lat_deg[i_ens, j100] = np.fromfile(
+                                    f, np.float64, count=1
+                                )[0]
                                 self.Gps2.lat_ref[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.lon_deg[i_ens, j100] = np.fromfile(f, np.float64, count=1)[0]
+                                self.Gps2.lon_deg[i_ens, j100] = np.fromfile(
+                                    f, np.float64, count=1
+                                )[0]
                                 self.Gps2.lon_ref[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.corr_qual[i_ens, j100] = np.fromfile(f, np.uint8, count=1)[0]
-                                self.Gps2.num_sats[i_ens, j100] = np.fromfile(f, np.uint8, count=1)[0]
-                                self.Gps2.hdop[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.alt[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.corr_qual[i_ens, j100] = np.fromfile(
+                                    f, np.uint8, count=1
+                                )[0]
+                                self.Gps2.num_sats[i_ens, j100] = np.fromfile(
+                                    f, np.uint8, count=1
+                                )[0]
+                                self.Gps2.hdop[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.alt[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.alt_unit[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.geoid[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.geoid[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.geoid_unit[i_ens][j100] = chr(f.read(1)[0])
-                                self.Gps2.d_gps_age[i_ens, j100] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.ref_stat_id[i_ens, j100] = np.fromfile(f, np.int16, count=1)[0]
+                                self.Gps2.d_gps_age[i_ens, j100] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.ref_stat_id[i_ens, j100] = np.fromfile(
+                                    f, np.int16, count=1
+                                )[0]
 
                             # VTG
                             elif specific_id == 105:
@@ -822,16 +1125,32 @@ class Pd0TRDI(object):
                                     self.Gps2.vtg_expand(n_ensembles)
 
                                 self.Gps2.vtg_delta_time[i_ens, j101] = delta_time
-                                self.Gps2.vtg_header[i_ens][j101] = ''.join([chr(x) for x in f.read(7)])
-                                self.Gps2.course_true[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.true_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.course_mag[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.vtg_header[i_ens][j101] = "".join(
+                                    [chr(x) for x in f.read(7)]
+                                )
+                                self.Gps2.course_true[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.true_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
+                                self.Gps2.course_mag[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.mag_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.speed_knots[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.knots_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.speed_kph[i_ens, j101] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.speed_knots[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.knots_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
+                                self.Gps2.speed_kph[i_ens, j101] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.kph_indicator[i_ens][j101] = chr(f.read(1)[0])
-                                self.Gps2.mode_indicator[i_ens][j101] = chr(f.read(1)[0])
+                                self.Gps2.mode_indicator[i_ens][j101] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # Depth sounder
                             elif specific_id == 106:
@@ -841,13 +1160,23 @@ class Pd0TRDI(object):
                                     self.Gps2.dbt_expand(n_ensembles)
 
                                 self.Gps2.dbt_delta_time[i_ens, j102] = delta_time
-                                self.Gps2.dbt_header[i_ens][j102] = ''.join([chr(x) for x in f.read(7)])
-                                self.Gps2.depth_ft[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.dbt_header[i_ens][j102] = "".join(
+                                    [chr(x) for x in f.read(7)]
+                                )
+                                self.Gps2.depth_ft[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.ft_indicator[i_ens][j102] = chr(f.read(1)[0])
-                                self.Gps2.depth_m[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
+                                self.Gps2.depth_m[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
                                 self.Gps2.m_indicator[i_ens][j102] = chr(f.read(1)[0])
-                                self.Gps2.depth_fath[i_ens, j102] = np.fromfile(f, np.float32, count=1)[0]
-                                self.Gps2.fath_indicator[i_ens][j102] = chr(f.read(1)[0])
+                                self.Gps2.depth_fath[i_ens, j102] = np.fromfile(
+                                    f, np.float32, count=1
+                                )[0]
+                                self.Gps2.fath_indicator[i_ens][j102] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # External heading
                             elif specific_id == 107:
@@ -857,9 +1186,15 @@ class Pd0TRDI(object):
                                     self.Gps2.hdt_expand(n_ensembles)
 
                                 self.Gps2.hdt_delta_time[i_ens, j103] = delta_time
-                                self.Gps2.hdt_header[i_ens][j103] = ''.join([chr(x) for x in f.read(7)])
-                                self.Gps2.heading_deg[i_ens, j103] = np.fromfile(f, np.double, count=1)[0]
-                                self.Gps2.h_true_indicator[i_ens][j103] = chr(f.read(1)[0])
+                                self.Gps2.hdt_header[i_ens][j103] = "".join(
+                                    [chr(x) for x in f.read(7)]
+                                )
+                                self.Gps2.heading_deg[i_ens, j103] = np.fromfile(
+                                    f, np.double, count=1
+                                )[0]
+                                self.Gps2.h_true_indicator[i_ens][j103] = chr(
+                                    f.read(1)[0]
+                                )
 
                             # GGA
                             elif specific_id == 204:
@@ -868,10 +1203,10 @@ class Pd0TRDI(object):
                                 if j100 > self.Gps2.gga_delta_time.shape[1] - 1:
                                     self.Gps2.gga_expand(n_ensembles)
 
-                                temp = ''.join([chr(x) for x in f.read(msg_size)])
+                                temp = "".join([chr(x) for x in f.read(msg_size)])
                                 self.Gps2.gga_sentence[i_ens][j100] = temp
-                                temp_array = np.array(temp.split(','))
-                                temp_array[temp_array == '999.9'] = ''
+                                temp_array = np.array(temp.split(","))
+                                temp_array[temp_array == "999.9"] = ""
 
                                 try:
                                     self.Gps2.gga_delta_time[i_ens, j100] = delta_time
@@ -879,25 +1214,36 @@ class Pd0TRDI(object):
                                     self.Gps2.utc[i_ens, j100] = float(temp_array[1])
                                     lat_str = temp_array[2]
                                     lat_deg = float(lat_str[0:2])
-                                    lat_deg = lat_deg+float(lat_str[2:]) / 60
+                                    lat_deg = lat_deg + float(lat_str[2:]) / 60
                                     self.Gps2.lat_deg[i_ens, j100] = lat_deg
                                     self.Gps2.lat_ref[i_ens][j100] = temp_array[3]
                                     lon_str = temp_array[4]
                                     lon_num = float(lon_str)
                                     lon_deg = np.floor(lon_num / 100)
-                                    lon_deg = lon_deg + (((lon_num / 100.) - lon_deg) * 100.) / 60.
+                                    lon_deg = (
+                                        lon_deg
+                                        + (((lon_num / 100.0) - lon_deg) * 100.0) / 60.0
+                                    )
                                     self.Gps2.lon_deg[i_ens, j100] = lon_deg
                                     self.Gps2.lon_ref[i_ens][j100] = temp_array[5]
-                                    self.Gps2.corr_qual[i_ens, j100] = float(temp_array[6])
-                                    self.Gps2.num_sats[i_ens, j100] = float(temp_array[7])
+                                    self.Gps2.corr_qual[i_ens, j100] = float(
+                                        temp_array[6]
+                                    )
+                                    self.Gps2.num_sats[i_ens, j100] = float(
+                                        temp_array[7]
+                                    )
                                     self.Gps2.hdop[i_ens, j100] = float(temp_array[8])
                                     self.Gps2.alt[i_ens, j100] = float(temp_array[9])
                                     self.Gps2.alt_unit[i_ens][j100] = temp_array[10]
                                     self.Gps2.geoid[i_ens, j100] = temp_array[11]
                                     self.Gps2.geoid_unit[i_ens][j100] = temp_array[12]
-                                    self.Gps2.d_gps_age[i_ens, j100] = float(temp_array[13])
-                                    idx_star = temp_array[14].find('*')
-                                    self.Gps2.ref_stat_id[i_ens, j100] = float(temp_array[15][:idx_star])
+                                    self.Gps2.d_gps_age[i_ens, j100] = float(
+                                        temp_array[13]
+                                    )
+                                    idx_star = temp_array[14].find("*")
+                                    self.Gps2.ref_stat_id[i_ens, j100] = float(
+                                        temp_array[15][:idx_star]
+                                    )
 
                                 except (ValueError, EOFError, IndexError):
                                     pass
@@ -909,24 +1255,38 @@ class Pd0TRDI(object):
                                 if j101 > self.Gps2.vtg_delta_time.shape[1] - 1:
                                     self.Gps2.vtg_expand(n_ensembles)
 
-                                temp = ''.join([chr(x) for x in f.read(msg_size)])
+                                temp = "".join([chr(x) for x in f.read(msg_size)])
                                 self.Gps2.vtg_sentence[i_ens][j100] = temp
-                                temp_array = np.array(temp.split(','))
-                                temp_array[temp_array == '999.9'] = ''
+                                temp_array = np.array(temp.split(","))
+                                temp_array[temp_array == "999.9"] = ""
 
                                 try:
                                     self.Gps2.vtg_delta_time[i_ens, j101] = delta_time
                                     self.Gps2.vtg_header[i_ens][j101] = temp_array[0]
-                                    self.Gps2.course_true[i_ens, j101] = valid_number(temp_array[1])
-                                    self.Gps2.true_indicator[i_ens][j101] = temp_array[2]
-                                    self.Gps2.course_mag[i_ens, j101] = valid_number(temp_array[3])
+                                    self.Gps2.course_true[i_ens, j101] = valid_number(
+                                        temp_array[1]
+                                    )
+                                    self.Gps2.true_indicator[i_ens][j101] = temp_array[
+                                        2
+                                    ]
+                                    self.Gps2.course_mag[i_ens, j101] = valid_number(
+                                        temp_array[3]
+                                    )
                                     self.Gps2.mag_indicator[i_ens][j101] = temp_array[4]
-                                    self.Gps2.speed_knots[i_ens, j101] = valid_number(temp_array[5])
-                                    self.Gps2.knots_indicator[i_ens][j101] = temp_array[6]
-                                    self.Gps2.speed_kph[i_ens, j101] = valid_number(temp_array[7])
+                                    self.Gps2.speed_knots[i_ens, j101] = valid_number(
+                                        temp_array[5]
+                                    )
+                                    self.Gps2.knots_indicator[i_ens][j101] = temp_array[
+                                        6
+                                    ]
+                                    self.Gps2.speed_kph[i_ens, j101] = valid_number(
+                                        temp_array[7]
+                                    )
                                     self.Gps2.kph_indicator[i_ens][j101] = temp_array[8]
-                                    idx_star = temp_array[9].find('*')
-                                    self.Gps2.mode_indicator[i_ens][j101] = temp_array[9][:idx_star]
+                                    idx_star = temp_array[9].find("*")
+                                    self.Gps2.mode_indicator[i_ens][j101] = temp_array[
+                                        9
+                                    ][:idx_star]
 
                                 except (ValueError, EOFError, IndexError):
                                     pass
@@ -938,20 +1298,28 @@ class Pd0TRDI(object):
                                 if j102 > self.Gps2.dbt_delta_time.shape[1] - 1:
                                     self.Gps2.dbt_expand(n_ensembles)
 
-                                temp = ''.join([chr(x) for x in f.read(msg_size)])
-                                temp_array = np.array(temp.split(','))
-                                temp_array[temp_array == '999.9'] = ''
+                                temp = "".join([chr(x) for x in f.read(msg_size)])
+                                temp_array = np.array(temp.split(","))
+                                temp_array[temp_array == "999.9"] = ""
 
                                 try:
                                     self.Gps2.dbt_delta_time[i_ens, j102] = delta_time
                                     self.Gps2.dbt_header[i_ens][j102] = temp_array[0]
-                                    self.Gps2.depth_ft[i_ens, j102] = float(temp_array[1])
+                                    self.Gps2.depth_ft[i_ens, j102] = float(
+                                        temp_array[1]
+                                    )
                                     self.Gps2.ft_indicator[i_ens][j102] = temp_array[2]
-                                    self.Gps2.depth_m[i_ens, j102] = float(temp_array[3])
+                                    self.Gps2.depth_m[i_ens, j102] = float(
+                                        temp_array[3]
+                                    )
                                     self.Gps2.m_indicator[i_ens][j102] = temp_array[4]
-                                    self.Gps2.depth_fath[i_ens, j102] = float(temp_array[5])
-                                    idx_star = temp.find('*')
-                                    self.Gps2.fath_indicator[i_ens][j102] = temp_array[6][:idx_star]
+                                    self.Gps2.depth_fath[i_ens, j102] = float(
+                                        temp_array[5]
+                                    )
+                                    idx_star = temp.find("*")
+                                    self.Gps2.fath_indicator[i_ens][j102] = temp_array[
+                                        6
+                                    ][:idx_star]
 
                                 except (ValueError, EOFError, IndexError):
                                     pass
@@ -963,274 +1331,530 @@ class Pd0TRDI(object):
                                 if j103 > self.Gps2.hdt_delta_time.shape[1] - 1:
                                     self.Gps2.hdt_expand(n_ensembles)
 
-                                temp = ''.join([chr(x) for x in f.read(msg_size)])
-                                temp_array = np.array(temp.split(','))
-                                temp_array[temp_array == '999.9'] = ''
+                                temp = "".join([chr(x) for x in f.read(msg_size)])
+                                temp_array = np.array(temp.split(","))
+                                temp_array[temp_array == "999.9"] = ""
 
                                 try:
                                     self.Gps2.hdt_delta_time[i_ens, j103] = delta_time
                                     self.Gps2.hdt_header[i_ens][j103] = temp_array[0]
-                                    self.Gps2.heading_deg[i_ens, j103] = float(temp_array[1])
-                                    idx_star = temp.find('*')
-                                    self.Gps2.h_true_indicator[i_ens][j103] = temp_array[2][:idx_star]
+                                    self.Gps2.heading_deg[i_ens, j103] = float(
+                                        temp_array[1]
+                                    )
+                                    idx_star = temp.find("*")
+                                    self.Gps2.h_true_indicator[i_ens][
+                                        j103
+                                    ] = temp_array[2][:idx_star]
 
                                 except (ValueError, EOFError, IndexError):
                                     pass
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Raw NMEA dbt sentence
-                        elif leader_id == '0x2100':
+                        elif leader_id == "0x2100":
 
                             # Update data types counter
                             i_data_types += 1
 
                             # Reposition file pointer
-                            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types-1])+file_loc+4, 0)
+                            f.seek(
+                                int(self.Hdr.data_offsets[i_ens, i_data_types - 1])
+                                + file_loc
+                                + 4,
+                                0,
+                            )
 
                             # Determine the number of characters to read
                             if i_data_types < self.Hdr.n_data_types[i_ens]:
-                                num_2_read = self.Hdr.data_offsets[i_ens, i_data_types] \
-                                             - self.Hdr.data_offsets[i_ens, i_data_types - 1] - 4
+                                num_2_read = (
+                                    self.Hdr.data_offsets[i_ens, i_data_types]
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 4
+                                )
                             else:
-                                num_2_read = bytes_per_ens - self.Hdr.data_offsets[i_ens, i_data_types-1] - 6
+                                num_2_read = (
+                                    bytes_per_ens
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 6
+                                )
 
                             # Read DBT sentence
-                            self.Nmea.dbt[i_ens] = ''.join([chr(x) for x in f.read(int(num_2_read))])
+                            self.Nmea.dbt[i_ens] = "".join(
+                                [chr(x) for x in f.read(int(num_2_read))]
+                            )
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Raw NMEA gga sentence
-                        elif leader_id == '0x2101':
+                        elif leader_id == "0x2101":
                             # Update data types counter
                             i_data_types += 1
 
                             # Reposition file pointer
-                            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types-1])+file_loc+4, 0)
+                            f.seek(
+                                int(self.Hdr.data_offsets[i_ens, i_data_types - 1])
+                                + file_loc
+                                + 4,
+                                0,
+                            )
 
                             # Determine the number of characters to read
                             if i_data_types < self.Hdr.n_data_types[i_ens]:
-                                num_2_read = self.Hdr.data_offsets[i_ens, i_data_types] \
-                                             - self.Hdr.data_offsets[i_ens, i_data_types - 1] - 4
+                                num_2_read = (
+                                    self.Hdr.data_offsets[i_ens, i_data_types]
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 4
+                                )
                             else:
-                                num_2_read = bytes_per_ens - self.Hdr.data_offsets[i_ens, i_data_types-1] - 6
+                                num_2_read = (
+                                    bytes_per_ens
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 6
+                                )
 
                             # Read GGA sentence
-                            self.Nmea.gga[i_ens] = ''.join([chr(x) for x in f.read(int(num_2_read))])
+                            self.Nmea.gga[i_ens] = "".join(
+                                [chr(x) for x in f.read(int(num_2_read))]
+                            )
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Raw NMEA vtg sentence
-                        elif leader_id == '0x2102':
+                        elif leader_id == "0x2102":
                             # Update data types counter
                             i_data_types += 1
 
                             # Reposition file pointer
-                            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types-1])+file_loc+4, 0)
+                            f.seek(
+                                int(self.Hdr.data_offsets[i_ens, i_data_types - 1])
+                                + file_loc
+                                + 4,
+                                0,
+                            )
 
                             # Determine the number of characters to read
                             if i_data_types < self.Hdr.n_data_types[i_ens]:
-                                num_2_read = self.Hdr.data_offsets[i_ens, i_data_types] \
-                                             - self.Hdr.data_offsets[i_ens, i_data_types - 1] - 4
+                                num_2_read = (
+                                    self.Hdr.data_offsets[i_ens, i_data_types]
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 4
+                                )
                             else:
-                                num_2_read = bytes_per_ens - self.Hdr.data_offsets[i_ens, i_data_types-1] - 6
+                                num_2_read = (
+                                    bytes_per_ens
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 6
+                                )
 
                             # Read VTG sentence
-                            self.Nmea.vtg[i_ens] = ''.join([chr(x) for x in f.read(int(num_2_read))])
+                            self.Nmea.vtg[i_ens] = "".join(
+                                [chr(x) for x in f.read(int(num_2_read))]
+                            )
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Raw NMEA gsa sentence
-                        elif leader_id == '0x2103':
+                        elif leader_id == "0x2103":
                             # Update data types counter
                             i_data_types += 1
 
                             # Reposition file pointer
-                            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types-1])+file_loc+4, 0)
+                            f.seek(
+                                int(self.Hdr.data_offsets[i_ens, i_data_types - 1])
+                                + file_loc
+                                + 4,
+                                0,
+                            )
 
                             # Determine the number of characters to read
                             if i_data_types < self.Hdr.n_data_types[i_ens]:
-                                num_2_read = self.Hdr.data_offsets[i_ens, i_data_types] \
-                                             - self.Hdr.data_offsets[i_ens, i_data_types - 1] - 4
+                                num_2_read = (
+                                    self.Hdr.data_offsets[i_ens, i_data_types]
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 4
+                                )
                             else:
-                                num_2_read = bytes_per_ens - self.Hdr.data_offsets[i_ens, i_data_types-1] - 6
+                                num_2_read = (
+                                    bytes_per_ens
+                                    - self.Hdr.data_offsets[i_ens, i_data_types - 1]
+                                    - 6
+                                )
 
                             # Read GSA sentence
-                            self.Nmea.gsa[i_ens] = ''.join([chr(x) for x in f.read(int(num_2_read))])
+                            self.Nmea.gsa[i_ens] = "".join(
+                                [chr(x) for x in f.read(int(num_2_read))]
+                            )
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Surface cells: cell data
-                        elif leader_id == '0x10':
+                        elif leader_id == "0x10":
                             # Update data types counter
                             i_data_types += 1
 
-                            self.Surface.no_cells[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Surface.cell_size_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.Surface.dist_bin1_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.Surface.no_cells[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Surface.cell_size_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.Surface.dist_bin1_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Surface cells: velocity data
-                        elif leader_id == '0x110':
+                        elif leader_id == "0x110":
                             # Update data types counter
                             i_data_types += 1
 
-                            dummy = np.fromfile(f, np.int16, count=int((self.Surface.no_cells[i_ens]*4)))
-                            dummy = np.reshape(dummy, [int(self.Surface.no_cells[i_ens]), n_velocities])
-                            self.Surface.vel_mps[:n_velocities, :int(self.Surface.no_cells[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f,
+                                np.int16,
+                                count=int((self.Surface.no_cells[i_ens] * 4)),
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Surface.no_cells[i_ens]), n_velocities]
+                            )
+                            self.Surface.vel_mps[
+                                :n_velocities,
+                                : int(self.Surface.no_cells[i_ens]),
+                                i_ens,
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Surface cells: correlation magnitude
-                        elif leader_id == '0x210':
+                        elif leader_id == "0x210":
                             # Update data types counter
                             i_data_types += 1
 
-                            dummy = np.fromfile(f, np.uint8, count=int((self.Surface.no_cells[i_ens]*4)))
-                            dummy = np.reshape(dummy, [int(self.Surface.no_cells[i_ens]), n_velocities])
-                            self.Surface.corr[:n_velocities, :int(self.Surface.no_cells[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f,
+                                np.uint8,
+                                count=int((self.Surface.no_cells[i_ens] * 4)),
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Surface.no_cells[i_ens]), n_velocities]
+                            )
+                            self.Surface.corr[
+                                :n_velocities,
+                                : int(self.Surface.no_cells[i_ens]),
+                                i_ens,
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Surface cells: echo intensity
-                        elif leader_id == '0x310':
+                        elif leader_id == "0x310":
                             # Update data types counter
                             i_data_types += 1
 
-                            dummy = np.fromfile(f, np.uint8, count=int((self.Surface.no_cells[i_ens]*4)))
-                            dummy = np.reshape(dummy, [int(self.Surface.no_cells[i_ens]), n_velocities])
-                            self.Surface.rssi[:n_velocities, :int(self.Surface.no_cells[i_ens]), i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f,
+                                np.uint8,
+                                count=int((self.Surface.no_cells[i_ens] * 4)),
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Surface.no_cells[i_ens]), n_velocities]
+                            )
+                            self.Surface.rssi[
+                                :n_velocities,
+                                : int(self.Surface.no_cells[i_ens]),
+                                i_ens,
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Surface cells: percent good
-                        elif leader_id == '0x410':
+                        elif leader_id == "0x410":
                             # Update data types counter
                             i_data_types += 1
 
-                            dummy = np.fromfile(f, np.uint8, count=int((self.Surface.no_cells[i_ens]*4)))
-                            dummy = np.reshape(dummy, [int(self.Surface.no_cells[i_ens]), n_velocities])
-                            self.Surface.pergd[:n_velocities, :self.Surface.no_cells[i_ens], i_ens] = dummy.T
+                            dummy = np.fromfile(
+                                f,
+                                np.uint8,
+                                count=int((self.Surface.no_cells[i_ens] * 4)),
+                            )
+                            dummy = np.reshape(
+                                dummy, [int(self.Surface.no_cells[i_ens]), n_velocities]
+                            )
+                            self.Surface.pergd[
+                                :n_velocities, : self.Surface.no_cells[i_ens], i_ens
+                            ] = dummy.T
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Undefined data skipped
-                        elif leader_id == '0x510':
+                        elif leader_id == "0x510":
                             # Update data types counter
                             i_data_types += 1
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         #  Automatic mode configuration
-                        elif leader_id == '0x4401':
+                        elif leader_id == "0x4401":
                             # Update data types counter
                             i_data_types += 1
 
-                            self.AutoMode.beam_count[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.AutoMode.beam_count[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
 
-                            self.AutoMode.Beam1.mode[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.depth_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.ping_count[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.ping_type[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.cell_count[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.cell_size_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.cell_mid_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.code_repeat[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.trans_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.lag_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam1.transmit_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.receive_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam1.ping_interval_ms[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.AutoMode.Beam1.mode[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.depth_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.ping_count[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.ping_type[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.cell_count[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.cell_size_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.cell_mid_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.code_repeat[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.trans_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.lag_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam1.transmit_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.receive_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam1.ping_interval_ms[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
-                            self.AutoMode.Beam2.mode[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.depth_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.ping_count[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.ping_type[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.cell_count[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.cell_size_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.cell_mid_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.code_repeat[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.trans_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.lag_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam2.transmit_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.receive_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam2.ping_interval_ms[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.AutoMode.Beam2.mode[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.depth_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.ping_count[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.ping_type[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.cell_count[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.cell_size_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.cell_mid_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.code_repeat[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.trans_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.lag_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam2.transmit_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.receive_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam2.ping_interval_ms[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
-                            self.AutoMode.Beam3.mode[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.depth_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.ping_count[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.ping_type[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.cell_count[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.cell_size_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.cell_mid_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.code_repeat[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.trans_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.lag_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam3.transmit_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.receive_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam3.ping_interval_ms[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.AutoMode.Beam3.mode[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.depth_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.ping_count[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.ping_type[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.cell_count[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.cell_size_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.cell_mid_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.code_repeat[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.trans_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.lag_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam3.transmit_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.receive_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam3.ping_interval_ms[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
-                            self.AutoMode.Beam4.mode[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.depth_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.ping_count[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.ping_type[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.cell_count[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.cell_size_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.cell_mid_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.code_repeat[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.trans_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.lag_length_cm[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
-                            self.AutoMode.Beam4.transmit_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.receive_bw[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.AutoMode.Beam4.ping_interval_ms[i_ens] = np.fromfile(f, np.uint16, count=1)[0]
+                            self.AutoMode.Beam4.mode[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.depth_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.ping_count[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.ping_type[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.cell_count[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.cell_size_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.cell_mid_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.code_repeat[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.trans_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.lag_length_cm[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
+                            self.AutoMode.Beam4.transmit_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.receive_bw[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.AutoMode.Beam4.ping_interval_ms[i_ens] = np.fromfile(
+                                f, np.uint16, count=1
+                            )[0]
 
-                            self.AutoMode.Reserved[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
+                            self.AutoMode.Reserved[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Vertical beam
-                        elif leader_id == '0x4100':
+                        elif leader_id == "0x4100":
                             # Update data types counter
                             i_data_types += 1
 
-                            self.Sensor.vert_beam_eval_amp[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.vert_beam_RSSI_amp[i_ens] = np.fromfile(f, np.uint8, count=1)[0]
-                            self.Sensor.vert_beam_range_m[i_ens] = np.fromfile(f, np.uint32, count=1)[0] / 1000
-                            temp = "{0:08b}".format(np.fromfile(f, np.uint8, count=1)[0])
+                            self.Sensor.vert_beam_eval_amp[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.vert_beam_RSSI_amp[i_ens] = np.fromfile(
+                                f, np.uint8, count=1
+                            )[0]
+                            self.Sensor.vert_beam_range_m[i_ens] = (
+                                np.fromfile(f, np.uint32, count=1)[0] / 1000
+                            )
+                            temp = "{0:08b}".format(
+                                np.fromfile(f, np.uint8, count=1)[0]
+                            )
                             self.Sensor.vert_beam_status[i_ens] = int(temp[6:], 2)
-                            if temp[5] == '0':
-                                self.Sensor.vert_beam_gain[i_ens] = 'L'
+                            if temp[5] == "0":
+                                self.Sensor.vert_beam_gain[i_ens] = "L"
                             else:
-                                self.Sensor.vert_beam_gain[i_ens] = 'H'
+                                self.Sensor.vert_beam_gain[i_ens] = "H"
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         # Transformation matrix
-                        elif leader_id == '0x3200':
+                        elif leader_id == "0x3200":
                             # Update data types counter
                             i_data_types += 1
 
-                            self.Inst.t_matrix[0, :] = np.fromfile(f, np.int16, count=4) * .0001
-                            self.Inst.t_matrix[1, :] = np.fromfile(f, np.int16, count=4) * .0001
-                            self.Inst.t_matrix[2, :] = np.fromfile(f, np.int16, count=4) * .0001
-                            self.Inst.t_matrix[3, :] = np.fromfile(f, np.int16, count=4) * .0001
+                            self.Inst.t_matrix[0, :] = (
+                                np.fromfile(f, np.int16, count=4) * 0.0001
+                            )
+                            self.Inst.t_matrix[1, :] = (
+                                np.fromfile(f, np.int16, count=4) * 0.0001
+                            )
+                            self.Inst.t_matrix[2, :] = (
+                                np.fromfile(f, np.int16, count=4) * 0.0001
+                            )
+                            self.Inst.t_matrix[3, :] = (
+                                np.fromfile(f, np.int16, count=4) * 0.0001
+                            )
 
                             # Check if more data types need to be read and position the pointer
-                            self.end_reading(f, file_loc, i_data_types, i_ens, bytes_per_ens)
+                            self.end_reading(
+                                f, file_loc, i_data_types, i_ens, bytes_per_ens
+                            )
 
                         else:
 
@@ -1241,33 +1865,49 @@ class Pd0TRDI(object):
                             # Find next leader ID
                             if (i_data_types + 1) <= self.Hdr.n_data_types[i_ens]:
                                 # Reposition file pointer for next data type
-                                f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types])+file_loc, 0)
+                                f.seek(
+                                    int(self.Hdr.data_offsets[i_ens, i_data_types])
+                                    + file_loc,
+                                    0,
+                                )
                             else:
                                 if f.tell() < end_file:
                                     # Locate next ensemble if no more data types
-                                    if i_data_types + 1 > self.Hdr.n_data_types[i_ens] + 1:
+                                    if (
+                                        i_data_types + 1
+                                        > self.Hdr.n_data_types[i_ens] + 1
+                                    ):
                                         current_loc = f.tell()
-                                        srch_string = struct.unpack('B'*(end_file-current_loc),
-                                                                    f.read(end_file-current_loc))
-                                        hex_string = ''.join([hex(x) for x in srch_string])
+                                        srch_string = struct.unpack(
+                                            "B" * (end_file - current_loc),
+                                            f.read(end_file - current_loc),
+                                        )
+                                        hex_string = "".join(
+                                            [hex(x) for x in srch_string]
+                                        )
 
-                                        next_ens = hex_string.find('0x7f7f')
+                                        next_ens = hex_string.find("0x7f7f")
                                         if next_ens > 0:
                                             next_ens = int((next_ens - 1) / 2)
-                                            f.seek(current_loc+next_ens, 0)
+                                            f.seek(current_loc + next_ens, 0)
                                             i_data_types = 0
                                         else:
                                             end_file_check = end_file + 1
 
                                     else:
-                                        f.seek(file_loc+bytes_per_ens-2, 0)
+                                        f.seek(file_loc + bytes_per_ens - 2, 0)
 
                         # If all data types have been read, read last two bytes of ensemble
                         if i_ens <= len(self.Hdr.n_data_types):
-                            if i_data_types >= self.Hdr.n_data_types[i_ens] and f.tell() <= end_file:
+                            if (
+                                i_data_types >= self.Hdr.n_data_types[i_ens]
+                                and f.tell() <= end_file
+                            ):
 
                                 try:
-                                    self.Inst.res_RDI = np.fromfile(f, np.uint16, count=1)[0]
+                                    self.Inst.res_RDI = np.fromfile(
+                                        f, np.uint16, count=1
+                                    )[0]
                                     # Read checksum but not used
                                     _ = np.fromfile(f, np.uint16, count=1)[0]
                                 except (ValueError, EOFError, IndexError):
@@ -1296,7 +1936,9 @@ class Pd0TRDI(object):
 
                     # Correct Bt.depth_m for RiverRay data
                     if not np.isnan(rr_bt_depth_correction).any():
-                        rr_bt_depth_correction[rr_bt_depth_correction == (-32768 * 2e16) / 100] = np.nan
+                        rr_bt_depth_correction[
+                            rr_bt_depth_correction == (-32768 * 2e16) / 100
+                        ] = np.nan
                         self.Bt.depth_m += rr_bt_depth_correction
 
                     # Remove bad data from Surface structure (RR), convert where needed
@@ -1310,7 +1952,7 @@ class Pd0TRDI(object):
                     if wr2:
 
                         # If vtg data are available compute north and east components
-                        if self.Gps2.vtg_header[0, 0] == '$':
+                        if self.Gps2.vtg_header[0, 0] == "$":
 
                             # Find minimum of absolute value of delta time from raw data
                             vtg_delta_time = np.abs(self.Gps2.vtg_delta_time)
@@ -1319,11 +1961,15 @@ class Pd0TRDI(object):
                             # Compute the velocity components in m/s
                             for i in range(len(vtg_delta_time)):
                                 idx = np.where(vtg_delta_time == vtg_min)[0][0]
-                                self.Gps2.vtg_velE_mps[i], self.Gps2.vtg_velN_mps[i] = \
-                                    pol2cart((90 - self.Gps2.course_true[i, idx])*np.pi/180,
-                                             self.Gps2.speed_kph[i, idx] * 0.2777778)
+                                (
+                                    self.Gps2.vtg_velE_mps[i],
+                                    self.Gps2.vtg_velN_mps[i],
+                                ) = pol2cart(
+                                    (90 - self.Gps2.course_true[i, idx]) * np.pi / 180,
+                                    self.Gps2.speed_kph[i, idx] * 0.2777778,
+                                )
 
-                        if self.Gps2.gga_header[0, 0] == '$':
+                        if self.Gps2.gga_header[0, 0] == "$":
 
                             # Initialize constants
                             e_radius = 6378137
@@ -1338,15 +1984,35 @@ class Pd0TRDI(object):
                             for i in range(len(gga_delta_time)):
                                 idx = np.where(gga_delta_time[i:] == gga_min)
                                 if idx > 0:
-                                    lat_avg_rad = (self.Gps2.lat_deg[i, idx[i]]
-                                                   + self.Gps2.lat_deg[i - 1, idx[i - 1]]) / 2
+                                    lat_avg_rad = (
+                                        self.Gps2.lat_deg[i, idx[i]]
+                                        + self.Gps2.lat_deg[i - 1, idx[i - 1]]
+                                    ) / 2
                                     sin_lat_avg_rad = np.sin(np.deg2rad(lat_avg_rad))
-                                    r_e = coeff * (1 + ellip * sin_lat_avg_rad * sin_lat_avg_rad)
-                                    rn = coeff * (1 - 2 * ellip + 3 * ellip * sin_lat_avg_rad * sin_lat_avg_rad)
-                                    dx = r_e * (self.Gps2.lon_deg[i, idx[i]] -
-                                                self.Gps2.lon_deg(i-1, idx[i-1])) * np.cos(np.deg2rad(lat_avg_rad))
-                                    dy = rn * (self.Gps2.lat_deg[i, idx[i]] - self.Gps2.lat_deg[i - 1, idx[i - 1]])
-                                    dt = self.Gps2.utc[i, idx[i]] - self.Gps2.utc[i-1, idx[i-1]]
+                                    r_e = coeff * (
+                                        1 + ellip * sin_lat_avg_rad * sin_lat_avg_rad
+                                    )
+                                    rn = coeff * (
+                                        1
+                                        - 2 * ellip
+                                        + 3 * ellip * sin_lat_avg_rad * sin_lat_avg_rad
+                                    )
+                                    dx = (
+                                        r_e
+                                        * (
+                                            self.Gps2.lon_deg[i, idx[i]]
+                                            - self.Gps2.lon_deg(i - 1, idx[i - 1])
+                                        )
+                                        * np.cos(np.deg2rad(lat_avg_rad))
+                                    )
+                                    dy = rn * (
+                                        self.Gps2.lat_deg[i, idx[i]]
+                                        - self.Gps2.lat_deg[i - 1, idx[i - 1]]
+                                    )
+                                    dt = (
+                                        self.Gps2.utc[i, idx[i]]
+                                        - self.Gps2.utc[i - 1, idx[i - 1]]
+                                    )
                                     self.Gps2.gga_velE_mps[i] = dx / dt
                                     self.Gps2.gga_velN_mps[i] = dy / dt
                                 else:
@@ -1371,10 +2037,10 @@ class Pd0TRDI(object):
         """
 
         i = 0
-        leader_id = '0000'
-            
+        leader_id = "0000"
+
         # Find the first ensemble
-        while leader_id != '0x7f7f' and i < f_size:
+        while leader_id != "0x7f7f" and i < f_size:
             f.seek(i, 0)
             i = i + 1
             leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
@@ -1384,11 +2050,11 @@ class Pd0TRDI(object):
 
         # Find last ensemble
         i = 0
-        leader_id = '0000'
+        leader_id = "0000"
         last_num = -1
-        
+
         while last_num < 0:
-            while leader_id != '0x7f7f' and i < f_size:
+            while leader_id != "0x7f7f" and i < f_size:
                 i = i + 1
                 f.seek(-i, 2)
 
@@ -1400,9 +2066,9 @@ class Pd0TRDI(object):
             last_num = Pd0TRDI.find_ens_no(f)
             if last_num is None or np.isnan(last_num):
                 last_num = -1
-            
-            leader_id = '0000'
-        n_ensembles = last_num-first_num+1
+
+            leader_id = "0000"
+        n_ensembles = last_num - first_num + 1
 
         return n_ensembles
 
@@ -1431,7 +2097,7 @@ class Pd0TRDI(object):
             if Pd0TRDI.check_sum(f, fileloc):
 
                 # Read header information
-                f.seek(fileloc+5, 0)
+                f.seek(fileloc + 5, 0)
                 n_data_types = np.fromfile(f, np.uint8, count=1)[0]
                 data_offsets = []
                 for x in range(n_data_types):
@@ -1439,17 +2105,17 @@ class Pd0TRDI(object):
 
                 # Initialize variables
                 i = 0
-                leader_id = '0000'
+                leader_id = "0000"
 
                 # Search for 0x80
-                while leader_id != '0x80' and i < n_data_types:
+                while leader_id != "0x80" and i < n_data_types:
 
-                    f.seek(data_offsets[i]+fileloc, 0)
+                    f.seek(data_offsets[i] + fileloc, 0)
                     leader_id = hex(np.fromfile(f, np.uint16, count=1)[0])
                     i = i + 1
-                    
+
                 # Read ensemble number from data type 0x80
-                if leader_id == '0x80':
+                if leader_id == "0x80":
                     ensemble_num = np.fromfile(f, np.uint16, count=1)[0]
 
             else:
@@ -1478,42 +2144,42 @@ class Pd0TRDI(object):
         """
 
         try:
-             
+
             if bytes_per_ens is None:
-                bytes_per_ens = np.fromfile(f, np.uint16, count=1)[0] 
+                bytes_per_ens = np.fromfile(f, np.uint16, count=1)[0]
             # Go to file location from the beginning of file
             f.seek(fileloc, 0)
-              
+
             # Read in the values for all of the bytes an get a check sum
             test_b = []
             x = f.read(bytes_per_ens)
             for y in x:
                 test_b.append(y)
-                  
+
             check_sum = sum(test_b)
             check_h = hex(check_sum)[2:]
-              
+
             # Check for a hex that is greater than 4 (including L indicator at the end)
             if len(check_h) > 4:
-                  
+
                 # Seek to location of check sum and compared to computed
-                if check_h[-1] == 'L':
+                if check_h[-1] == "L":
                     check_h = check_h[:-1]
-                      
-                f.seek(fileloc+bytes_per_ens, 0)
-                check_sum = np.fromfile(f, np.uint16, count=1)[0]  
-                if int('0x'+check_h[1:], 16) == check_sum:
+
+                f.seek(fileloc + bytes_per_ens, 0)
+                check_sum = np.fromfile(f, np.uint16, count=1)[0]
+                if int("0x" + check_h[1:], 16) == check_sum:
                     return True
                 else:
                     return False
             elif len(check_h) > 3:
                 # Seek to location of check sum and compared to computed
-                if check_h[-1] == 'L':
+                if check_h[-1] == "L":
                     check_h = check_h[:-1]
-                      
-                f.seek(fileloc+bytes_per_ens, 0)
-                check_sum = np.fromfile(f, np.uint16, count=1)[0]  
-                if int('0x'+check_h, 16) == check_sum:
+
+                f.seek(fileloc + bytes_per_ens, 0)
+                check_sum = np.fromfile(f, np.uint16, count=1)[0]
+                if int("0x" + check_h, 16) == check_sum:
                     return True
                 else:
                     return False
@@ -1534,9 +2200,9 @@ class Pd0TRDI(object):
             Location in file
         """
 
-        search_id = '    '
-        search_loc = file_loc+2
-        while search_id != '0x7f7f':
+        search_id = "    "
+        search_loc = file_loc + 2
+        while search_id != "0x7f7f":
             f.seek(search_loc, 0)
             search_loc += 1
             try:
@@ -1544,7 +2210,7 @@ class Pd0TRDI(object):
             except (ValueError, EOFError):
                 continue
         f.seek(search_loc, 0)
-        
+
     def end_reading(self, f, file_loc, i_data_types, i_ens, bytes_per_ens):
         """Checks if more data types need to be read and position file pointer.
 
@@ -1563,9 +2229,9 @@ class Pd0TRDI(object):
 
         """
         if i_data_types + 1 <= self.Hdr.n_data_types[i_ens]:
-            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types])+file_loc, 0)
+            f.seek(int(self.Hdr.data_offsets[i_ens, i_data_types]) + file_loc, 0)
         else:
-            f.seek(file_loc+bytes_per_ens-2, 0)
+            f.seek(file_loc + bytes_per_ens - 2, 0)
 
 
 class Hdr(object):
@@ -1599,7 +2265,7 @@ class Hdr(object):
         self.data_offsets = nans([n_ensembles, n_types])
         self.n_data_types = nans(n_ensembles)
         self.data_ok = nans(n_ensembles)
-        self.invalid = [''] * n_ensembles
+        self.invalid = [""] * n_ensembles
 
 
 class Inst(object):
@@ -1641,13 +2307,13 @@ class Inst(object):
         """
         self.beam_ang = nans(n_ensembles)
         self.beams = nans(n_ensembles)
-        self.data_type = [''] * n_ensembles
+        self.data_type = [""] * n_ensembles
         self.firm_ver = nans(n_ensembles)
         self.freq = nans(n_ensembles)
-        self.pat = [''] * n_ensembles
+        self.pat = [""] * n_ensembles
         self.res_RDI = 0
         self.sensor_CFG = nans(n_ensembles)
-        self.xducer = [''] * n_ensembles
+        self.xducer = [""] * n_ensembles
         self.t_matrix = np.tile([np.nan], [4, 4])
         self.demod = nans(n_ensembles)
 
@@ -1900,31 +2566,31 @@ class Cfg(object):
         self.bp = nans(n_ensembles)
         self.bx_dm = nans(n_ensembles)
         self.code_reps = nans(n_ensembles)
-        self.coord_sys = [''] * n_ensembles
+        self.coord_sys = [""] * n_ensembles
         self.cpu_ser_no = nans([n_ensembles, 8])
         self.cq = nans(n_ensembles)
         self.cx = nans(n_ensembles)
         self.dist_bin1_cm = nans(n_ensembles)
         self.ea_deg = nans(n_ensembles)
         self.eb_deg = nans(n_ensembles)
-        self.sensor_avail = [''] * n_ensembles
-        self.ex = [''] * n_ensembles
-        self.ez = [''] * n_ensembles
-        self.head_src = [''] * n_ensembles
+        self.sensor_avail = [""] * n_ensembles
+        self.ex = [""] * n_ensembles
+        self.ez = [""] * n_ensembles
+        self.head_src = [""] * n_ensembles
         self.lag_cm = nans(n_ensembles)
-        self.map_bins = [''] * n_ensembles
+        self.map_bins = [""] * n_ensembles
         self.n_beams = nans(n_ensembles)
-        self.pitch_src = [''] * n_ensembles
+        self.pitch_src = [""] * n_ensembles
         self.ref_lay_end_cell = nans(n_ensembles)
         self.ref_lay_str_cell = nans(n_ensembles)
-        self.roll_src = [''] * n_ensembles
-        self.sal_src = [''] * n_ensembles
+        self.roll_src = [""] * n_ensembles
+        self.sal_src = [""] * n_ensembles
         self.wm = nans(n_ensembles)
-        self.sos_src = [''] * n_ensembles
-        self.temp_src = [''] * n_ensembles
+        self.sos_src = [""] * n_ensembles
+        self.temp_src = [""] * n_ensembles
         self.tp_sec = nans(n_ensembles)
-        self.use_3beam = [''] * n_ensembles
-        self.use_pr = [''] * n_ensembles
+        self.use_3beam = [""] * n_ensembles
+        self.use_pr = [""] * n_ensembles
         self.wa = nans(n_ensembles)
         self.wb = nans(n_ensembles)
         self.wc = nans(n_ensembles)
@@ -1935,7 +2601,7 @@ class Cfg(object):
         self.wn = nans(n_ensembles)
         self.wp = nans(n_ensembles)
         self.ws_cm = nans(n_ensembles)
-        self.xdcr_dep_srs = [''] * n_ensembles
+        self.xdcr_dep_srs = [""] * n_ensembles
         self.xmit_pulse_cm = nans(n_ensembles)
         self.lag_near_bottom = nans(n_ensembles)
 
@@ -2106,46 +2772,46 @@ class Gps2(object):
         """
 
         self.gga_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.gga_header = [x[:] for x in [[''] * 20] * n_ensembles]
-        self.gga_sentence = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.gga_header = [x[:] for x in [[""] * 20] * n_ensembles]
+        self.gga_sentence = [x[:] for x in [[""] * 20] * n_ensembles]
         self.utc = np.full([n_ensembles, 20], np.nan)
         self.lat_deg = np.zeros([n_ensembles, 20])
-        self.lat_ref = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.lat_ref = [x[:] for x in [[""] * 20] * n_ensembles]
         self.lon_deg = np.zeros([n_ensembles, 20])
-        self.lon_ref = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.lon_ref = [x[:] for x in [[""] * 20] * n_ensembles]
         self.corr_qual = np.full([n_ensembles, 20], np.nan)
         self.num_sats = np.full([n_ensembles, 20], np.nan)
         self.hdop = np.full([n_ensembles, 20], np.nan)
         self.alt = np.full([n_ensembles, 20], np.nan)
-        self.alt_unit = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.alt_unit = [x[:] for x in [[""] * 20] * n_ensembles]
         self.geoid = np.full([n_ensembles, 20], np.nan)
-        self.geoid_unit = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.geoid_unit = [x[:] for x in [[""] * 20] * n_ensembles]
         self.d_gps_age = np.full([n_ensembles, 20], np.nan)
         self.ref_stat_id = np.full([n_ensembles, 20], np.nan)
         self.vtg_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.vtg_header = [x[:] for x in [[''] * 20] * n_ensembles]
-        self.vtg_sentence = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.vtg_header = [x[:] for x in [[""] * 20] * n_ensembles]
+        self.vtg_sentence = [x[:] for x in [[""] * 20] * n_ensembles]
         self.course_true = np.full([n_ensembles, 20], np.nan)
-        self.true_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.true_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.course_mag = np.full([n_ensembles, 20], np.nan)
-        self.mag_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.mag_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.speed_knots = np.full([n_ensembles, 20], np.nan)
-        self.knots_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.knots_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.speed_kph = np.zeros([n_ensembles, 20])
-        self.kph_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
-        self.mode_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.kph_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
+        self.mode_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.dbt_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.dbt_header = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.dbt_header = [x[:] for x in [[""] * 20] * n_ensembles]
         self.depth_ft = np.full([n_ensembles, 20], np.nan)
-        self.ft_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.ft_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.depth_m = np.zeros([n_ensembles, 20])
-        self.m_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.m_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.depth_fath = np.full([n_ensembles, 20], np.nan)
-        self.fath_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.fath_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
         self.hdt_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.hdt_header = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.hdt_header = [x[:] for x in [[""] * 20] * n_ensembles]
         self.heading_deg = np.full([n_ensembles, 20], np.nan)
-        self.h_true_indicator = [x[:] for x in [[''] * 20] * n_ensembles]
+        self.h_true_indicator = [x[:] for x in [[""] * 20] * n_ensembles]
 
         # if wr2:
         self.gga_velE_mps = nans(n_ensembles)
@@ -2155,76 +2821,98 @@ class Gps2(object):
 
     def gga_expand(self, n_ensembles):
         self.gga_delta_time = np.concatenate(
-            (self.gga_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.gga_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.utc = np.concatenate(
-            (self.utc, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.utc, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.lat_deg = np.concatenate(
-            (self.lat_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.lat_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.lon_deg = np.concatenate(
-            (self.lon_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.lon_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.corr_qual = np.concatenate(
-            (self.corr_qual, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.corr_qual, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.num_sats = np.concatenate(
-            (self.num_sats, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.num_sats, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.hdop = np.concatenate(
-            (self.hdop, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.hdop, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.alt = np.concatenate(
-            (self.alt, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.alt, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.geoid = np.concatenate(
-            (self.geoid, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.geoid, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.d_gps_age = np.concatenate(
-            (self.d_gps_age, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.d_gps_age, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.ref_stat_id = np.concatenate(
-            (self.ref_stat_id, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.ref_stat_id, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         for ens in range(n_ensembles):
-            self.gga_header[ens].append('')
-            self.geoid_unit[ens].append('')
-            self.alt_unit[ens].append('')
-            self.lon_ref[ens].append('')
-            self.lat_ref[ens].append('')
+            self.gga_header[ens].append("")
+            self.geoid_unit[ens].append("")
+            self.alt_unit[ens].append("")
+            self.lon_ref[ens].append("")
+            self.lat_ref[ens].append("")
 
     def vtg_expand(self, n_ensembles):
         self.vtg_delta_time = np.concatenate(
-            (self.vtg_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.vtg_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.course_true = np.concatenate(
-            (self.course_true, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.course_true, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.course_mag = np.concatenate(
-            (self.course_mag, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.course_mag, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.speed_knots = np.concatenate(
-            (self.speed_knots, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.speed_knots, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.speed_kph = np.concatenate(
-            (self.speed_kph, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.speed_kph, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         for ens in range(n_ensembles):
-            self.kph_indicator[ens].append('')
-            self.mode_indicator[ens].append('')
-            self.vtg_header[ens].append('')
-            self.true_indicator[ens].append('')
-            self.mag_indicator[ens].append('')
-            self.knots_indicator[ens].append('')
+            self.kph_indicator[ens].append("")
+            self.mode_indicator[ens].append("")
+            self.vtg_header[ens].append("")
+            self.true_indicator[ens].append("")
+            self.mag_indicator[ens].append("")
+            self.knots_indicator[ens].append("")
 
     def dbt_expand(self, n_ensembles):
         self.dbt_delta_time = np.concatenate(
-            (self.dbt_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.dbt_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.depth_ft = np.concatenate(
-            (self.depth_ft, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.depth_ft, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.depth_m = np.concatenate(
-            (self.depth_m, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.depth_m, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.depth_fath = np.concatenate(
-            (self.depth_fath, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.depth_fath, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         for ens in range(n_ensembles):
-            self.fath_indicator[ens].append('')
-            self.dbt_header[ens].append('')
-            self.ft_indicator[ens].append('')
-            self.m_indicator[ens].append('')
+            self.fath_indicator[ens].append("")
+            self.dbt_header[ens].append("")
+            self.ft_indicator[ens].append("")
+            self.m_indicator[ens].append("")
 
     def hdt_expand(self, n_ensembles):
         self.hdt_delta_time = np.concatenate(
-            (self.hdt_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.hdt_delta_time, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         self.heading_deg = np.concatenate(
-            (self.heading_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1)
+            (self.heading_deg, np.tile(np.nan, (1, n_ensembles)).T), axis=1
+        )
         for ens in range(n_ensembles):
-            self.h_true_indicator[ens].append('')
-            self.hdt_header[ens].append('')
+            self.h_true_indicator[ens].append("")
+            self.hdt_header[ens].append("")
 
 
 class Nmea(object):
@@ -2250,11 +2938,11 @@ class Nmea(object):
         n_ensembles: int
             Number of ensembles
         """
-        self.gga = ['']*n_ensembles
-        self.gsa = ['']*n_ensembles
-        self.vtg = ['']*n_ensembles
+        self.gga = [""] * n_ensembles
+        self.gsa = [""] * n_ensembles
+        self.vtg = [""] * n_ensembles
         # self.raw = ['']*n_ensembles DSM: not sure this was used
-        self.dbt = ['']*n_ensembles
+        self.dbt = [""] * n_ensembles
 
 
 class Sensor(object):
@@ -2355,14 +3043,14 @@ class Sensor(object):
         self.date = nans([n_ensembles, 3])
         self.date_y2k = nans([n_ensembles, 4])
         self.date_not_y2k = nans([n_ensembles, 3])
-        self.error_status_word = [''] * n_ensembles
+        self.error_status_word = [""] * n_ensembles
         self.heading_deg = nans(n_ensembles)
         self.heading_std_dev_deg = nans(n_ensembles)
         self.mpt_msc = nans([n_ensembles, 3])
         self.num = nans(n_ensembles)
         self.num_fact = nans(n_ensembles)
         self.num_tot = nans(n_ensembles)
-        self.orient = [''] * n_ensembles
+        self.orient = [""] * n_ensembles
         self.pitch_std_dev_deg = nans(n_ensembles)
         self.pitch_deg = nans(n_ensembles)
         self.pressure_neg = nans(n_ensembles)
@@ -2382,7 +3070,7 @@ class Sensor(object):
         self.vert_beam_eval_amp = nans(n_ensembles)
         self.vert_beam_RSSI_amp = nans(n_ensembles)
         self.vert_beam_range_m = nans(n_ensembles)
-        self.vert_beam_gain = [''] * n_ensembles
+        self.vert_beam_gain = [""] * n_ensembles
         self.vert_beam_status = np.zeros(n_ensembles)
 
 

@@ -40,7 +40,7 @@ class PRTS(object):
         self.row_index = []
         self.hover_connection = None
         self.annot = None
-        self.x_axis_type = 'E'
+        self.x_axis_type = "E"
 
     def create(self, meas, checked, tbl, cb_pitch, cb_roll, units, x_axis_type=None):
         """Generates the pitch and roll plot.
@@ -65,7 +65,7 @@ class PRTS(object):
 
         # Set default axis
         if x_axis_type is None:
-            x_axis_type = 'E'
+            x_axis_type = "E"
         self.x_axis_type = x_axis_type
 
         # Clear the plot
@@ -75,11 +75,15 @@ class PRTS(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.98, wspace=0.1, hspace=0)
-        self.fig.ax.set_ylabel(self.canvas.tr('Pitch or Roll (deg)'))
+        self.fig.subplots_adjust(
+            left=0.1, bottom=0.15, right=0.95, top=0.98, wspace=0.1, hspace=0
+        )
+        self.fig.ax.set_ylabel(self.canvas.tr("Pitch or Roll (deg)"))
         self.fig.ax.xaxis.label.set_fontsize(10)
         self.fig.ax.yaxis.label.set_fontsize(10)
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
         self.pitch = []
         self.roll = []
         self.row_index = []
@@ -90,52 +94,77 @@ class PRTS(object):
                 self.row_index.append(row)
                 if cb_pitch.isChecked():
                     # Get pitch data
-                    pitch = np.copy(meas.transects[checked[row]].sensors.pitch_deg.internal.data)
+                    pitch = np.copy(
+                        meas.transects[checked[row]].sensors.pitch_deg.internal.data
+                    )
                     # Arrange data from left to right
                     flip = False
-                    if meas.transects[checked[row]].start_edge == 'Right':
+                    if meas.transects[checked[row]].start_edge == "Right":
                         pitch = np.flip(pitch)
                         flip = True
                     # Compute x-axis
-                    x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
-                                        units=units, flip=flip)
+                    x = self.set_x_axis(
+                        x_axis_type=x_axis_type,
+                        transect=meas.transects[checked[row]],
+                        units=units,
+                        flip=flip,
+                    )
                     if pitch.shape[0] > 0:
-                        self.pitch.append(self.fig.ax.plot(x, pitch, 'r-')[0])
+                        self.pitch.append(self.fig.ax.plot(x, pitch, "r-")[0])
 
                 else:
                     self.pitch = None
 
                 if cb_roll.isChecked():
                     # Get roll data
-                    roll = np.copy(meas.transects[checked[row]].sensors.roll_deg.internal.data)
+                    roll = np.copy(
+                        meas.transects[checked[row]].sensors.roll_deg.internal.data
+                    )
                     # Arrange data from left to right
                     flip = False
-                    if meas.transects[checked[row]].start_edge == 'Right':
+                    if meas.transects[checked[row]].start_edge == "Right":
                         roll = np.flip(roll)
                     # Compute x-axis
-                    x = self.set_x_axis(x_axis_type=x_axis_type, transect=meas.transects[checked[row]],
-                                        units=units, flip=flip)
+                    x = self.set_x_axis(
+                        x_axis_type=x_axis_type,
+                        transect=meas.transects[checked[row]],
+                        units=units,
+                        flip=flip,
+                    )
                     if roll.shape[0] > 0:
-                        self.roll.append(self.fig.ax.plot(x, roll, 'b-')[0])
+                        self.roll.append(self.fig.ax.plot(x, roll, "b-")[0])
                 else:
                     self.roll = None
 
         # Label axis
-        if x_axis_type == 'L':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02 * units['L'],
-                                  right=np.nanmax(x) * 1.02 * units['L'])
-            self.fig.ax.set_xlabel(self.canvas.tr('Length Left to Right' + units['label_L']))
-        elif x_axis_type == 'E':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
-            self.fig.ax.set_xlabel(self.canvas.tr('Ensembles Left to Right'))
-        elif x_axis_type == 'T':
-            self.fig.ax.set_xlim(left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02)
-            self.fig.ax.set_xlabel(self.canvas.tr('Duration Left to Right (seconds)'))
+        if x_axis_type == "L":
+            self.fig.ax.set_xlim(
+                left=-1 * np.nanmax(x) * 0.02 * units["L"],
+                right=np.nanmax(x) * 1.02 * units["L"],
+            )
+            self.fig.ax.set_xlabel(
+                self.canvas.tr("Length Left to Right" + units["label_L"])
+            )
+        elif x_axis_type == "E":
+            self.fig.ax.set_xlim(
+                left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02
+            )
+            self.fig.ax.set_xlabel(self.canvas.tr("Ensembles Left to Right"))
+        elif x_axis_type == "T":
+            self.fig.ax.set_xlim(
+                left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02
+            )
+            self.fig.ax.set_xlabel(self.canvas.tr("Duration Left to Right (seconds)"))
 
         # Initialize annotation for data cursor
-        self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                          bbox=dict(boxstyle="round", fc="w"),
-                                          arrowprops=dict(arrowstyle="->"))
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
 
         self.annot.set_visible(False)
 
@@ -159,17 +188,17 @@ class PRTS(object):
 
         # Compute x axis data
         x = None
-        if x_axis_type == 'L':
+        if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
-            if not np.alltrue(np.isnan(boat_track['track_x_m'])):
-                x = boat_track['distance_m'] * units['L']
-        elif x_axis_type == 'E':
+            if not np.alltrue(np.isnan(boat_track["track_x_m"])):
+                x = boat_track["distance_m"] * units["L"]
+        elif x_axis_type == "E":
             x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
-        elif x_axis_type == 'T':
+        elif x_axis_type == "T":
             x = np.nancumsum(transect.date_time.ens_duration_sec)
 
         if flip:
-            x = (x[-1] - x)
+            x = x[-1] - x
 
         return x
 
@@ -192,12 +221,26 @@ class PRTS(object):
         # Shift annotation box left or right depending on which half of the axis the pos x is located and the
         # direction of x increasing.
         if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] + plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
@@ -205,12 +248,26 @@ class PRTS(object):
         # Shift annotation box up or down depending on which half of the axis the pos y is located and the
         # direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] + plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
@@ -218,7 +275,7 @@ class PRTS(object):
         self.annot.xy = pos
 
         # Format and display text
-        text = 'row: {:.0f}, x: {:.2f}, y: {:.2f}'.format(row, pos[0], pos[1])
+        text = "row: {:.0f}, x: {:.2f}, y: {:.2f}".format(row, pos[0], pos[1])
         self.annot.set_text(text)
 
     def hover(self, event):
@@ -252,7 +309,7 @@ class PRTS(object):
                     if cont:
                         break
             if cont:
-                self.update_annot(ind, plt_ref=item, row=self.row_index[n]+1)
+                self.update_annot(ind, plt_ref=item, row=self.row_index[n] + 1)
                 self.annot.set_visible(True)
                 self.canvas.draw_idle()
             else:
@@ -272,7 +329,9 @@ class PRTS(object):
 
         if setting and self.hover_connection is None:
             # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

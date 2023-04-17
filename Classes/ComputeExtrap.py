@@ -31,12 +31,16 @@ class ComputeExtrap(object):
         Specifies to use the discharge rather than the xprod when subsectioning
 
     """
-    
+
     def __init__(self):
         """Initialize instance variables."""
 
-        self.threshold = None  # Threshold as a percent for determining if a median is valid
-        self.subsection = None  # Percent of discharge, does not account for transect direction
+        self.threshold = (
+            None  # Threshold as a percent for determining if a median is valid
+        )
+        self.subsection = (
+            None  # Percent of discharge, does not account for transect direction
+        )
         self.fit_method = None  # Method used to determine fit.  Automatic or manual
         self.norm_data = []  # Object of class norm data
         self.sel_fit = []  # Object of class SelectFit
@@ -45,8 +49,15 @@ class ComputeExtrap(object):
         self.use_weighted = False
         self.use_q = False
         self.sub_from_left = False
-        
-    def populate_data(self, transects, compute_sensitivity=True, use_weighted=False, use_q=True, sub_from_left=True):
+
+    def populate_data(
+        self,
+        transects,
+        compute_sensitivity=True,
+        use_weighted=False,
+        use_q=True,
+        sub_from_left=True,
+    ):
         """Store data in instance variables.
 
         Parameters
@@ -61,16 +72,20 @@ class ComputeExtrap(object):
 
         self.threshold = 20
         self.subsection = [0, 100]
-        self.fit_method = 'Automatic'
+        self.fit_method = "Automatic"
         self.use_weighted = use_weighted
         self.use_q = use_q
         self.sub_from_left = sub_from_left
-        self.process_profiles(transects=transects, data_type='q', use_weighted=use_weighted)
+        self.process_profiles(
+            transects=transects, data_type="q", use_weighted=use_weighted
+        )
 
         # Compute the sensitivity of the final discharge to changes in extrapolation methods
         if compute_sensitivity:
             self.q_sensitivity = ExtrapQSensitivity()
-            self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
+            self.q_sensitivity.populate_data(
+                transects=transects, extrap_fits=self.sel_fit
+            )
 
     def populate_from_qrev_mat(self, meas_struct):
         """Populates the object using data from previously saved QRev Matlab file.
@@ -81,7 +96,7 @@ class ComputeExtrap(object):
            Matlab data structure obtained from sio.loadmat
         """
 
-        if hasattr(meas_struct, 'extrapFit'):
+        if hasattr(meas_struct, "extrapFit"):
             self.threshold = meas_struct.extrapFit.threshold
             self.subsection = meas_struct.extrapFit.subsection
             self.fit_method = meas_struct.extrapFit.fitMethod
@@ -129,17 +144,17 @@ class ComputeExtrap(object):
             self.sel_fit = SelectFit.qrev_mat_in(meas_struct.extrapFit)
             self.q_sensitivity = ExtrapQSensitivity()
             self.q_sensitivity.populate_from_qrev_mat(meas_struct.extrapFit)
-            if hasattr(meas_struct.extrapFit, 'use_weighted'):
+            if hasattr(meas_struct.extrapFit, "use_weighted"):
                 self.use_weighted = meas_struct.extrapFit.use_weighted
             else:
                 self.use_weighted = False
 
-            if hasattr(meas_struct.extrapFit, 'use_q'):
+            if hasattr(meas_struct.extrapFit, "use_q"):
                 self.use_q = meas_struct.extrapFit.use_q
             else:
                 self.use_q = False
 
-            if hasattr(meas_struct.extrapFit, 'sub_from_left'):
+            if hasattr(meas_struct.extrapFit, "sub_from_left"):
                 self.sub_from_left = meas_struct.extrapFit.sub_from_left
             else:
                 self.sub_from_left = False
@@ -149,7 +164,9 @@ class ComputeExtrap(object):
             elif type(meas_struct.extrapFit.messages) is np.ndarray:
                 self.messages = meas_struct.extrapFit.messages.tolist()
 
-    def process_profiles(self, transects, data_type, use_weighted=None, use_q=True, sub_from_left=True):
+    def process_profiles(
+        self, transects, data_type, use_weighted=None, use_q=True, sub_from_left=True
+    ):
         """Function that coordinates the fitting process.
 
         Parameters
@@ -175,30 +192,36 @@ class ComputeExtrap(object):
         self.norm_data = []
         for transect in transects:
             norm_data = NormData()
-            norm_data.populate_data(transect=transect,
-                                    data_type=data_type,
-                                    threshold=self.threshold,
-                                    data_extent=self.subsection,
-                                    use_weighted=self.use_weighted,
-                                    use_q=self.use_q,
-                                    sub_from_left=self.sub_from_left)
+            norm_data.populate_data(
+                transect=transect,
+                data_type=data_type,
+                threshold=self.threshold,
+                data_extent=self.subsection,
+                use_weighted=self.use_weighted,
+                use_q=self.use_q,
+                sub_from_left=self.sub_from_left,
+            )
             self.norm_data.append(norm_data)
 
         # Compute composite normalized data
         comp_data = NormData()
         comp_data.use_q = self.norm_data[-1].use_q
         comp_data.sub_from_left = self.norm_data[-1].sub_from_left
-        comp_data.create_composite(transects=transects, norm_data=self.norm_data, threshold=self.threshold)
+        comp_data.create_composite(
+            transects=transects, norm_data=self.norm_data, threshold=self.threshold
+        )
         self.norm_data.append(comp_data)
 
         # Compute the fit for the selected  method
-        if self.fit_method == 'Manual':
+        if self.fit_method == "Manual":
             for n in range(len(transects)):
-                self.sel_fit[n].populate_data(normalized=self.norm_data[n],
-                                              fit_method=self.fit_method,
-                                              top=transects[n].extrap.top_method,
-                                              bot=transects[n].extrap.bot_method,
-                                              exponent=transects[n].extrap.exponent)
+                self.sel_fit[n].populate_data(
+                    normalized=self.norm_data[n],
+                    fit_method=self.fit_method,
+                    top=transects[n].extrap.top_method,
+                    bot=transects[n].extrap.bot_method,
+                    exponent=transects[n].extrap.exponent,
+                )
         else:
             self.sel_fit = []
             for n in range(len(self.norm_data)):
@@ -208,10 +231,13 @@ class ComputeExtrap(object):
 
         if self.sel_fit[-1].top_fit_r2 is not None:
             # Evaluate if there is a potential that a 3-point top method may be appropriate
-            if (self.sel_fit[-1].top_fit_r2 > 0.9 or self.sel_fit[-1].top_r2 > 0.9) \
-                    and np.abs(self.sel_fit[-1].top_max_diff) > 0.2:
-                self.messages.append('The measurement profile may warrant a 3-point fit at the top')
-                
+            if (
+                self.sel_fit[-1].top_fit_r2 > 0.9 or self.sel_fit[-1].top_r2 > 0.9
+            ) and np.abs(self.sel_fit[-1].top_max_diff) > 0.2:
+                self.messages.append(
+                    "The measurement profile may warrant a 3-point fit at the top"
+                )
+
     def update_q_sensitivity(self, transects):
         """Updates the discharge sensitivity values.
 
@@ -222,8 +248,17 @@ class ComputeExtrap(object):
         """
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects, self.sel_fit)
-        
-    def change_fit_method(self, transects, new_fit_method, idx, top=None, bot=None, exponent=None, compute_qsens=True):
+
+    def change_fit_method(
+        self,
+        transects,
+        new_fit_method,
+        idx,
+        top=None,
+        bot=None,
+        exponent=None,
+        compute_qsens=True,
+    ):
         """Function to change the extrapolation method.
 
         Parameters
@@ -245,11 +280,13 @@ class ComputeExtrap(object):
         """
         self.fit_method = new_fit_method
 
-        self.sel_fit[idx].populate_data(self.norm_data[idx], new_fit_method,  top=top, bot=bot, exponent=exponent)
-        if compute_qsens & idx == len(self.norm_data)-1:
+        self.sel_fit[idx].populate_data(
+            self.norm_data[idx], new_fit_method, top=top, bot=bot, exponent=exponent
+        )
+        if compute_qsens & idx == len(self.norm_data) - 1:
             self.q_sensitivity = ExtrapQSensitivity()
             self.q_sensitivity.populate_data(transects, self.sel_fit)
-        
+
     def change_threshold(self, transects, data_type, threshold):
         """Function to change the threshold for accepting the increment median as valid.  The threshold
         is in percent of the median number of points in all increments.
@@ -263,12 +300,12 @@ class ComputeExtrap(object):
         threshold: float
             Percent of data that must be in a median to include the median in the fit algorithm
         """
-        
+
         self.threshold = threshold
         self.process_profiles(transects=transects, data_type=data_type)
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
-        
+
     def change_extents(self, transects, data_type, extents, use_q, sub_from_left):
         """Function allows the data to be subsection by specifying the percent cumulative discharge
         for the start and end points.  Currently this function does not consider transect direction.
@@ -286,14 +323,14 @@ class ComputeExtrap(object):
         use_q: bool
             Specifies to use the discharge rather than the xprod when subsectioning
         """
-        
+
         self.subsection = extents
         self.use_q = use_q
         self.sub_from_left = sub_from_left
-        self.process_profiles(transects=transects, data_type=data_type )
+        self.process_profiles(transects=transects, data_type=data_type)
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
-        
+
     def change_data_type(self, transects, data_type):
         """Changes the data type to be processed in extrap.
 
@@ -304,12 +341,14 @@ class ComputeExtrap(object):
         data_type: str
             Specifies the data type (discharge or velocity)
         """
-        if data_type.lower() == 'q':
+        if data_type.lower() == "q":
             use_weighted = self.use_weighted
         else:
             use_weighted = False
 
-        self.process_profiles(transects=transects, data_type=data_type, use_weighted=use_weighted)
+        self.process_profiles(
+            transects=transects, data_type=data_type, use_weighted=use_weighted
+        )
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
 
@@ -323,7 +362,9 @@ class ComputeExtrap(object):
         """
         self.threshold = 20
         self.subsection = [0, 100]
-        self.process_profiles(transects=transects, data_type='q', use_weighted=self.use_weighted)
+        self.process_profiles(
+            transects=transects, data_type="q", use_weighted=self.use_weighted
+        )
 
         # Compute the sensitivity of the final discharge to changes in extrapolation methods
         self.q_sensitivity = ExtrapQSensitivity()

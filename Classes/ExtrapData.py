@@ -16,16 +16,24 @@ class ExtrapData(object):
     exponent: float
         Applied exponent for power of no slip methods
     """
-    
+
     def __init__(self):
         """Initialize class and set defaults."""
-        self.top_method_orig = None  # Extrapolation method for top of profile: Power, Constant, 3-Point
-        self.bot_method_orig = None  # Extrapolation method for bottom of profile: Power, No Slip
+        self.top_method_orig = (
+            None  # Extrapolation method for top of profile: Power, Constant, 3-Point
+        )
+        self.bot_method_orig = (
+            None  # Extrapolation method for bottom of profile: Power, No Slip
+        )
         self.exponent_orig = None  # Exponent for power of no slip methods
-        self.top_method = None  # Extrapolation method for top of profile: Power, Constant, 3-Point
-        self.bot_method = None  # Extrapolation method for bottom of profile: Power, No Slip
+        self.top_method = (
+            None  # Extrapolation method for top of profile: Power, Constant, 3-Point
+        )
+        self.bot_method = (
+            None  # Extrapolation method for bottom of profile: Power, No Slip
+        )
         self.exponent = None  # Exponent for power of no slip methods
-        
+
     def populate_data(self, top, bot, exp):
         """Store data in class variables.
 
@@ -54,7 +62,7 @@ class ExtrapData(object):
            Matlab data structure obtained from sio.loadmat
         """
 
-        if hasattr(transect, 'extrap'):
+        if hasattr(transect, "extrap"):
             self.top_method_orig = transect.extrap.topMethodOrig
             self.bot_method_orig = transect.extrap.botMethodOrig
             self.exponent_orig = transect.extrap.exponentOrig
@@ -77,7 +85,7 @@ class ExtrapData(object):
         self.top_method = top
         self.bot_method = bot
         self.exponent = exp
-        
+
     def set_property(self, prop, setting):
         """Allows setting any property.
 

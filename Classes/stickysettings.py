@@ -39,15 +39,15 @@ class StickySettings(object):
 
         """
         # Construct filename from user input.
-        self.settings_file = os.path.join(os.getenv('APPDATA'), arg + '.json')
+        self.settings_file = os.path.join(os.getenv("APPDATA"), arg + ".json")
         if os.path.isfile(self.settings_file):
             # Read json into dictionary
-            with open(self.settings_file, 'r') as f:
+            with open(self.settings_file, "r") as f:
                 self.settings = json.load(f)
         else:
             # Create json file with default dictionary
             self.settings = {}
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
 
     def new(self, key, value):
@@ -69,10 +69,10 @@ class StickySettings(object):
         """
 
         if key in self.settings:
-            raise KeyError('Key already exists in settings')
+            raise KeyError("Key already exists in settings")
         else:
             self.settings[key] = value
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
 
     def set(self, key, value):
@@ -95,10 +95,10 @@ class StickySettings(object):
         """
         if key in self.settings:
             self.settings[key] = value
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
         else:
-            raise KeyError('Key does not exist in settings')
+            raise KeyError("Key does not exist in settings")
 
     def get(self, item):
         """Get value of item for settings.
@@ -117,7 +117,7 @@ class StickySettings(object):
 
         """
 
-        with open(self.settings_file, 'r') as f:
+        with open(self.settings_file, "r") as f:
             self.settings = json.load(f)
 
         return self.settings[item]

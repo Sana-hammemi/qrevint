@@ -17,11 +17,13 @@ class SensorStructure(object):
     self.user: SensorData
         Contains user supplied value, object of SensorData
     """
-    
+
     def __init__(self):
         """Initialize class and set variable to None."""
 
-        self.selected = None  # The selected sensor reference name ('internal', 'external', 'user')
+        self.selected = (
+            None  # The selected sensor reference name ('internal', 'external', 'user')
+        )
         self.internal = None  # Contains the data from the internal sensor
         self.external = None  # Contains the data from an external sensor
         self.user = None  # Contains user supplied value
@@ -61,7 +63,7 @@ class SensorStructure(object):
                 self.user = HeadingData()
                 self.user.populate_from_qrev_mat(mat_data.user)
             self.selected = mat_data.selected
-        
+
     def set_selected(self, selected_name):
         """Set the selected source for the specified object
 

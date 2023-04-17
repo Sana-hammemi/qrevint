@@ -23,6 +23,7 @@ class RIVRS_Controller:
     QRev_Window: QRev
         Instance of the QRev QMainWindow
     """
+
     def __init__(self):
         # Initialize attributes
         self.processed_meas = None
@@ -31,8 +32,7 @@ class RIVRS_Controller:
         QRev_Window = None
 
     def Show_RIVRS(self):
-        """Controls the display of the RIVRS GUI.
-        """
+        """Controls the display of the RIVRS GUI."""
 
         if self.processed_meas is None:
             # If processed_meas is None then the RIVRS GUI is opened as if it were run independent of the controller
@@ -49,15 +49,16 @@ class RIVRS_Controller:
             self.QRev_Window.close()
 
     def Show_QRev(self):
-        """Controls the display of the QRev GUI.
-        """
-        self.QRev_Window = QRev(groupings=self.RIVRS_Window.groupings,
-                                data=self.RIVRS_Window.meas,
-                                caller=self)
+        """Controls the display of the QRev GUI."""
+        self.QRev_Window = QRev(
+            groupings=self.RIVRS_Window.groupings,
+            data=self.RIVRS_Window.meas,
+            caller=self,
+        )
         self.QRev_Window.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     Controller = RIVRS_Controller()
     Controller.Show_RIVRS()

@@ -276,7 +276,9 @@ class Ui_Options(object):
         font.setPointSize(12)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout_10.addWidget(self.buttonBox)
 
@@ -312,11 +314,14 @@ class Ui_Options(object):
         self.rb_qrev_u.setText(_translate("Options", "QRev Original"))
         self.rb_oursin_u.setText(_translate("Options", "Oursin"))
         self.gb_moving_bed_option.setTitle(_translate("Options", "Moving Bed"))
-        self.cb_allow_manual_no_mb.setText(_translate("Options", "Allow observed no moving-bed"))
+        self.cb_allow_manual_no_mb.setText(
+            _translate("Options", "Allow observed no moving-bed")
+        )
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Options = QtWidgets.QDialog()
     ui = Ui_Options()

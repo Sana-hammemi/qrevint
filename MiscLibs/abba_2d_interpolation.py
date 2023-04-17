@@ -36,8 +36,16 @@ interpolated_v_values = interpolated_data[1]
 import numpy as np
 
 
-def find_neighbors(valid_data, cells_above_sl, y_cell_centers, y_cell_size, y_depth, search_loc, normalize=False):
-    """ Finds the nearest valid cells above, below, before, and after each invalid cell. The before and after
+def find_neighbors(
+    valid_data,
+    cells_above_sl,
+    y_cell_centers,
+    y_cell_size,
+    y_depth,
+    search_loc,
+    normalize=False,
+):
+    """Finds the nearest valid cells above, below, before, and after each invalid cell. The before and after
     Cells must have data in the same y range as the invalid cell.
 
     Parameters
@@ -86,13 +94,13 @@ def find_neighbors(valid_data, cells_above_sl, y_cell_centers, y_cell_size, y_de
         points = []
         target = (cell, ens)
 
-        if 'above' in search_loc:
+        if "above" in search_loc:
             # Identify indices of cells above and below target
             above = find_above(target, valid_data)
             if above is not None:
                 points.append(above)
 
-        if 'below' in search_loc:
+        if "below" in search_loc:
             below = find_below(target, valid_data)
             if below is not None:
                 points.append(below)
@@ -102,24 +110,24 @@ def find_neighbors(valid_data, cells_above_sl, y_cell_centers, y_cell_size, y_de
         y_match = np.logical_and(y_top[target] <= y_bottom, y_bottom[target] >= y_top)
         y_match = np.logical_and(y_match, valid_data)
 
-        if 'before' in search_loc:
+        if "before" in search_loc:
             # Identify indices of cells before and after target
             before = find_before(target, y_match, y_depth, y_bottom_actual)
             if before:
                 points = points + before
 
-        if 'after' in search_loc:
+        if "after" in search_loc:
             after = find_after(target, y_match, y_depth, y_bottom_actual)
             if after:
                 points = points + after
 
-        neighbors.append({'target': target, 'neighbors': points})
+        neighbors.append({"target": target, "neighbors": points})
 
     return neighbors
 
 
 def find_above(target, valid_data):
-    """ Finds the nearest valid cell above the target.
+    """Finds the nearest valid cell above the target.
 
     Parameters
     ----------
@@ -148,7 +156,7 @@ def find_above(target, valid_data):
 
 
 def find_below(target, valid_data):
-    """ Finds the nearest valid cell below the target.
+    """Finds the nearest valid cell below the target.
 
     Parameters
     ----------
@@ -166,7 +174,7 @@ def find_below(target, valid_data):
     below_idx = target[0] + 1
 
     # Determine cell row index limit
-    n_cells = len(valid_data[:, target[1]])-1
+    n_cells = len(valid_data[:, target[1]]) - 1
 
     # Find nearest valid cell below target
     while below_idx <= n_cells and not valid_data[below_idx, target[1]]:
@@ -180,7 +188,7 @@ def find_below(target, valid_data):
 
 
 def find_before(target, y_match, y_depth, y_bottom):
-    """ Finds the nearest ensemble before the target that has valid cells within the vertical range of the target
+    """Finds the nearest ensemble before the target that has valid cells within the vertical range of the target
 
     Parameters
     ----------
@@ -232,7 +240,7 @@ def find_before(target, y_match, y_depth, y_bottom):
 
 
 def find_after(target, y_match, y_depth, y_bottom):
-    """ Finds the nearest ensemble after the target that has valid cells within the vertical range of the target
+    """Finds the nearest ensemble after the target that has valid cells within the vertical range of the target
 
     Parameters
     ----------
@@ -271,7 +279,7 @@ def find_after(target, y_match, y_depth, y_bottom):
 
     # Find and store the indices all cells from the identified ensemble
     # that are within the vertical range of the target
-    if (after_ens <= y_match.shape[1]-1) and (after_ens > 0):
+    if (after_ens <= y_match.shape[1] - 1) and (after_ens > 0):
         rows = np.where(y_match[:, after_ens])[0]
         after_idx = []
         for row in rows:
@@ -283,7 +291,7 @@ def find_after(target, y_match, y_depth, y_bottom):
 
 
 def compute_distances(target, neighbors, x, y):
-    """ Computes distances between the target and neighbors.
+    """Computes distances between the target and neighbors.
 
     Parameters
     ----------
@@ -309,13 +317,15 @@ def compute_distances(target, neighbors, x, y):
     # Compute distance from target cell to each neighbor
     distances = []
     for neighbor in neighbors:
-        distances.append(np.sqrt((y[neighbor] - target_y) ** 2 + (x[neighbor[1]] - target_x) ** 2))
+        distances.append(
+            np.sqrt((y[neighbor] - target_y) ** 2 + (x[neighbor[1]] - target_x) ** 2)
+        )
 
     return distances
 
 
 def idw_interpolation(data, neighbor_indices, distances):
-    """ Interpolate value using neighbors and inverse distance weighting.
+    """Interpolate value using neighbors and inverse distance weighting.
 
     Parameters
     ----------
@@ -337,8 +347,8 @@ def idw_interpolation(data, neighbor_indices, distances):
     weighted_sum = 0
     for n, index in enumerate(neighbor_indices):
         if distances[n] > 0:
-            sum_of_weights = sum_of_weights + (1/distances[n])
-            weighted_sum = weighted_sum + data[index] * (1/distances[n])
+            sum_of_weights = sum_of_weights + (1 / distances[n])
+            weighted_sum = weighted_sum + data[index] * (1 / distances[n])
 
     # Compute interpolated value
     if sum_of_weights > 0:
@@ -349,9 +359,18 @@ def idw_interpolation(data, neighbor_indices, distances):
     return interpolated_value
 
 
-def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_cell_size, y_depth,
-                           x_shiptrack, normalize, search_loc=('above', 'below', 'before', 'after')):
-    """ Interpolates values for invalid cells using the neighboring cells above, below, before, and after and
+def abba_idw_interpolation(
+    data_list,
+    valid_data,
+    cells_above_sl,
+    y_centers,
+    y_cell_size,
+    y_depth,
+    x_shiptrack,
+    normalize,
+    search_loc=("above", "below", "before", "after"),
+):
+    """Interpolates values for invalid cells using the neighboring cells above, below, before, and after and
     and inverse distance averaging.
 
     Parameters
@@ -388,27 +407,31 @@ def abba_idw_interpolation(data_list, valid_data, cells_above_sl, y_centers, y_c
     valid_cells = np.logical_and(cells_above_sl, valid_data)
     if not np.all(valid_cells):
         # Find neighbors associated with each target
-        interpolation_points = find_neighbors(valid_data=valid_data,
-                                              cells_above_sl=cells_above_sl,
-                                              y_cell_centers=y_centers,
-                                              y_cell_size=y_cell_size,
-                                              y_depth=y_depth,
-                                              search_loc=search_loc,
-                                              normalize=normalize)
+        interpolation_points = find_neighbors(
+            valid_data=valid_data,
+            cells_above_sl=cells_above_sl,
+            y_cell_centers=y_centers,
+            y_cell_size=y_cell_size,
+            y_depth=y_depth,
+            search_loc=search_loc,
+            normalize=normalize,
+        )
         dist = []
         # Process each target
         for point in interpolation_points:
             # Compute distance from target to neighbors
-            distances = compute_distances(target=point['target'],
-                                          neighbors=point['neighbors'],
-                                          x=x_shiptrack,
-                                          y=y_centers)
+            distances = compute_distances(
+                target=point["target"],
+                neighbors=point["neighbors"],
+                x=x_shiptrack,
+                y=y_centers,
+            )
             dist.append(dist)
             # Interpolate target for each data set in data_list
             for n, data in enumerate(data_list):
-                interpolated_value = idw_interpolation(data=data,
-                                                       neighbor_indices=point['neighbors'],
-                                                       distances=distances)
-                interpolated_data[n].append([point['target'], interpolated_value])
+                interpolated_value = idw_interpolation(
+                    data=data, neighbor_indices=point["neighbors"], distances=distances
+                )
+                interpolated_data[n].append([point["target"], interpolated_value])
 
     return interpolated_data

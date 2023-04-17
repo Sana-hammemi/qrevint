@@ -12,7 +12,6 @@ class Threshold(QtWidgets.QDialog, wThreshold.Ui_threshold):
     """
 
     def __init__(self, parent=None):
-        """Initialize dialog
-        """
+        """Initialize dialog"""
         super(Threshold, self).__init__(parent)
         self.setupUi(self)
