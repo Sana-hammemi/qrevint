@@ -19,9 +19,9 @@ from Classes.BoatStructure import BoatStructure
 from Classes.BoatData import BoatData
 from Classes.WaterData import WaterData
 from Classes.Oursin import Oursin
+from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-
 from profilehooks import profile
 
 
@@ -172,6 +172,7 @@ class Measurement(object):
         }
         self.checked_transect_idx = []
         self.oursin = None
+        self.map = None
         self.use_weighted = use_weighted
         self.observed_no_moving_bed = False
         self.stage_meas_m = 0
@@ -941,6 +942,8 @@ class Measurement(object):
         self.use_measurement_thresholds = self.transects[
             self.checked_transect_idx[0]
         ].boat_vel.bt_vel.use_measurement_thresholds
+
+        self.compute_map()
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and
@@ -1721,6 +1724,7 @@ class Measurement(object):
         self.compute_discharge()
 
         self.compute_uncertainty()
+        self.compute_map()
 
     def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -2300,6 +2304,41 @@ class Measurement(object):
                 user_advanced_settings=user_advanced_settings,
                 u_measurement_user=u_measurement_user,
             )
+
+    def compute_map(self,
+                    node_horizontal_user=None,
+                    node_vertical_user=None,
+                    extrap_option=True,
+                    edges_option=False,
+                    interp_option=True):
+        """Computes Multi-transect Average Profile
+
+        Parameters
+        ----------
+        node_horizontal_user: float
+            Width of MAP cell (in m)
+        node_vertical_user: float
+            Height of MAP cell (in m)
+        extrap_option: bool
+            Boolean indicating if top/bottom extrapolation should be apply
+        edges_option: bool
+            Boolean indicating if edges extrapolation should be apply
+        interp_option: bool
+            Boolean indicating if interpolated data should be used
+         """
+
+        # Check for heading data
+        if all(deg == 0 for deg in self.transects[
+                self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
+            self.map = None
+        else:
+            self.map = MAP()
+            self.map.populate_data(self,
+                                   node_horizontal_user,
+                                   node_vertical_user,
+                                   extrap_option,
+                                   edges_option,
+                                   interp_option)
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):

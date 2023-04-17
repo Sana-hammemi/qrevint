@@ -172,8 +172,8 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         self.close()
 
 
-class SaveMeasurementDialog(QtWidgets.QDialog):
-    """Dialog to allow users to select measurement files for processing.
+class SaveDialog(QtWidgets.QDialog):
+    """Dialog to allow users to specify file for saving (_QRev.mat or figure)
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         Filename with path to save file.
     """
 
-    def __init__(self, group=None, parent=None):
+    def __init__(self, group=None, save_type="QRev", parent=None):
         """Initializes settings and connections.
 
         Parameters
@@ -195,10 +195,13 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
             Identifies parent GUI.
         group: str
             group number if split initiation
+        save_type: str
+            Indicates type of save
         """
-        super(SaveMeasurementDialog, self).__init__(parent)
+        super(SaveDialog, self).__init__(parent)
         # self.setupUi(self)
-
+        self.full_Name = None
+        self.file_extension = None
         # Create settings object which contains the default folder
         settings = SSet(parent.settingsFile)
 
@@ -210,28 +213,47 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
                 folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
         # Create default file name
-        if group is None:
-            file_name = os.path.join(
-                folder,
-                datetime.datetime.today().strftime(
-                    "%Y%m%d_%H%M%S_" + version + "_QRev.mat"
-                ),
-            )
-        else:
-            file_name = os.path.join(
-                folder,
-                datetime.datetime.today().strftime(
-                    "%Y%m%d_%H%M%S_" + group + "_" + version + "_QRev.mat"
-                ),
-            )
+        if save_type == "QRev":
+            if group is None:
+                file_name = os.path.join(
+                    folder,
+                    datetime.datetime.today().strftime(
+                        "%Y%m%d_%H%M%S_" + version + "_QRev.mat"
+                    ),
+                )
+            else:
+                file_name = os.path.join(
+                    folder,
+                    datetime.datetime.today().strftime(
+                        "%Y%m%d_%H%M%S_" + group + "_" + version + "_QRev.mat"
+                    ),
+                )
+            title = self.tr("Save File")
+            filetype = self.tr("QRev File (*_QRev.mat)")
 
+        elif save_type == "fig":
+            file_name = folder + "/" + (folder).split("/")[-1]
+            title = self.tr("Save figure")
+            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
+
+        elif save_type == "MAP":
+            file_name = folder + "/MAP_" + (folder).split("/")[-1]
+            title = self.tr("Save MAP")
+            filetype = (f"{self.tr('csv (separator: semicolon)')}( *.csv);;"
+                        f"{self.tr('text (separator: space)')}(*.txt);;"
+                        f"{self.tr('All Files')} (*)")
         # Get the full names (path + file) of the selected file
-        self.full_Name = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr("Save File"), file_name, self.tr("QRev File (*_QRev.mat)")
-        )[0]
-        if len(self.full_Name) > 0:
-            if self.full_Name[-4:] != ".mat":
-                self.full_Name = self.full_Name + ".mat"
+        file_save = QtWidgets.QFileDialog.getSaveFileName(
+            self, title, file_name, filetype
+        )
+
+        if file_save is not None:
+            self.full_Name, file_type = file_save
+            file_extension = (file_type).split("*")[-1][:-1]
+            if len(self.full_Name) > 0:
+                self.file_extension = file_extension
+                if self.full_Name[-len(file_extension) :] != file_extension:
+                    self.full_Name = self.full_Name + file_extension
 
     @staticmethod
     def default_folder(settings):

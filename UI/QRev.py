@@ -10,6 +10,7 @@ import simplekml
 from contextlib import contextmanager
 from datetime import datetime
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -29,7 +30,7 @@ from MiscLibs.common_functions import (
     units_conversion,
     scientific_notation,
 )
-from UI.selectFile import SaveMeasurementDialog
+from UI.selectFile import SaveDialog
 from UI.OpenMeasurementDialog import OpenMeasurementDialog
 from UI.Comment import Comment
 from UI.Transects2Use import Transects2Use
@@ -41,6 +42,9 @@ from UI.SOSSource import SOSSource
 from UI.TempSource import TempSource
 from UI.Salinity import Salinity
 from UI.ShipTrack import Shiptrack
+
+# from UI.MapWTContour import MapWTContour
+from UI.MapTrack import Maptrack
 from UI.BoatSpeed import BoatSpeed
 from UI.Draft import Draft
 from UI.TemperatureTS import TemperatureTS
@@ -69,7 +73,6 @@ try:
     pyi_splash.close()
 except:
     pass
-
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
@@ -752,6 +755,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs = []
         self.canvases = []
         self.toolbars = []
+        self.ui_parents = []
+
+        # Save figure menu with Right click
+        self.figsMenu = QtWidgets.QMenu(self)
+        self.figsMenu.addAction("Save figure", self.saveFig)
 
         # Connect a change in selected tab to the tab manager
         self.tab_all.currentChanged.connect(self.tab_manager)
@@ -949,6 +957,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_fig = None
         self.adv_graph_toolbar = None
         self.adv_graph_types = []
+        self.map_shiptrack_canvas = None
+        self.map_shiptrack_toolbar = None
+        self.map_shiptrack_fig = None
+        self.map_wt_contour_canvas = None
+        self.map_wt_contour_toolbar = None
+        self.map_wt_contour_fig = None
+        self.current_fig = None
 
         self.mb_row = 0
         self.show_below_sl = False
@@ -968,6 +983,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.edi_initialized = False
         self.gps_bt_initialized = False
         self.adv_graph_initialized = False
+        self.map_initialized = False
 
         self.setMouseTracking(True)
 
@@ -1305,7 +1321,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.user_rating = rating
                     self.set_user_rating()
 
-            save_file = SaveMeasurementDialog(parent=self)
+            save_file = SaveDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
                 # Add comment when saving file
@@ -1458,17 +1474,41 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Changes the navigation reference to GPS GGA"""
 
         if self.meas is not None:
-            with self.wait_cursor():
-                # Get all current settings
-                settings = Measurement.current_settings(self.meas)
-                old_discharge = self.meas.discharge
-                # Change NavRef to selected setting
-                settings["NavRef"] = "GGA"
-                # Update measurement and GUI
-                Measurement.apply_settings(self.meas, settings)
-                self.update_toolbar_nav_ref()
-                self.change = True
-                self.tab_manager(old_discharge=old_discharge)
+            # Get all current settings
+            settings = Measurement.current_settings(self.meas)
+            invalid_gga_idx = []
+            # Check if gga quality is fine
+            for idx in self.checked_transects_idx:
+                if self.meas.transects[idx].boat_vel.gga_vel is not None:
+                    if (
+                        self.meas.transects[idx].gps.diff_qual_ens[
+                            ~np.isnan(self.meas.transects[idx].gps.diff_qual_ens)
+                        ]
+                        < settings["ggaDiffQualFilter"]
+                    ).all():
+                        invalid_gga_idx.append(idx)
+            if len(invalid_gga_idx) > 0:
+                error_gga = QtWidgets.QMessageBox()
+                error_gga.setIcon(QtWidgets.QMessageBox.Warning)
+                error_gga.setWindowTitle(self.tr("GGA Error"))
+                error_gga.setText(
+                    self.tr(
+                        f"GGA quality is too low for transects {', '.join(map(str, invalid_gga_idx))}. "
+                        f"\nPlease change settings or selected transects."
+                    )
+                )
+                error_gga.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                error_gga = error_gga.exec()
+            else:
+                with self.wait_cursor():
+                    old_discharge = self.meas.discharge
+                    # Change NavRef to selected setting
+                    settings["NavRef"] = "GGA"
+                    # Update measurement and GUI
+                    Measurement.apply_settings(self.meas, settings)
+                    self.update_toolbar_nav_ref()
+                    self.change = True
+                    self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_vtg(self):
         """Changes the navigation reference to GPS VTG"""
@@ -2018,6 +2058,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_shiptrack_canvas.draw()
 
                 self.update_main_uncertainty()
+                self.map_tab()
                 self.set_user_rating()
 
                 # Setup list for use by graphics controls
@@ -3208,8 +3249,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8.3f}".format(
-                            self.meas.discharge[transect_id].total * self.units["Q"]
+                        "{:8}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].total * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -3221,8 +3264,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:7.3f}".format(
-                            self.meas.discharge[transect_id].top * self.units["Q"]
+                        "{:7}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].top * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -3234,8 +3279,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:7.3f}".format(
-                            self.meas.discharge[transect_id].middle * self.units["Q"]
+                        "{:7}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].middle
+                                * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -3247,8 +3295,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:7.3f}".format(
-                            self.meas.discharge[transect_id].bottom * self.units["Q"]
+                        "{:7}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].bottom
+                                * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -3260,8 +3311,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:7.3f}".format(
-                            self.meas.discharge[transect_id].left * self.units["Q"]
+                        "{:7}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].left * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -3273,8 +3326,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row + 1,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:7.3f}".format(
-                            self.meas.discharge[transect_id].right * self.units["Q"]
+                        "{:7}".format(
+                            scientific_notation(
+                                self.meas.discharge[transect_id].right * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -4384,7 +4439,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
                     tbl.item(row, col).setToolTip(self.tr("No system test."))
-                    tbl.item(row, col).setToolTip(self.tr("No system test."))
                 else:
                     tbl.setItem(
                         row,
@@ -4400,24 +4454,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.tr(
                                 "One or more system test sets have at least "
                                 "one test that failed"
-                            )
-                        )
-                        tbl.item(row, col).setToolTip(
-                            self.tr(
-                                "One or more system test sets have at least one test that failed"
-                            )
-                        )
-                    else:
-                        tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
-                        tbl.item(row, col).setToolTip(
-                            self.tr(
-                                "All system test sets have at least one test "
-                                "that failed"
-                            )
-                        )
-                        tbl.item(row, col).setToolTip(
-                            self.tr(
-                                "All system test sets have at least one test that failed"
                             )
                         )
 
@@ -4466,11 +4502,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                                 "One or more PT3 tests in "
                                                 "the system test indicate "
                                                 "potential EMI"
-                                            )
-                                        )
-                                        tbl.item(row, col).setToolTip(
-                                            self.tr(
-                                                "One or more PT3 tests in the system test indicate potential EMI"
                                             )
                                         )
                                     else:
@@ -4657,6 +4688,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.heading_canvas, self.pr_canvas]
         self.figs = [self.heading_fig, self.pr_fig]
         self.toolbars = [self.heading_toolbar, self.pr_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         # Initialize the calibration/evaluation tab
         self.compass_cal_eval(idx_eval=0)
@@ -5557,6 +5590,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.tts_canvas]
         self.toolbars = [self.tts_toolbar]
         self.figs = [self.tts_fig]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_tempsal_tab(self, tbl, old_discharge, new_discharge):
         """Updates all data displayed on the tempsal tab.
@@ -6629,6 +6664,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.canvases = [self.mb_shiptrack_canvas, self.mb_ts_canvas]
             self.figs = [self.mb_shiptrack_fig, self.mb_ts_fig]
             self.toolbars = [self.mb_shiptrack_toolbar, self.mb_ts_toolbar]
+            self.ui_parents = [i.parent() for i in self.canvases]
+            self.figsMenuConnection()
+
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
                 self.data_cursor()
@@ -6994,6 +7032,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.bt_shiptrack_canvas, self.bt_ts_canvas]
         self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
         self.toolbars = [self.bt_shiptrack_toolbar, self.bt_ts_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         # Turn signals on
         self.cb_bt_bt.blockSignals(False)
@@ -7249,8 +7289,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8.3f}".format(
-                            old_discharge[transect_id].total * self.units["Q"]
+                        "{:8}".format(
+                            scientific_notation(
+                                old_discharge[transect_id].total * self.units["Q"]
+                            )
                         )
                     ),
                 )
@@ -7508,7 +7550,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.update_bt_table(
             old_discharge=old_discharge, new_discharge=self.meas.discharge
         )
-        self.bt_comments_messages()
         self.bt_comments_messages()
 
         # Update plots
@@ -7827,6 +7868,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             self.combo_gps_altitude.setCurrentIndex(index)
 
+            s = self.meas.current_settings()
+
+            if s["ggaAltitudeFilter"] == "Manual":
+                self.ed_gps_altitude_threshold.setEnabled(True)
+                threshold = "{:3.2f}".format(
+                    s["ggaAltitudeFilterChange"] * self.units["L"]
+                )
+                self.ed_gps_altitude_threshold.setText(threshold)
+
+            # Set hdop filter from transect data
+            index = self.combo_gps_hdop.findText(
+                gga_transect.boat_vel.gga_vel.gps_HDOP_filter,
+                QtCore.Qt.MatchFixedString,
+            )
+            self.combo_gps_hdop.setCurrentIndex(index)
+
             if s["GPSHDOPFilter"] == "Manual":
                 self.ed_gps_hdop_threshold.setEnabled(True)
                 threshold = "{:3.2f}".format(s["GPSHDOPFilterChange"])
@@ -7888,6 +7945,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.gps_shiptrack_canvas, self.gps_ts_canvas]
         self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
         self.toolbars = [self.gps_shiptrack_toolbar, self.gps_ts_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
         if not self.gps_initialized:
             tbl.cellClicked.connect(self.gps_table_clicked)
@@ -9450,6 +9509,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.depth_canvas]
         self.figs = [self.depth_fig]
         self.toolbars = [self.depth_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_depth_table(self, old_discharge, new_discharge):
         """Updates the depth table with new or reprocessed data.
@@ -10145,6 +10206,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.wt_shiptrack_canvas, self.wt_filter_canvas]
         self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
         self.toolbars = [self.wt_shiptrack_toolbar, self.wt_filter_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_wt_table(self, old_discharge, new_discharge):
         """Updates the bottom track table with new or reprocessed data.
@@ -11077,6 +11140,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.extrap_canvas]
         self.figs = [self.extrap_fig]
         self.toolbars = [self.extrap_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def extrap_update(self):
         """Update the extrapolation tab."""
@@ -11905,6 +11970,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_st_toolbar,
             self.right_edge_st_toolbar,
         ]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def update_edges_table(self):
         """Populates the edges table with the latest data and also updates
@@ -12023,8 +12090,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Left edge discharge
                 col += 1
-                item = "{:6.3f}".format(
-                    self.meas.discharge[transect_id].left * self.units["Q"]
+                item = "{:6}".format(
+                    scientific_notation(
+                        self.meas.discharge[transect_id].left * self.units["Q"]
+                    )
                 )
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -12146,8 +12215,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Right edge discharge
                 col += 1
-                item = "{:6.3f}".format(
-                    self.meas.discharge[transect_id].right * self.units["Q"]
+                item = "{:6}".format(
+                    scientific_notation(
+                        self.meas.discharge[transect_id].right * self.units["Q"]
+                    )
                 )
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -12891,6 +12962,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_meas_q_toolbar,
             self.uncertainty_measurement_toolbar,
         ]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def uncertainty_results_table(self):
         """Create and populate uncertainty results table."""
@@ -14534,6 +14607,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.adv_graph_canvas]
         self.figs = [self.adv_graph_fig]
         self.toolbars = [self.adv_graph_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
 
     def adv_graph_transect_select(self):
         """Updates advanced graphics with newly selected transect."""
@@ -14721,6 +14796,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Update list of figs
         self.figs = [self.adv_graph_fig]
         self.toolbars = [self.adv_graph_toolbar]
+
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
@@ -14744,6 +14820,568 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.adv_graph_layout.setStretch(0, 7)
             self.adv_graph_layout.setStretch(1, 3)
             self.pb_adv_graph_controls.setText("Hide Plot Controls")
+
+    # MAP tab (Multi-transects Average Profile)
+    # ==============
+    def map_tab(self):
+        """Initializes and configures MAP tab."""
+        if self.meas.map is not None:
+            if self.change:
+                # Reset settings if change
+                self.cb_map_interpolation.setChecked(True)
+                self.cb_map_top_bottom.setChecked(True)
+                self.cb_map_edges.setChecked(True)
+                self.cb_map_bed_profiles.setChecked(False)
+                self.ed_map_cell_width.setText("")
+                self.ed_map_cell_height.setText("")
+                self.ed_map_secondary_velocity.setText("")
+                self.combo_map_data.setCurrentIndex(0)
+                self.map_current_settings = {
+                    "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
+                    "ed_map_cell_width": self.check_numeric_input(
+                        self.ed_map_cell_width
+                    ),
+                    "ed_map_cell_height": self.check_numeric_input(
+                        self.ed_map_cell_height
+                    ),
+                    "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
+                    "cb_map_edges": self.cb_map_edges.isChecked(),
+                    "ed_map_secondary_velocity": self.check_numeric_input(
+                        self.ed_map_secondary_velocity
+                    ),
+                    "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
+                    "combo_map_data": self.combo_map_data.currentText(),
+                }
+
+            # Disable MAP open Earth button if not GGA
+            settings = Measurement.current_settings(self.meas)
+            if settings["NavRef"] == "gga_vel":
+                self.pb_map_open_earth.setEnabled(True)
+            else:
+                self.pb_map_open_earth.setEnabled(False)
+
+            # Save MAP parameters as dic
+            self.map_settings = {
+                "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
+                "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
+                "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
+                "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
+                "cb_map_edges": self.cb_map_edges.isChecked(),
+                "ed_map_secondary_velocity": self.check_numeric_input(
+                    self.ed_map_secondary_velocity
+                ),
+                "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
+                "combo_map_data": self.combo_map_data.currentText(),
+            }
+
+            # MAP table
+            self.map_table()
+
+            # MAP figures
+            self.map_shiptrack()
+            self.map_wt_contour()
+
+            self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
+            self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+            self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
+            self.ui_parents = [i.parent() for i in self.canvases]
+            self.figsMenuConnection()
+
+            if not self.map_initialized:
+                # Configure dictionary of plot options
+                self.map_current_settings = self.map_settings
+                self.pb_map_apply.clicked.connect(self.update_map)
+                self.pb_map_save.clicked.connect(self.map_save_data)
+                self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
+                self.map_initialized = True
+
+    def update_map(self):
+        """Updates MAP with user's parameters."""
+
+        # Load MAP parameters and check if there is any change
+        with self.wait_cursor():
+            change_data = False
+            change_plot = False
+            self.map_settings = {
+                "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
+                "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
+                "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
+                "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
+                "cb_map_edges": self.cb_map_edges.isChecked(),
+                "ed_map_secondary_velocity": self.check_numeric_input(
+                    self.ed_map_secondary_velocity
+                ),
+                "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
+                "combo_map_data": self.combo_map_data.currentText(),
+            }
+            for key in self.map_settings:
+                if self.map_settings[key] != self.map_current_settings[key]:
+                    if key in [
+                        "cb_map_interpolation",
+                        "ed_map_cell_width",
+                        "ed_map_cell_height",
+                        "cb_map_top_bottom",
+                        "cb_map_edges",
+                    ]:
+                        change_data = True
+                        change_plot = True
+                        break
+                    else:
+                        change_plot = True
+
+            # Save current parameters
+            self.map_current_settings = self.map_settings
+
+            # Apply changes
+            if change_data or change_plot:
+                if change_data:
+                    self.meas.compute_map(
+                        node_horizontal_user=self.map_settings["ed_map_cell_width"],
+                        node_vertical_user=self.map_settings["ed_map_cell_height"],
+                        extrap_option=self.map_settings["cb_map_top_bottom"],
+                        edges_option=self.map_settings["cb_map_edges"],
+                        interp_option=self.map_settings["cb_map_interpolation"],
+                    )
+                self.map_table(update=True)
+                self.map_wt_contour()
+
+                self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+
+                # Reset data cursor to work with new figure
+                if self.actionData_Cursor.isChecked():
+                    self.data_cursor()
+
+    def map_table(self, update=False):
+        """Create and populate MAP results table."""
+        # Setup table
+        n_transects = len(self.meas.transects)
+        tbl = self.table_map_results
+        if not update:
+            map_header = [self.tr("MAP"), self.tr("Meas."), self.tr("Delta (%)")]
+            map_rows = [
+                self.tr("Total Q ") + self.tr(self.units["label_Q"]),
+                self.tr("Q/A ") + self.tr(self.units["label_V"]),
+                self.tr("Mean depth ") + self.tr(self.units["label_L"]),
+                self.tr("Width ") + self.tr(self.units["label_L"]),
+            ]
+            tbl.setRowCount(0)
+            ncols = len(map_header)
+            nrows = len(map_rows)
+            tbl.setRowCount(nrows)
+            tbl.setColumnCount(ncols)
+
+            # tbl.horizontalHeader().hide()
+            tbl.setHorizontalHeaderLabels(map_header)
+            tbl.horizontalHeader().setFont(self.font_bold)
+            tbl.setVerticalHeaderLabels(map_rows)
+            tbl.verticalHeader().setFont(self.font_bold)
+
+            header = tbl.horizontalHeader()
+            header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+            col_header = tbl.verticalHeader()
+            col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+
+        if len(self.checked_transects_idx) > 0:
+            trans_prop = Measurement.compute_measurement_properties(self.meas)
+
+            row = 0
+            # MAP Q
+            col = 0
+            map_q = self.meas.map.total_discharge
+            tbl.setItem(
+                row,
+                col,
+                QtWidgets.QTableWidgetItem(
+                    "{:8}".format(scientific_notation(map_q * self.units["Q"]))
+                ),
+            )
+            # Meas Q
+            col += 1
+            discharge = Measurement.mean_discharges(self.meas)
+            tbl.setItem(
+                row,
+                col,
+                QtWidgets.QTableWidgetItem(
+                    "{:8}".format(
+                        scientific_notation(discharge["total_mean"] * self.units["Q"])
+                    )
+                ),
+            )
+            # Delta Q
+            col += 1
+            if discharge["total_mean"] != 0:
+                per_diff = (
+                    100 * (map_q - discharge["total_mean"]) / discharge["total_mean"]
+                )
+            else:
+                per_diff = np.nan
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row, col, QtWidgets.QTableWidgetItem("{:7.1f}".format(per_diff))
+                )
+
+            row += 1
+            # MAP mean v
+            col = 0
+            map_area = np.nansum(self.meas.map.cells_area)
+            map_v = map_q / map_area * self.units["V"]
+            if np.isnan(map_v):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(map_v))
+                    ),
+                )
+            # Meas. mean v
+            col += 1
+            meas_v = trans_prop["avg_water_speed"][n_transects] * self.units["V"]
+            if np.isnan(meas_v):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(meas_v))
+                    ),
+                )
+            # Delta v
+            col += 1
+            if meas_v != 0:
+                per_diff = 100 * (map_v - meas_v) / meas_v
+            else:
+                per_diff = np.nan
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row, col, QtWidgets.QTableWidgetItem("{:7.1f}".format(per_diff))
+                )
+
+            row += 1
+            # MAP mean depth
+            col = 0
+            map_d = np.nanmean(self.meas.map.depths)
+            if np.isnan(map_d):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(map_d * self.units["L"]))
+                    ),
+                )
+            # Meas. mean depth
+            col += 1
+            depth_meas = []
+            for id_transect in self.checked_transects_idx:
+                transect = self.meas.transects[id_transect]
+                depth_meas.append(transect.depths.bt_depths.depth_processed_m)
+            every_depth = np.array(
+                [item for subarray in depth_meas for item in subarray]
+            )
+            meas_d = np.nanmean(every_depth)
+            if np.isnan(meas_d):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(meas_d * self.units["L"]))
+                    ),
+                )
+            # Delta mean depth
+            col += 1
+            if meas_d != 0:
+                per_diff = 100 * (map_d - meas_d) / meas_d
+            else:
+                per_diff = np.nan
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row, col, QtWidgets.QTableWidgetItem("{:7.1f}".format(per_diff))
+                )
+
+            row += 1
+            # MAP width
+            col = 0
+            map_width = self.meas.map.borders_ens[-1]
+            if np.isnan(map_width):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(map_width))
+                    ),
+                )
+            # Meas. width
+            col += 1
+            meas_width = trans_prop["width"][n_transects] * self.units["L"]
+            if np.isnan(meas_width):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(scientific_notation(meas_width))
+                    ),
+                )
+            # Delta mean depth
+            col += 1
+            if meas_width != 0:
+                per_diff = 100 * (map_width - meas_width) / meas_width
+            else:
+                per_diff = np.nan
+            if np.isnan(per_diff):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row, col, QtWidgets.QTableWidgetItem("{:7.1f}".format(per_diff))
+                )
+
+            tbl.item(0, 0).setFont(self.font_bold)
+            tbl.item(1, 0).setFont(self.font_bold)
+            tbl.item(2, 0).setFont(self.font_bold)
+            tbl.item(3, 0).setFont(self.font_bold)
+
+    def map_wt_contour(self):
+        """Creates water track profile on MAP data."""
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.map_wt_contour_canvas is None:
+            # Create the canvas
+            self.map_wt_contour_canvas = MplCanvas(
+                parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80
+            )
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graphics_map_wt_contour)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(1, 1, 1, 1)
+            # Add the canvas
+            layout.addWidget(self.map_wt_contour_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.map_wt_contour_toolbar = NavigationToolbar(
+                self.map_wt_contour_canvas, self
+            )
+            self.map_wt_contour_toolbar.hide()
+
+        # Initialize the boat speed figure and assign to the canvas
+        self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
+
+        # Quiver parameters
+        if self.map_settings["combo_map_data"] == "Primary velocity":
+            vy = self.meas.map.secondary_velocity
+            quiver_label = "Secondary velocity"
+        else:
+            vy = self.meas.map.transverse_velocity
+            quiver_label = "Transverse velocity"
+        data_quiver = {
+            "x": self.meas.map.distance_cells_center,
+            "z": self.meas.map.depth_cells_center,
+            "vy": vy,
+            "vz": self.meas.map.vertical_velocity,
+            "scale": self.map_settings["ed_map_secondary_velocity"],
+            "label": quiver_label,
+        }
+
+        # Bed profiles of transects
+        if self.map_settings["cb_map_bed_profiles"]:
+            bed_profiles = {
+                "x": self.meas.map.acs_distance,
+                "depth": self.meas.map.depth_by_transect,
+            }
+        else:
+            bed_profiles = None
+
+        self.map_wt_contour_fig.create(
+            transect=self.meas.map,
+            units=self.units,
+            data_type=self.map_settings["combo_map_data"],
+            data_quiver=data_quiver,
+            bed_profiles=bed_profiles,
+            color_map=self.color_map,
+            x_axis_type="MAP",
+        )
+        self.map_wt_contour_fig.fig.subplots_adjust(
+            left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0
+        )
+        # Draw canvas
+        self.map_wt_contour_canvas.draw()
+
+    def map_shiptrack(self):
+        """Creates shiptrack plot for MAP cross-section and transects' track."""
+
+        # If the canvas has not been previously created, create the canvas and add the widget.
+        if self.map_shiptrack_canvas is None:
+            # Create the canvas
+            self.map_shiptrack_canvas = MplCanvas(
+                parent=self.graphics_map_track, width=4, height=3, dpi=80
+            )
+            # Assign layout to widget to allow auto scaling
+            layout = QtWidgets.QVBoxLayout(self.graphics_map_track)
+            # Adjust margins of layout to maximize graphic area
+            layout.setContentsMargins(1, 1, 1, 1)
+            # Add the canvas
+            layout.addWidget(self.map_shiptrack_canvas)
+            # Initialize hidden toolbar for use by graphics controls
+            self.map_shiptrack_toolbar = NavigationToolbar(
+                self.map_shiptrack_canvas, self
+            )
+            self.map_shiptrack_toolbar.hide()
+
+        # Initialize the shiptrack figure and assign to the canvas
+        self.map_shiptrack_fig = Maptrack(canvas=self.map_shiptrack_canvas)
+        # Create the figure with the specified data
+        settings = Measurement.current_settings(self.meas)
+        self.map_shiptrack_fig.create(
+            map_data=self.meas.map, units=self.units, nav_ref=settings["NavRef"]
+        )
+
+        # Draw canvas
+        self.map_shiptrack_canvas.draw()
+
+    def map_save_data(self):
+        """Save MAP data as csv or txt."""
+        map_data = self.meas.map
+        if map_data is not None:
+            row, col = map_data.primary_velocity.shape
+            ens_mid = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) * 0.5
+            data = {
+                "Distance (Left bank) "
+                + self.units["label_L"]: np.repeat(ens_mid, row) * self.units["L"],
+                "Primary velocity "
+                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
+                * self.units["V"],
+                "Secondary velocity "
+                + self.units["label_V"]: map_data.secondary_velocity.ravel(order="F")
+                * self.units["V"],
+                "Streamwise velocity "
+                + self.units["label_V"]: map_data.streamwise_velocity.ravel(order="F")
+                * self.units["V"],
+                "Transverse velocity (Left to Right) "
+                + self.units["label_V"]: map_data.transverse_velocity.ravel(order="F")
+                * self.units["V"],
+                "Vertical velocity "
+                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
+                * self.units["V"],
+                "Depth "
+                + self.units["label_L"]: np.repeat(map_data.depths, row)
+                * self.units["L"],
+                "Cells discharge "
+                + self.units["label_Q"]: map_data.cells_discharge.ravel(order="F")
+                * self.units["Q"],
+                "Cells area "
+                + self.units["label_A"]: map_data.cells_area.ravel(order="F")
+                * self.units["A"],
+                "Distance cells center "
+                + self.units["label_L"]: map_data.distance_cells_center.ravel(order="F")
+                * self.units["L"],
+                "Depth cells center "
+                + self.units["label_L"]: map_data.depth_cells_center.ravel(order="F")
+                * self.units["L"],
+            }
+
+            df = pd.DataFrame(data)
+            df = df[df["Cells discharge " + self.units["label_Q"]].notna()]
+            save_map = SaveDialog(parent=self, save_type="MAP")
+            if len(save_map.full_Name) > 0:
+                try:
+                    if save_map.file_extension == ".csv":
+                        df.to_csv(save_map.full_Name, sep=";", index=False, header=True)
+                    elif save_map.file_extension == ".txt":
+                        df.to_csv(save_map.full_Name, sep=" ", index=False, header=True)
+                except Exception:
+                    self.popup_message(self.tr("Impossible to save MAP data."))
+
+    def plot_map_google_earth(self):
+        """Creates line plots of transects in Google Earth using GGA coordinates and MAP average ship track."""
+        kml = simplekml.Kml(open=1)
+        # Create a shiptrack for each checked transect
+        for transect_idx in self.checked_transects_idx:
+            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
+            lon = lon[np.logical_not(np.isnan(lon))]
+            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
+            lat = lat[np.logical_not(np.isnan(lat))]
+            line_name = self.meas.transects[transect_idx].file_name[:-4]
+            lon_lat = tuple(zip(lon, lat))
+            _ = kml.newlinestring(name=line_name, coords=lon_lat)
+
+        # Get utm zone
+        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
+        # Define average ship track
+        left_x = np.nanmedian([item[0] for item in self.meas.map.x_raw_coordinates])
+        x_boundaries = [
+            min([min(l) for l in self.meas.map.x_projected]),
+            max([max(l) for l in self.meas.map.x_projected]),
+        ]
+
+        x_utm = np.array(
+            [
+                min(x_boundaries, key=lambda x: abs(x - left_x)),
+                max(x_boundaries, key=lambda x: abs(x - left_x)),
+            ]
+        )
+        y_utm = np.array(
+            [i * self.meas.map.slope + self.meas.map.intercept for i in x_utm]
+        )
+
+        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
+        line_name = "MAP average ship track"
+        lon_lat = tuple(zip(lon, lat))
+        lin = kml.newlinestring(name=line_name, coords=lon_lat)
+        lin.style.linestyle.color = "ff0000ff"
+
+        fullname = os.path.join(
+            self.sticky_settings.get("Folder"),
+            datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
+        )
+        kml.save(fullname)
+        try:
+            os.startfile(fullname)
+        except os.error:
+            self.popup_message(
+                text=self.tr(
+                    "Google Earth is not installed or is not associated with kml files."
+                )
+            )
+
+    # Graphics save
+    # =================
+    def figsMenuConnection(self):
+        """Connect ui to event filter for current figures."""
+        for fig in self.figs:
+            fig.canvas.parent().installEventFilter(self)
+
+    def eventFilter(self, source, event):
+        """Load events."""
+        if event.type() == QtCore.QEvent.ContextMenu:
+            if source in self.ui_parents:
+                self.current_fig = self.figs[self.ui_parents.index(source)]
+                self.figsMenu.exec_(event.globalPos())
+                return True
+        return super().eventFilter(source, event)
+
+    def saveFig(self):
+        """Save selected figure."""
+        if self.current_fig is not None:
+            # Get the current folder setting.
+            save_fig = SaveDialog(parent=self, save_type="fig")
+            # Save figure in user format
+            if len(save_fig.full_Name) > 0:
+                self.current_fig.fig.savefig(
+                    save_fig.full_Name, dpi=300, bbox_inches="tight"
+                )
 
     # Graphics controls
     # =================
@@ -15415,6 +16053,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         elif tab_idx == "Adv. Graph":
             self.adv_graph_tab()
 
+        # MAP tab
+        elif tab_idx == "MAP":
+            self.map_tab()
+
         self.set_tab_color()
 
         # Toggle window to fix sizing when BT or WT tabs are chosen to prevent
@@ -15506,7 +16148,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionON.setDisabled(True)
 
         # Set tab text and icons to default
-        for tab_idx in range(self.tab_all.count() - 3):
+        for tab_idx in range(self.tab_all.count() - 4):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
             self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
 
@@ -15558,8 +16200,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if len(heading) > 1 and np.any(np.not_equal(heading, 0)):
             self.tab_all.setTabEnabled(2, True)
+            self.tab_all.setTabEnabled(13, True)
         else:
             self.tab_all.setTabEnabled(2, False)
+            self.tab_all.setTabEnabled(13, False)
 
         self.tab_all.setCurrentIndex(0)
 
