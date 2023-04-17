@@ -1016,7 +1016,7 @@ class Oursin(object):
             a = a.reshape(1, -1)
         return a
 
-    @profile
+    # @profile
     def compute_oursin(
         self, meas, user_advanced_settings=None, u_measurement_user=None
     ):
