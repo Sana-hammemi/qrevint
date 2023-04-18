@@ -379,6 +379,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     xs_export: bool
         Indicates that the mean cross-section should be computed and included
         the XML when saving
+    show_map: bool
+        Indicates if the MAP tab should be shown and the MAP computed
+    gps_quality_threshold: int
+        Sets the threshold for which the GPS quality must equal to or greater than
     """
 
     handle_args_trigger = pyqtSignal()
@@ -615,6 +619,36 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.sticky_settings.new("XsExport",
                 self.agency_options["ExportCrossSection"]["default"])
             self.xs_export = self.agency_options["ExportCrossSection"]["default"]
+
+        # MAP
+        if "MAP" not in self.agency_options.keys():
+            self.popup_message(
+                self.tr("QRev.cfg: MAP parameter not found."))
+            sys.exit()
+        if "show" not in self.agency_options["MAP"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg MAP: show parameter not found."))
+            sys.exit()
+        if self.agency_options["MAP"]["show"]:
+            self.show_map = True
+        else:
+            self.show_map = False
+            self.tab_all.removeTab(self.tab_all.indexOf(
+                self.tab_all.findChild(QtWidgets.QWidget, "tab_map")))
+
+        # Autonomous GPS
+        if "AutonomousGPS" not in self.agency_options.keys():
+            self.popup_message(
+                self.tr("QRev.cfg: AutonomousGPS parameter not found."))
+            sys.exit()
+        if "allow" not in self.agency_options["AutonomousGPS"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg AutonomousGPS: allow parameter not found."))
+            sys.exit()
+        if self.agency_options["AutonomousGPS"]["allow"]:
+            self.gps_quality_threshold = 1
+        else:
+            self.gps_quality_threshold = 2
 
         # Color map
         if "ColorMap" not in self.agency_options.keys():
@@ -1136,6 +1170,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options["QA"]["MinTransects"],
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
+                            run_map=self.show_map,
+                            gps_quality_threshold=self.gps_quality_threshold
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1156,6 +1192,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         min_transects=self.agency_options["QA"]["MinTransects"],
                         min_duration=self.agency_options["QA"]["MinDuration"],
                         export_xs=self.xs_export,
+                        run_map=self.show_map,
+                        gps_quality_threshold=self.gps_quality_threshold
                     )
 
             # Load and process TRDI data
@@ -1175,6 +1213,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         min_transects=self.agency_options["QA"]["MinTransects"],
                         min_duration=self.agency_options["QA"]["MinDuration"],
                         export_xs=self.xs_export,
+                        run_map=self.show_map,
+                        gps_quality_threshold=self.gps_quality_threshold
                     )
 
             # Load QRev data
@@ -1223,6 +1263,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             source="QRev",
                             proc_type="None",
                             export_xs=self.xs_export,
+                            run_map=self.show_map,
+                            gps_quality_threshold=self.gps_quality_threshold
                         )
                     elif msg_box.clickedButton() == reprocess_btn:
                         self.meas = Measurement(
@@ -1235,6 +1277,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options["QA"]["MinTransects"],
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
+                            run_map=self.show_map,
+                            gps_quality_threshold=self.gps_quality_threshold
                         )
 
                 # Settings based on measurement settings
@@ -1953,10 +1997,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setIcon(QtWidgets.QMessageBox.Question)
         msg.addButton(self.tr("Users Manual"), msg.ActionRole)
         msg.addButton(self.tr("Technical Manual"), msg.ActionRole)
-        msg.addButton(
-            self.tr("Submit Bug or Feature Request \n " "(Internet Required)"),
-            msg.ActionRole,
-        )
+        if self.QRev_version[0:5] == 'QRev ':
+            msg.addButton(
+                self.tr("Submit Bug or Feature Request \n " "(Internet Required)"),
+                msg.ActionRole,
+            )
         msg.addButton(self.tr("About"), msg.ActionRole)
         msg.addButton(self.tr("Cancel"), msg.ActionRole)
         # msg.setInformativeText('Select option:')
@@ -15645,7 +15690,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             group = str(self.group_idx + 1)
 
-            save_file = SaveMeasurementDialog(group=group, parent=self)
+            save_file = SaveDialog(group=group, parent=self)
 
             if len(save_file.full_Name) > 0:
 

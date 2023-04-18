@@ -22,7 +22,7 @@ from Classes.Oursin import Oursin
 from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-from profilehooks import profile
+# from profilehooks import profile
 
 
 class Measurement(object):
@@ -93,9 +93,15 @@ class Measurement(object):
         Stage at end of measurement
     stage_meas_m: float
         Stage assigned to measurement
+    gps_quality_threshold: int
+        Sets the threshold for which the GPS quality must equal to or greater than
+    export_xs: bool
+        Specifies if average cross-section should be computed and exported
+    run_map: bool
+        Indicates if the MAP computation should be run
     """
 
-    @profile
+    # @profile
     def __init__(
         self,
         in_file,
@@ -109,6 +115,8 @@ class Measurement(object):
         min_transects=2,
         min_duration=720,
         export_xs=True,
+        run_map=True,
+        gps_quality_threshold=2
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -139,6 +147,10 @@ class Measurement(object):
             Minimum duration in seconds of all transects to pass QA
         export_xs: bool
             Specifies if average cross-section should be computed and exported
+        run_map: bool
+            Indicates if the MAP computation should be run
+        gps_quality_threshold: int
+            Sets the threshold for which the GPS quality must equal to or greater than
         """
 
         self.use_ping_type = use_ping_type
@@ -179,6 +191,8 @@ class Measurement(object):
         self.stage_end_m = 0
         self.stage_start_m = 0
         self.export_xs = export_xs
+        self.run_map = run_map
+        self.gps_quality_threshold = gps_quality_threshold
 
         # Load data from selected source
         if source == "QRev":
@@ -943,7 +957,8 @@ class Measurement(object):
             self.checked_transect_idx[0]
         ].boat_vel.bt_vel.use_measurement_thresholds
 
-        self.compute_map()
+        if self.run_map:
+            self.compute_map()
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and
@@ -1724,7 +1739,8 @@ class Measurement(object):
         self.compute_discharge()
 
         self.compute_uncertainty()
-        self.compute_map()
+        if self.run_map:
+            self.compute_map()
 
     def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -2109,7 +2125,7 @@ class Measurement(object):
         settings["BTsmoothFilter"] = "Off"
 
         # GGA Filter settings
-        settings["ggaDiffQualFilter"] = 2
+        settings["ggaDiffQualFilter"] = self.gps_quality_threshold
         settings["ggaAltitudeFilter"] = "Auto"
         settings["ggaAltitudeFilterChange"] = np.nan
 
