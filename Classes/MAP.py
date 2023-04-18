@@ -259,6 +259,7 @@ class MAP(object):
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
                 # Depth
+                #TODO shouldn't this use the selected depth
                 depth_transect = transect.depths.bt_depths.depth_processed_m[::-1]
                 cells_depth = transect.depths.bt_depths.depth_cell_depth_m[:, ::-1]
                 # Velocity data
@@ -295,6 +296,7 @@ class MAP(object):
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
                 # Depth
+                #TODO Shouldn't this use the selected depth
                 depth_transect = transect.depths.bt_depths.depth_processed_m
                 cells_depth = transect.depths.bt_depths.depth_cell_depth_m
                 # Velocity data
