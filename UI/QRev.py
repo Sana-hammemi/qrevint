@@ -592,12 +592,29 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rating_prompt = self.agency_options["RatingPrompt"]["default"]
 
         # check xs export setting
+        if "ExportCrossSection" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: ExportCrossSection parameter not found."))
+            sys.exit()
+        if "show" not in self.agency_options["RatingPrompt"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg ExportCrossSection: show parameter not found.")
+            )
+            sys.exit()
+        if "default" not in self.agency_options["RatingPrompt"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg ExportCrossSection: default parameter not found.")
+            )
+            sys.exit()
         try:
-            ss = self.sticky_settings.get("XsExport")
-            self.xs_export = ss
+            if self.agency_options["ExportCrossSection"]["show"]:
+                ss = self.sticky_settings.get("XsExport")
+                self.xs_export = ss
+            else:
+                self.xs_export = self.agency_options["ExportCrossSection"]["default"]
         except KeyError:
-            self.sticky_settings.new("XsExport", True)
-            self.xs_export = True
+            self.sticky_settings.new("XsExport",
+                self.agency_options["ExportCrossSection"]["default"])
+            self.xs_export = self.agency_options["ExportCrossSection"]["default"]
 
         # Color map
         if "ColorMap" not in self.agency_options.keys():
@@ -1612,6 +1629,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             options.cb_stylesheet.setChecked(True)
         else:
             options.cb_stylesheet.setChecked(False)
+
+        if not self.agency_options["ExportCrossSection"]["show"]:
+            options.cb_xs_export.hide()
+        if self.xs_export:
+            options.cb_xs_export.setChecked(True)
+        else:
+            options.cb_xs_export.setChecked(True)
 
         if not self.agency_options["ExtrapWeighting"]["show"]:
             options.gb_extrap_weighted.hide()
