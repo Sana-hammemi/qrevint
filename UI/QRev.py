@@ -3,6 +3,7 @@ import copy
 import os
 import sys
 import webbrowser
+import utm
 import multiprocessing as mp
 import getpass
 import json
@@ -28,7 +29,7 @@ from Classes.Oursin import Oursin
 from MiscLibs.common_functions import (
     convert_temperature,
     units_conversion,
-    scientific_notation,
+    sfrnd,
 )
 from UI.selectFile import SaveDialog
 from UI.OpenMeasurementDialog import OpenMeasurementDialog
@@ -3250,7 +3251,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -3265,7 +3266,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:7}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].top * self.units["Q"]
                             )
                         )
@@ -3280,7 +3281,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:7}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].middle
                                 * self.units["Q"]
                             )
@@ -3296,7 +3297,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:7}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].bottom
                                 * self.units["Q"]
                             )
@@ -3312,7 +3313,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:7}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].left * self.units["Q"]
                             )
                         )
@@ -3327,7 +3328,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:7}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 self.meas.discharge[transect_id].right * self.units["Q"]
                             )
                         )
@@ -3398,7 +3399,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:8}".format(
-                        scientific_notation(discharge["total_mean"] * self.units["Q"])
+                        self.q_digits(discharge["total_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -3411,7 +3412,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(discharge["top_mean"] * self.units["Q"])
+                        self.q_digits(discharge["top_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -3424,7 +3425,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(discharge["mid_mean"] * self.units["Q"])
+                        self.q_digits(discharge["mid_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -3437,7 +3438,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(discharge["bot_mean"] * self.units["Q"])
+                        self.q_digits(discharge["bot_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -3450,7 +3451,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(discharge["left_mean"] * self.units["Q"])
+                        self.q_digits(discharge["left_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -3463,7 +3464,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(discharge["right_mean"] * self.units["Q"])
+                        self.q_digits(discharge["right_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -5033,7 +5034,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -5048,7 +5049,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -5175,7 +5176,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -5190,7 +5191,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -5707,7 +5708,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:8}".format(
-                        scientific_notation(
+                        self.q_digits(
                             old_discharge[transect_id].total * self.units["Q"]
                         )
                     )
@@ -5722,7 +5723,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:8}".format(
-                        scientific_notation(
+                        self.q_digits(
                             new_discharge[transect_id].total * self.units["Q"]
                         )
                     )
@@ -7290,7 +7291,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -7305,7 +7306,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -8273,7 +8274,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -8288,7 +8289,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -9658,7 +9659,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -9673,7 +9674,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -10511,7 +10512,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 old_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -10526,7 +10527,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     col,
                     QtWidgets.QTableWidgetItem(
                         "{:8}".format(
-                            scientific_notation(
+                            self.q_digits(
                                 new_discharge[transect_id].total * self.units["Q"]
                             )
                         )
@@ -12091,7 +12092,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Left edge discharge
                 col += 1
                 item = "{:6}".format(
-                    scientific_notation(
+                    self.q_digits(
                         self.meas.discharge[transect_id].left * self.units["Q"]
                     )
                 )
@@ -12216,7 +12217,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Right edge discharge
                 col += 1
                 item = "{:6}".format(
-                    scientific_notation(
+                    self.q_digits(
                         self.meas.discharge[transect_id].right * self.units["Q"]
                     )
                 )
@@ -14145,7 +14146,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:8}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].total * units["Q"]
                         )
                     )
@@ -14158,7 +14159,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].top * units["Q"]
                         )
                     )
@@ -14171,7 +14172,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].middle * units["Q"]
                         )
                     )
@@ -14184,7 +14185,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].bottom * units["Q"]
                         )
                     )
@@ -14197,7 +14198,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].left * units["Q"]
                         )
                     )
@@ -14210,7 +14211,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:7}".format(
-                        scientific_notation(
+                        self.q_digits(
                             self.meas.discharge[transect_id].right * units["Q"]
                         )
                     )
@@ -14992,7 +14993,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 row,
                 col,
                 QtWidgets.QTableWidgetItem(
-                    "{:8}".format(scientific_notation(map_q * self.units["Q"]))
+                    "{:8}".format(self.q_digits(map_q * self.units["Q"]))
                 ),
             )
             # Meas Q
@@ -15003,7 +15004,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 col,
                 QtWidgets.QTableWidgetItem(
                     "{:8}".format(
-                        scientific_notation(discharge["total_mean"] * self.units["Q"])
+                        self.q_digits(discharge["total_mean"] * self.units["Q"])
                     )
                 ),
             )
@@ -15034,7 +15035,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(map_v))
+                        "{:8}".format(self.q_digits(map_v))
                     ),
                 )
             # Meas. mean v
@@ -15047,7 +15048,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(meas_v))
+                        "{:8}".format(self.q_digits(meas_v))
                     ),
                 )
             # Delta v
@@ -15074,7 +15075,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(map_d * self.units["L"]))
+                        "{:8}".format(self.q_digits(map_d * self.units["L"]))
                     ),
                 )
             # Meas. mean depth
@@ -15094,7 +15095,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(meas_d * self.units["L"]))
+                        "{:8}".format(self.q_digits(meas_d * self.units["L"]))
                     ),
                 )
             # Delta mean depth
@@ -15121,7 +15122,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(map_width))
+                        "{:8}".format(self.q_digits(map_width))
                     ),
                 )
             # Meas. width
@@ -15134,7 +15135,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(scientific_notation(meas_width))
+                        "{:8}".format(self.q_digits(meas_width))
                     ),
                 )
             # Delta mean depth
@@ -16206,6 +16207,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tab_all.setTabEnabled(13, False)
 
         self.tab_all.setCurrentIndex(0)
+        
+    def q_digits(self, q):
+        if self.agency_options["QDigits"]["method"] == "sigfig":
+            return sfrnd(q, self.agency_options["QDigits"]["digits"])
+        else:
+            return np.round(q, self.agency_options["QDigits"]["digits"])
 
     def closeEvent(self, event):
         """Warns user when closing QRev.

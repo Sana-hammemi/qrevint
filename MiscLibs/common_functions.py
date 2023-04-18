@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as sp
-from decimal import Decimal
-from sigfig import round as sfrnd
+# from decimal import Decimal
+from sigfig import round as sigfig_round
 
 
 def cosd(angle):
@@ -493,7 +493,7 @@ def ari2geodeg(ari_ang):
     return geo_ang
 
 
-def scientific_notation(n, sig: int = 3):
+def sfrnd(n, sig: int = 3):
     # """Return scientific notation
     #
     #     Parameters
@@ -521,5 +521,4 @@ def scientific_notation(n, sig: int = 3):
     #     n_sn = str(n_sn_temp).split('.')[0]
     # else:
     #     n_sn = str(n_sn_temp)
-    n_sn = sfrnd(n, sig)
-    return n_sn
+    return sigfig_round(n, sig)
