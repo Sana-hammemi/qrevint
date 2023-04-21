@@ -36,7 +36,7 @@ class DischargeTS(object):
         self.hover_connection = None
         self.annot = None
 
-    def create(self, meas, checked, units):
+    def create(self, meas, checked, transect_idx, units):
         """Generates the discharge plot.
 
         Parameters
@@ -59,6 +59,8 @@ class DischargeTS(object):
             left=0.2, bottom=0.15, right=0.98, top=0.98, wspace=0.1, hspace=0
         )
 
+        save_y = []
+        save_x = []
         # Plot each transects discharge as a horizontal line from start time to end time
         for idx in checked:
             x = []
@@ -73,7 +75,23 @@ class DischargeTS(object):
             )
             y.append(meas.discharge[idx].total * units["Q"])
             y.append(meas.discharge[idx].total * units["Q"])
-            self.fig.ax.plot(np.array(x), np.array(y), "k-")
+            self.fig.ax.plot(np.array(x), np.array(y), color="black")
+            save_y.append(y)
+            save_x.append(x)
+
+        avg_y = []
+        for n in range(len(save_y)):
+            if n < len(save_y):
+                avg_y.append([np.nanmean(save_y[0:n+1]), np.nanmean(save_y[0:n+1])])
+        avg_y = np.array(avg_y).flatten()
+        y_upper = np.array(avg_y) * 1.05
+        y_lower = np.array(avg_y) * .95
+        x_flat = np.array(save_x).flatten()
+        self.fig.ax.fill_between(x_flat, y_upper, y_lower, color="aliceblue")
+        self.fig.ax.plot(x_flat, y_upper, color="cornflowerblue")
+        self.fig.ax.plot(x_flat, y_lower, color="cornflowerblue")
+        self.fig.ax.plot(x_flat, avg_y, color='blue')
+        self.fig.ax.plot(save_x[transect_idx], save_y[transect_idx], color="black", linewidth=5 )
 
         # Customize axis
         time_fmt = mdates.DateFormatter("%H:%M:%S")

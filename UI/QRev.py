@@ -812,6 +812,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Save figure menu with Right click
         self.figsMenu = QtWidgets.QMenu(self)
         self.figsMenu.addAction("Save figure", self.saveFig)
+        self.figsMenu.addAction("Set Axes Limits", self.set_axes)
 
         # Connect a change in selected tab to the tab manager
         self.tab_all.currentChanged.connect(self.tab_manager)
@@ -831,24 +832,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionOptions.setToolTip(self.tr("Options [CNTL-O]"))
         self.actionData_Cursor.setToolTip(self.tr("Data cursor"))
         self.actionHome.setToolTip(self.tr("Reset graphs"))
-        self.actionZoom.setToolTip(self.tr("Zoom"))
-        self.actionPan.setToolTip(self.tr("Pan"))
-        self.actionGoogle_Earth.setToolTip(self.tr("Plot transects in Google Earth"))
-        self.actionHelp.setToolTip(self.tr("Open help documents."))
-
-        # Set tooltips for toolbar icons
-        self.actionOpen.setToolTip(self.tr("Open measurement"))
-        self.actionComment.setToolTip(self.tr("Add comment"))
-        self.actionCheck.setToolTip(self.tr("Select transects"))
-        self.actionBT.setToolTip(self.tr("Set BT as reference"))
-        self.actionGGA.setToolTip(self.tr("Set GGA as reference"))
-        self.actionVTG.setToolTip(self.tr("Set VGT as reference"))
-        self.actionOFF.setToolTip(self.tr("Composite tracks off"))
-        self.actionON.setToolTip(self.tr("Composite tracks on"))
-        self.actionOptions.setToolTip(self.tr("Options"))
-        self.actionData_Cursor.setToolTip(self.tr("Data cursor"))
-        self.actionHome.setToolTip(self.tr("Reset graphs"))
-        self.actionZoom.setToolTip(self.tr("Zoom"))
+        self.actionZoom.setToolTip(self.tr("Zoom Window (In: Left click, Out: Right click "))
         self.actionPan.setToolTip(self.tr("Pan"))
         self.actionGoogle_Earth.setToolTip(self.tr("Plot transects in Google Earth"))
         self.actionHelp.setToolTip(self.tr("Open help documents."))
@@ -2185,6 +2169,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             self.update_toolbar_trans_select()
 
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figsMenuConnection()
+
     def refocus(self):
         self.tab_all.setFocus()
 
@@ -2699,6 +2686,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Update contour and shiptrack plot
                 self.contour_shiptrack(transect_id=transect_id)
+                self.discharge_plot()
+
         self.tab_all.setFocus()
 
     def contour_shiptrack(self, transect_id=0):
@@ -2716,13 +2705,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Generate graphs
         self.main_shiptrack(transect=transect)
         self.main_wt_contour(transect=transect)
-        if len(self.figs) > 0:
-            self.figs = [
-                self.main_shiptrack_fig,
-                self.main_wt_contour_fig,
-                self.main_extrap_fig,
-                self.main_discharge_fig,
-            ]
 
     def main_shiptrack(self, transect):
         """Creates shiptrack plot for data in transect.
@@ -2756,7 +2738,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_shiptrack_fig = Shiptrack(canvas=self.main_shiptrack_canvas)
         # Create the figure with the specified data
         self.main_shiptrack_fig.create(transect=transect, units=self.units, cb=False)
-
         # Draw canvas
         self.main_shiptrack_canvas.draw()
 
@@ -2800,6 +2781,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_wt_contour_fig.fig.subplots_adjust(
             left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0
         )
+        self.figs = [self.main_wt_contour_fig]
         # Draw canvas
         self.main_wt_contour_canvas.draw()
 
@@ -2907,9 +2889,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_discharge_fig = DischargeTS(canvas=self.main_discharge_canvas)
         # Create the figure with the specified data
         self.main_discharge_fig.create(
-            meas=self.meas, checked=self.checked_transects_idx, units=self.units
+            meas=self.meas,
+            checked=self.checked_transects_idx,
+            transect_idx=self.transect_row,
+            units=self.units
         )
-
         self.main_discharge_canvas.draw()
 
     def messages_tab(self):
@@ -15435,9 +15419,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def eventFilter(self, source, event):
         """Load events."""
+
         if event.type() == QtCore.QEvent.ContextMenu:
             if source in self.ui_parents:
                 self.current_fig = self.figs[self.ui_parents.index(source)]
+
+                # Determine axes of graph in which the click occured and save
+                # for use by change axes limits
+                extents = []
+                for ax in self.current_fig.fig.axes:
+                    extents.append(ax.bbox.extents)
+                extents = np.array(extents)
+                y_max = np.nanmax(extents[:,-1])
+                y_adjusted = y_max - event.y()
+                ax = np.where(np.logical_and(np.greater(event.x(), extents[:, 0]),
+                                              np.less(y_adjusted, extents[:, 3])))[0]
+                self.current_axis = self.current_fig.fig.axes[ax[-1]]
+
+                # Context menu
                 self.figsMenu.exec_(event.globalPos())
                 return True
         return super().eventFilter(source, event)
@@ -15555,6 +15554,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Adv. Graph
             elif tab_idx == "Adv. Graph":
                 self.adv_graph_tab()
+
+    def set_axes(self):
+        pass
+
+        x_limits = self.current_axis.get_xlim()
+        y_limits = self.current_axis.get_ylim()
+
+        # Get new limits
+
+        # Set new limits
+        self.current_axis.set_xlim(new_x_limits)
+        self.current_axis.set_ylim(new_y_limits)
+        self.current_fig.canvas.draw()
+
 
     def x_axis_time(self):
         """Changes the x-axis type to time"""
@@ -16051,24 +16064,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.update_main()
             else:
                 # Setup list for use by graphics controls
-                self.canvases = [
-                    self.main_shiptrack_canvas,
-                    self.main_wt_contour_canvas,
-                    self.main_extrap_canvas,
-                    self.main_discharge_canvas,
-                ]
-                self.figs = [
-                    self.main_shiptrack_fig,
-                    self.main_wt_contour_fig,
-                    self.main_extrap_fig,
-                    self.main_discharge_fig,
-                ]
-                self.toolbars = [
-                    self.main_shiptrack_toolbar,
-                    self.main_wt_contour_toolbar,
-                    self.main_extrap_toolbar,
-                    self.main_discharge_toolbar,
-                ]
+                if self.run_oursin:
+                    self.canvases = [self.main_shiptrack_canvas,
+                        self.main_wt_contour_canvas, self.main_extrap_canvas,
+                        self.main_discharge_canvas, self.uncertainty_lollipop_canvas, ]
+                    self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
+                        self.main_extrap_fig, self.main_discharge_fig,
+                        self.uncertainty_lollipop_fig, ]
+                    self.toolbars = [self.main_shiptrack_toolbar,
+                        self.main_wt_contour_toolbar, self.main_extrap_toolbar,
+                        self.main_discharge_toolbar, self.uncertainty_lollipop_toolbar, ]
+                else:
+                    self.canvases = [self.main_shiptrack_canvas,
+                        self.main_wt_contour_canvas, self.main_extrap_canvas,
+                        self.main_discharge_canvas, ]
+                    self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
+                        self.main_extrap_fig, self.main_discharge_fig, ]
+                    self.toolbars = [self.main_shiptrack_toolbar,
+                        self.main_wt_contour_toolbar, self.main_extrap_toolbar,
+                        self.main_discharge_toolbar, ]
+                self.ui_parents = [i.parent() for i in self.canvases]
                 self.tab_main.show()
 
         # System tab
