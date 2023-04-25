@@ -347,7 +347,7 @@ class WTContour(object):
                 left=True,
                 right=True,
             )
-            self.fig.ax.set_ylim(top=0, bottom=1.1 * np.nanmax(depth * units["L"]))
+            self.fig.ax.set_ylim(top=0, bottom=1.02 * np.nanmax(depth * units["L"]))
 
             # Label and limits for x axis
             if x_axis_type == "L":
@@ -365,11 +365,14 @@ class WTContour(object):
                     )
                 self.fig.ax.set_xlabel(self.canvas.tr("Length " + units["label_L"]))
             elif x_axis_type == "E":
+                e_rng = np.nanmax(x) - np.nanmin(x)
+                e_max = np.nanmax([np.nanmax(x) + 1, np.nanmax(x) + e_rng * 0.02])
+                e_min = np.nanmin([np.nanmin(x) - 1, np.nanmin(x) - e_rng * 0.02])
                 if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
-                    self.fig.ax.set_xlim(right=np.nanmin(x) - 1, left=np.nanmax(x) + 1)
+                    self.fig.ax.set_xlim(right=e_min, left=e_max)
                 else:
-                    self.fig.ax.set_xlim(left=np.nanmin(x) - 1, right=np.nanmax(x) + 1)
+                    self.fig.ax.set_xlim(left=e_min, right=e_max)
                 self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
             elif x_axis_type == "T":
                 axis_buffer = (x_plt[0, -1] - x_plt[0, 0]) * 0.02

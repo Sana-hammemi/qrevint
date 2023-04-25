@@ -850,24 +850,26 @@ class AdvGraphs(object):
 
         # x-axis is length
         if self.x_axis_type == "L":
+            axis_buffer = np.nanmax(self.x[:]) - np.nanmin(self.x[:])
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
-                self.ax[idx].set_xlim(
-                    right=-1 * self.x[-1] * 0.02, left=self.x[-1] * 1.02
-                )
+                self.ax[idx].set_xlim(right=np.nanmin(self.x) - axis_buffer * 0.02,
+                    left=np.nanmax(self.x) + axis_buffer * 0.02, )
             else:
-                self.ax[idx].set_xlim(
-                    left=-1 * self.x[-1] * 0.02, right=self.x[-1] * 1.02
-                )
-            self.ax[idx].set_xlabel(self.canvas.tr("Length" + self.units["label_L"]))
+                self.ax[idx].set_xlim(left=np.nanmin(self.x) - axis_buffer * 0.02,
+                    right=np.nanmax(self.x) + axis_buffer * 0.02, )
+            self.ax[idx].set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
 
         # x-axis is ensembles
         elif self.x_axis_type == "E":
+            e_rng = np.nanmax(self.x) - np.nanmin(self.x)
+            e_max = np.nanmax([np.nanmax(self.x) + 1, np.nanmax(self.x) + e_rng * 0.02])
+            e_min = np.nanmin([np.nanmin(self.x) - 1, np.nanmin(self.x) - e_rng * 0.02])
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
-                self.ax[idx].set_xlim(right=0, left=self.x[-1] + 1)
+                self.ax[idx].set_xlim(right=e_min, left=e_max)
             else:
-                self.ax[idx].set_xlim(left=0, right=self.x[-1] + 1)
+                self.ax[idx].set_xlim(left=e_min, right=e_max)
             self.ax[idx].set_xlabel(self.canvas.tr("Ensembles"))
 
         # x-axis is time
@@ -2042,7 +2044,7 @@ class AdvGraphs(object):
 
         # Configure y axis
         self.ax[-1].set_ylim(
-            top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1)
+            top=np.ceil(max_data * 1.02), bottom=np.floor(min_data * 1.02)
         )
 
     def bt_rssi_ts(self):
@@ -2136,7 +2138,7 @@ class AdvGraphs(object):
 
         # Configure y axis
         self.ax[-1].set_ylim(
-            top=np.ceil(max_data * 1.1), bottom=np.floor(min_data * 1.1)
+            top=np.ceil(max_data * 1.02), bottom=np.floor(min_data * 1.02)
         )
 
     def other_ts(self, data, data_color="r-"):
@@ -2726,7 +2728,7 @@ class AdvGraphs(object):
         # Configure y axis
         self.ax[-1].invert_yaxis()
         self.ax[-1].set_ylim(
-            bottom=np.ceil(np.nanmax(max_depth) * 1.1 * self.units["L"]), top=0
+            bottom=np.ceil(np.nanmax(max_depth) * 1.02 * self.units["L"]), top=0
         )
 
     def depths_final_ts(
@@ -2794,7 +2796,7 @@ class AdvGraphs(object):
         self.ax[-1].invert_yaxis()
         try:
             self.ax[-1].set_ylim(
-                bottom=np.ceil(np.nanmax(beam_depths) * 1.1 * self.units["L"]), top=0
+                bottom=np.ceil(np.nanmax(beam_depths) * 1.02 * self.units["L"]), top=0
             )
         except ValueError:
             pass
@@ -3123,7 +3125,7 @@ class AdvGraphs(object):
         ax.tick_params(
             axis="both", direction="in", bottom=True, top=True, left=True, right=True
         )
-        ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.05))
+        ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
 
     def plt_timeseries(
         self,
@@ -3214,13 +3216,13 @@ class AdvGraphs(object):
         # Set axis limits
         try:
             max_y = (
-                np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.1)
+                np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.02)
             ) * data_units[0]
             min_y = (
-                np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.1
+                np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
             ) * data_units[0]
-            if min_y > max_y * -0.05:
-                min_y = max_y * -0.05
+            if min_y > max_y * -0.02:
+                min_y = max_y * -0.02
             ax.set_ylim(top=max_y, bottom=min_y)
         except (TypeError, ValueError):
             pass

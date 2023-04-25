@@ -8063,7 +8063,6 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    <addaction name="actionZoom"/>
    <addaction name="actionPan"/>
    <addaction name="actionData_Cursor"/>
-   <addaction name="actionAxes"/>
    <addaction name="separator"/>
    <addaction name="actionGoogle_Earth"/>
    <addaction name="separator"/>
@@ -8298,18 +8297,6 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    </property>
    <property name="toolTip">
     <string>Plot to Google Earth</string>
-   </property>
-  </action>
-  <action name="actionAxes">
-   <property name="icon">
-    <iconset resource="dsm.qrc">
-     <normaloff>:/images/24x24/Stock graph.png</normaloff>:/images/24x24/Stock graph.png</iconset>
-   </property>
-   <property name="text">
-    <string>Axes</string>
-   </property>
-   <property name="toolTip">
-    <string>Set Axes Limits</string>
    </property>
   </action>
  </widget>

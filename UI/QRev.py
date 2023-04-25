@@ -66,6 +66,7 @@ from UI.MplCanvas import MplCanvas
 from UI.Disclaimer import Disclaimer
 from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
+from UI.AxesScale import AxesScale
 
 # if there is a splash screen close it
 try:
@@ -2131,6 +2132,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_discharge_fig,
                         self.uncertainty_lollipop_fig,
                     ]
+                    self.fig_calls = [self.main_shiptrack, self.main_wt_contour,
+                                      self.main_extrap_plot, self.discharge_plot, self.main_uncertainty_plot]
                     self.toolbars = [
                         self.main_shiptrack_toolbar,
                         self.main_wt_contour_toolbar,
@@ -2151,6 +2154,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_extrap_fig,
                         self.main_discharge_fig,
                     ]
+                    self.fig_calls = [self.main_shiptrack,
+                                      self.main_wt_contour,
+                                      self.main_extrap_plot,
+                                      self.discharg_plot]
                     self.toolbars = [
                         self.main_shiptrack_toolbar,
                         self.main_wt_contour_toolbar,
@@ -2782,6 +2789,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0
         )
         self.figs = [self.main_wt_contour_fig]
+        self.fig_calls = [self.main_wt_contour]
         # Draw canvas
         self.main_wt_contour_canvas.draw()
 
@@ -4741,6 +4749,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup list for use by graphics controls
         self.canvases = [self.heading_canvas, self.pr_canvas]
         self.figs = [self.heading_fig, self.pr_fig]
+        self.fig_calls = [self.compass_plot, self.pr_plot]
         self.toolbars = [self.heading_toolbar, self.pr_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -5301,6 +5310,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.compass_plot()
             self.pr_plot()
             self.figs = [self.heading_fig, self.pr_fig]
+            self.fig_calls[self.compass_plot, self.pr_plot]
 
     @QtCore.pyqtSlot(int, int)
     def compass_table_clicked(self, row, column):
@@ -5327,6 +5337,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.compass_plot()
             self.pr_plot()
             self.figs = [self.heading_fig, self.pr_fig]
+            self.fig_calls[self.compass_plot, self.pr_plot]
             self.change = True
 
         # Magnetic variation
@@ -5644,6 +5655,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.canvases = [self.tts_canvas]
         self.toolbars = [self.tts_toolbar]
         self.figs = [self.tts_fig]
+        self.fig_calls = [self.plot_temperature]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
 
@@ -6717,6 +6729,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Setup list for use by graphics controls
             self.canvases = [self.mb_shiptrack_canvas, self.mb_ts_canvas]
             self.figs = [self.mb_shiptrack_fig, self.mb_ts_fig]
+            self.fig_calls = [self.mb_shiptrack, self.mb_plots]
             self.toolbars = [self.mb_shiptrack_toolbar, self.mb_ts_toolbar]
             self.ui_parents = [i.parent() for i in self.canvases]
             self.figsMenuConnection()
@@ -7085,6 +7098,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup lists for use by graphics controls
         self.canvases = [self.bt_shiptrack_canvas, self.bt_ts_canvas]
         self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+        self.fig_calls = [self.bt_shiptrack, self.bt_ts_plots]
         self.toolbars = [self.bt_shiptrack_toolbar, self.bt_ts_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -7456,6 +7470,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+            self.fig_calls = [self.bt_shiptrack, self.bt_ts_plots]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -7539,6 +7554,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.bt_shiptrack_fig, self.bt_ts_fig]
+        self.fig_calls = [self.bt_shiptrack, self.bt_ts_plots]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -7998,6 +8014,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup lists for use by graphics controls
         self.canvases = [self.gps_shiptrack_canvas, self.gps_ts_canvas]
         self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+        self.fig_calls = [self.gps_shiptrack, self.gps_ts_plots]
         self.toolbars = [self.gps_shiptrack_toolbar, self.gps_ts_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -8564,6 +8581,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+            self.fig_calls = [self.gps_shiptrack, self.gps_ts_plots]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
@@ -8667,6 +8685,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+        self.fig_calls = [self.gps_shiptrack, self.gps_ts_plots]
 
         # Reset data cursor to work with new data plot
         if self.actionData_Cursor.isChecked():
@@ -9213,6 +9232,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.gps_shiptrack_fig, self.gps_ts_fig]
+            self.fig_calls = [self.gps_bt_shiptrack, self.gps_bt_boat_speed]
 
             # Reset data cursor to work with new data plot
             if self.actionData_Cursor.isChecked():
@@ -9562,6 +9582,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup list for use by graphics controls
         self.canvases = [self.depth_canvas]
         self.figs = [self.depth_fig]
+        self.fig_calls = [self.depth_plots]
         self.toolbars = [self.depth_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -9849,6 +9870,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.depth_fig]
+            self.fig_calls = [self.depth_plots]
             self.toolbars = [self.depth_toolbar]
 
             # Reset data cursor to work with new figure
@@ -10259,6 +10281,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup list for use by graphics controls
         self.canvases = [self.wt_shiptrack_canvas, self.wt_filter_canvas]
         self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
+        self.fig_calls = [self.wt_shiptrack, self.wt_filter_plots]
         self.toolbars = [self.wt_shiptrack_toolbar, self.wt_filter_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -10644,6 +10667,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
+            self.fig_calls = [self.wt_shiptrack, self.wt_filter_plots]
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
@@ -10742,6 +10766,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
+        self.fig_calls = [self.wt_shiptrack, self.wt_filter_plots]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -11193,6 +11218,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup list for use by graphics controls
         self.canvases = [self.extrap_canvas]
         self.figs = [self.extrap_fig]
+        self.fig_calls = [self.extrap_plot]
         self.toolbars = [self.extrap_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -11577,6 +11603,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.extrap_fig]
+        self.fig_calls = [self.extrap_plot]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -12018,6 +12045,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_st_fig,
             self.right_edge_st_fig,
         ]
+        self.fig_calls = [self.edges_contour_plots, self.edges_contour_plots,
+                          self.edges_shiptrack_plots, self.edges_shiptrack_plots]
         self.toolbars = [
             self.left_edge_contour_toolbar,
             self.right_edge_contour_toolbar,
@@ -12724,6 +12753,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_st_fig,
             self.right_edge_st_fig,
         ]
+        self.fig_calls = [self.edges_contour_plots, self.edges_contour_plots,
+                          self.edges_shiptrack_plots, self.edges_shiptrack_plots]
 
     def edges_contour_plots(self):
         """Create or update color contour plot for edges."""
@@ -13012,6 +13043,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_measurement_canvas,
         ]
         self.figs = [self.uncertainty_meas_q_fig, self.uncertainty_measurement_fig]
+        self.fig_calls = [self.uncertainty_meas_q_plot, self.uncertainty_measurement_plot]
         self.toolbars = [
             self.uncertainty_meas_q_toolbar,
             self.uncertainty_measurement_toolbar,
@@ -14660,6 +14692,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup list for use by graphics controls
         self.canvases = [self.adv_graph_canvas]
         self.figs = [self.adv_graph_fig]
+        self.fig_calls = [self.adv_graph_plots]
         self.toolbars = [self.adv_graph_toolbar]
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
@@ -14849,6 +14882,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.adv_graph_fig]
+        self.fig_calls = [self.adv_graph_plots]
         self.toolbars = [self.adv_graph_toolbar]
 
         # Reset data cursor to work with new figure
@@ -14937,6 +14971,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
             self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+            self.fig_calls = [self.map_shiptrack, self.map_wt_contour]
             self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
             self.ui_parents = [i.parent() for i in self.canvases]
             self.figsMenuConnection()
@@ -15000,6 +15035,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.map_wt_contour()
 
                 self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
+                self.fig_calls = [self.map_shiptrack, self.map_wt_contour]
 
                 # Reset data cursor to work with new figure
                 if self.actionData_Cursor.isChecked():
@@ -15556,18 +15592,77 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.adv_graph_tab()
 
     def set_axes(self):
-        pass
+        """Scales the selected graph to either user specifications of automatics
+        scaling.
+        """
 
+        scale = AxesScale()
+
+        # Get current axes limits
         x_limits = self.current_axis.get_xlim()
         y_limits = self.current_axis.get_ylim()
 
-        # Get new limits
+        # Show limits in dialog
+        scale.ed_x_left.setText('%.2f' % x_limits[0])
+        scale.ed_x_right.setText('%.2f' % x_limits[1])
+        scale.ed_y_bottom.setText('%.2f' % y_limits[0])
+        scale.ed_y_top.setText('%.2f' % y_limits[1])
 
-        # Set new limits
-        self.current_axis.set_xlim(new_x_limits)
-        self.current_axis.set_ylim(new_y_limits)
-        self.current_fig.canvas.draw()
+        rsp = scale.exec_()
 
+        with self.wait_cursor():
+            # Apply settings from options window
+            if rsp == QtWidgets.QDialog.Accepted:
+                if scale.cb_axes_auto.isChecked():
+                    # If automatic is selected the original method that created the graph
+                    # is identified and called. However, if that method cannot be
+                    # identified or it requires extra arguments then the plot is
+                    # rescaled using the data available from the plot axes. The
+                    # reason the original plot method has priority is that for some
+                    # graphs the tick scaling is customized.
+                    try:
+                        self.fig_calls[self.figs.index(self.current_fig)]()
+                    except:
+                        # Rescale the plot using data from the plot
+                        ydata = np.array([])
+                        xdata = np.array([])
+                        for line in self.current_axis.lines:
+                            ydata = np.hstack((ydata, line.get_ydata()))
+                            xdata = np.hstack((xdata, line.get_xdata()))
+                        ydata_max = np.nanmax(ydata) * 1.02
+                        ydata_min = 0 - np.nanmax(ydata) * 0.02
+                        xdata_max = np.nanmax(xdata) * 1.02
+                        xdata_min = 0 - np.nanmax(xdata) * 0.02
+
+                        if np.isnan(ydata_max):
+                            ydata_max = 1
+                            ydata_min = 0
+                        if np.isnan(xdata_max):
+                            xdata_max = 1
+                            xdata_min = 0
+
+                        if x_limits[0] < x_limits[1]:
+                            new_x_limits = [xdata_min, xdata_max]
+                        else:
+                            new_x_limits = [xdata_max, xdata_min]
+
+                        if y_limits[0] < y_limits[1]:
+                            new_y_limits = [ydata_min, ydata_max]
+                        else:
+                            new_y_limits = [ydata_max, ydata_min]
+                else:
+                    x_left = self.check_numeric_input(scale.ed_x_left, block=False)
+                    x_right = self.check_numeric_input(scale.ed_x_right, block=False)
+                    y_bottom = self.check_numeric_input(scale.ed_y_bottom, block=False)
+                    y_top = self.check_numeric_input(scale.ed_y_top, block=False)
+                    new_x_limits = [x_left, x_right]
+                    new_y_limits = [y_bottom, y_top]
+
+                    # Set new limits
+                    if not any(new_x_limits) is None and not any(new_y_limits) is None:
+                        self.current_axis.set_xlim(left=x_left, right=x_right)
+                        self.current_axis.set_ylim(bottom=y_bottom, top=y_top)
+                        self.current_fig.canvas.draw()
 
     def x_axis_time(self):
         """Changes the x-axis type to time"""
@@ -16071,6 +16166,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
                         self.main_extrap_fig, self.main_discharge_fig,
                         self.uncertainty_lollipop_fig, ]
+                    self.fig_calls = [self.main_shiptrack, self.main_wt_contour,
+                                      self.main_extrap_plot, self.discharge_plot,
+                                      self.main_uncertainty_plot]
                     self.toolbars = [self.main_shiptrack_toolbar,
                         self.main_wt_contour_toolbar, self.main_extrap_toolbar,
                         self.main_discharge_toolbar, self.uncertainty_lollipop_toolbar, ]
@@ -16080,6 +16178,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_discharge_canvas, ]
                     self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
                         self.main_extrap_fig, self.main_discharge_fig, ]
+                    self.fig_calls = [self.main_shiptrack,
+                                      self.main_wt_contour,
+                                      self.main_extrap_plot,
+                                      self.discharge_plot]
                     self.toolbars = [self.main_shiptrack_toolbar,
                         self.main_wt_contour_toolbar, self.main_extrap_toolbar,
                         self.main_discharge_toolbar, ]
