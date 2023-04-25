@@ -113,8 +113,7 @@ def find_neighbors(
 
         # Find all cells in ensembles before or after the target ensemble
         # that overlap the target cell.
-        # This is a change implemented on 2/27/2020 - dsm
-        y_match = np.logical_and(y_top[target] <= y_bottom, y_bottom[target] >= y_top)
+        y_match = np.logical_and(y_top[target] < y_bottom, y_bottom[target] > y_top)
         y_match = np.logical_and(y_match, valid_data)
 
         if "before" in search_loc:
@@ -227,7 +226,7 @@ def find_before(target, y_match, y_depth, y_bottom):
     found = False
 
     while (before_ens >= 0) and not found:
-        if y_bottom[target] < y_depth[before_ens] and np.any(y_match[:, before_ens]):
+        if y_bottom[target] <= y_depth[before_ens] and np.any(y_match[:, before_ens]):
             found = True
         elif y_bottom[target] > y_depth[before_ens]:
             before_ens = -999
@@ -280,7 +279,7 @@ def find_after(target, y_match, y_depth, y_bottom):
     found = False
 
     while (after_ens <= y_match.shape[1] - 1) and not found:
-        if (y_bottom[target] < y_depth[after_ens]) and np.any(y_match[:, after_ens]):
+        if (y_bottom[target] <= y_depth[after_ens]) and np.any(y_match[:, after_ens]):
             found = True
         elif y_bottom[target] > y_depth[after_ens]:
             after_ens = -999

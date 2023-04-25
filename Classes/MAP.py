@@ -6,6 +6,7 @@ import pandas as pd
 from scipy.optimize.minpack import curve_fit
 
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
+from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 from sklearn.linear_model import LinearRegression
 
 
@@ -122,7 +123,7 @@ class MAP(object):
         node_vertical_user=None,
         extrap_option=True,
         edges_option=True,
-        interp_option=True,
+        interp_option=False,
         n_burn=None,
     ):
         """Attributes
@@ -185,6 +186,9 @@ class MAP(object):
         # Compute top/bottom extrapolation according QRevInt method/exponent
         if extrap_option:
             self.compute_extrap_velocity(settings)
+
+        if interp_option:
+            self.compute_interpolation()
 
         # Compute edge extrapolation
         if edges_option:
@@ -269,10 +273,10 @@ class MAP(object):
                 invalid = np.logical_not(
                     transect.w_vel.valid_data[0, :, in_transect_idx]
                 ).T[::-1]
-                if not interp_option:
-                    vel_x[invalid] = np.nan
-                    vel_y[invalid] = np.nan
-                    vel_z[invalid] = np.nan
+
+                vel_x[invalid] = np.nan
+                vel_y[invalid] = np.nan
+                vel_z[invalid] = np.nan
                 x_velocity = vel_x[:, valid]
                 y_velocity = vel_y[:, valid]
                 z_velocity = vel_z[:, valid]
@@ -306,10 +310,10 @@ class MAP(object):
                 invalid = np.logical_not(
                     transect.w_vel.valid_data[0, :, in_transect_idx]
                 ).T
-                if not interp_option:
-                    vel_x[invalid] = np.nan
-                    vel_y[invalid] = np.nan
-                    vel_z[invalid] = np.nan
+
+                vel_x[invalid] = np.nan
+                vel_y[invalid] = np.nan
+                vel_z[invalid] = np.nan
                 x_velocity = vel_x[:, valid]
                 y_velocity = vel_y[:, valid]
                 z_velocity = vel_z[:, valid]
@@ -809,7 +813,7 @@ class MAP(object):
             self.north_velocity[:, index_node] = np.nanmean(y_map_cell, axis=0)
             map_vertical_velocity[:, index_node] = np.nanmean(vertical_map_cell, axis=0)
             map_depth_cells_border[depth_limit, index_node] = map_depth[index_node]
-            map_depth_cells_border[depth_limit + 1 :, index_node] = np.nan
+            map_depth_cells_border[depth_limit + 1:, index_node] = np.nan
 
         self.vertical_velocity = map_vertical_velocity
         self.depths = map_depth
@@ -902,13 +906,24 @@ class MAP(object):
             w_vel_sec_extrap[invalid, i] = np.nan
             w_vel_z_extrap[invalid, i] = np.nan
 
-        # Identify valid data
-        valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
-        # Preallocate variables
-        n_ensembles = valid_data.shape[1]
-        idx_bot = np.tile(-1, (valid_data.shape[1])).astype(int)
-        idx_top = np.tile(-1, valid_data.shape[1]).astype(int)
-        idx_top_3 = np.tile(-1, (3, valid_data.shape[1])).astype(int)
+            # Identify valid data
+            valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
+            # Preallocate variables
+            n_ensembles = valid_data.shape[1]
+            idx_bot = np.tile(-1, (valid_data.shape[1])).astype(int)
+            idx_top = np.tile(-1, valid_data.shape[1]).astype(int)
+            idx_top_3 = np.tile(-1, (3, valid_data.shape[1])).astype(int)
+
+            for n in range(n_ensembles):
+                # Identifying bottom most valid cell
+                idx_temp = np.where(np.logical_not(np.isnan(w_vel_prim_extrap[:, n])))[0]
+                if len(idx_temp) > 0:
+                    idx_top[n] = idx_temp[0]
+                    idx_bot[n] = idx_temp[-1]
+                    if len(idx_temp) > 2:
+                        idx_top_3[:, n] = idx_temp[0:3]
+                else:
+                    idx_top[n] = 0
 
         for n in range(n_ensembles):
             # Identifying bottom most valid cell
@@ -1043,6 +1058,102 @@ class MAP(object):
         self.primary_velocity = w_vel_prim_extrap
         self.secondary_velocity = w_vel_sec_extrap
         self.vertical_velocity = w_vel_z_extrap
+
+    @staticmethod
+    def group(L):
+        first = last = L[0]
+        for n in L[1:]:
+            if n - 1 == last:
+                last = n
+            else:
+                yield first, last
+                first = last = n
+        yield first, last
+
+    def compute_interpolation(self):
+        # Interpolate depth
+        not_nan = np.logical_not(np.isnan(self.depths))
+        indices = np.arange(len(self.depths))
+        self.depths = np.interp(indices, indices[not_nan], self.depths[not_nan])
+        self.direction_ens = np.interp(indices, indices[not_nan], self.direction_ens[not_nan])
+
+        data_list = [self.primary_velocity, self.secondary_velocity, self.vertical_velocity]
+        # Identify valid data
+        valid_data = np.logical_not(np.isnan(self.primary_velocity))
+        cells_above_sl = np.full(self.primary_velocity.shape, True)
+        # Preallocate variables
+        n_ensembles = valid_data.shape[1]
+        idx_bot = np.tile(-1, (valid_data.shape[1])).astype(int)
+        idx_top = np.tile(-1, valid_data.shape[1]).astype(int)
+
+        # Define valid cells
+        invalid_ens = []
+        for n in range(n_ensembles):
+            # Identifying bottom most valid cell
+            idx_temp = np.where(np.logical_not(np.isnan(self.primary_velocity[:, n])))[0]
+            if len(idx_temp) > 0:
+                idx_top[n] = idx_temp[0]
+                idx_bot[n] = idx_temp[-1]
+                cells_above_sl[:idx_top[n], n] = False
+                cells_above_sl[idx_bot[n] + 1:, n] = False
+            else:
+                idx_top[n] = 0
+                invalid_ens.append(n)
+
+        # Remove top/bottom cells
+        if len(invalid_ens) > 0:
+            grouped_invalid = list(self.group(invalid_ens))
+            for x in grouped_invalid:
+                top = min(idx_top[x[0] - 1], idx_top[x[0] + 1])
+                bot = max(idx_bot[x[0] - 1], idx_bot[x[0] + 1])
+
+                for ens in range(x[0], x[1]+1):
+                    cells_above_sl[:top, ens] = False
+                    cells_above_sl[bot+1:, ens] = False
+
+        # Use bottom of cells as depth
+        last_cell = []
+        for n in range(len(self.depths)):
+            last_cell.append(next(
+                (i, v)
+                for i, v in enumerate(self.main_depth_layers)
+                if v > self.depths[n]
+            ))
+        y_depth = [x[1] for x in last_cell]
+
+        # Update depth data
+        i = -1
+        for x in last_cell:
+            i += 1
+            self.depth_cells_border[x[0], i] = self.depths[i]
+            self.depth_cells_border[x[0]+1:, i] = np.nan
+
+        y_cell_size = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
+        y_centers = self.depth_cells_border[:-1, :] + 0.5 * y_cell_size
+        x_shiptrack = self.distance_cells_center[0, :]
+        search_loc = ["above", "below", "before", "after"]
+        normalize = False
+
+        # abba interpolation
+        interpolated_data = abba_idw_interpolation(
+            data_list=data_list,
+            valid_data=valid_data,
+            cells_above_sl=cells_above_sl,
+            y_centers=y_centers,
+            y_cell_size=y_cell_size,
+            y_depth=y_depth,
+            x_shiptrack=x_shiptrack,
+            search_loc=search_loc,
+            normalize=normalize,
+        )
+
+        # apply interpolated results
+        if interpolated_data is not None:
+            # Incorporate interpolated values
+            for n in range(len(interpolated_data[0])):
+                self.primary_velocity[interpolated_data[0][n][0]] = interpolated_data[0][n][1]
+                self.secondary_velocity[interpolated_data[1][n][0]] = interpolated_data[1][n][1]
+                self.vertical_velocity[interpolated_data[2][n][0]] = interpolated_data[2][n][1]
 
     def compute_edges(self, settings):
         """Compute edge extrapolation
@@ -1252,6 +1363,8 @@ class MAP(object):
             # Primary velocity : Power-power extrapolation from first ensemble
             # Mean velocity on the first valid ensemble
             primary_mean_valid = np.nanmean(self.primary_velocity[:, id_edge])
+            is_nan = np.isnan(self.primary_velocity[:, id_edge])
+
             # Compute mean velocity according power law at middle_distance position
             vp_mean = primary_mean_valid * (mid_cells_x / edge_distance) ** (
                 1 / edge_exp
@@ -1302,6 +1415,9 @@ class MAP(object):
                         np.array([0, edge_secondary_vel_interp[i, j]]),
                         mid_cells_x[i, j],
                     )
+            edge_primary_velocity[is_nan] = np.nan
+            edge_secondary_velocity[is_nan] = np.nan
+            edge_vertical_velocity[is_nan] = np.nan
 
         if edge == "right":
             self.primary_velocity = np.c_[

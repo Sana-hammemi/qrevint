@@ -4114,7 +4114,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.cb_map_interpolation.setFont(font)
-        self.cb_map_interpolation.setChecked(True)
+        self.cb_map_interpolation.setChecked(False)
         self.cb_map_interpolation.setObjectName("cb_map_interpolation")
         self.horizontalLayout_91.addWidget(self.cb_map_interpolation)
         self.gridLayout_51.addLayout(self.horizontalLayout_91, 1, 0, 1, 1)
@@ -4358,11 +4358,6 @@ class Ui_MainWindow(object):
         icon10.addPixmap(QtGui.QPixmap(":/images/24x24/Globe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionGoogle_Earth.setIcon(icon10)
         self.actionGoogle_Earth.setObjectName("actionGoogle_Earth")
-        self.actionAxes = QtWidgets.QAction(MainWindow)
-        icon11 = QtGui.QIcon()
-        icon11.addPixmap(QtGui.QPixmap(":/images/24x24/Stock graph.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionAxes.setIcon(icon11)
-        self.actionAxes.setObjectName("actionAxes")
         self.toolBar.addAction(self.actionOpen)
         self.toolBar.addSeparator()
         self.toolBar.addAction(self.actionSave)
@@ -4386,7 +4381,6 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.actionZoom)
         self.toolBar.addAction(self.actionPan)
         self.toolBar.addAction(self.actionData_Cursor)
-        self.toolBar.addAction(self.actionAxes)
         self.toolBar.addSeparator()
         self.toolBar.addAction(self.actionGoogle_Earth)
         self.toolBar.addSeparator()
@@ -4786,8 +4780,6 @@ class Ui_MainWindow(object):
         self.actionData_Cursor.setToolTip(_translate("MainWindow", "Data Cursor"))
         self.actionGoogle_Earth.setText(_translate("MainWindow", "Google Earth"))
         self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
-        self.actionAxes.setText(_translate("MainWindow", "Axes"))
-        self.actionAxes.setToolTip(_translate("MainWindow", "Set Axes Limits"))
 import dsm_rc
 
 

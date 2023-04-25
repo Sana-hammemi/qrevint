@@ -14916,7 +14916,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if self.meas.map is not None:
             if self.change:
                 # Reset settings if change
-                self.cb_map_interpolation.setChecked(True)
+                self.cb_map_interpolation.setChecked(False)
                 self.cb_map_top_bottom.setChecked(True)
                 self.cb_map_edges.setChecked(True)
                 self.cb_map_bed_profiles.setChecked(False)
