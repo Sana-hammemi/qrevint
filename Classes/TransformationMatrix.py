@@ -58,6 +58,7 @@ class TransformationMatrix(object):
             [0.2661, 0.2661, 0.2661, 0.2661],
             [1.0337, 1.0337, -1.0337, -1.0337],
         ]
+        self.source = "Nominal"
 
         if adcp_model == "RiverRay":
             self.matrix = [
@@ -69,7 +70,7 @@ class TransformationMatrix(object):
 
         # Overwrite nominal transformation matrix with custom matrix from
         # test data, if available
-        self.source = "Nominal"
+
         if data_in == "Nominal":
             self.source = "Nominal"
         elif adcp_model == "Rio Grande":
@@ -84,6 +85,7 @@ class TransformationMatrix(object):
             self.riopro(data_in)
         elif adcp_model == "pd0":
             self.matrix = data_in.Inst.t_matrix
+            self.source = "ADCP"
 
         if np.array(self.matrix).size < 16:
             self.trdi(model=model, data_in=None)
@@ -146,12 +148,14 @@ class TransformationMatrix(object):
             idx = data_in.find("Instrument Transformation Matrix")
             if idx != -1:
                 idx2 = data_in[idx:].find(":")
-                idx3 = idx + idx2
+                idx3 = idx + idx2 + 1
                 if idx2 != -1:
                     idx4 = data_in[idx3:].find(">")
                     idx5 = idx3 + idx4 - 2
                     if idx4 != -1:
-                        self.matrix = float(data_in[idx3:idx5])
+                        cell_matrix = np.fromstring(data_in[idx3:idx5], dtype=np.float64,
+                                                    sep=" ")
+                        self.matrix = cell_matrix.reshape(4, 4)
                         self.source = "ADCP"
 
     def riverpro(self, data_in):

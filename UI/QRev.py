@@ -12,11 +12,13 @@ from contextlib import contextmanager
 from datetime import datetime
 import numpy as np
 import pandas as pd
+from pandas.plotting import register_matplotlib_converters
 import scipy.io as sio
 import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.ticker import AutoLocator
 from Classes.createconfig import Config
 from Classes.stickysettings import StickySettings as SSet
 from Classes.Measurement import Measurement
@@ -15658,10 +15660,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     new_x_limits = [x_left, x_right]
                     new_y_limits = [y_bottom, y_top]
 
+
                     # Set new limits
                     if not any(new_x_limits) is None and not any(new_y_limits) is None:
                         self.current_axis.set_xlim(left=x_left, right=x_right)
                         self.current_axis.set_ylim(bottom=y_bottom, top=y_top)
+                        self.current_axis.yaxis.set_major_locator(AutoLocator())
                         self.current_fig.canvas.draw()
 
     def x_axis_time(self):

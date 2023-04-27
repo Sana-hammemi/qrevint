@@ -3469,7 +3469,7 @@ class AdvGraphs(object):
                 text = "x: {:.0f}, y: {:.2f}".format(int(round(x)), y)
             # Format for length axis
             elif self.x_axis_type == "L":
-                text = "x: {:.0f}, y: {:.2f}".format(x, y)
+                text = "x: {:.2f}, y: {:.2f}".format(x, y)
 
         annot_ref.set_text(text)
 

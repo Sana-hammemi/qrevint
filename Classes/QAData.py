@@ -873,6 +873,33 @@ class QAData(object):
                     ]
                 )
 
+        # Check for a custom transformation matrix
+        for transect in meas.transects:
+            if transect.checked:
+                if transect.adcp.t_matrix.source == "Nominal":
+                    # This secondary check is necessary due to an earlier QRev bug
+                    # that indicated the source as Nominal even though it was a
+                    # custom matrix obtained from the ADCP. Thus loading a measurement
+                    # saved from a earlier version could create a false alert.
+                    # RiverRay matrices are always a standard matrix based on 30 degree
+                    # beams, but other TRDI ADCPs should be different from their
+                    # standard matrix based on 20 degree beams.
+                    # This secondary check is not necessary for Sontek ADCPs.
+                    if transect.adcp.model != "RiverRay" and transect.adcp.manufacturer == "TRDI":
+                        nominal_matrix = [
+                            [1.4619, -1.4619, 0, 0],
+                            [0, 0, -1.4619, 1.4619],
+                            [0.2661, 0.2661, 0.2661, 0.2661],
+                            [1.0337, 1.0337, -1.0337, -1.0337],
+                        ]
+                        if np.allclose(nominal_matrix, transect.adcp.t_matrix.matrix):
+                            self.system_tst["status"] = "caution"
+                            self.system_tst["messages"].append(
+                                ["System Test: ADCP is using a nominal matrix rather "
+                                 "than a custom matrix;", 2, 3, ]
+                            )
+                            break
+
     def compass_qa(self, meas):
         """Apply QA checks to compass calibration and evaluation.
 
