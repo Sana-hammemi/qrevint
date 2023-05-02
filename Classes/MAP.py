@@ -1,5 +1,6 @@
 import utm
 import copy
+from sklearn.linear_model import LinearRegression
 import numpy as np
 import scipy as sc
 import pandas as pd
@@ -7,7 +8,7 @@ from scipy.optimize.minpack import curve_fit
 
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
-from sklearn.linear_model import LinearRegression
+
 
 
 class MAP(object):

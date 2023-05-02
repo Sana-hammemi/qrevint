@@ -8,7 +8,7 @@ import numpy as np
 import math
 import scipy.stats
 
-from profilehooks import profile
+# from profilehooks import profile
 from MiscLibs.common_functions import cosd, sind
 from MiscLibs.bayes_cov_compiled import bayes_cov
 
@@ -1935,9 +1935,8 @@ class Oursin(object):
             transect_q["q_right"] = meas.discharge[trans_id].right
             transect_q["q_left"] = meas.discharge[trans_id].left
             transect_q["q_middle"] = meas.discharge[trans_id].middle
-            self.sim_original = self.sim_original.append(
-                transect_q, ignore_index=True, sort=False
-            )
+            self.sim_original = self.sim_original.append(transect_q, ignore_index=True,
+                sort=False)
 
     def sim_cns_min_max_opt(self, meas):
         """Computes simulations resulting in the min and max discharges

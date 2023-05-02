@@ -12,7 +12,6 @@ from contextlib import contextmanager
 from datetime import datetime
 import numpy as np
 import pandas as pd
-from pandas.plotting import register_matplotlib_converters
 import scipy.io as sio
 import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -71,12 +70,13 @@ from UI.ULollipopPlot import ULollipopPlot
 from UI.AxesScale import AxesScale
 
 # if there is a splash screen close it
-try:
-    import pyi_splash
+if getattr(sys, 'frozen', False):
+    try:
+        import pyi_splash
 
-    pyi_splash.close()
-except:
-    pass
+        pyi_splash.close()
+    except:
+        pass
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
@@ -411,7 +411,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.setupUi(self)
 
         # Set version of QRev
-        self.QRev_version = "QRevInt 1.18"
+        self.QRev_version = "QRevInt 1.21"
         self.setWindowTitle(self.QRev_version)
         self.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
         show_disclaimer = True
@@ -2159,7 +2159,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.fig_calls = [self.main_shiptrack,
                                       self.main_wt_contour,
                                       self.main_extrap_plot,
-                                      self.discharg_plot]
+                                      self.discharge_plot]
                     self.toolbars = [
                         self.main_shiptrack_toolbar,
                         self.main_wt_contour_toolbar,
@@ -2790,8 +2790,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_wt_contour_fig.fig.subplots_adjust(
             left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0
         )
-        self.figs = [self.main_wt_contour_fig]
-        self.fig_calls = [self.main_wt_contour]
+        # self.figs = [self.main_wt_contour_fig]
+        # self.fig_calls = [self.main_wt_contour]
         # Draw canvas
         self.main_wt_contour_canvas.draw()
 
@@ -16445,9 +16445,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 if __name__ == "__main__":
     mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
+    splash_pix = QtGui.QPixmap('QRevInt_Splash.png')
+    splash = QtWidgets.QSplashScreen(splash_pix)
+    splash.show
     window = QRev()
     if window.agreement:
         window.show()
         app.exec_()
+        splash.finish(None)
     else:
         app.closeAllWindows()
