@@ -530,12 +530,10 @@ class BoatData(object):
                 orig_sys = 1
             elif o_coord_sys == "Inst":
                 orig_sys = 2
-                t_matrix[:] = np.eye(t_matrix.shape[0])
             elif o_coord_sys == "Ship":
                 orig_sys = 3
                 p = np.zeros(h.shape)
                 r = np.zeros(h.shape)
-                t_matrix[:] = np.eye(t_matrix.shape[0])
             elif o_coord_sys == "Earth":
                 orig_sys = 4
 
@@ -587,7 +585,7 @@ class BoatData(object):
                         # Determine frequency index for transformation matrix
                         if len(t_matrix.shape) > 2:
                             idx_freq = np.where(t_matrix_freq == self.frequency_khz[ii])
-                            t_mult = np.copy(t_matrix[idx_freq])
+                            t_mult = np.copy(t_matrix[:, :, idx_freq[0][0]])
                         else:
                             t_mult = np.copy(t_matrix)
 

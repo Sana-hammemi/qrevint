@@ -123,7 +123,7 @@ class MovingBedTests(object):
         self.gps_mb_spd_mps = np.nan
         self.gps_flow_spd_mps = np.nan
 
-    def populate_data(self, source, file=None, test_type=None):
+    def populate_data(self, source, snr_3beam_comp, file=None, test_type=None):
         """Process and store moving-bed test data.
 
         Parameters
@@ -139,7 +139,7 @@ class MovingBedTests(object):
         if source == "TRDI":
             self.mb_trdi(file, test_type)
         else:
-            self.mb_sontek(file, test_type)
+            self.mb_sontek(file, test_type, snr_3beam_comp)
 
         self.process_mb_test(source)
 
@@ -319,7 +319,7 @@ class MovingBedTests(object):
         self.user_valid = True
         self.type = test_type
 
-    def mb_sontek(self, file_name, test_type):
+    def mb_sontek(self, file_name, test_type, snr_3beam_comp):
         """Function to create object properties for SonTek moving-bed tests
 
         Parameters
@@ -336,7 +336,7 @@ class MovingBedTests(object):
 
         # Create transect objects for each discharge transect
         self.transect = TransectData()
-        self.transect.sontek(rsdata, file_name)
+        self.transect.sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
 
     def loop_test(self, ens_duration=None, ref="BT"):
         """Process loop moving bed test.

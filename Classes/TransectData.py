@@ -872,7 +872,7 @@ class TransectData(object):
             ping_type = np.tile(["U"], pd0_data.Wt.vel_mps.shape[2])
         return ping_type
 
-    def sontek(self, rsdata, file_name):
+    def sontek(self, rsdata, file_name, snr_3beam_comp):
         """Reads Matlab file produced by RiverSurveyor Live and populates the
          transect instance variables.
 
@@ -882,6 +882,8 @@ class TransectData(object):
             Object of Matlab data from SonTek Matlab files
         file_name: str
             Name of SonTek Matlab file not including path.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         """
 
         self.file_name = os.path.basename(file_name)
@@ -922,17 +924,17 @@ class TransectData(object):
         # of RiverSurveyor firmware. This implementation forces all versions to use
         # the earth coordinate system.
         if rsdata.Setup.coordinateSystem == 0:
-            # ref_coord = 'Beam'
-            raise CoordError(
-                "Beam Coordinates are not supported for all "
-                "RiverSuveyor firmware releases, " + "use Earth coordinates."
-            )
+            ref_coord = 'Beam'
+            # raise CoordError(
+            #     "Beam Coordinates are not supported for all "
+            #     "RiverSuveyor firmware releases, " + "use Earth coordinates."
+            # )
         elif rsdata.Setup.coordinateSystem == 1:
-            # ref_coord = 'Inst'
-            raise CoordError(
-                "Instrument Coordinates are not supported for all"
-                " RiverSuveyor firmware releases, " + "use Earth coordinates."
-            )
+            ref_coord = 'Inst'
+            # raise CoordError(
+            #     "Instrument Coordinates are not supported for all"
+            #     " RiverSuveyor firmware releases, " + "use Earth coordinates."
+            # )
         elif rsdata.Setup.coordinateSystem == 2:
             ref_coord = "Earth"
 
@@ -1366,6 +1368,7 @@ class TransectData(object):
             blank_in=excluded_distance,
             corr_in=corr,
             ping_type=ping_type,
+            snr_3beam_comp=snr_3beam_comp,
         )
 
         # Edges
@@ -1515,6 +1518,10 @@ class TransectData(object):
         elif hasattr(rsdata.System, "Pitch"):
             pitch = rsdata.System.Pitch
             roll = rsdata.System.Roll
+        if len(pitch.shape) > 1:
+            pitch = np.squeeze(pitch[:, 0])
+            roll = np.squeeze(roll[:, 0])
+
         self.sensors.pitch_deg.internal = SensorData()
         self.sensors.pitch_deg.internal.populate_data(
             data_in=pitch, source_in="internal"

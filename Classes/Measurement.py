@@ -99,6 +99,8 @@ class Measurement(object):
         Specifies if average cross-section should be computed and exported
     run_map: bool
         Indicates if the MAP computation should be run
+    snr_3beam_comp: bool
+        Indicates the use of 3-beam velocity computations when invalid SNR is found
     """
 
     # @profile
@@ -116,7 +118,8 @@ class Measurement(object):
         min_duration=720,
         export_xs=True,
         run_map=True,
-        gps_quality_threshold=2
+        gps_quality_threshold=2,
+        snr_3beam_comp=False,
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -215,7 +218,7 @@ class Measurement(object):
                 self.load_trdi(in_file, checked=checked)
 
             elif source == "SonTek":
-                self.load_sontek(in_file)
+                self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
 
             elif source == "Nortek":
                 self.load_sontek(in_file)
@@ -568,7 +571,7 @@ class Measurement(object):
         # from TransectData
         transect.depths.composite_depths(transect)
 
-    def load_sontek(self, fullnames):
+    def load_sontek(self, fullnames, snr_3beam_comp):
         """Coordinates reading of all SonTek data files.
 
         Parameters
@@ -590,7 +593,7 @@ class Measurement(object):
             if hasattr(rsdata, "BottomTrack"):
                 # Create transect objects for each discharge transect
                 self.transects.append(TransectData())
-                self.transects[-1].sontek(rsdata, file_name)
+                self.transects[-1].sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
             else:
                 self.comments.append(
                     file + " is incomplete and is not included in "
@@ -633,7 +636,7 @@ class Measurement(object):
 
             self.stage_meas_m = (self.stage_start_m + self.stage_end_m) / 2.0
 
-        self.qaqc_sontek(pathname)
+        self.qaqc_sontek(pathname, snr_3beam_comp=snr_3beam_comp)
 
         for transect in self.transects:
             transect.change_coord_sys(new_coord_sys="Earth")
@@ -680,7 +683,7 @@ class Measurement(object):
                     temperature=transect.sensors.temperature_deg_c.user.data,
                 )
 
-    def qaqc_sontek(self, pathname):
+    def qaqc_sontek(self, pathname, snr_3beam_comp):
         """Reads and stores system tests, compass calibrations,
         and moving-bed tests.
 
@@ -732,9 +735,9 @@ class Measurement(object):
                     self.system_tst.append(sys_test)
 
         # Moving-bed tests
-        self.sontek_moving_bed_tests(pathname)
+        self.sontek_moving_bed_tests(pathname, snr_3beam_comp=snr_3beam_comp)
 
-    def sontek_moving_bed_tests(self, pathname):
+    def sontek_moving_bed_tests(self, pathname, snr_3beam_comp):
         """Locates and processes SonTek moving-bed tests.
 
         Searches the pathname for Matlab files that start with Loop or SMBA.
@@ -755,6 +758,7 @@ class Measurement(object):
                         source="SonTek",
                         file=os.path.join(pathname, file),
                         test_type="Loop",
+                        snr_3beam_comp=snr_3beam_comp
                     )
                 # Process Stationary test
                 elif file.lower().startswith("smba"):
@@ -763,6 +767,7 @@ class Measurement(object):
                         source="SonTek",
                         file=os.path.join(pathname, file),
                         test_type="Stationary",
+                        snr_3beam_comp=snr_3beam_comp
                     )
 
     def load_qrev_mat(self, mat_data):

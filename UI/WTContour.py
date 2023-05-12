@@ -117,7 +117,7 @@ class WTContour(object):
         )
 
         # Compute x axis data
-        x = None
+        x = []
         if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):

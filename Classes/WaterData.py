@@ -114,6 +114,8 @@ class WaterData(object):
             Set SNR filter for SonTek data "On", "Off".
         snr_rng: np.array(float)
             Range of beam averaged SNR
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         wt_depth_filter: np.array(bool)
             WT in ensembles with invalid depths are marked invalid.
         interpolate_ens: str
@@ -190,6 +192,7 @@ class WaterData(object):
         self.smooth_lower_limit = None
         self.snr_filter = "Off"
         self.snr_rng = []
+        self.snr_3beam_comp = False
         self.wt_depth_filter = True
         self.interpolate_ens = None
         self.interpolate_cells = None
@@ -231,6 +234,7 @@ class WaterData(object):
         surface_num_cells_in=0,
         ping_type="U",
         use_measurement_thresholds=False,
+        snr_3beam_comp=False
     ):
 
         """Populates the variables with input, computed, or default values.
@@ -266,6 +270,8 @@ class WaterData(object):
             Method used to compute cutoff "Percent" or "Number".
         sl_lag_effect_in: np.array(float)
             Lag effect for each ensemble, in m.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         wm_in: str
             Watermode for TRDI or 'Variable' for SonTek.
         blank_in: float
@@ -290,7 +296,11 @@ class WaterData(object):
         """
 
         # Set object properties from input data standard for all ADCPs
-        self.frequency = freq_in
+        if np.nanmean(freq_in) < 10:
+            self.frequency = freq_in * 1000
+        else:
+            self.frequency = freq_in
+
         self.orig_coord_sys = coord_sys_in
         self.coord_sys = coord_sys_in
         self.orig_nav_ref = nav_ref_in
@@ -301,6 +311,8 @@ class WaterData(object):
         max_cells = cells_above_sl_in.shape[0]
         self.ping_type = np.tile(np.array([ping_type]), (max_cells, 1))
         self.use_measurement_thresholds = use_measurement_thresholds
+        self.snr_beam_velocities = None
+        self.snr_3beam_comp = snr_3beam_comp
 
         # Set object properties that depend on the presence or absence of
         # surface cells
@@ -500,8 +512,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape(1, self.w_mps.shape[0])
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape(1, self.d_mps.shape[0])
-                self.snr_rng = transect.wVel.snrRng
-                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                # self.snr_rng = transect.wVel.snrRng
+                # self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     1, self.cells_above_sl.shape[0]
@@ -561,8 +573,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-                self.snr_rng = transect.wVel.snrRng
-                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                # self.snr_rng = transect.wVel.snrRng
+                # self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     self.cells_above_sl.shape[0], 1
@@ -626,7 +638,7 @@ class WaterData(object):
             self.v_processed_mps = transect.wVel.vProcessed_mps
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
-            self.snr_rng = transect.wVel.snrRng
+            # self.snr_rng = transect.wVel.snrRng
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
@@ -733,10 +745,17 @@ class WaterData(object):
         adcp: InstrumentData
             Object of instrument data
         """
+
         if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
             o_coord_sys = self.orig_coord_sys[0].strip()
         else:
             o_coord_sys = self.orig_coord_sys.strip()
+
+        if self.snr_beam_velocities is None:
+            data = self.raw_vel_mps
+        else:
+            data = self.snr_beam_velocities
+            o_coord_sys = "Beam"
 
         orig_sys = None
         new_sys = None
@@ -763,7 +782,6 @@ class WaterData(object):
                 orig_sys = 3
                 p = np.zeros(h.shape)
                 r = np.zeros(h.shape)
-                t_matrix = np.eye(len(t_matrix))
             elif o_coord_sys.strip() == "Earth":
                 orig_sys = 4
 
@@ -816,12 +834,12 @@ class WaterData(object):
                         # Determine frequency index for transformation
                         if len(t_matrix.shape) > 2:
                             idx_freq = np.where(t_matrix_freq == self.frequency[ii])
-                            t_mult = np.copy(t_matrix[:, :, idx_freq])
+                            t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
                         else:
                             t_mult = np.copy(t_matrix)
 
                         # Get velocity data
-                        vel_beams = np.copy(self.raw_vel_mps[:, :, ii])
+                        vel_beams = np.copy(data[:, :, ii])
 
                         # Apply transformation matrix for 4 beam solutions
                         temp_t = t_mult.dot(vel_beams)
@@ -944,6 +962,61 @@ class WaterData(object):
         if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+
+    @staticmethod
+    def earth_to_beam(w_vel, sensors, adcp):
+
+        # Create matrix to store results
+        vel_beam = np.tile(np.nan, w_vel.raw_vel_mps.shape)
+
+        # Assign the transformation matrix retrieve the sensor data
+        t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
+        t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
+
+        # Retrieve the sensor data
+        p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
+        r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
+        h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
+
+        # Compute trig function for heading, pitch and roll
+        ch = np.cos(np.deg2rad(h))
+        sh = np.sin(np.deg2rad(h))
+        cp = np.cos(np.deg2rad(p))
+        sp = np.sin(np.deg2rad(p))
+        cr = np.cos(np.deg2rad(r))
+        sr = np.sin(np.deg2rad(r))
+
+        # Process each ensemble
+        n_ens = w_vel.raw_vel_mps.shape[2]
+        for ii in range(n_ens):
+
+            # Compute matrix for heading, pitch, and roll
+            hpr_matrix = np.array([
+                [((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])), (sh[ii] * cp[ii]),
+                    ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]), ],
+                [(-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]), ch[ii] * cp[ii],
+                 (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]), ],
+                [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]], ])
+
+            # Determine frequency index for transformation
+            if len(t_matrix.shape) > 2:
+                idx_freq = np.where(t_matrix_freq == w_vel.frequency[ii])
+                t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
+            else:
+                t_mult = np.copy(t_matrix)
+
+            # Construct earth velocity matrix for ensemble
+            vel_enu = np.vstack([w_vel.u_earth_no_ref_mps[:, ii],
+                                 w_vel.v_earth_no_ref_mps[:, ii],
+                                 w_vel.w_mps[:, ii],
+                                 w_vel.d_mps[:, ii]])
+
+            # Compute beam velocities
+            vel_xyz = np.copy(vel_enu)
+            vel_xyz[0:3, :] = np.matmul(np.linalg.inv(hpr_matrix), vel_enu[:3])
+            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(t_mult), vel_xyz)
+
+        return vel_beam
 
     def set_nav_reference(self, boat_vel):
         """This function sets the navigation reference.
@@ -1164,6 +1237,10 @@ class WaterData(object):
             > 1
         ):
 
+            # Because the snr filter may apply 3-beam solutions the result
+            # could affect other filters, thus it should be run first
+            if snr is not None:
+                self.filter_snr(transect=transect, setting=snr)
             if difference is not None:
                 if difference == "Manual":
                     self.filter_diff_vel(
@@ -1180,13 +1257,12 @@ class WaterData(object):
                 self.filter_smooth(transect=transect, setting=other)
             if excluded is not None:
                 self.filter_excluded(transect=transect, setting=excluded)
-            if snr is not None:
-                self.filter_snr(setting=snr)
             if wt_depth is not None:
                 self.filter_wt_depth(transect=transect, setting=wt_depth)
             if beam is not None:
                 self.filter_beam(setting=beam, transect=transect)
         else:
+            self.filter_snr(transect=transect, setting=self.snr_filter)
             self.filter_diff_vel(
                 setting=self.d_filter, threshold=self.d_filter_thresholds
             )
@@ -1195,7 +1271,6 @@ class WaterData(object):
             )
             self.filter_smooth(transect=transect, setting=self.smooth_filter)
             self.filter_excluded(transect=transect, setting=self.excluded_dist_m)
-            self.filter_snr(setting=self.snr_filter)
             self.filter_beam(setting=self.beam_filter, transect=transect)
 
     def sos_correction(self, ratio):
@@ -1246,7 +1321,9 @@ class WaterData(object):
             cells_above_sl = cells_above_slbt
 
         # Compute cutoff from interpolated depths
-        n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
+        valid_beams = depth_selected.depth_beams_m > 0
+        n_valid_beams = np.nansum(valid_beams, 0)
+        # n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
 
         # Find ensembles with no valid beam depths
         idx = np.where(n_valid_beams == 0)[0]
@@ -1304,7 +1381,14 @@ class WaterData(object):
         valid data"""
 
         n_filters = len(self.valid_data[1:, 0, 0])
-        sum_filters = np.nansum(self.valid_data[1:, :, :], 0) / n_filters
+
+        # Since invalid SNR are replaced with 3-beam solutions
+        # set these values to true as they will not need interpolation
+        valid_data = np.copy(self.valid_data)
+        if self.snr_3beam_comp:
+            valid_data[7, :, :] = True
+
+        sum_filters = np.nansum(valid_data[1:, :, :], 0) / n_filters
         valid = np.tile([True], self.cells_above_sl.shape)
         valid[sum_filters < 1] = False
         self.valid_data[0] = valid
@@ -1341,8 +1425,10 @@ class WaterData(object):
 
             # Find invalid raw data
             valid_vel = np.array([self.cells_above_sl] * 4)
-            valid_vel[np.isnan(self.raw_vel_mps)] = 0
-
+            if self.snr_beam_velocities is None:
+                valid_vel[np.isnan(self.raw_vel_mps)] = 0
+            else:
+                valid_vel[np.isnan(self.snr_beam_velocities)] = 0
             # Determine how many beams or transformed coordinates are valid
             valid_vel_sum = np.sum(valid_vel, 0)
             valid = copy.deepcopy(self.cells_above_sl)
@@ -1380,7 +1466,8 @@ class WaterData(object):
         temp.filter_beam(4)
         valid_bool = temp.valid_data[5, :, :]
         valid = valid_bool.astype(float)
-        valid[temp.cells_above_sl == False] = np.nan
+        valid[np.logical_not(temp.cells_above_sl)] = 0
+        valid[np.logical_not(temp.valid_data[1, :, :])] = 0
 
         # Initialize processed velocity data variables
         temp.u_processed_mps = copy.deepcopy(temp.u_mps)
@@ -1407,7 +1494,7 @@ class WaterData(object):
             interpolated_data = self.compute_abba_interpolation(
                 wt_data=temp,
                 data_list=[u, v],
-                valid=temp.valid_data[5, :, :],
+                valid=valid,
                 transect=transect,
             )
 
@@ -1922,7 +2009,7 @@ class WaterData(object):
 
         self.all_valid_data()
 
-    def filter_snr(self, setting):
+    def filter_snr(self, transect, setting):
         """Filters SonTek data based on SNR.
 
         Computes the average SNR for all cells above the side lobe cutoff for
@@ -1931,6 +2018,8 @@ class WaterData(object):
 
         Parameters
         ----------
+        transect: TransectData
+            Object of TransectData
         setting: str
             Setting for filter (Auto, Off)
         """
@@ -1938,17 +2027,58 @@ class WaterData(object):
         self.snr_filter = setting
 
         if setting == "Auto":
-            if self.snr_rng is not None:
+
+            # Determines if invalid data should use 3-beam computations
+            if self.snr_3beam_comp:
+
+                cells_above_sl = np.copy(self.cells_above_sl.astype(float))
+                cells_above_sl[cells_above_sl < 0.5] = np.nan
+                snr_adjusted = self.rssi * cells_above_sl
+                snr_average = np.nanmean(snr_adjusted, 1)
+
+                # Find invalid beams
+                snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
+
+                ens_bad_snr =np.any(snr_beam_invalid, axis=0)
+                valid = np.copy(self.cells_above_sl)
+
+                bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
+                valid[bad_snr_array] = False
+
+                beam_velocities = self.earth_to_beam(w_vel=self,
+                                                     sensors=transect.sensors,
+                                                     adcp=transect.adcp)
+                invalid_beam_value = np.tile(np.nan, valid.shape[0])
+
+                invalid_snr_idx = np.where(snr_beam_invalid)
+
+                beam_velocities[invalid_snr_idx[0], :, invalid_snr_idx[1]] = invalid_beam_value
+                self.snr_beam_velocities = beam_velocities
+                self.orig_coord_sys = 'Beam'
+                self.change_coord_sys(new_coord_sys='Earth',
+                                      sensors=transect.sensors,
+                                      adcp=transect.adcp)
+                self.orig_coord_sys = 'Earth'
+
+                self.set_nav_reference(transect.boat_vel)
+            else:
                 bad_snr_idx = np.greater(self.snr_rng, 12)
                 valid = np.copy(self.cells_above_sl)
 
                 bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
                 valid[bad_snr_array] = False
-                self.valid_data[7, :, :] = valid
 
-                # Combine all filter data and update processed properties
-                self.all_valid_data()
-        else:
+            self.valid_data[7, :, :] = valid
+
+            # Combine all filter data and update processed properties
+            self.all_valid_data()
+        elif transect.adcp.manufacturer == "SonTek":
+            self.snr_beam_velocities = None
+            self.change_coord_sys(new_coord_sys='Earth', sensors=transect.sensors,
+                                  adcp=transect.adcp)
+            self.orig_coord_sys = 'Earth'
+
+            self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 

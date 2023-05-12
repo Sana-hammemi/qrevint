@@ -70,13 +70,13 @@ from UI.ULollipopPlot import ULollipopPlot
 from UI.AxesScale import AxesScale
 
 # if there is a splash screen close it
-if getattr(sys, 'frozen', False):
-    try:
-        import pyi_splash
-
-        pyi_splash.close()
-    except:
-        pass
+# if getattr(sys, 'frozen', False):
+#     try:
+#         import pyi_splash
+#
+#         pyi_splash.close()
+#     except:
+#         pass
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
@@ -766,6 +766,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             sys.exit()
 
+        # SNR 3-beam computations setting
+        if "SNR" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: SNR parameter not found."))
+            sys.exit()
+        if "Use3Beam" not in self.agency_options["SNR"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg: SNR Use3Beam parameter " "not found.")
+            )
+            sys.exit()
+
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
             "use_measurement_thresholds": self.use_measurement_thresholds,
@@ -1158,7 +1168,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
                             run_map=self.show_map,
-                            gps_quality_threshold=self.gps_quality_threshold
+                            gps_quality_threshold=self.gps_quality_threshold,
+                            snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"]
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -5312,7 +5323,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.compass_plot()
             self.pr_plot()
             self.figs = [self.heading_fig, self.pr_fig]
-            self.fig_calls[self.compass_plot, self.pr_plot]
+            self.fig_calls=[self.compass_plot, self.pr_plot]
 
     @QtCore.pyqtSlot(int, int)
     def compass_table_clicked(self, row, column):
@@ -15694,6 +15705,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.show_below_sl = True
 
+        self.adv_graph_plots()
+
+
     # Split functions
     # ==============
     def split_initialization(self, groupings=None, data=None):
@@ -16252,9 +16266,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Toggle window to fix sizing when BT or WT tabs are chosen to prevent
         # full screen window from going behind the taskbar.
-        if self.isMaximized() or self.isFullScreen():
-            self.showNormal()
-            self.showMaximized()
+        # if self.isMaximized() or self.isFullScreen():
+        #     self.showNormal()
+        #     self.showMaximized()
 
     def update_comments(self, tab_idx=None):
         """Manages the initialization of content for each tab and updates that
@@ -16445,13 +16459,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 if __name__ == "__main__":
     mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
-    splash_pix = QtGui.QPixmap('QRevInt_Splash.png')
-    splash = QtWidgets.QSplashScreen(splash_pix)
-    splash.show
+    # splash_pix = QtGui.QPixmap('QRevInt_Splash.png')
+    # splash = QtWidgets.QSplashScreen(splash_pix)
+    # splash.show
     window = QRev()
     if window.agreement:
         window.show()
         app.exec_()
-        splash.finish(None)
+        # splash.finish(None)
     else:
         app.closeAllWindows()
