@@ -518,8 +518,9 @@ class Measurement(object):
 
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
-                    mb_test.populate_data(
-                        "TRDI", transects[n], mmt.mbt_transects[n].moving_bed_type
+                    mb_test.populate_data(source="TRDI",
+                                          file=transects[n],
+                                          test_type=mmt.mbt_transects[n].moving_bed_type
                     )
 
                     # Save notes from mmt files in comments

@@ -192,6 +192,7 @@ class WaterData(object):
         self.smooth_lower_limit = None
         self.snr_filter = "Off"
         self.snr_rng = []
+        self.snr_beam_velocities = None
         self.snr_3beam_comp = False
         self.wt_depth_filter = True
         self.interpolate_ens = None

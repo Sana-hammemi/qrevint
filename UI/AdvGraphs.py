@@ -850,14 +850,15 @@ class AdvGraphs(object):
 
         # x-axis is length
         if self.x_axis_type == "L":
-            axis_buffer = np.nanmax(self.x[:]) - np.nanmin(self.x[:])
+            x_max = np.nanmax(self.x[:]) + self.transect.edges.left.distance_m + self.transect.edges.right.distance_m
+            axis_buffer = (x_max - np.nanmin(self.x[:]))
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
                 self.ax[idx].set_xlim(right=np.nanmin(self.x) - axis_buffer * 0.02,
-                    left=np.nanmax(self.x) + axis_buffer * 0.02, )
+                    left=x_max + axis_buffer * 0.02, )
             else:
                 self.ax[idx].set_xlim(left=np.nanmin(self.x) - axis_buffer * 0.02,
-                    right=np.nanmax(self.x) + axis_buffer * 0.02, )
+                    right=x_max + axis_buffer * 0.02, )
             self.ax[idx].set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
 
         # x-axis is ensembles
@@ -901,9 +902,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -931,9 +935,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -997,9 +1004,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1061,9 +1071,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1147,9 +1160,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1180,9 +1196,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1250,9 +1269,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1306,9 +1328,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1336,9 +1361,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1368,9 +1396,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         # Compute data for contour plot
         x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
@@ -1400,9 +1431,12 @@ class AdvGraphs(object):
         # Set the 1-dimensional x-axis data based on selected x-axis type.
         # Timestamp must be used for time
         if self.x_axis_type == "T":
-            x_1d = self.x_timestamp
+            x_1d = np.copy(self.x_timestamp)
+        elif self.x_axis_type == "L":
+            x_1d = np.copy(self.x)
+            x_1d = self.shift_x(x_1d)
         else:
-            x_1d = self.x
+            x_1d = np.copy(self.x)
 
         ping_type = self.transect.w_vel.ping_type
         p_types = np.unique(ping_type)
@@ -2758,40 +2792,51 @@ class AdvGraphs(object):
                 self.transect.depths, self.transect.depths.selected
             )
             beam_depths = depth_selected.depth_processed_m
-
+            old_x = np.copy(self.x)
+            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
+            self.x = old_x
 
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
+            old_x = np.copy(self.x)
+            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
+            self.x = old_x
 
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
+            old_x = np.copy(self.x)
+            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
                 {"color": "#aa00ff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-
+            self.x = old_x
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
+            old_x = np.copy(self.x)
+            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
                 {"color": "#00aaff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
+            self.x = old_x
+
         # Format y axis
         self.ax[-1].invert_yaxis()
         try:
@@ -3097,7 +3142,11 @@ class AdvGraphs(object):
             cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment="center")
 
         # Plot depth
-        ax.plot(x, depth * self.units["L"], color="k")
+        if self.x_axis_type == "L":
+            expanded_x, depth = self.add_edge_bathymetry(x, depth)
+            ax.plot(expanded_x, depth * self.units["L"], color="k")
+        else:
+            ax.plot(x, depth * self.units["L"], color="k")
 
         depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
@@ -3126,6 +3175,50 @@ class AdvGraphs(object):
             axis="both", direction="in", bottom=True, top=True, left=True, right=True
         )
         ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
+
+    def shift_x (self, x):
+
+        if self.transect.start_edge == "Left":
+            x = x + self.transect.edges.left.distance_m
+        else:
+            x = x + self.transect.edges.right.distance_m
+
+        return x
+
+    def add_edge_bathymetry(self, x, depth):
+
+        if self.transect.start_edge == "Left":
+            x = x + self.transect.edges.left.distance_m
+            if self.transect.edges.left.type == "Rectangular":
+                start_x = np.array([0, 0])
+                start_d = np.array([0, depth[0]])
+            else:
+                start_x = np.array([0])
+                start_d = np.array([0])
+            if self.transect.edges.right.type == "Rectangular":
+                end_x = np.array(2 * [x[-1] + self.transect.edges.right.distance_m])
+                end_d = np.array([depth[-1], 0])
+            else:
+                end_x = np.array([x[-1] + self.transect.edges.right.distance_m])
+                end_d = np.array([0])
+
+        else:
+            x = x + self.transect.edges.right.distance_m
+            if self.transect.edges.right.type == "Rectangular":
+                start_x = np.array([0, 0])
+                start_d = np.array([0, depth[0]])
+            else:
+                start_x = np.array([0])
+                start_d = np.array([0])
+            if self.transect.edges.left.type == "Rectangular":
+                end_x = np.array(2 * [x[-1] + self.transect.edges.left.distance_m])
+                end_d = np.array([depth[-1], 0])
+            else:
+                end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
+                end_d = np.array([0])
+        x = np.hstack([start_x, x, end_x])
+        d = np.hstack([start_d, depth, end_d])
+        return x, d
 
     def plt_timeseries(
         self,

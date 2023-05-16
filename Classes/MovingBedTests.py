@@ -123,7 +123,7 @@ class MovingBedTests(object):
         self.gps_mb_spd_mps = np.nan
         self.gps_flow_spd_mps = np.nan
 
-    def populate_data(self, source, snr_3beam_comp, file=None, test_type=None):
+    def populate_data(self, source, snr_3beam_comp=False, file=None, test_type=None):
         """Process and store moving-bed test data.
 
         Parameters

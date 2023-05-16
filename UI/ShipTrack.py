@@ -154,6 +154,9 @@ class Shiptrack(object):
                 ship_data_bt["track_y_m"], n_ensembles, edge_start
             )
             invalid_bt = self.subsection_2d(invalid_bt, n_ensembles, edge_start)
+        else:
+            # Edge start set to one to plot black box at start of transect
+            edge_start = 1
 
         self.bt = self.fig.ax.plot(
             ship_data_bt["track_x_m"] * units["L"],
@@ -163,8 +166,7 @@ class Shiptrack(object):
         )
 
         if (
-            edge_start is not None
-            and not np.alltrue(np.isnan(ship_data_bt["track_x_m"]))
+            not np.alltrue(np.isnan(ship_data_bt["track_x_m"]))
             and len(ship_data_bt["track_x_m"]) > 0
         ):
             if edge_start:
