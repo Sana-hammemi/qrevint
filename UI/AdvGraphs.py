@@ -383,6 +383,51 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
+    def create_main_contour(self, transect, units, x_axis_type="E",
+        color_map="viridis"):
+
+        # Initialize data sources
+        self.transect = transect
+
+        # Set axis type and units
+        self.x_axis_type = x_axis_type
+        self.units = units
+        self.color_map = color_map
+
+        # Clear the plot
+        self.fig.clear()
+
+        # Determine number of subplots
+        self.n_subplots = 1
+
+        # Compute x-axis variable
+        self.compute_x_axis()
+
+        # Initialize variable for subplots
+        self.ax = []
+        self.annot = []
+        self.data_plotted = []
+
+        # Create grid specification
+        # Note: the second column of the grid is for the color bar. It is
+        # blank but present even for time series plots to allow the sharing
+        # of the x-axis between all plots
+        self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+        self.wt_speed_final_contour()
+
+        # Adjust the spacing of the subplots
+        self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.92, top=0.95,
+            wspace=0.02, hspace=0.08)
+
+        # Apply the x-axis label to the bottom x-axis
+        idx = -2
+        self.ax[idx].xaxis.label.set_fontsize(12)
+        self.set_x_axis(idx)
+
+        self.canvas.draw()
+
     def create_depth_tab_graphs(
         self,
         transect,
@@ -903,9 +948,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -936,9 +978,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1005,9 +1044,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1072,9 +1108,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1161,9 +1194,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1197,9 +1227,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1270,9 +1297,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1329,9 +1353,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1362,9 +1383,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1397,9 +1415,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -1432,9 +1447,6 @@ class AdvGraphs(object):
         # Timestamp must be used for time
         if self.x_axis_type == "T":
             x_1d = np.copy(self.x_timestamp)
-        elif self.x_axis_type == "L":
-            x_1d = np.copy(self.x)
-            x_1d = self.shift_x(x_1d)
         else:
             x_1d = np.copy(self.x)
 
@@ -2889,6 +2901,7 @@ class AdvGraphs(object):
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"] * self.units["L"]
             self.x = x[self.transect.in_transect_idx]
+            self.x = self.shift_x(self.x)
 
         # x axis is ensembles
         elif self.x_axis_type == "E":
@@ -2913,7 +2926,7 @@ class AdvGraphs(object):
             self.x = x[self.transect.in_transect_idx]
 
     @staticmethod
-    def contour_data_prep(transect, data, x_1d=None):
+    def contour_data_prep(transect, data, x_1d=None, n_ensembles=None, start_left=None):
         """Modifies the selected data from transect into arrays matching the
         meshgrid format for creating contour or color plots.
 
@@ -2947,16 +2960,40 @@ class AdvGraphs(object):
         if x_1d is None:
             x_1d = in_transect_idx
 
-        # Get data from transect
-        depth_selected = getattr(transect.depths, transect.depths.selected)
-        depth = depth_selected.depth_processed_m[in_transect_idx]
-        cell_depth = depth_selected.depth_cell_depth_m[:, in_transect_idx]
-        cell_size = depth_selected.depth_cell_size_m[:, in_transect_idx]
-        x_data = x_1d
-        ensembles = in_transect_idx
+        data_2_plot = np.copy(data)
+
+        if n_ensembles is None:
+            # Get data from transect
+            depth_selected = getattr(transect.depths, transect.depths.selected)
+            depth = depth_selected.depth_processed_m[in_transect_idx]
+            cell_depth = depth_selected.depth_cell_depth_m[:, in_transect_idx]
+            cell_size = depth_selected.depth_cell_size_m[:, in_transect_idx]
+            x_data = x_1d
+            ensembles = in_transect_idx
+
+        else:
+            # Use only edge ensembles from transect
+            n_ensembles = int(n_ensembles)
+            if start_left:
+                # Start on left bank
+                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth = depth_selected.depth_processed_m[:n_ensembles]
+                cell_depth = depth_selected.depth_cell_depth_m[:, :n_ensembles]
+                cell_size = depth_selected.depth_cell_size_m[:, :n_ensembles]
+                data_2_plot = data_2_plot[:, :n_ensembles]
+                ensembles = in_transect_idx[:n_ensembles]
+                x_data = x_1d[:n_ensembles]
+
+            else:
+                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth = depth_selected.depth_processed_m[-n_ensembles:]
+                cell_depth = depth_selected.depth_cell_depth_m[:, -n_ensembles:]
+                cell_size = depth_selected.depth_cell_size_m[:, -n_ensembles:]
+                data_2_plot = data_2_plot[:, -n_ensembles]
+                ensembles = in_transect_idx[-n_ensembles:]
+                x_data = x_1d[-n_ensembles:]
 
         # Prep water speed to use -999 instead of nans
-        data_2_plot = np.copy(data)
         data_2_plot[np.isnan(data_2_plot)] = -999
 
         # Create x for contour plot
@@ -3033,6 +3070,8 @@ class AdvGraphs(object):
         cmap_in=None,
         ping_name=None,
         n_names=None,
+        n_ensembles=None,
+        start_left=None
     ):
         """Create contour plot.
 
@@ -3143,14 +3182,14 @@ class AdvGraphs(object):
 
         # Plot depth
         if self.x_axis_type == "L":
-            expanded_x, depth = self.add_edge_bathymetry(x, depth)
+            expanded_x, depth = self.add_edge_bathymetry(x, depth, start_left)
             ax.plot(expanded_x, depth * self.units["L"], color="k")
         else:
             ax.plot(x, depth * self.units["L"], color="k")
 
         depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
-        # Plot side lobe cutoff if available
+        # Side lobe cutoff if available
         if self.transect.w_vel.sl_cutoff_m is not None:
             last_valid_cell = np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
             last_depth_cell_size = depth_obj.depth_cell_size_m[
@@ -3159,13 +3198,22 @@ class AdvGraphs(object):
             y_plt_sl = (
                 self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
             ) * self.units["L"]
+            if start_left is True:
+                y_plt_sl = y_plt_sl[: int(n_ensembles)]
+            elif start_left is False:
+                y_plt_sl = y_plt_sl[-int(n_ensembles):]
             ax.plot(x, y_plt_sl, color="r", linewidth=0.5)
 
-        # Plot upper bound of measured depth cells
+
+        # Upper bound of measured depth cells
         y_plt_top = (
             depth_obj.depth_cell_depth_m[0, :]
             - (depth_obj.depth_cell_size_m[0, :] * 0.5)
         ) * self.units["L"]
+        if start_left is True:
+            y_plt_top = y_plt_top[: int(n_ensembles)]
+        elif start_left is False:
+            y_plt_top = y_plt_top[-int(n_ensembles):]
         ax.plot(x, y_plt_top, color="r", linewidth=0.5)
 
         # Label and limits for y axis
@@ -3185,10 +3233,9 @@ class AdvGraphs(object):
 
         return x
 
-    def add_edge_bathymetry(self, x, depth):
+    def add_edge_bathymetry(self, x, depth, start_left=None):
 
         if self.transect.start_edge == "Left":
-            x = x + self.transect.edges.left.distance_m
             if self.transect.edges.left.type == "Rectangular":
                 start_x = np.array([0, 0])
                 start_d = np.array([0, depth[0]])
@@ -3203,7 +3250,6 @@ class AdvGraphs(object):
                 end_d = np.array([0])
 
         else:
-            x = x + self.transect.edges.right.distance_m
             if self.transect.edges.right.type == "Rectangular":
                 start_x = np.array([0, 0])
                 start_d = np.array([0, depth[0]])
@@ -3216,8 +3262,16 @@ class AdvGraphs(object):
             else:
                 end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
                 end_d = np.array([0])
-        x = np.hstack([start_x, x, end_x])
-        d = np.hstack([start_d, depth, end_d])
+
+        if start_left is None:
+            x = np.hstack([start_x, x, end_x])
+            d = np.hstack([start_d, depth, end_d])
+        elif start_left:
+            x = np.hstack([start_x, x])
+            d = np.hstack([start_d, depth])
+        else:
+            x = np.hstack([x, end_x])
+            d = np.hstack([depth, end_d])
         return x, d
 
     def plt_timeseries(

@@ -2806,9 +2806,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.main_wt_contour_toolbar.hide()
 
         # Initialize the boat speed figure and assign to the canvas
-        self.main_wt_contour_fig = WTContour(canvas=self.main_wt_contour_canvas)
+        self.main_wt_contour_fig = AdvGraphs(canvas=self.main_wt_contour_canvas)
         # Create the figure with the specified data
-        self.main_wt_contour_fig.create(
+        self.main_wt_contour_fig.create_main_contour(
             transect=transect,
             units=self.units,
             color_map=self.color_map,
