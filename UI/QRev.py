@@ -12701,7 +12701,7 @@ and display.
                       self.tr('Actual Q ' + self.units['label_Q']),
                       self.tr('Distance ' + self.units['label_L']),
                       self.tr('Depth ' + self.units['label_L']),
-                      self.tr('Velocity ' + self.units['label_L']),
+                      self.tr('Velocity ' + self.units['label_V']),
                       self.tr('Latitude (D M.M)'),
                       self.tr('Longitude (D M.M)')]
         ncols = len(edi_header)
@@ -12862,6 +12862,28 @@ and display.
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+        # If nothing in Percent Q column, clear the rest of the row
+        for row in range(tbl.rowCount()):
+            try:
+                if tbl.item(row, 0).text() == '':
+                    for col in range(1, 8):
+                        tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                        tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                        col += 1
+            except AttributeError:
+                pass
+
+        # Clear rows that should be blank
+        # If Percent Q has been deleted from the middle of the table, the
+        # final row(s) can be duplicated
+        if tbl.rowCount() > len(self.edi_results['percent']):
+            for row in range(len(self.edi_results['percent']), tbl.rowCount()):
+                tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(''))
+                for col in range(1, 8):
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(''))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    col += 1
+
     def edi_compute(self):
         """Coordinates the computation of the EDI results.
                         """
@@ -12881,23 +12903,37 @@ and display.
             try:
                 percent = float(self.tbl_edi_results.item(row, 0).text())
                 percents.append(percent)
-            except AttributeError:
+            except (AttributeError, ValueError):
                 pass
 
-        # If the selected transect has computed discharge compute EDI results
-        if np.abs(self.meas.discharge[selected_idx].total) > 0:
-            # Compute EDI results
-            self.edi_results = Measurement.compute_edi(self.meas, selected_idx,
-                                                       percents)
-            # Update EDI results table
-            self.edi_update_table()
-            # Create topoquad file is requested
-            if self.cb_edi_topoquad.checkState() == QtCore.Qt.Checked:
-                self.create_topoquad_file()
-        else:
-            # Display message to user
+        # Warn user if less than 3 verticals are entered
+        if len(percents) < 3:
             self.popup_message(
-                self.tr('The selected transect has no discharge'))
+                self.tr('3 verticals are required for EDI calculations.'))
+        else:
+            # If the selected transect has computed discharge compute EDI
+            # results
+            if np.abs(self.meas.discharge[selected_idx].total) > 0:
+                # Check that no Percent Q values are >= 100
+                if not any(percent >= 100.0 for percent in percents):
+                    # Compute EDI results
+                    self.edi_results = Measurement.compute_edi(self.meas,
+                                                               selected_idx,
+                                                               percents)
+                else:
+                    # Warn user if vertical >= 100 is entered
+                    self.popup_message(
+                        self.tr('Percent Q must be less than 100.'))
+
+                # Update EDI results table
+                self.edi_update_table()
+                # Create topoquad file is requested
+                if self.cb_edi_topoquad.checkState() == QtCore.Qt.Checked:
+                    self.create_topoquad_file()
+            else:
+                # Display message to user
+                self.popup_message(
+                    self.tr('The selected transect has no discharge'))
 
     def create_topoquad_file(self):
         """Create an ASCII file that can be loaded into TopoQuads to mark

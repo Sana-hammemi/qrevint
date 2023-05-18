@@ -2289,8 +2289,21 @@ class Measurement(object):
             distance.append(dist[ensemble])
             # Report lat and lon if available
             try:
-                lat.append(transect.gps.gga_lat_ens_deg[ensemble])
-                lon.append(transect.gps.gga_lon_ens_deg[ensemble])
+                # Interpolate lat/lon when missing
+                if np.isnan(transect.gps.gga_lat_ens_deg[ensemble]):
+                    good_idx = ~np.isnan(transect.gps.gga_lat_ens_deg)
+                    lat_interp = np.interp(
+                        ensemble, good_idx.nonzero()[0],
+                        transect.gps.gga_lat_ens_deg[good_idx])
+                    lat.append(lat_interp)
+                    lon_interp = np.interp(
+                        ensemble, good_idx.nonzero()[0],
+                        transect.gps.gga_lon_ens_deg[good_idx])
+                    lon.append(lon_interp)
+                else:
+                    lat.append(transect.gps.gga_lat_ens_deg[ensemble])
+                    lon.append(transect.gps.gga_lon_ens_deg[ensemble])
+
             except (ValueError, AttributeError, TypeError):
                 lat.append('')
                 lon.append('')
