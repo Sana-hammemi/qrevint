@@ -1013,7 +1013,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_wt_contour_toolbar = None
         self.map_wt_contour_fig = None
         self.current_fig = None
-
+        self.edges_axis_type = "E"
         self.mb_row = 0
         self.show_below_sl = False
 
@@ -2815,7 +2815,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             x_axis_type=self.x_axis_type,
         )
         self.main_wt_contour_fig.fig.subplots_adjust(
-            left=0.08, bottom=0.2, right=1, top=0.97, wspace=0.02, hspace=0
+            left=0.08, bottom=0.2, right=0.94, top=0.97, wspace=0.02, hspace=0
         )
         # self.figs = [self.main_wt_contour_fig]
         # self.fig_calls = [self.main_wt_contour]
@@ -12533,6 +12533,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     s = self.meas.current_settings()
                     self.meas.apply_settings(s)
                     self.update_edges_table()
+                    self.edges_graphics()
 
         # Left edge distance
         elif col == 4:
@@ -12568,6 +12569,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         s = self.meas.current_settings()
                         self.meas.apply_settings(s)
                         self.update_edges_table()
+                        self.edges_graphics()
 
         # Left number of ensembles
         elif col == 6:
@@ -12696,6 +12698,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     s = self.meas.current_settings()
                     self.meas.apply_settings(s)
                     self.update_edges_table()
+                    self.edges_graphics()
 
         # Right edge distance
         elif col == 11:
@@ -12730,6 +12733,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         s = self.meas.current_settings()
                         self.meas.apply_settings(s)
                         self.update_edges_table()
+                        self.edges_graphics()
 
         # Right number of ensembles
         elif col == 13:
@@ -12792,10 +12796,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_edges
         # Left edge
         n_ensembles = int(tbl.item(self.transect_row, 5).text())
-        if transect.start_edge == "Left":
-            edge_start = True
-        else:
-            edge_start = False
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -12817,16 +12817,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_contour_toolbar.hide()
 
         # Initialize the contour figure and assign to the canvas
-        self.left_edge_contour_fig = WTContour(canvas=self.left_edge_contour_canvas)
+        self.left_edge_contour_fig = AdvGraphs(canvas=self.left_edge_contour_canvas)
         # Create the figure with the specified data
-        self.left_edge_contour_fig.create(
+        self.left_edge_contour_fig.create_edge_contour(
             transect=transect,
             units=self.units,
-            invalid_data=np.logical_not(transect.w_vel.valid_data[0, :, :]),
-            n_ensembles=n_ensembles,
-            edge_start=edge_start,
+            x_axis_type=self.edges_axis_type,
             color_map=self.color_map,
-            x_axis_type=self.x_axis_type,
+            n_ensembles=n_ensembles,
+            edge="Left"
         )
 
         # Set margins and padding for figure
@@ -12839,10 +12838,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Right edge
         n_ensembles = int(tbl.item(self.transect_row, 12).text())
-        if transect.start_edge == "Left":
-            edge_start = False
-        else:
-            edge_start = True
 
         # If the canvas has not been previously created, create the canvas
         # and add the widget.
@@ -12864,17 +12859,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.right_edge_contour_toolbar.hide()
 
         # Initialize the contour figure and assign to the canvas
-        self.right_edge_contour_fig = WTContour(canvas=self.right_edge_contour_canvas)
+        self.right_edge_contour_fig = AdvGraphs(canvas=self.right_edge_contour_canvas)
         # Create the figure with the specified data
-        self.right_edge_contour_fig.create(
-            transect=transect,
-            units=self.units,
-            invalid_data=np.logical_not(transect.w_vel.valid_data[0, :, :]),
-            n_ensembles=n_ensembles,
-            edge_start=edge_start,
-            color_map=self.color_map,
-            x_axis_type=self.x_axis_type,
-        )
+        self.right_edge_contour_fig.create_edge_contour(transect=transect,
+            units=self.units, x_axis_type=self.edges_axis_type, color_map=self.color_map,
+            n_ensembles=n_ensembles, edge="Right")
 
         # Set margins and padding for figure
         self.right_edge_contour_canvas.fig.subplots_adjust(
@@ -15697,19 +15686,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def x_axis_time(self):
         """Changes the x-axis type to time"""
-
+        if self.current_tab == "Edges":
+            self.edges_axis_type = "T"
         self.x_axis_type = "T"
         self.change_x_axis()
 
     def x_axis_ensemble(self):
         """Changes the x-axis type to ensembles"""
-
+        if self.current_tab == "Edges":
+            self.edges_axis_type = "E"
         self.x_axis_type = "E"
         self.change_x_axis()
 
     def x_axis_length(self):
         """Changes the x-axis type to length"""
 
+        if self.current_tab == "Edges":
+            self.edges_axis_type = "L"
         self.x_axis_type = "L"
         self.change_x_axis()
 
@@ -16260,6 +16253,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Edges tab
         elif tab_idx == "Edges":
+            self.edges_axis_type = "E"
             self.edges_tab()
 
         # Uncertainty tab

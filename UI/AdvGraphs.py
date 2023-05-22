@@ -71,6 +71,8 @@ class AdvGraphs(object):
         Dictionary for bt frequency color
     freq_marker: dict
         Dictionary for bt frequency marker
+    expanded_x: np.array(float)
+        Values of x-axis for length including edge shape and distance
     """
 
     def __init__(self, canvas):
@@ -104,6 +106,7 @@ class AdvGraphs(object):
         self.gs = None
         self.ping_name = None
         self.show_below_sl = False
+        self.expanded_x = None
         self.ping_type_long_name = {
             "I": "Incoherent",
             "C": "Coherent",
@@ -418,8 +421,8 @@ class AdvGraphs(object):
         self.wt_speed_final_contour()
 
         # Adjust the spacing of the subplots
-        self.fig.subplots_adjust(left=0.05, bottom=0.07, right=0.92, top=0.95,
-            wspace=0.02, hspace=0.08)
+        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.8, top=0.97,
+            wspace=0.02, hspace=0)
 
         # Apply the x-axis label to the bottom x-axis
         idx = -2
@@ -884,6 +887,103 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
+    def create_edge_contour(self, transect, units, x_axis_type,
+        color_map, n_ensembles, edge):
+        """Create edge contour plots.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Object of TransectData
+        units: dict
+            Dictionary of units labels and conversions
+        x_axis_type: str
+            Indicates type of x-axis (E, L, T)
+        color_map: str
+            Indicates colormap to use (viridis or jet)
+        n_ensembles: int
+            Number of ensembles in the edge
+        edge: str
+            Edge, Left or Right
+        """
+
+        with self.wait_cursor():
+
+            # Initialize data sources
+            self.transect = transect
+
+            # Set axis type and units
+            self.x_axis_type = x_axis_type
+            self.units = units
+            self.color_map = color_map
+
+            # Clear the plot
+            self.fig.clear()
+
+            # Determine number of subplots
+            self.n_subplots = 1
+
+            # Compute x-axis variable
+            self.compute_x_axis()
+
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is
+            # blank but present even for time series plots to allow the sharing
+            # of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+
+            # Compute water speed for each cell
+            water_u = self.transect.w_vel.u_processed_mps[:,
+                      self.transect.in_transect_idx]
+            water_v = self.transect.w_vel.v_processed_mps[:,
+                      self.transect.in_transect_idx]
+            water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
+            water_speed[np.logical_not(self.transect.w_vel.valid_data[0, :, :])] = np.nan
+
+            # Set the 1-dimensional x-axis data based on selected x-axis type.
+            # Timestamp must be used for time
+            if self.x_axis_type == "T":
+                x_1d = np.copy(self.x_timestamp)
+            else:
+                x_1d = np.copy(self.x)
+
+            # Compute data for contour plot
+            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
+                transect=self.transect,
+                data=water_speed,
+                x_1d=x_1d,
+                n_ensembles=n_ensembles,
+                edge=edge
+            )
+
+            # Plot data
+            self.plt_contour(x_plt_in=x_plt,
+                             cell_plt_in=cell_plt,
+                             data_plt_in=data_plt,
+                             x=self.x,
+                             depth=depth,
+                             data_units=(self.units["V"], "Filtered \n Speed "
+                                         + self.units["label_V"]),
+                             n_ensembles=n_ensembles,
+                             edge=edge
+                             )
+
+            # Apply the x-axis label to the bottom x-axis
+            idx = -2
+            self.ax[idx].xaxis.label.set_fontsize(12)
+
+            self.set_x_axis(idx)
+
+            self.canvas.draw()
+
     def set_x_axis(self, idx):
         """Configures the x-axis.
 
@@ -895,14 +995,21 @@ class AdvGraphs(object):
 
         # x-axis is length
         if self.x_axis_type == "L":
-            x_max = np.nanmax(self.x[:]) + self.transect.edges.left.distance_m + self.transect.edges.right.distance_m
-            axis_buffer = (x_max - np.nanmin(self.x[:]))
+            if self.expanded_x is not None:
+                x = self.expanded_x
+            else:
+                x = self.x
+
+            x_max = np.nanmax(x)
+            x_min = np.nanmin(x)
+
+            axis_buffer = (x_max - x_min)
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
-                self.ax[idx].set_xlim(right=np.nanmin(self.x) - axis_buffer * 0.02,
+                self.ax[idx].set_xlim(right=x_min - axis_buffer * 0.02,
                     left=x_max + axis_buffer * 0.02, )
             else:
-                self.ax[idx].set_xlim(left=np.nanmin(self.x) - axis_buffer * 0.02,
+                self.ax[idx].set_xlim(left=x_min - axis_buffer * 0.02,
                     right=x_max + axis_buffer * 0.02, )
             self.ax[idx].set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
 
@@ -952,7 +1059,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -982,7 +1089,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -1048,7 +1155,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -1080,7 +1187,7 @@ class AdvGraphs(object):
             data = data_all[n, :, :]
 
             # Compute data for contour plot
-            x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
                 self.transect, data, x_1d=x_1d
             )
 
@@ -1112,7 +1219,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, water_dir, x_1d=x_1d
         )
 
@@ -1198,7 +1305,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -1231,7 +1338,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, projected_speed, x_1d=x_1d
         )
 
@@ -1301,7 +1408,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -1325,7 +1432,7 @@ class AdvGraphs(object):
                 )
             )
             data = data_all[n, :, :]
-            x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
                 self.transect, data, x_1d=x_1d
             )
             self.plt_contour(
@@ -1357,7 +1464,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, water_speed, x_1d=x_1d
         )
 
@@ -1387,7 +1494,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, water_speed, x_1d=x_1d
         )
 
@@ -1419,7 +1526,7 @@ class AdvGraphs(object):
             x_1d = np.copy(self.x)
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -1462,7 +1569,7 @@ class AdvGraphs(object):
         data[np.logical_not(self.transect.w_vel.cells_above_sl)] = np.nan
 
         # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth = self.contour_data_prep(
+        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
             self.transect, data, x_1d=x_1d
         )
 
@@ -2901,7 +3008,11 @@ class AdvGraphs(object):
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"] * self.units["L"]
             self.x = x[self.transect.in_transect_idx]
-            self.x = self.shift_x(self.x)
+            # Shift data to account for edge distance
+            if self.transect.start_edge == "Left":
+                self.x = self.x + self.transect.edges.left.distance_m
+            else:
+                self.x = self.x + self.transect.edges.right.distance_m
 
         # x axis is ensembles
         elif self.x_axis_type == "E":
@@ -2926,7 +3037,7 @@ class AdvGraphs(object):
             self.x = x[self.transect.in_transect_idx]
 
     @staticmethod
-    def contour_data_prep(transect, data, x_1d=None, n_ensembles=None, start_left=None):
+    def contour_data_prep(transect, data, x_1d=None, n_ensembles=None, edge=None):
         """Modifies the selected data from transect into arrays matching the
         meshgrid format for creating contour or color plots.
 
@@ -2938,6 +3049,10 @@ class AdvGraphs(object):
             Contour data
         x_1d: np.array
             Array of x-coordinates for each ensemble
+        n_ensembles: int
+            Used to specify number of ensembles for an edge plot
+        edge: str
+            Specifies edge (Left or Right)
 
         Returns
         -------
@@ -2974,7 +3089,7 @@ class AdvGraphs(object):
         else:
             # Use only edge ensembles from transect
             n_ensembles = int(n_ensembles)
-            if start_left:
+            if transect.start_edge == edge:
                 # Start on left bank
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[:n_ensembles]
@@ -2989,7 +3104,7 @@ class AdvGraphs(object):
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
                 cell_depth = depth_selected.depth_cell_depth_m[:, -n_ensembles:]
                 cell_size = depth_selected.depth_cell_size_m[:, -n_ensembles:]
-                data_2_plot = data_2_plot[:, -n_ensembles]
+                data_2_plot = data_2_plot[:, -n_ensembles:]
                 ensembles = in_transect_idx[-n_ensembles:]
                 x_data = x_1d[-n_ensembles:]
 
@@ -3056,7 +3171,7 @@ class AdvGraphs(object):
         data_plt[np.isnan(data_plt)] = -999
         x_plt[np.isnan(x_plt)] = 0
 
-        return x_plt, cell_plt, data_plt, ensembles, depth
+        return x_plt, cell_plt, data_plt, ensembles, depth, x_data
 
     def plt_contour(
         self,
@@ -3071,7 +3186,7 @@ class AdvGraphs(object):
         ping_name=None,
         n_names=None,
         n_ensembles=None,
-        start_left=None
+        edge=None
     ):
         """Create contour plot.
 
@@ -3097,6 +3212,10 @@ class AdvGraphs(object):
             Dictionary of ping names
         n_names: int
             Number of names
+        n_ensembles: int
+            Number of ensembles for edge data
+        edge: str
+            Specifies edge (Left or Right)
         """
 
         # Use last subplot
@@ -3182,9 +3301,10 @@ class AdvGraphs(object):
 
         # Plot depth
         if self.x_axis_type == "L":
-            expanded_x, depth = self.add_edge_bathymetry(x, depth, start_left)
-            ax.plot(expanded_x, depth * self.units["L"], color="k")
+            self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
+            ax.plot(self.expanded_x, depth * self.units["L"], color="k")
         else:
+            self.expanded_x = x
             ax.plot(x, depth * self.units["L"], color="k")
 
         depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
@@ -3198,10 +3318,11 @@ class AdvGraphs(object):
             y_plt_sl = (
                 self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
             ) * self.units["L"]
-            if start_left is True:
-                y_plt_sl = y_plt_sl[: int(n_ensembles)]
-            elif start_left is False:
-                y_plt_sl = y_plt_sl[-int(n_ensembles):]
+            if edge is not None:
+                if self.transect.start_edge == edge:
+                    y_plt_sl = y_plt_sl[: int(n_ensembles)]
+                else:
+                    y_plt_sl = y_plt_sl[-int(n_ensembles):]
             ax.plot(x, y_plt_sl, color="r", linewidth=0.5)
 
 
@@ -3210,10 +3331,11 @@ class AdvGraphs(object):
             depth_obj.depth_cell_depth_m[0, :]
             - (depth_obj.depth_cell_size_m[0, :] * 0.5)
         ) * self.units["L"]
-        if start_left is True:
-            y_plt_top = y_plt_top[: int(n_ensembles)]
-        elif start_left is False:
-            y_plt_top = y_plt_top[-int(n_ensembles):]
+        if edge is not None:
+            if self.transect.start_edge == edge:
+                y_plt_top = y_plt_top[: int(n_ensembles)]
+            else:
+                y_plt_top = y_plt_top[-int(n_ensembles):]
         ax.plot(x, y_plt_top, color="r", linewidth=0.5)
 
         # Label and limits for y axis
@@ -3224,55 +3346,110 @@ class AdvGraphs(object):
         )
         ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
 
-    def shift_x (self, x):
+    def add_edge_bathymetry(self, x, depth, edge=None):
+        """Computes a new cross section profile including edge shapes.
+        The edge shape is based on the type of edge.
 
-        if self.transect.start_edge == "Left":
-            x = x + self.transect.edges.left.distance_m
-        else:
-            x = x + self.transect.edges.right.distance_m
+        Parameters
+        ----------
+        x: np.array(float)
+            Array of lengths along transect in m
+        depth: np.array(float)
+            Array of depths along transect in m
+        edge: strt
+            Specifies the edge (Left or Right)
 
-        return x
+        Returns
+        -------
+        x: np.array(float)
+            Array of lengths along transect with edges in m
+        d: np.array(float)
+            Array of depths along transect with edge shapes in m
+        """
 
-    def add_edge_bathymetry(self, x, depth, start_left=None):
 
         if self.transect.start_edge == "Left":
             if self.transect.edges.left.type == "Rectangular":
                 start_x = np.array([0, 0])
                 start_d = np.array([0, depth[0]])
-            else:
+            elif self.transect.edges.left.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
+            else:
+                cd = self.compute_edge_cd(self.transect.edges.left)
+                start_x = np.array([0, 0, self.transect.edges.left.distance_m])
+                start_d = np.array([0, depth[0] * cd, depth[0]])
             if self.transect.edges.right.type == "Rectangular":
                 end_x = np.array(2 * [x[-1] + self.transect.edges.right.distance_m])
                 end_d = np.array([depth[-1], 0])
-            else:
+            elif self.transect.edges.right.type == "Triangular":
                 end_x = np.array([x[-1] + self.transect.edges.right.distance_m])
                 end_d = np.array([0])
+            else:
+                cd = self.compute_edge_cd(self.transect.edges.right)
+                end_x = np.array([x[-1],
+                                 x[-1] + self.transect.edges.right.distance_m,
+                                 x[-1] + self.transect.edges.right.distance_m])
+                end_d = np.array([depth[-1], depth[-1] * cd, 0])
 
         else:
             if self.transect.edges.right.type == "Rectangular":
                 start_x = np.array([0, 0])
                 start_d = np.array([0, depth[0]])
-            else:
+            elif self.transect.edges.right.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
+            else:
+                cd = self.compute_edge_cd(self.transect.edges.right)
+                start_x = np.array([0, 0, self.transect.edges.right.distance_m])
+                start_d = np.array([0, depth[0] * cd, depth[0]])
+
             if self.transect.edges.left.type == "Rectangular":
                 end_x = np.array(2 * [x[-1] + self.transect.edges.left.distance_m])
                 end_d = np.array([depth[-1], 0])
-            else:
+            elif self.transect.edges.left.type == "Triangular":
                 end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
                 end_d = np.array([0])
+            else:
+                cd = self.compute_edge_cd(self.transect.edges.left)
+                end_x = np.array([x[-1],
+                                  x[-1] + self.transect.edges.left.distance_m,
+                                  x[-1] + self.transect.edges.left.distance_m])
+                end_d = np.array([depth[-1], depth[-1] * cd, 0])
 
-        if start_left is None:
+        if edge is None:
             x = np.hstack([start_x, x, end_x])
             d = np.hstack([start_d, depth, end_d])
-        elif start_left:
+        elif self.transect.start_edge == edge:
             x = np.hstack([start_x, x])
             d = np.hstack([start_d, depth])
         else:
             x = np.hstack([x, end_x])
             d = np.hstack([depth, end_d])
         return x, d
+
+    @staticmethod
+    def compute_edge_cd(edge_data):
+        """Computes the edge shape coefficient used to determine the visual shape of
+        the edge if other than rectangular or triangular.
+
+        Parameters
+        ----------
+        edge_data: EdgeData
+            Object of EdgeData
+
+        Returns
+        -------
+        cd: float
+            Edge shape coefficient
+        """
+
+        if edge_data.type == "User Q":
+            cd = 0.5
+        else:
+            ca = (((edge_data.cust_coef - 0.3535)/(0.92 - 0.3535)) * (1 - 0.5)) + 0.5
+            cd = (ca - 0.5) * 2
+        return cd
 
     def plt_timeseries(
         self,
