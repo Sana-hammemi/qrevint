@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from MiscLibs.common_functions import sind, cosd
+from MiscLibs.compute_edge_cd import compute_edge_cd
 from matplotlib import collections as collections
 
 
@@ -3376,7 +3377,7 @@ class AdvGraphs(object):
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
-                cd = self.compute_edge_cd(self.transect.edges.left)
+                cd = compute_edge_cd(self.transect.edges.left)
                 start_x = np.array([0, 0, self.transect.edges.left.distance_m])
                 start_d = np.array([0, depth[0] * cd, depth[0]])
             if self.transect.edges.right.type == "Rectangular":
@@ -3386,7 +3387,7 @@ class AdvGraphs(object):
                 end_x = np.array([x[-1] + self.transect.edges.right.distance_m])
                 end_d = np.array([0])
             else:
-                cd = self.compute_edge_cd(self.transect.edges.right)
+                cd = compute_edge_cd(self.transect.edges.right)
                 end_x = np.array([x[-1],
                                  x[-1] + self.transect.edges.right.distance_m,
                                  x[-1] + self.transect.edges.right.distance_m])
@@ -3400,7 +3401,7 @@ class AdvGraphs(object):
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
-                cd = self.compute_edge_cd(self.transect.edges.right)
+                cd = compute_edge_cd(self.transect.edges.right)
                 start_x = np.array([0, 0, self.transect.edges.right.distance_m])
                 start_d = np.array([0, depth[0] * cd, depth[0]])
 
@@ -3411,7 +3412,7 @@ class AdvGraphs(object):
                 end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
                 end_d = np.array([0])
             else:
-                cd = self.compute_edge_cd(self.transect.edges.left)
+                cd = compute_edge_cd(self.transect.edges.left)
                 end_x = np.array([x[-1],
                                   x[-1] + self.transect.edges.left.distance_m,
                                   x[-1] + self.transect.edges.left.distance_m])
@@ -3427,29 +3428,6 @@ class AdvGraphs(object):
             x = np.hstack([x, end_x])
             d = np.hstack([depth, end_d])
         return x, d
-
-    @staticmethod
-    def compute_edge_cd(edge_data):
-        """Computes the edge shape coefficient used to determine the visual shape of
-        the edge if other than rectangular or triangular.
-
-        Parameters
-        ----------
-        edge_data: EdgeData
-            Object of EdgeData
-
-        Returns
-        -------
-        cd: float
-            Edge shape coefficient
-        """
-
-        if edge_data.type == "User Q":
-            cd = 0.5
-        else:
-            ca = (((edge_data.cust_coef - 0.3535)/(0.92 - 0.3535)) * (1 - 0.5)) + 0.5
-            cd = (ca - 0.5) * 2
-        return cd
 
     def plt_timeseries(
         self,

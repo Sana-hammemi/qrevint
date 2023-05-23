@@ -2,6 +2,7 @@ import numpy as np
 from Classes.TransectData import TransectData
 from Classes.BoatStructure import BoatStructure
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_greater
+from MiscLibs.compute_edge_cd import compute_edge_cd
 
 # from profilehooks import profile
 from DischargeFunctions.top_discharge_extrapolation import extrapolate_top
@@ -295,6 +296,9 @@ class QComp(object):
                 + self.right
                 + (self.middle + self.bottom + self.top) * self.correction_factor
             )
+
+        self.compute_topbot_speed(transect=data_in)
+        self.compute_edge_speed(transect=data_in)
 
     @staticmethod
     def qrev_mat_in(meas_struct):
@@ -1835,6 +1839,173 @@ class QComp(object):
         run_length_true = run_length[bool_vector[true_start] :: 2]
 
         return run_length_false, run_length_true
+
+    def compute_topbot_speed(self, transect):
+        """Compute top and bottom extrapolated speed.
+
+        Parameters
+        ----------
+        transect: TransectData
+        """
+
+        delta_t = np.tile(1.0, transect.w_vel.u_processed_mps.shape[1])
+
+        # Compute top speed
+        u = self.compute_top_component(transect=transect,
+            component=transect.w_vel.u_processed_mps, delta_t=delta_t)
+        v = self.compute_top_component(transect=transect,
+            component=transect.w_vel.v_processed_mps, delta_t=delta_t)
+        self.top_speed = np.sqrt(u ** 2 + v ** 2)
+
+        # Compute bottom speed
+        u = self.compute_bottom_component(transect=transect,
+                                          component=transect.w_vel.u_processed_mps,
+                                          delta_t=delta_t)
+        v = self.compute_bottom_component(transect=transect,
+                                          component=transect.w_vel.v_processed_mps,
+                                          delta_t=delta_t)
+        self.bottom_speed = np.sqrt(u ** 2 + v ** 2)
+
+    @staticmethod
+    def compute_top_component(transect, component, delta_t):
+        """Compute the extrapolated top value for the specified component.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Object of TransectData
+        component: np.array(float)
+            Component to be extrapolated
+        delta_t: np.array(float)
+            Duration of each ensemble computed from QComp
+
+        Returns
+        -------
+        top_component: np.array(float)
+            Top extrapolated values
+        """
+
+        depth_selected = getattr(transect.depths, transect.depths.selected)
+        num_top_method = {"Power": 0, "Constant": 1, "3-Point": 2, None: -1}
+        try:
+            # Top extrapolated speed
+            top_component = extrapolate_top(
+                component,
+                transect.w_vel.valid_data[0, :, :],
+                num_top_method[transect.extrap.top_method],
+                transect.extrap.exponent,
+                transect.in_transect_idx,
+                depth_selected.depth_cell_size_m,
+                depth_selected.depth_cell_depth_m,
+                depth_selected.depth_processed_m,
+                delta_t,
+                -1,
+                0.1667,
+            )
+        except SystemError:
+            top_component = QComp.extrapolate_top(xprod=component,
+                w_valid_data=transect.w_vel.valid_data[0, :, :],
+                transect_top_method=num_top_method[transect.extrap.top_method],
+                transect_exponent=transect.extrap.exponent,
+                in_transect_idx=transect.in_transect_idx,
+                depth_cell_size_m=depth_selected.depth_cell_size_m,
+                depth_cell_depth_m=depth_selected.depth_cell_depth_m,
+                depth_processed_m=depth_selected.depth_processed_m, delta_t=delta_t, )
+        return top_component
+
+    @staticmethod
+    def compute_bottom_component(transect, component, delta_t):
+        """Compute the extrapolated bottom value for the specified component.
+
+        Parameters
+        ----------
+        transect: TransectData
+            Object of TransectData
+        component: np.array(float)
+            Component to be extrapolated
+        delta_t: np.array(float)
+            Duration of each ensemble computed from QComp
+
+        Returns
+        -------
+        bottom_component: np.array(float)
+            Bottom extrapolated values
+        """
+
+        depth_selected = getattr(transect.depths, transect.depths.selected)
+        num_bot_method = {"Power": 0, "No Slip": 1, None: -1}
+        try:
+            bottom_component = extrapolate_bot(
+                component,
+                transect.w_vel.valid_data[0, :, :],
+                num_bot_method[transect.extrap.bot_method],
+                transect.extrap.exponent,
+                transect.in_transect_idx,
+                depth_selected.depth_cell_size_m,
+                depth_selected.depth_cell_depth_m,
+                depth_selected.depth_processed_m,
+                delta_t,
+                -1,
+                0.1667,
+            )
+        except SystemError:
+            bottom_component = QComp.extrapolate_bot(
+                xprod=component,
+                w_valid_data=transect.w_vel.valid_data[0, :, :],
+                transect_bot_method=num_bot_method[transect.extrap.bot_method],
+                transect_exponent=transect.extrap.exponent,
+                in_transect_idx=transect.in_transect_idx,
+                depth_cell_size_m=depth_selected.depth_cell_size_m,
+                depth_cell_depth_m=depth_selected.depth_cell_depth_m,
+                depth_processed_m=depth_selected.depth_processed_m,
+                delta_t=delta_t
+            )
+        return bottom_component
+
+    def compute_edge_speed(self, transect):
+
+        # Left edge
+
+        # Determine what ensembles to use for edge computation.
+        # The method of determining varies by manufacturer
+        edge_idx = QComp.edge_ensembles("left", transect)
+
+        # Average depth for the edge ensembles
+        depth_selected = getattr(transect.depths, transect.depths.selected)
+        depth = depth_selected.depth_processed_m[edge_idx]
+        depth_avg = np.nanmean(depth)
+
+        # Compute area
+        if transect.edges.left.type == "Triangular":
+            a = 0.5 * transect.edges.left.distance_m * depth_avg
+        elif transect.edges.left.type == "Rectangular":
+            a = transect.edges.left.distance_m * depth_avg
+        else:
+            cd = compute_edge_cd(transect.edges.left)
+            a = transect.edges.left.distance_m * depth_avg * cd + 0.5* transect.edges.left.distance_m * depth_avg * (1 - cd)
+        self.left_edge_speed = self.left / a
+
+        # Right edge
+
+        # Determine what ensembles to use for edge computation.
+        # The method of determining varies by manufacturer
+        edge_idx = QComp.edge_ensembles("right", transect)
+
+        # Average depth for the edge ensembles
+        depth_selected = getattr(transect.depths, transect.depths.selected)
+        depth = depth_selected.depth_processed_m[edge_idx]
+        depth_avg = np.nanmean(depth)
+
+        # Compute area
+        if transect.edges.right.type == "Triangular":
+            a = 0.5 * transect.edges.right.distance_m * depth_avg
+        elif transect.edges.right.type == "Rectangular":
+            a = transect.edges.right.distance_m * depth_avg
+        else:
+            cd = compute_edge_cd(transect.edges.right)
+            a = transect.edges.right.distance_m * depth_avg * cd + 0.5 * transect.edges.right.distance_m * depth_avg * (
+                        1 - cd)
+        self.right_edge_speed = self.right / a
 
     # ========================================================================
     # The methods below are not being used in the discharge computations.

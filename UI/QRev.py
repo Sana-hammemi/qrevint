@@ -15676,7 +15676,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     new_x_limits = [x_left, x_right]
                     new_y_limits = [y_bottom, y_top]
 
-
                     # Set new limits
                     if not any(new_x_limits) is None and not any(new_y_limits) is None:
                         self.current_axis.set_xlim(left=x_left, right=x_right)
