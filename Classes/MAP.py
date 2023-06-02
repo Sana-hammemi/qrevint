@@ -264,9 +264,9 @@ class MAP(object):
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
                 # Depth
-                #TODO shouldn't this use the selected depth
-                depth_transect = transect.depths.bt_depths.depth_processed_m[::-1]
-                cells_depth = transect.depths.bt_depths.depth_cell_depth_m[:, ::-1]
+                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth_transect = depth_selected.depth_processed_m[::-1]
+                cells_depth = depth_selected.depth_cell_depth_m[::-1]
                 # Velocity data
                 vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
                 vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::-1])
@@ -301,9 +301,10 @@ class MAP(object):
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
                 # Depth
-                #TODO Shouldn't this use the selected depth
-                depth_transect = transect.depths.bt_depths.depth_processed_m
-                cells_depth = transect.depths.bt_depths.depth_cell_depth_m
+                depth_selected = getattr(transect.depths, transect.depths.selected)
+                depth_transect = depth_selected.depth_processed_m
+                cells_depth = depth_selected.depth_cell_depth_m
+
                 # Velocity data
                 vel_x = np.copy(transect.w_vel.u_processed_mps)
                 vel_y = np.copy(transect.w_vel.v_processed_mps)
@@ -736,7 +737,9 @@ class MAP(object):
         node_range_border = list(range(node_min, node_max + 2))
 
         borders_ens = self.borders_ens[node_range_border]
-        borders_ens -= min(borders_ens)
+        dist_start = min(borders_ens)
+        borders_ens -= dist_start
+        self.acs_distance -= dist_start
 
         map_depth_cells_border = np.tile(
             np.nan, (len(self.main_depth_layers), len(node_range))
