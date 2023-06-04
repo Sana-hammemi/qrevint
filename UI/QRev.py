@@ -10688,7 +10688,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Update list of figs
             self.figs = [self.wt_shiptrack_fig, self.wt_filter_fig]
-            self.fig_calls = [self.wt_shiptrack, self.wt_filter_plots]
+            self.fig_calls = [self.wt_shiptrack, self.wt_filter_plots] 
 
             # Reset data cursor to work with new figure
             if self.actionData_Cursor.isChecked():
