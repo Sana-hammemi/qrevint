@@ -1016,6 +1016,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.edges_axis_type = "E"
         self.mb_row = 0
         self.show_below_sl = False
+        self.plot_extrapolated = False
 
         # Tab initialization tracking setup
         self.main_initialized = False
@@ -1099,6 +1100,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_x_ensembles.activated.connect(self.x_axis_ensemble)
         self.sc_advanced = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+A"), self)
         self.sc_advanced.activated.connect(self.set_show_below_sl)
+        self.sc_unmeasured = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+U"), self)
+        self.sc_unmeasured.activated.connect(self.show_extrapolated)
         self.sc_gga = None
         self.sc_vtg = None
 
@@ -2144,55 +2147,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.update_main_uncertainty()
                 self.map_tab()
                 self.set_user_rating()
-
-                # Setup list for use by graphics controls
-                if self.run_oursin:
-                    self.canvases = [
-                        self.main_shiptrack_canvas,
-                        self.main_wt_contour_canvas,
-                        self.main_extrap_canvas,
-                        self.main_discharge_canvas,
-                        self.uncertainty_lollipop_canvas,
-                    ]
-                    self.figs = [
-                        self.main_shiptrack_fig,
-                        self.main_wt_contour_fig,
-                        self.main_extrap_fig,
-                        self.main_discharge_fig,
-                        self.uncertainty_lollipop_fig,
-                    ]
-                    self.fig_calls = [self.main_shiptrack, self.main_wt_contour,
-                                      self.main_extrap_plot, self.discharge_plot, self.main_uncertainty_plot]
-                    self.toolbars = [
-                        self.main_shiptrack_toolbar,
-                        self.main_wt_contour_toolbar,
-                        self.main_extrap_toolbar,
-                        self.main_discharge_toolbar,
-                        self.uncertainty_lollipop_toolbar,
-                    ]
-                else:
-                    self.canvases = [
-                        self.main_shiptrack_canvas,
-                        self.main_wt_contour_canvas,
-                        self.main_extrap_canvas,
-                        self.main_discharge_canvas,
-                    ]
-                    self.figs = [
-                        self.main_shiptrack_fig,
-                        self.main_wt_contour_fig,
-                        self.main_extrap_fig,
-                        self.main_discharge_fig,
-                    ]
-                    self.fig_calls = [self.main_shiptrack,
-                                      self.main_wt_contour,
-                                      self.main_extrap_plot,
-                                      self.discharge_plot]
-                    self.toolbars = [
-                        self.main_shiptrack_toolbar,
-                        self.main_wt_contour_toolbar,
-                        self.main_extrap_toolbar,
-                        self.main_discharge_toolbar,
-                    ]
+                self.update_fig_list()
 
                 # Toggles changes indicating the main has been updated
                 self.change = False
@@ -2207,6 +2162,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figsMenuConnection()
+
+    def update_fig_list(self):
+
+        if self.current_tab == "Main":
+            # Setup list for use by graphics controls
+            if self.run_oursin:
+                self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas,
+                    self.main_extrap_canvas, self.main_discharge_canvas,
+                    self.uncertainty_lollipop_canvas, ]
+                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
+                    self.main_extrap_fig, self.main_discharge_fig,
+                    self.uncertainty_lollipop_fig, ]
+                self.fig_calls = [self.main_shiptrack, self.main_wt_contour,
+                                  self.main_extrap_plot, self.discharge_plot,
+                                  self.main_uncertainty_plot]
+                self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar,
+                    self.main_extrap_toolbar, self.main_discharge_toolbar,
+                    self.uncertainty_lollipop_toolbar, ]
+            else:
+                self.canvases = [self.main_shiptrack_canvas, self.main_wt_contour_canvas,
+                    self.main_extrap_canvas, self.main_discharge_canvas, ]
+                self.figs = [self.main_shiptrack_fig, self.main_wt_contour_fig,
+                    self.main_extrap_fig, self.main_discharge_fig, ]
+                self.fig_calls = [self.main_shiptrack, self.main_wt_contour,
+                                  self.main_extrap_plot, self.discharge_plot]
+                self.toolbars = [self.main_shiptrack_toolbar, self.main_wt_contour_toolbar,
+                    self.main_extrap_toolbar, self.main_discharge_toolbar, ]
 
     def refocus(self):
         self.tab_all.setFocus()
@@ -2740,7 +2722,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Generate graphs
         self.main_shiptrack(transect=transect)
-        self.main_wt_contour(transect=transect)
+        self.main_wt_contour(transect_id=transect_id)
 
     def main_shiptrack(self, transect):
         """Creates shiptrack plot for data in transect.
@@ -2777,13 +2759,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.main_shiptrack_canvas.draw()
 
-    def main_wt_contour(self, transect):
+    def main_wt_contour(self, transect_id):
         """Creates boat speed plot for data in transect.
 
         Parameters
         ----------
         transect: TransectData
             Object of TransectData
+        transect_id: int
+            Index of selected transect
         """
 
         # If the canvas has not been previously created, create the canvas
@@ -2808,19 +2792,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Initialize the boat speed figure and assign to the canvas
         self.main_wt_contour_fig = AdvGraphs(canvas=self.main_wt_contour_canvas)
         # Create the figure with the specified data
-        self.main_wt_contour_fig.create_main_contour(
-            transect=transect,
-            units=self.units,
-            color_map=self.color_map,
-            x_axis_type=self.x_axis_type,
-        )
+        if self.plot_extrapolated:
+            self.main_wt_contour_fig.create_main_contour(
+                transect=self.meas.transects[transect_id],
+                units=self.units,
+                color_map=self.color_map,
+                x_axis_type=self.x_axis_type,
+                discharge=self.meas.discharge[transect_id])
+        else:
+            self.main_wt_contour_fig.create_main_contour(
+                transect=self.meas.transects[transect_id],
+                units=self.units, color_map=self.color_map,
+                x_axis_type=self.x_axis_type,
+            )
         self.main_wt_contour_fig.fig.subplots_adjust(
-            left=0.08, bottom=0.2, right=0.94, top=0.97, wspace=0.02, hspace=0
+            left=0.05, bottom=0.2, right=0.92, top=0.97, wspace=0.02, hspace=0
         )
         # self.figs = [self.main_wt_contour_fig]
         # self.fig_calls = [self.main_wt_contour]
         # Draw canvas
         self.main_wt_contour_canvas.draw()
+        self.update_fig_list()
 
     def main_extrap_plot(self):
         """Creates extrapolation plot."""
@@ -5366,7 +5358,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.compass_plot()
             self.pr_plot()
             self.figs = [self.heading_fig, self.pr_fig]
-            self.fig_calls[self.compass_plot, self.pr_plot]
+            self.fig_calls = [self.compass_plot, self.pr_plot]
             self.change = True
 
         # Magnetic variation
@@ -10777,18 +10769,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Initialize the water filters figure and assign to the canvas
         self.wt_filter_fig = AdvGraphs(canvas=self.wt_filter_canvas)
-        self.wt_filter_fig.create_wt_tab_graphs(
-            transect=self.transect,
-            units=self.units,
-            contour=self.rb_wt_contour.isChecked(),
-            beam=self.rb_wt_beam.isChecked(),
-            error=self.rb_wt_error.isChecked(),
-            vert=self.rb_wt_vert.isChecked(),
-            snr=self.rb_wt_snr.isChecked(),
-            speed=self.rb_wt_speed.isChecked(),
-            x_axis_type=self.x_axis_type,
-            color_map=self.color_map,
-        )
+        if self.plot_extrapolated:
+            self.wt_filter_fig.create_wt_tab_graphs(
+                transect=self.transect,
+                units=self.units,
+                contour=self.rb_wt_contour.isChecked(),
+                beam=self.rb_wt_beam.isChecked(),
+                error=self.rb_wt_error.isChecked(),
+                vert=self.rb_wt_vert.isChecked(),
+                snr=self.rb_wt_snr.isChecked(),
+                speed=self.rb_wt_speed.isChecked(),
+                x_axis_type=self.x_axis_type,
+                color_map=self.color_map,
+                discharge=self.meas.discharge[self.checked_transects_idx[self.transect_row]])
+        else:
+            self.wt_filter_fig.create_wt_tab_graphs(
+                transect=self.transect,
+                units=self.units,
+                contour=self.rb_wt_contour.isChecked(),
+                beam=self.rb_wt_beam.isChecked(),
+                error=self.rb_wt_error.isChecked(),
+                vert=self.rb_wt_vert.isChecked(),
+                snr=self.rb_wt_snr.isChecked(),
+                speed=self.rb_wt_speed.isChecked(),
+                x_axis_type=self.x_axis_type,
+                color_map=self.color_map,
+            )
 
         # Draw canvas
         self.wt_filter_canvas.draw()
@@ -14893,6 +14899,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             x_axis_type=self.x_axis_type,
             flow_direction=flow_direction,
             show_below_sl=self.show_below_sl,
+            show_unmeasured=self.plot_extrapolated,
         )
 
         # Draw canvas
@@ -15715,6 +15722,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.adv_graph_plots()
 
+    def show_extrapolated(self):
+
+        if self.plot_extrapolated == False:
+            self.plot_extrapolated = True
+        else:
+            self.plot_extrapolated = False
+
+        with self.wait_cursor():
+            # Clear zoom, pan, home, data_cursor
+            self.clear_zphd()
+
+            # Determine the selected tab
+            tab_idx = self.current_tab
+
+            # Main tab
+            if tab_idx == "Main":
+                self.main_wt_contour(transect_id=self.checked_transects_idx[self.transect_row])
+            elif tab_idx == "WT":
+                self.wt_plots()
+            elif tab_idx == "Adv. Graph":
+                self.adv_graph_tab()
 
     # Split functions
     # ==============

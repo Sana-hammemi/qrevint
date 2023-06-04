@@ -1850,20 +1850,48 @@ class QComp(object):
 
         delta_t = np.tile(1.0, transect.w_vel.u_processed_mps.shape[1])
 
+        # Compute extrapolated cell size and depth
+        n_ensembles = transect.w_vel.u_processed_mps.shape[1]
+        depth_selected = getattr(transect.depths, transect.depths.selected)
+        top_cell_size = np.repeat(np.nan, n_ensembles)
+        top_cell_depth = np.repeat(np.nan, n_ensembles)
+        bottom_cell_size = np.repeat(np.nan, n_ensembles)
+        bottom_cell_depth = np.repeat(np.nan, n_ensembles)
+        for n in range(n_ensembles):
+            # Identify topmost 1 and 3 valid cells
+            idx_temp = np.where(np.logical_not(np.isnan(transect.w_vel.u_processed_mps[:, n])))[0]
+            if len(idx_temp) > 0:
+                # Compute top
+                top_cell_size[n] = (
+                    depth_selected.depth_cell_depth_m[idx_temp[0], n]
+                    - 0.5 * depth_selected.depth_cell_size_m[idx_temp[0], n]
+                )
+                top_cell_depth[n] = top_cell_size[n] / 2
+                # Compute bottom
+                bottom_cell_size[n] = (depth_selected.depth_processed_m[n]
+                    -(depth_selected.depth_cell_depth_m[idx_temp[-1], n]
+                    + 0.5 * depth_selected.depth_cell_size_m[idx_temp[-1], n])
+                )
+                bottom_cell_depth[n] = depth_selected.depth_processed_m[n] - 0.5 * bottom_cell_size[n]
+            else:
+                top_cell_size[n] = 0
+                top_cell_depth[n] = 0
+                bottom_cell_size[n] = 0
+                bottom_cell_depth[n] = 0
         # Compute top speed
         u = self.compute_top_component(transect=transect,
-            component=transect.w_vel.u_processed_mps, delta_t=delta_t)
+            component=transect.w_vel.u_processed_mps, delta_t=delta_t) / top_cell_size
         v = self.compute_top_component(transect=transect,
-            component=transect.w_vel.v_processed_mps, delta_t=delta_t)
+            component=transect.w_vel.v_processed_mps, delta_t=delta_t) / top_cell_size
         self.top_speed = np.sqrt(u ** 2 + v ** 2)
 
         # Compute bottom speed
         u = self.compute_bottom_component(transect=transect,
                                           component=transect.w_vel.u_processed_mps,
-                                          delta_t=delta_t)
+                                          delta_t=delta_t) / bottom_cell_size
         v = self.compute_bottom_component(transect=transect,
                                           component=transect.w_vel.v_processed_mps,
-                                          delta_t=delta_t)
+                                          delta_t=delta_t) / bottom_cell_size
         self.bottom_speed = np.sqrt(u ** 2 + v ** 2)
 
     @staticmethod
@@ -1983,7 +2011,7 @@ class QComp(object):
         else:
             cd = compute_edge_cd(transect.edges.left)
             a = transect.edges.left.distance_m * depth_avg * cd + 0.5* transect.edges.left.distance_m * depth_avg * (1 - cd)
-        self.left_edge_speed = self.left / a
+        self.left_edge_speed = np.abs(self.left / a)
 
         # Right edge
 
@@ -2005,7 +2033,7 @@ class QComp(object):
             cd = compute_edge_cd(transect.edges.right)
             a = transect.edges.right.distance_m * depth_avg * cd + 0.5 * transect.edges.right.distance_m * depth_avg * (
                         1 - cd)
-        self.right_edge_speed = self.right / a
+        self.right_edge_speed = np.abs(self.right / a)
 
     # ========================================================================
     # The methods below are not being used in the discharge computations.

@@ -138,8 +138,8 @@ class PRTS(object):
             # Label axis
             if x_axis_type == "L":
                 self.fig.ax.set_xlim(
-                    left=-1 * np.nanmax(x) * 0.02 * units["L"],
-                    right=np.nanmax(x) * 1.02 * units["L"],
+                    left=-1 * np.nanmax(x) * 0.02,
+                    right=np.nanmax(x) * 1.02,
                 )
                 self.fig.ax.set_xlabel(
                     self.canvas.tr("Length Left to Right" + units["label_L"])
@@ -160,8 +160,8 @@ class PRTS(object):
                 # Label axis
                 if x_axis_type == "L":
                     self.fig.ax.set_xlim(
-                        left=-1 * np.nanmax(x) * 0.02 * units["L"],
-                        right=np.nanmax(x) * 1.02 * units["L"],
+                        left=-1 * np.nanmax(x) * 0.02,
+                        right=np.nanmax(x) * 1.02,
                     )
                     self.fig.ax.set_xlabel(
                         self.canvas.tr("Length Left to Right" + units["label_L"])
@@ -182,8 +182,8 @@ class PRTS(object):
         # Label axis
         if x_axis_type == "L":
             self.fig.ax.set_xlim(
-                left=-1 * np.nanmax(x) * 0.02 * units["L"],
-                right=np.nanmax(x) * 1.02 * units["L"],
+                left=-1 * np.nanmax(x) * 0.02,
+                right=np.nanmax(x) * 1.02,
             )
             self.fig.ax.set_xlabel(
                 self.canvas.tr("Length Left to Right" + units["label_L"])

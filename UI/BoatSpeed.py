@@ -358,7 +358,7 @@ class BoatSpeed(object):
         # Set axis limits
         max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
         self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
-        x = x[transect.in_transect_idx]
+        x = x[transect.in_transect_idx - transect.in_transect_idx[0]]
         if x_axis_type == "L":
             if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()

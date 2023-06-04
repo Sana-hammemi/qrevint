@@ -925,16 +925,16 @@ class TransectData(object):
         # the earth coordinate system.
         if rsdata.Setup.coordinateSystem == 0:
             ref_coord = 'Beam'
-            # raise CoordError(
-            #     "Beam Coordinates are not supported for all "
-            #     "RiverSuveyor firmware releases, " + "use Earth coordinates."
-            # )
+            raise CoordError(
+                "Beam Coordinates are not supported for all "
+                "RiverSuveyor firmware releases, " + "use Earth coordinates."
+            )
         elif rsdata.Setup.coordinateSystem == 1:
             ref_coord = 'Inst'
-            # raise CoordError(
-            #     "Instrument Coordinates are not supported for all"
-            #     " RiverSuveyor firmware releases, " + "use Earth coordinates."
-            # )
+            raise CoordError(
+                "Instrument Coordinates are not supported for all"
+                " RiverSuveyor firmware releases, " + "use Earth coordinates."
+            )
         elif rsdata.Setup.coordinateSystem == 2:
             ref_coord = "Earth"
 

@@ -3,12 +3,12 @@ import copy
 from matplotlib import gridspec
 import matplotlib.cm as cm
 from matplotlib.dates import DateFormatter, num2date
+from matplotlib.patches import Polygon
 from PyQt5 import QtWidgets, QtCore
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from MiscLibs.common_functions import sind, cosd
 from MiscLibs.compute_edge_cd import compute_edge_cd
-from matplotlib import collections as collections
 
 
 class AdvGraphs(object):
@@ -74,6 +74,8 @@ class AdvGraphs(object):
         Dictionary for bt frequency marker
     expanded_x: np.array(float)
         Values of x-axis for length including edge shape and distance
+    show_unmeasured: bool
+        Indicates if unmeasured data should be plotted in final wt contour
     """
 
     def __init__(self, canvas):
@@ -107,6 +109,7 @@ class AdvGraphs(object):
         self.gs = None
         self.ping_name = None
         self.show_below_sl = False
+        self.show_unmeasured = False
         self.expanded_x = None
         self.ping_type_long_name = {
             "I": "Incoherent",
@@ -259,6 +262,7 @@ class AdvGraphs(object):
         color_map="viridis",
         x_axis_type=None,
         show_below_sl=False,
+        show_unmeasured=False,
     ):
         """Create selected plots for the specified transect.
 
@@ -281,6 +285,8 @@ class AdvGraphs(object):
         x_axis_type: str
             Specifies what variable (ensemble, length or time) to be used for
             the x-axis
+        show_unmeasured: bool
+            Indicates if unmeasured data should be plotted in final wt contour
         """
 
         # Make sure a selection was made
@@ -293,6 +299,7 @@ class AdvGraphs(object):
                 self.discharge = discharge
 
                 self.show_below_sl = show_below_sl
+                self.show_unmeasured = show_unmeasured
 
                 # Set default axis
                 if x_axis_type is None:
@@ -365,7 +372,7 @@ class AdvGraphs(object):
                 self.fig.subplots_adjust(
                     left=0.05,
                     bottom=0.05,
-                    right=0.95,
+                    right=0.92,
                     top=0.95,
                     wspace=0.02,
                     hspace=0.08,
@@ -387,11 +394,18 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def create_main_contour(self, transect, units, x_axis_type="E",
-        color_map="viridis"):
+    def create_main_contour(
+        self, transect, units, x_axis_type="E", color_map="viridis", discharge=None
+    ):
 
         # Initialize data sources
         self.transect = transect
+        self.discharge = discharge
+
+        if discharge is not None:
+            self.show_unmeasured = True
+        else:
+            self.show_unmeasured = False
 
         # Set axis type and units
         self.x_axis_type = x_axis_type
@@ -422,8 +436,9 @@ class AdvGraphs(object):
         self.wt_speed_final_contour()
 
         # Adjust the spacing of the subplots
-        self.fig.subplots_adjust(left=0.08, bottom=0.2, right=0.8, top=0.97,
-            wspace=0.02, hspace=0)
+        self.fig.subplots_adjust(
+            left=0.08, bottom=0.2, right=0.92, top=0.97, wspace=0.02, hspace=0
+        )
 
         # Apply the x-axis label to the bottom x-axis
         idx = -2
@@ -788,6 +803,7 @@ class AdvGraphs(object):
         speed=False,
         x_axis_type="E",
         color_map="viridis",
+        discharge=None
     ):
         """Creates the plots for the bottom track tab.
         This approach allows zoom and pan to work together for both plots.
@@ -815,11 +831,19 @@ class AdvGraphs(object):
             the x-axis
         color_map: str
             Name of color map to be used for color contour plots
+        discharge: QComp
+            Object of QComp
         """
         with self.wait_cursor():
 
             # Initialize data sources
             self.transect = transect
+            self.discharge = discharge
+
+            if discharge is not None:
+                self.show_unmeasured = True
+            else:
+                self.show_unmeasured = False
 
             # Set axis type and units
             self.x_axis_type = x_axis_type
@@ -888,8 +912,9 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def create_edge_contour(self, transect, units, x_axis_type,
-        color_map, n_ensembles, edge):
+    def create_edge_contour(
+        self, transect, units, x_axis_type, color_map, n_ensembles, edge
+    ):
         """Create edge contour plots.
 
         Parameters
@@ -942,12 +967,16 @@ class AdvGraphs(object):
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
 
             # Compute water speed for each cell
-            water_u = self.transect.w_vel.u_processed_mps[:,
-                      self.transect.in_transect_idx]
-            water_v = self.transect.w_vel.v_processed_mps[:,
-                      self.transect.in_transect_idx]
-            water_speed = np.sqrt(water_u ** 2 + water_v ** 2)
-            water_speed[np.logical_not(self.transect.w_vel.valid_data[0, :, :])] = np.nan
+            water_u = self.transect.w_vel.u_processed_mps[
+                :, self.transect.in_transect_idx
+            ]
+            water_v = self.transect.w_vel.v_processed_mps[
+                :, self.transect.in_transect_idx
+            ]
+            water_speed = np.sqrt(water_u**2 + water_v**2)
+            water_speed[
+                np.logical_not(self.transect.w_vel.valid_data[0, :, :])
+            ] = np.nan
 
             # Set the 1-dimensional x-axis data based on selected x-axis type.
             # Timestamp must be used for time
@@ -957,25 +986,35 @@ class AdvGraphs(object):
                 x_1d = np.copy(self.x)
 
             # Compute data for contour plot
-            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
+            (
+                x_plt,
+                cell_plt,
+                data_plt,
+                ensembles,
+                depth,
+                self.x,
+            ) = self.contour_data_prep(
                 transect=self.transect,
                 data=water_speed,
                 x_1d=x_1d,
                 n_ensembles=n_ensembles,
-                edge=edge
+                edge=edge,
             )
 
             # Plot data
-            self.plt_contour(x_plt_in=x_plt,
-                             cell_plt_in=cell_plt,
-                             data_plt_in=data_plt,
-                             x=self.x,
-                             depth=depth,
-                             data_units=(self.units["V"], "Filtered \n Speed "
-                                         + self.units["label_V"]),
-                             n_ensembles=n_ensembles,
-                             edge=edge
-                             )
+            self.plt_contour(
+                x_plt_in=x_plt,
+                cell_plt_in=cell_plt,
+                data_plt_in=data_plt,
+                x=self.x,
+                depth=depth,
+                data_units=(
+                    self.units["V"],
+                    "Filtered \n Speed " + self.units["label_V"],
+                ),
+                n_ensembles=n_ensembles,
+                edge=edge,
+            )
 
             # Apply the x-axis label to the bottom x-axis
             idx = -2
@@ -1004,14 +1043,18 @@ class AdvGraphs(object):
             x_max = np.nanmax(x)
             x_min = np.nanmin(x)
 
-            axis_buffer = (x_max - x_min)
+            axis_buffer = x_max - x_min
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
-                self.ax[idx].set_xlim(right=x_min - axis_buffer * 0.02,
-                    left=x_max + axis_buffer * 0.02, )
+                self.ax[idx].set_xlim(
+                    right=x_min - axis_buffer * 0.02,
+                    left=x_max + axis_buffer * 0.02,
+                )
             else:
-                self.ax[idx].set_xlim(left=x_min - axis_buffer * 0.02,
-                    right=x_max + axis_buffer * 0.02, )
+                self.ax[idx].set_xlim(
+                    left=x_min - axis_buffer * 0.02,
+                    right=x_max + axis_buffer * 0.02,
+                )
             self.ax[idx].set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
 
         # x-axis is ensembles
@@ -1188,9 +1231,14 @@ class AdvGraphs(object):
             data = data_all[n, :, :]
 
             # Compute data for contour plot
-            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
-                self.transect, data, x_1d=x_1d
-            )
+            (
+                x_plt,
+                cell_plt,
+                data_plt,
+                ensembles,
+                depth,
+                self.x,
+            ) = self.contour_data_prep(self.transect, data, x_1d=x_1d)
 
             # Plot data
             self.plt_contour(
@@ -1433,9 +1481,14 @@ class AdvGraphs(object):
                 )
             )
             data = data_all[n, :, :]
-            x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
-                self.transect, data, x_1d=x_1d
-            )
+            (
+                x_plt,
+                cell_plt,
+                data_plt,
+                ensembles,
+                depth,
+                self.x,
+            ) = self.contour_data_prep(self.transect, data, x_1d=x_1d)
             self.plt_contour(
                 x_plt_in=x_plt,
                 cell_plt_in=cell_plt,
@@ -1494,10 +1547,38 @@ class AdvGraphs(object):
         else:
             x_1d = np.copy(self.x)
 
-        # Compute data for contour plot
-        x_plt, cell_plt, data_plt, ensembles, depth, self.x = self.contour_data_prep(
-            self.transect, water_speed, x_1d=x_1d
-        )
+        # If discharge data are provided, expanded data with extrapolated values
+        if self.show_unmeasured and self.x_axis_type == "L":
+            (
+                expanded_cell_size,
+                expanded_cell_depth,
+                expanded_water_speed,
+            ) = self.add_extrapolated_topbot(water_speed)
+            # Compute data for contour plot
+            (
+                x_plt,
+                cell_plt,
+                data_plt,
+                ensembles,
+                depth,
+                self.x,
+            ) = self.contour_data_prep(
+                self.transect,
+                expanded_water_speed,
+                x_1d=x_1d,
+                cell_depth=expanded_cell_depth,
+                cell_size=expanded_cell_size,
+            )
+        else:
+            # Compute data for contour plot
+            (
+                x_plt,
+                cell_plt,
+                data_plt,
+                ensembles,
+                depth,
+                self.x,
+            ) = self.contour_data_prep(self.transect, water_speed, x_1d=x_1d)
 
         # Plot data
         self.plt_contour(
@@ -1508,8 +1589,8 @@ class AdvGraphs(object):
             depth=depth,
             data_units=(
                 self.units["V"],
-                "Interpolated \n Speed " + self.units["label_V"],
-            ),
+                "Interpolated \n Speed " + self.units["label_V"]),
+            show_edge_speed=self.show_unmeasured,
         )
 
     def wt_vertical_contour(self):
@@ -2043,12 +2124,16 @@ class AdvGraphs(object):
         self.ax[-1].legend(clean_legend)
 
     def bt_vertical_ts(self):
+        """Create time series plot of BT vertical velocity."""
+
+        # Get data
         y_data = self.transect.boat_vel.bt_vel.w_mps
         invalid = np.logical_not(
             self.transect.boat_vel.bt_vel.valid_data[3, :]
         ).tolist()
         data_units = (self.units["V"], "BT Vertical Vel " + self.units["label_V"])
 
+        # Assign ping type if available
         if self.transect.boat_vel.bt_vel.ping_type is None:
             freq_used = (
                 np.unique(self.transect.boat_vel.bt_vel.frequency_khz)
@@ -2066,6 +2151,7 @@ class AdvGraphs(object):
             marker_dict = self.p_type_marker
             color_dict = self.p_type_color
 
+        # Construct data formats
         data_mask = []
         fmt = []
         for freq in freq_used:
@@ -2083,6 +2169,7 @@ class AdvGraphs(object):
             {"marker": "o", "color": "r", "ms": 8, "linestyle": "", "mfc": "none"}
         )
 
+        # Plot data
         self.plt_timeseries(
             data=None,
             data_units=data_units,
@@ -2104,7 +2191,7 @@ class AdvGraphs(object):
         self.ax[-1].legend(clean_legend)
 
     def bt_source_ts(self):
-
+        """Create time series plot of BT source."""
         self.source_ts(self.transect.boat_vel.bt_vel, "BT Source")
 
     def bt_corr_ts(self):
@@ -2528,6 +2615,7 @@ class AdvGraphs(object):
 
     def gga_speed_ts(self, lbl="GGA Speed"):
         """Plot boat speed using GGA reference."""
+
         if (
             self.transect.boat_vel.gga_vel is not None
             and self.transect.boat_vel.gga_vel.u_mps is not None
@@ -2570,6 +2658,7 @@ class AdvGraphs(object):
 
     def vtg_speed_ts(self, lbl="VTG Speed"):
         """Plot boat speed using VTG reference."""
+
         if (
             self.transect.boat_vel.vtg_vel is not None
             and self.transect.boat_vel.vtg_vel.u_mps is not None
@@ -2925,6 +3014,7 @@ class AdvGraphs(object):
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
             old_x = np.copy(self.x)
+            # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
@@ -2936,6 +3026,7 @@ class AdvGraphs(object):
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
             old_x = np.copy(self.x)
+            # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
                 {"color": "#aa00ff", "linestyle": "-", "marker": "o", "markersize": 4}
@@ -2948,6 +3039,7 @@ class AdvGraphs(object):
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
             old_x = np.copy(self.x)
+            # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
                 {"color": "#00aaff", "linestyle": "-", "marker": "o", "markersize": 4}
@@ -3009,6 +3101,7 @@ class AdvGraphs(object):
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"] * self.units["L"]
             self.x = x[self.transect.in_transect_idx]
+
             # Shift data to account for edge distance
             if self.transect.start_edge == "Left":
                 self.x = self.x + self.transect.edges.left.distance_m
@@ -3038,7 +3131,15 @@ class AdvGraphs(object):
             self.x = x[self.transect.in_transect_idx]
 
     @staticmethod
-    def contour_data_prep(transect, data, x_1d=None, n_ensembles=None, edge=None):
+    def contour_data_prep(
+        transect,
+        data,
+        x_1d=None,
+        n_ensembles=None,
+        edge=None,
+        cell_size=None,
+        cell_depth=None,
+    ):
         """Modifies the selected data from transect into arrays matching the
         meshgrid format for creating contour or color plots.
 
@@ -3054,6 +3155,10 @@ class AdvGraphs(object):
             Used to specify number of ensembles for an edge plot
         edge: str
             Specifies edge (Left or Right)
+        cell_size: np.array(float)
+            Array of cell sizes, used when extrapolated values are included in plot
+        cell_depth: np.array(float)
+            Array of cell depths, used when extrapolated values are included in plot
 
         Returns
         -------
@@ -3082,8 +3187,10 @@ class AdvGraphs(object):
             # Get data from transect
             depth_selected = getattr(transect.depths, transect.depths.selected)
             depth = depth_selected.depth_processed_m[in_transect_idx]
-            cell_depth = depth_selected.depth_cell_depth_m[:, in_transect_idx]
-            cell_size = depth_selected.depth_cell_size_m[:, in_transect_idx]
+            if cell_depth is None:
+                cell_depth = depth_selected.depth_cell_depth_m[:, in_transect_idx]
+                cell_size = depth_selected.depth_cell_size_m[:, in_transect_idx]
+
             x_data = x_1d
             ensembles = in_transect_idx
 
@@ -3094,17 +3201,20 @@ class AdvGraphs(object):
                 # Start on left bank
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[:n_ensembles]
-                cell_depth = depth_selected.depth_cell_depth_m[:, :n_ensembles]
-                cell_size = depth_selected.depth_cell_size_m[:, :n_ensembles]
+                if cell_depth is None:
+                    cell_depth = depth_selected.depth_cell_depth_m[:, :n_ensembles]
+                    cell_size = depth_selected.depth_cell_size_m[:, :n_ensembles]
                 data_2_plot = data_2_plot[:, :n_ensembles]
                 ensembles = in_transect_idx[:n_ensembles]
                 x_data = x_1d[:n_ensembles]
 
             else:
+
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
-                cell_depth = depth_selected.depth_cell_depth_m[:, -n_ensembles:]
-                cell_size = depth_selected.depth_cell_size_m[:, -n_ensembles:]
+                if cell_depth is None:
+                    cell_depth = depth_selected.depth_cell_depth_m[:, -n_ensembles:]
+                    cell_size = depth_selected.depth_cell_size_m[:, -n_ensembles:]
                 data_2_plot = data_2_plot[:, -n_ensembles:]
                 ensembles = in_transect_idx[-n_ensembles:]
                 x_data = x_1d[-n_ensembles:]
@@ -3171,6 +3281,7 @@ class AdvGraphs(object):
         cell_plt[np.isnan(cell_plt)] = 0
         data_plt[np.isnan(data_plt)] = -999
         x_plt[np.isnan(x_plt)] = 0
+        data_plt = data_plt[:-1, :-1]
 
         return x_plt, cell_plt, data_plt, ensembles, depth, x_data
 
@@ -3187,7 +3298,8 @@ class AdvGraphs(object):
         ping_name=None,
         n_names=None,
         n_ensembles=None,
-        edge=None
+        edge=None,
+        show_edge_speed=False,
     ):
         """Create contour plot.
 
@@ -3217,6 +3329,8 @@ class AdvGraphs(object):
             Number of ensembles for edge data
         edge: str
             Specifies edge (Left or Right)
+        show_edge_speed: bool
+            Indicates if edge speed should be plotted
         """
 
         # Use last subplot
@@ -3302,6 +3416,7 @@ class AdvGraphs(object):
 
         # Plot depth
         if self.x_axis_type == "L":
+            # Add edge bathymetry
             self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
             ax.plot(self.expanded_x, depth * self.units["L"], color="k")
         else:
@@ -3323,9 +3438,8 @@ class AdvGraphs(object):
                 if self.transect.start_edge == edge:
                     y_plt_sl = y_plt_sl[: int(n_ensembles)]
                 else:
-                    y_plt_sl = y_plt_sl[-int(n_ensembles):]
+                    y_plt_sl = y_plt_sl[-int(n_ensembles) :]
             ax.plot(x, y_plt_sl, color="r", linewidth=0.5)
-
 
         # Upper bound of measured depth cells
         y_plt_top = (
@@ -3336,8 +3450,43 @@ class AdvGraphs(object):
             if self.transect.start_edge == edge:
                 y_plt_top = y_plt_top[: int(n_ensembles)]
             else:
-                y_plt_top = y_plt_top[-int(n_ensembles):]
+                y_plt_top = y_plt_top[-int(n_ensembles) :]
         ax.plot(x, y_plt_top, color="r", linewidth=0.5)
+
+        # Extrapolated data plotting additions
+        if show_edge_speed and self.x_axis_type == "L":
+
+            # Plot extrapolated boundaries
+            ax.plot(
+                x_plt[-2, :],
+                cell_plt[-2, :],
+                linewidth=3,
+                color="w",
+                linestyle="dotted",
+            )
+            ax.plot(
+                x_plt[2, :],
+                cell_plt[2, :],
+                linewidth=3,
+                color="w",
+                linestyle="dotted",
+            )
+            ax.plot(
+                [x_plt[-2, 0], x_plt[2, 0]],
+                [cell_plt[-2, 0], cell_plt[2, 0]],
+                linewidth=3,
+                color="w",
+                linestyle="dotted",
+            )
+            ax.plot(
+                [x_plt[-2, -1], x_plt[2, -1]],
+                [cell_plt[-2, -1], cell_plt[2, -1]],
+                linewidth=3,
+                color="w",
+                linestyle="dotted",
+            )
+            # Plot edge contours
+            self.add_edge_contours(x_plt, min_limit, max_limit, cmap, ax, depth)
 
         # Label and limits for y axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
@@ -3368,7 +3517,7 @@ class AdvGraphs(object):
             Array of depths along transect with edge shapes in m
         """
 
-
+        # Left edge
         if self.transect.start_edge == "Left":
             if self.transect.edges.left.type == "Rectangular":
                 start_x = np.array([0, 0])
@@ -3388,11 +3537,16 @@ class AdvGraphs(object):
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.right)
-                end_x = np.array([x[-1],
-                                 x[-1] + self.transect.edges.right.distance_m,
-                                 x[-1] + self.transect.edges.right.distance_m])
+                end_x = np.array(
+                    [
+                        x[-1],
+                        x[-1] + self.transect.edges.right.distance_m,
+                        x[-1] + self.transect.edges.right.distance_m,
+                    ]
+                )
                 end_d = np.array([depth[-1], depth[-1] * cd, 0])
 
+        # Right edge
         else:
             if self.transect.edges.right.type == "Rectangular":
                 start_x = np.array([0, 0])
@@ -3413,11 +3567,16 @@ class AdvGraphs(object):
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.left)
-                end_x = np.array([x[-1],
-                                  x[-1] + self.transect.edges.left.distance_m,
-                                  x[-1] + self.transect.edges.left.distance_m])
+                end_x = np.array(
+                    [
+                        x[-1],
+                        x[-1] + self.transect.edges.left.distance_m,
+                        x[-1] + self.transect.edges.left.distance_m,
+                    ]
+                )
                 end_d = np.array([depth[-1], depth[-1] * cd, 0])
 
+        # Combine edges with transect data
         if edge is None:
             x = np.hstack([start_x, x, end_x])
             d = np.hstack([start_d, depth, end_d])
@@ -3427,7 +3586,212 @@ class AdvGraphs(object):
         else:
             x = np.hstack([x, end_x])
             d = np.hstack([depth, end_d])
+
         return x, d
+
+    def add_extrapolated_topbot(self, water_speed):
+        """Computes the speed in the top and bottom extrapolated areas and expands
+        the water_speed data to include these extrapolated data.
+
+        Parameters
+        ----------
+        water_speed: np.array(float)
+            Water speed from processed u and v components
+
+        Returns
+        -------
+        expanded_cell_size: np.array(float)
+            Cell size data including extrapolated values
+        expanded_cell_depth: np.array(float)
+            Cell depth data including extrapolated values
+        expanded_water_speed: np.array(float)
+            Water speed data including extrapolated values
+        """
+
+        # Compute extrapolated cell size and depth
+        n_ensembles = water_speed.shape[1]
+        depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+        top_cell_size = np.repeat(np.nan, n_ensembles)
+        top_cell_depth = np.repeat(np.nan, n_ensembles)
+        bottom_cell_size = np.repeat(np.nan, n_ensembles)
+        bottom_cell_depth = np.repeat(np.nan, n_ensembles)
+        for n in range(n_ensembles):
+            # Identify topmost valid cells
+            idx_temp = np.where(np.logical_not(np.isnan(water_speed[:, n])))[0]
+            if len(idx_temp) > 0:
+                # Compute top
+                top_cell_size[n] = (
+                    depth_selected.depth_cell_depth_m[idx_temp[0], n]
+                    - 0.5 * depth_selected.depth_cell_size_m[idx_temp[0], n]
+                )
+                top_cell_depth[n] = top_cell_size[n] / 2
+                # Compute bottom
+                bottom_cell_size[n] = depth_selected.depth_processed_m[n] - (
+                    depth_selected.depth_cell_depth_m[idx_temp[-1], n]
+                    + 0.5 * depth_selected.depth_cell_size_m[idx_temp[-1], n]
+                )
+                bottom_cell_depth[n] = (
+                    depth_selected.depth_processed_m[n] - 0.5 * bottom_cell_size[n]
+                )
+            else:
+                top_cell_size[n] = 0
+                top_cell_depth[n] = 0
+                bottom_cell_size[n] = 0
+                bottom_cell_depth[n] = 0
+
+        # Expanded arrays to include extrapolated cell size and depth
+        expanded_cell_size = np.vstack(
+            [top_cell_size, depth_selected.depth_cell_size_m, bottom_cell_size]
+        )
+        expanded_cell_depth = np.vstack(
+            [top_cell_depth, depth_selected.depth_cell_depth_m, bottom_cell_depth]
+        )
+
+        # Expand array to include extrapolated top and bottom speeds
+        expanded_water_speed = np.vstack(
+            [self.discharge.top_speed, water_speed, self.discharge.bottom_speed]
+        )
+
+        return expanded_cell_size, expanded_cell_depth, expanded_water_speed
+
+    def add_edge_contours(self, x_plt, min_limit, max_limit, cmap, ax, depth):
+        """Adds color patches representing the average speed in each edge to the
+        color contour plot.
+
+        Parameters
+        ----------
+        min_limit: float
+            Minimum limit for colorbar
+        max_limit: float
+            Maximum limit for colorbar
+        cmap: color_map
+            Color map
+        ax: subplot
+            Axis of contour plot
+        depth: np.array(float)
+            Array of measured transect depths
+        """
+
+        # Left edge
+        if self.transect.start_edge == "Left":
+            x_left = 0
+            if self.transect.edges.left.type == "Triangular":
+                x = np.array(
+                    [
+                        self.expanded_x[0],
+                        self.expanded_x[1],
+                        self.expanded_x[1],
+                        self.expanded_x[0],
+                    ]
+                )
+                d = np.array([depth[0], depth[1], depth[0], depth[0]])
+                x_left = self.expanded_x[0]
+            else:
+                x = np.array(
+                    [
+                        self.expanded_x[0],
+                        self.expanded_x[1],
+                        self.expanded_x[2],
+                        self.expanded_x[2],
+                        self.expanded_x[0],
+                    ]
+                )
+                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+                x_left = self.expanded_x[2]
+        else:
+            if self.transect.edges.left.type == "Triangular":
+                x = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-2],
+                        self.expanded_x[-1],
+                    ]
+                )
+                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+                x_left = self.expanded_x[-2]
+            else:
+                x = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-3],
+                        self.expanded_x[-3],
+                        self.expanded_x[-1],
+                    ]
+                )
+                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                x_left = self.expanded_x[-3]
+        left_coords = np.vstack([x, d]).T
+        v_left = self.discharge.left_edge_speed
+        # Determine color for left edge based on colormap and edge velocity
+        left_c = cmap((v_left - min_limit) / (max_limit - min_limit))
+
+        # Right edge
+        if self.transect.start_edge == "Right":
+            x_right = 0
+            if self.transect.edges.left.type == "Triangular":
+                x = np.array(
+                    [
+                        self.expanded_x[0],
+                        self.expanded_x[1],
+                        self.expanded_x[1],
+                        self.expanded_x[0],
+                    ]
+                )
+                d = np.array([depth[0], depth[1], depth[0], depth[0]])
+                x_right = self.expanded_x[0]
+            else:
+                x = np.array(
+                    [
+                        self.expanded_x[0],
+                        self.expanded_x[1],
+                        self.expanded_x[2],
+                        self.expanded_x[2],
+                        self.expanded_x[0],
+                    ]
+                )
+                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+                x_right = self.expanded_x[2]
+        else:
+            if self.transect.edges.left.type == "Triangular":
+                x = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-2],
+                        self.expanded_x[-1],
+                    ]
+                )
+                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+                x_right = self.expanded_x[-2]
+            else:
+                x = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-3],
+                        self.expanded_x[-3],
+                        self.expanded_x[-1],
+                    ]
+                )
+                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                x_right = self.expanded_x[-3]
+
+        right_coords = np.vstack([x, d]).T
+        v_right = self.discharge.right_edge_speed
+        # Determine color for right edge based on colormap and edge velocity
+        right_c = cmap((v_right - min_limit) / (max_limit - min_limit))
+
+        # Plot patches
+        ax.add_patch(Polygon(left_coords, edgecolor=left_c, facecolor=left_c))
+
+        ax.add_patch(Polygon(right_coords, edgecolor=right_c, facecolor=right_c))
+
+        # Create data plotted for annotation use
+
+        self.data_plotted[-2]["edge_x"]= np.array([x_left, x_right])
+        self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right])
 
     def plt_timeseries(
         self,
@@ -3561,7 +3925,7 @@ class AdvGraphs(object):
 
         # Determine if mouse location references a data point in the plot and
         # update the annotation.
-        for n, item in enumerate(self.ax):
+        for n, item in enumerate(self.fig.axes):
             if event.inaxes == item:
 
                 # Verify that location is associated with plotted data
@@ -3576,82 +3940,102 @@ class AdvGraphs(object):
                         if cont_fig:
                             break
                     if not cont_fig:
-                        for ax in self.ax:
-                            cont_ax, ind_ax = ax.contains(event)
-                            if cont_ax:
-                                child_list = ax.get_children()
-                                for child in child_list:
-                                    if type(child) is collections.QuadMesh:
-                                        cont_fig, ind_fig = child.contains(event)
-                                    if cont_fig:
-                                        break
-                            if cont_fig:
+                        data = self.data_plotted[n]
+                        if data["type"] == "contour":
+                            if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
+                                cont_fig = True
+                                x_plt = self.data_plotted[n]["x"]
+                                y_plt = self.data_plotted[n]["y"]
+                                z_plt = self.data_plotted[n]["z"]
+                                break
+                            # Check for edge speed
+                            elif "edge_x" in data:
+                                if (
+                                    np.nanmax(data["edge_x"]) <= event.xdata
+                                    or event.xdata >= np.nanmin(data["edge_x"])
+                                ):
+                                    cont_fig = True
+                                    x_plt = self.data_plotted[n]["edge_x"]
+                                    y_plt = np.nan
+                                    z_plt = self.data_plotted[n]["edge_z"]
+                                    break
+                        elif data["type"] == "ping type":
+                            if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
+                                cont_fig = True
+                                x_plt = self.data_plotted[n]["x"]
+                                y_plt = self.data_plotted[n]["y"]
+                                z_plt = self.data_plotted[n]["z"]
                                 break
 
-                value = None
-                if cont_fig and self.fig.get_visible():
-                    # Annotation for contour plot
-                    if (
-                        self.data_plotted[n]["type"] == "contour"
-                        or self.data_plotted[n]["type"] == "ping type"
-                    ):
-                        # Get plotted data
-                        x_plt = self.data_plotted[n]["x"]
-                        y_plt = self.data_plotted[n]["y"]
-                        z_plt = self.data_plotted[n]["z"]
+        value = None
+        if cont_fig and self.fig.get_visible():
+            # Annotation for contour plot
+            if (
+                self.data_plotted[n]["type"] == "contour"
+                or self.data_plotted[n]["type"] == "ping type"
+            ):
 
-                        # Determine data column index
-                        if self.x_axis_type == "T":
-                            col_idx = np.where(
-                                x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None)
-                            )[0][-1]
-                        elif self.x_axis_type == "L":
-                            col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
-                        else:
-                            col_idx = (
-                                int(round(abs(event.xdata - x_plt[0, 0]))) * 2
-                            ) - 1
+                # Determine data column index
+                if self.x_axis_type == "T":
+                    col_idx = np.where(
+                        x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None)
+                    )[0][-1]
+                elif self.x_axis_type == "L":
+                    # if edge speed x_plt only has 1 dimension
+                    if len(x_plt.shape) < 2:
+                        col_idx = np.where(x_plt < event.xdata)[0][-1]
+                    else:
+                        col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
+                else:
+                    col_idx = (
+                        int(round(abs(event.xdata - x_plt[0, 0]))) * 2
+                    ) - 1
 
-                        # Determine plotted value
-                        for row_idx, cell in enumerate(y_plt[:, col_idx]):
-                            if event.ydata < cell:
-                                value = z_plt[row_idx, col_idx]
-                                break
+                # Determine row index. Edge data has no row index
+                if not np.all(np.isnan(y_plt)):
+                    row_idx = np.where(y_plt[:, col_idx] > event.ydata)[0]
+                    if z_plt[row_idx[0] - 1, col_idx - 1] == -999:
+                        row_idx = row_idx[-1] - 1
+                    else:
+                        row_idx = row_idx[0] - 1
+                    value = z_plt[row_idx, col_idx]
+                else:
+                    value = z_plt[col_idx]
 
-                        if self.data_plotted[n]["type"] == "contour":
-                            # Create annotation
-                            self.update_annot(
-                                ax_idx=n,
-                                x=event.xdata,
-                                y=event.ydata,
-                                v=value,
-                                v_dict=None,
-                            )
-                        else:
-                            # Create annotation
-                            self.update_annot(
-                                ax_idx=n,
-                                x=event.xdata,
-                                y=event.ydata,
-                                v=value,
-                                v_dict=self.ping_name,
-                            )
+                if self.data_plotted[n]["type"] == "contour":
+                    # Create annotation
+                    self.update_annot(
+                        ax_idx=n,
+                        x=event.xdata,
+                        y=event.ydata,
+                        v=value,
+                        v_dict=None,
+                    )
+                else:
+                    # Create annotation
+                    self.update_annot(
+                        ax_idx=n,
+                        x=event.xdata,
+                        y=event.ydata,
+                        v=value,
+                        v_dict=self.ping_name,
+                    )
 
-                    # Annotation for time series data
-                    elif self.data_plotted[n]["type"] == "ts":
-                        self.update_annot(
-                            ax_idx=n, x=event.xdata, y=event.ydata, v=value
-                        )
+            # Annotation for time series data
+            elif self.data_plotted[n]["type"] == "ts":
+                self.update_annot(
+                    ax_idx=n, x=event.xdata, y=event.ydata, v=value
+                )
 
-                    self.annot[n].set_visible(True)
-                    self.canvas.draw_idle()
-            else:
-                # If the cursor location is not associated with the plotted
-                # data hide the annotation.
-                if self.fig.get_visible():
-                    if type(self.annot[n]) != str:
-                        self.annot[n].set_visible(False)
-                    self.canvas.draw_idle()
+            self.annot[n].set_visible(True)
+            self.canvas.draw_idle()
+        else:
+            # If the cursor location is not associated with the plotted
+            # data hide the annotation.
+            if self.fig.get_visible():
+                if type(self.annot[n]) != str:
+                    self.annot[n].set_visible(False)
+                self.canvas.draw_idle()
 
     def set_hover_connection(self, setting):
         """Turns the connection to the mouse event on or off.
@@ -3749,7 +4133,7 @@ class AdvGraphs(object):
             # Format for ensemble axis
             elif self.x_axis_type == "E":
                 if v_dict is None:
-                    text = "x: {:.2f}, y: {:.2f}, \n v: {:.1f}".format(
+                    text = "x: {:.2f}, y: {:.2f}, \n v: {:.2f}".format(
                         int(round(x)), y, v
                     )
                 else:
@@ -3757,7 +4141,7 @@ class AdvGraphs(object):
             # Format for length axis
             elif self.x_axis_type == "L":
                 if v_dict is None:
-                    text = "x: {:.2f}, y: {:.2f}, \n v: {:.1f}".format(x, y, v)
+                    text = "x: {:.2f}, y: {:.2f}, \n v: {:.2f}".format(x, y, v)
                 else:
                     text = "x: {:.2f}, y: {:.2f}, \n {}".format(x, y, v_dict[v])
         # Annotation for time series
