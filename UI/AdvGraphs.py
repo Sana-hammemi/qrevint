@@ -3674,7 +3674,6 @@ class AdvGraphs(object):
 
         # Left edge
         if self.transect.start_edge == "Left":
-            x_left = 0
             if self.transect.edges.left.type == "Triangular":
                 x = np.array(
                     [
@@ -3685,7 +3684,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[0], depth[1], depth[0], depth[0]])
-                x_left = self.expanded_x[0]
+                x_left = np.array([self.expanded_x[0], self.expanded_x[1]])
+                y_left = np.array([depth[0], depth[1]])
             else:
                 x = np.array(
                     [
@@ -3697,7 +3697,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
-                x_left = self.expanded_x[2]
+                x_left = np.array([self.expanded_x[0], self.expanded_x[2]])
+                y_left = np.array([depth[0], depth[2]])
         else:
             if self.transect.edges.left.type == "Triangular":
                 x = np.array(
@@ -3709,7 +3710,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
-                x_left = self.expanded_x[-2]
+                x_left = np.array([self.expanded_x[-1], self.expanded_x[-2]])
+                y_left = np.array([depth[-1], depth[-2]])
             else:
                 x = np.array(
                     [
@@ -3721,7 +3723,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
-                x_left = self.expanded_x[-3]
+                x_left = np.array([self.expanded_x[-1], self.expanded_x[-3]])
+                y_left = np.array([depth[-1], depth[-3]])
         left_coords = np.vstack([x, d]).T
         v_left = self.discharge.left_edge_speed
         # Determine color for left edge based on colormap and edge velocity
@@ -3729,7 +3732,6 @@ class AdvGraphs(object):
 
         # Right edge
         if self.transect.start_edge == "Right":
-            x_right = 0
             if self.transect.edges.left.type == "Triangular":
                 x = np.array(
                     [
@@ -3740,7 +3742,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[0], depth[1], depth[0], depth[0]])
-                x_right = self.expanded_x[0]
+                x_right = np.array([self.expanded_x[0], self.expanded_x[1]])
+                y_right = np.array([depth[0], depth[1]])
             else:
                 x = np.array(
                     [
@@ -3752,7 +3755,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
-                x_right = self.expanded_x[2]
+                x_right = np.array([self.expanded_x[0], self.expanded_x[2]])
+                y_right = np.array([depth[0], depth[2]])
         else:
             if self.transect.edges.left.type == "Triangular":
                 x = np.array(
@@ -3764,7 +3768,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
-                x_right = self.expanded_x[-2]
+                x_right = np.array([self.expanded_x[-1], self.expanded_x[-2]])
+                y_right = np.array([depth[-1], depth[-2]])
             else:
                 x = np.array(
                     [
@@ -3776,7 +3781,8 @@ class AdvGraphs(object):
                     ]
                 )
                 d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
-                x_right = self.expanded_x[-3]
+                x_right = np.array([self.expanded_x[-1], self.expanded_x[-3]])
+                y_right = np.array([depth[-1], depth[-3]])
 
         right_coords = np.vstack([x, d]).T
         v_right = self.discharge.right_edge_speed
@@ -3791,6 +3797,7 @@ class AdvGraphs(object):
         # Create data plotted for annotation use
 
         self.data_plotted[-2]["edge_x"]= np.array([x_left, x_right])
+        self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right])
         self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right])
 
     def plt_timeseries(
@@ -3925,6 +3932,8 @@ class AdvGraphs(object):
 
         # Determine if mouse location references a data point in the plot and
         # update the annotation.
+
+        value = None
         for n, item in enumerate(self.fig.axes):
             if event.inaxes == item:
 
@@ -3951,14 +3960,27 @@ class AdvGraphs(object):
                             # Check for edge speed
                             elif "edge_x" in data:
                                 if (
-                                    np.nanmax(data["edge_x"]) <= event.xdata
-                                    or event.xdata >= np.nanmin(data["edge_x"])
+                                        (np.nanmax(data["edge_x"][0]) >= event.xdata
+                                        >= np.nanmin(data["edge_x"][0]))
+                                    and
+                                        (np.nanmax(data["edge_y"][0]) >= event.ydata
+                                        >= np.nanmin(data["edge_y"][0]))
                                 ):
                                     cont_fig = True
-                                    x_plt = self.data_plotted[n]["edge_x"]
-                                    y_plt = np.nan
-                                    z_plt = self.data_plotted[n]["edge_z"]
+                                    value = data["edge_z"][0]
                                     break
+
+                                elif (
+                                        (np.nanmax(data["edge_x"][1]) >= event.xdata
+                                        >= np.nanmin(data["edge_x"][1]))
+                                    and
+                                        (np.nanmax(data["edge_y"][1]) >= event.ydata
+                                        >= np.nanmin(data["edge_y"][1]))
+                                ):
+                                    cont_fig = True
+                                    value = data["edge_z"][1]
+                                    break
+
                         elif data["type"] == "ping type":
                             if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
                                 cont_fig = True
@@ -3967,40 +3989,39 @@ class AdvGraphs(object):
                                 z_plt = self.data_plotted[n]["z"]
                                 break
 
-        value = None
         if cont_fig and self.fig.get_visible():
             # Annotation for contour plot
             if (
                 self.data_plotted[n]["type"] == "contour"
                 or self.data_plotted[n]["type"] == "ping type"
             ):
-
-                # Determine data column index
-                if self.x_axis_type == "T":
-                    col_idx = np.where(
-                        x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None)
-                    )[0][-1]
-                elif self.x_axis_type == "L":
-                    # if edge speed x_plt only has 1 dimension
-                    if len(x_plt.shape) < 2:
-                        col_idx = np.where(x_plt < event.xdata)[0][-1]
+                if value is None:
+                    # Determine data column index
+                    if self.x_axis_type == "T":
+                        col_idx = np.where(
+                            x_plt[0, :] < num2date(event.xdata).replace(tzinfo=None)
+                        )[0][-1]
+                    elif self.x_axis_type == "L":
+                        # if edge speed x_plt only has 1 dimension
+                        if len(x_plt.shape) < 2:
+                            col_idx = np.where(x_plt < event.xdata)[0][-1]
+                        else:
+                            col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
                     else:
-                        col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
-                else:
-                    col_idx = (
-                        int(round(abs(event.xdata - x_plt[0, 0]))) * 2
-                    ) - 1
+                        col_idx = (
+                            int(round(abs(event.xdata - x_plt[0, 0]))) * 2
+                        ) - 1
 
-                # Determine row index. Edge data has no row index
-                if not np.all(np.isnan(y_plt)):
-                    row_idx = np.where(y_plt[:, col_idx] > event.ydata)[0]
-                    if z_plt[row_idx[0] - 1, col_idx - 1] == -999:
-                        row_idx = row_idx[-1] - 1
+                    # Determine row index. Edge data has no row index
+                    if not np.all(np.isnan(y_plt)):
+                        row_idx = np.where(y_plt[:, col_idx] > event.ydata)[0]
+                        if z_plt[row_idx[0] - 1, col_idx - 1] == -999:
+                            row_idx = row_idx[-1] - 1
+                        else:
+                            row_idx = row_idx[0] - 1
+                        value = z_plt[row_idx, col_idx]
                     else:
-                        row_idx = row_idx[0] - 1
-                    value = z_plt[row_idx, col_idx]
-                else:
-                    value = z_plt[col_idx]
+                        value = z_plt[col_idx]
 
                 if self.data_plotted[n]["type"] == "contour":
                     # Create annotation
