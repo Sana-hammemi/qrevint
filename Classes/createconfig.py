@@ -23,6 +23,12 @@ class Config:
             "FilterUsingMeasurement": {"show": True, "default": False},
             "Uncertainty": {"show": False, "default": "QRev Original"},
             "MovingBedObservation": {"show": False, "default": False},
+            "ExportCrossSection": {"show": True, "default": True},
+            "MAP": {"show": False},
+            "AutonomousGPS": {"allow": False},
+            "QDigits": {"method": "sigfig", "digits": 3},
+            "SNR": {"Use3Beam": False},
+            "ExtrapolatedSpeed": {"ShowIcon": False},
             "QA": {"MinTransects": 2, "MinDuration": 720},
         }
 
