@@ -613,6 +613,7 @@ class QAData(object):
         self.transects["duration"] = 0
         self.transects["number"] = 0
         self.transects["uncertainty"] = 0
+        self.transects["batt_voltage"] = []
 
         # Initialize lists
         checked = []
@@ -710,6 +711,18 @@ class QAData(object):
                     idx_right.append(np.where(valid)[0][0])
                     idx_left.append(np.where(np.flip(valid))[0][0])
 
+                # Battery voltage
+                batt_threshold = 10.5
+
+                if transect.sensors is not None:
+                    if hasattr(transect.sensors, "battery_voltage"):
+                        if transect.sensors.battery_voltage.internal.data is not None:
+                            if transect.adcp.model == "RS5":
+                                batt_threshold = 3.3
+
+                            if (np.nanmin(transect.sensors.battery_voltage.internal.data) < batt_threshold):
+                                self.transects["batt_voltage"].append(transect.file_name[:-4])
+
         # Message for invalid ensembles at left or right
         if np.any(idx_left > threshold):
             self.transects["messages"].append([
@@ -722,6 +735,14 @@ class QAData(object):
                 + " edge exceeds 5 percent;",
                 2, 0, ])
             self.transects["status"] = "caution"
+
+        # Message for low battery
+        if len(self.transects["batt_voltage"]) > 0:
+            self.transects["status"] = "caution"
+            text = ("Transects: " + str(self.transects[
+                                      "batt_voltage"]) + " have battery voltage less than " + str(
+                batt_threshold))
+            self.transects["messages"].append([text, 2, 0])
 
         # Check number of transects checked
         if num_checked == 0:
@@ -807,6 +828,8 @@ class QAData(object):
             self.transects["messages"].append(
                 ["TRANSECTS: One or more transects have zero Q;", 1, 0]
             )
+
+
 
     def system_tst_qa(self, meas):
         """Apply QA checks to system test.

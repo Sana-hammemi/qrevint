@@ -7,6 +7,8 @@ class Sensors(object):
 
     Attributes
     ----------
+    battery_voltage: SensorStructure
+        Battery voltage suppling power to ADCP
     heading_deg: HeadingData
         Object of HeadingData.
     pitch_deg: SensorStructure
@@ -30,6 +32,7 @@ class Sensors(object):
         self.temperature_deg_c = SensorStructure()
         self.salinity_ppt = SensorStructure()
         self.speed_of_sound_mps = SensorStructure()
+        self.battery_voltage = SensorStructure()
 
     def populate_from_qrev_mat(self, transect):
         """Populates the object using data from previously saved QRev Matlab file.

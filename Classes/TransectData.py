@@ -825,6 +825,23 @@ class TransectData(object):
             # The raw data are referenced to the internal SOS
             self.sensors.speed_of_sound_mps.selected = "internal"
 
+            # Battery voltage
+            self.sensors.battery_voltage.internal = SensorData()
+
+            # Determine TRDI model
+            num = float(pd0_data.Inst.firm_ver[0])
+            model_switch = np.floor(num)
+
+            # Rio Grande voltage does not represent battery voltage and is set to nan
+            if model_switch == 10:
+                scale_factor = np.nan
+            else:
+                scale_factor = 0.1
+
+            self.sensors.battery_voltage.internal.populate_data(
+                data_in=pd0_data.Sensor.xmit_voltage * scale_factor,
+                source_in="internal")
+
     @staticmethod
     def trdi_ping_type(pd0_data):
         """Determines if the ping is coherent on incoherent based on the lag near bottom.
@@ -1530,6 +1547,12 @@ class TransectData(object):
         self.sensors.roll_deg.internal = SensorData()
         self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in="internal")
         self.sensors.roll_deg.selected = "internal"
+
+        # Battery voltage
+        self.sensors.battery_voltage.internal = SensorData()
+        self.sensors.battery_voltage.internal.populate_data(
+            data_in=rsdata.System.Battery_Voltage,
+            source_in="internal", )
 
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")

@@ -7124,6 +7124,34 @@
                   </widget>
                  </item>
                  <item>
+                  <widget class="QGroupBox" name="gb_sensors">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Sensors</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_75">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_battery_voltage">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Battery Voltage</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
                   <spacer name="verticalSpacer_5">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>

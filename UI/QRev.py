@@ -14686,6 +14686,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_beam_depths_ts", self.cb_adv_graph_beam_depths),
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
+                ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage)
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)
@@ -14865,6 +14866,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.cb_adv_graph_wt_snr_ts.setEnabled(False)
             self.cb_adv_graph_wt_snr_ts.setChecked(False)
+
+        # Battery voltage
+        if (
+            self.meas.transects[
+                self.checked_transects_idx[self.transect_row]
+            ].sensors.battery_voltage.internal.data is None
+        ):
+            self.cb_adv_graph_battery_voltage.setEnabled(False)
+        else:
+            self.cb_adv_graph_battery_voltage.setEnabled(True)
 
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect."""

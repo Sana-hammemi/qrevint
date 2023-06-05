@@ -250,6 +250,7 @@ class AdvGraphs(object):
             "cb_beam_depths_ts": self.depths_beam_ts,
             "cb_final_depths_ts": self.depths_final_ts,
             "cb_depths_source_ts": self.depths_source_ts,
+            "cb_battery_voltage_ts": self.battery_voltage_ts,
         }
 
     def create(
@@ -2738,6 +2739,14 @@ class AdvGraphs(object):
         data_units = (1, "Roll (deg)")
         self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
 
+    def battery_voltage_ts(self):
+        """Plot roll data."""
+
+        data = self.transect.sensors.battery_voltage.internal.data
+        fmt = [{"color": "b", "linestyle": "-"}]
+        data_units = (1, "Battery (Volts DC)")
+        self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
+
     def depths_beam_ts(
         self, b1=True, b2=True, b3=True, b4=True, vb=True, ds=True, leg=True
     ):
@@ -3894,7 +3903,7 @@ class AdvGraphs(object):
             min_y = (
                 np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
             ) * data_units[0]
-            if min_y > max_y * -0.02:
+            if min_y == 0:
                 min_y = max_y * -0.02
             ax.set_ylim(top=max_y, bottom=min_y)
         except (TypeError, ValueError):
@@ -3941,14 +3950,14 @@ class AdvGraphs(object):
                 cont_fig = False
                 if item is not None:
                     # cont_fig, ind_fig = self.fig.contains(event)
-                    for ax in self.ax:
-                        for line in ax.lines:
-                            cont_fig, ind_fig = line.contains(event)
-                            if cont_fig:
-                                break
+                    # for ax in self.ax:
+                    for line in item.lines:
+                        cont_fig, ind_fig = line.contains(event)
                         if cont_fig:
                             break
-                    if not cont_fig:
+                    if cont_fig:
+                        break
+                    else:
                         data = self.data_plotted[n]
                         if data["type"] == "contour":
                             if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
@@ -4099,7 +4108,7 @@ class AdvGraphs(object):
 
         # Set local variables
         pos = [x, y]
-        plt_ref = self.ax[ax_idx]
+        plt_ref = self.fig.axes[ax_idx]
         annot_ref = self.annot[ax_idx]
 
         # Shift annotation box left or right depending on which half of the
