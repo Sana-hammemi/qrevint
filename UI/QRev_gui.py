@@ -4358,6 +4358,12 @@ class Ui_MainWindow(object):
         icon10.addPixmap(QtGui.QPixmap(":/images/24x24/Globe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionGoogle_Earth.setIcon(icon10)
         self.actionGoogle_Earth.setObjectName("actionGoogle_Earth")
+        self.actionShow_Extrapolated = QtWidgets.QAction(MainWindow)
+        self.actionShow_Extrapolated.setCheckable(True)
+        icon11 = QtGui.QIcon()
+        icon11.addPixmap(QtGui.QPixmap("images/extrap_contour.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionShow_Extrapolated.setIcon(icon11)
+        self.actionShow_Extrapolated.setObjectName("actionShow_Extrapolated")
         self.toolBar.addAction(self.actionOpen)
         self.toolBar.addSeparator()
         self.toolBar.addAction(self.actionSave)
@@ -4381,6 +4387,8 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.actionZoom)
         self.toolBar.addAction(self.actionPan)
         self.toolBar.addAction(self.actionData_Cursor)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionShow_Extrapolated)
         self.toolBar.addSeparator()
         self.toolBar.addAction(self.actionGoogle_Earth)
         self.toolBar.addSeparator()
@@ -4780,6 +4788,8 @@ class Ui_MainWindow(object):
         self.actionData_Cursor.setToolTip(_translate("MainWindow", "Data Cursor"))
         self.actionGoogle_Earth.setText(_translate("MainWindow", "Google Earth"))
         self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
+        self.actionShow_Extrapolated.setText(_translate("MainWindow", "Show_Extrapolated"))
+        self.actionShow_Extrapolated.setToolTip(_translate("MainWindow", "Show extrapolated speeds"))
 import dsm_rc
 
 

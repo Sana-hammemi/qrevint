@@ -8064,6 +8064,8 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    <addaction name="actionPan"/>
    <addaction name="actionData_Cursor"/>
    <addaction name="separator"/>
+   <addaction name="actionShow_Extrapolated"/>
+   <addaction name="separator"/>
    <addaction name="actionGoogle_Earth"/>
    <addaction name="separator"/>
    <addaction name="actionHelp"/>
@@ -8297,6 +8299,21 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    </property>
    <property name="toolTip">
     <string>Plot to Google Earth</string>
+   </property>
+  </action>
+  <action name="actionShow_Extrapolated">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>images/extrap_contour.png</normaloff>images/extrap_contour.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show_Extrapolated</string>
+   </property>
+   <property name="toolTip">
+    <string>Show extrapolated speeds</string>
    </property>
   </action>
  </widget>

@@ -776,6 +776,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             sys.exit()
 
+            # Extrapolated speed display option
+            if "ExtrapolatedSpeed" not in self.agency_options.keys():
+                self.popup_message(self.tr("QRev.cfg: ExtrapolatedSpeed parameter not found."))
+                sys.exit()
+            if "ShowIcon" not in self.agency_options["ExtrapolatedSpeed"].keys():
+                self.popup_message(
+                    self.tr("QRev.cfg: ExtrapolatedSpeed ShowIcon parameter " "not found."))
+                sys.exit()
+
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
             "use_measurement_thresholds": self.use_measurement_thresholds,
@@ -815,6 +824,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionPan.triggered.connect(self.pan)
         self.actionGoogle_Earth.triggered.connect(self.plot_google_earth)
         self.actionHelp.triggered.connect(self.help)
+        self.actionShow_Extrapolated.triggered.connect(self.show_extrapolated)
 
         # Initialize lists for figure, canvas, and toolbar references
         self.figs = []
@@ -849,6 +859,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionPan.setToolTip(self.tr("Pan"))
         self.actionGoogle_Earth.setToolTip(self.tr("Plot transects in Google Earth"))
         self.actionHelp.setToolTip(self.tr("Open help documents."))
+        self.actionShow_Extrapolated.setToolTip(self.tr("Show extrapolated speeds"))
 
         # Disable toolbar icons until data are loaded
         self.actionSave.setDisabled(True)
@@ -15726,8 +15737,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if self.plot_extrapolated == False:
             self.plot_extrapolated = True
+            self.actionShow_Extrapolated.setChecked(True)
         else:
             self.plot_extrapolated = False
+            self.actionShow_Extrapolated.setChecked(False)
 
         with self.wait_cursor():
             # Clear zoom, pan, home, data_cursor
@@ -16388,6 +16401,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionVTG.setDisabled(True)
         self.actionOFF.setDisabled(True)
         self.actionON.setDisabled(True)
+
+        if self.agency_options['ExtrapolatedSpeed']["ShowIcon"]:
+            self.actionShow_Extrapolated.setVisible(True)
+        else:
+            self.actionShow_Extrapolated.setVisible(False)
 
         # Set tab text and icons to default
         for tab_idx in range(self.tab_all.count() - 4):
