@@ -522,3 +522,8 @@ def sfrnd(n, sig: int = 3):
     # else:
     #     n_sn = str(n_sn_temp)
     return sigfig_round(n, sig)
+
+def rotate_coordinates(x, y, angle_d):
+    xr = x * cosd(angle_d) + y * sind(angle_d)
+    yr = -x * sind(angle_d) + y * cosd(angle_d)
+    return xr, yr

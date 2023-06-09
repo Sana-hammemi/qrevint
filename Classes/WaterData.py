@@ -1490,8 +1490,8 @@ class WaterData(object):
             u = u[:, transect.in_transect_idx]
             v = v[:, transect.in_transect_idx]
 
-            u[np.logical_not(temp.valid_data[5, :, :])] = np.nan
-            v[np.logical_not(temp.valid_data[5, :, :])] = np.nan
+            u[np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)] = np.nan
+            v[np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)] = np.nan
             interpolated_data = self.compute_abba_interpolation(
                 wt_data=temp,
                 data_list=[u, v],

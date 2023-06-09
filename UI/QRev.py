@@ -14871,7 +14871,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if (
             self.meas.transects[
                 self.checked_transects_idx[self.transect_row]
-            ].sensors.battery_voltage.internal.data is None
+            ].sensors.battery_voltage.internal is None
         ):
             self.cb_adv_graph_battery_voltage.setEnabled(False)
         else:

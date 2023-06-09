@@ -1550,10 +1550,13 @@ class TransectData(object):
 
         # Battery voltage
         self.sensors.battery_voltage.internal = SensorData()
-        self.sensors.battery_voltage.internal.populate_data(
-            data_in=rsdata.System.Battery_Voltage,
-            source_in="internal", )
-
+        if hasattr(rsdata.System, "Voltage"):
+            self.sensors.battery_voltage.internal.populate_data(
+                data_in=rsdata.System.Voltage,
+                source_in="internal", )
+        elif hasattr(rsdata.System, "Battery_Voltage"):
+            self.sensors.battery_voltage.internal.populate_data(
+                data_in=rsdata.System.Battery_Voltage, source_in="internal", )
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
 

@@ -936,6 +936,8 @@ class Measurement(object):
                 self.discharge[n].correction_factor = (
                     self.discharge[n].total / self.discharge[n].total_uncorrected
                 )
+            self.discharge[n].compute_topbot_speed(self.transects[n])
+            self.discharge[n].compute_edge_speed(self.transects[n])
 
         # Identify checked transects
         self.checked_transect_idx = self.checked_transects(self)

@@ -579,13 +579,16 @@ class QAData(object):
                 list_out = []
             # Single message with integer codes at end
             elif array_in.size == 3:
-                if type(array_in[1]) is int or len(array_in[1].strip()) == 1:
-                    temp = array_in.tolist()
-                    if len(temp) > 0:
-                        internal_list = []
-                        for item in temp:
-                            internal_list.append(item)
-                        list_out = [internal_list]
+                if not type(array_in[1]) is np.ndarray:
+                    if type(array_in[1]) is int or len(array_in[1].strip()) == 1:
+                        temp = array_in.tolist()
+                        if len(temp) > 0:
+                            internal_list = []
+                            for item in temp:
+                                internal_list.append(item)
+                            list_out = [internal_list]
+                    else:
+                        list_out = array_in.tolist()
                 else:
                     list_out = array_in.tolist()
             # Either multiple messages with or without integer codes
@@ -648,8 +651,8 @@ class QAData(object):
             self.transects["duration"] = 1
 
         # Check transects for missing ensembles
-        idx_left = []
-        idx_right = []
+        left_invalid_exceeded = False
+        right_invalid_exceeded = False
         for transect in meas.transects:
             if transect.checked:
 
@@ -705,18 +708,26 @@ class QAData(object):
 
                 threshold = np.floor(0.05 * valid.shape[0])
                 if transect.start_edge == "Left":
-                    idx_left.append(np.where(valid)[0][0])
-                    idx_right.append(np.where(np.flip(valid))[0][0])
+                    idx = np.where(np.logical_not(valid))
+                    if idx[0].size > threshold:
+                        left_invalid_exceeded = True
+                    idx = np.where(np.logical_not(np.flip(valid)))
+                    if idx[0].size > threshold:
+                        right_invalid_exceeded = True
                 else:
-                    idx_right.append(np.where(valid)[0][0])
-                    idx_left.append(np.where(np.flip(valid))[0][0])
+                    idx = np.where(np.logical_not(valid))
+                    if idx[0].size > threshold:
+                        right_invalid_exceeded = True
+                    idx = np.where(np.logical_not(np.flip(valid)))
+                    if idx[0].size > threshold:
+                        left_invalid_exceeded = True
 
                 # Battery voltage
                 batt_threshold = 10.5
 
                 if transect.sensors is not None:
                     if hasattr(transect.sensors, "battery_voltage"):
-                        if transect.sensors.battery_voltage.internal.data is not None:
+                        if transect.sensors.battery_voltage.internal is not None:
                             if transect.adcp.model == "RS5":
                                 batt_threshold = 3.3
 
@@ -724,12 +735,12 @@ class QAData(object):
                                 self.transects["batt_voltage"].append(transect.file_name[:-4])
 
         # Message for invalid ensembles at left or right
-        if np.any(idx_left > threshold):
+        if left_invalid_exceeded:
             self.transects["messages"].append([
                 "Transects: " + " The number of invalid ensembles at the left"
                 + " edge exceeds 5 percent;", 2, 0, ])
             self.transects["status"] = "caution"
-        if np.any(idx_right > threshold):
+        if right_invalid_exceeded:
             self.transects["messages"].append([
                 "Transects: " + " The number of invalid ensembles at the right"
                 + " edge exceeds 5 percent;",
@@ -3576,12 +3587,13 @@ class QAData(object):
                     transect.sensors.salinity_ppt,
                     transect.sensors.salinity_ppt.selected,
                 )
-                if np.all(
-                    np.equal(sal.data, transect.sensors.salinity_ppt.internal.data)
-                ):
-                    salinity_change = False
-                else:
-                    salinity_change = True
+                if transect.sensors.salinity_ppt.internal is not None:
+                    if np.all(
+                        np.equal(sal.data, transect.sensors.salinity_ppt.internal.data)
+                    ):
+                        salinity_change = False
+                    else:
+                        salinity_change = True
 
             # Speed of Sound
             if transect.sensors.speed_of_sound_mps.selected != "internal":
