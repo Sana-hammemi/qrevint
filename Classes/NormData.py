@@ -8,7 +8,6 @@ from MiscLibs.common_functions import (
     nan_less_equal,
     nan_greater,
 )
-from Classes.QComp import QComp
 
 
 class NormData(object):
@@ -46,7 +45,7 @@ class NormData(object):
         Index of median values with point count greater than threshold cutoff
     weights: np.array(float)
         Discharge based weights for computing a weighted median
-    use_weights: bool
+    use_weighted: bool
         Specifies if discharge weighted medians are to be used in the
         extrapolation fit
     sub_from_left: bool
@@ -130,7 +129,7 @@ class NormData(object):
         depths_selected = getattr(transect.depths, transect.depths.selected)
         cell_depth = np.copy(depths_selected.depth_cell_depth_m[:, in_transect_idx])
         cells_above_sl = transect.w_vel.cells_above_sl[:, in_transect_idx]
-        cell_depth[cells_above_sl == False] = np.nan
+        cell_depth[np.logical_not(cells_above_sl)] = np.nan
         depth_ens = np.copy(depths_selected.depth_processed_m[in_transect_idx])
 
         w_vel_x = np.copy(transect.w_vel.u_processed_mps[:, in_transect_idx])
@@ -265,7 +264,7 @@ class NormData(object):
         idx_neg2 = np.tile([np.nan], [unit_norm.shape[1], 1])
         for c in range(unit_norm.shape[1]):
             idx_neg1[c] = len(np.where(nan_less(unit_norm[:, c], 0))[0])
-            idx_neg2[c] = len(np.where(np.isnan(unit_norm[:, c]) == False)[0])
+            idx_neg2[c] = len(np.where(np.logical_not(np.isnan(unit_norm[:, c])))[0])
         idx_neg = np.squeeze(idx_neg1) == np.squeeze(idx_neg2)
         unit_norm[:, idx_neg] = unit_norm[:, idx_neg] * -1
 
@@ -380,7 +379,7 @@ class NormData(object):
                     )
 
                 unit_norm_med_no[i] = np.sum(
-                    np.isnan(self.unit_normalized[condition_all]) == False
+                    np.logical_not(np.isnan(self.unit_normalized[condition_all]))
                 )
                 avgz[i] = 1 - np.nanmean(self.cell_depth_normalized[condition_all])
 

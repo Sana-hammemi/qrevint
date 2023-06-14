@@ -617,6 +617,8 @@ class QAData(object):
         self.transects["number"] = 0
         self.transects["uncertainty"] = 0
         self.transects["batt_voltage"] = []
+        # Battery voltage
+        batt_threshold = 10.5
 
         # Initialize lists
         checked = []
@@ -702,7 +704,7 @@ class QAData(object):
                 valid_bt = boat_selected.valid_data[0, :]
                 valid_wt = np.any(transect.w_vel.valid_data[0, :, :], axis=0)
                 depth_selected = getattr(transect.depths, transect.depths.selected)
-                valid_depth =depth_selected.valid_data
+                valid_depth = depth_selected.valid_data
                 valid_all = np.vstack([valid_bt, valid_wt, valid_depth])
                 valid = np.all(valid_all, axis=0)
 
@@ -722,37 +724,55 @@ class QAData(object):
                     if idx[0].size > threshold:
                         left_invalid_exceeded = True
 
-                # Battery voltage
-                batt_threshold = 10.5
-
                 if transect.sensors is not None:
                     if hasattr(transect.sensors, "battery_voltage"):
                         if transect.sensors.battery_voltage.internal is not None:
                             if transect.adcp.model == "RS5":
                                 batt_threshold = 3.3
 
-                            if (np.nanmin(transect.sensors.battery_voltage.internal.data) < batt_threshold):
-                                self.transects["batt_voltage"].append(transect.file_name[:-4])
+                            if (
+                                np.nanmin(
+                                    transect.sensors.battery_voltage.internal.data
+                                )
+                                < batt_threshold
+                            ):
+                                self.transects["batt_voltage"].append(
+                                    transect.file_name[:-4]
+                                )
 
         # Message for invalid ensembles at left or right
         if left_invalid_exceeded:
-            self.transects["messages"].append([
-                "Transects: " + " The number of invalid ensembles at the left"
-                + " edge exceeds 5 percent;", 2, 0, ])
+            self.transects["messages"].append(
+                [
+                    "Transects: "
+                    + " The number of invalid ensembles at the left"
+                    + " edge exceeds 5 percent;",
+                    2,
+                    0,
+                ]
+            )
             self.transects["status"] = "caution"
         if right_invalid_exceeded:
-            self.transects["messages"].append([
-                "Transects: " + " The number of invalid ensembles at the right"
-                + " edge exceeds 5 percent;",
-                2, 0, ])
+            self.transects["messages"].append(
+                [
+                    "Transects: "
+                    + " The number of invalid ensembles at the right"
+                    + " edge exceeds 5 percent;",
+                    2,
+                    0,
+                ]
+            )
             self.transects["status"] = "caution"
 
         # Message for low battery
         if len(self.transects["batt_voltage"]) > 0:
             self.transects["status"] = "caution"
-            text = ("Transects: " + str(self.transects[
-                                      "batt_voltage"]) + " have battery voltage less than " + str(
-                batt_threshold))
+            text = (
+                "Transects: "
+                + str(self.transects["batt_voltage"])
+                + " have battery voltage less than "
+                + str(batt_threshold)
+            )
             self.transects["messages"].append([text, 2, 0])
 
         # Check number of transects checked
@@ -839,8 +859,6 @@ class QAData(object):
             self.transects["messages"].append(
                 ["TRANSECTS: One or more transects have zero Q;", 1, 0]
             )
-
-
 
     def system_tst_qa(self, meas):
         """Apply QA checks to system test.
@@ -951,7 +969,10 @@ class QAData(object):
                     # beams, but other TRDI ADCPs should be different from their
                     # standard matrix based on 20 degree beams.
                     # This secondary check is not necessary for Sontek ADCPs.
-                    if transect.adcp.model != "RiverRay" and transect.adcp.manufacturer == "TRDI":
+                    if (
+                        transect.adcp.model != "RiverRay"
+                        and transect.adcp.manufacturer == "TRDI"
+                    ):
                         nominal_matrix = [
                             [1.4619, -1.4619, 0, 0],
                             [0, 0, -1.4619, 1.4619],
@@ -961,8 +982,12 @@ class QAData(object):
                         if np.allclose(nominal_matrix, transect.adcp.t_matrix.matrix):
                             self.system_tst["status"] = "caution"
                             self.system_tst["messages"].append(
-                                ["System Test: ADCP is using a nominal matrix rather "
-                                 "than a custom matrix;", 2, 3, ]
+                                [
+                                    "System Test: ADCP is using a nominal matrix rather "
+                                    "than a custom matrix;",
+                                    2,
+                                    3,
+                                ]
                             )
                             break
 
@@ -1947,9 +1972,15 @@ class QAData(object):
 
             elif np.any(self.depths["q_total_warning"]):
                 self.depths["messages"].append(
-                    ["DEPTH: Int. Q for invalid ensembles in a "
-                     "transect exceeds " + "%2.0f" % self.q_total_threshold_warning + "%;",
-                        1, 10, ])
+                    [
+                        "DEPTH: Int. Q for invalid ensembles in a "
+                        "transect exceeds "
+                        + "%2.0f" % self.q_total_threshold_warning
+                        + "%;",
+                        1,
+                        10,
+                    ]
+                )
                 self.depths["status"] = "warning"
             elif np.any(self.depths["q_max_run_caution"]):
                 self.depths["messages"].append(
@@ -2375,9 +2406,11 @@ class QAData(object):
                                 boat["all_invalid"][n] = True
 
                             else:
-                                q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
-                                    valid, meas.discharge[n]
-                                )
+                                (
+                                    q_total,
+                                    q_max_run,
+                                    number_invalid_ens,
+                                ) = QAData.invalid_qa(valid, meas.discharge[n])
                                 boat["q_total"][n, dt_filter[1]] = q_total
                                 boat["q_max_run"][n, dt_filter[1]] = q_max_run
 
@@ -2579,15 +2612,6 @@ class QAData(object):
         """
 
         # Initialize filter labels and indices
-        prefix = [
-            "All: ",
-            "Original: ",
-            "ErrorVel: ",
-            "VertVel: ",
-            "Other: ",
-            "3Beams: ",
-            "SNR:",
-        ]
         if meas.transects[0].adcp.manufacturer == "TRDI":
             filter_index = [0, 1, 2, 3, 4, 5]
         else:
@@ -2758,8 +2782,7 @@ class QAData(object):
             if np.any(self.w_vel["all_invalid"]):
                 self.w_vel["messages"].append(
                     [
-                        "WT-"
-                        + "There are no valid data for one or more transects.",
+                        "WT-" + "There are no valid data for one or more transects.",
                         1,
                         11,
                     ]
@@ -3148,12 +3171,20 @@ class QAData(object):
             if np.abs(right_q_percent) > 5 or np.abs(left_q_percent) > 5:
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Edge Q is greater than 5%;", 1, 13])
-            elif len(self.edges["right_q_idx"]) > 0 or len(self.edges["left_q_idx"]) > 0:
+                    ["Edges: Edge Q is greater than 5%;", 1, 13]
+                )
+            elif (
+                len(self.edges["right_q_idx"]) > 0 or len(self.edges["left_q_idx"]) > 0
+            ):
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: One or more transects have an edge edge Q "
-                     "greater than 5%;", 1, 13, ])
+                    [
+                        "Edges: One or more transects have an edge edge Q "
+                        "greater than 5%;",
+                        1,
+                        13,
+                    ]
+                )
 
             # Check for consistent sign
             q_positive = []
@@ -3179,7 +3210,8 @@ class QAData(object):
             if self.edges["right_sign"] or self.edges["left_sign"]:
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Sign of edge Q is not consistent;", 2, 13])
+                    ["Edges: Sign of edge Q is not consistent;", 2, 13]
+                )
 
             # Check distance moved
             dmg_5_percent = 0.05 * np.nanmean(dist_made_good)
@@ -3200,10 +3232,14 @@ class QAData(object):
                 self.edges["left_dist_moved_idx"] = []
 
             # Excessive movement message
-            if len(self.edges["right_dist_moved_idx"]) > 0 or len(self.edges["left_dist_moved_idx"]) > 0:
+            if (
+                len(self.edges["right_dist_moved_idx"]) > 0
+                or len(self.edges["left_dist_moved_idx"]) > 0
+            ):
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in edge ensembles;", 2, 13])
+                    ["Edges: Excessive boat movement in edge ensembles;", 2, 13]
+                )
 
             # Check for edge ensembles marked invalid due to excluded distance
             self.edges["invalid_transect_left_idx"] = []
@@ -3213,29 +3249,36 @@ class QAData(object):
                     ens_invalid = np.nansum(transect.w_vel.valid_data[0, :, :], 0) > 0
                     ens_cells_above_sl = np.nansum(transect.w_vel.cells_above_sl, 0) > 0
                     ens_invalid = np.logical_not(
-                        np.logical_and(ens_invalid, ens_cells_above_sl))
+                        np.logical_and(ens_invalid, ens_cells_above_sl)
+                    )
                     if np.any(ens_invalid):
                         if transect.start_edge == "Left":
                             invalid_left = ens_invalid[
-                                           0: int(transect.edges.left.number_ensembles)]
+                                0 : int(transect.edges.left.number_ensembles)
+                            ]
                             invalid_right = ens_invalid[
-                                            -int(transect.edges.right.number_ensembles):]
+                                -int(transect.edges.right.number_ensembles) :
+                            ]
                         else:
                             invalid_right = ens_invalid[
-                                            0: int(transect.edges.right.number_ensembles)]
+                                0 : int(transect.edges.right.number_ensembles)
+                            ]
                             invalid_left = ens_invalid[
-                                           -int(transect.edges.left.number_ensembles):]
+                                -int(transect.edges.left.number_ensembles) :
+                            ]
                         if len(invalid_left) > 0:
                             left_invalid_percent = sum(invalid_left) / len(invalid_left)
                         else:
                             left_invalid_percent = 0
                         if len(invalid_right) > 0:
                             right_invalid_percent = sum(invalid_right) / len(
-                                invalid_right)
+                                invalid_right
+                            )
                         else:
                             right_invalid_percent = 0
                         max_invalid_percent = (
-                                max([left_invalid_percent, right_invalid_percent]) * 100)
+                            max([left_invalid_percent, right_invalid_percent]) * 100
+                        )
                         if max_invalid_percent > 25:
                             self.edges["status"] = "caution"
                             if np.any(invalid_left):
@@ -3243,11 +3286,18 @@ class QAData(object):
                             if np.any(invalid_right):
                                 self.edges["invalid_transect_right_idx"].append(n)
 
-            if (len(self.edges["invalid_transect_left_idx"]) > 0 or len(
-                self.edges["invalid_transect_right_idx"]) > 0):
-                self.edges["messages"].append([
-                    "Edges: The percent of invalid ensembles exceeds 25% in" + " one or more transects.",
-                    2, 13, ])
+            if (
+                len(self.edges["invalid_transect_left_idx"]) > 0
+                or len(self.edges["invalid_transect_right_idx"]) > 0
+            ):
+                self.edges["messages"].append(
+                    [
+                        "Edges: The percent of invalid ensembles exceeds 25% in"
+                        + " one or more transects.",
+                        2,
+                        13,
+                    ]
+                )
 
             # Check edges for zero discharge
             self.edges["left_zero"] = 0
@@ -3284,7 +3334,8 @@ class QAData(object):
             if self.edges["right_type"] == 2 or self.edges["left_type"] == 2:
                 self.edges["status"] = "warning"
                 self.edges["messages"].append(
-                    ["EDGES: An edge has an inconsistent edge type;", 1, 13])
+                    ["EDGES: An edge has an inconsistent edge type;", 1, 13]
+                )
 
         else:
             self.edges["status"] = "inactive"

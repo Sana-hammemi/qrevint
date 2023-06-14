@@ -134,6 +134,8 @@ class MovingBedTests(object):
             Object of TransectData for TRDI and str of filename for SonTek
         test_type: str
             Type of moving-bed test (Loop or Stationary)
+        snr_3beam_comp: bool
+            Indicates is 3 beam solutions should be used for invalid snr data
         """
 
         if source == "TRDI":
@@ -286,7 +288,7 @@ class MovingBedTests(object):
 
         Parameters
         ----------
-        array_in: np.ndarray
+        array_in: np.array
             Input that needs to be convert to a list
         """
 
@@ -328,6 +330,8 @@ class MovingBedTests(object):
             Name of moving-bed test data file
         test_type: str
             Type of moving-bed test.
+        snr_3beam_comp: bool
+            Indicates is 3 beam solutions should be used for invalid snr data
         """
         self.type = test_type
 
@@ -406,7 +410,7 @@ class MovingBedTests(object):
             wght_area = np.multiply(
                 np.multiply(np.sqrt(bt_u**2 + bt_v**2), bin_size), ens_duration
             )
-            idx = np.where(np.isnan(wt_u) == False)
+            idx = np.where(np.logical_not(np.isnan(wt_u)))
             se = np.nansum(np.nansum(wt_u[idx] * wght_area[idx])) / np.nansum(
                 np.nansum(wght_area[idx])
             )
@@ -439,7 +443,7 @@ class MovingBedTests(object):
             # Assess invalid bottom track
             # Compute percent invalid bottom track
             self.percent_invalid_bt = (
-                np.nansum(bt_valid == False) / len(bt_valid)
+                np.nansum(np.logical_not(bt_valid)) / len(bt_valid)
             ) * 100
 
             # Determine if more than 9 consecutive seconds of invalid BT
@@ -491,7 +495,7 @@ class MovingBedTests(object):
             v_dir_corr[v_dir_idx] = 360 + v_dir_corr[v_dir_idx]
 
             # Number of invalid weights
-            idx2 = np.where(np.isnan(wght) == False)
+            idx2 = np.where(np.logical_not(np.isnan(wght)))
             nwght = len(idx2[0])
 
             # Compute 95% uncertainty using weighted standard deviation
@@ -525,7 +529,7 @@ class MovingBedTests(object):
             v_dir_corr[v_dir_idx] = 360 + v_dir_corr[v_dir_idx]
 
             # Number of valid weights
-            idx2 = np.where(np.isnan(wght) == False)
+            idx2 = np.where(np.logical_not(np.isnan(wght)))
             nwght = len(idx2[0])
 
             # Compute 95% uncertainty using weighted standard deviation
@@ -546,7 +550,7 @@ class MovingBedTests(object):
             uncert = uncert1 + uncert2
 
             # Compute potential compass error
-            idx = np.where(np.isnan(bt_x) == False)
+            idx = np.where(np.logical_not(np.isnan(bt_x)))
             if len(idx[0]) > 0:
                 idx = idx[0][-1]
             width = np.sqrt(
@@ -698,10 +702,10 @@ class MovingBedTests(object):
 
             # Use only data with valid bottom track
             valid_bt = trans_data.boat_vel.bt_vel.valid_data[0, in_transect_idx]
-            wt_u[:, valid_bt == False] = np.nan
-            wt_v[:, valid_bt == False] = np.nan
-            bt_u[valid_bt == False] = np.nan
-            bt_v[valid_bt == False] = np.nan
+            wt_u[:, np.logical_not(valid_bt)] = np.nan
+            wt_v[:, np.logical_not(valid_bt)] = np.nan
+            bt_u[np.logical_not(valid_bt)] = np.nan
+            bt_v[np.logical_not(valid_bt)] = np.nan
 
             u_water = np.nanmean(wt_u)
             v_water = np.nanmean(wt_v)
@@ -736,7 +740,7 @@ class MovingBedTests(object):
             bt_cs_strm_dist_cum = np.nancumsum(bt_cs_strm_dist)
 
             # Compute cumulative mean moving bed velocity
-            valid_bt_vel_up_strm = np.isnan(bt_vel_up_strm) == False
+            valid_bt_vel_up_strm = np.logical_not(np.isnan(bt_vel_up_strm))
 
             mb_vel = np.nancumsum(bt_vel_up_strm) / np.nancumsum(valid_bt_vel_up_strm)
 
@@ -773,7 +777,7 @@ class MovingBedTests(object):
 
             # Compute percent invalid bottom track
             self.percent_invalid_bt = (
-                np.nansum(bt_valid == False) / len(bt_valid)
+                np.nansum(np.logical_not(bt_valid)) / len(bt_valid)
             ) * 100
             self.duration_sec = np.nansum(ens_duration)
 
@@ -1050,7 +1054,7 @@ class MovingBedTests(object):
 
         # Compute near bed velocity for each ensemble
         for n in range(n_ensembles):
-            idx = np.where(np.isnan(u[:, n]) == False)
+            idx = np.where(np.logical_not(np.isnan(u[:, n])))
             if len(idx[-1]) > 0:
                 if len(idx[-1]) > 0:
                     idx = idx[-1][-2::]
@@ -1103,7 +1107,7 @@ class MovingBedTests(object):
                 test.use_2_correct = False
                 test.selected = False
                 # Valid test according to user
-                lidx_user.append(test.user_valid == True)
+                lidx_user.append(test.user_valid)
                 # Valid test according to quality assessment
                 lidx_no_errors.append(test.test_quality != "Errors")
                 # Identify type of test

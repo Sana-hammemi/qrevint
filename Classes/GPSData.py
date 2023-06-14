@@ -312,11 +312,11 @@ class GPSData(object):
         self.vtg_velocity_method = vtg_method
 
         # If gga data exist compute position and velocity
-        if np.sum(np.sum(np.isnan(raw_gga_lat) == False)) > 0:
+        if np.sum(np.sum(np.logical_not(np.isnan(raw_gga_lat)))) > 0:
             self.process_gga()
 
         # If vtg data exist compute velocity
-        if np.sum(np.sum(np.isnan(raw_vtg_speed) == False)) > 0:
+        if np.sum(np.sum(np.logical_not(np.isnan(raw_vtg_speed)))) > 0:
             self.process_vtg()
 
     def populate_from_qrev_mat(self, transect):
@@ -436,21 +436,21 @@ class GPSData(object):
         valid[np.isnan(valid)] = 0
         # valid[valid > 0] = 1
         gga_lat_deg = np.copy(self.raw_gga_lat_deg)
-        gga_lat_deg[valid == False] = np.nan
+        gga_lat_deg[np.logical_not(valid)] = np.nan
         gga_lon_deg = np.copy(self.raw_gga_lon_deg)
-        gga_lon_deg[valid == False] = np.nan
+        gga_lon_deg[np.logical_not(valid)] = np.nan
         gga_serial_time = np.copy(self.raw_gga_serial_time)
-        gga_serial_time[valid == False] = np.nan
+        gga_serial_time[np.logical_not(valid)] = np.nan
         gga_delta_time = np.copy(self.raw_gga_delta_time)
-        gga_delta_time[valid == False] = np.nan
+        gga_delta_time[np.logical_not(valid)] = np.nan
         gga_hdop = np.copy(self.raw_gga_hdop)
-        gga_hdop[valid == False] = np.nan
+        gga_hdop[np.logical_not(valid)] = np.nan
         gga_num_sats = np.copy(self.raw_gga_num_sats)
-        gga_num_sats[valid == False] = np.nan
+        gga_num_sats[np.logical_not(valid)] = np.nan
         gga_altitude_m = np.copy(self.raw_gga_altitude_m)
-        gga_altitude_m[valid == False] = np.nan
+        gga_altitude_m[np.logical_not(valid)] = np.nan
         gga_differential = np.copy(self.raw_gga_differential)
-        gga_differential[valid == False] = np.nan
+        gga_differential[np.logical_not(valid)] = np.nan
         n_ensembles = gga_lat_deg.shape[0]
 
         # Apply method for computing position of ensemble
@@ -497,7 +497,7 @@ class GPSData(object):
             self.gga_lat_ens_deg = np.tile([np.nan], (len(d_time_min)))
             self.gga_lon_ens_deg = np.tile([np.nan], (len(d_time_min)))
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     self.gga_lat_ens_deg[n] = gga_lat_deg[n, idx]
@@ -539,7 +539,7 @@ class GPSData(object):
         elif v_setting == "End":
 
             for n in range(n_ensembles):
-                idx = np.where(np.isnan(gga_lat_deg[n, :]) == False)[0]
+                idx = np.where(np.logical_not(np.isnan(gga_lat_deg[n, :])))[0]
                 if len(idx) > 0:
                     idx = idx[-1]
                     lat[n] = gga_lat_deg[n, idx]
@@ -579,7 +579,7 @@ class GPSData(object):
                 use.append(np.abs(d_time[n, :]) == d_time_min[n])
             use = np.array(use)
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     lat[n] = gga_lat_deg[n, idx]
@@ -595,7 +595,7 @@ class GPSData(object):
                     self.num_sats_ens[n] = gga_num_sats[n, idx]
 
         # Identify valid values
-        idx_values = np.where(np.isnan(x_utm) == False)[0]
+        idx_values = np.where(np.logical_not(np.isnan(x_utm)))[0]
         if len(idx_values) > 1:
             u, v = self.gga2_vel_trdi(lat, lon, self.gga_serial_time_ens, idx_values)
             self.gga_velocity_ens_mps = np.tile([np.nan], (2, len(lat)))
@@ -693,7 +693,7 @@ class GPSData(object):
 
             use = np.array(use)
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     vtg_speed.append(vtg_speed_mps[n, idx])
@@ -734,7 +734,9 @@ class GPSData(object):
         y = np.tile([np.nan], lat_in.shape)
         x = np.tile([np.nan], lon_in.shape)
         idx = np.where(
-            np.logical_and((np.isnan(lat2) == False), (np.isnan(lon2) == False))
+            np.logical_and(
+                (np.logical_not(np.isnan(lat2))), (np.logical_not(np.isnan(lon2)))
+            )
         )
         for ind in idx[0]:
             y[ind], x[ind], _, _ = utm.from_latlon(lat2[ind], lon2[ind])

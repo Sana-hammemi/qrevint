@@ -437,11 +437,9 @@ class Pd0TRDI(object):
             Dictionary of decoded data
         """
 
-        data = {}
+        data = {"header": Pd0TRDI.decode_fixed_header(pd0_bytes), "checksum": False}
 
         # Read in header
-        data["header"] = Pd0TRDI.decode_fixed_header(pd0_bytes)
-        data["checksum"] = False
         if (
             "number_of_bytes" in data["header"]
             and data["header"]["number_of_bytes"] > 0
@@ -734,6 +732,7 @@ class Pd0TRDI(object):
 
         return Pd0TRDI.unpack_bytes(pd0_bytes, variable_leader_format, offset)
 
+    @staticmethod
     def decode_per_cell_per_beam(
         pd0_bytes, offset, number_of_cells, number_of_beams, struct_format
     ):
@@ -749,7 +748,7 @@ class Pd0TRDI(object):
             Pointer into pd0_bytes
         number_of_cells: int
             Number of cells in data
-        number of beams: int
+        number_of_beams: int
             Number of beams in data
         struct_format: str
             A string identifying the type of data to decode
@@ -1063,7 +1062,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "10s", 0),
             ("utc", "10s", 10),
             ("lat_deg", "d", 20),
@@ -1082,7 +1081,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         try:
             decoded_data["utc"] = float(
@@ -1118,7 +1117,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "10s", 0),
             ("course_true", "f", 10),
             ("true_indicator", "c", 14),
@@ -1132,7 +1131,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         decoded_data["true_indicator"] = Pd0TRDI.bin2str(decoded_data["true_indicator"])
         decoded_data["mag_indicator"] = Pd0TRDI.bin2str(decoded_data["mag_indicator"])
@@ -1164,7 +1163,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "10s", 0),
             ("depth_ft", "f", 10),
             ("ft_indicator", "c", 14),
@@ -1175,7 +1174,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         decoded_data["ft_indicator"] = Pd0TRDI.bin2str(decoded_data["ft_indicator"])
         decoded_data["m_indicator"] = Pd0TRDI.bin2str(decoded_data["m_indicator"])
@@ -1204,14 +1203,14 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "10s", 0),
             ("heading_deg", "d", 10),
             ("h_true_indicator", "c", 14),
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         decoded_data["h_true_indicator"] = Pd0TRDI.bin2str(
             decoded_data["h_true_indicator"]
@@ -1241,7 +1240,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "7s", 0),
             ("utc", "10s", 7),
             ("lat_deg", "d", 17),
@@ -1260,7 +1259,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         try:
             decoded_data["utc"] = float(
@@ -1297,7 +1296,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "7s", 0),
             ("course_true", "f", 7),
             ("true_indicator", "c", 11),
@@ -1311,7 +1310,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         decoded_data["true_indicator"] = Pd0TRDI.bin2str(decoded_data["true_indicator"])
         decoded_data["mag_indicator"] = Pd0TRDI.bin2str(decoded_data["mag_indicator"])
@@ -1344,7 +1343,7 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "7s", 0),
             ("depth_ft", "f", 7),
             ("ft_indicator", "c", 11),
@@ -1355,7 +1354,7 @@ class Pd0TRDI(object):
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         decoded_data["ft_indicator"] = Pd0TRDI.bin2str(decoded_data["ft_indicator"])
         decoded_data["m_indicator"] = Pd0TRDI.bin2str(decoded_data["m_indicator"])
@@ -1385,14 +1384,14 @@ class Pd0TRDI(object):
         """
 
         # Define format
-        format = (
+        fmt = (
             ("header", "7s", 0),
             ("heading_deg", "d", 7),
             ("h_true_indicator", "c", 15),
         )
 
         # Decode data
-        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, format, offset)
+        decoded_data = Pd0TRDI.unpack_bytes(pd0_bytes, fmt, offset)
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         if abs(decoded_data["heading_deg"]) < 360:
             try:
@@ -1428,31 +1427,30 @@ class Pd0TRDI(object):
         """
 
         # Initialize dictionary
-        decoded_data = {}
-        decoded_data["header"] = ""
-        decoded_data["utc"] = np.nan
-        decoded_data["lat_deg"] = np.nan
-        decoded_data["lat_ref"] = ""
-        decoded_data["lon_deg"] = np.nan
-        decoded_data["lon_ref"] = ""
-        decoded_data["corr_qual"] = np.nan
-        decoded_data["num_sats"] = np.nan
-        decoded_data["hdop"] = np.nan
-        decoded_data["alt"] = np.nan
-        decoded_data["alt_unit"] = ""
-        decoded_data["geoid"] = ""
-        decoded_data["geoid_unit"] = ""
-        decoded_data["d_gps_age"] = np.nan
-        decoded_data["ref_stat_id"] = np.nan
-        decoded_data["delta_time"] = np.nan
+        decoded_data = {
+            "header": "",
+            "utc": np.nan,
+            "lat_deg": np.nan,
+            "lat_ref": "",
+            "lon_deg": np.nan,
+            "lon_ref": "",
+            "corr_qual": np.nan,
+            "num_sats": np.nan,
+            "hdop": np.nan,
+            "alt": np.nan,
+            "alt_unit": "",
+            "geoid": "",
+            "geoid_unit": "",
+            "d_gps_age": np.nan,
+            "ref_stat_id": np.nan,
+            "delta_time": np.nan,
+        }
 
         # Decode NMEA sentence and split into an array
-        format = str(data["msg_size"]) + "c"
+        fmt = str(data["msg_size"]) + "c"
         sentence = Pd0TRDI.bin2str(
             b"".join(
-                list(
-                    struct.unpack(format, pd0_bytes[offset : offset + data["msg_size"]])
-                )
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
             )
         )
         temp_array = np.array(sentence.split(","))
@@ -1510,26 +1508,25 @@ class Pd0TRDI(object):
         """
 
         # Initialize dictionary
-        decoded_data = {}
-        decoded_data["header"] = ""
-        decoded_data["course_true"] = np.nan
-        decoded_data["true_indicator"] = ""
-        decoded_data["course_mag"] = np.nan
-        decoded_data["mag_indicator"] = ""
-        decoded_data["speed_knots"] = np.nan
-        decoded_data["knots_indicator"] = ""
-        decoded_data["speed_kph"] = np.nan
-        decoded_data["kph_indicator"] = ""
-        decoded_data["mode_indicator"] = ""
-        decoded_data["delta_time"] = np.nan
+        decoded_data = {
+            "header": "",
+            "course_true": np.nan,
+            "true_indicator": "",
+            "course_mag": np.nan,
+            "mag_indicator": "",
+            "speed_knots": np.nan,
+            "knots_indicator": "",
+            "speed_kph": np.nan,
+            "kph_indicator": "",
+            "mode_indicator": "",
+            "delta_time": np.nan,
+        }
 
         # Decode NMEA sentence and split into an array
-        format = str(data["msg_size"]) + "c"
+        fmt = str(data["msg_size"]) + "c"
         sentence = Pd0TRDI.bin2str(
             b"".join(
-                list(
-                    struct.unpack(format, pd0_bytes[offset : offset + data["msg_size"]])
-                )
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
             )
         )
         temp_array = np.array(sentence.split(","))
@@ -1575,23 +1572,22 @@ class Pd0TRDI(object):
         """
 
         # Initialize dictionary
-        decoded_data = {}
-        decoded_data["header"] = ""
-        decoded_data["depth_ft"] = np.nan
-        decoded_data["ft_indicator"] = ""
-        decoded_data["depth_m"] = np.nan
-        decoded_data["m_indicator"] = ""
-        decoded_data["depth_fath"] = np.nan
-        decoded_data["fath_indicator"] = ""
-        decoded_data["delta_time"] = np.nan
+        decoded_data = {
+            "header": "",
+            "depth_ft": np.nan,
+            "ft_indicator": "",
+            "depth_m": np.nan,
+            "m_indicator": "",
+            "depth_fath": np.nan,
+            "fath_indicator": "",
+            "delta_time": np.nan,
+        }
 
         # Decode NMEA sentence and split into an array
-        format = str(data["msg_size"]) + "c"
+        fmt = str(data["msg_size"]) + "c"
         sentence = Pd0TRDI.bin2str(
             b"".join(
-                list(
-                    struct.unpack(format, pd0_bytes[offset : offset + data["msg_size"]])
-                )
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
             )
         )
         temp_array = np.array(sentence.split(","))
@@ -1634,19 +1630,18 @@ class Pd0TRDI(object):
         """
 
         # Initialize dictionary
-        decoded_data = {}
-        decoded_data["header"] = ""
-        decoded_data["heading_deg"] = np.nan
-        decoded_data["h_true_indicator"] = ""
-        decoded_data["delta_time"] = np.nan
+        decoded_data = {
+            "header": "",
+            "heading_deg": np.nan,
+            "h_true_indicator": "",
+            "delta_time": np.nan,
+        }
 
         # Decode NMEA sentence and split into an array
-        format = str(data["msg_size"]) + "c"
+        fmt = str(data["msg_size"]) + "c"
         sentence = Pd0TRDI.bin2str(
             b"".join(
-                list(
-                    struct.unpack(format, pd0_bytes[offset : offset + data["msg_size"]])
-                )
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
             )
         )
         temp_array = np.array(sentence.split(","))
@@ -1783,7 +1778,6 @@ class Pd0TRDI(object):
 
         # Generate format string
         format_str = str(number_of_characters - 4) + "c"
-        format = ("sentence", format_str, 0)
         offset = data["header"]["address_offsets"][offset_idx]
         # Decode data
         sentence = struct.unpack(
@@ -2005,10 +1999,9 @@ class Pd0TRDI(object):
             ("receive_bandwidth", "B", 17),
             ("min_ping_interval", "<H", 18),
         )
-        auto_config_data = {}
-        auto_config_data["leader"] = Pd0TRDI.unpack_bytes(
-            pd0_bytes, auto_config_leader_format, offset
-        )
+        auto_config_data = {
+            "leader": Pd0TRDI.unpack_bytes(pd0_bytes, auto_config_leader_format, offset)
+        }
 
         for n in range(1, auto_config_data["leader"]["beam_count"] + 1):
             label = "beam_" + str(n)
@@ -2115,10 +2108,10 @@ class Hdr(object):
         n_types: int
             Number of data types
         """
-        self.bytes_per_ens = nans(n_ensembles)
-        self.data_offsets = nans([n_ensembles, n_types])
-        self.n_data_types = nans(n_ensembles)
-        self.data_ok = nans(n_ensembles)
+        self.bytes_per_ens = nans((n_ensembles,))
+        self.data_offsets = nans((n_ensembles, n_types))
+        self.n_data_types = nans((n_ensembles,))
+        self.data_ok = nans((n_ensembles,))
         self.invalid = [""] * n_ensembles
 
     def populate_data(self, n_ens, data):
@@ -2126,7 +2119,7 @@ class Hdr(object):
 
         Parameters
         ----------
-        i_ens: int
+        n_ens: int
             Ensemble index
         data: dict
             Dictionary of all data for this ensemble
@@ -2182,17 +2175,17 @@ class Inst(object):
         """
 
         # TODO change n_ensembles to (ensembles,)
-        self.beam_ang = nans(n_ensembles)
-        self.beams = nans(n_ensembles)
+        self.beam_ang = nans((n_ensembles,))
+        self.beams = nans((n_ensembles,))
         self.data_type = [""] * n_ensembles
-        self.firm_ver = nans(n_ensembles)
-        self.freq = nans(n_ensembles)
+        self.firm_ver = nans((n_ensembles,))
+        self.freq = nans((n_ensembles,))
         self.pat = [""] * n_ensembles
         self.res_RDI = 0
-        self.sensor_CFG = nans(n_ensembles)
+        self.sensor_CFG = nans((n_ensembles,))
         self.xducer = [""] * n_ensembles
         self.t_matrix = np.tile([np.nan], [4, 4])
-        self.demod = nans(n_ensembles)
+        self.demod = nans((n_ensembles,))
         self.serial_number = np.nan
 
     def populate_data(self, i_ens, data):
@@ -2314,12 +2307,12 @@ class AutoMode(object):
         n_ensembles: int
             Number of ensembles
         """
-        self.beam_count = nans(n_ensembles)
+        self.beam_count = nans((n_ensembles,))
         self.Beam1 = Beam(n_ensembles)
         self.Beam2 = Beam(n_ensembles)
         self.Beam3 = Beam(n_ensembles)
         self.Beam4 = Beam(n_ensembles)
-        self.Reserved = nans(n_ensembles)
+        self.Reserved = nans((n_ensembles,))
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -2382,19 +2375,19 @@ class Beam(object):
             Number of ensembles
         """
 
-        self.mode = nans(n_ensembles)
-        self.depth_cm = nans(n_ensembles)
-        self.ping_count = nans(n_ensembles)
-        self.ping_type = nans(n_ensembles)
-        self.cell_count = nans(n_ensembles)
-        self.cell_size_cm = nans(n_ensembles)
-        self.cell_mid_cm = nans(n_ensembles)
-        self.code_repeat = nans(n_ensembles)
-        self.trans_length_cm = nans(n_ensembles)
-        self.lag_length_cm = nans(n_ensembles)
-        self.transmit_bw = nans(n_ensembles)
-        self.receive_bw = nans(n_ensembles)
-        self.ping_interval_ms = nans(n_ensembles)
+        self.mode = nans((n_ensembles,))
+        self.depth_cm = nans((n_ensembles,))
+        self.ping_count = nans((n_ensembles,))
+        self.ping_type = nans((n_ensembles,))
+        self.cell_count = nans((n_ensembles,))
+        self.cell_size_cm = nans((n_ensembles,))
+        self.cell_mid_cm = nans((n_ensembles,))
+        self.code_repeat = nans((n_ensembles,))
+        self.trans_length_cm = nans((n_ensembles,))
+        self.lag_length_cm = nans((n_ensembles,))
+        self.transmit_bw = nans((n_ensembles,))
+        self.receive_bw = nans((n_ensembles,))
+        self.ping_interval_ms = nans((n_ensembles,))
 
     def populate_data(self, i_ens, beam_data):
         """Populates the class with data for an ensemble.
@@ -2403,7 +2396,7 @@ class Beam(object):
         ----------
         i_ens: int
             Ensemble index
-        data: dict
+        beam_data: dict
             Dictionary of all data for this ensemble
         """
 
@@ -2454,13 +2447,13 @@ class Bt(object):
             Number of velocity beams
         """
 
-        self.corr = nans([n_velocities, n_ensembles])
-        self.depth_m = nans([n_velocities, n_ensembles])
-        self.eval_amp = nans([n_velocities, n_ensembles])
-        self.ext_depth_cm = nans(n_ensembles)
-        self.pergd = nans([n_velocities, n_ensembles])
-        self.rssi = nans([n_velocities, n_ensembles])
-        self.vel_mps = nans([n_velocities, n_ensembles])
+        self.corr = nans((n_velocities, n_ensembles))
+        self.depth_m = nans((n_velocities, n_ensembles))
+        self.eval_amp = nans((n_velocities, n_ensembles))
+        self.ext_depth_cm = nans((n_ensembles,))
+        self.pergd = nans((n_velocities, n_ensembles))
+        self.rssi = nans((n_velocities, n_ensembles))
+        self.vel_mps = nans((n_velocities, n_ensembles))
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -2602,52 +2595,52 @@ class Cfg(object):
             Number of ensembles
         """
 
-        self.ba = nans(n_ensembles)
-        self.bc = nans(n_ensembles)
-        self.be_mmps = nans(n_ensembles)
-        self.bg = nans(n_ensembles)
-        self.bm = nans(n_ensembles)
-        self.bp = nans(n_ensembles)
-        self.bx_dm = nans(n_ensembles)
-        self.code_reps = nans(n_ensembles)
+        self.ba = nans((n_ensembles,))
+        self.bc = nans((n_ensembles,))
+        self.be_mmps = nans((n_ensembles,))
+        self.bg = nans((n_ensembles,))
+        self.bm = nans((n_ensembles,))
+        self.bp = nans((n_ensembles,))
+        self.bx_dm = nans((n_ensembles,))
+        self.code_reps = nans((n_ensembles,))
         self.coord_sys = [""] * n_ensembles
-        self.cpu_ser_no = nans([n_ensembles, 8])
-        self.cq = nans(n_ensembles)
-        self.cx = nans(n_ensembles)
-        self.dist_bin1_cm = nans(n_ensembles)
-        self.ea_deg = nans(n_ensembles)
-        self.eb_deg = nans(n_ensembles)
+        self.cpu_ser_no = nans((n_ensembles, 8))
+        self.cq = nans((n_ensembles,))
+        self.cx = nans((n_ensembles,))
+        self.dist_bin1_cm = nans((n_ensembles,))
+        self.ea_deg = nans((n_ensembles,))
+        self.eb_deg = nans((n_ensembles,))
         self.sensor_avail = [""] * n_ensembles
         self.ex = [""] * n_ensembles
         self.ez = [""] * n_ensembles
         self.head_src = [""] * n_ensembles
-        self.lag_cm = nans(n_ensembles)
+        self.lag_cm = nans((n_ensembles,))
         self.map_bins = [""] * n_ensembles
-        self.n_beams = nans(n_ensembles)
+        self.n_beams = nans((n_ensembles,))
         self.pitch_src = [""] * n_ensembles
-        self.ref_lay_end_cell = nans(n_ensembles)
-        self.ref_lay_str_cell = nans(n_ensembles)
+        self.ref_lay_end_cell = nans((n_ensembles,))
+        self.ref_lay_str_cell = nans((n_ensembles,))
         self.roll_src = [""] * n_ensembles
         self.sal_src = [""] * n_ensembles
-        self.wm = nans(n_ensembles)
+        self.wm = nans((n_ensembles,))
         self.sos_src = [""] * n_ensembles
         self.temp_src = [""] * n_ensembles
-        self.tp_sec = nans(n_ensembles)
+        self.tp_sec = nans((n_ensembles,))
         self.use_3beam = [""] * n_ensembles
         self.use_pr = [""] * n_ensembles
-        self.wa = nans(n_ensembles)
-        self.wb = nans(n_ensembles)
-        self.wc = nans(n_ensembles)
-        self.we_mmps = nans(n_ensembles)
-        self.wf_cm = nans(n_ensembles)
-        self.wg_per = nans(n_ensembles)
-        self.wj = nans(n_ensembles)
-        self.wn = nans(n_ensembles)
-        self.wp = nans(n_ensembles)
-        self.ws_cm = nans(n_ensembles)
+        self.wa = nans((n_ensembles,))
+        self.wb = nans((n_ensembles,))
+        self.wc = nans((n_ensembles,))
+        self.we_mmps = nans((n_ensembles,))
+        self.wf_cm = nans((n_ensembles,))
+        self.wg_per = nans((n_ensembles,))
+        self.wj = nans((n_ensembles,))
+        self.wn = nans((n_ensembles,))
+        self.wp = nans((n_ensembles,))
+        self.ws_cm = nans((n_ensembles,))
         self.xdcr_dep_srs = [""] * n_ensembles
-        self.xmit_pulse_cm = nans(n_ensembles)
-        self.lag_near_bottom = nans(n_ensembles)
+        self.xmit_pulse_cm = nans((n_ensembles,))
+        self.lag_near_bottom = nans((n_ensembles,))
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -2852,19 +2845,19 @@ class Gps(object):
             Number of ensembles
         """
 
-        self.alt_m = nans(n_ensembles)
-        self.gga_diff = nans(n_ensembles)
-        self.gga_hdop = nans(n_ensembles)
-        self.gga_n_stats = nans(n_ensembles)
-        self.gga_vel_e_mps = nans(n_ensembles)
-        self.gga_vel_n_mps = nans(n_ensembles)
-        self.gsa_p_dop = nans(n_ensembles)
-        self.gsa_sat = nans([n_ensembles, 6])
-        self.gsa_v_dop = nans(n_ensembles)
-        self.lat_deg = nans(n_ensembles)
-        self.long_deg = nans(n_ensembles)
-        self.vtg_vel_e_mps = nans(n_ensembles)
-        self.vtg_vel_n_mps = nans(n_ensembles)
+        self.alt_m = nans((n_ensembles,))
+        self.gga_diff = nans((n_ensembles,))
+        self.gga_hdop = nans((n_ensembles,))
+        self.gga_n_stats = nans((n_ensembles,))
+        self.gga_vel_e_mps = nans((n_ensembles,))
+        self.gga_vel_n_mps = nans((n_ensembles,))
+        self.gsa_p_dop = nans((n_ensembles,))
+        self.gsa_sat = nans((n_ensembles, 6))
+        self.gsa_v_dop = nans((n_ensembles,))
+        self.lat_deg = nans((n_ensembles,))
+        self.long_deg = nans((n_ensembles,))
+        self.vtg_vel_e_mps = nans((n_ensembles,))
+        self.vtg_vel_n_mps = nans((n_ensembles,))
 
 
 class Gps2(object):
@@ -2976,52 +2969,52 @@ class Gps2(object):
         """
 
         self.gga_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.gga_header = np.full([n_ensembles, 20], "      ")
-        self.gga_sentence = np.full([n_ensembles, 20], "")
+        self.gga_header = np.tile("      ", [n_ensembles, 20])
+        self.gga_sentence = np.tile("", [n_ensembles, 20])
         self.utc = np.full([n_ensembles, 20], np.nan)
         self.lat_deg = np.zeros([n_ensembles, 20])
-        self.lat_ref = np.full([n_ensembles, 20], "")
+        self.lat_ref = np.tile("", [n_ensembles, 20])
         self.lon_deg = np.zeros([n_ensembles, 20])
-        self.lon_ref = np.full([n_ensembles, 20], "")
+        self.lon_ref = np.tile("", [n_ensembles, 20])
         self.corr_qual = np.full([n_ensembles, 20], np.nan)
         self.num_sats = np.full([n_ensembles, 20], np.nan)
         self.hdop = np.full([n_ensembles, 20], np.nan)
         self.alt = np.full([n_ensembles, 20], np.nan)
-        self.alt_unit = np.full([n_ensembles, 20], "")
+        self.alt_unit = np.tile("", [n_ensembles, 20])
         self.geoid = np.full([n_ensembles, 20], np.nan)
-        self.geoid_unit = np.full([n_ensembles, 20], "")
+        self.geoid_unit = np.tile("", [n_ensembles, 20])
         self.d_gps_age = np.full([n_ensembles, 20], np.nan)
         self.ref_stat_id = np.full([n_ensembles, 20], np.nan)
         self.vtg_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.vtg_header = np.full([n_ensembles, 20], "      ")
-        self.vtg_sentence = np.full([n_ensembles, 20], "")
+        self.vtg_header = np.tile("      ", [n_ensembles, 20])
+        self.vtg_sentence = np.tile("", [n_ensembles, 20])
         self.course_true = np.full([n_ensembles, 20], np.nan)
-        self.true_indicator = np.full([n_ensembles, 20], "")
+        self.true_indicator = np.tile("", [n_ensembles, 20])
         self.course_mag = np.full([n_ensembles, 20], np.nan)
-        self.mag_indicator = np.full([n_ensembles, 20], "")
+        self.mag_indicator = np.tile("", [n_ensembles, 20])
         self.speed_knots = np.full([n_ensembles, 20], np.nan)
-        self.knots_indicator = np.full([n_ensembles, 20], "")
+        self.knots_indicator = np.tile("", [n_ensembles, 20])
         self.speed_kph = np.zeros([n_ensembles, 20])
-        self.kph_indicator = np.full([n_ensembles, 20], "")
-        self.mode_indicator = np.full([n_ensembles, 20], "")
+        self.kph_indicator = np.tile("", [n_ensembles, 20])
+        self.mode_indicator = np.tile("", [n_ensembles, 20])
         self.dbt_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.dbt_header = np.full([n_ensembles, 20], "      ")
+        self.dbt_header = np.tile("      ", [n_ensembles, 20])
         self.depth_ft = np.full([n_ensembles, 20], np.nan)
-        self.ft_indicator = np.full([n_ensembles, 20], "")
+        self.ft_indicator = np.tile("", [n_ensembles, 20])
         self.depth_m = np.zeros([n_ensembles, 20])
-        self.m_indicator = np.full([n_ensembles, 20], "")
+        self.m_indicator = np.tile("", [n_ensembles, 20])
         self.depth_fath = np.full([n_ensembles, 20], np.nan)
-        self.fath_indicator = np.full([n_ensembles, 20], "")
+        self.fath_indicator = np.tile("", [n_ensembles, 20])
         self.hdt_delta_time = np.full([n_ensembles, 20], np.nan)
-        self.hdt_header = np.full([n_ensembles, 20], "      ")
+        self.hdt_header = np.tile("      ", [n_ensembles, 20])
         self.heading_deg = np.full([n_ensembles, 20], np.nan)
-        self.h_true_indicator = np.full([n_ensembles, 20], "")
+        self.h_true_indicator = np.tile("", [n_ensembles, 20])
 
         # if wr2:
-        self.gga_velE_mps = nans(n_ensembles)
-        self.gga_velN_mps = nans(n_ensembles)
-        self.vtg_velE_mps = nans(n_ensembles)
-        self.vtg_velN_mps = nans(n_ensembles)
+        self.gga_velE_mps = nans((n_ensembles,))
+        self.gga_velN_mps = nans((n_ensembles,))
+        self.vtg_velE_mps = nans((n_ensembles,))
+        self.vtg_velN_mps = nans((n_ensembles,))
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -3432,7 +3425,7 @@ class Sensor(object):
         Transducer depth in decimeters
     xmit_current: np.array(int)
         Transmit current
-    self.xmit_voltage = nans(n_ensembles)
+    self.xmit_voltage = nans((n_ensembles,))
         Transmit voltage
     self.vert_beam_eval_amp: np.array(int)
         Vertical beam amplitude
@@ -3455,42 +3448,42 @@ class Sensor(object):
             Number of ensembles
         """
 
-        self.ambient_temp = nans(n_ensembles)
-        self.attitude_temp = nans(n_ensembles)
-        self.attitude = nans(n_ensembles)
-        self.bit_test = nans(n_ensembles)
-        self.bit_test_count = nans(n_ensembles)
-        self.contam_sensor = nans(n_ensembles)
-        self.date = nans([n_ensembles, 3])
-        self.date_y2k = nans([n_ensembles, 4])
-        self.date_not_y2k = nans([n_ensembles, 3])
+        self.ambient_temp = nans((n_ensembles,))
+        self.attitude_temp = nans((n_ensembles,))
+        self.attitude = nans((n_ensembles,))
+        self.bit_test = nans((n_ensembles,))
+        self.bit_test_count = nans((n_ensembles,))
+        self.contam_sensor = nans((n_ensembles,))
+        self.date = nans((n_ensembles, 3))
+        self.date_y2k = nans((n_ensembles, 4))
+        self.date_not_y2k = nans((n_ensembles, 3))
         self.error_status_word = [""] * n_ensembles
-        self.heading_deg = nans(n_ensembles)
-        self.heading_std_dev_deg = nans(n_ensembles)
-        self.mpt_msc = nans([n_ensembles, 3])
-        self.num = nans(n_ensembles)
-        self.num_fact = nans(n_ensembles)
-        self.num_tot = nans(n_ensembles)
+        self.heading_deg = nans((n_ensembles,))
+        self.heading_std_dev_deg = nans((n_ensembles,))
+        self.mpt_msc = nans((n_ensembles, 3))
+        self.num = nans((n_ensembles,))
+        self.num_fact = nans((n_ensembles,))
+        self.num_tot = nans((n_ensembles,))
         self.orient = [""] * n_ensembles
-        self.pitch_std_dev_deg = nans(n_ensembles)
-        self.pitch_deg = nans(n_ensembles)
-        self.pressure_neg = nans(n_ensembles)
-        self.pressure_pos = nans(n_ensembles)
-        self.pressure_pascal = nans(n_ensembles)
-        self.pressure_var_pascal = nans(n_ensembles)
-        self.roll_std_dev_deg = nans(n_ensembles)
-        self.roll_deg = nans(n_ensembles)
-        self.salinity_ppt = nans(n_ensembles)
-        self.sos_mps = nans(n_ensembles)
-        self.temperature_deg_c = nans(n_ensembles)
-        self.time = nans([n_ensembles, 4])
-        self.time_y2k = nans([n_ensembles, 4])
-        self.xdcr_depth_dm = nans(n_ensembles)
-        self.xmit_current = nans(n_ensembles)
-        self.xmit_voltage = nans(n_ensembles)
-        self.vert_beam_eval_amp = nans(n_ensembles)
-        self.vert_beam_RSSI_amp = nans(n_ensembles)
-        self.vert_beam_range_m = nans(n_ensembles)
+        self.pitch_std_dev_deg = nans((n_ensembles,))
+        self.pitch_deg = nans((n_ensembles,))
+        self.pressure_neg = nans((n_ensembles,))
+        self.pressure_pos = nans((n_ensembles,))
+        self.pressure_pascal = nans((n_ensembles,))
+        self.pressure_var_pascal = nans((n_ensembles,))
+        self.roll_std_dev_deg = nans((n_ensembles,))
+        self.roll_deg = nans((n_ensembles,))
+        self.salinity_ppt = nans((n_ensembles,))
+        self.sos_mps = nans((n_ensembles,))
+        self.temperature_deg_c = nans((n_ensembles,))
+        self.time = nans((n_ensembles, 4))
+        self.time_y2k = nans((n_ensembles, 4))
+        self.xdcr_depth_dm = nans((n_ensembles,))
+        self.xmit_current = nans((n_ensembles,))
+        self.xmit_voltage = nans((n_ensembles,))
+        self.vert_beam_eval_amp = nans((n_ensembles,))
+        self.vert_beam_RSSI_amp = nans((n_ensembles,))
+        self.vert_beam_range_m = nans((n_ensembles,))
         self.vert_beam_gain = [""] * n_ensembles
         self.vert_beam_status = np.zeros(n_ensembles)
 
@@ -3645,12 +3638,12 @@ class Surface(object):
         """
 
         self.no_cells = np.zeros(n_ensembles)
-        self.cell_size_cm = nans(n_ensembles)
-        self.dist_bin1_cm = nans(n_ensembles)
+        self.cell_size_cm = nans((n_ensembles,))
+        self.dist_bin1_cm = nans((n_ensembles,))
         self.vel_mps = np.tile([np.nan], [n_velocities, max_surface_bins, n_ensembles])
-        self.corr = nans([n_velocities, max_surface_bins, n_ensembles])
-        self.pergd = nans([n_velocities, max_surface_bins, n_ensembles])
-        self.rssi = nans([n_velocities, max_surface_bins, n_ensembles])
+        self.corr = nans((n_velocities, max_surface_bins, n_ensembles))
+        self.pergd = nans((n_velocities, max_surface_bins, n_ensembles))
+        self.rssi = nans((n_velocities, max_surface_bins, n_ensembles))
 
     def populate_data(self, i_ens, data, main_data):
         """Populates the class with data for an ensemble.
@@ -3728,10 +3721,10 @@ class Wt(object):
             Maximum number of bins in an ensemble in the transect
         """
 
-        self.corr = nans([n_velocities, n_bins, n_ensembles])
-        self.pergd = nans([n_velocities, n_bins, n_ensembles])
-        self.rssi = nans([n_velocities, n_bins, n_ensembles])
-        self.vel_mps = nans([n_velocities, n_bins, n_ensembles])
+        self.corr = nans((n_velocities, n_bins, n_ensembles))
+        self.pergd = nans((n_velocities, n_bins, n_ensembles))
+        self.rssi = nans((n_velocities, n_bins, n_ensembles))
+        self.vel_mps = nans((n_velocities, n_bins, n_ensembles))
 
     def populate_data(self, i_ens, data, main_data):
         """Populates the class with data for an ensemble.
