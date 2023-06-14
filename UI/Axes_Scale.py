@@ -17,7 +17,9 @@ class Ui_Axes_Scale(object):
         self.buttonBox = QtWidgets.QDialogButtonBox(Axes_Scale)
         self.buttonBox.setGeometry(QtCore.QRect(120, 240, 211, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.line = QtWidgets.QFrame(Axes_Scale)
         self.line.setGeometry(QtCore.QRect(107, 181, 221, 16))
@@ -103,6 +105,7 @@ class Ui_Axes_Scale(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Axes_Scale = QtWidgets.QDialog()
     ui = Ui_Axes_Scale()

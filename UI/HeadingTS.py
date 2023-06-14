@@ -123,6 +123,7 @@ class HeadingTS(object):
         self.internal = []
         self.external = []
         self.merror = []
+        x = np.nan
         for row in range(len(checked)):
             if tbl.item(row, 0).checkState() == QtCore.Qt.Checked:
                 self.row_index.append(row)
@@ -162,8 +163,7 @@ class HeadingTS(object):
                     heading = np.copy(
                         meas.transects[checked[row]].sensors.heading_deg.external.data
                     )
-                    # Arrange data left to right
-                    flip = False
+
                     # Arrange data left to right
                     flip = False
                     if meas.transects[checked[row]].start_edge == "Right":

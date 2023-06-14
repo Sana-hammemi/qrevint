@@ -82,16 +82,20 @@ class DischargeTS(object):
         avg_y = []
         for n in range(len(save_y)):
             if n < len(save_y):
-                avg_y.append([np.nanmean(save_y[0:n+1]), np.nanmean(save_y[0:n+1])])
+                avg_y.append(
+                    [np.nanmean(save_y[0 : n + 1]), np.nanmean(save_y[0 : n + 1])]
+                )
         avg_y = np.array(avg_y).flatten()
         y_upper = np.array(avg_y) * 1.05
-        y_lower = np.array(avg_y) * .95
+        y_lower = np.array(avg_y) * 0.95
         x_flat = np.array(save_x).flatten()
         self.fig.ax.fill_between(x_flat, y_upper, y_lower, color="aliceblue")
         self.fig.ax.plot(x_flat, y_upper, color="cornflowerblue")
         self.fig.ax.plot(x_flat, y_lower, color="cornflowerblue")
-        self.fig.ax.plot(x_flat, avg_y, color='blue')
-        self.fig.ax.plot(save_x[transect_idx], save_y[transect_idx], color="black", linewidth=5 )
+        self.fig.ax.plot(x_flat, avg_y, color="blue")
+        self.fig.ax.plot(
+            save_x[transect_idx], save_y[transect_idx], color="black", linewidth=5
+        )
 
         # Customize axis
         time_fmt = mdates.DateFormatter("%H:%M:%S")

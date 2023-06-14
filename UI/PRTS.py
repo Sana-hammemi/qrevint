@@ -87,6 +87,7 @@ class PRTS(object):
         self.pitch = []
         self.roll = []
         self.row_index = []
+        x = np.nan
 
         # Plot all selected transects
         for row in range(len(checked)):

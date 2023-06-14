@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class Maptrack(object):
     """Class to generate shiptrack plot from MAP profile.
 
@@ -44,6 +41,8 @@ class Maptrack(object):
             Object of MAP from Measurement
         units: dict
             Dictionary of units conversions.
+        nav_ref: str
+            Navigation reference (bt_vel, gga_vel, vtg_vel)
         """
 
         # Assign and save parameters
@@ -65,8 +64,8 @@ class Maptrack(object):
 
         # Boundaries on x and y coordinates for the selected transects
         x_plt = [
-            min([min(l) for l in map_data.x_projected]),
-            max([max(l) for l in map_data.x_projected]),
+            min([min(x) for x in map_data.x_projected]),
+            max([max(x) for x in map_data.x_projected]),
         ]
         y_plt = [i * map_data.slope + map_data.intercept for i in x_plt]
 
@@ -165,10 +164,6 @@ class Maptrack(object):
             Contains data selected.
         plt_ref: Line2D
             Reference containing plotted data
-        vector_ref: Quiver
-            Refernece containing plotted data
-        ref_label: str
-            Label used to ID data type in annotation
         """
 
         pos = plt_ref._xy[ind["ind"][0]]

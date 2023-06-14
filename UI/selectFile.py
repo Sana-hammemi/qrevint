@@ -191,7 +191,7 @@ class SaveDialog(QtWidgets.QDialog):
 
         Parameters
         ----------
-        parent
+        parent: QRev
             Identifies parent GUI.
         group: str
             group number if split initiation
@@ -204,6 +204,10 @@ class SaveDialog(QtWidgets.QDialog):
         self.file_extension = None
         # Create settings object which contains the default folder
         settings = SSet(parent.settingsFile)
+        folder = ""
+        title = ""
+        file_name = ""
+        filetype = ""
 
         # Get the current folder setting.
         if parent is not None:
@@ -232,16 +236,18 @@ class SaveDialog(QtWidgets.QDialog):
             filetype = self.tr("QRev File (*_QRev.mat)")
 
         elif save_type == "fig":
-            file_name = folder + "/" + (folder).split("/")[-1]
+            file_name = folder + "/" + folder.split("/")[-1]
             title = self.tr("Save figure")
             filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
 
         elif save_type == "MAP":
-            file_name = folder + "/MAP_" + (folder).split("/")[-1]
+            file_name = folder + "/MAP_" + folder.split("/")[-1]
             title = self.tr("Save MAP")
-            filetype = (f"{self.tr('csv (separator: semicolon)')}( *.csv);;"
-                        f"{self.tr('text (separator: space)')}(*.txt);;"
-                        f"{self.tr('All Files')} (*)")
+            filetype = (
+                f"{self.tr('csv (separator: semicolon)')}( *.csv);;"
+                f"{self.tr('text (separator: space)')}(*.txt);;"
+                f"{self.tr('All Files')} (*)"
+            )
         # Get the full names (path + file) of the selected file
         file_save = QtWidgets.QFileDialog.getSaveFileName(
             self, title, file_name, filetype
@@ -249,7 +255,7 @@ class SaveDialog(QtWidgets.QDialog):
 
         if file_save is not None:
             self.full_Name, file_type = file_save
-            file_extension = (file_type).split("*")[-1][:-1]
+            file_extension = file_type.split("*")[-1][:-1]
             if len(self.full_Name) > 0:
                 self.file_extension = file_extension
                 if self.full_Name[-len(file_extension) :] != file_extension:
