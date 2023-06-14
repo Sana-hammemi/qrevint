@@ -1493,13 +1493,19 @@ class MAP(object):
 
         direction_meas = np.arctan2(-1, self.slope)
 
+        distance = (self.borders_ens[1:] + self.borders_ens[:-1])/2
+
+        direction_ens = sc.interpolate.griddata(
+            distance[~np.isnan(self.direction_ens)], self.direction_ens[~np.isnan(self.direction_ens)], distance
+        )
+
         streamwise_velocity = self.primary_velocity * np.cos(
-            self.direction_ens - direction_meas
-        ) + self.secondary_velocity * np.sin(self.direction_ens - direction_meas)
+            direction_ens - direction_meas
+        ) + self.secondary_velocity * np.sin(direction_ens - direction_meas)
 
         transverse_velocity = self.primary_velocity * np.sin(
-            self.direction_ens - direction_meas
-        ) - self.secondary_velocity * np.cos(self.direction_ens - direction_meas)
+            direction_ens - direction_meas
+        ) - self.secondary_velocity * np.cos(direction_ens - direction_meas)
 
         cells_discharge = self.cells_area * streamwise_velocity
         total_discharge = np.nansum(cells_discharge)

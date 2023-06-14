@@ -2040,7 +2040,7 @@ class WaterData(object):
                 # Find invalid beams
                 snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
 
-                ens_bad_snr =np.any(snr_beam_invalid, axis=0)
+                ens_bad_snr = np.any(snr_beam_invalid, axis=0)
                 valid = np.copy(self.cells_above_sl)
 
                 bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
