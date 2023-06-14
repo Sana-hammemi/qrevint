@@ -15517,11 +15517,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 y_adjusted = y_max - event.y()
                 ax = np.where(np.logical_and(np.greater(event.x(), extents[:, 0]),
                                               np.less(y_adjusted, extents[:, 3])))[0]
-                self.current_axis = self.current_fig.fig.axes[ax[-1]]
+                if len(ax) > 0:
+                    self.current_axis = self.current_fig.fig.axes[ax[-1]]
 
-                # Context menu
-                self.figsMenu.exec_(event.globalPos())
-                return True
+                    # Context menu
+                    self.figsMenu.exec_(event.globalPos())
+                    return True
         return super().eventFilter(source, event)
 
     def saveFig(self):
