@@ -1678,16 +1678,6 @@ class AdvGraphs(object):
         """Create time series plot of WT beams used."""
 
         # Determine number of beams for each ensemble
-        # wt_temp = copy.deepcopy(self.transect.w_vel)
-        # wt_temp.filter_beam(3)
-        # valid_3beam = wt_temp.valid_data[5, :, :]
-        # wt_temp.filter_beam(4)
-        # valid_4beam = wt_temp.valid_data[5, :, :]
-        # beam_data = np.tile(0, [valid_4beam.shape[0], valid_4beam.shape[1]])
-        # beam_data[valid_3beam] = 3
-        # beam_data[valid_4beam] = 4
-        # beam_data[np.logical_not(self.transect.w_vel.valid_data[1, :, :])] = -999
-        # Determine number of beams for each ensemble
         wt_temp = copy.deepcopy(self.transect.w_vel)
         wt_temp.filter_beam(4)
         valid_4beam = wt_temp.valid_data[5, :, :].astype(int)
@@ -3833,7 +3823,6 @@ class AdvGraphs(object):
         ax.add_patch(Polygon(right_coords, edgecolor=right_c, facecolor=right_c))
 
         # Create data plotted for annotation use
-
         self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right])
         self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right])
         self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right])

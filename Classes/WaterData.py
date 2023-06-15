@@ -2102,12 +2102,6 @@ class WaterData(object):
             self.all_valid_data()
         elif transect.adcp.manufacturer == "SonTek":
             self.snr_beam_velocities = None
-            # self.change_coord_sys(
-            #     new_coord_sys="Earth", sensors=transect.sensors, adcp=transect.adcp
-            # )
-            # self.orig_coord_sys = "Earth"
-            #
-            # self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 
