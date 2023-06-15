@@ -53,6 +53,10 @@ class MAP(object):
         Main direction of each MAP ensemble
     borders_ens: np.array(float) 1D
         Borders of each MAP vertical (distance from left bank)
+    x: np.array(float) 1D
+        X coordinates from the average cross-section
+    y: np.array(float) 1D
+        Y coordinates from the average cross-section
     main_depth_layers: np.array(float) 1D
         Borders of each MAP depth layer (distance from surface)
     depth_cells_center: np.array(float)
@@ -103,6 +107,9 @@ class MAP(object):
         self.borders_ens = (
             None  # Borders of each MAP vertical (distance from left bank)
         )
+        self._start = 0  # Lag (in m) from start
+        self.x = None  # x coordinates
+        self.y = None  # y coordinates
         self.main_depth_layers = (
             None  # Borders of each MAP depth layer (distance from surface)
         )
@@ -149,7 +156,7 @@ class MAP(object):
             n_burn = int(1 + len(meas.checked_transect_idx) / 3)
 
         # Get main data from selected transects
-        data_transects = self.collect_data(meas, interp_option, settings["NavRef"])
+        data_transects = self.collect_data(meas, settings["NavRef"])
 
         # Compute coefficients of the average cross-section
         self.compute_coef()
@@ -183,12 +190,13 @@ class MAP(object):
         # Compute primary and secondary velocity according Rozovskii projection
         self.compute_rozovskii(self.east_velocity, self.north_velocity)
 
+        # Interpolate empty values
+        if interp_option:
+            self.compute_interpolation()
+
         # Compute top/bottom extrapolation according QRevInt method/exponent
         if extrap_option:
             self.compute_extrap_velocity(settings)
-
-        if interp_option:
-            self.compute_interpolation()
 
         # Compute edge extrapolation
         if edges_option:
@@ -200,7 +208,12 @@ class MAP(object):
         # Compute discharge
         self.compute_discharge()
 
-    def collect_data(self, meas, interp_option, nav_ref="bt_vel"):
+        # Compute coordinates
+        distance = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
+        self.x = distance + self._start
+        self.y = self.slope * self.x + self.intercept
+
+    def collect_data(self, meas, nav_ref="bt_vel"):
         """Collect data of valid position and depth for each selected transect
         Attributes
         ----------
@@ -265,14 +278,14 @@ class MAP(object):
                 # Depth
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth_transect = depth_selected.depth_processed_m[::-1]
-                cells_depth = depth_selected.depth_cell_depth_m[::-1]
+                cells_depth = depth_selected.depth_cell_depth_m[:, ::-1]
                 # Velocity data
                 vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
                 vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::-1])
                 vel_z = np.copy(transect.w_vel.w_mps[:, ::-1])
                 invalid = np.logical_not(
                     transect.w_vel.valid_data[0, :, in_transect_idx]
-                ).T[::-1]
+                ).T[:, ::-1]
 
                 vel_x[invalid] = np.nan
                 vel_y[invalid] = np.nan
@@ -381,6 +394,7 @@ class MAP(object):
             np.nanmedian(x_right) - x_med_left
         )
         self.intercept = y_med_left - self.slope * x_med_left
+        self._start = x_med_left
 
     def project_transect(self):
         """Project transects on the average cross-section.
@@ -739,6 +753,7 @@ class MAP(object):
         dist_start = min(borders_ens)
         borders_ens -= dist_start
         self.acs_distance -= dist_start
+        self._start -= dist_start
 
         map_depth_cells_border = np.tile(
             np.nan, (len(self.main_depth_layers), len(node_range))
@@ -905,9 +920,10 @@ class MAP(object):
         blanking_depth = depths * 0.9
         for i in range(map_depth_cells_center.shape[1]):
             invalid = map_depth_cells_center[:, i] > blanking_depth[i]
-            w_vel_prim_extrap[invalid, i] = np.nan
-            w_vel_sec_extrap[invalid, i] = np.nan
-            w_vel_z_extrap[invalid, i] = np.nan
+            if np.sum(~np.isnan(w_vel_prim_extrap[~invalid, i])) > 0:
+                w_vel_prim_extrap[invalid, i] = np.nan
+                w_vel_sec_extrap[invalid, i] = np.nan
+                w_vel_z_extrap[invalid, i] = np.nan
 
             # Identify valid data
             valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
@@ -1117,12 +1133,12 @@ class MAP(object):
         if len(invalid_ens) > 0:
             grouped_invalid = list(self.group(invalid_ens))
             for x in grouped_invalid:
-                top = min(idx_top[x[0] - 1], idx_top[x[0] + 1])
-                bot = max(idx_bot[x[0] - 1], idx_bot[x[0] + 1])
+                top = min(idx_top[x[0] - 1], idx_top[x[1] + 1])
+                bot = max(idx_bot[x[0] - 1], idx_bot[x[1] + 1])
 
                 for ens in range(x[0], x[1] + 1):
                     cells_above_sl[:top, ens] = False
-                    cells_above_sl[bot + 1 :, ens] = False
+                    cells_above_sl[bot + 1:, ens] = False
 
         # Use bottom of cells as depth
         last_cell = []
@@ -1206,6 +1222,8 @@ class MAP(object):
 
         left_distance, left_coef = self.left_geometry
         self.edge_velocity("left", left_distance, left_coef, exponent)
+
+        self._start -= left_distance
 
         right_distance, right_coef = self.right_geometry
         self.edge_velocity("right", right_distance, right_coef, exponent)

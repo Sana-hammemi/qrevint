@@ -15144,6 +15144,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
                 self.map_table(update=True)
                 self.map_wt_contour()
+                self.map_shiptrack()
 
                 self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
                 self.fig_calls = [self.map_shiptrack, self.map_wt_contour]

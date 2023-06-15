@@ -22,7 +22,6 @@ from Classes.Oursin import Oursin
 from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
-
 # from profilehooks import profile
 
 
@@ -2344,8 +2343,8 @@ class Measurement(object):
         node_horizontal_user=None,
         node_vertical_user=None,
         extrap_option=True,
-        edges_option=False,
-        interp_option=True,
+        edges_option=True,
+        interp_option=False,
     ):
         """Computes Multi-transect Average Profile
 
