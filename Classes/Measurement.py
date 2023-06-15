@@ -22,6 +22,7 @@ from Classes.Oursin import Oursin
 from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
+
 # from profilehooks import profile
 
 
@@ -221,7 +222,7 @@ class Measurement(object):
                 self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
 
             elif source == "Nortek":
-                self.load_sontek(in_file)
+                self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
 
             # Process data
             if len(self.transects) > 0:
@@ -518,9 +519,10 @@ class Measurement(object):
 
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
-                    mb_test.populate_data(source="TRDI",
-                                          file=transects[n],
-                                          test_type=mmt.mbt_transects[n].moving_bed_type
+                    mb_test.populate_data(
+                        source="TRDI",
+                        file=transects[n],
+                        test_type=mmt.mbt_transects[n].moving_bed_type,
                     )
 
                     # Save notes from mmt files in comments
@@ -580,6 +582,8 @@ class Measurement(object):
         fullnames: list
             File names including path for all discharge transects converted
             to Matlab files.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         """
 
         # Initialize variables
@@ -594,7 +598,9 @@ class Measurement(object):
             if hasattr(rsdata, "BottomTrack"):
                 # Create transect objects for each discharge transect
                 self.transects.append(TransectData())
-                self.transects[-1].sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
+                self.transects[-1].sontek(
+                    rsdata, file_name, snr_3beam_comp=snr_3beam_comp
+                )
             else:
                 self.comments.append(
                     file + " is incomplete and is not included in "
@@ -692,6 +698,8 @@ class Measurement(object):
         ----------
         pathname: str
             Path to discharge transect files.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         """
 
         # Compass Calibration
@@ -748,6 +756,8 @@ class Measurement(object):
         ----------
         pathname: str
             Path to discharge transect files.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         """
         for file in os.listdir(pathname):
             # Find moving-bed test files.
@@ -759,7 +769,7 @@ class Measurement(object):
                         source="SonTek",
                         file=os.path.join(pathname, file),
                         test_type="Loop",
-                        snr_3beam_comp=snr_3beam_comp
+                        snr_3beam_comp=snr_3beam_comp,
                     )
                 # Process Stationary test
                 elif file.lower().startswith("smba"):
@@ -768,7 +778,7 @@ class Measurement(object):
                         source="SonTek",
                         file=os.path.join(pathname, file),
                         test_type="Stationary",
-                        snr_3beam_comp=snr_3beam_comp
+                        snr_3beam_comp=snr_3beam_comp,
                     )
 
     def load_qrev_mat(self, mat_data):
@@ -2329,12 +2339,14 @@ class Measurement(object):
                 u_measurement_user=u_measurement_user,
             )
 
-    def compute_map(self,
-                    node_horizontal_user=None,
-                    node_vertical_user=None,
-                    extrap_option=True,
-                    edges_option=False,
-                    interp_option=True):
+    def compute_map(
+        self,
+        node_horizontal_user=None,
+        node_vertical_user=None,
+        extrap_option=True,
+        edges_option=False,
+        interp_option=True,
+    ):
         """Computes Multi-transect Average Profile
 
         Parameters
@@ -2349,20 +2361,26 @@ class Measurement(object):
             Boolean indicating if edges extrapolation should be apply
         interp_option: bool
             Boolean indicating if interpolated data should be used
-         """
+        """
 
         # Check for heading data
-        if all(deg == 0 for deg in self.transects[
-                self.checked_transect_idx[0]].sensors.heading_deg.internal.data):
+        if all(
+            deg == 0
+            for deg in self.transects[
+                self.checked_transect_idx[0]
+            ].sensors.heading_deg.internal.data
+        ):
             self.map = None
         else:
             self.map = MAP()
-            self.map.populate_data(self,
-                                   node_horizontal_user,
-                                   node_vertical_user,
-                                   extrap_option,
-                                   edges_option,
-                                   interp_option)
+            self.map.populate_data(
+                self,
+                node_horizontal_user,
+                node_vertical_user,
+                extrap_option,
+                edges_option,
+                interp_option,
+            )
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):

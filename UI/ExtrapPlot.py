@@ -433,8 +433,6 @@ class ExtrapPlot(object):
         ----------
         norm_data: list or NormData
             List of or single object of class NormData
-        idx: int
-            Index to data to be plotted
         """
 
         # If composite measurement the color is black otherwise use start bank

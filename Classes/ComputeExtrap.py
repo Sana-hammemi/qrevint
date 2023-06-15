@@ -66,6 +66,11 @@ class ComputeExtrap(object):
             Determines is sensitivity should be computed.
         use_weighted: bool
             Specifies if discharge weighted medians are used in extrapolations
+        use_q: bool
+            Specifies to use the discharge rather than the xprod when subsectioning
+        sub_from_left: bool
+            Specifies if when subsectioning the subsection should start from
+            left to right.
         """
 
         self.threshold = 20
@@ -177,6 +182,8 @@ class ComputeExtrap(object):
             Object of TransectData
         data_type: str
             Type of data processing (q or v)
+        use_weighted: bool
+            Specifies if discharge weighted medians are used in extrapolations
         sub_from_left: bool
             Specifies if when subsectioning the subsection should start from
             left to right.

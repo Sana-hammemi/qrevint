@@ -1,5 +1,3 @@
-import time
-
 import pandas as pd
 import copy
 from Classes.QComp import QComp
@@ -1935,8 +1933,9 @@ class Oursin(object):
             transect_q["q_right"] = meas.discharge[trans_id].right
             transect_q["q_left"] = meas.discharge[trans_id].left
             transect_q["q_middle"] = meas.discharge[trans_id].middle
-            self.sim_original = self.sim_original.append(transect_q, ignore_index=True,
-                sort=False)
+            self.sim_original = self.sim_original.append(
+                transect_q, ignore_index=True, sort=False
+            )
 
     def sim_cns_min_max_opt(self, meas):
         """Computes simulations resulting in the min and max discharges

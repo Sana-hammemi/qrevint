@@ -64,9 +64,9 @@ def cart2pol(x, y):
 
     Returns
     -------
-    phi: float
+    phi: np.array(float)
         Angle in radians
-    rho: float
+    rho: np.array(float)
         Magnitude
     """
 
@@ -159,7 +159,7 @@ def iqr_2d(data):
     return sp_iqr
 
 
-def azdeg2rad(angle) -> float:
+def azdeg2rad(angle):
     """Converts an azimuth angle in degrees to radians.
 
     Parameters
@@ -186,7 +186,7 @@ def azdeg2rad(angle) -> float:
     return direction
 
 
-def rad2azdeg(angle) -> float:
+def rad2azdeg(angle):
     """Converts an angle in radians to an azimuth in degrees.
 
     Parameters
@@ -421,7 +421,7 @@ def nan_less(data1, data2) -> bool:
 
     Returns
     -------
-    :bool
+    :np.array(bool)
         Result of comparison.
     """
 
@@ -442,7 +442,7 @@ def nan_greater_equal(data1, data2) -> bool:
 
     Returns
     -------
-    :bool
+    :np.array(bool)
         Result of comparison.
     """
 
@@ -522,6 +522,7 @@ def sfrnd(n, sig: int = 3):
     # else:
     #     n_sn = str(n_sn_temp)
     return sigfig_round(n, sig)
+
 
 def rotate_coordinates(x, y, angle_d):
     xr = x * cosd(angle_d) + y * sind(angle_d)

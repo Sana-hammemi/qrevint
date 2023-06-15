@@ -74,11 +74,11 @@ class BoatData(object):
     Settings variables
         d_filter: str
             Difference velocity filter "Manual", "Off", "Auto".
-        d_filter_thresholds: float
+        d_filter_thresholds: dict
             Threshold for difference velocity filter.
         w_filter: str
             Vertical velocity filter "Manual", "Off", "Auto".
-        w_filter_threshold: float
+        w_filter_thresholds: dict
             Threshold for vertical velocity filter.
         gps_diff_qual_filter: integer
             Differential correction quality (1,2,4).
@@ -209,12 +209,12 @@ class BoatData(object):
             Minimum number of valid beams for valid data.
         bottom_mode_in: str
             Bottom mode for TRDI ADCP
-        corr: np.array
+        corr_in: np.array
             Correlation values for bottom track
-        rssi: np.array
+        rssi_in: np.array
             Returned signal strength for bottom track
         ping_type: np.array(str)
-            Indicates type of ping used for water tracking
+            Indicates type of ping used for bottom tracking
         """
 
         # Identify invalid ensembles for SonTek data.
@@ -295,10 +295,10 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
         self.processed_source = np.array([""] * self.u_mps.shape[0], dtype=object)
-        self.processed_source[np.where(self.valid_data[0, :] == True)] = nav_ref_in
-        self.processed_source[np.where(self.valid_data[0, :] == False)] = "INT"
+        self.processed_source[np.where(self.valid_data[0, :])] = nav_ref_in
+        self.processed_source[np.where(np.logical_not(self.valid_data[0, :]))] = "INT"
 
     def populate_from_qrev_mat(self, mat_data):
         """Populates the object using data from previously saved QRev Matlab
@@ -848,8 +848,8 @@ class BoatData(object):
         if self.u_mps is not None:
             self.u_processed_mps = np.copy(self.u_mps)
             self.v_processed_mps = np.copy(self.v_mps)
-            self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
-            self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
+            self.u_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
+            self.v_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
 
             # Determine interpolation methods to apply
             if interpolation_method is None:
@@ -900,7 +900,7 @@ class BoatData(object):
             Composite u-velocity component, in m/s
         v_composite: np.array(float)
             Composite v-velocity component, in m/s
-        composite_source: str
+        composite_source: np.array()
             Reference used for each ensemble velocity.
         """
 
@@ -937,15 +937,15 @@ class BoatData(object):
         # Get data from object
         self.u_processed_mps = np.copy(self.u_mps)
         self.v_processed_mps = np.copy(self.v_mps)
-        self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
-        self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
+        self.u_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
+        self.v_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
 
         n_invalid = 0
         # Process data by ensembles
         for n in range(n_ensembles):
             # Check if ensemble is invalid and number of consecutive
             # invalids is less than 9
-            if self.valid_data[0, n] == False and n_invalid < 9:
+            if self.valid_data[0, n] is False and n_invalid < 9:
                 self.u_processed_mps[n] = self.u_processed_mps[n - 1]
                 self.v_processed_mps[n] = self.v_processed_mps[n - 1]
                 n_invalid += 1
@@ -959,8 +959,8 @@ class BoatData(object):
         # Reset processed data
         self.u_processed_mps = np.copy(self.u_mps)
         self.v_processed_mps = np.copy(self.v_mps)
-        self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
-        self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
+        self.u_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
+        self.v_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
 
     def interpolate_hold_last(self):
         """This function holds the last valid value until the next valid data
@@ -973,15 +973,15 @@ class BoatData(object):
             # Get data from object
             self.u_processed_mps = np.copy(self.u_mps)
             self.v_processed_mps = np.copy(self.v_mps)
-            self.u_processed_mps[self.valid_data[0, :] == False] = np.nan
-            self.v_processed_mps[self.valid_data[0, :] == False] = np.nan
+            self.u_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
+            self.v_processed_mps[np.logical_not(self.valid_data[0, :])] = np.nan
 
             n_invalid = 0
             # Process data by ensembles
             for n in range(1, n_ensembles):
                 # Check if ensemble is invalid and number of consecutive
                 # invalids is less than 9
-                if (self.valid_data[0, n] == False) and (n_invalid < 9):
+                if (self.valid_data[0, n] is False) and (n_invalid < 9):
                     self.u_processed_mps[n] = self.u_processed_mps[n - 1]
                     self.v_processed_mps[n] = self.v_processed_mps[n - 1]
 
@@ -1012,8 +1012,8 @@ class BoatData(object):
         # Get data from object
         u = np.copy(self.u_mps)
         v = np.copy(self.v_mps)
-        u[self.valid_data[0, :] == False] = np.nan
-        v[self.valid_data[0, :] == False] = np.nan
+        u[np.logical_not(self.valid_data[0, :])] = np.nan
+        v[np.logical_not(self.valid_data[0, :])] = np.nan
 
         # Compute ens_time
         ens_time = np.nancumsum(transect.date_time.ens_duration_sec)
@@ -1041,7 +1041,7 @@ class BoatData(object):
         u = np.copy(self.u_mps)
         v = np.copy(self.v_mps)
 
-        valid = np.isnan(u) == False
+        valid = np.logical_not(np.isnan(u))
 
         # Check for valid data
         if sum(valid) > 1 and sum(self.valid_data[0, :]) > 1:
@@ -1079,7 +1079,7 @@ class BoatData(object):
         u = np.copy(self.u_processed_mps)
         v = np.copy(self.v_processed_mps)
 
-        valid = np.isnan(u) == False
+        valid = np.logical_not(np.isnan(u))
 
         # Check for valid data
         if np.sum(valid) > 1:
@@ -1246,7 +1246,7 @@ class BoatData(object):
                 beam_3_valid_data[5, :], self.valid_data[5, :]
             )
             n_ens = len(self.valid_data[5, :])
-            idx = np.where(valid_3_beams == True)[0]
+            idx = np.where(valid_3_beams)[0]
 
             # If 3 beam solutions exist evaluate there validity
             if len(idx) > 0:
@@ -1263,17 +1263,13 @@ class BoatData(object):
 
                         # Find nearest 4 beam solutions before and after
                         # 3 beam solution
-                        ref_idx_before = np.where(self.valid_data[5, : idx[m]] == True)[
-                            0
-                        ]
+                        ref_idx_before = np.where(self.valid_data[5, : idx[m]])[0]
                         if len(ref_idx_before) > 0:
                             ref_idx_before = ref_idx_before[-1]
                         else:
                             ref_idx_before = None
 
-                        ref_idx_after = np.where(self.valid_data[5, idx[m] :] == True)[
-                            0
-                        ]
+                        ref_idx_after = np.where(self.valid_data[5, idx[m] :])[0]
                         if len(ref_idx_after) > 0:
                             ref_idx_after = idx[m] + ref_idx_after[0]
                         else:
@@ -1303,7 +1299,7 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     def filter_diff_vel(self, setting, threshold=None):
         """Applies either manual or automatic filtering of the difference
@@ -1321,7 +1317,7 @@ class BoatData(object):
         ----------
         setting: str
             Difference velocity setting (Off, Manual, Auto)
-        threshold: float
+        threshold: float, dict
             If manual, the user specified threshold
         """
 
@@ -1398,7 +1394,7 @@ class BoatData(object):
 
         # Combine all filter data to composite filter data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     def filter_vert_vel(self, setting, threshold=None):
         """Applies either manual or automatic filtering of the vertical
@@ -1408,7 +1404,7 @@ class BoatData(object):
         ----------
         setting: str
             Filter setting (Off, Manual, Auto)
-        threshold: float
+        threshold: float, dict
             If setting is manual, the user specified threshold
         """
 
@@ -1487,7 +1483,7 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     @staticmethod
     def iqr_filter(data, multiplier=5, minimum_window=0.01):
@@ -1636,7 +1632,7 @@ class BoatData(object):
             # Update valid_data property
             self.valid_data[4, :] = True
             self.valid_data[4, bt_bad_idx] = False
-            self.valid_data[4, self.valid_data[1, :] == False] = True
+            self.valid_data[4, np.logical_not(self.valid_data[1, :])] = True
             self.smooth_upper_limit = upper_limit
             self.smooth_lower_limit = lower_limit
             self.smooth_speed = speed_smooth
@@ -1656,7 +1652,7 @@ class BoatData(object):
             ],
             0,
         )
-        self.num_invalid = np.sum(self.valid_data[0, :] == False, 0)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]), 0)
 
     def apply_gps_filter(
         self,
@@ -1790,7 +1786,7 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     def filter_altitude(self, gps_data, setting=None, threshold=None):
         """Filter GPS data based on a change in altitude.
@@ -1855,7 +1851,7 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     def filter_hdop(
         self, gps_data, setting=None, max_threshold=None, change_threshold=None
@@ -1935,7 +1931,7 @@ class BoatData(object):
 
         # Combine all filter data to composite data
         self.valid_data[0, :] = np.all(self.valid_data[1:, :], 0)
-        self.num_invalid = np.sum(self.valid_data[0, :] == False)
+        self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]))
 
     @staticmethod
     def filter_sontek(vel_in):

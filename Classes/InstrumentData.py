@@ -268,6 +268,13 @@ class InstrumentData(object):
         self.configuration_commands = None
 
     def nortek(self, rs):
+        """Populates the variables with data from Nortek ADCPs.
+
+        Parameters
+        ----------
+        rs: MatSonTek
+        """
+
         self.serial_num = rs.System.SerialNumber
         self.frequency_khz = rs.Transformation_Matrices.Frequency
         self.model = rs.System.InstrumentModel

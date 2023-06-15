@@ -43,6 +43,7 @@ class StationaryGraphs(object):
         self.annot_stud = None
         self.mb = None
         self.stud = None
+        self.x_axis_type = "E"
 
     def create(self, mb_test, units, x_axis_type=None):
         """Generates a moving-bed time series and upstream/downstream bottom

@@ -14,7 +14,13 @@ class Transects2Use(QtWidgets.QDialog, wTransects2Use.Ui_Transects2Use):
     """
 
     def __init__(self, parent=None):
-        """Initialize dialog"""
+        """Initialize dialog
+
+        Parameters
+        ----------
+        parent: QRev
+            Main UI
+        """
 
         super(Transects2Use, self).__init__(parent)
         self.setupUi(self)

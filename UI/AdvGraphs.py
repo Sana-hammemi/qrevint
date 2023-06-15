@@ -804,7 +804,7 @@ class AdvGraphs(object):
         speed=False,
         x_axis_type="E",
         color_map="viridis",
-        discharge=None
+        discharge=None,
     ):
         """Creates the plots for the bottom track tab.
         This approach allows zoom and pan to work together for both plots.
@@ -1590,7 +1590,8 @@ class AdvGraphs(object):
             depth=depth,
             data_units=(
                 self.units["V"],
-                "Interpolated \n Speed " + self.units["label_V"]),
+                "Interpolated \n Speed " + self.units["label_V"],
+            ),
             show_edge_speed=self.show_unmeasured,
         )
 
@@ -3495,7 +3496,7 @@ class AdvGraphs(object):
                 linestyle="dotted",
             )
             # Plot edge contours
-            self.add_edge_contours(x_plt, min_limit, max_limit, cmap, ax, depth)
+            self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
 
         # Label and limits for y axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
@@ -3663,7 +3664,7 @@ class AdvGraphs(object):
 
         return expanded_cell_size, expanded_cell_depth, expanded_water_speed
 
-    def add_edge_contours(self, x_plt, min_limit, max_limit, cmap, ax, depth):
+    def add_edge_contours(self, min_limit, max_limit, cmap, ax, depth):
         """Adds color patches representing the average speed in each edge to the
         color contour plot.
 
@@ -3805,7 +3806,7 @@ class AdvGraphs(object):
 
         # Create data plotted for annotation use
 
-        self.data_plotted[-2]["edge_x"]= np.array([x_left, x_right])
+        self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right])
         self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right])
         self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right])
 
@@ -3941,13 +3942,17 @@ class AdvGraphs(object):
 
         # Determine if mouse location references a data point in the plot and
         # update the annotation.
-
+        cont_fig = False
         value = None
+        n = 0
+        x_plt = np.nan
+        y_plt = np.nan
+        z_plt = np.nan
         for n, item in enumerate(self.fig.axes):
             if event.inaxes == item:
 
                 # Verify that location is associated with plotted data
-                cont_fig = False
+
                 if item is not None:
                     # cont_fig, ind_fig = self.fig.contains(event)
                     # for ax in self.ax:
@@ -3960,7 +3965,11 @@ class AdvGraphs(object):
                     else:
                         data = self.data_plotted[n]
                         if data["type"] == "contour":
-                            if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
+                            if (
+                                np.nanmax(data["x"])
+                                >= event.xdata
+                                >= np.nanmin(data["x"])
+                            ):
                                 cont_fig = True
                                 x_plt = self.data_plotted[n]["x"]
                                 y_plt = self.data_plotted[n]["y"]
@@ -3969,29 +3978,37 @@ class AdvGraphs(object):
                             # Check for edge speed
                             elif "edge_x" in data:
                                 if (
-                                        (np.nanmax(data["edge_x"][0]) >= event.xdata
-                                        >= np.nanmin(data["edge_x"][0]))
-                                    and
-                                        (np.nanmax(data["edge_y"][0]) >= event.ydata
-                                        >= np.nanmin(data["edge_y"][0]))
+                                    np.nanmax(data["edge_x"][0])
+                                    >= event.xdata
+                                    >= np.nanmin(data["edge_x"][0])
+                                ) and (
+                                    np.nanmax(data["edge_y"][0])
+                                    >= event.ydata
+                                    >= np.nanmin(data["edge_y"][0])
                                 ):
                                     cont_fig = True
                                     value = data["edge_z"][0]
                                     break
 
                                 elif (
-                                        (np.nanmax(data["edge_x"][1]) >= event.xdata
-                                        >= np.nanmin(data["edge_x"][1]))
-                                    and
-                                        (np.nanmax(data["edge_y"][1]) >= event.ydata
-                                        >= np.nanmin(data["edge_y"][1]))
+                                    np.nanmax(data["edge_x"][1])
+                                    >= event.xdata
+                                    >= np.nanmin(data["edge_x"][1])
+                                ) and (
+                                    np.nanmax(data["edge_y"][1])
+                                    >= event.ydata
+                                    >= np.nanmin(data["edge_y"][1])
                                 ):
                                     cont_fig = True
                                     value = data["edge_z"][1]
                                     break
 
                         elif data["type"] == "ping type":
-                            if np.nanmax(data["x"]) >= event.xdata >= np.nanmin(data["x"]):
+                            if (
+                                np.nanmax(data["x"])
+                                >= event.xdata
+                                >= np.nanmin(data["x"])
+                            ):
                                 cont_fig = True
                                 x_plt = self.data_plotted[n]["x"]
                                 y_plt = self.data_plotted[n]["y"]
@@ -4017,9 +4034,7 @@ class AdvGraphs(object):
                         else:
                             col_idx = np.where(x_plt[0, :] < event.xdata)[0][-1]
                     else:
-                        col_idx = (
-                            int(round(abs(event.xdata - x_plt[0, 0]))) * 2
-                        ) - 1
+                        col_idx = (int(round(abs(event.xdata - x_plt[0, 0]))) * 2) - 1
 
                     # Determine row index. Edge data has no row index
                     if not np.all(np.isnan(y_plt)):
@@ -4039,7 +4054,6 @@ class AdvGraphs(object):
                         x=event.xdata,
                         y=event.ydata,
                         v=value,
-                        v_dict=None,
                     )
                 else:
                     # Create annotation
@@ -4053,9 +4067,7 @@ class AdvGraphs(object):
 
             # Annotation for time series data
             elif self.data_plotted[n]["type"] == "ts":
-                self.update_annot(
-                    ax_idx=n, x=event.xdata, y=event.ydata, v=value
-                )
+                self.update_annot(ax_idx=n, x=event.xdata, y=event.ydata, v=value)
 
             self.annot[n].set_visible(True)
             self.canvas.draw_idle()

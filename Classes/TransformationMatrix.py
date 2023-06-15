@@ -46,7 +46,7 @@ class TransformationMatrix(object):
         ----------
         model: str
             Model of ADCP
-        data_in:
+        data_in: np.array(float)
             System test data or 'Nominal'
         """
 
@@ -153,8 +153,9 @@ class TransformationMatrix(object):
                     idx4 = data_in[idx3:].find(">")
                     idx5 = idx3 + idx4 - 2
                     if idx4 != -1:
-                        cell_matrix = np.fromstring(data_in[idx3:idx5], dtype=np.float64,
-                                                    sep=" ")
+                        cell_matrix = np.fromstring(
+                            data_in[idx3:idx5], dtype=np.float64, sep=" "
+                        )
                         self.matrix = cell_matrix.reshape(4, 4)
                         self.source = "ADCP"
 

@@ -10,7 +10,6 @@ from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
 
-
 class MAP(object):
     """Multitransect Averaged Profile (MAP) generates an average profile of selected transects.
 
@@ -817,7 +816,7 @@ class MAP(object):
             self.north_velocity[:, index_node] = np.nanmean(y_map_cell, axis=0)
             map_vertical_velocity[:, index_node] = np.nanmean(vertical_map_cell, axis=0)
             map_depth_cells_border[depth_limit, index_node] = map_depth[index_node]
-            map_depth_cells_border[depth_limit + 1:, index_node] = np.nan
+            map_depth_cells_border[depth_limit + 1 :, index_node] = np.nan
 
         self.vertical_velocity = map_vertical_velocity
         self.depths = map_depth
@@ -920,7 +919,9 @@ class MAP(object):
 
             for n in range(n_ensembles):
                 # Identifying bottom most valid cell
-                idx_temp = np.where(np.logical_not(np.isnan(w_vel_prim_extrap[:, n])))[0]
+                idx_temp = np.where(np.logical_not(np.isnan(w_vel_prim_extrap[:, n])))[
+                    0
+                ]
                 if len(idx_temp) > 0:
                     idx_top[n] = idx_temp[0]
                     idx_bot[n] = idx_temp[-1]
@@ -1079,9 +1080,15 @@ class MAP(object):
         not_nan = np.logical_not(np.isnan(self.depths))
         indices = np.arange(len(self.depths))
         self.depths = np.interp(indices, indices[not_nan], self.depths[not_nan])
-        self.direction_ens = np.interp(indices, indices[not_nan], self.direction_ens[not_nan])
+        self.direction_ens = np.interp(
+            indices, indices[not_nan], self.direction_ens[not_nan]
+        )
 
-        data_list = [self.primary_velocity, self.secondary_velocity, self.vertical_velocity]
+        data_list = [
+            self.primary_velocity,
+            self.secondary_velocity,
+            self.vertical_velocity,
+        ]
         # Identify valid data
         valid_data = np.logical_not(np.isnan(self.primary_velocity))
         cells_above_sl = np.full(self.primary_velocity.shape, True)
@@ -1094,12 +1101,14 @@ class MAP(object):
         invalid_ens = []
         for n in range(n_ensembles):
             # Identifying bottom most valid cell
-            idx_temp = np.where(np.logical_not(np.isnan(self.primary_velocity[:, n])))[0]
+            idx_temp = np.where(np.logical_not(np.isnan(self.primary_velocity[:, n])))[
+                0
+            ]
             if len(idx_temp) > 0:
                 idx_top[n] = idx_temp[0]
                 idx_bot[n] = idx_temp[-1]
-                cells_above_sl[:idx_top[n], n] = False
-                cells_above_sl[idx_bot[n] + 1:, n] = False
+                cells_above_sl[: idx_top[n], n] = False
+                cells_above_sl[idx_bot[n] + 1 :, n] = False
             else:
                 idx_top[n] = 0
                 invalid_ens.append(n)
@@ -1111,18 +1120,20 @@ class MAP(object):
                 top = min(idx_top[x[0] - 1], idx_top[x[0] + 1])
                 bot = max(idx_bot[x[0] - 1], idx_bot[x[0] + 1])
 
-                for ens in range(x[0], x[1]+1):
+                for ens in range(x[0], x[1] + 1):
                     cells_above_sl[:top, ens] = False
-                    cells_above_sl[bot+1:, ens] = False
+                    cells_above_sl[bot + 1 :, ens] = False
 
         # Use bottom of cells as depth
         last_cell = []
         for n in range(len(self.depths)):
-            last_cell.append(next(
-                (i, v)
-                for i, v in enumerate(self.main_depth_layers)
-                if v > self.depths[n]
-            ))
+            last_cell.append(
+                next(
+                    (i, v)
+                    for i, v in enumerate(self.main_depth_layers)
+                    if v > self.depths[n]
+                )
+            )
         y_depth = [x[1] for x in last_cell]
 
         # Update depth data
@@ -1130,7 +1141,7 @@ class MAP(object):
         for x in last_cell:
             i += 1
             self.depth_cells_border[x[0], i] = self.depths[i]
-            self.depth_cells_border[x[0]+1:, i] = np.nan
+            self.depth_cells_border[x[0] + 1 :, i] = np.nan
 
         y_cell_size = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
         y_centers = self.depth_cells_border[:-1, :] + 0.5 * y_cell_size
@@ -1155,9 +1166,15 @@ class MAP(object):
         if interpolated_data is not None:
             # Incorporate interpolated values
             for n in range(len(interpolated_data[0])):
-                self.primary_velocity[interpolated_data[0][n][0]] = interpolated_data[0][n][1]
-                self.secondary_velocity[interpolated_data[1][n][0]] = interpolated_data[1][n][1]
-                self.vertical_velocity[interpolated_data[2][n][0]] = interpolated_data[2][n][1]
+                self.primary_velocity[interpolated_data[0][n][0]] = interpolated_data[
+                    0
+                ][n][1]
+                self.secondary_velocity[interpolated_data[1][n][0]] = interpolated_data[
+                    1
+                ][n][1]
+                self.vertical_velocity[interpolated_data[2][n][0]] = interpolated_data[
+                    2
+                ][n][1]
 
     def compute_edges(self, settings):
         """Compute edge extrapolation

@@ -119,7 +119,7 @@ class TransectData(object):
 
             # Compute the duration of each ensemble in seconds adjusting for lost data
             ens_delta_time = np.tile([np.nan], ens_time_sec.shape)
-            idx_time = np.where(np.isnan(ens_time_sec) == False)[0]
+            idx_time = np.where(np.logical_not(np.isnan(ens_time_sec)))[0]
             ens_delta_time[idx_time[1:]] = nandiff(ens_time_sec[idx_time])
 
             # Adjust for transects tha last past midnight
@@ -128,7 +128,7 @@ class TransectData(object):
             ens_delta_time = ens_delta_time.T
 
             # Start date and time
-            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][0]
+            idx = np.where(np.logical_not(np.isnan(pd0_data.Sensor.time[:, 0])))[0][0]
             start_year = int(pd0_data.Sensor.date[idx, 0])
 
             # Handle data that is not Y2K compliant
@@ -168,7 +168,7 @@ class TransectData(object):
             )
 
             # End data and time
-            idx = np.where(np.isnan(pd0_data.Sensor.time[:, 0]) == False)[0][-1]
+            idx = np.where(np.logical_not(np.isnan(pd0_data.Sensor.time[:, 0])))[0][-1]
             end_year = int(pd0_data.Sensor.date[idx, 0])
 
             # Handle data that is not Y2K compliant
@@ -416,7 +416,7 @@ class TransectData(object):
 
                 # Use the last valid depth for each ensemble
                 last_depth_col_idx = (
-                    np.sum(np.isnan(temp_depth_ds) == False, axis=1) - 1
+                    np.sum(np.logical_not(np.isnan(temp_depth_ds)), axis=1) - 1
                 )
                 last_depth_col_idx[last_depth_col_idx == -1] = 0
                 row_index = np.arange(len(temp_depth_ds))
@@ -723,7 +723,9 @@ class TransectData(object):
             )
 
             # External Heading
-            ext_heading_check = np.where(np.isnan(pd0_data.Gps2.heading_deg) == False)
+            ext_heading_check = np.where(
+                np.logical_not(np.isnan(pd0_data.Gps2.heading_deg))
+            )
             if len(ext_heading_check[0]) <= 0:
                 self.sensors.heading_deg.selected = "internal"
             else:
@@ -840,7 +842,8 @@ class TransectData(object):
 
             self.sensors.battery_voltage.internal.populate_data(
                 data_in=pd0_data.Sensor.xmit_voltage * scale_factor,
-                source_in="internal")
+                source_in="internal",
+            )
 
     @staticmethod
     def trdi_ping_type(pd0_data):
@@ -941,13 +944,13 @@ class TransectData(object):
         # of RiverSurveyor firmware. This implementation forces all versions to use
         # the earth coordinate system.
         if rsdata.Setup.coordinateSystem == 0:
-            ref_coord = 'Beam'
+            # ref_coord = "Beam"
             raise CoordError(
                 "Beam Coordinates are not supported for all "
                 "RiverSuveyor firmware releases, " + "use Earth coordinates."
             )
         elif rsdata.Setup.coordinateSystem == 1:
-            ref_coord = 'Inst'
+            # ref_coord = "Inst"
             raise CoordError(
                 "Instrument Coordinates are not supported for all"
                 " RiverSuveyor firmware releases, " + "use Earth coordinates."
@@ -1223,12 +1226,6 @@ class TransectData(object):
         # Prepare bottom track depth variable
         depth = rsdata.BottomTrack.BT_Beam_Depth.T
         depth[depth == 0] = np.nan
-
-        # Convert frequency to kHz
-        if np.nanmean(rsdata.BottomTrack.BT_Frequency) > 10000:
-            freq = rsdata.BottomTrack.BT_Frequency / 1000
-        else:
-            freq = rsdata.BottomTrack.BT_Frequency
 
         # Create depth object for bottom track beams
         self.depths.add_depth_object(
@@ -1553,10 +1550,13 @@ class TransectData(object):
         if hasattr(rsdata.System, "Voltage"):
             self.sensors.battery_voltage.internal.populate_data(
                 data_in=rsdata.System.Voltage,
-                source_in="internal", )
+                source_in="internal",
+            )
         elif hasattr(rsdata.System, "Battery_Voltage"):
             self.sensors.battery_voltage.internal.populate_data(
-                data_in=rsdata.System.Battery_Voltage, source_in="internal", )
+                data_in=rsdata.System.Battery_Voltage,
+                source_in="internal",
+            )
         # Set composite depths as this is the only option in RiverSurveyor Live
         self.depths.composite_depths(transect=self, setting="On")
 
@@ -1587,10 +1587,12 @@ class TransectData(object):
 
         Parameters
         ----------
-        corr: np.ndarray(int)
+        corr: np.array(int)
             Water track correlation
         freq:
             Frequency of ping in Hz
+        expected_std: np.array(float)
+            Expected standard deviation
 
         Returns
         -------
@@ -2157,7 +2159,7 @@ class TransectData(object):
 
         if (
             self.boat_vel.selected == "VTG" or self.boat_vel.selected == "GGA"
-        ) and update == True:
+        ) and update:
             self.update_water()
 
     def set_depth_reference(self, update, setting):
@@ -2599,7 +2601,6 @@ class TransectData(object):
             + transect.boat_vel.bt_vel.v_processed_mps**2
         )
 
-        avg_ens_dur = np.nanmean(transect.date_time.ens_duration_sec)
         if transect.boat_vel.gga_vel is not None:
             gga_speed = np.sqrt(
                 transect.boat_vel.gga_vel.u_processed_mps**2
@@ -2732,11 +2733,13 @@ def adjusted_ensemble_duration(transect, trans_type=None):
     if transect.adcp.manufacturer == "TRDI":
         if trans_type is None:
             # Determine valid data from water track
-            valid = np.isnan(transect.w_vel.u_processed_mps) == False
+            valid = np.logical_not(np.isnan(transect.w_vel.u_processed_mps))
             valid_sum = np.sum(valid)
         else:
             # Determine valid data from bottom track
-            valid_sum = np.isnan(transect.boat_vel.bt_vel.u_processed_mps) == False
+            valid_sum = np.logical_not(
+                np.isnan(transect.boat_vel.bt_vel.u_processed_mps)
+            )
 
         valid_ens = valid_sum > 0
         n_ens = len(valid_ens)

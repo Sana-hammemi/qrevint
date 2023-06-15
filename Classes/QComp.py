@@ -1,7 +1,7 @@
 import numpy as np
 from Classes.TransectData import TransectData
 from Classes.BoatStructure import BoatStructure
-from MiscLibs.common_functions import cart2pol, pol2cart, nan_less, nan_greater
+from MiscLibs.common_functions import cart2pol, pol2cart
 from MiscLibs.compute_edge_cd import compute_edge_cd
 
 # from profilehooks import profile
@@ -68,6 +68,10 @@ class QComp(object):
         self.correction_factor = 1
         self.int_cells = None
         self.int_ens = None
+        self.top_speed = np.nan
+        self.bottom_speed = np.nan
+        self.left_edge_speed = np.nan
+        self.right_edge_speed = np.nan
 
     # @profile
     def populate_data(
@@ -1057,7 +1061,6 @@ class QComp(object):
                 bot_vel_x = QComp.discharge_bot(
                     bot_method=bot_method,
                     exponent=exponent,
-                    idx_bot=idx_last_valid_cell,
                     bot_rng=bot_rng_edge,
                     component=x_profile,
                     cell_size=cell_size_edge,
@@ -1088,7 +1091,6 @@ class QComp(object):
                 bot_vel_y = QComp.discharge_bot(
                     bot_method=bot_method,
                     exponent=exponent,
-                    idx_bot=idx_last_valid_cell,
                     bot_rng=bot_rng_edge,
                     component=y_profile,
                     cell_size=cell_size_edge,
@@ -1859,7 +1861,9 @@ class QComp(object):
         bottom_cell_depth = np.repeat(np.nan, n_ensembles)
         for n in range(n_ensembles):
             # Identify topmost 1 and 3 valid cells
-            idx_temp = np.where(np.logical_not(np.isnan(transect.w_vel.u_processed_mps[:, n])))[0]
+            idx_temp = np.where(
+                np.logical_not(np.isnan(transect.w_vel.u_processed_mps[:, n]))
+            )[0]
             if len(idx_temp) > 0:
                 # Compute top
                 top_cell_size[n] = (
@@ -1868,31 +1872,55 @@ class QComp(object):
                 )
                 top_cell_depth[n] = top_cell_size[n] / 2
                 # Compute bottom
-                bottom_cell_size[n] = (depth_selected.depth_processed_m[n]
-                    -(depth_selected.depth_cell_depth_m[idx_temp[-1], n]
-                    + 0.5 * depth_selected.depth_cell_size_m[idx_temp[-1], n])
+                bottom_cell_size[n] = depth_selected.depth_processed_m[n] - (
+                    depth_selected.depth_cell_depth_m[idx_temp[-1], n]
+                    + 0.5 * depth_selected.depth_cell_size_m[idx_temp[-1], n]
                 )
-                bottom_cell_depth[n] = depth_selected.depth_processed_m[n] - 0.5 * bottom_cell_size[n]
+                bottom_cell_depth[n] = (
+                    depth_selected.depth_processed_m[n] - 0.5 * bottom_cell_size[n]
+                )
             else:
                 top_cell_size[n] = 0
                 top_cell_depth[n] = 0
                 bottom_cell_size[n] = 0
                 bottom_cell_depth[n] = 0
         # Compute top speed
-        u = self.compute_top_component(transect=transect,
-            component=transect.w_vel.u_processed_mps, delta_t=delta_t) / top_cell_size
-        v = self.compute_top_component(transect=transect,
-            component=transect.w_vel.v_processed_mps, delta_t=delta_t) / top_cell_size
-        self.top_speed = np.sqrt(u ** 2 + v ** 2)
+        u = (
+            self.compute_top_component(
+                transect=transect,
+                component=transect.w_vel.u_processed_mps,
+                delta_t=delta_t,
+            )
+            / top_cell_size
+        )
+        v = (
+            self.compute_top_component(
+                transect=transect,
+                component=transect.w_vel.v_processed_mps,
+                delta_t=delta_t,
+            )
+            / top_cell_size
+        )
+        self.top_speed = np.sqrt(u**2 + v**2)
 
         # Compute bottom speed
-        u = self.compute_bottom_component(transect=transect,
-                                          component=transect.w_vel.u_processed_mps,
-                                          delta_t=delta_t) / bottom_cell_size
-        v = self.compute_bottom_component(transect=transect,
-                                          component=transect.w_vel.v_processed_mps,
-                                          delta_t=delta_t) / bottom_cell_size
-        self.bottom_speed = np.sqrt(u ** 2 + v ** 2)
+        u = (
+            self.compute_bottom_component(
+                transect=transect,
+                component=transect.w_vel.u_processed_mps,
+                delta_t=delta_t,
+            )
+            / bottom_cell_size
+        )
+        v = (
+            self.compute_bottom_component(
+                transect=transect,
+                component=transect.w_vel.v_processed_mps,
+                delta_t=delta_t,
+            )
+            / bottom_cell_size
+        )
+        self.bottom_speed = np.sqrt(u**2 + v**2)
 
     @staticmethod
     def compute_top_component(transect, component, delta_t):
@@ -1931,14 +1959,17 @@ class QComp(object):
                 0.1667,
             )
         except SystemError:
-            top_component = QComp.extrapolate_top(xprod=component,
+            top_component = QComp.extrapolate_top(
+                xprod=component,
                 w_valid_data=transect.w_vel.valid_data[0, :, :],
                 transect_top_method=num_top_method[transect.extrap.top_method],
                 transect_exponent=transect.extrap.exponent,
                 in_transect_idx=transect.in_transect_idx,
                 depth_cell_size_m=depth_selected.depth_cell_size_m,
                 depth_cell_depth_m=depth_selected.depth_cell_depth_m,
-                depth_processed_m=depth_selected.depth_processed_m, delta_t=delta_t, )
+                depth_processed_m=depth_selected.depth_processed_m,
+                delta_t=delta_t,
+            )
         return top_component
 
     @staticmethod
@@ -1986,7 +2017,7 @@ class QComp(object):
                 depth_cell_size_m=depth_selected.depth_cell_size_m,
                 depth_cell_depth_m=depth_selected.depth_cell_depth_m,
                 depth_processed_m=depth_selected.depth_processed_m,
-                delta_t=delta_t
+                delta_t=delta_t,
             )
         return bottom_component
 
@@ -2010,7 +2041,10 @@ class QComp(object):
             a = transect.edges.left.distance_m * depth_avg
         else:
             cd = compute_edge_cd(transect.edges.left)
-            a = transect.edges.left.distance_m * depth_avg * cd + 0.5* transect.edges.left.distance_m * depth_avg * (1 - cd)
+            a = (
+                transect.edges.left.distance_m * depth_avg * cd
+                + 0.5 * transect.edges.left.distance_m * depth_avg * (1 - cd)
+            )
         self.left_edge_speed = np.abs(self.left / a)
 
         # Right edge
@@ -2031,8 +2065,10 @@ class QComp(object):
             a = transect.edges.right.distance_m * depth_avg
         else:
             cd = compute_edge_cd(transect.edges.right)
-            a = transect.edges.right.distance_m * depth_avg * cd + 0.5 * transect.edges.right.distance_m * depth_avg * (
-                        1 - cd)
+            a = (
+                transect.edges.right.distance_m * depth_avg * cd
+                + 0.5 * transect.edges.right.distance_m * depth_avg * (1 - cd)
+            )
         self.right_edge_speed = np.abs(self.right / a)
 
     # ========================================================================
@@ -2115,7 +2151,7 @@ class QComp(object):
         valid_data = np.logical_not(np.isnan(xprod[:, in_transect_idx]))
         for row in range(valid_data.shape[0]):
             for col in range(valid_data.shape[1]):
-                if valid_data[row, col] == False:
+                if not valid_data[row, col]:
                     z[row, col] = np.nan
                     cell_size[row, col] = np.nan
                     cell_depth[row, col] = np.nan
@@ -2271,7 +2307,7 @@ class QComp(object):
 
                     # Use loop to sum data from top 3 cells
                     for k in range(3):
-                        if np.isnan(cell_depth[idx_top_3[k, j], j]) == False:
+                        if not np.isnan(cell_depth[idx_top_3[k, j], j]):
                             sumd = sumd + cell_depth[idx_top_3[k, j], j]
                             sumd2 = sumd2 + cell_depth[idx_top_3[k, j], j] ** 2
                             sumq = sumq + component[idx_top_3[k, j], j]
@@ -2420,7 +2456,7 @@ class QComp(object):
         valid_data = np.logical_not(np.isnan(xprod))
         for row in range(valid_data.shape[0]):
             for col in range(valid_data.shape[1]):
-                if valid_data[row, col] == False:
+                if not valid_data[row, col]:
                     z[row, col] = np.nan
                     cell_size[row, col] = np.nan
                     cell_depth[row, col] = np.nan

@@ -65,7 +65,12 @@ class BoatStructure(object):
             set to Auto (-1)
         bottom_mode: str
             Bottom mode used
+        corr_in: np.array
+            Correlation values for bottom track
+        rssi_in: np.array
+            Returned signal strength for bottom track
         ping_type: np.array
+            Indicates type of ping used for bottom tracking
         """
 
         if nav_ref_in == "BT":
@@ -193,8 +198,8 @@ class BoatStructure(object):
                 v_bt = self.bt_vel.v_processed_mps
                 # Set to invalid all interpolated velocities
                 valid_bt = self.bt_vel.valid_data[0, :]
-                u_bt[valid_bt == False] = np.nan
-                v_bt[valid_bt == False] = np.nan
+                u_bt[np.logical_not(valid_bt)] = np.nan
+                v_bt[np.logical_not(valid_bt)] = np.nan
 
             # Prepare gga data
             if self.gga_vel is not None:
@@ -203,8 +208,8 @@ class BoatStructure(object):
                 v_gga = self.gga_vel.v_processed_mps
                 # Set to invalid all interpolated velocities
                 valid_gga = self.gga_vel.valid_data[0, :]
-                u_gga[valid_gga == False] = np.nan
-                v_gga[valid_gga == False] = np.nan
+                u_gga[np.logical_not(valid_gga)] = np.nan
+                v_gga[np.logical_not(valid_gga)] = np.nan
             elif self.bt_vel is not None:
                 u_gga = np.tile([np.nan], u_bt.shape)
                 v_gga = np.tile([np.nan], v_bt.shape)
@@ -216,8 +221,8 @@ class BoatStructure(object):
                 v_vtg = self.vtg_vel.v_processed_mps
                 # Set to invalid all interpolated velocities
                 valid_vtg = self.vtg_vel.valid_data[0, :]
-                u_vtg[valid_vtg == False] = np.nan
-                v_vtg[valid_vtg == False] = np.nan
+                u_vtg[np.logical_not(valid_vtg)] = np.nan
+                v_vtg[np.logical_not(valid_vtg)] = np.nan
             elif self.bt_vel is not None:
                 u_vtg = np.tile([np.nan], u_bt.shape)
                 v_vtg = np.tile([np.nan], v_bt.shape)
@@ -229,25 +234,31 @@ class BoatStructure(object):
 
                 # Process u velocity component
                 u_comp = u_bt
-                comp_source[np.isnan(u_comp) == False] = 1
+                comp_source[np.logical_not(np.isnan(u_comp))] = 1
 
                 # If BT data are not valid try VTG and set composite source
                 u_comp[np.isnan(u_comp)] = u_vtg[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 3
 
                 # If there are still invalid boat velocities, try GGA and
                 # set composite source
                 u_comp[np.isnan(u_comp)] = u_gga[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 2
 
                 # If there are still invalid boat velocities, use interpolated
                 # values if present and set composite source
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 0
 
                 # Set composite source to invalid for all remaining invalid
@@ -272,25 +283,31 @@ class BoatStructure(object):
 
                 # Process the u velocity component
                 u_comp = u_gga
-                comp_source[np.isnan(u_comp) == False] = 2
+                comp_source[np.logical_not(np.isnan(u_comp))] = 2
 
                 # If GGA data are not valid try VTG and set composite source
                 u_comp[np.isnan(u_comp)] = u_vtg[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 3
 
                 # If there are still invalid boat velocities, try BT and set
                 # composite source
                 u_comp[np.isnan(u_comp)] = u_bt[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 1
 
                 # If there are still invalid boat velocities,
                 # use interpolated values, if present and set composite source
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 0
 
                 # Set composite source to invalid for all remaining invalid
@@ -325,26 +342,32 @@ class BoatStructure(object):
 
                 # Process the u velocity component
                 u_comp = u_vtg
-                comp_source[np.isnan(u_comp) == False] = 3
+                comp_source[np.logical_not(np.isnan(u_comp))] = 3
 
                 # If VTG data are not valid try GGA and set composite source
                 u_comp[np.isnan(u_comp)] = u_gga[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 2
 
                 # If there are still invalid boat velocities, try BT and set
                 # composite source
                 u_comp[np.isnan(u_comp)] = u_bt[np.isnan(u_comp)]
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 1
 
                 # If there are still invalid boat velocities,
                 # use interpolated values,
                 # if present and set composite source
                 comp_source[
-                    np.logical_and(np.isnan(u_comp) == False, np.isnan(comp_source))
+                    np.logical_and(
+                        np.logical_not(np.isnan(u_comp)), np.isnan(comp_source)
+                    )
                 ] = 0
 
                 # Set composite source to invalid for all remaining invalid
@@ -388,7 +411,7 @@ class BoatStructure(object):
                 comp_source[
                     np.logical_and(
                         np.isnan(comp_source),
-                        (np.isnan(self.bt_vel.u_processed_mps) == False),
+                        (np.logical_not(np.isnan(self.bt_vel.u_processed_mps))),
                     )
                 ] = 0
                 comp_source[np.isnan(comp_source)] = -1
@@ -413,7 +436,7 @@ class BoatStructure(object):
                     comp_source[
                         np.logical_and(
                             np.isnan(comp_source),
-                            (np.isnan(self.gga_vel.u_processed_mps) == False),
+                            (np.logical_not(np.isnan(self.gga_vel.u_processed_mps))),
                         )
                     ] = 0
                     comp_source[np.isnan(comp_source)] = -1
@@ -440,7 +463,7 @@ class BoatStructure(object):
                     comp_source[
                         np.logical_and(
                             np.isnan(comp_source),
-                            (np.isnan(self.vtg_vel.u_processed_mps) == False),
+                            (np.logical_not(np.isnan(self.vtg_vel.u_processed_mps))),
                         )
                     ] = 0
                     comp_source[np.isnan(comp_source)] = -1
