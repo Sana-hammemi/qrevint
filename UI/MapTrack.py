@@ -1,3 +1,5 @@
+import numpy as np
+
 class Maptrack(object):
     """Class to generate shiptrack plot from MAP profile.
 
@@ -31,6 +33,7 @@ class Maptrack(object):
         self.acs = None
         self.hover_connection = None
         self.annot = None
+        self.vectors = None
 
     def create(self, map_data, units, nav_ref):
         """Create the axes and lines for the figure.
@@ -62,12 +65,34 @@ class Maptrack(object):
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
 
-        # Boundaries on x and y coordinates for the selected transects
-        x_plt = [
-            min([min(x) for x in map_data.x_projected]),
-            max([max(x) for x in map_data.x_projected]),
-        ]
-        y_plt = [i * map_data.slope + map_data.intercept for i in x_plt]
+        direction_meas = np.arctan2(-1, map_data.slope)
+        u = map_data.streamwise_velocity * np.cos(direction_meas) + \
+            map_data.transverse_velocity * np.sin(direction_meas)
+        v = map_data.transverse_velocity * np.cos(direction_meas) - \
+            map_data.streamwise_velocity * np.sin(direction_meas)
+
+        u_mean = np.nanmean(u, axis=0)
+        v_mean = np.nanmean(v, axis=0)
+
+        x_plt = map_data.borders_ens + map_data.x[0] - np.mean(map_data.borders_ens[:2])
+        y_plt = map_data.slope * x_plt + map_data.intercept
+
+        speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
+        if len(speed) > 0:
+            max_speed = np.nanmax(speed)
+        else:
+            max_speed = 0
+
+        self.vectors = self.fig.ax.quiver(
+            map_data.x,
+            map_data.y,
+            u_mean * units["V"],
+            v_mean * units["V"],
+            units="dots",
+            width=1,
+            scale_units="width",
+            scale=4 * max_speed,
+        )
 
         self.acs = self.fig.ax.plot(
             x_plt,
