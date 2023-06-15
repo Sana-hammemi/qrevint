@@ -1678,6 +1678,16 @@ class AdvGraphs(object):
         """Create time series plot of WT beams used."""
 
         # Determine number of beams for each ensemble
+        # wt_temp = copy.deepcopy(self.transect.w_vel)
+        # wt_temp.filter_beam(3)
+        # valid_3beam = wt_temp.valid_data[5, :, :]
+        # wt_temp.filter_beam(4)
+        # valid_4beam = wt_temp.valid_data[5, :, :]
+        # beam_data = np.tile(0, [valid_4beam.shape[0], valid_4beam.shape[1]])
+        # beam_data[valid_3beam] = 3
+        # beam_data[valid_4beam] = 4
+        # beam_data[np.logical_not(self.transect.w_vel.valid_data[1, :, :])] = -999
+        # Determine number of beams for each ensemble
         wt_temp = copy.deepcopy(self.transect.w_vel)
         wt_temp.filter_beam(4)
         valid_4beam = wt_temp.valid_data[5, :, :].astype(int)
@@ -3465,18 +3475,29 @@ class AdvGraphs(object):
 
         # Extrapolated data plotting additions
         if show_edge_speed and self.x_axis_type == "L":
+            top_valid = []
+            bottom_valid = []
 
+            for n in range(data_plt.shape[1]):
+                idx = np.where(data_plt[2:-1, n] > -999)[0]
+                top_valid.append(cell_plt[idx[0] + 2, n])
+                bottom_valid.append(cell_plt[idx[-1] + 2, n])
+
+            top_valid.append(top_valid[-1])
+            bottom_valid.append(bottom_valid[-1])
+            top_valid = np.array(top_valid)
+            bottom_valid = np.array(bottom_valid)
             # Plot extrapolated boundaries
             ax.plot(
                 x_plt[-2, :],
-                cell_plt[-2, :],
+                bottom_valid,
                 linewidth=3,
                 color="w",
                 linestyle="dotted",
             )
             ax.plot(
                 x_plt[2, :],
-                cell_plt[2, :],
+                top_valid,
                 linewidth=3,
                 color="w",
                 linestyle="dotted",
@@ -3662,6 +3683,13 @@ class AdvGraphs(object):
             [self.discharge.top_speed, water_speed, self.discharge.bottom_speed]
         )
 
+        # Fix expanded_water_speed for excluded depth cells
+        for n in range(expanded_water_speed.shape[1]):
+            idx = np.where(self.transect.w_vel.valid_data[6, :, n])
+            if idx[0][0] > 0:
+                for row in range(idx[0][0]):
+                    expanded_water_speed[row + 1, n] = expanded_water_speed[row, n]
+
         return expanded_cell_size, expanded_cell_depth, expanded_water_speed
 
     def add_edge_contours(self, min_limit, max_limit, cmap, ax, depth):
@@ -3693,7 +3721,7 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[0], depth[0]])
+                d = np.array([depth[0], depth[1], depth[0], depth[0]]) * self.units['L']
                 x_left = np.array([self.expanded_x[0], self.expanded_x[1]])
                 y_left = np.array([depth[0], depth[1]])
             else:
@@ -3706,7 +3734,7 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]]) * self.units['L']
                 x_left = np.array([self.expanded_x[0], self.expanded_x[2]])
                 y_left = np.array([depth[0], depth[2]])
         else:
@@ -3719,7 +3747,7 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]]) * self.units['L']
                 x_left = np.array([self.expanded_x[-1], self.expanded_x[-2]])
                 y_left = np.array([depth[-1], depth[-2]])
             else:
@@ -3732,7 +3760,7 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]) * self.units['L']
                 x_left = np.array([self.expanded_x[-1], self.expanded_x[-3]])
                 y_left = np.array([depth[-1], depth[-3]])
         left_coords = np.vstack([x, d]).T
@@ -3751,7 +3779,7 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[0], depth[0]])
+                d = np.array([depth[0], depth[1], depth[0], depth[0]]) * self.units['L']
                 x_right = np.array([self.expanded_x[0], self.expanded_x[1]])
                 y_right = np.array([depth[0], depth[1]])
             else:
@@ -3764,7 +3792,7 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]]) * self.units['L']
                 x_right = np.array([self.expanded_x[0], self.expanded_x[2]])
                 y_right = np.array([depth[0], depth[2]])
         else:
@@ -3777,7 +3805,7 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]]) * self.units['L']
                 x_right = np.array([self.expanded_x[-1], self.expanded_x[-2]])
                 y_right = np.array([depth[-1], depth[-2]])
             else:
@@ -3790,7 +3818,7 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]) * self.units['L']
                 x_right = np.array([self.expanded_x[-1], self.expanded_x[-3]])
                 y_right = np.array([depth[-1], depth[-3]])
 

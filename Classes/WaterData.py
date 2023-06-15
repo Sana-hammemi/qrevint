@@ -974,11 +974,19 @@ class WaterData(object):
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
 
-    @staticmethod
-    def earth_to_beam(w_vel, sensors, adcp):
+    def earth_to_beam(self, sensors, adcp):
+        """Converts earth coordinates to beam coordinates.
+
+        Parameters
+        ----------
+        sensors: Sensors
+            Object of class Sensors
+        adcp: InstrumentData
+            Object of class InstrumentData
+        """
 
         # Create matrix to store results
-        vel_beam = np.tile(np.nan, w_vel.raw_vel_mps.shape)
+        vel_beam = np.tile(np.nan, self.raw_vel_mps.shape)
 
         # Assign the transformation matrix retrieve the sensor data
         t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
@@ -998,7 +1006,7 @@ class WaterData(object):
         sr = np.sin(np.deg2rad(r))
 
         # Process each ensemble
-        n_ens = w_vel.raw_vel_mps.shape[2]
+        n_ens = self.raw_vel_mps.shape[2]
         for ii in range(n_ens):
 
             # Compute matrix for heading, pitch, and roll
@@ -1020,7 +1028,7 @@ class WaterData(object):
 
             # Determine frequency index for transformation
             if len(t_matrix.shape) > 2:
-                idx_freq = np.where(t_matrix_freq == w_vel.frequency[ii])
+                idx_freq = np.where(t_matrix_freq == self.frequency[ii])
                 t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
             else:
                 t_mult = np.copy(t_matrix)
@@ -1028,10 +1036,10 @@ class WaterData(object):
             # Construct earth velocity matrix for ensemble
             vel_enu = np.vstack(
                 [
-                    w_vel.u_earth_no_ref_mps[:, ii],
-                    w_vel.v_earth_no_ref_mps[:, ii],
-                    w_vel.w_mps[:, ii],
-                    w_vel.d_mps[:, ii],
+                    self.u_earth_no_ref_mps[:, ii],
+                    self.v_earth_no_ref_mps[:, ii],
+                    self.w_mps[:, ii],
+                    self.d_mps[:, ii],
                 ]
             )
 
@@ -2053,7 +2061,7 @@ class WaterData(object):
         if setting == "Auto":
 
             # Determines if invalid data should use 3-beam computations
-            if self.snr_3beam_comp:
+            if self.snr_3beam_comp and self.d_filter != 3:
 
                 cells_above_sl = np.copy(self.cells_above_sl.astype(float))
                 cells_above_sl[cells_above_sl < 0.5] = np.nan
@@ -2068,9 +2076,9 @@ class WaterData(object):
 
                 bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
                 valid[bad_snr_array] = False
-
-                beam_velocities = self.earth_to_beam(
-                    w_vel=self, sensors=transect.sensors, adcp=transect.adcp
+                w_vel_copy = copy.deepcopy(self)
+                beam_velocities = w_vel_copy.earth_to_beam(
+                    sensors=transect.sensors, adcp=transect.adcp
                 )
                 invalid_beam_value = np.tile(np.nan, valid.shape[0])
 
@@ -2080,13 +2088,7 @@ class WaterData(object):
                     invalid_snr_idx[0], :, invalid_snr_idx[1]
                 ] = invalid_beam_value
                 self.snr_beam_velocities = beam_velocities
-                self.orig_coord_sys = "Beam"
-                self.change_coord_sys(
-                    new_coord_sys="Earth", sensors=transect.sensors, adcp=transect.adcp
-                )
-                self.orig_coord_sys = "Earth"
 
-                self.set_nav_reference(transect.boat_vel)
             else:
                 bad_snr_idx = np.greater(self.snr_rng, 12)
                 valid = np.copy(self.cells_above_sl)
@@ -2100,12 +2102,12 @@ class WaterData(object):
             self.all_valid_data()
         elif transect.adcp.manufacturer == "SonTek":
             self.snr_beam_velocities = None
-            self.change_coord_sys(
-                new_coord_sys="Earth", sensors=transect.sensors, adcp=transect.adcp
-            )
-            self.orig_coord_sys = "Earth"
-
-            self.set_nav_reference(transect.boat_vel)
+            # self.change_coord_sys(
+            #     new_coord_sys="Earth", sensors=transect.sensors, adcp=transect.adcp
+            # )
+            # self.orig_coord_sys = "Earth"
+            #
+            # self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 
