@@ -8155,7 +8155,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">
@@ -8334,8 +8334,8 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>images/extrap_contour.png</normaloff>images/extrap_contour.png</iconset>
+    <iconset resource="dsm.qrc">
+     <normaloff>:/images/images/60.png</normaloff>:/images/images/60.png</iconset>
    </property>
    <property name="text">
     <string>Show_Extrapolated</string>

@@ -419,7 +419,7 @@ class AdvGraphs(object):
         # Determine number of subplots
         self.n_subplots = 1
 
-        # Compute x-axis variable
+        # Compute x-axis variable, this applies units
         self.compute_x_axis()
 
         # Initialize variable for subplots
@@ -1041,8 +1041,8 @@ class AdvGraphs(object):
             else:
                 x = self.x
 
-            x_max = np.nanmax(x)
-            x_min = np.nanmin(x)
+            x_max = np.nanmax(x) * self.units["L"]
+            x_min = np.nanmin(x) * self.units["L"]
 
             axis_buffer = x_max - x_min
             if self.transect.start_edge == "Right":
@@ -1822,7 +1822,6 @@ class AdvGraphs(object):
         self.x = self.x[self.transect.w_vel.cells_above_sl]
         y_data = (
             self.transect.w_vel.w_mps[self.transect.w_vel.cells_above_sl]
-            * self.units["V"]
         )
 
         data_units = (self.units["V"], "WT Vert. Vel " + self.units["label_V"])
@@ -3109,7 +3108,7 @@ class AdvGraphs(object):
                 transect=self.transect
             )
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
-                x = boat_track["distance_m"] * self.units["L"]
+                x = boat_track["distance_m"]
             self.x = x[self.transect.in_transect_idx]
 
             # Shift data to account for edge distance
@@ -3356,6 +3355,9 @@ class AdvGraphs(object):
         else:
             x_plt = x_plt_in
 
+        if self.x_axis_type == "L":
+            x_plt = x_plt * self.units["L"]
+
         cell_plt = cell_plt_in * self.units["L"]
         data_plt = data_plt_in * data_units[0]
 
@@ -3428,10 +3430,10 @@ class AdvGraphs(object):
         if self.x_axis_type == "L":
             # Add edge bathymetry
             self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
-            ax.plot(self.expanded_x, depth * self.units["L"], color="k")
+            ax.plot(self.expanded_x * self.units["L"], depth * self.units["L"], color="k")
         else:
             self.expanded_x = x
-            ax.plot(x, depth * self.units["L"], color="k")
+            ax.plot(x * self.units["L"], depth * self.units["L"], color="k")
 
         depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
@@ -3443,25 +3445,31 @@ class AdvGraphs(object):
             ]
             y_plt_sl = (
                 self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
-            ) * self.units["L"]
+            )
             if edge is not None:
                 if self.transect.start_edge == edge:
                     y_plt_sl = y_plt_sl[: int(n_ensembles)]
                 else:
                     y_plt_sl = y_plt_sl[-int(n_ensembles) :]
-            ax.plot(x, y_plt_sl, color="r", linewidth=0.5)
+            if self.x_axis_type == "L":
+                ax.plot(x * self.units["L"], y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+            else:
+                ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
 
         # Upper bound of measured depth cells
         y_plt_top = (
             depth_obj.depth_cell_depth_m[0, :]
             - (depth_obj.depth_cell_size_m[0, :] * 0.5)
-        ) * self.units["L"]
+        )
         if edge is not None:
             if self.transect.start_edge == edge:
                 y_plt_top = y_plt_top[: int(n_ensembles)]
             else:
                 y_plt_top = y_plt_top[-int(n_ensembles) :]
-        ax.plot(x, y_plt_top, color="r", linewidth=0.5)
+        if self.x_axis_type == "L":
+            ax.plot(x * self.units["L"], y_plt_top * self.units["L"], color="r", linewidth=0.5)
+        else:
+            ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
         # Extrapolated data plotting additions
         if show_edge_speed and self.x_axis_type == "L":
@@ -3697,13 +3705,13 @@ class AdvGraphs(object):
         ax: subplot
             Axis of contour plot
         depth: np.array(float)
-            Array of measured transect depths
+            Array of measured transect depths in m
         """
 
         # Left edge
         if self.transect.start_edge == "Left":
             if self.transect.edges.left.type == "Triangular":
-                x = np.array(
+                x_left = np.array(
                     [
                         self.expanded_x[0],
                         self.expanded_x[1],
@@ -3711,11 +3719,10 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[0], depth[0]]) * self.units['L']
-                x_left = np.array([self.expanded_x[0], self.expanded_x[1]])
-                y_left = np.array([depth[0], depth[1]])
+                y_left = np.array([depth[0], depth[1], depth[0], depth[0]])
+
             else:
-                x = np.array(
+                x_left = np.array(
                     [
                         self.expanded_x[0],
                         self.expanded_x[1],
@@ -3724,12 +3731,11 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]]) * self.units['L']
-                x_left = np.array([self.expanded_x[0], self.expanded_x[2]])
-                y_left = np.array([depth[0], depth[2]])
+                y_left = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+
         else:
             if self.transect.edges.left.type == "Triangular":
-                x = np.array(
+                x_left = np.array(
                     [
                         self.expanded_x[-1],
                         self.expanded_x[-2],
@@ -3737,11 +3743,10 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]]) * self.units['L']
-                x_left = np.array([self.expanded_x[-1], self.expanded_x[-2]])
-                y_left = np.array([depth[-1], depth[-2]])
+                y_left = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+
             else:
-                x = np.array(
+                x_left = np.array(
                     [
                         self.expanded_x[-1],
                         self.expanded_x[-2],
@@ -3750,18 +3755,17 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]) * self.units['L']
-                x_left = np.array([self.expanded_x[-1], self.expanded_x[-3]])
-                y_left = np.array([depth[-1], depth[-3]])
-        left_coords = np.vstack([x, d]).T
+                y_left = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+
+        left_coords = np.vstack([x_left, y_left]).T
         v_left = self.discharge.left_edge_speed
         # Determine color for left edge based on colormap and edge velocity
-        left_c = cmap((v_left - min_limit) / (max_limit - min_limit))
+        left_c = cmap((v_left * self.units['V'] - min_limit) / (max_limit - min_limit))
 
         # Right edge
         if self.transect.start_edge == "Right":
-            if self.transect.edges.left.type == "Triangular":
-                x = np.array(
+            if self.transect.edges.right.type == "Triangular":
+                x_right = np.array(
                     [
                         self.expanded_x[0],
                         self.expanded_x[1],
@@ -3769,63 +3773,58 @@ class AdvGraphs(object):
                         self.expanded_x[0],
                     ]
                 )
-                d = np.array([depth[0], depth[1], depth[0], depth[0]]) * self.units['L']
-                x_right = np.array([self.expanded_x[0], self.expanded_x[1]])
-                y_right = np.array([depth[0], depth[1]])
-            else:
-                x = np.array(
-                    [
-                        self.expanded_x[0],
-                        self.expanded_x[1],
-                        self.expanded_x[2],
-                        self.expanded_x[2],
-                        self.expanded_x[0],
-                    ]
-                )
-                d = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]]) * self.units['L']
-                x_right = np.array([self.expanded_x[0], self.expanded_x[2]])
-                y_right = np.array([depth[0], depth[2]])
-        else:
-            if self.transect.edges.left.type == "Triangular":
-                x = np.array(
-                    [
-                        self.expanded_x[-1],
-                        self.expanded_x[-2],
-                        self.expanded_x[-2],
-                        self.expanded_x[-1],
-                    ]
-                )
-                d = np.array([depth[-1], depth[-2], depth[-1], depth[-1]]) * self.units['L']
-                x_right = np.array([self.expanded_x[-1], self.expanded_x[-2]])
-                y_right = np.array([depth[-1], depth[-2]])
-            else:
-                x = np.array(
-                    [
-                        self.expanded_x[-1],
-                        self.expanded_x[-2],
-                        self.expanded_x[-3],
-                        self.expanded_x[-3],
-                        self.expanded_x[-1],
-                    ]
-                )
-                d = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]) * self.units['L']
-                x_right = np.array([self.expanded_x[-1], self.expanded_x[-3]])
-                y_right = np.array([depth[-1], depth[-3]])
+                y_right = np.array([depth[0], depth[1], depth[0], depth[0]])
 
-        right_coords = np.vstack([x, d]).T
+            else:
+                x_right = np.array(
+                    [
+                        self.expanded_x[0],
+                        self.expanded_x[1],
+                        self.expanded_x[2],
+                        self.expanded_x[2],
+                        self.expanded_x[0],
+                    ]
+                )
+                y_right = np.array([depth[0], depth[1], depth[2], depth[0], depth[0]])
+
+        else:
+            if self.transect.edges.right.type == "Triangular":
+                x_right = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-2],
+                        self.expanded_x[-1],
+                    ]
+                )
+                y_right = np.array([depth[-1], depth[-2], depth[-1], depth[-1]])
+
+            else:
+                x_right = np.array(
+                    [
+                        self.expanded_x[-1],
+                        self.expanded_x[-2],
+                        self.expanded_x[-3],
+                        self.expanded_x[-3],
+                        self.expanded_x[-1],
+                    ]
+                )
+                y_right = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+
+        right_coords = np.vstack([x_right, y_right]).T
         v_right = self.discharge.right_edge_speed
         # Determine color for right edge based on colormap and edge velocity
-        right_c = cmap((v_right - min_limit) / (max_limit - min_limit))
+        right_c = cmap((v_right * self.units['V'] - min_limit) / (max_limit - min_limit))
 
         # Plot patches
-        ax.add_patch(Polygon(left_coords, edgecolor=left_c, facecolor=left_c))
+        ax.add_patch(Polygon(left_coords * self.units["L"], edgecolor=left_c, facecolor=left_c))
 
-        ax.add_patch(Polygon(right_coords, edgecolor=right_c, facecolor=right_c))
+        ax.add_patch(Polygon(right_coords * self.units["L"], edgecolor=right_c, facecolor=right_c))
 
         # Create data plotted for annotation use
-        self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right])
-        self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right])
-        self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right])
+        self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right]) * self.units["L"]
+        self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right]) * self.units["L"]
+        self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right]) * self.units["V"]
 
     def plt_timeseries(
         self,
@@ -3875,12 +3874,18 @@ class AdvGraphs(object):
         else:
             kwargs = {"linestyle": "-", "color": "b"}
 
+        # Compute x coordinates in selected units
+        if self.x_axis_type == "L":
+            x_coords = self.x * self.units["L"]
+        else:
+            x_coords = self.x
+
         # First call to plot uses masked data if there is no primary data
         if data is not None:
-            ax.plot(self.x, data * data_units[0], **kwargs)
+            ax.plot(x_coords, data * data_units[0], **kwargs)
         else:
             ax.plot(
-                self.x[data_mask[0]], data_2[data_mask[0]] * data_units[0], **kwargs
+                x_coords[data_mask[0]], data_2[data_mask[0]] * data_units[0], **kwargs
             )
 
         # Compile all data from primary and masked data sets
@@ -3907,11 +3912,11 @@ class AdvGraphs(object):
                     kwargs = fmt[n]
 
                 ax.plot(
-                    self.x[data_mask[n]], data_2[data_mask[n]] * data_units[0], **kwargs
+                    x_coords[data_mask[n]], data_2[data_mask[n]] * data_units[0], **kwargs
                 )
 
         # Create dictionary of data for use by annotation
-        self.data_plotted.append({"type": "ts", "x": self.x, "y": all_data})
+        self.data_plotted.append({"type": "ts", "x": x_coords, "y": all_data * data_units[0]})
 
         # Set axis limits
         try:

@@ -14,9 +14,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1925, 1055)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
@@ -72,28 +70,18 @@ class Ui_MainWindow(object):
         MainWindow.setWindowIcon(icon)
         MainWindow.setLayoutDirection(QtCore.Qt.LeftToRight)
         MainWindow.setStyleSheet("QMainWindow{background: solid rgb(0, 0, 175);}")
-        MainWindow.setDockOptions(
-            QtWidgets.QMainWindow.AllowTabbedDocks
-            | QtWidgets.QMainWindow.AnimatedDocks
-            | QtWidgets.QMainWindow.VerticalTabs
-        )
+        MainWindow.setDockOptions(QtWidgets.QMainWindow.AllowTabbedDocks|QtWidgets.QMainWindow.AnimatedDocks|QtWidgets.QMainWindow.VerticalTabs)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.centralwidget.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
         self.centralwidget.setSizePolicy(sizePolicy)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.centralwidget)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.tab_all = QtWidgets.QTabWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tab_all.sizePolicy().hasHeightForWidth())
@@ -128,9 +116,7 @@ class Ui_MainWindow(object):
         self.tab_all.setIconSize(QtCore.QSize(40, 24))
         self.tab_all.setObjectName("tab_all")
         self.tab_main = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tab_main.sizePolicy().hasHeightForWidth())
@@ -163,14 +149,10 @@ class Ui_MainWindow(object):
         self.tab_summary.setTabShape(QtWidgets.QTabWidget.Triangular)
         self.tab_summary.setObjectName("tab_summary")
         self.tab_summary_discharge = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_summary_discharge.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_summary_discharge.sizePolicy().hasHeightForWidth())
         self.tab_summary_discharge.setSizePolicy(sizePolicy)
         self.tab_summary_discharge.setObjectName("tab_summary_discharge")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.tab_summary_discharge)
@@ -180,23 +162,17 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
         self.main_table_summary.setFont(font)
         self.main_table_summary.setAutoFillBackground(False)
-        self.main_table_summary.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustIgnored
-        )
+        self.main_table_summary.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustIgnored)
         self.main_table_summary.setObjectName("main_table_summary")
         self.main_table_summary.setColumnCount(0)
         self.main_table_summary.setRowCount(0)
         self.gridLayout_2.addWidget(self.main_table_summary, 0, 0, 1, 1)
         self.tab_summary.addTab(self.tab_summary_discharge, "")
         self.tab_summary_details = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_summary_details.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_summary_details.sizePolicy().hasHeightForWidth())
         self.tab_summary_details.setSizePolicy(sizePolicy)
         self.tab_summary_details.setObjectName("tab_summary_details")
         self.gridLayout_4 = QtWidgets.QGridLayout(self.tab_summary_details)
@@ -211,14 +187,10 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addWidget(self.main_table_details, 0, 0, 1, 1)
         self.tab_summary.addTab(self.tab_summary_details, "")
         self.tab_summary_premeasurement = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_summary_premeasurement.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_summary_premeasurement.sizePolicy().hasHeightForWidth())
         self.tab_summary_premeasurement.setSizePolicy(sizePolicy)
         self.tab_summary_premeasurement.setObjectName("tab_summary_premeasurement")
         self.gridLayout_7 = QtWidgets.QGridLayout(self.tab_summary_premeasurement)
@@ -306,9 +278,7 @@ class Ui_MainWindow(object):
         self.ed_stage_meas.setObjectName("ed_stage_meas")
         self.horizontalLayout_82.addWidget(self.ed_stage_meas)
         self.horizontalLayout_84.addLayout(self.horizontalLayout_82)
-        spacerItem = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_84.addItem(spacerItem)
         self.horizontalLayout_84.setStretch(3, 4)
         self.gridLayout_7.addLayout(self.horizontalLayout_84, 2, 0, 1, 1)
@@ -326,14 +296,10 @@ class Ui_MainWindow(object):
         self.gridLayout_7.addLayout(self.horizontalLayout_5, 3, 0, 1, 1)
         self.tab_summary.addTab(self.tab_summary_premeasurement, "")
         self.tab_summary_settings = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_summary_settings.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_summary_settings.sizePolicy().hasHeightForWidth())
         self.tab_summary_settings.setSizePolicy(sizePolicy)
         self.tab_summary_settings.setObjectName("tab_summary_settings")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.tab_summary_settings)
@@ -367,28 +333,20 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setSpacing(2)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.graphics_wt_contour = QtWidgets.QWidget(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.graphics_wt_contour.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.graphics_wt_contour.sizePolicy().hasHeightForWidth())
         self.graphics_wt_contour.setSizePolicy(sizePolicy)
         self.graphics_wt_contour.setMinimumSize(QtCore.QSize(500, 200))
         self.graphics_wt_contour.setAutoFillBackground(True)
         self.graphics_wt_contour.setObjectName("graphics_wt_contour")
         self.horizontalLayout.addWidget(self.graphics_wt_contour)
         self.graphics_shiptrack = QtWidgets.QWidget(self.layoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.graphics_shiptrack.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.graphics_shiptrack.sizePolicy().hasHeightForWidth())
         self.graphics_shiptrack.setSizePolicy(sizePolicy)
         self.graphics_shiptrack.setAutoFillBackground(True)
         self.graphics_shiptrack.setObjectName("graphics_shiptrack")
@@ -407,14 +365,10 @@ class Ui_MainWindow(object):
         self.tab_mc.setTabShape(QtWidgets.QTabWidget.Triangular)
         self.tab_mc.setObjectName("tab_mc")
         self.tab_mc_messages = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_mc_messages.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_mc_messages.sizePolicy().hasHeightForWidth())
         self.tab_mc_messages.setSizePolicy(sizePolicy)
         self.tab_mc_messages.setObjectName("tab_mc_messages")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.tab_mc_messages)
@@ -426,14 +380,10 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.main_message_table, 0, 0, 1, 1)
         self.tab_mc.addTab(self.tab_mc_messages, "")
         self.tab_mc_comments = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.tab_mc_comments.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.tab_mc_comments.sizePolicy().hasHeightForWidth())
         self.tab_mc_comments.setSizePolicy(sizePolicy)
         self.tab_mc_comments.setObjectName("tab_mc_comments")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.tab_mc_comments)
@@ -459,21 +409,15 @@ class Ui_MainWindow(object):
         self.table_qa.setRowCount(0)
         self.verticalLayout_right.addWidget(self.table_qa)
         self.uncertainty_lollipop = QtWidgets.QWidget(self.tab_main)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.uncertainty_lollipop.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.uncertainty_lollipop.sizePolicy().hasHeightForWidth())
         self.uncertainty_lollipop.setSizePolicy(sizePolicy)
         self.uncertainty_lollipop.setObjectName("uncertainty_lollipop")
         self.verticalLayout_right.addWidget(self.uncertainty_lollipop)
         self.table_uncertainty = QtWidgets.QTableWidget(self.tab_main)
-        self.table_uncertainty.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustIgnored
-        )
+        self.table_uncertainty.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustIgnored)
         self.table_uncertainty.setObjectName("table_uncertainty")
         self.table_uncertainty.setColumnCount(0)
         self.table_uncertainty.setRowCount(0)
@@ -560,9 +504,7 @@ class Ui_MainWindow(object):
         self.box_systest_messages.setObjectName("box_systest_messages")
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout(self.box_systest_messages)
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
-        self.display_systest_messages = QtWidgets.QPlainTextEdit(
-            self.box_systest_messages
-        )
+        self.display_systest_messages = QtWidgets.QPlainTextEdit(self.box_systest_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -581,9 +523,7 @@ class Ui_MainWindow(object):
         self.box_systest_comments.setObjectName("box_systest_comments")
         self.horizontalLayout_8 = QtWidgets.QHBoxLayout(self.box_systest_comments)
         self.horizontalLayout_8.setObjectName("horizontalLayout_8")
-        self.display_systest_comments = QtWidgets.QPlainTextEdit(
-            self.box_systest_comments
-        )
+        self.display_systest_comments = QtWidgets.QPlainTextEdit(self.box_systest_comments)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -801,9 +741,7 @@ class Ui_MainWindow(object):
         self.box_compass_messages.setObjectName("box_compass_messages")
         self.horizontalLayout_12 = QtWidgets.QHBoxLayout(self.box_compass_messages)
         self.horizontalLayout_12.setObjectName("horizontalLayout_12")
-        self.display_compass_messages = QtWidgets.QPlainTextEdit(
-            self.box_compass_messages
-        )
+        self.display_compass_messages = QtWidgets.QPlainTextEdit(self.box_compass_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -822,9 +760,7 @@ class Ui_MainWindow(object):
         self.box_compass_comments.setObjectName("box_compass_comments")
         self.horizontalLayout_13 = QtWidgets.QHBoxLayout(self.box_compass_comments)
         self.horizontalLayout_13.setObjectName("horizontalLayout_13")
-        self.display_compass_comments = QtWidgets.QPlainTextEdit(
-            self.box_compass_comments
-        )
+        self.display_compass_comments = QtWidgets.QPlainTextEdit(self.box_compass_comments)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -872,9 +808,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
         self.verticalLayout_10 = QtWidgets.QVBoxLayout()
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        spacerItem1 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_10.addItem(spacerItem1)
         self.gridLayout_16 = QtWidgets.QGridLayout()
         self.gridLayout_16.setObjectName("gridLayout_16")
@@ -884,9 +818,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.label_independent.setFont(font)
-        self.label_independent.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
-        )
+        self.label_independent.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_independent.setObjectName("label_independent")
         self.gridLayout_16.addWidget(self.label_independent, 0, 0, 1, 1)
         self.ed_user_temp = QtWidgets.QLineEdit(self.gb_temp)
@@ -912,9 +844,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.label_adcp.setFont(font)
-        self.label_adcp.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
-        )
+        self.label_adcp.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_adcp.setObjectName("label_adcp")
         self.gridLayout_16.addWidget(self.label_adcp, 1, 0, 1, 1)
         self.ed_adcp_temp = QtWidgets.QLineEdit(self.gb_temp)
@@ -950,9 +880,7 @@ class Ui_MainWindow(object):
         self.txt_adcp_avg.setFont(font)
         self.txt_adcp_avg.setObjectName("txt_adcp_avg")
         self.gridLayout_16.addWidget(self.txt_adcp_avg, 2, 1, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_16.addItem(spacerItem2, 2, 2, 1, 1)
         self.gridLayout_16.setColumnMinimumWidth(0, 2)
         self.gridLayout_16.setColumnMinimumWidth(1, 1)
@@ -978,9 +906,7 @@ class Ui_MainWindow(object):
         self.rb_c.setObjectName("rb_c")
         self.verticalLayout_9.addWidget(self.rb_c)
         self.verticalLayout_10.addLayout(self.verticalLayout_9)
-        spacerItem3 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_10.addItem(spacerItem3)
         self.horizontalLayout_14.addLayout(self.verticalLayout_10)
         self.graph_temperature = QtWidgets.QWidget(self.gb_temp)
@@ -1009,9 +935,7 @@ class Ui_MainWindow(object):
         self.box_compass_messages_2.setObjectName("box_compass_messages_2")
         self.horizontalLayout_15 = QtWidgets.QHBoxLayout(self.box_compass_messages_2)
         self.horizontalLayout_15.setObjectName("horizontalLayout_15")
-        self.display_tempsal_messages = QtWidgets.QPlainTextEdit(
-            self.box_compass_messages_2
-        )
+        self.display_tempsal_messages = QtWidgets.QPlainTextEdit(self.box_compass_messages_2)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -1030,9 +954,7 @@ class Ui_MainWindow(object):
         self.box_compass_comments_2.setObjectName("box_compass_comments_2")
         self.horizontalLayout_16 = QtWidgets.QHBoxLayout(self.box_compass_comments_2)
         self.horizontalLayout_16.setObjectName("horizontalLayout_16")
-        self.display_tempsal_comments = QtWidgets.QPlainTextEdit(
-            self.box_compass_comments_2
-        )
+        self.display_tempsal_comments = QtWidgets.QPlainTextEdit(self.box_compass_comments_2)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -1450,9 +1372,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_bt_error_velocity.setFont(font)
-        self.txt_bt_error_velocity.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_bt_error_velocity.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_bt_error_velocity.setObjectName("txt_bt_error_velocity")
         self.horizontalLayout_29.addWidget(self.txt_bt_error_velocity)
         self.ed_bt_error_vel_threshold = QtWidgets.QLineEdit(self.gb_bt_error_velocity)
@@ -1489,14 +1409,10 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_bt_vert_velocity.setFont(font)
-        self.txt_bt_vert_velocity.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_bt_vert_velocity.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_bt_vert_velocity.setObjectName("txt_bt_vert_velocity")
         self.horizontalLayout_31.addWidget(self.txt_bt_vert_velocity)
-        self.ed_bt_vert_vel_threshold = QtWidgets.QLineEdit(
-            self.gb_bt_vertical_velocity
-        )
+        self.ed_bt_vert_vel_threshold = QtWidgets.QLineEdit(self.gb_bt_vertical_velocity)
         self.ed_bt_vert_vel_threshold.setEnabled(False)
         self.ed_bt_vert_vel_threshold.setObjectName("ed_bt_vert_vel_threshold")
         self.horizontalLayout_31.addWidget(self.ed_bt_vert_vel_threshold)
@@ -1799,9 +1715,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_gps_altitude.setFont(font)
-        self.txt_gps_altitude.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_gps_altitude.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_gps_altitude.setObjectName("txt_gps_altitude")
         self.horizontalLayout_36.addWidget(self.txt_gps_altitude)
         self.ed_gps_altitude_threshold = QtWidgets.QLineEdit(self.gb_gps_altitude)
@@ -1838,9 +1752,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_gps_hdop.setFont(font)
-        self.txt_gps_hdop.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_gps_hdop.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_gps_hdop.setObjectName("txt_gps_hdop")
         self.horizontalLayout_37.addWidget(self.txt_gps_hdop)
         self.ed_gps_hdop_threshold = QtWidgets.QLineEdit(self.gb_gps_hdop)
@@ -2258,9 +2170,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_80.addLayout(self.verticalLayout_27)
         self.verticalLayout_28 = QtWidgets.QVBoxLayout()
         self.verticalLayout_28.setObjectName("verticalLayout_28")
-        spacerItem4 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_28.addItem(spacerItem4)
         self.gb_depth_settings = QtWidgets.QGroupBox(self.tab_depth_2_data)
         font = QtGui.QFont()
@@ -2317,9 +2227,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_32.addWidget(self.combo_depth_filter)
         self.verticalLayout_29.addWidget(self.gb_depth_filter)
         self.verticalLayout_28.addWidget(self.gb_depth_settings)
-        spacerItem5 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_28.addItem(spacerItem5)
         self.verticalLayout_28.setStretch(0, 1)
         self.verticalLayout_28.setStretch(1, 3)
@@ -2569,9 +2477,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_wt_excluded.setFont(font)
-        self.txt_wt_excluded.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_wt_excluded.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_wt_excluded.setObjectName("txt_wt_excluded")
         self.horizontalLayout_51.addWidget(self.txt_wt_excluded)
         self.ed_wt_excluded_dist = QtWidgets.QLineEdit(self.gb_wt_excluded)
@@ -2627,9 +2533,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_wt_error_velocity.setFont(font)
-        self.txt_wt_error_velocity.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_wt_error_velocity.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_wt_error_velocity.setObjectName("txt_wt_error_velocity")
         self.horizontalLayout_45.addWidget(self.txt_wt_error_velocity)
         self.ed_wt_error_vel_threshold = QtWidgets.QLineEdit(self.gb_wt_error_velocity)
@@ -2666,14 +2570,10 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_wt_vert_velocity.setFont(font)
-        self.txt_wt_vert_velocity.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_wt_vert_velocity.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_wt_vert_velocity.setObjectName("txt_wt_vert_velocity")
         self.horizontalLayout_50.addWidget(self.txt_wt_vert_velocity)
-        self.ed_wt_vert_vel_threshold = QtWidgets.QLineEdit(
-            self.gb_wt_vertical_velocity
-        )
+        self.ed_wt_vert_vel_threshold = QtWidgets.QLineEdit(self.gb_wt_vertical_velocity)
         self.ed_wt_vert_vel_threshold.setEnabled(False)
         self.ed_wt_vert_vel_threshold.setObjectName("ed_wt_vert_vel_threshold")
         self.horizontalLayout_50.addWidget(self.ed_wt_vert_vel_threshold)
@@ -2698,9 +2598,7 @@ class Ui_MainWindow(object):
         self.combo_wt_snr.addItem("")
         self.verticalLayout_59.addWidget(self.combo_wt_snr)
         self.verticalLayout_52.addWidget(self.gb_snr)
-        spacerItem6 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem6 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_52.addItem(spacerItem6)
         self.horizontalLayout_42.addWidget(self.gb_wt_filters)
         self.horizontalLayout_42.setStretch(0, 6)
@@ -2888,9 +2786,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_57.addLayout(self.horizontalLayout_56)
         self.horizontalLayout_57 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_57.setObjectName("horizontalLayout_57")
-        spacerItem7 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem7 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_57.addItem(spacerItem7)
         self.txt_start = QtWidgets.QLabel(self.gb_profile)
         font = QtGui.QFont()
@@ -2932,9 +2828,7 @@ class Ui_MainWindow(object):
         self.txt_right.setFont(font)
         self.txt_right.setObjectName("txt_right")
         self.horizontalLayout_57.addWidget(self.txt_right)
-        spacerItem8 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_57.addItem(spacerItem8)
         self.verticalLayout_57.addLayout(self.horizontalLayout_57)
         self.verticalLayout_57.setStretch(0, 10)
@@ -2980,9 +2874,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_top.setFont(font)
-        self.txt_top.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_top.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_top.setObjectName("txt_top")
         self.horizontalLayout_38.addWidget(self.txt_top)
         self.combo_extrap_top = QtWidgets.QComboBox(self.gb_fit)
@@ -2996,9 +2888,7 @@ class Ui_MainWindow(object):
         self.combo_extrap_top.addItem("")
         self.combo_extrap_top.addItem("")
         self.horizontalLayout_38.addWidget(self.combo_extrap_top)
-        spacerItem9 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_38.addItem(spacerItem9)
         self.horizontalLayout_38.setStretch(0, 4)
         self.horizontalLayout_38.setStretch(1, 4)
@@ -3012,9 +2902,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_bottom.setFont(font)
-        self.txt_bottom.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_bottom.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_bottom.setObjectName("txt_bottom")
         self.horizontalLayout_39.addWidget(self.txt_bottom)
         self.combo_extrap_bottom = QtWidgets.QComboBox(self.gb_fit)
@@ -3027,9 +2915,7 @@ class Ui_MainWindow(object):
         self.combo_extrap_bottom.addItem("")
         self.combo_extrap_bottom.addItem("")
         self.horizontalLayout_39.addWidget(self.combo_extrap_bottom)
-        spacerItem10 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem10 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_39.addItem(spacerItem10)
         self.horizontalLayout_39.setStretch(0, 4)
         self.horizontalLayout_39.setStretch(1, 5)
@@ -3043,9 +2929,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_exponent.setFont(font)
-        self.txt_exponent.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
-        )
+        self.txt_exponent.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.txt_exponent.setObjectName("txt_exponent")
         self.horizontalLayout_40.addWidget(self.txt_exponent)
         self.ed_extrap_exponent = QtWidgets.QLineEdit(self.gb_fit)
@@ -3056,9 +2940,7 @@ class Ui_MainWindow(object):
         self.ed_extrap_exponent.setFont(font)
         self.ed_extrap_exponent.setObjectName("ed_extrap_exponent")
         self.horizontalLayout_40.addWidget(self.ed_extrap_exponent)
-        spacerItem11 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_40.addItem(spacerItem11)
         self.horizontalLayout_40.setStretch(1, 5)
         self.horizontalLayout_40.setStretch(2, 6)
@@ -3091,9 +2973,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.label_3.setFont(font)
-        self.label_3.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.label_3.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_55.addWidget(self.label_3)
         self.combo_extrap_type = QtWidgets.QComboBox(self.gb_data)
@@ -3107,9 +2987,7 @@ class Ui_MainWindow(object):
         self.combo_extrap_type.addItem("")
         self.combo_extrap_type.addItem("")
         self.horizontalLayout_55.addWidget(self.combo_extrap_type)
-        spacerItem12 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_55.addItem(spacerItem12)
         self.horizontalLayout_55.setStretch(0, 3)
         self.horizontalLayout_55.setStretch(1, 3)
@@ -3123,9 +3001,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_extrap_subsection.setFont(font)
-        self.txt_extrap_subsection.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
-        )
+        self.txt_extrap_subsection.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.txt_extrap_subsection.setObjectName("txt_extrap_subsection")
         self.horizontalLayout_54.addWidget(self.txt_extrap_subsection)
         self.ed_extrap_subsection = QtWidgets.QLineEdit(self.gb_data)
@@ -3148,9 +3024,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.text_extrap_threshold.setFont(font)
-        self.text_extrap_threshold.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
-        )
+        self.text_extrap_threshold.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.text_extrap_threshold.setObjectName("text_extrap_threshold")
         self.horizontalLayout_41.addWidget(self.text_extrap_threshold)
         self.ed_extrap_threshold = QtWidgets.QLineEdit(self.gb_data)
@@ -3162,9 +3036,7 @@ class Ui_MainWindow(object):
         self.ed_extrap_threshold.setFont(font)
         self.ed_extrap_threshold.setObjectName("ed_extrap_threshold")
         self.horizontalLayout_41.addWidget(self.ed_extrap_threshold)
-        spacerItem13 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem13 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_41.addItem(spacerItem13)
         self.horizontalLayout_41.setStretch(0, 5)
         self.horizontalLayout_41.setStretch(1, 4)
@@ -3300,9 +3172,7 @@ class Ui_MainWindow(object):
         self.box_extrap_messages.setObjectName("box_extrap_messages")
         self.horizontalLayout_59 = QtWidgets.QHBoxLayout(self.box_extrap_messages)
         self.horizontalLayout_59.setObjectName("horizontalLayout_59")
-        self.display_extrap_messages = QtWidgets.QPlainTextEdit(
-            self.box_extrap_messages
-        )
+        self.display_extrap_messages = QtWidgets.QPlainTextEdit(self.box_extrap_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3321,9 +3191,7 @@ class Ui_MainWindow(object):
         self.box_extrap_comments.setObjectName("box_extrap_comments")
         self.horizontalLayout_60 = QtWidgets.QHBoxLayout(self.box_extrap_comments)
         self.horizontalLayout_60.setObjectName("horizontalLayout_60")
-        self.display_extrap_comments = QtWidgets.QPlainTextEdit(
-            self.box_extrap_comments
-        )
+        self.display_extrap_comments = QtWidgets.QPlainTextEdit(self.box_extrap_comments)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3411,9 +3279,7 @@ class Ui_MainWindow(object):
         self.box_extrap_messages_2.setObjectName("box_extrap_messages_2")
         self.horizontalLayout_63 = QtWidgets.QHBoxLayout(self.box_extrap_messages_2)
         self.horizontalLayout_63.setObjectName("horizontalLayout_63")
-        self.display_edges_messages = QtWidgets.QPlainTextEdit(
-            self.box_extrap_messages_2
-        )
+        self.display_edges_messages = QtWidgets.QPlainTextEdit(self.box_extrap_messages_2)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3432,9 +3298,7 @@ class Ui_MainWindow(object):
         self.box_extrap_comments_2.setObjectName("box_extrap_comments_2")
         self.horizontalLayout_62 = QtWidgets.QHBoxLayout(self.box_extrap_comments_2)
         self.horizontalLayout_62.setObjectName("horizontalLayout_62")
-        self.display_edges_comments = QtWidgets.QPlainTextEdit(
-            self.box_extrap_comments_2
-        )
+        self.display_edges_comments = QtWidgets.QPlainTextEdit(self.box_extrap_comments_2)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3490,9 +3354,7 @@ class Ui_MainWindow(object):
         self.txt_edi_bank.setFont(font)
         self.txt_edi_bank.setObjectName("txt_edi_bank")
         self.horizontalLayout_66.addWidget(self.txt_edi_bank)
-        spacerItem14 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem14 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_66.addItem(spacerItem14)
         self.cb_edi_topoquad = QtWidgets.QCheckBox(self.tab_edi)
         font = QtGui.QFont()
@@ -3523,9 +3385,7 @@ class Ui_MainWindow(object):
         self.pb_edi_add_row.setFont(font)
         self.pb_edi_add_row.setObjectName("pb_edi_add_row")
         self.horizontalLayout_67.addWidget(self.pb_edi_add_row)
-        spacerItem15 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem15 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_67.addItem(spacerItem15)
         self.pb_edi_compute = QtWidgets.QPushButton(self.tab_edi)
         font = QtGui.QFont()
@@ -3533,9 +3393,7 @@ class Ui_MainWindow(object):
         self.pb_edi_compute.setFont(font)
         self.pb_edi_compute.setObjectName("pb_edi_compute")
         self.horizontalLayout_67.addWidget(self.pb_edi_compute)
-        spacerItem16 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem16 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_67.addItem(spacerItem16)
         self.verticalLayout_65.addLayout(self.horizontalLayout_67)
         self.verticalLayout_65.setStretch(0, 3)
@@ -3560,9 +3418,7 @@ class Ui_MainWindow(object):
         self.gridLayout_50.setObjectName("gridLayout_50")
         self.verticalLayout_66 = QtWidgets.QVBoxLayout()
         self.verticalLayout_66.setObjectName("verticalLayout_66")
-        self.table_uncertainty_results = QtWidgets.QTableWidget(
-            self.tab_uncertainty_2_data
-        )
+        self.table_uncertainty_results = QtWidgets.QTableWidget(self.tab_uncertainty_2_data)
         self.table_uncertainty_results.setObjectName("table_uncertainty_results")
         self.table_uncertainty_results.setColumnCount(0)
         self.table_uncertainty_results.setRowCount(0)
@@ -3602,9 +3458,7 @@ class Ui_MainWindow(object):
         self.tab_uncertainty_2_advanced.setObjectName("tab_uncertainty_2_advanced")
         self.gridLayout_47 = QtWidgets.QGridLayout(self.tab_uncertainty_2_advanced)
         self.gridLayout_47.setObjectName("gridLayout_47")
-        self.table_uncertainty_settings = QtWidgets.QTableWidget(
-            self.tab_uncertainty_2_advanced
-        )
+        self.table_uncertainty_settings = QtWidgets.QTableWidget(self.tab_uncertainty_2_advanced)
         self.table_uncertainty_settings.setObjectName("table_uncertainty_settings")
         self.table_uncertainty_settings.setColumnCount(0)
         self.table_uncertainty_settings.setRowCount(0)
@@ -3614,9 +3468,7 @@ class Ui_MainWindow(object):
         self.tab_uncertainty_2_messages.setObjectName("tab_uncertainty_2_messages")
         self.gridLayout_48 = QtWidgets.QGridLayout(self.tab_uncertainty_2_messages)
         self.gridLayout_48.setObjectName("gridLayout_48")
-        self.box_uncertainty_messages = QtWidgets.QGroupBox(
-            self.tab_uncertainty_2_messages
-        )
+        self.box_uncertainty_messages = QtWidgets.QGroupBox(self.tab_uncertainty_2_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(True)
@@ -3625,9 +3477,7 @@ class Ui_MainWindow(object):
         self.box_uncertainty_messages.setObjectName("box_uncertainty_messages")
         self.horizontalLayout_65 = QtWidgets.QHBoxLayout(self.box_uncertainty_messages)
         self.horizontalLayout_65.setObjectName("horizontalLayout_65")
-        self.display_uncertainty_messages = QtWidgets.QPlainTextEdit(
-            self.box_uncertainty_messages
-        )
+        self.display_uncertainty_messages = QtWidgets.QPlainTextEdit(self.box_uncertainty_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3637,9 +3487,7 @@ class Ui_MainWindow(object):
         self.display_uncertainty_messages.setObjectName("display_uncertainty_messages")
         self.horizontalLayout_65.addWidget(self.display_uncertainty_messages)
         self.gridLayout_48.addWidget(self.box_uncertainty_messages, 0, 0, 1, 1)
-        self.box_uncertainty_comments = QtWidgets.QGroupBox(
-            self.tab_uncertainty_2_messages
-        )
+        self.box_uncertainty_comments = QtWidgets.QGroupBox(self.tab_uncertainty_2_messages)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(True)
@@ -3648,9 +3496,7 @@ class Ui_MainWindow(object):
         self.box_uncertainty_comments.setObjectName("box_uncertainty_comments")
         self.horizontalLayout_68 = QtWidgets.QHBoxLayout(self.box_uncertainty_comments)
         self.horizontalLayout_68.setObjectName("horizontalLayout_68")
-        self.display_uncertainty_comments = QtWidgets.QPlainTextEdit(
-            self.box_uncertainty_comments
-        )
+        self.display_uncertainty_comments = QtWidgets.QPlainTextEdit(self.box_uncertainty_comments)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(False)
@@ -3680,14 +3526,10 @@ class Ui_MainWindow(object):
         self.combo_adv_graph_transect.setObjectName("combo_adv_graph_transect")
         self.horizontalLayout_86.addWidget(self.combo_adv_graph_transect)
         self.pb_adv_graph_controls = QtWidgets.QPushButton(self.tab_adv_graph)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_adv_graph_controls.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_adv_graph_controls.sizePolicy().hasHeightForWidth())
         self.pb_adv_graph_controls.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -3824,14 +3666,10 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_vtg_source.setObjectName("cb_adv_graph_vtg_source")
         self.verticalLayout_92.addWidget(self.cb_adv_graph_vtg_source)
         self.verticalLayout_98.addWidget(self.groupBox_3)
-        spacerItem17 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem17 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_98.addItem(spacerItem17)
         self.gridLayout_55.addLayout(self.verticalLayout_98, 0, 1, 1, 1)
-        self.pb_adv_graph_create_plots = QtWidgets.QPushButton(
-            self.gb_adv_graph_controls
-        )
+        self.pb_adv_graph_create_plots = QtWidgets.QPushButton(self.gb_adv_graph_controls)
         font = QtGui.QFont()
         font.setPointSize(11)
         font.setBold(True)
@@ -3860,9 +3698,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(10)
         self.cb_adv_graph_discharge_percent.setFont(font)
-        self.cb_adv_graph_discharge_percent.setObjectName(
-            "cb_adv_graph_discharge_percent"
-        )
+        self.cb_adv_graph_discharge_percent.setObjectName("cb_adv_graph_discharge_percent")
         self.verticalLayout_93.addWidget(self.cb_adv_graph_discharge_percent)
         self.verticalLayout_97.addWidget(self.groupBox_6)
         self.groupBox_5 = QtWidgets.QGroupBox(self.gb_adv_graph_controls)
@@ -3949,9 +3785,7 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_battery_voltage.setObjectName("cb_adv_graph_battery_voltage")
         self.verticalLayout_75.addWidget(self.cb_adv_graph_battery_voltage)
         self.verticalLayout_97.addWidget(self.gb_sensors)
-        spacerItem18 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem18 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_97.addItem(spacerItem18)
         self.gridLayout_55.addLayout(self.verticalLayout_97, 0, 2, 1, 1)
         self.verticalLayout_96 = QtWidgets.QVBoxLayout()
@@ -4059,9 +3893,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(10)
         self.cb_adv_graph_projected_speed_ts.setFont(font)
-        self.cb_adv_graph_projected_speed_ts.setObjectName(
-            "cb_adv_graph_projected_speed_ts"
-        )
+        self.cb_adv_graph_projected_speed_ts.setObjectName("cb_adv_graph_projected_speed_ts")
         self.verticalLayout_87.addWidget(self.cb_adv_graph_projected_speed_ts)
         self.cb_adv_graph_wt_error_ts = QtWidgets.QCheckBox(self.gb_plot_type_3)
         font = QtGui.QFont()
@@ -4088,9 +3920,7 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_wt_beams_ts.setObjectName("cb_adv_graph_wt_beams_ts")
         self.verticalLayout_87.addWidget(self.cb_adv_graph_wt_beams_ts)
         self.verticalLayout_96.addWidget(self.gb_plot_type_3)
-        spacerItem19 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem19 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_96.addItem(spacerItem19)
         self.verticalLayout_96.setStretch(0, 15)
         self.verticalLayout_96.setStretch(1, 1)
@@ -4109,22 +3939,16 @@ class Ui_MainWindow(object):
         self.ed_adv_graph_flow_dir.setObjectName("ed_adv_graph_flow_dir")
         self.horizontalLayout_88.addWidget(self.ed_adv_graph_flow_dir)
         self.pb_adv_graph_auto_flow_direction = QtWidgets.QPushButton(self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pb_adv_graph_auto_flow_direction.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.pb_adv_graph_auto_flow_direction.sizePolicy().hasHeightForWidth())
         self.pb_adv_graph_auto_flow_direction.setSizePolicy(sizePolicy)
         self.pb_adv_graph_auto_flow_direction.setMaximumSize(QtCore.QSize(50, 16777215))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.pb_adv_graph_auto_flow_direction.setFont(font)
-        self.pb_adv_graph_auto_flow_direction.setObjectName(
-            "pb_adv_graph_auto_flow_direction"
-        )
+        self.pb_adv_graph_auto_flow_direction.setObjectName("pb_adv_graph_auto_flow_direction")
         self.horizontalLayout_88.addWidget(self.pb_adv_graph_auto_flow_direction)
         self.gridLayout_55.addWidget(self.groupBox, 1, 0, 1, 1)
         self.gb_x_axis_3 = QtWidgets.QGroupBox(self.gb_adv_graph_controls)
@@ -4156,9 +3980,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_89.addWidget(self.rb_adv_graph_length)
         self.gridLayout_55.addWidget(self.gb_x_axis_3, 1, 1, 1, 1)
         self.verticalLayout_99.addWidget(self.gb_adv_graph_controls)
-        spacerItem20 = QtWidgets.QSpacerItem(
-            20, 130, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem20 = QtWidgets.QSpacerItem(20, 130, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_99.addItem(spacerItem20)
         self.adv_graph_layout.addLayout(self.verticalLayout_99)
         self.adv_graph_layout.setStretch(0, 7)
@@ -4196,9 +4018,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.txt_map_data.setFont(font)
-        self.txt_map_data.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.txt_map_data.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.txt_map_data.setObjectName("txt_map_data")
         self.horizontalLayout_87.addWidget(self.txt_map_data, 0, QtCore.Qt.AlignLeft)
         self.combo_map_data = QtWidgets.QComboBox(self.gb_previous_2)
@@ -4211,9 +4031,7 @@ class Ui_MainWindow(object):
         self.combo_map_data.addItem("")
         self.combo_map_data.addItem("")
         self.horizontalLayout_87.addWidget(self.combo_map_data)
-        spacerItem21 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem21 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_87.addItem(spacerItem21)
         self.gridLayout_51.addLayout(self.horizontalLayout_87, 2, 0, 1, 1)
         self.horizontalLayout_93 = QtWidgets.QHBoxLayout()
@@ -4324,9 +4142,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_99 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_99.setContentsMargins(-1, 0, -1, 0)
         self.horizontalLayout_99.setObjectName("horizontalLayout_99")
-        spacerItem22 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_99.addItem(spacerItem22)
         self.pb_map_apply = QtWidgets.QPushButton(self.gb_previous_2)
         font = QtGui.QFont()
@@ -4347,23 +4163,17 @@ class Ui_MainWindow(object):
         self.horizontalLayout_90.addWidget(self.gb_previous_2)
         self.horizontalLayout_85 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_85.setObjectName("horizontalLayout_85")
-        spacerItem23 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem23 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_85.addItem(spacerItem23)
         self.horizontalLayout_90.addLayout(self.horizontalLayout_85)
         self.verticalLayout_71.addLayout(self.horizontalLayout_90)
         self.verticalLayout_74 = QtWidgets.QVBoxLayout()
         self.verticalLayout_74.setObjectName("verticalLayout_74")
         self.graphics_map_wt_contour = QtWidgets.QWidget(self.tab_map)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.graphics_map_wt_contour.sizePolicy().hasHeightForWidth()
-        )
+        sizePolicy.setHeightForWidth(self.graphics_map_wt_contour.sizePolicy().hasHeightForWidth())
         self.graphics_map_wt_contour.setSizePolicy(sizePolicy)
         self.graphics_map_wt_contour.setMinimumSize(QtCore.QSize(500, 200))
         self.graphics_map_wt_contour.setAutoFillBackground(True)
@@ -4371,9 +4181,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_74.addWidget(self.graphics_map_wt_contour)
         self.horizontalLayout_94 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_94.setObjectName("horizontalLayout_94")
-        spacerItem24 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem24 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_94.addItem(spacerItem24)
         self.pb_map_save = QtWidgets.QPushButton(self.tab_map)
         font = QtGui.QFont()
@@ -4383,9 +4191,7 @@ class Ui_MainWindow(object):
         self.pb_map_save.setFont(font)
         self.pb_map_save.setObjectName("pb_map_save")
         self.horizontalLayout_94.addWidget(self.pb_map_save)
-        spacerItem25 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem25 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_94.addItem(spacerItem25)
         self.horizontalLayout_94.setStretch(0, 3)
         self.horizontalLayout_94.setStretch(1, 1)
@@ -4412,12 +4218,8 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
         self.table_map_results.setFont(font)
         self.table_map_results.setStyleSheet("")
-        self.table_map_results.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustIgnored
-        )
-        self.table_map_results.setEditTriggers(
-            QtWidgets.QAbstractItemView.NoEditTriggers
-        )
+        self.table_map_results.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustIgnored)
+        self.table_map_results.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table_map_results.setTextElideMode(QtCore.Qt.ElideNone)
         self.table_map_results.setObjectName("table_map_results")
         self.table_map_results.setColumnCount(0)
@@ -4448,9 +4250,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.toolBar = QtWidgets.QToolBar(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.toolBar.sizePolicy().hasHeightForWidth())
@@ -4462,10 +4262,8 @@ class Ui_MainWindow(object):
         font.setWeight(50)
         self.toolBar.setFont(font)
         self.toolBar.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.toolBar.setStyleSheet(
-            "QToolBar{background: solid rgb(240, 240, 240); font: 12pt}\n"
-            'font: 12pt "MS Shell Dlg 2";'
-        )
+        self.toolBar.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240); font: 12pt}\n"
+"font: 12pt \"MS Shell Dlg 2\";")
         self.toolBar.setMovable(False)
         self.toolBar.setAllowedAreas(QtCore.Qt.AllToolBarAreas)
         self.toolBar.setOrientation(QtCore.Qt.Horizontal)
@@ -4475,62 +4273,34 @@ class Ui_MainWindow(object):
         MainWindow.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
         self.actionOpen = QtWidgets.QAction(MainWindow)
         icon = QtGui.QIcon()
-        icon.addPixmap(
-            QtGui.QPixmap(":/images/images/52.png"), QtGui.QIcon.Normal, QtGui.QIcon.On
-        )
+        icon.addPixmap(QtGui.QPixmap(":/images/images/52.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.actionOpen.setIcon(icon)
         self.actionOpen.setObjectName("actionOpen")
         self.actionOptions = QtWidgets.QAction(MainWindow)
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Application.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
-        icon1.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Application.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.On,
-        )
+        icon1.addPixmap(QtGui.QPixmap(":/images/24x24/Application.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(":/images/24x24/Application.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.actionOptions.setIcon(icon1)
         self.actionOptions.setObjectName("actionOptions")
         self.actionSave = QtWidgets.QAction(MainWindow)
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(
-            QtGui.QPixmap(":/images/images/22.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off
-        )
+        icon2.addPixmap(QtGui.QPixmap(":/images/images/22.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionSave.setIcon(icon2)
         self.actionSave.setObjectName("actionSave")
         self.actionComment = QtWidgets.QAction(MainWindow)
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Notes.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
-        icon3.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Notes.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.On,
-        )
+        icon3.addPixmap(QtGui.QPixmap(":/images/24x24/Notes.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon3.addPixmap(QtGui.QPixmap(":/images/24x24/Notes.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.actionComment.setIcon(icon3)
         self.actionComment.setObjectName("actionComment")
         self.actionHelp = QtWidgets.QAction(MainWindow)
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Help book 3d.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon4.addPixmap(QtGui.QPixmap(":/images/24x24/Help book 3d.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionHelp.setIcon(icon4)
         self.actionHelp.setObjectName("actionHelp")
         self.actionCheck = QtWidgets.QAction(MainWindow)
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(
-            QtGui.QPixmap(":/images/24x24/check-mark-green.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon5.addPixmap(QtGui.QPixmap(":/images/24x24/check-mark-green.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionCheck.setIcon(icon5)
         self.actionCheck.setObjectName("actionCheck")
         self.actionBT = QtWidgets.QAction(MainWindow)
@@ -4578,58 +4348,36 @@ class Ui_MainWindow(object):
         self.actionHome = QtWidgets.QAction(MainWindow)
         self.actionHome.setCheckable(False)
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Home.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon6.addPixmap(QtGui.QPixmap(":/images/24x24/Home.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionHome.setIcon(icon6)
         self.actionHome.setObjectName("actionHome")
         self.actionZoom = QtWidgets.QAction(MainWindow)
         self.actionZoom.setCheckable(True)
         icon7 = QtGui.QIcon()
-        icon7.addPixmap(
-            QtGui.QPixmap(":/images/images/83.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off
-        )
+        icon7.addPixmap(QtGui.QPixmap(":/images/images/83.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionZoom.setIcon(icon7)
         self.actionZoom.setObjectName("actionZoom")
         self.actionPan = QtWidgets.QAction(MainWindow)
         self.actionPan.setCheckable(True)
         icon8 = QtGui.QIcon()
-        icon8.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Move.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon8.addPixmap(QtGui.QPixmap(":/images/24x24/Move.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionPan.setIcon(icon8)
         self.actionPan.setObjectName("actionPan")
         self.actionData_Cursor = QtWidgets.QAction(MainWindow)
         self.actionData_Cursor.setCheckable(True)
         icon9 = QtGui.QIcon()
-        icon9.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Info.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon9.addPixmap(QtGui.QPixmap(":/images/24x24/Info.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionData_Cursor.setIcon(icon9)
         self.actionData_Cursor.setObjectName("actionData_Cursor")
         self.actionGoogle_Earth = QtWidgets.QAction(MainWindow)
         icon10 = QtGui.QIcon()
-        icon10.addPixmap(
-            QtGui.QPixmap(":/images/24x24/Globe.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon10.addPixmap(QtGui.QPixmap(":/images/24x24/Globe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionGoogle_Earth.setIcon(icon10)
         self.actionGoogle_Earth.setObjectName("actionGoogle_Earth")
         self.actionShow_Extrapolated = QtWidgets.QAction(MainWindow)
         self.actionShow_Extrapolated.setCheckable(True)
         icon11 = QtGui.QIcon()
-        icon11.addPixmap(
-            QtGui.QPixmap("images/extrap_contour.png"),
-            QtGui.QIcon.Normal,
-            QtGui.QIcon.Off,
-        )
+        icon11.addPixmap(QtGui.QPixmap(":/images/images/60.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionShow_Extrapolated.setIcon(icon11)
         self.actionShow_Extrapolated.setObjectName("actionShow_Extrapolated")
         self.toolBar.addAction(self.actionOpen)
@@ -4684,14 +4432,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.tab_summary.setTabText(
-            self.tab_summary.indexOf(self.tab_summary_discharge),
-            _translate("MainWindow", "Summary"),
-        )
-        self.tab_summary.setTabText(
-            self.tab_summary.indexOf(self.tab_summary_details),
-            _translate("MainWindow", "Details"),
-        )
+        self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_discharge), _translate("MainWindow", "Summary"))
+        self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_details), _translate("MainWindow", "Details"))
         self.label_site_name.setText(_translate("MainWindow", "Site Name: "))
         self.label_site_number.setText(_translate("MainWindow", "Site Number:"))
         self.label_person.setText(_translate("MainWindow", "Person(s):"))
@@ -4699,77 +4441,36 @@ class Ui_MainWindow(object):
         self.label_stage_start.setText(_translate("MainWindow", "Stage Start:"))
         self.label_stage_end.setText(_translate("MainWindow", "Stage End:"))
         self.label_stage_meas.setText(_translate("MainWindow", "Measurement Stage:"))
-        self.tab_summary.setTabText(
-            self.tab_summary.indexOf(self.tab_summary_premeasurement),
-            _translate("MainWindow", "Premeasurement"),
-        )
-        self.tab_summary.setTabText(
-            self.tab_summary.indexOf(self.tab_summary_settings),
-            _translate("MainWindow", "Settings"),
-        )
-        self.tab_summary.setTabText(
-            self.tab_summary.indexOf(self.tab_summary_adcp),
-            _translate("MainWindow", "ADCP"),
-        )
-        self.tab_mc.setTabText(
-            self.tab_mc.indexOf(self.tab_mc_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_mc.setTabText(
-            self.tab_mc.indexOf(self.tab_mc_comments),
-            _translate("MainWindow", "Comments"),
-        )
+        self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_premeasurement), _translate("MainWindow", "Premeasurement"))
+        self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_settings), _translate("MainWindow", "Settings"))
+        self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_adcp), _translate("MainWindow", "ADCP"))
+        self.tab_mc.setTabText(self.tab_mc.indexOf(self.tab_mc_messages), _translate("MainWindow", "Messages"))
+        self.tab_mc.setTabText(self.tab_mc.indexOf(self.tab_mc_comments), _translate("MainWindow", "Comments"))
         self.label_5.setText(_translate("MainWindow", "User Rating:"))
         self.cb_user_rating.setItemText(0, _translate("MainWindow", "Not Rated"))
         self.cb_user_rating.setItemText(1, _translate("MainWindow", "Excellent (<3%)"))
         self.cb_user_rating.setItemText(2, _translate("MainWindow", "Good (3-5%)"))
         self.cb_user_rating.setItemText(3, _translate("MainWindow", "Fair (5-8%)"))
         self.cb_user_rating.setItemText(4, _translate("MainWindow", "Poor (>8%)"))
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_main), _translate("MainWindow", "Main")
-        )
-        self.tab_systest_2.setTabText(
-            self.tab_systest_2.indexOf(self.tab_systest_2_results),
-            _translate("MainWindow", "Results"),
-        )
-        self.box_systest_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_main), _translate("MainWindow", "Main"))
+        self.tab_systest_2.setTabText(self.tab_systest_2.indexOf(self.tab_systest_2_results), _translate("MainWindow", "Results"))
+        self.box_systest_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_systest_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_systest_2.setTabText(
-            self.tab_systest_2.indexOf(self.tab_systest_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_systest), _translate("MainWindow", "SysTest")
-        )
+        self.tab_systest_2.setTabText(self.tab_systest_2.indexOf(self.tab_systest_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_systest), _translate("MainWindow", "SysTest"))
         self.cb_adcp_compass.setText(_translate("MainWindow", "ADCP Compass"))
         self.cb_ext_compass.setText(_translate("MainWindow", "Ext. Compass"))
         self.cb_mag_field.setText(_translate("MainWindow", "Mag. Field"))
         self.cb_pitch.setText(_translate("MainWindow", "Pitch"))
         self.cb_roll.setText(_translate("MainWindow", "Roll"))
-        self.tab_compass_2.setTabText(
-            self.tab_compass_2.indexOf(self.tab_compass_2_data),
-            _translate("MainWindow", "Data"),
-        )
+        self.tab_compass_2.setTabText(self.tab_compass_2.indexOf(self.tab_compass_2_data), _translate("MainWindow", "Data"))
         self.groupBox_cal.setTitle(_translate("MainWindow", "Compass Calibration"))
         self.groupBox_eval.setTitle(_translate("MainWindow", "Compass Evaluation"))
-        self.tab_compass_2.setTabText(
-            self.tab_compass_2.indexOf(self.tab_compass_2_cal),
-            _translate("MainWindow", "Calibration / Evaluation"),
-        )
-        self.box_compass_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_compass_2.setTabText(self.tab_compass_2.indexOf(self.tab_compass_2_cal), _translate("MainWindow", "Calibration / Evaluation"))
+        self.box_compass_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_compass_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_compass_2.setTabText(
-            self.tab_compass_2.indexOf(self.tab_compass_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_compass),
-            _translate("MainWindow", "Compass/P/R"),
-        )
+        self.tab_compass_2.setTabText(self.tab_compass_2.indexOf(self.tab_compass_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_compass), _translate("MainWindow", "Compass/P/R"))
         self.gb_temp.setTitle(_translate("MainWindow", "Water Temperature"))
         self.label_independent.setText(_translate("MainWindow", "Independent:"))
         self.pb_ind_temp_apply.setText(_translate("MainWindow", "Apply"))
@@ -4779,46 +4480,21 @@ class Ui_MainWindow(object):
         self.txt_adcp_avg.setText(_translate("MainWindow", "0"))
         self.rb_f.setText(_translate("MainWindow", "Fahrenheit"))
         self.rb_c.setText(_translate("MainWindow", "Celsius"))
-        self.tab_tempsal_2.setTabText(
-            self.tab_tempsal_2.indexOf(self.tab_tempsal_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.box_compass_messages_2.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_tempsal_2.setTabText(self.tab_tempsal_2.indexOf(self.tab_tempsal_2_data), _translate("MainWindow", "Data"))
+        self.box_compass_messages_2.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_compass_comments_2.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_tempsal_2.setTabText(
-            self.tab_tempsal_2.indexOf(self.tab_tempsal_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_tempsal), _translate("MainWindow", "Temp/Sal")
-        )
-        self.cb_mb_observed_no.setText(
-            _translate(
-                "MainWindow",
-                "User certifies that they have visually observed the streambed and that there is no moving-bed condition.",
-            )
-        )
+        self.tab_tempsal_2.setTabText(self.tab_tempsal_2.indexOf(self.tab_tempsal_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_tempsal), _translate("MainWindow", "Temp/Sal"))
+        self.cb_mb_observed_no.setText(_translate("MainWindow", "User certifies that they have visually observed the streambed and that there is no moving-bed condition."))
         self.cb_mb_bt.setText(_translate("MainWindow", "BT"))
         self.cb_mb_gga.setText(_translate("MainWindow", "GGA"))
         self.cb_mb_vtg.setText(_translate("MainWindow", "VTG"))
         self.cb_mb_vectors.setText(_translate("MainWindow", "Vectors"))
-        self.tab_mtb_2.setTabText(
-            self.tab_mtb_2.indexOf(self.tab_mbt_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.box_mb_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_mtb_2.setTabText(self.tab_mtb_2.indexOf(self.tab_mbt_2_data), _translate("MainWindow", "Data"))
+        self.box_mb_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_mb_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_mtb_2.setTabText(
-            self.tab_mtb_2.indexOf(self.tab_mbt_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_mbt), _translate("MainWindow", "MovBedTst")
-        )
+        self.tab_mtb_2.setTabText(self.tab_mtb_2.indexOf(self.tab_mbt_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_mbt), _translate("MainWindow", "MovBedTst"))
         self.rb_bt_beam.setText(_translate("MainWindow", "3 Beam Solutions"))
         self.rb_bt_error.setText(_translate("MainWindow", "Error Velocity"))
         self.rb_bt_vert.setText(_translate("MainWindow", "Vertical Velocity"))
@@ -4838,9 +4514,7 @@ class Ui_MainWindow(object):
         self.combo_bt_error_velocity.setItemText(1, _translate("MainWindow", "Manual"))
         self.combo_bt_error_velocity.setItemText(2, _translate("MainWindow", "Off"))
         self.txt_bt_error_velocity.setText(_translate("MainWindow", "Threshold (+/-):"))
-        self.gb_bt_vertical_velocity.setTitle(
-            _translate("MainWindow", "Vertical Velocity")
-        )
+        self.gb_bt_vertical_velocity.setTitle(_translate("MainWindow", "Vertical Velocity"))
         self.combo_bt_vert_velocity.setItemText(0, _translate("MainWindow", "Auto"))
         self.combo_bt_vert_velocity.setItemText(1, _translate("MainWindow", "Manual"))
         self.combo_bt_vert_velocity.setItemText(2, _translate("MainWindow", "Off"))
@@ -4848,20 +4522,11 @@ class Ui_MainWindow(object):
         self.gb_bt_other.setTitle(_translate("MainWindow", "Other"))
         self.combo_bt_other.setItemText(0, _translate("MainWindow", "Off"))
         self.combo_bt_other.setItemText(1, _translate("MainWindow", "Smooth"))
-        self.tab_bt_2.setTabText(
-            self.tab_bt_2.indexOf(self.tab_bt_2_data), _translate("MainWindow", "Data")
-        )
-        self.box_bt_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_bt_2.setTabText(self.tab_bt_2.indexOf(self.tab_bt_2_data), _translate("MainWindow", "Data"))
+        self.box_bt_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_bt_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_bt_2.setTabText(
-            self.tab_bt_2.indexOf(self.tab_bt_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_bt), _translate("MainWindow", "BT")
-        )
+        self.tab_bt_2.setTabText(self.tab_bt_2.indexOf(self.tab_bt_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_bt), _translate("MainWindow", "BT"))
         self.rb_gps_quality.setText(_translate("MainWindow", "Quality"))
         self.rb_gps_altitude.setText(_translate("MainWindow", "Altitude"))
         self.rb_gps_hdop.setText(_translate("MainWindow", "HDOP"))
@@ -4890,29 +4555,16 @@ class Ui_MainWindow(object):
         self.gb_gps_other.setTitle(_translate("MainWindow", "Other"))
         self.combo_gps_other.setItemText(0, _translate("MainWindow", "Off"))
         self.combo_gps_other.setItemText(1, _translate("MainWindow", "Smooth"))
-        self.tab_gps_2.setTabText(
-            self.tab_gps_2.indexOf(self.tab_gps_2_data),
-            _translate("MainWindow", "Data"),
-        )
+        self.tab_gps_2.setTabText(self.tab_gps_2.indexOf(self.tab_gps_2_data), _translate("MainWindow", "Data"))
         self.cb_gps_bt_2.setText(_translate("MainWindow", "BT"))
         self.cb_gps_gga_2.setText(_translate("MainWindow", "GGA"))
         self.cb_gps_vtg_2.setText(_translate("MainWindow", "VTG"))
         self.cb_gps_vectors_2.setText(_translate("MainWindow", "Vectors"))
-        self.tab_gps_2.setTabText(
-            self.tab_gps_2.indexOf(self.tab_gps_2_gpsbt),
-            _translate("MainWindow", "GPS - BT"),
-        )
-        self.box_gps_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_gps_2.setTabText(self.tab_gps_2.indexOf(self.tab_gps_2_gpsbt), _translate("MainWindow", "GPS - BT"))
+        self.box_gps_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_gps_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_gps_2.setTabText(
-            self.tab_gps_2.indexOf(self.tab_gps_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_gps), _translate("MainWindow", "GPS")
-        )
+        self.tab_gps_2.setTabText(self.tab_gps_2.indexOf(self.tab_gps_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_gps), _translate("MainWindow", "GPS"))
         self.gb_depth_beams.setTitle(_translate("MainWindow", "Individual Beams"))
         self.cb_depth_beam1.setText(_translate("MainWindow", "Beam 1"))
         self.cb_depth_beam2.setText(_translate("MainWindow", "Beam 2"))
@@ -4927,9 +4579,7 @@ class Ui_MainWindow(object):
         self.cb_depth_final_cs.setText(_translate("MainWindow", "Final"))
         self.gb_depth_settings.setTitle(_translate("MainWindow", "Settings"))
         self.gb_depth_ref.setTitle(_translate("MainWindow", "Depth Reference"))
-        self.gb_depth_averaging.setTitle(
-            _translate("MainWindow", "BT Averaging Method")
-        )
+        self.gb_depth_averaging.setTitle(_translate("MainWindow", "BT Averaging Method"))
         self.combo_depth_avg.setItemText(0, _translate("MainWindow", "IDW"))
         self.combo_depth_avg.setItemText(1, _translate("MainWindow", "Simple"))
         self.gb_depth_filter.setTitle(_translate("MainWindow", "Filter"))
@@ -4937,21 +4587,11 @@ class Ui_MainWindow(object):
         self.combo_depth_filter.setItemText(0, _translate("MainWindow", "Off"))
         self.combo_depth_filter.setItemText(1, _translate("MainWindow", "Smooth"))
         self.combo_depth_filter.setItemText(2, _translate("MainWindow", "TRDI"))
-        self.tab_depth_2.setTabText(
-            self.tab_depth_2.indexOf(self.tab_depth_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.box_depth_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_depth_2.setTabText(self.tab_depth_2.indexOf(self.tab_depth_2_data), _translate("MainWindow", "Data"))
+        self.box_depth_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_depth_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_depth_2.setTabText(
-            self.tab_depth_2.indexOf(self.tab_gps_2_messages_3),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_depth), _translate("MainWindow", "Depth")
-        )
+        self.tab_depth_2.setTabText(self.tab_depth_2.indexOf(self.tab_gps_2_messages_3), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_depth), _translate("MainWindow", "Depth"))
         self.rb_wt_contour.setText(_translate("MainWindow", " Contour No Interp"))
         self.rb_wt_beam.setText(_translate("MainWindow", "Beams Used"))
         self.rb_wt_error.setText(_translate("MainWindow", "Error Vel."))
@@ -4974,9 +4614,7 @@ class Ui_MainWindow(object):
         self.combo_wt_error_velocity.setItemText(1, _translate("MainWindow", "Manual"))
         self.combo_wt_error_velocity.setItemText(2, _translate("MainWindow", "Off"))
         self.txt_wt_error_velocity.setText(_translate("MainWindow", "Threshold (+/-):"))
-        self.gb_wt_vertical_velocity.setTitle(
-            _translate("MainWindow", "Vertical Velocity")
-        )
+        self.gb_wt_vertical_velocity.setTitle(_translate("MainWindow", "Vertical Velocity"))
         self.combo_wt_vert_velocity.setItemText(0, _translate("MainWindow", "Auto"))
         self.combo_wt_vert_velocity.setItemText(1, _translate("MainWindow", "Manual"))
         self.combo_wt_vert_velocity.setItemText(2, _translate("MainWindow", "Off"))
@@ -4984,20 +4622,11 @@ class Ui_MainWindow(object):
         self.gb_snr.setTitle(_translate("MainWindow", "SNR"))
         self.combo_wt_snr.setItemText(0, _translate("MainWindow", "Auto"))
         self.combo_wt_snr.setItemText(1, _translate("MainWindow", "Off"))
-        self.tab_wt_2.setTabText(
-            self.tab_wt_2.indexOf(self.tab_wt_2_data), _translate("MainWindow", "Data")
-        )
-        self.box_wt_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_wt_2.setTabText(self.tab_wt_2.indexOf(self.tab_wt_2_data), _translate("MainWindow", "Data"))
+        self.box_wt_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_wt_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_wt_2.setTabText(
-            self.tab_wt_2.indexOf(self.tab_wt_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_wt), _translate("MainWindow", "WT")
-        )
+        self.tab_wt_2.setTabText(self.tab_wt_2.indexOf(self.tab_wt_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_wt), _translate("MainWindow", "WT"))
         self.gp_points.setTitle(_translate("MainWindow", "Points"))
         self.gb_profile.setTitle(_translate("MainWindow", "Profile"))
         self.gb_depth_cell.setTitle(_translate("MainWindow", "Depth Cell"))
@@ -5029,13 +4658,9 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "Type: "))
         self.combo_extrap_type.setItemText(0, _translate("MainWindow", "Discharge"))
         self.combo_extrap_type.setItemText(1, _translate("MainWindow", "Velocity"))
-        self.txt_extrap_subsection.setText(
-            _translate("MainWindow", "Subsection (% L to R, x:x):")
-        )
+        self.txt_extrap_subsection.setText(_translate("MainWindow", "Subsection (% L to R, x:x):"))
         self.text_extrap_threshold.setText(_translate("MainWindow", "Threshold (%): "))
-        self.gb_previous.setTitle(
-            _translate("MainWindow", "Fit Settings When Tab Opened")
-        )
+        self.gb_previous.setTitle(_translate("MainWindow", "Fit Settings When Tab Opened"))
         self.txt_p_fit.setText(_translate("MainWindow", "Fit Method"))
         self.txt_extrap_p_fit.setText(_translate("MainWindow", "TextLabel"))
         self.txt_p_top.setText(_translate("MainWindow", "Top:"))
@@ -5044,127 +4669,61 @@ class Ui_MainWindow(object):
         self.txt_extrap_p_bottom.setText(_translate("MainWindow", "TextLabel"))
         self.txt_p_exponent.setText(_translate("MainWindow", "Exponent:"))
         self.txt_extrap_p_exponent.setText(_translate("MainWindow", "TextLabel"))
-        self.pb_extrap_cancel.setText(
-            _translate("MainWindow", "Reset to These Settings")
-        )
+        self.pb_extrap_cancel.setText(_translate("MainWindow", "Reset to These Settings"))
         self.gb_q.setTitle(_translate("MainWindow", "Discharge Sensitivity"))
-        self.tab_extrap_2.setTabText(
-            self.tab_extrap_2.indexOf(self.tab_extrap_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.box_extrap_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_extrap_2.setTabText(self.tab_extrap_2.indexOf(self.tab_extrap_2_data), _translate("MainWindow", "Data"))
+        self.box_extrap_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_extrap_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_extrap_2.setTabText(
-            self.tab_extrap_2.indexOf(self.tab_extrap_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_extrap), _translate("MainWindow", "Extrap")
-        )
+        self.tab_extrap_2.setTabText(self.tab_extrap_2.indexOf(self.tab_extrap_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_extrap), _translate("MainWindow", "Extrap"))
         self.gb_left.setTitle(_translate("MainWindow", "Left"))
         self.gb_right.setTitle(_translate("MainWindow", "Right"))
-        self.tab_edges_2.setTabText(
-            self.tab_edges_2.indexOf(self.tab_edges_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.box_extrap_messages_2.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_edges_2.setTabText(self.tab_edges_2.indexOf(self.tab_edges_2_data), _translate("MainWindow", "Data"))
+        self.box_extrap_messages_2.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_extrap_comments_2.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_edges_2.setTabText(
-            self.tab_edges_2.indexOf(self.tab_wt_2_messages_3),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_edges), _translate("MainWindow", "Edges")
-        )
+        self.tab_edges_2.setTabText(self.tab_edges_2.indexOf(self.tab_wt_2_messages_3), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_edges), _translate("MainWindow", "Edges"))
         self.gb_edi_transect.setTitle(_translate("MainWindow", "Select Transect"))
-        self.txt_edi_offset.setText(
-            _translate("MainWindow", "Zero Distance Offset (ft):")
-        )
+        self.txt_edi_offset.setText(_translate("MainWindow", "Zero Distance Offset (ft):"))
         self.txt_edi_bank.setText(_translate("MainWindow", " From Right Bank"))
         self.cb_edi_topoquad.setText(_translate("MainWindow", "Create TopoQuad File"))
         self.pb_edi_add_row.setText(_translate("MainWindow", "Add Row"))
         self.pb_edi_compute.setText(_translate("MainWindow", "Compute Stations"))
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_edi), _translate("MainWindow", "EDI")
-        )
-        self.qb_contrib_meas_area.setTitle(
-            _translate("MainWindow", "Contributions to Meas. Q Uncertainty")
-        )
-        self.gb_contrib_measurement.setTitle(
-            _translate("MainWindow", "Contributions to Measurement Uncertainty")
-        )
-        self.tab_uncertainty_2.setTabText(
-            self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_data),
-            _translate("MainWindow", "Data"),
-        )
-        self.tab_uncertainty_2.setTabText(
-            self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_advanced),
-            _translate("MainWindow", "Advanced Settings"),
-        )
-        self.box_uncertainty_messages.setTitle(
-            _translate("MainWindow", "Quality Check Messages")
-        )
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_edi), _translate("MainWindow", "EDI"))
+        self.qb_contrib_meas_area.setTitle(_translate("MainWindow", "Contributions to Meas. Q Uncertainty"))
+        self.gb_contrib_measurement.setTitle(_translate("MainWindow", "Contributions to Measurement Uncertainty"))
+        self.tab_uncertainty_2.setTabText(self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_data), _translate("MainWindow", "Data"))
+        self.tab_uncertainty_2.setTabText(self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_advanced), _translate("MainWindow", "Advanced Settings"))
+        self.box_uncertainty_messages.setTitle(_translate("MainWindow", "Quality Check Messages"))
         self.box_uncertainty_comments.setTitle(_translate("MainWindow", "Comments"))
-        self.tab_uncertainty_2.setTabText(
-            self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_messages),
-            _translate("MainWindow", "Messages"),
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_uncertainty),
-            _translate("MainWindow", "Uncertainty"),
-        )
-        self.pb_adv_graph_controls.setText(
-            _translate("MainWindow", "Hide Plot Controls")
-        )
+        self.tab_uncertainty_2.setTabText(self.tab_uncertainty_2.indexOf(self.tab_uncertainty_2_messages), _translate("MainWindow", "Messages"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_uncertainty), _translate("MainWindow", "Uncertainty"))
+        self.pb_adv_graph_controls.setText(_translate("MainWindow", "Hide Plot Controls"))
         self.gb_adv_graph_controls.setTitle(_translate("MainWindow", "Plot Controls"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Bottom Track"))
-        self.cb_adv_graph_bt_boat_speed.setText(
-            _translate("MainWindow", "Boat Speed (BT)")
-        )
+        self.cb_adv_graph_bt_boat_speed.setText(_translate("MainWindow", "Boat Speed (BT)"))
         self.cb_adv_graph_bt_3beam.setText(_translate("MainWindow", "3 Beam Solutions"))
         self.cb_adv_graph_bt_error.setText(_translate("MainWindow", "Error Velocity"))
-        self.cb_adv_graph_bt_vertical.setText(
-            _translate("MainWindow", "Vertical Velocity")
-        )
+        self.cb_adv_graph_bt_vertical.setText(_translate("MainWindow", "Vertical Velocity"))
         self.cb_adv_graph_bt_source.setText(_translate("MainWindow", "Source"))
-        self.cb_adv_graph_bt_correlation.setText(
-            _translate("MainWindow", "Correlation")
-        )
+        self.cb_adv_graph_bt_correlation.setText(_translate("MainWindow", "Correlation"))
         self.cb_adv_graph_bt_rssi.setText(_translate("MainWindow", "RSSI"))
         self.groupBox_3.setTitle(_translate("MainWindow", "GPS"))
-        self.cb_adv_graph_gga_boat_speed.setText(
-            _translate("MainWindow", "Boat Speed (GGA)")
-        )
-        self.cb_adv_graph_vtg_boat_speed.setText(
-            _translate("MainWindow", "Boat Speed (VTG)")
-        )
+        self.cb_adv_graph_gga_boat_speed.setText(_translate("MainWindow", "Boat Speed (GGA)"))
+        self.cb_adv_graph_vtg_boat_speed.setText(_translate("MainWindow", "Boat Speed (VTG)"))
         self.cb_adv_graph_gga_quality.setText(_translate("MainWindow", "Quality"))
         self.cb_adv_graph_gga_hdop.setText(_translate("MainWindow", "HDOP"))
         self.cb_adv_graph_gga_altitude.setText(_translate("MainWindow", "Altitude"))
-        self.cb_adv_graph_gga_satellites.setText(
-            _translate("MainWindow", "No. Satellites")
-        )
+        self.cb_adv_graph_gga_satellites.setText(_translate("MainWindow", "No. Satellites"))
         self.cb_adv_graph_gga_source.setText(_translate("MainWindow", "Source (GGA)"))
         self.cb_adv_graph_vtg_source.setText(_translate("MainWindow", "Source (VTG)"))
         self.pb_adv_graph_create_plots.setText(_translate("MainWindow", "Create Plot"))
         self.groupBox_6.setTitle(_translate("MainWindow", "Discharge"))
-        self.cb_adv_graph_discharge.setText(
-            _translate("MainWindow", "Discharge Time Series")
-        )
-        self.cb_adv_graph_discharge_percent.setText(
-            _translate("MainWindow", "Discharge % of Total")
-        )
+        self.cb_adv_graph_discharge.setText(_translate("MainWindow", "Discharge Time Series"))
+        self.cb_adv_graph_discharge_percent.setText(_translate("MainWindow", "Discharge % of Total"))
         self.groupBox_5.setTitle(_translate("MainWindow", "Compass/P/R"))
-        self.cb_adv_graph_adcp_heading.setText(
-            _translate("MainWindow", "Heading (ADCP)")
-        )
-        self.cb_adv_graph_ext_heading.setText(
-            _translate("MainWindow", "Heading (External)")
-        )
+        self.cb_adv_graph_adcp_heading.setText(_translate("MainWindow", "Heading (ADCP)"))
+        self.cb_adv_graph_ext_heading.setText(_translate("MainWindow", "Heading (External)"))
         self.cb_adv_graph_mag_error.setText(_translate("MainWindow", "Magnetic Error"))
         self.cb_adv_graph_pitch.setText(_translate("MainWindow", "Pitch"))
         self.cb_adv_graph_roll.setText(_translate("MainWindow", "Roll"))
@@ -5173,45 +4732,25 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_final_depths.setText(_translate("MainWindow", "Final Depths"))
         self.cb_adv_graph_depth_source.setText(_translate("MainWindow", "Depth Source"))
         self.gb_sensors.setTitle(_translate("MainWindow", "Sensors"))
-        self.cb_adv_graph_battery_voltage.setText(
-            _translate("MainWindow", "Battery Voltage")
-        )
+        self.cb_adv_graph_battery_voltage.setText(_translate("MainWindow", "Battery Voltage"))
         self.gb_plot_type_3.setTitle(_translate("MainWindow", "Water Track"))
         self.label_8.setText(_translate("MainWindow", "Contour Plots"))
-        self.cb_adv_graph_speed_filtered.setText(
-            _translate("MainWindow", "Speed - Filtered")
-        )
+        self.cb_adv_graph_speed_filtered.setText(_translate("MainWindow", "Speed - Filtered"))
         self.cb_adv_graph_speed_final.setText(_translate("MainWindow", "Speed - Final"))
         self.cb_adv_graph_projected.setText(_translate("MainWindow", "Speed Projected"))
-        self.cb_adv_graph_vertical.setText(
-            _translate("MainWindow", "Vertical Velocity")
-        )
+        self.cb_adv_graph_vertical.setText(_translate("MainWindow", "Vertical Velocity"))
         self.cb_adv_graph_error.setText(_translate("MainWindow", "Error Velocity"))
         self.cb_adv_graph_direction.setText(_translate("MainWindow", "Direction"))
-        self.cb_adv_graph_avg_corr.setText(
-            _translate("MainWindow", "Average Correlation")
-        )
-        self.cb_adv_graph_corr_beam.setText(
-            _translate("MainWindow", "Correlation by Beam")
-        )
-        self.cb_adv_graph_avg_rssi.setText(
-            _translate("MainWindow", "Average RSSI or SNR")
-        )
-        self.cb_adv_graph_rssi_beam.setText(
-            _translate("MainWindow", "RSSI or SNR by Beam")
-        )
+        self.cb_adv_graph_avg_corr.setText(_translate("MainWindow", "Average Correlation"))
+        self.cb_adv_graph_corr_beam.setText(_translate("MainWindow", "Correlation by Beam"))
+        self.cb_adv_graph_avg_rssi.setText(_translate("MainWindow", "Average RSSI or SNR"))
+        self.cb_adv_graph_rssi_beam.setText(_translate("MainWindow", "RSSI or SNR by Beam"))
         self.cb_adv_graph_ping_type.setText(_translate("MainWindow", "Ping Type"))
         self.label_9.setText(_translate("MainWindow", "Time Series"))
         self.cb_adv_graph_avg_speed.setText(_translate("MainWindow", "Average Speed"))
-        self.cb_adv_graph_projected_speed_ts.setText(
-            _translate("MainWindow", "Projected Speed")
-        )
-        self.cb_adv_graph_wt_error_ts.setText(
-            _translate("MainWindow", "Error Velocity")
-        )
-        self.cb_adv_graph_wt_vert_ts.setText(
-            _translate("MainWindow", "Vertical Velocity")
-        )
+        self.cb_adv_graph_projected_speed_ts.setText(_translate("MainWindow", "Projected Speed"))
+        self.cb_adv_graph_wt_error_ts.setText(_translate("MainWindow", "Error Velocity"))
+        self.cb_adv_graph_wt_vert_ts.setText(_translate("MainWindow", "Vertical Velocity"))
         self.cb_adv_graph_wt_snr_ts.setText(_translate("MainWindow", "SNR"))
         self.cb_adv_graph_wt_beams_ts.setText(_translate("MainWindow", "Beams Used"))
         self.groupBox.setTitle(_translate("MainWindow", "Projection Angle"))
@@ -5220,19 +4759,12 @@ class Ui_MainWindow(object):
         self.rb_adv_graph_ensemble.setText(_translate("MainWindow", "Ensemble"))
         self.rb_adv_graph_time.setText(_translate("MainWindow", "Time"))
         self.rb_adv_graph_length.setText(_translate("MainWindow", "Length"))
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_adv_graph),
-            _translate("MainWindow", "Adv. Graph"),
-        )
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_adv_graph), _translate("MainWindow", "Adv. Graph"))
         self.gb_previous_2.setTitle(_translate("MainWindow", "MAP Properties"))
         self.txt_map_data.setText(_translate("MainWindow", "Data to plot:"))
         self.combo_map_data.setItemText(0, _translate("MainWindow", "Primary velocity"))
-        self.combo_map_data.setItemText(
-            1, _translate("MainWindow", "Streamwise velocity")
-        )
-        self.cb_map_bed_profiles.setText(
-            _translate("MainWindow", "Individual bed profiles")
-        )
+        self.combo_map_data.setItemText(1, _translate("MainWindow", "Streamwise velocity"))
+        self.cb_map_bed_profiles.setText(_translate("MainWindow", "Individual bed profiles"))
         self.label_6.setText(_translate("MainWindow", "Quiver scale:"))
         self.label.setText(_translate("MainWindow", "Cell width (m)"))
         self.label_2.setText(_translate("MainWindow", "Cell height (m)"))
@@ -5242,17 +4774,11 @@ class Ui_MainWindow(object):
         self.pb_map_apply.setText(_translate("MainWindow", "Apply"))
         self.pb_map_save.setText(_translate("MainWindow", "Save MAP data"))
         self.gb_previous_3.setTitle(_translate("MainWindow", "MAP Results"))
-        self.pb_map_open_earth.setText(
-            _translate("MainWindow", "Open MAP in Google Earth")
-        )
-        self.tab_all.setTabText(
-            self.tab_all.indexOf(self.tab_map), _translate("MainWindow", "MAP")
-        )
+        self.pb_map_open_earth.setText(_translate("MainWindow", "Open MAP in Google Earth"))
+        self.tab_all.setTabText(self.tab_all.indexOf(self.tab_map), _translate("MainWindow", "MAP"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
-        self.actionOpen.setToolTip(
-            _translate("MainWindow", "Opens measurement data file(s)")
-        )
+        self.actionOpen.setToolTip(_translate("MainWindow", "Opens measurement data file(s)"))
         self.actionOptions.setText(_translate("MainWindow", "options"))
         self.actionOptions.setToolTip(_translate("MainWindow", "Optional Settings"))
         self.actionSave.setText(_translate("MainWindow", "Save"))
@@ -5279,23 +4805,14 @@ class Ui_MainWindow(object):
         self.actionData_Cursor.setText(_translate("MainWindow", "Data Cursor"))
         self.actionData_Cursor.setToolTip(_translate("MainWindow", "Data Cursor"))
         self.actionGoogle_Earth.setText(_translate("MainWindow", "Google Earth"))
-        self.actionGoogle_Earth.setToolTip(
-            _translate("MainWindow", "Plot to Google Earth")
-        )
-        self.actionShow_Extrapolated.setText(
-            _translate("MainWindow", "Show_Extrapolated")
-        )
-        self.actionShow_Extrapolated.setToolTip(
-            _translate("MainWindow", "Show extrapolated speeds")
-        )
-
-
+        self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
+        self.actionShow_Extrapolated.setText(_translate("MainWindow", "Show_Extrapolated"))
+        self.actionShow_Extrapolated.setToolTip(_translate("MainWindow", "Show extrapolated speeds"))
 import dsm_rc
 
 
 if __name__ == "__main__":
     import sys
-
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
