@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 class Maptrack(object):
     """Class to generate shiptrack plot from MAP profile.
@@ -65,17 +66,21 @@ class Maptrack(object):
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
 
-        direction_meas = np.arctan2(-1, map_data.slope)
-        u = map_data.streamwise_velocity * np.cos(direction_meas) + \
-            map_data.transverse_velocity * np.sin(direction_meas)
-        v = map_data.transverse_velocity * np.cos(direction_meas) - \
-            map_data.streamwise_velocity * np.sin(direction_meas)
+        direction_section = np.arctan2(map_data.slope, 1)
+
+        u = map_data.streamwise_velocity * np.sin(direction_section) + \
+            map_data.transverse_velocity * np.cos(direction_section)
+        v = map_data.transverse_velocity * np.sin(direction_section) - \
+            map_data.streamwise_velocity * np.cos(direction_section)
+
+        u = u * -1 * map_data._unit
+        v = v * -1 * map_data._unit
 
         u_mean = np.nanmean(u, axis=0)
         v_mean = np.nanmean(v, axis=0)
 
-        x_plt = map_data.borders_ens + map_data.x[0] - np.mean(map_data.borders_ens[:2])
-        y_plt = map_data.slope * x_plt + map_data.intercept
+        x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
+        y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
 
         speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
         if len(speed) > 0:
@@ -84,8 +89,8 @@ class Maptrack(object):
             max_speed = 0
 
         self.vectors = self.fig.ax.quiver(
-            map_data.x,
-            map_data.y,
+            x_plt,
+            y_plt,
             u_mean * units["V"],
             v_mean * units["V"],
             units="dots",
@@ -95,8 +100,8 @@ class Maptrack(object):
         )
 
         self.acs = self.fig.ax.plot(
-            x_plt,
-            y_plt,
+            map_data.x,
+            map_data.y,
             color="firebrick",
             linewidth=2,
             label="MAP Average course",
