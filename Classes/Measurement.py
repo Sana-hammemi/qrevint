@@ -588,6 +588,7 @@ class Measurement(object):
         # Initialize variables
         rsdata = None
         pathname = None
+        fullnames.sort()
 
         for file in fullnames:
             # Read data file
