@@ -107,7 +107,7 @@ class MAP(object):
         self.borders_ens = (
             None  # Borders of each MAP vertical (distance from left bank)
         )
-        self._start = 0  # Lag (in m) from start
+        self._x_left = 0  # Default x position in m
         self.x = None  # x coordinates
         self.y = None  # y coordinates
         self.main_depth_layers = (
@@ -209,9 +209,15 @@ class MAP(object):
         self.compute_discharge()
 
         # Compute coordinates
-        distance = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
-        self.x = distance + self._start
-        self.y = self.slope * self.x + self.intercept
+        direction_section = np.arctan2(self.slope, 1)
+        if self.left_geometry is not None:
+            distance = self.borders_ens - self.left_geometry[0]
+        else:
+            distance = self.borders_ens
+        x = self._unit * (distance * np.cos(direction_section))
+        y = self._unit * (distance * np.sin(direction_section))
+        self.x = self._x_left + x
+        self.y = self._y_left + y
 
     def collect_data(self, meas, nav_ref="bt_vel"):
         """Collect data of valid position and depth for each selected transect
@@ -394,7 +400,13 @@ class MAP(object):
             np.nanmedian(x_right) - x_med_left
         )
         self.intercept = y_med_left - self.slope * x_med_left
-        self._start = x_med_left
+        self._x_left = x_med_left
+        self._y_left = y_med_left
+        if x_med_left > np.nanmedian(x_right):
+            self._unit = -1
+        else:
+            self._unit = 1
+
 
     def project_transect(self):
         """Project transects on the average cross-section.
@@ -753,7 +765,6 @@ class MAP(object):
         dist_start = min(borders_ens)
         borders_ens -= dist_start
         self.acs_distance -= dist_start
-        self._start -= dist_start
 
         map_depth_cells_border = np.tile(
             np.nan, (len(self.main_depth_layers), len(node_range))
@@ -1222,8 +1233,6 @@ class MAP(object):
 
         left_distance, left_coef = self.left_geometry
         self.edge_velocity("left", left_distance, left_coef, exponent)
-
-        self._start -= left_distance
 
         right_distance, right_coef = self.right_geometry
         self.edge_velocity("right", right_distance, right_coef, exponent)
