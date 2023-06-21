@@ -47,6 +47,15 @@ class QComp(object):
         ensembles
     int_ens: float
         Total discharge computed for invalid ensembles
+    top_speed: nd.array(float)
+        Computed speed from top extrapolation for each ensemble
+    bottom_speed: nd.array(float)
+        Computed speed from bottom extrapolation for each ensemble
+    left_edge_speed: float
+        Computed speed in the left edge based on edge settings
+    right_edge_speed: float
+        Computed speed in the right edge based on edge settings
+
     """
 
     def __init__(self):

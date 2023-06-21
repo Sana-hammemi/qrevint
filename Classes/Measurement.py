@@ -79,8 +79,6 @@ class Measurement(object):
         Stage at end of measurement
     stage_meas_m: float
         Stage assigned to measurement
-    export_xs: bool
-        Indicates if average cross-section should be computed and exported
     use_weighted: bool
         Indicates the setting for use_weighted to be used for reprocessing
     use_ping_type: bool
