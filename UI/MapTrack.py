@@ -68,36 +68,40 @@ class Maptrack(object):
 
         direction_section = np.arctan2(map_data.slope, 1)
 
-        u = map_data.streamwise_velocity * np.sin(direction_section) + \
-            map_data.transverse_velocity * np.cos(direction_section)
-        v = map_data.transverse_velocity * np.sin(direction_section) - \
-            map_data.streamwise_velocity * np.cos(direction_section)
+        if map_data.streamwise_velocity is not None:
+            u = map_data.streamwise_velocity * np.sin(direction_section) + \
+                map_data.transverse_velocity * np.cos(direction_section)
+            v = map_data.transverse_velocity * np.sin(direction_section) - \
+                map_data.streamwise_velocity * np.cos(direction_section)
 
-        u = u * -1 * map_data._unit
-        v = v * -1 * map_data._unit
+            u = u * -1 * map_data._unit
+            v = v * -1 * map_data._unit
 
-        u_mean = np.nanmean(u, axis=0)
-        v_mean = np.nanmean(v, axis=0)
+            u_mean = np.nanmean(u, axis=0)
+            v_mean = np.nanmean(v, axis=0)
 
-        x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
-        y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
+            x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
+            y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
 
-        speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
-        if len(speed) > 0:
-            max_speed = np.nanmax(speed)
-        else:
-            max_speed = 0
+            speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
+            try:
+                if len(speed) > 0:
+                    max_speed = np.nanmax(speed)
+                else:
+                    max_speed = 0
+            except TypeError:
+                max_speed = 0
 
-        self.vectors = self.fig.ax.quiver(
-            x_plt,
-            y_plt,
-            u_mean * units["V"],
-            v_mean * units["V"],
-            units="dots",
-            width=1,
-            scale_units="width",
-            scale=4 * max_speed,
-        )
+            self.vectors = self.fig.ax.quiver(
+                x_plt,
+                y_plt,
+                u_mean * units["V"],
+                v_mean * units["V"],
+                units="dots",
+                width=1,
+                scale_units="width",
+                scale=4 * max_speed,
+            )
 
         self.acs = self.fig.ax.plot(
             map_data.x,
