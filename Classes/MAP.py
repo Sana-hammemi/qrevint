@@ -586,9 +586,11 @@ class MAP(object):
             [min(l) for l in acs_distance]
         )
         if node_horizontal_user is None:
-            node_horz = np.nanmedian(
-                np.abs([np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
-            )
+            flat_acs = np.sort(np.concatenate(acs_distance).ravel())
+            node_horz = np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95)
+            # node_horz = np.nanmedian(
+            #     np.abs([np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
+            # )
         else:
             node_horz = node_horizontal_user
 

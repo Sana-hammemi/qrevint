@@ -84,12 +84,9 @@ class Maptrack(object):
             y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
 
             speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
-            try:
-                if len(speed) > 0:
-                    max_speed = np.nanmax(speed)
-                else:
-                    max_speed = 0
-            except TypeError:
+            if len(speed) > 0:
+                max_speed = np.nanmax(speed)
+            else:
                 max_speed = 0
 
             self.vectors = self.fig.ax.quiver(
@@ -103,14 +100,14 @@ class Maptrack(object):
                 scale=4 * max_speed,
             )
 
-        self.acs = self.fig.ax.plot(
-            map_data.x,
-            map_data.y,
-            color="firebrick",
-            linewidth=2,
-            label="MAP Average course",
-            zorder=1,
-        )
+            self.acs = self.fig.ax.plot(
+                map_data.x,
+                map_data.y,
+                color="firebrick",
+                linewidth=2,
+                label="MAP Average course",
+                zorder=1,
+            )
         for i in range(len(map_data.x_raw_coordinates)):
             self.fig.ax.plot(
                 map_data.x_raw_coordinates[i],
