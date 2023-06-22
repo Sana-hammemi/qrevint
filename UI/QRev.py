@@ -426,7 +426,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.toolBar.toggleViewAction().setEnabled(False)
 
         # Get agency optional settings
-        options_file = os.path.join(os.getcwd(), "../QRev.cfg")
+        options_file = os.path.join(os.getcwd(), "QRev.cfg")
 
         if os.path.exists(options_file) is False:
             config = Config()
@@ -447,10 +447,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.popup_message(
                 self.tr(
                     "QRev.cfg could not be read due a formatting error. "
-                    "QRev cannot continue."
+                    "A default configuration file will be created that might "
+                    "not match your agency's policy."
                 )
             )
-            sys.exit()
+
+            config = Config()
+            config.export_config()
+
+            # sys.exit()
 
         # Setting file for settings to carry over from one session to the next
         self.settingsFile = "QRev_Settings"

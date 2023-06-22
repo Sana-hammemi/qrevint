@@ -3433,7 +3433,7 @@ class AdvGraphs(object):
             ax.plot(self.expanded_x * self.units["L"], depth * self.units["L"], color="k")
         else:
             self.expanded_x = x
-            ax.plot(x * self.units["L"], depth * self.units["L"], color="k")
+            ax.plot(x, depth * self.units["L"], color="k")
 
         depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 

@@ -17,8 +17,8 @@ class Config:
         self.config = {
             "Units": {"show": True, "default": "SI"},
             "ColorMap": {"show": True, "default": "viridis"},
-            "RatingPrompt": {"show": True, "default": "false"},
-            "SaveStyleSheet": {"show": True, "default": "false"},
+            "RatingPrompt": {"show": True, "default": False},
+            "SaveStyleSheet": {"show": True, "default": False},
             "ExtrapWeighting": {"show": True, "default": True},
             "FilterUsingMeasurement": {"show": True, "default": False},
             "Uncertainty": {"show": False, "default": "QRev Original"},
