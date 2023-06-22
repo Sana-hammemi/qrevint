@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_mag_var(object):
     def setupUi(self, mag_var):
         mag_var.setObjectName("mag_var")
@@ -18,11 +19,15 @@ class Ui_mag_var(object):
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem1)
         self.magvar_label = QtWidgets.QLabel(mag_var)
         font = QtGui.QFont()
@@ -32,12 +37,16 @@ class Ui_mag_var(object):
         self.magvar_label.setFont(font)
         self.magvar_label.setObjectName("magvar_label")
         self.horizontalLayout_2.addWidget(self.magvar_label)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem2)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem3)
         self.ed_magvar = QtWidgets.QLineEdit(mag_var)
         font = QtGui.QFont()
@@ -45,13 +54,17 @@ class Ui_mag_var(object):
         self.ed_magvar.setFont(font)
         self.ed_magvar.setObjectName("ed_magvar")
         self.horizontalLayout.addWidget(self.ed_magvar)
-        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem4 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem4)
         self.horizontalLayout.setStretch(0, 2)
         self.horizontalLayout.setStretch(1, 1)
         self.horizontalLayout.setStretch(2, 2)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem5 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem5)
         self.horizontalLayout_3.addLayout(self.verticalLayout_2)
         self.gb_magvar = QtWidgets.QGroupBox(mag_var)
@@ -87,7 +100,9 @@ class Ui_mag_var(object):
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
         self.buttonBox = QtWidgets.QDialogButtonBox(mag_var)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
@@ -107,10 +122,10 @@ class Ui_mag_var(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     mag_var = QtWidgets.QDialog()
     ui = Ui_mag_var()
     ui.setupUi(mag_var)
     mag_var.show()
     sys.exit(app.exec_())
-

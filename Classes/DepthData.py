@@ -1,7 +1,5 @@
 import copy
-import concurrent.futures
 import numpy as np
-import itertools as it
 from numpy.matlib import repmat
 from MiscLibs.common_functions import iqr, nan_less, nan_greater
 from MiscLibs.robust_loess_compiled import rloess
@@ -10,8 +8,7 @@ from MiscLibs.run_iqr import run_iqr, compute_quantile
 
 
 class DepthData(object):
-    """Process and store depth data.
-    Supported sources include bottom track
+    """Process and store depth data. Supported sources include bottom track
     vertical beam, and external depth sounder.
 
     Attributes
@@ -68,46 +65,34 @@ class DepthData(object):
     """
 
     def __init__(self):
-        """Initialize attributes.
-        """
+        """Initialize attributes."""
 
-        self.depth_orig_m = None  # Original multi-beam depth data from
-        # transect file (includes draft_orig) in meters
-        self.depth_beams_m = None  # Depth data from transect file adjusted
-        # for any draft changes, in meters
-        self.depth_processed_m = None  # Depth data filtered and interpolated
-        self.depth_freq_kHz = None  # Defines ADCP frequency used of each
-        # raw data point
-        self.depth_invalid_index = None  # Index of depths marked invalid
-        self.depth_source = None  # Source of depth data ("BT", "VB", "DS")
-        self.depth_source_ens = None  # Source of each depth value ("BT",
-        # "VB", "DS", "IN")
-        self.draft_orig_m = None  # Original draft from data files, in meters
-        self.draft_use_m = None  # Draft used in computation of
-        # depth_beams_m and depth_cell_depths_m
-        self.depth_cell_depth_orig_m = None  # Depth cell range from the
-        # transducer, in meters
-        self.depth_cell_depth_m = None  # Depth to centerline of depth
-        # cells, in meters
-        self.depth_cell_size_orig_m = None  # Size of depth cells in meters
-        # from raw data
-        self.depth_cell_size_m = None  # Size of depth cells in meters
-        self.smooth_depth = None  # Smoothed beam depth
-        self.smooth_upper_limit = None  # Smooth function upper limit of window
-        self.smooth_lower_limit = None  # Smooth function lowerl limit or
-        # window
-        self.avg_method = None  # Defines averaging method: "Simple", "IDW"
-        self.filter_type = None  # Type of filter: "None", "TRDI", "Smooth"
-        self.interp_type = None  # Type of interpolation: "None", "Linear",
-        # "Smooth"
-        self.valid_data_method = None  # QRev or TRDI
-        self.valid_data = None  # Logical array of valid mean depth for each
-        # ensemble
-        self.valid_beams = None  # Logical array, 1 row for each beam
-        # identifying valid data
+        self.depth_orig_m = None
+        self.depth_beams_m = None
+        self.depth_processed_m = None
+        self.depth_freq_kHz = None
+        self.depth_invalid_index = None
+        self.depth_source = None
+        self.depth_source_ens = None
+        self.draft_orig_m = None
+        self.draft_use_m = None
+        self.depth_cell_depth_orig_m = None
+        self.depth_cell_depth_m = None
+        self.depth_cell_size_orig_m = None
+        self.depth_cell_size_m = None
+        self.smooth_depth = None
+        self.smooth_upper_limit = None
+        self.smooth_lower_limit = None
+        self.avg_method = None
+        self.filter_type = None
+        self.interp_type = None
+        self.valid_data_method = None
+        self.valid_data = None
+        self.valid_beams = None
 
-    def populate_data(self, depth_in, source_in, freq_in, draft_in,
-                      cell_depth_in, cell_size_in):
+    def populate_data(
+        self, depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
+    ):
         """Stores data in DepthData.
 
         Parameters
@@ -126,27 +111,26 @@ class DepthData(object):
             from bottom track should be used.
         cell_size_in: np.array
             Size of each depth cell, in meters. If source does not have
-            depth cells the depth cell size
-            from bottom track should be used.
+            depth cells the depth cell size from bottom track should be used.
+
         """
 
         self.depth_orig_m = depth_in
         self.depth_beams_m = depth_in
         self.depth_source = source_in
-        self.depth_source_ens = np.array([source_in] * depth_in.shape[-1],
-                                         dtype=object)
+        self.depth_source_ens = np.array([source_in] * depth_in.shape[-1], dtype=object)
         self.depth_freq_kHz = freq_in
         self.draft_orig_m = draft_in
         self.draft_use_m = draft_in
-        self.filter_type = 'None'
-        self.interp_type = 'None'
-        self.valid_data_method = 'QRev'
+        self.filter_type = "None"
+        self.interp_type = "None"
+        self.valid_data_method = "QRev"
 
         # For BT data set method to average multiple beam depths
-        if source_in == 'BT':
-            self.avg_method = 'IDW'
+        if source_in == "BT":
+            self.avg_method = "IDW"
         else:
-            self.avg_method = 'None'
+            self.avg_method = "None"
 
         # Store cell data
         self.depth_cell_depth_orig_m = cell_depth_in
@@ -155,7 +139,7 @@ class DepthData(object):
         self.depth_cell_depth_m = cell_depth_in
 
         # Remove all filters to initialize data
-        self.apply_filter('dummy', filter_type='Off')
+        self.apply_filter("dummy", filter_type="Off")
 
     def populate_from_qrev_mat(self, mat_data):
         """Populates the object using data from previously saved QRev Matlab
@@ -189,7 +173,7 @@ class DepthData(object):
         self.depth_cell_size_m = mat_data.depthCellSize_m
 
         # Configure arrays properly for VB and DS
-        if mat_data.depthSource == 'BT':
+        if mat_data.depthSource == "BT":
             self.depth_beams_m = mat_data.depthBeams_m
             self.depth_orig_m = mat_data.depthOrig_m
             self.smooth_depth = mat_data.smoothDepth
@@ -224,59 +208,65 @@ class DepthData(object):
         if len(self.depth_beams_m.shape) == 1:
             # One ensemble multiple cells
             self.depth_beams_m = self.depth_beams_m.reshape(
-                self.depth_beams_m.shape[0], 1)
+                self.depth_beams_m.shape[0], 1
+            )
             self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(
-                self.depth_cell_depth_m.shape[0], 1)
-            self.depth_cell_depth_orig_m = \
-                self.depth_cell_depth_orig_m.reshape(
-                self.depth_cell_depth_orig_m.shape[0], 1)
+                self.depth_cell_depth_m.shape[0], 1
+            )
+            self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(
+                self.depth_cell_depth_orig_m.shape[0], 1
+            )
             self.depth_cell_size_m = self.depth_cell_size_m.reshape(
-                self.depth_cell_size_m.shape[0], 1)
+                self.depth_cell_size_m.shape[0], 1
+            )
             self.depth_cell_size_orig_m = self.depth_cell_size_orig_m.reshape(
-                self.depth_cell_size_orig_m.shape[0], 1)
-            self.depth_orig_m = self.depth_orig_m.reshape(
-                self.depth_orig_m.shape[0], 1)
+                self.depth_cell_size_orig_m.shape[0], 1
+            )
+            self.depth_orig_m = self.depth_orig_m.reshape(self.depth_orig_m.shape[0], 1)
             self.depth_processed_m = np.array([self.depth_processed_m])
-            self.smooth_depth = self.smooth_depth.reshape(
-                self.smooth_depth.shape[0], 1)
+            self.smooth_depth = self.smooth_depth.reshape(self.smooth_depth.shape[0], 1)
             self.smooth_lower_limit = self.smooth_lower_limit.reshape(
-                self.smooth_lower_limit.shape[0], 1)
+                self.smooth_lower_limit.shape[0], 1
+            )
             self.smooth_upper_limit = self.smooth_upper_limit.reshape(
-                self.smooth_upper_limit.shape[0], 1)
+                self.smooth_upper_limit.shape[0], 1
+            )
             self.valid_data = np.array([self.valid_data])
             self.depth_source_ens = np.array([mat_data.depthSourceEns])
         elif len(self.depth_cell_depth_m.shape) == 1:
             # One cell, multiple ensembles
-            self.depth_cell_depth_m = \
-                self.depth_cell_depth_m.reshape(1,
-                                                self.depth_cell_depth_m.shape[
-                                                    0])
-            self.depth_cell_depth_orig_m = \
-                self.depth_cell_depth_orig_m.reshape(1,
-                                                     self.depth_cell_depth_orig_m.shape[
-                                                         0])
-            self.depth_cell_size_m = \
-                self.depth_cell_size_m.reshape(1,
-                                               self.depth_cell_size_m.shape[
-                                                   0])
+            self.depth_cell_depth_m = self.depth_cell_depth_m.reshape(
+                1, self.depth_cell_depth_m.shape[0]
+            )
+            self.depth_cell_depth_orig_m = self.depth_cell_depth_orig_m.reshape(
+                1, self.depth_cell_depth_orig_m.shape[0]
+            )
+            self.depth_cell_size_m = self.depth_cell_size_m.reshape(
+                1, self.depth_cell_size_m.shape[0]
+            )
             self.depth_cell_size_orig_m = self.depth_cell_size_orig_m.reshape(
-                1, self.depth_cell_size_orig_m.shape[0])
+                1, self.depth_cell_size_orig_m.shape[0]
+            )
 
     def change_draft(self, draft):
         """Changes the draft for object
 
-        draft: new draft for object
+        Parameters
+        ----------
+        draft: float
+            New draft for object
         """
+
         # Compute draft change
         draft_change = draft - self.draft_use_m
         self.draft_use_m = draft
 
         # Apply draft to ensemble depths if BT or VB
-        if self.depth_source != 'DS':
+        if self.depth_source != "DS":
             self.depth_beams_m = self.depth_beams_m + draft_change
             self.depth_processed_m = self.depth_processed_m + draft_change
 
-            # Apply draft to depth cell locations
+        # Apply draft to depth cell locations
         if len(self.depth_cell_depth_m) > 0:
             self.depth_cell_depth_m = self.depth_cell_depth_m + draft_change
 
@@ -312,9 +302,9 @@ class DepthData(object):
         depth[np.logical_not(self.valid_beams)] = np.nan
 
         # Compute average depths
-        self.depth_processed_m = DepthData.average_depth(depth,
-                                                         self.draft_use_m,
-                                                         self.avg_method)
+        self.depth_processed_m = DepthData.average_depth(
+            depth, self.draft_use_m, self.avg_method
+        )
 
         # Set depths to nan if depth are not valid beam depths
         self.depth_processed_m[np.equal(self.valid_data, False)] = np.nan
@@ -331,31 +321,30 @@ class DepthData(object):
         """
 
         # Compute selected filter
-        if filter_type == 'Off' or filter_type is None:
+        if filter_type == "Off" or filter_type is None:
             # No filter
             self.filter_none()
             # Savitzky-Golay
-        elif filter_type == 'SavGol':
+        elif filter_type == "SavGol":
             self.filter_savgol(transect)
-        elif filter_type == 'Smooth':
+        elif filter_type == "Smooth":
             # Smooth filter
             self.filter_smooth(transect)
-        elif filter_type == 'TRDI' and self.depth_source == 'BT':
+        elif filter_type == "TRDI" and self.depth_source == "BT":
             # TRDI filter for multiple returns
             self.filter_trdi()
-            self.filter_type = 'TRDI'
+            self.filter_type = "TRDI"
 
         self.valid_mean_data()
 
         # Update processed depth with filtered results
-        if self.depth_source == 'BT':
+        if self.depth_source == "BT":
             # Multiple beams require averaging to obtain 1-D array
             self.compute_avg_bt_depth()
         else:
             # Single beam (VB or DS) save to 1-D array
             self.depth_processed_m = np.array(self.depth_beams_m[0, :])
-            self.depth_processed_m[
-                np.squeeze(np.equal(self.valid_data, 0))] = np.nan
+            self.depth_processed_m[np.squeeze(np.equal(self.valid_data, 0))] = np.nan
 
     def apply_interpolation(self, transect, method=None):
         """Coordinates application of interpolations
@@ -375,15 +364,15 @@ class DepthData(object):
         # Apply selected interpolation
         self.interp_type = method
         # No filtering
-        if method == 'None':
+        if method == "None":
             self.interpolate_none()
 
         # Hold last valid depth indefinitely
-        elif method == 'HoldLast':
+        elif method == "HoldLast":
             self.interpolate_hold_last()
 
         # Use values form a Loess smooth
-        elif method == 'Smooth':
+        elif method == "Smooth":
             self.interpolate_smooth()
 
         # Linear interpolation
@@ -394,11 +383,10 @@ class DepthData(object):
         idx = np.where(np.logical_not(self.valid_data[:]))
         if len(idx[0]) > 0:
             idx = idx[0]
-            idx2 = np.where(
-                np.logical_not(np.isnan(self.depth_processed_m[idx])))
+            idx2 = np.where(np.logical_not(np.isnan(self.depth_processed_m[idx])))
             if len(idx2) > 0:
                 idx2 = idx2[0]
-                self.depth_source_ens[idx[idx2]] = 'IN'
+                self.depth_source_ens[idx[idx2]] = "IN"
 
     def apply_composite(self, comp_depth, comp_source):
         """Applies the data from CompDepth computed in DepthStructure
@@ -416,11 +404,11 @@ class DepthData(object):
         self.depth_processed_m = comp_depth
 
         # Assign appropriate composite source for each ensemble
-        self.depth_source_ens[comp_source == 1] = 'BT'
-        self.depth_source_ens[comp_source == 2] = 'VB'
-        self.depth_source_ens[comp_source == 3] = 'DS'
-        self.depth_source_ens[comp_source == 4] = 'IN'
-        self.depth_source_ens[comp_source == 0] = 'NA'
+        self.depth_source_ens[comp_source == 1] = "BT"
+        self.depth_source_ens[comp_source == 2] = "VB"
+        self.depth_source_ens[comp_source == 3] = "DS"
+        self.depth_source_ens[comp_source == 4] = "IN"
+        self.depth_source_ens[comp_source == 0] = "NA"
 
     def sos_correction(self, ratio):
         """Correct depth for new speed of sound setting
@@ -433,27 +421,30 @@ class DepthData(object):
 
         # Correct unprocessed depths
         self.depth_beams_m = self.draft_use_m + np.multiply(
-            self.depth_beams_m - self.draft_use_m, ratio)
+            self.depth_beams_m - self.draft_use_m, ratio
+        )
 
         # Correct processed depths
         self.depth_processed_m = self.draft_use_m + np.multiply(
-            self.depth_processed_m - self.draft_use_m, ratio)
+            self.depth_processed_m - self.draft_use_m, ratio
+        )
 
         # Correct cell size and location
         self.depth_cell_size_m = np.multiply(self.depth_cell_size_m, ratio)
         self.depth_cell_depth_m = self.draft_use_m + np.multiply(
-            self.depth_cell_depth_m - self.draft_use_m, ratio)
+            self.depth_cell_depth_m - self.draft_use_m, ratio
+        )
 
     def valid_mean_data(self):
         """Determines if raw data are sufficient to compute a valid depth
         without interpolation.
         """
 
-        if self.depth_source == 'BT':
+        if self.depth_source == "BT":
             self.valid_data = np.tile(True, self.valid_beams.shape[1])
             nvalid = np.sum(self.valid_beams, axis=0)
 
-            if self.valid_data_method == 'TRDI':
+            if self.valid_data_method == "TRDI":
                 self.valid_data[nvalid < 3] = False
             else:
                 self.valid_data[nvalid < 2] = False
@@ -461,8 +452,7 @@ class DepthData(object):
             self.valid_data = self.valid_beams[0, :]
 
     def filter_none(self):
-        """Applies no filter to depth data. Removes filter if one was applied.
-        """
+        """Applies no filter to depth data. Removes filter if one was applied."""
 
         # Set all ensembles to have valid data
         if len(self.depth_beams_m.shape) > 1:
@@ -474,17 +464,14 @@ class DepthData(object):
         self.valid_beams[self.depth_beams_m == 0] = False
         self.valid_beams[np.isnan(self.depth_beams_m)] = False
 
-        self.filter_type = 'None'
+        self.filter_type = "None"
 
     def filter_smooth(self, transect):
         """This filter uses a moving InterQuartile Range filter on residuals
-        from a
-        robust Loess smooth of the depths in each beam to identify unnatural
-        spikes in the depth
-        measurements from each beam.  Each beam is filtered independently.
-        The filter
-        criteria are set to be the maximum of the IQR filter, 5% of the
-        measured depth, or 0.1 meter
+        from a robust Loess smooth of the depths in each beam
+        to identify unnatural spikes in the depth measurements from each beam.
+        Each beam is filtered independently. The filter criteria are set
+        to be the maximum of the IQR filter, 5% of the measured depth, or 0.1 meter
 
         Parameters
         ----------
@@ -494,83 +481,67 @@ class DepthData(object):
         Notes
         -----
         half_width - number of points to each side of target point used in
-        computing IQR.
-            This is the raw number of points actual points used may be less
-            if some are bad.
+        computing IQR. This is the raw number of points actual points used may be less
+        if some are bad.
 
         multiplier - number multiplied times the IQR to determine the filter
         criteria
-
         """
 
         # If the smoothed depth has not been computed
         if self.smooth_depth is None or len(self.smooth_depth) == 0:
 
             # Set filter characteristics
-            self.filter_type = 'Smooth'
-            # cycles = 3
-            # half_width = 10
-            # multiplier = 15
+            self.filter_type = "Smooth"
 
             # Determine number of beams
             if len(self.depth_orig_m.shape) > 1:
-                n_beams, n_ensembles = self.depth_orig_m.shape[0], \
-                                       self.depth_orig_m.shape[1]
+                n_beams, n_ensembles = (
+                    self.depth_orig_m.shape[0],
+                    self.depth_orig_m.shape[1],
+                )
                 depth_raw = np.copy(self.depth_orig_m)
             else:
                 n_beams = 1
                 n_ensembles = self.depth_orig_m.shape[0]
-                depth_raw = np.copy(
-                    np.reshape(self.depth_orig_m, (1, n_ensembles)))
+                depth_raw = np.copy(np.reshape(self.depth_orig_m, (1, n_ensembles)))
 
             # Set bad depths to nan
             depth = repmat([np.nan], n_beams, n_ensembles)
 
             # Arrays initialized
             depth_smooth = repmat([np.nan], n_beams, n_ensembles)
-            # depth_res = repmat([np.nan], n_beams, n_ensembles)
             upper_limit = repmat([np.nan], n_beams, n_ensembles)
             lower_limit = repmat([np.nan], n_beams, n_ensembles)
             depth_filtered = depth
-            depth[nan_greater(depth_raw, 0)] = depth_raw[
-                nan_greater(depth_raw, 0)]
+            depth[nan_greater(depth_raw, 0)] = depth_raw[nan_greater(depth_raw, 0)]
 
             # Create position array
-            boat_vel_selected = getattr(transect.boat_vel,
-                                        transect.boat_vel.selected)
+            boat_vel_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
             if boat_vel_selected is not None:
-                track_x = boat_vel_selected.u_processed_mps * \
-                          transect.date_time.ens_duration_sec
-                track_y = boat_vel_selected.v_processed_mps * \
-                          transect.date_time.ens_duration_sec
+                track_x = (
+                    boat_vel_selected.u_processed_mps
+                    * transect.date_time.ens_duration_sec
+                )
+                track_y = (
+                    boat_vel_selected.v_processed_mps
+                    * transect.date_time.ens_duration_sec
+                )
             else:
                 track_x = np.nan
                 track_y = np.nan
 
             idx = np.where(np.isnan(track_x))
             if len(idx[0]) < 2:
-                x = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
+                x = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
             else:
                 x = np.nancumsum(transect.date_time.ens_duration_sec)
 
-            multi_processing = False
-            # start = time.perf_counter()
-            if multi_processing:
-                with concurrent.futures.ProcessPoolExecutor() as executor:
-                    results = executor.map(self.compute_smooth, depth,
-                                           depth_filtered, it.repeat(x))
-
-                for j, result in enumerate(results):
-                    depth_smooth[j] = result[0]
-                    upper_limit[j] = result[1]
-                    lower_limit[j] = result[2]
-            else:
-                # Loop for each beam, smooth is applied to each beam
-                for j in range(n_beams):
-                    depth_smooth[j], upper_limit[j], lower_limit[
-                        j] = self.compute_smooth(depth[j],
-                                                 depth_filtered[j],
-                                                 x)
+            # Loop for each beam, smooth is applied to each beam
+            for j in range(n_beams):
+                depth_smooth[j], upper_limit[j], lower_limit[j] = self.compute_smooth(
+                    depth[j], depth_filtered[j], x
+                )
 
             # Save smooth results to avoid recomputing them if needed later
             self.smooth_depth = depth_smooth
@@ -581,12 +552,14 @@ class DepthData(object):
         self.filter_none()
 
         # Set filter type
-        self.filter_type = 'Smooth'
+        self.filter_type = "Smooth"
 
         # Determine number of beams
         if len(self.depth_orig_m.shape) > 1:
-            n_beams, n_ensembles = self.depth_orig_m.shape[0], \
-                                   self.depth_orig_m.shape[1]
+            n_beams, n_ensembles = (
+                self.depth_orig_m.shape[0],
+                self.depth_orig_m.shape[1],
+            )
             depth_raw = np.copy(self.depth_orig_m)
         else:
             n_beams = 1
@@ -605,7 +578,9 @@ class DepthData(object):
                 bad_idx = np.where(
                     np.logical_or(
                         nan_greater(depth[j], self.smooth_upper_limit[j]),
-                        nan_less(depth[j], self.smooth_lower_limit[j])))[0]
+                        nan_less(depth[j], self.smooth_lower_limit[j]),
+                    )
+                )[0]
                 # Update depth matrix
                 depth_res[j, bad_idx] = np.nan
 
@@ -625,8 +600,7 @@ class DepthData(object):
         lower_limit = np.nan
 
         # At least 50% of the data in a beam must be valid to apply the smooth
-        # if np.nansum((np.isnan(depth_filtered) == False) / len(
-        # depth_filtered)) > .5:
+        # if np.nansum((np.isnan(depth_filtered) == False) / len( depth_filtered)) > .5:
         # Compute residuals based on robust loess smooth
         if len(x) > 1:
             # Fit smooth
@@ -645,28 +619,31 @@ class DepthData(object):
             max_upper_limit = 9999
             idx = np.where(np.logical_not(np.isnan(depth_filtered)))[0]
             if len(idx) > 0:
-                max_upper_limit = compute_quantile(depth_filtered[idx],
-                                                   0.90) * 3
+                max_upper_limit = compute_quantile(depth_filtered[idx], 0.90) * 3
 
             # Compute inner quartile range
             fill_array = run_iqr(half_width, depth_res)
 
             # Compute filter criteria and apply appropriate
             criteria = multiplier * fill_array
-            idx = np.where(nan_less(criteria,
-                                    np.max(np.vstack((depth * .05,
-                                                      np.ones(
-                                                          depth.shape) / 10)),
-                                           0)))[0]
+            idx = np.where(
+                nan_less(
+                    criteria,
+                    np.max(np.vstack((depth * 0.05, np.ones(depth.shape) / 10)), 0),
+                )
+            )[0]
             if len(idx) > 0:
                 criteria[idx] = np.max(
-                    np.vstack((depth[idx] * .05, np.ones(idx.shape) / 10)), 0)
+                    np.vstack((depth[idx] * 0.05, np.ones(idx.shape) / 10)), 0
+                )
 
             # Compute limits
             upper_limit = depth_smooth + criteria
             idx = np.where(
-                np.logical_or(np.greater(upper_limit, max_upper_limit),
-                              np.isnan(upper_limit)))[0]
+                np.logical_or(
+                    np.greater(upper_limit, max_upper_limit), np.isnan(upper_limit)
+                )
+            )[0]
             if len(idx) > 0:
                 upper_limit[idx] = max_upper_limit
             lower_limit = depth_smooth - criteria
@@ -674,10 +651,11 @@ class DepthData(object):
             lower_limit[idx] = 0
 
             bad_idx = np.where(
-                np.logical_or(nan_greater(depth, upper_limit),
-                              nan_less(depth, lower_limit)))[0]
+                np.logical_or(
+                    nan_greater(depth, upper_limit), nan_less(depth, lower_limit)
+                )
+            )[0]
             # Update depth matrix
-            # depth_res[bad_idx] = np.nan
             if len(bad_idx) == 0:
                 break
             else:
@@ -695,13 +673,11 @@ class DepthData(object):
 
     def filter_savgol(self, transect):
         """This filter uses a moving InterQuartile Range filter on residuals
-        from a
-        a Savitzky-Golay filter on y with non-uniform spaced x
+        from a Savitzky-Golay filter on y with non-uniform spaced x
         of the depths in each beam to identify unnatural spikes in the depth
         measurements from each beam.  Each beam is filtered independently.
-        The filter
-        criteria are set to be the maximum of the IQR filter, 5% of the
-        measured depth, or 0.1 meter
+        The filter criteria are set to be the maximum of the IQR filter,
+        5% of the measured depth, or 0.1 meter
 
         Parameters
         ----------
@@ -711,27 +687,26 @@ class DepthData(object):
         Notes
         -----
         half_width - number of points to each side of target point used in
-        computing IQR.
-            This is the raw number of points actual points used may be less
-            if some are bad.
+        computing IQR. This is the raw number of points actual points used
+        may be less if some are bad.
 
         multiplier - number multiplied times the IQR to determine the filter
         criteria
-
         """
 
         # Determine number of beams
         if len(self.depth_orig_m.shape) > 1:
             # For slant beams
-            n_beams, n_ensembles = self.depth_orig_m.shape[0], \
-                                   self.depth_orig_m.shape[1]
+            n_beams, n_ensembles = (
+                self.depth_orig_m.shape[0],
+                self.depth_orig_m.shape[1],
+            )
             depth_raw = np.copy(self.depth_orig_m)
         else:
             # For vertical beam or depth sounder
             n_beams = 1
             n_ensembles = self.depth_orig_m.shape[0]
-            depth_raw = np.copy(
-                np.reshape(self.depth_orig_m, (1, n_ensembles)))
+            depth_raw = np.copy(np.reshape(self.depth_orig_m, (1, n_ensembles)))
 
         # Set bad depths to nan
         depth = repmat([np.nan], n_beams, n_ensembles)
@@ -741,7 +716,7 @@ class DepthData(object):
         if self.smooth_depth is None:
 
             # Set filter characteristics
-            self.filter_type = 'SavGol'
+            self.filter_type = "SavGol"
             cycles = 3
             half_width = 10
             multiplier = 15
@@ -754,24 +729,25 @@ class DepthData(object):
 
             # Create position array. If there are insufficient track data
             # use elapsed time
-            boat_vel_selected = getattr(transect.boat_vel,
-                                        transect.boat_vel.selected)
-            if boat_vel_selected is not None and \
-                    np.nansum(np.isnan(boat_vel_selected.u_processed_mps)) < 2:
-                track_x = boat_vel_selected.u_processed_mps * \
-                          transect.date_time.ens_duration_sec
-                track_y = boat_vel_selected.v_processed_mps * \
-                          transect.date_time.ens_duration_sec
-                x = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
+            boat_vel_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
+            if (
+                boat_vel_selected is not None
+                and np.nansum(np.isnan(boat_vel_selected.u_processed_mps)) < 2
+            ):
+                track_x = (
+                    boat_vel_selected.u_processed_mps
+                    * transect.date_time.ens_duration_sec
+                )
+                track_y = (
+                    boat_vel_selected.v_processed_mps
+                    * transect.date_time.ens_duration_sec
+                )
+                x = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
             else:
                 x = np.nancumsum(transect.date_time.ens_duration_sec)
 
             # Loop for each beam, smooth is applied to each beam
             for j in range(n_beams):
-                # At least 50% of the data in a beam must be valid to apply
-                # the smooth
-                # if np.nansum((np.isnan(depth[j, :]) == False) /
-                # depth.shape[0]) > .5:
 
                 # Compute residuals based on non-uniform Savitzky-Golay
                 try:
@@ -789,31 +765,36 @@ class DepthData(object):
                 for n in range(cycles - 1):
 
                     # Compute inner quartile range
-                    # fill_array = DepthData.run_iqr(half_width, depth_res[
-                    # j, :])
+
                     fill_array = run_iqr(half_width, depth_res[j, :])
                     # Compute filter criteria
                     criteria = multiplier * fill_array
 
                     # Adjust criteria so that it is never less than 5% of
                     # depth or 0.1 m which ever is greater
-                    idx = \
-                    np.where(criteria < np.max(np.vstack((depth[j, :] * .05,
-                                                          np.ones(
-                                                              depth.shape) /
-                                                          10)),
-                                               0))[0]
+                    idx = np.where(
+                        criteria
+                        < np.max(
+                            np.vstack((depth[j, :] * 0.05, np.ones(depth.shape) / 10)),
+                            0,
+                        )
+                    )[0]
                     if len(idx) > 0:
-                        criteria[idx] = np.max(np.vstack(
-                            (depth[j, idx] * .05, np.ones(idx.shape) / 10)), 0)
+                        criteria[idx] = np.max(
+                            np.vstack((depth[j, idx] * 0.05, np.ones(idx.shape) / 10)),
+                            0,
+                        )
 
                     # Compute limits
                     upper_limit[j] = depth_smooth[j, :] + criteria
                     lower_limit[j] = depth_smooth[j, :] - criteria
 
                     bad_idx = np.where(
-                        np.logical_or(np.greater(depth[j], upper_limit[j]),
-                                      np.less(depth[j], lower_limit[j])))[0]
+                        np.logical_or(
+                            np.greater(depth[j], upper_limit[j]),
+                            np.less(depth[j], lower_limit[j]),
+                        )
+                    )[0]
                     # Update residual matrix
                     depth_res[j, bad_idx] = np.nan
 
@@ -826,7 +807,7 @@ class DepthData(object):
         self.filter_none()
 
         # Set filter type
-        self.filter_type = 'SavGol'
+        self.filter_type = "SavGol"
 
         # Apply filter
         for j in range(n_beams):
@@ -834,7 +815,9 @@ class DepthData(object):
                 bad_idx = np.where(
                     np.logical_or(
                         np.greater(depth[j], self.smooth_upper_limit[j]),
-                        np.less(depth[j], self.smooth_lower_limit[j])))[0]
+                        np.less(depth[j], self.smooth_lower_limit[j]),
+                    )
+                )[0]
             else:
                 bad_idx = np.isnan(depth[j])
 
@@ -842,22 +825,20 @@ class DepthData(object):
             self.valid_beams[j, bad_idx] = False
 
     def interpolate_none(self):
-        """Applies no interpolation.
-        """
+        """Applies no interpolation."""
 
         # Compute processed depth without interpolation
-        if self.depth_source == 'BT':
+        if self.depth_source == "BT":
             # Bottom track methods
             self.compute_avg_bt_depth()
         else:
             # Vertical beam or depth sounder depths
             self.depth_processed_m = self.depth_beams_m[0, :]
 
-        self.depth_processed_m[
-            np.squeeze(np.equal(self.valid_data, False))] = np.nan
+        self.depth_processed_m[np.squeeze(np.equal(self.valid_data, False))] = np.nan
 
         # Set interpolation type
-        self.interp_type = 'None'
+        self.interp_type = "None"
 
     def interpolate_hold_last(self):
         """This function holds the last valid value until the next valid
@@ -876,8 +857,7 @@ class DepthData(object):
                 self.depth_processed_m[n] = self.depth_processed_m[n - 1]
 
     def interpolate_next(self):
-        """This function back fills with the next valid value.
-        """
+        """This function back fills with the next valid value."""
 
         # Get number of ensembles
         n_ens = len(self.depth_processed_m)
@@ -891,20 +871,18 @@ class DepthData(object):
                 self.depth_processed_m[n] = self.depth_processed_m[n + 1]
 
     def interpolate_smooth(self):
-        """Apply interpolation based on the robust loess smooth
-        """
+        """Apply interpolation based on the robust loess smooth"""
 
-        self.interp_type = 'Smooth'
+        self.interp_type = "Smooth"
 
         # Get depth data from object
         depth_new = self.depth_beams_m
 
         # Update depth data with interpolated depths
-        depth_new[not self.valid_beams] = self.smooth_depth[
-            not self.valid_beams]
+        depth_new[not self.valid_beams] = self.smooth_depth[not self.valid_beams]
 
         # Compute processed depths with interpolated values
-        if self.depth_source == 'BT':
+        if self.depth_source == "BT":
             # Temporarily change self.depth_beams_m to compute average
             # for bottom track based depths
             temp_save = copy.deepcopy(self.depth_beams_m)
@@ -917,11 +895,10 @@ class DepthData(object):
             self.depth_processed_m = depth_new[0, :]
 
     def interpolate_linear(self, transect):
-        """Apply linear interpolation
-        """
+        """Apply linear interpolation"""
 
         # Set interpolation type
-        self.interp_type = 'Linear'
+        self.interp_type = "Linear"
 
         # Create position array
         select = getattr(transect.boat_vel, transect.boat_vel.selected)
@@ -931,7 +908,7 @@ class DepthData(object):
             track_x = boat_vel_x * transect.date_time.ens_duration_sec
             track_y = boat_vel_y * transect.date_time.ens_duration_sec
         else:
-            select = getattr(transect.boat_vel, 'bt_vel')
+            select = getattr(transect.boat_vel, "bt_vel")
             track_x = np.tile(np.nan, select.u_processed_mps.shape)
             track_y = np.tile(np.nan, select.v_processed_mps.shape)
 
@@ -940,7 +917,7 @@ class DepthData(object):
         # If the navigation reference has no gaps use it for interpolation,
         # if not use time
         if len(idx[0]) < 1:
-            x = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
+            x = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
         else:
             # Compute accumulated time
             x = np.nancumsum(transect.date_time.ens_duration_sec)
@@ -950,19 +927,16 @@ class DepthData(object):
         depth_mono = copy.deepcopy(self.depth_beams_m)
         depth_new = copy.deepcopy(self.depth_beams_m)
 
-        #       Create strict monotonic arrays for depth and track by
-        #       identifying duplicate
-        #       track values.  The first track value is used and the
-        #       remaining duplicates
-        #       are set to nan.  The depth assigned to that first track
-        #       value is the average
-        #       of all duplicates.  The depths for the duplicates are then
-        #       set to nan.  Only
-        #       valid strictly monotonic track and depth data are used for
-        #       the input in to linear
-        #       interpolation.   Only the interpolated data for invalid
-        #       depths are added
-        #       to the valid depth data to create depth_new
+        # Create strict monotonic arrays for depth and track by
+        # identifying duplicate track values.
+        # The first track value is used and the remaining duplicates
+        # are set to nan.  The depth assigned to that first track
+        # value is the average of all duplicates.
+        # The depths for the duplicates are then set to nan.  Only
+        # valid strictly monotonic track and depth data are used for
+        # the input in to linear interpolation.
+        # Only the interpolated data for invalid depths are added
+        # to the valid depth data to create depth_new
 
         x_mono = x
 
@@ -1000,18 +974,23 @@ class DepthData(object):
 
             if np.sum(valid) > 1:
                 # Compute interpolation function from all valid data
-                depth_int = np.interp(x_mono, x_mono[valid],
-                                      depth_mono[n, valid], left=np.nan,
-                                      right=np.nan)
+                depth_int = np.interp(
+                    x_mono,
+                    x_mono[valid],
+                    depth_mono[n, valid],
+                    left=np.nan,
+                    right=np.nan,
+                )
                 # Fill in invalid data with interpolated data
                 depth_new[n, np.logical_not(self.valid_beams[n])] = depth_int[
-                    np.logical_not(self.valid_beams[n])]
+                    np.logical_not(self.valid_beams[n])
+                ]
 
-        if self.depth_source == 'BT':
+        if self.depth_source == "BT":
             # Bottom track depths
-            self.depth_processed_m = self.average_depth(depth_new,
-                                                        self.draft_use_m,
-                                                        self.avg_method)
+            self.depth_processed_m = self.average_depth(
+                depth_new, self.draft_use_m, self.avg_method
+            )
         else:
             # Vertical beam or depth sounder depths
             self.depth_processed_m = np.copy(depth_new[0, :])
@@ -1036,16 +1015,15 @@ class DepthData(object):
             Average depth for each ensemble
 
         """
-        if method == 'Simple':
+        if method == "Simple":
             avg_depth = np.nanmean(depth, 0)
         else:
             # Compute inverse weighted mean depth
             rng = depth - draft
             w = 1 - np.divide(rng, np.nansum(rng, 0))
-            avg_depth = draft + np.nansum(np.divide((rng * w), np.nansum(w, 0),
-                                                    where=np.nansum(w,
-                                                                    0) != 0),
-                                          0)
+            avg_depth = draft + np.nansum(
+                np.divide((rng * w), np.nansum(w, 0), where=np.nansum(w, 0) != 0), 0
+            )
             avg_depth[avg_depth == draft] = np.nan
 
         return avg_depth
@@ -1065,7 +1043,7 @@ class DepthData(object):
         self.filter_none()
 
         # Set filter type to TRDI
-        self.filter_type = 'TRDI'
+        self.filter_type = "TRDI"
 
         for n in range(n_beams):
             depth_ratio = depth_raw[n, :] / depth_raw
@@ -1079,8 +1057,7 @@ class DepthData(object):
     # AOT.
     # The methods below are included here for historical purposes
     # and may provide an easier approach to adding new features/algorithms
-    # prior to recoding
-    # them in a manner that can be compiled using Numba AOT.
+    # prior to recoding them in a manner that can be compiled using Numba AOT.
     # ======================================================================
     @staticmethod
     def run_iqr(half_width, data):
@@ -1116,21 +1093,21 @@ class DepthData(object):
 
             # Sample selection for 1st point
             if n == 0:
-                sample = data[1:1 + half_width]
+                sample = data[1 : 1 + half_width]
 
             # Sample selection a end of data set
             elif n + half_width > npts:
-                sample = np.hstack(
-                    [data[n - half_width - 1:n - 1], data[n:npts]])
+                sample = np.hstack([data[n - half_width - 1 : n - 1], data[n:npts]])
 
             # Sample selection at beginning of data set
             elif half_width >= n + 1:
-                sample = np.hstack([data[0:n], data[n + 1:n + half_width + 1]])
+                sample = np.hstack([data[0:n], data[n + 1 : n + half_width + 1]])
 
             # Sample selection in body of data set
             else:
                 sample = np.hstack(
-                    [data[n - half_width:n], data[n + 1:n + half_width + 1]])
+                    [data[n - half_width : n], data[n + 1 : n + half_width + 1]]
+                )
 
             iqr_array.append(iqr(sample))
 

@@ -27,11 +27,15 @@ class Ui_rating(object):
         self.txt_rating_msg.setWordWrap(True)
         self.txt_rating_msg.setObjectName("txt_rating_msg")
         self.verticalLayout_2.addWidget(self.txt_rating_msg)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem1)
         self.Uncertainty_label = QtWidgets.QLabel(rating)
         font = QtGui.QFont()
@@ -41,12 +45,16 @@ class Ui_rating(object):
         self.Uncertainty_label.setFont(font)
         self.Uncertainty_label.setObjectName("Uncertainty_label")
         self.horizontalLayout_2.addWidget(self.Uncertainty_label)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem2)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem3)
         self.uncertainty_value = QtWidgets.QLabel(rating)
         font = QtGui.QFont()
@@ -61,12 +69,16 @@ class Ui_rating(object):
         self.uncertainty_units.setFont(font)
         self.uncertainty_units.setObjectName("uncertainty_units")
         self.horizontalLayout.addWidget(self.uncertainty_units)
-        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem4 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem4)
         self.horizontalLayout.setStretch(0, 2)
         self.horizontalLayout.setStretch(3, 2)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem5 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem5)
         self.horizontalLayout_3.addLayout(self.verticalLayout_2)
         self.gb_rating = QtWidgets.QGroupBox(rating)
@@ -121,7 +133,9 @@ class Ui_rating(object):
         font.setPointSize(12)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
@@ -133,8 +147,15 @@ class Ui_rating(object):
     def retranslateUi(self, rating):
         _translate = QtCore.QCoreApplication.translate
         rating.setWindowTitle(_translate("rating", "Rating"))
-        self.txt_rating_msg.setText(_translate("rating", "<html><head/><body><p><span style=\" font-weight:600;\">IMPORTANT:</span> The rating for a measurement should include the uncertainty of the stage associated with the measurement in addition to the uncertainty of the discharge.</p></body></html>"))
-        self.Uncertainty_label.setText(_translate("rating", "QRev Estimated Uncertainty"))
+        self.txt_rating_msg.setText(
+            _translate(
+                "rating",
+                '<html><head/><body><p><span style=" font-weight:600;">IMPORTANT:</span> The rating for a measurement should include the uncertainty of the stage associated with the measurement in addition to the uncertainty of the discharge.</p></body></html>',
+            )
+        )
+        self.Uncertainty_label.setText(
+            _translate("rating", "QRev Estimated Uncertainty")
+        )
         self.uncertainty_units.setText(_translate("rating", "%"))
         self.gb_rating.setTitle(_translate("rating", "Rating:"))
         self.rb_excellent.setText(_translate("rating", "Excellent (< 3%)"))
@@ -145,6 +166,7 @@ class Ui_rating(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     rating = QtWidgets.QDialog()
     ui = Ui_rating()

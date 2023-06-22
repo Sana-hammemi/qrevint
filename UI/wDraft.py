@@ -19,11 +19,15 @@ class Ui_draft(object):
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem1)
         self.draft_label = QtWidgets.QLabel(draft)
         font = QtGui.QFont()
@@ -33,12 +37,16 @@ class Ui_draft(object):
         self.draft_label.setFont(font)
         self.draft_label.setObjectName("draft_label")
         self.horizontalLayout_2.addWidget(self.draft_label)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem2)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem3)
         self.ed_draft = QtWidgets.QLineEdit(draft)
         font = QtGui.QFont()
@@ -49,13 +57,17 @@ class Ui_draft(object):
         self.draft_units = QtWidgets.QLabel(draft)
         self.draft_units.setObjectName("draft_units")
         self.horizontalLayout.addWidget(self.draft_units)
-        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem4 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem4)
         self.horizontalLayout.setStretch(0, 2)
         self.horizontalLayout.setStretch(1, 1)
         self.horizontalLayout.setStretch(3, 2)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem5 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem5)
         self.horizontalLayout_3.addLayout(self.verticalLayout_2)
         self.gb_hoffset = QtWidgets.QGroupBox(draft)
@@ -91,7 +103,9 @@ class Ui_draft(object):
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
         self.buttonBox = QtWidgets.QDialogButtonBox(draft)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
@@ -110,10 +124,9 @@ class Ui_draft(object):
         self.rb_transect.setText(_translate("draft", "Transect Only"))
 
 
-
-
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     draft = QtWidgets.QDialog()
     ui = Ui_draft()

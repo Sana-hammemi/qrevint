@@ -6,7 +6,8 @@ def non_uniform_savgol(x, y, window, polynom):
     Applies a Savitzky-Golay filter to y with non-uniform spacing
     as defined in x
 
-    This is based on https://dsp.stackexchange.com/questions/1676/savitzky-golay-smoothing-filter-for-not-equally-spaced-data
+    This is based on https://dsp.stackexchange.com/questions/1676
+    /savitzky-golay-smoothing-filter-for-not-equally-spaced-data
     The borders are interpolated like scipy.signal.savgol_filter would do
 
     Parameters
@@ -30,7 +31,7 @@ def non_uniform_savgol(x, y, window, polynom):
         raise ValueError('"x" and "y" must be of the same size')
 
     if len(x) < window:
-        raise ValueError('The data size must be larger than the window size')
+        raise ValueError("The data size must be larger than the window size")
 
     if type(window) is not int:
         raise TypeError('"window" must be an integer')
@@ -48,9 +49,9 @@ def non_uniform_savgol(x, y, window, polynom):
     polynom += 1
 
     # Initialize variables
-    A = np.empty((window, polynom))     # Matrix
-    tA = np.empty((polynom, window))    # Transposed matrix
-    t = np.empty(window)                # Local x variables
+    A = np.empty((window, polynom))  # Matrix
+    tA = np.empty((polynom, window))  # Transposed matrix
+    t = np.empty(window)  # Local x variables
     y_smoothed = np.full(len(y), np.nan)
 
     # Start smoothing

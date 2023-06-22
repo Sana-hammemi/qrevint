@@ -54,7 +54,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         self.fullName = []
         self.fileName = []
         self.pathName = []
-        self.type = ''
+        self.type = ""
         self.checked = False
 
     def default_folder(self):
@@ -64,12 +64,12 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
         the current working folder is returned.
         """
         try:
-            folder = self.settings.get('Folder')
+            folder = self.settings.get("Folder")
             if not folder:
                 folder = os.getcwd()
         except KeyError:
-            self.settings.new('Folder', os.getcwd())
-            folder = self.settings.get('Folder')
+            self.settings.new("Folder", os.getcwd())
+            folder = self.settings.get("Folder")
         return folder
 
     def process_names(self):
@@ -86,7 +86,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
                 self.fileName.append(fileTemp)
 
         # Update the folder setting
-        self.settings.set('Folder', self.pathName)
+        self.settings.set("Folder", self.pathName)
 
     def select_sontek(self):
         """Get filenames and pathname for SonTek Matlab transect files
@@ -101,17 +101,17 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
 
         # Get the full names (path + file) of the selected files
         self.fullName = QtWidgets.QFileDialog.getOpenFileNames(
-                    self, self.tr('Open File'), folder,
-                    self.tr('SonTek Matlab File (*.mat)'))[0]
+            self, self.tr("Open File"), folder, self.tr("SonTek Matlab File (*.mat)")
+        )[0]
 
         # Initialize parameters
-        self.type = ''
+        self.type = ""
         self.checked = False
 
         # Process fullName if selection was made
         if self.fullName:
             self.process_names()
-            self.type = 'SonTek'
+            self.type = "SonTek"
         self.close()
 
     def select_trdi(self):
@@ -127,108 +127,139 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
 
         # Get the full names (path + file) of the selected files
         self.fullName = QtWidgets.QFileDialog.getOpenFileNames(
-                    self, self.tr('Open File'), folder,
-                    self.tr('TRDI mmt File (*.mmt)'))[0]
+            self, self.tr("Open File"), folder, self.tr("TRDI mmt File (*.mmt)")
+        )[0]
 
         # Initialize parameters
-        self.type = ''
+        self.type = ""
         self.checked = self.cbTRDI.isChecked()
 
         # Process fullName if selection was made
         if self.fullName:
-            self.type = 'TRDI'
+            self.type = "TRDI"
             self.process_names()
         self.close()
 
     def select_qrev(self):
         """Get filename and pathname of QRev file.
 
-                Allows the user to select a QRev file for viewing or
-                reprocessing.
-                The selected folder becomes the default folder for subsequent
-                selectFile requests.
-                """
+        Allows the user to select a QRev file for viewing or
+        reprocessing. The selected folder becomes the default
+        folder for subsequent selectFile requests.
+        """
 
         # Get the current folder setting.
         folder = self.default_folder()
 
         # Get the full names (path + file) of the selected file
         self.fullName = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr('Open File'), folder,
-            self.tr('QRev File (*_QRev.mat)'))[0]
+            self, self.tr("Open File"), folder, self.tr("QRev File (*_QRev.mat)")
+        )[0]
 
         # Initialize parameters
-        self.type = ''
+        self.type = ""
         self.checked = False
 
         # Process fullName if selection was made
         if self.fullName:
-            self.type = 'QRev'
+            self.type = "QRev"
             self.process_names()
         self.close()
 
     def cancel(self):
-        """Close dialog.
-        """
-        self.type = ''
+        """Close dialog."""
+        self.type = ""
         self.close()
 
 
-class SaveMeasurementDialog(QtWidgets.QDialog):
-    """Dialog to allow users to select measurement files for processing.
+class SaveDialog(QtWidgets.QDialog):
+    """Dialog to allow users to specify file for saving (_QRev.mat or figure)
 
-        Parameters
-        ----------
-        wSelectFile.Ui_selectFile : QDialog
-            Dialog window with options for users
+    Parameters
+    ----------
+    wSelectFile.Ui_selectFile : QDialog
+        Dialog window with options for users
 
-        Attributes
-        ----------
-        full_Name: str
-            Filename with path to save file.
+    Attributes
+    ----------
+    full_Name: str
+        Filename with path to save file.
     """
 
-    def __init__(self, group=None, parent=None):
+    def __init__(self, group=None, save_type="QRev", parent=None):
         """Initializes settings and connections.
 
         Parameters
         ----------
-        parent
+        parent: QRev
             Identifies parent GUI.
         group: str
             group number if split initiation
+        save_type: str
+            Indicates type of save
         """
-        super(SaveMeasurementDialog, self).__init__(parent)
+        super(SaveDialog, self).__init__(parent)
         # self.setupUi(self)
-
+        self.full_Name = None
+        self.file_extension = None
         # Create settings object which contains the default folder
         settings = SSet(parent.settingsFile)
+        folder = ""
+        title = ""
+        file_name = ""
+        filetype = ""
 
         # Get the current folder setting.
-        folder = self.default_folder(settings)
+        if parent is not None:
+            if len(parent.path) > 0:
+                folder = parent.path
+            else:
+                folder = self.default_folder(settings)
         version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
         # Create default file name
-        if group is None:
-            file_name = \
-                os.path.join(folder,
-                             datetime.datetime.today().
-                             strftime('%Y%m%d_%H%M%S_' + version +
-                                      '_QRev.mat'))
-        else:
-            file_name = \
-                os.path.join(folder,
-                             datetime.datetime.today().
-                             strftime('%Y%m%d_%H%M%S_' + group + '_' +
-                                      version + '_QRev.mat'))
+        if save_type == "QRev":
+            if group is None:
+                file_name = os.path.join(
+                    folder,
+                    datetime.datetime.today().strftime(
+                        "%Y%m%d_%H%M%S_" + version + "_QRev.mat"
+                    ),
+                )
+            else:
+                file_name = os.path.join(
+                    folder,
+                    datetime.datetime.today().strftime(
+                        "%Y%m%d_%H%M%S_" + group + "_" + version + "_QRev.mat"
+                    ),
+                )
+            title = self.tr("Save File")
+            filetype = self.tr("QRev File (*_QRev.mat)")
 
+        elif save_type == "fig":
+            file_name = folder + "/" + folder.split("/")[-1]
+            title = self.tr("Save figure")
+            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
+
+        elif save_type == "MAP":
+            file_name = folder + "/MAP_" + folder.split("/")[-1]
+            title = self.tr("Save MAP")
+            filetype = (
+                f"{self.tr('csv (separator: semicolon)')}( *.csv);;"
+                f"{self.tr('text (separator: space)')}(*.txt);;"
+                f"{self.tr('All Files')} (*)"
+            )
         # Get the full names (path + file) of the selected file
-        self.full_Name = QtWidgets.QFileDialog.getSaveFileName(
-            self, self.tr('Save File'), file_name,
-            self.tr('QRev File (*_QRev.mat)'))[0]
-        if len(self.full_Name) > 0:
-            if self.full_Name[-4:] != '.mat':
-                self.full_Name = self.full_Name + '.mat'
+        file_save = QtWidgets.QFileDialog.getSaveFileName(
+            self, title, file_name, filetype
+        )
 
+        if file_save is not None:
+            self.full_Name, file_type = file_save
+            file_extension = file_type.split("*")[-1][:-1]
+            if len(self.full_Name) > 0:
+                self.file_extension = file_extension
+                if self.full_Name[-len(file_extension) :] != file_extension:
+                    self.full_Name = self.full_Name + file_extension
 
     @staticmethod
     def default_folder(settings):
@@ -238,10 +269,10 @@ class SaveMeasurementDialog(QtWidgets.QDialog):
         then the current working folder is returned.
         """
         try:
-            folder = settings.get('Folder')
+            folder = settings.get("Folder")
             if not folder:
                 folder = os.getcwd()
         except KeyError:
-            settings.new('Folder', os.getcwd())
-            folder = settings.get('Folder')
+            settings.new("Folder", os.getcwd())
+            folder = settings.get("Folder")
         return folder

@@ -54,3 +54,4 @@ lib64
 .Trashes
 ehthumbs.db
 Thumbs.db
+/Classes/__pycache__

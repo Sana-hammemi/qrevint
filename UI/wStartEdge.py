@@ -53,7 +53,9 @@ class Ui_start_edge(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout)
         self.buttonBox = QtWidgets.QDialogButtonBox(start_edge)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout_3.addWidget(self.buttonBox)
         self.gridLayout_2.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
@@ -71,10 +73,9 @@ class Ui_start_edge(object):
         self.rb_right.setText(_translate("start_edge", "Right"))
 
 
-
-
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     start_edge = QtWidgets.QDialog()
     ui = Ui_start_edge()

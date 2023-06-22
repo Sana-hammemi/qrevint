@@ -6,28 +6,173 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1938</width>
-    <height>1208</height>
+    <width>1925</width>
+    <height>1055</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="palette">
+   <palette>
+    <active>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Text">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="PlaceholderText">
+      <brush brushstyle="NoBrush">
+       <color alpha="128">
+        <red>0</red>
+        <green>0</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </active>
+    <inactive>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Text">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="PlaceholderText">
+      <brush brushstyle="NoBrush">
+       <color alpha="128">
+        <red>0</red>
+        <green>0</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </inactive>
+    <disabled>
+     <colorrole role="Button">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Text">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>120</red>
+        <green>120</green>
+        <blue>120</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>0</red>
+        <green>0</green>
+        <blue>175</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="PlaceholderText">
+      <brush brushstyle="NoBrush">
+       <color alpha="128">
+        <red>0</red>
+        <green>0</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </disabled>
+   </palette>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="QRev.ico">
-    <normaloff>../../qrevpy/UI</normaloff>../../qrevpy/UI</iconset>
+   <iconset theme="QRevInt.ico">
+    <normaloff>../../../../../.designer/backup</normaloff>../../../../../.designer/backup</iconset>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
   </property>
   <property name="styleSheet">
-   <string notr="true"/>
+   <string notr="true">QMainWindow{background: solid rgb(0, 0, 175);}</string>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
@@ -66,11 +211,29 @@
            </color>
           </brush>
          </colorrole>
+         <colorrole role="PlaceholderText">
+          <brush brushstyle="NoBrush">
+           <color alpha="128">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
         </active>
         <inactive>
          <colorrole role="Text">
           <brush brushstyle="SolidPattern">
            <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="PlaceholderText">
+          <brush brushstyle="NoBrush">
+           <color alpha="128">
             <red>0</red>
             <green>0</green>
             <blue>0</blue>
@@ -85,6 +248,15 @@
             <red>120</red>
             <green>120</green>
             <blue>120</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="PlaceholderText">
+          <brush brushstyle="NoBrush">
+           <color alpha="128">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
            </color>
           </brush>
          </colorrole>
@@ -651,7 +823,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_systest_2_results">
            <attribute name="title">
@@ -809,6 +981,15 @@
                          </color>
                         </brush>
                        </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
+                          <red>0</red>
+                          <green>0</green>
+                          <blue>255</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -823,6 +1004,15 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
+                          <red>0</red>
+                          <green>0</green>
+                          <blue>255</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
                           <red>0</red>
                           <green>0</green>
                           <blue>255</blue>
@@ -846,6 +1036,15 @@
                           <red>120</red>
                           <green>120</green>
                           <blue>120</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
+                          <red>0</red>
+                          <green>0</green>
+                          <blue>255</blue>
                          </color>
                         </brush>
                        </colorrole>
@@ -1606,6 +1805,15 @@
                               </color>
                              </brush>
                             </colorrole>
+                            <colorrole role="PlaceholderText">
+                             <brush brushstyle="NoBrush">
+                              <color alpha="128">
+                               <red>255</red>
+                               <green>0</green>
+                               <blue>0</blue>
+                              </color>
+                             </brush>
+                            </colorrole>
                            </active>
                            <inactive>
                             <colorrole role="WindowText">
@@ -1620,6 +1828,15 @@
                             <colorrole role="Text">
                              <brush brushstyle="SolidPattern">
                               <color alpha="255">
+                               <red>255</red>
+                               <green>0</green>
+                               <blue>0</blue>
+                              </color>
+                             </brush>
+                            </colorrole>
+                            <colorrole role="PlaceholderText">
+                             <brush brushstyle="NoBrush">
+                              <color alpha="128">
                                <red>255</red>
                                <green>0</green>
                                <blue>0</blue>
@@ -1643,6 +1860,15 @@
                                <red>120</red>
                                <green>120</green>
                                <blue>120</blue>
+                              </color>
+                             </brush>
+                            </colorrole>
+                            <colorrole role="PlaceholderText">
+                             <brush brushstyle="NoBrush">
+                              <color alpha="128">
+                               <red>255</red>
+                               <green>0</green>
+                               <blue>0</blue>
                               </color>
                              </brush>
                             </colorrole>
@@ -2008,6 +2234,15 @@
                            </color>
                           </brush>
                          </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -2022,6 +2257,15 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -2045,6 +2289,15 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -2658,6 +2911,15 @@
                            </color>
                           </brush>
                          </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -2672,6 +2934,15 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -2695,6 +2966,15 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -3132,6 +3412,15 @@
                          </color>
                         </brush>
                        </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
+                          <red>255</red>
+                          <green>0</green>
+                          <blue>0</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -3146,6 +3435,15 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
+                          <red>255</red>
+                          <green>0</green>
+                          <blue>0</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
                           <red>255</red>
                           <green>0</green>
                           <blue>0</blue>
@@ -3169,6 +3467,15 @@
                           <red>120</red>
                           <green>120</green>
                           <blue>120</blue>
+                         </color>
+                        </brush>
+                       </colorrole>
+                       <colorrole role="PlaceholderText">
+                        <brush brushstyle="NoBrush">
+                         <color alpha="128">
+                          <red>255</red>
+                          <green>0</green>
+                          <blue>0</blue>
                          </color>
                         </brush>
                        </colorrole>
@@ -4292,6 +4599,15 @@
                            </color>
                           </brush>
                          </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -4306,6 +4622,15 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -4329,6 +4654,15 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
+                           </color>
+                          </brush>
+                         </colorrole>
+                         <colorrole role="PlaceholderText">
+                          <brush brushstyle="NoBrush">
+                           <color alpha="128">
+                            <red>255</red>
+                            <green>0</green>
+                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -5364,7 +5698,7 @@
                   </layout>
                  </item>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_40" stretch="4,5,6">
+                  <layout class="QHBoxLayout" name="horizontalLayout_40" stretch="0,5,6">
                    <item>
                     <widget class="QLabel" name="txt_exponent">
                      <property name="font">
@@ -6790,6 +7124,34 @@
                   </widget>
                  </item>
                  <item>
+                  <widget class="QGroupBox" name="gb_sensors">
+                   <property name="font">
+                    <font>
+                     <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="title">
+                    <string>Sensors</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_75">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_battery_voltage">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Battery Voltage</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
                   <spacer name="verticalSpacer_5">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
@@ -7195,6 +7557,463 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_map">
+       <attribute name="title">
+        <string>MAP</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_101">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_100" stretch="8,2">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_71" stretch="1,3">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_90">
+              <item>
+               <widget class="QGroupBox" name="gb_previous_2">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="title">
+                 <string>MAP Properties</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_70" stretch="0,1">
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetDefaultConstraint</enum>
+                 </property>
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_51" rowstretch="2,0,0" columnstretch="1,0">
+                   <property name="sizeConstraint">
+                    <enum>QLayout::SetDefaultConstraint</enum>
+                   </property>
+                   <item row="2" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_87" stretch="0,0,0">
+                     <item alignment="Qt::AlignLeft">
+                      <widget class="QLabel" name="txt_map_data">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Data to plot:</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="combo_map_data">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <item>
+                        <property name="text">
+                         <string>Primary velocity</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>Streamwise velocity</string>
+                        </property>
+                       </item>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_6">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="1" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_93">
+                     <item>
+                      <widget class="QCheckBox" name="cb_map_bed_profiles">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Individual bed profiles</string>
+                       </property>
+                       <property name="checked">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="2" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_92">
+                     <item>
+                      <widget class="QLabel" name="label_6">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Quiver scale:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_map_secondary_velocity">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string/>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="0" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_89">
+                     <item>
+                      <widget class="QLabel" name="label">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Cell width (m)</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="ed_map_cell_width">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_2">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Cell height (m)</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="0" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_96">
+                     <item>
+                      <widget class="QLineEdit" name="ed_map_cell_height">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="1" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_91">
+                     <item>
+                      <widget class="QCheckBox" name="cb_map_top_bottom">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Top/bottom extrap</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="cb_map_edges">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Edges extrap</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="cb_map_interpolation">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>50</weight>
+                         <bold>false</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Interpolation</string>
+                       </property>
+                       <property name="checked">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QVBoxLayout" name="verticalLayout_69" stretch="1">
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_99" stretch="2,1">
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <spacer name="horizontalSpacer_12">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pb_map_apply">
+                       <property name="font">
+                        <font>
+                         <pointsize>11</pointsize>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Apply</string>
+                       </property>
+                       <property name="autoDefault">
+                        <bool>false</bool>
+                       </property>
+                       <property name="default">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_85">
+                <item>
+                 <spacer name="horizontalSpacer_10">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_74" stretch="9,1">
+              <item>
+               <widget class="QWidget" name="graphics_map_wt_contour" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>500</width>
+                  <height>200</height>
+                 </size>
+                </property>
+                <property name="autoFillBackground">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_94" stretch="3,1,0">
+                <item>
+                 <spacer name="horizontalSpacer_14">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pb_map_save">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Save MAP data</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_13">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_73" stretch="1,1,1">
+            <item>
+             <widget class="QGroupBox" name="gb_previous_3">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="title">
+               <string>MAP Results</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_72">
+               <item>
+                <widget class="QTableWidget" name="table_map_results">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true"/>
+                 </property>
+                 <property name="sizeAdjustPolicy">
+                  <enum>QAbstractScrollArea::AdjustIgnored</enum>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="textElideMode">
+                  <enum>Qt::ElideNone</enum>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="graphics_map_track" native="true">
+              <property name="autoFillBackground">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pb_map_open_earth">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Open MAP in Google Earth</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -7273,6 +8092,8 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
    <addaction name="actionPan"/>
    <addaction name="actionData_Cursor"/>
    <addaction name="separator"/>
+   <addaction name="actionShow_Extrapolated"/>
+   <addaction name="separator"/>
    <addaction name="actionGoogle_Earth"/>
    <addaction name="separator"/>
    <addaction name="actionHelp"/>
@@ -7293,7 +8114,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionOptions">
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Application.png</normaloff>
      <normalon>:/images/24x24/Application.png</normalon>:/images/24x24/Application.png</iconset>
    </property>
@@ -7306,7 +8127,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/images/22.png</normaloff>:/images/images/22.png</iconset>
    </property>
    <property name="text">
@@ -7315,7 +8136,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionComment">
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Notes.png</normaloff>
      <normalon>:/images/24x24/Notes.png</normalon>:/images/24x24/Notes.png</iconset>
    </property>
@@ -7325,7 +8146,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionHelp">
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Help book 3d.png</normaloff>:/images/24x24/Help book 3d.png</iconset>
    </property>
    <property name="text">
@@ -7334,7 +8155,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">
@@ -7441,7 +8262,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Home.png</normaloff>:/images/24x24/Home.png</iconset>
    </property>
    <property name="text">
@@ -7456,7 +8277,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/images/83.png</normaloff>:/images/images/83.png</iconset>
    </property>
    <property name="text">
@@ -7471,7 +8292,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Move.png</normaloff>:/images/24x24/Move.png</iconset>
    </property>
    <property name="text">
@@ -7486,7 +8307,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Info.png</normaloff>:/images/24x24/Info.png</iconset>
    </property>
    <property name="text">
@@ -7498,7 +8319,7 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
   </action>
   <action name="actionGoogle_Earth">
    <property name="icon">
-    <iconset resource="../../qrevpy/UI/dsm.qrc">
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Globe.png</normaloff>:/images/24x24/Globe.png</iconset>
    </property>
    <property name="text">
@@ -7508,9 +8329,24 @@ font: 12pt &quot;MS Shell Dlg 2&quot;;</string>
     <string>Plot to Google Earth</string>
    </property>
   </action>
+  <action name="actionShow_Extrapolated">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="dsm.qrc">
+     <normaloff>:/images/images/60.png</normaloff>:/images/images/60.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show_Extrapolated</string>
+   </property>
+   <property name="toolTip">
+    <string>Show extrapolated speeds</string>
+   </property>
+  </action>
  </widget>
  <resources>
-  <include location="../../qrevpy/UI/dsm.qrc"/>
+  <include location="dsm.qrc"/>
  </resources>
  <connections/>
 </ui>

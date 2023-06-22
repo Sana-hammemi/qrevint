@@ -17,8 +17,7 @@ class Edges(object):
     """
 
     def __init__(self):
-        """Initialize Edges.
-        """
+        """Initialize Edges."""
 
         self.rec_edge_method = None
         self.vel_method = None
@@ -46,13 +45,13 @@ class Edges(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
-       """
+        """
 
-        if hasattr(transect, 'edges'):
-            if hasattr(transect.edges, 'left'):
+        if hasattr(transect, "edges"):
+            if hasattr(transect.edges, "left"):
                 self.left = EdgeData()
                 self.left.populate_from_qrev_mat(transect.edges.left)
-            if hasattr(transect.edges, 'right'):
+            if hasattr(transect.edges, "right"):
                 self.right = EdgeData()
                 self.right.populate_from_qrev_mat(transect.edges.right)
             self.rec_edge_method = transect.edges.recEdgeMethod

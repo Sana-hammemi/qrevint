@@ -74,10 +74,9 @@ class Ui_RIVRS_Demo(object):
         self.gb_ressults.setTitle(_translate("RIVRS_Demo", "Final Measurements"))
 
 
-
-
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     RIVRS_Demo = QtWidgets.QMainWindow()
     ui = Ui_RIVRS_Demo()
