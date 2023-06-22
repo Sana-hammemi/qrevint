@@ -179,7 +179,8 @@ class MAP(object):
             extrap_option,
         )
 
-        # Compute transect median velocity on each mesh (North, East and vertical velocities) and depth on each vertical
+        # Compute transect median velocity on each mesh (North, East and
+        # vertical velocities) and depth on each vertical
         tr_nodes_data = self.compute_nodes_velocity(
             checked_transect_idx, data_transects
         )
@@ -234,8 +235,10 @@ class MAP(object):
         data_transects: dict
             Dictionary of transects data loaded from Measurement
         """
+
         # Create empty lists to iterate
         depth_data = []
+        temp_data = []
         w_vel_x = []
         w_vel_y = []
         w_vel_z = []
@@ -285,6 +288,7 @@ class MAP(object):
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth_transect = depth_selected.depth_processed_m[::-1]
                 cells_depth = depth_selected.depth_cell_depth_m[:, ::-1]
+
                 # Velocity data
                 vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
                 vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::-1])
@@ -338,10 +342,17 @@ class MAP(object):
                 y_velocity = vel_y[:, valid]
                 z_velocity = vel_z[:, valid]
 
+            # Temperature
+            temp_selected = getattr(
+                transect.sensors.temperature_deg_c,
+                transect.sensors.temperature_deg_c.selected,
+            )
+
             self.x_raw_coordinates.append(x_transect)
             self.y_raw_coordinates.append(y_transect)
             depth_data.append(depth_transect[valid])
             cell_depth.append(cells_depth[:, valid])
+            temp_data.append(temp_selected)
             w_vel_x.append(x_velocity)
             w_vel_y.append(y_velocity)
             w_vel_z.append(z_velocity)
@@ -381,6 +392,7 @@ class MAP(object):
             "orig_start_edge": orig_start_edge,
             "invalid_data": invalid_data,
             "cell_depth": cell_depth,
+            "temp_data": temp_data,
         }
         self.depth_by_transect = depth_data
 
@@ -406,7 +418,6 @@ class MAP(object):
             self._unit = -1
         else:
             self._unit = 1
-
 
     def project_transect(self):
         """Project transects on the average cross-section.
@@ -1093,6 +1104,7 @@ class MAP(object):
 
     @staticmethod
     def group(L):
+        # Todo need doc str
         first = last = L[0]
         for n in L[1:]:
             if n - 1 == last:
@@ -1103,6 +1115,9 @@ class MAP(object):
         yield first, last
 
     def compute_interpolation(self):
+        # Todo Add doc string
+        # Todo Add temperature
+
         # Interpolate depth
         not_nan = np.logical_not(np.isnan(self.depths))
         indices = np.arange(len(self.depths))
@@ -1149,7 +1164,7 @@ class MAP(object):
 
                 for ens in range(x[0], x[1] + 1):
                     cells_above_sl[:top, ens] = False
-                    cells_above_sl[bot + 1:, ens] = False
+                    cells_above_sl[bot + 1 :, ens] = False
 
         # Use bottom of cells as depth
         last_cell = []
@@ -1239,6 +1254,8 @@ class MAP(object):
 
     @staticmethod
     def interpolation(data1, data2, data1_interp_value, style="linear"):
+        # Todo add doc strings
+
         funcs = {
             "linear": lambda x, a, b: a * x + b,
             "power": lambda x, a, b: a * x**b,
@@ -1537,10 +1554,12 @@ class MAP(object):
 
         direction_meas = np.arctan2(-1, self.slope)
 
-        distance = (self.borders_ens[1:] + self.borders_ens[:-1])/2
+        distance = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
 
         direction_ens = sc.interpolate.griddata(
-            distance[~np.isnan(self.direction_ens)], self.direction_ens[~np.isnan(self.direction_ens)], distance
+            distance[~np.isnan(self.direction_ens)],
+            self.direction_ens[~np.isnan(self.direction_ens)],
+            distance,
         )
 
         streamwise_velocity = self.primary_velocity * np.cos(

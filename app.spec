@@ -1,0 +1,54 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+block_cipher = None
+import os
+from Classes import __app__
+icon = __app__ + '.ico'
+
+a = Analysis(['app.py'],
+             binaries=[],
+             datas=[],
+             hiddenimports=['statsmodels.tsa.statespace._kalman_filter', 'statsmodels.tsa.statespace._kalman_smoother',
+             'statsmodels.tsa.statespace._representation', 'statsmodels.tsa.statespace._simulation_smoother',
+             'statsmodels.tsa.statespace._statespace', 'statsmodels.tsa.statespace._tools',
+             'statsmodels.tsa.statespace._filters._conventional', 'statsmodels.tsa.statespace._filters._inversions',
+             'statsmodels.tsa.statespace._filters._univariate', 'statsmodels.tsa.statespace._smoothers._alternative',
+             'statsmodels.tsa.statespace._smoothers._classical', 'statsmodels.tsa.statespace._smoothers._conventional',
+             'statsmodels.tsa.statespace._smoothers._univariate'],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=[],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
+
+splash = Splash(
+    icon,
+    binaries=a.binaries,
+    datas=a.datas,
+    text_pos=None,
+    text_size=12,
+    minify_script=True,
+    always_on_top=False,)
+
+pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
+exe = EXE(pyz,
+          a.scripts,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
+          splash,
+          splash.binaries,
+          [],
+          name=__app__,
+          debug=False,
+          bootloader_ignore_signals=False,
+          strip=False,
+          upx=True,
+          upx_exclude=[],
+          runtime_tmpdir=None,
+          console=False,
+          version='file_version_info.txt',
+          icon=icon)

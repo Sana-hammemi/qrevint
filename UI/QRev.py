@@ -1,4 +1,5 @@
 import shutil
+import ctypes
 import copy
 import os
 import sys
@@ -68,6 +69,9 @@ from UI.Disclaimer import Disclaimer
 from UI.AdvGraphs import AdvGraphs
 from UI.ULollipopPlot import ULollipopPlot
 from UI.AxesScale import AxesScale
+from Classes import __qrev_version__, myappid, __app__
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 # if there is a splash screen close it
 try:
@@ -409,10 +413,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         super(QRev, self).__init__(parent)
         self.setupUi(self)
 
-        # Set version of QRev
-        self.QRev_version = 'QRev 4.34'
-        self.setWindowTitle(self.QRev_version)
-        self.setWindowIcon(QtGui.QIcon('QRev.ico'))
+        # Set window title
+        self.setWindowTitle(__qrev_version__)
+        self.setWindowIcon(QtGui.QIcon('../' + __app__ + '.ico'))
+
+        if 'Int' in __qrev_version__:
+            self.set_qrevint_ui()
 
         show_disclaimer = False
 
@@ -420,7 +426,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.toolBar.toggleViewAction().setEnabled(False)
 
         # Get agency optional settings
-        options_file = os.path.join(os.getcwd(), "QRev.cfg")
+        options_file = os.path.join(os.getcwd(), "../QRev.cfg")
 
         if os.path.exists(options_file) is False:
             config = Config()
@@ -1151,6 +1157,64 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
+    def set_qrevint_ui(self):
+        """If QRevInt set background of UI to blue."""
+
+        # Todo fix toolbar color.
+        # set main window pallete
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText,
+                         brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Inactive,
+                         QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Disabled,
+                         QtGui.QPalette.PlaceholderText, brush)
+        self.setPalette(palette)
+
+        self.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240)}")
+
     # Toolbar functions
     # =================
     def select_measurement(self):
@@ -1196,7 +1260,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == "SonTek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.pathName)
+                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
 
                     # Create measurement object
                     try:
@@ -1221,7 +1285,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.pathName)
+                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName,
@@ -1241,7 +1305,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif select.type == "TRDI":
                 with self.wait_cursor():
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.fullName[0])
+                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName[0],
@@ -1261,7 +1325,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Load QRev data
             elif select.type == "QRev":
                 # Show QRev filename in GUI header
-                self.setWindowTitle(self.QRev_version + ": " + select.fullName[0])
+                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
                 mat_data = sio.loadmat(
                     select.fullName[0], struct_as_record=False, squeeze_me=True
                 )
@@ -1450,19 +1514,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Save data in Matlab format
                 if self.save_all:
                     Python2Matlab.save_matlab_file(
-                        self.meas, save_file.full_Name, self.QRev_version
+                        self.meas, save_file.full_Name, __qrev_version__
                     )
                 else:
                     Python2Matlab.save_matlab_file(
                         self.meas,
                         save_file.full_Name,
-                        self.QRev_version,
+                        __qrev_version__,
                         checked=self.checked_transects_idx,
                     )
 
                 # Save xml file
-                self.meas.xml_output(
-                    self.QRev_version, save_file.full_Name[:-4] + ".xml"
+                self.meas.xml_output(save_file.full_Name[:-4] + ".xml"
                 )
 
                 # Save stylesheet in measurement folder
@@ -2038,7 +2101,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setIcon(QtWidgets.QMessageBox.Question)
         msg.addButton(self.tr("Users Manual"), msg.ActionRole)
         msg.addButton(self.tr("Technical Manual"), msg.ActionRole)
-        if self.QRev_version[0:5] == "QRev ":
+        if __qrev_version__[0:5] == "QRev ":
             msg.addButton(
                 self.tr("Submit Bug or Feature Request \n " "(Internet Required)"),
                 msg.ActionRole,
@@ -2050,7 +2113,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
         msg.exec_()
 
-        help_file = os.path.join(os.getcwd(), "Help")
+        help_file = os.path.join(os.getcwd(), "../Help")
         if msg.clickedButton().text() == "Users Manual":
             help_file = os.path.join(help_file, "QRev_Users.pdf")
             webbrowser.open("file:///" + help_file, new=2, autoraise=True)
@@ -15960,19 +16023,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Save data in Matlab format
                 if self.save_all:
                     Python2Matlab.save_matlab_file(
-                        self.meas, save_file.full_Name, self.QRev_version
+                        self.meas, save_file.full_Name, __qrev_version__
                     )
                 else:
                     Python2Matlab.save_matlab_file(
                         self.meas,
                         save_file.full_Name,
-                        self.QRev_version,
+                        __qrev_version__,
                         checked=self.groupings[self.group_idx],
                     )
 
                 # Save xml file
                 self.meas.xml_output(
-                    self.QRev_version, save_file.full_Name[:-4] + ".xml"
+                    __qrev_version__, save_file.full_Name[:-4] + ".xml"
                 )
 
                 # Notify user when save complete

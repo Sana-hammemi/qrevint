@@ -1,4 +1,6 @@
 import os
+import ctypes
+from Classes import __qrev_version__, myappid
 import datetime
 import numpy as np
 import xml.etree.ElementTree as ETree
@@ -23,6 +25,8 @@ from Classes.MAP import MAP
 from Classes.Pd0TRDI_2 import Pd0TRDI
 from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
 # from profilehooks import profile
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
 class Measurement(object):
@@ -2924,11 +2928,11 @@ class Measurement(object):
 
         return data, serial_time
 
-    def xml_output(self, version, file_name):
+    def xml_output(self, file_name):
         channel = ETree.Element(
             "Channel",
             QRevFilename=os.path.basename(file_name[:-4]),
-            QRevVersion=version,
+            QRevVersion=__qrev_version__,
         )
 
         # (2) SiteInformation Node
@@ -3364,7 +3368,7 @@ class Measurement(object):
         processing = ETree.SubElement(channel, "Processing")
 
         # (3) SoftwareVersion Node
-        ETree.SubElement(processing, "SoftwareVersion", type="char").text = version
+        ETree.SubElement(processing, "SoftwareVersion", type="char").text = __qrev_version__
 
         # (3) Type Node
         ETree.SubElement(processing, "Type", type="char").text = self.processing
@@ -4796,100 +4800,108 @@ class Measurement(object):
                 temp = temp + comment.replace("\n", " |||") + " |||"
             ETree.SubElement(channel, "UserComment", type="char").text = temp
 
-        # Average cross-section
-        if self.export_xs:
-            # xs = CrossSectionComp(self.transects, file_name)
-            xs = CrossSectionComp(self.transects)
+            # Average cross-section
+            if self.export_xs:
+                # update the mean cross-section computation before export
+                # xs = CrossSectionComp(self.transects, file_name)
+                self.update_mean_xs()
 
-            cross_section = xs.cross_section[(len(xs.cross_section) - 1)]
-            rows = cross_section.shape[0]
+                cross_section = \
+                    self.mean_xs.cross_section['MeanXS']
+                rows = cross_section.shape[0]
 
-            survey = ETree.SubElement(channel, "CrossSectionSurvey")
+                survey = ETree.SubElement(channel, 'CrossSectionSurvey')
 
-            for row in range(rows):
-                lon = cross_section[row, 0]
-                lat = cross_section[row, 1]
-                dist_x = cross_section[row, 2]
-                dist_y = cross_section[row, 3]
-                station = cross_section[row, 4]
-                depth = cross_section[row, 5]
+                for row in range(rows):
+                    lon = cross_section[row, 0]
+                    lat = cross_section[row, 1]
+                    dist_x = cross_section[row, 2]
+                    dist_y = cross_section[row, 3]
+                    station = cross_section[row, 4]
+                    depth = cross_section[row, 5]
 
-                if not np.isnan(lon):
-                    try:
-                        lat, lon = utm.to_latlon(
-                            lat,
-                            lon,
-                            zone_number=xs.zone_number,
-                            zone_letter=xs.zone_letter,
-                        )
-                    except BaseException:
-                        lat = np.nan
-                        lon = np.nan
+                    if not np.isnan(lon):
+                        try:
+                            lat, lon = utm.to_latlon(
+                                lat, lon, zone_number=self.mean_xs.zone_number,
+                                zone_letter=self.mean_xs.zone_letter)
 
-                meas_pts = ETree.SubElement(survey, "MeasurementPoints")
-                ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(row)
+                        except BaseException:
+                            lat = np.nan
+                            lon = np.nan
 
-                # latitude
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Latitude"
-                ETree.SubElement(parm, "Units").text = "Degrees"
-                ETree.SubElement(measurements, "Value", type="double").text = str(lat)
+                    meas_pts = ETree.SubElement(survey, 'MeasurementPoints')
+                    ETree.SubElement(meas_pts,
+                                     'TableRow',
+                                     type='integer').text = str(row)
 
-                # Longitude
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Longitude"
-                ETree.SubElement(parm, "Units").text = "Degrees"
-                ETree.SubElement(measurements, "Value", type="double").text = str(lon)
+                    # latitude
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Latitude'
+                    ETree.SubElement(parm, 'Units').text = 'Degrees'
+                    ETree.SubElement(measurements, 'Value',
+                                     type='double').text = str(lat)
 
-                # station
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance"
-                ETree.SubElement(parm, "Units").text = "Meters"
-                ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(station)
+                    # Longitude
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Longitude'
+                    ETree.SubElement(parm, 'Units').text = 'Degrees'
+                    ETree.SubElement(measurements, 'Value',
+                                     type='double').text = str(lon)
 
-                # distance x
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance X"
-                ETree.SubElement(parm, "Units").text = "Meters"
-                ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(dist_x)
+                    # station
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Distance'
+                    ETree.SubElement(parm, 'Units').text = 'Meters'
+                    ETree.SubElement(measurements, 'Value',
+                                     type='double',
+                                     unitsCode='m').text = '{:.3f}'.format(
+                        station)
 
-                # distance y
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance Y"
-                ETree.SubElement(parm, "Units").text = "Meters"
-                ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(dist_y)
+                    # distance x
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Distance X'
+                    ETree.SubElement(parm, 'Units').text = 'Meters'
+                    ETree.SubElement(measurements,
+                                     'Value', type='double',
+                                     unitsCode='m').text = '{:.3f}'.format(
+                        dist_x)
 
-                # depth
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Depth"
-                ETree.SubElement(parm, "Units").text = "Meters"
-                ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(depth)
+                    # distance y
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Distance Y'
+                    ETree.SubElement(parm, 'Units').text = 'Meters'
+                    ETree.SubElement(measurements, 'Value',
+                                     type='double',
+                                     unitsCode='m').text = '{:.3f}'.format(
+                        dist_y)
+
+                    # depth
+                    measurements = ETree.SubElement(meas_pts, 'Measurements')
+                    sensor = ETree.SubElement(measurements, 'Sensor')
+                    s_type = ETree.SubElement(sensor, 'SensorType')
+                    parm = ETree.SubElement(s_type, 'Parameter')
+                    ETree.SubElement(parm, 'Name').text = 'Depth'
+                    ETree.SubElement(parm, 'Units').text = 'Meters'
+                    ETree.SubElement(measurements, 'Value',
+                                     type='double',
+                                     unitsCode='m').text = '{:.3f}'.format(
+                        depth)
 
         # Create xml output file
         with open(file_name, "wb") as xml_file:
