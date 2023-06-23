@@ -7,7 +7,7 @@ print('Updating version information')
 
 pyinstaller_versionfile.create_versionfile(
     output_file="file_version_info.txt",
-    version=__version__ + ".0",
+    version=__version__ + ".0.0",
     company_name="My Imaginary Company",
     file_description="",
     internal_name=__app__,

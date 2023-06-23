@@ -3,6 +3,7 @@ import datetime as datetime
 from PyQt5 import QtWidgets
 from Classes.stickysettings import StickySettings as SSet
 from UI import wSelectFile
+from Classes import __version__
 
 
 class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
@@ -215,7 +216,7 @@ class SaveDialog(QtWidgets.QDialog):
                 folder = parent.path
             else:
                 folder = self.default_folder(settings)
-        version = str(int(round(float(parent.QRev_version[-4:]) * 100)))
+        version = __version__.replace('.', '')
         # Create default file name
         if save_type == "QRev":
             if group is None:
