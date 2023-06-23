@@ -1,20 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-import os
 from Classes import __app__
 icon = __app__ + '.ico'
 
 a = Analysis(['app.py'],
              binaries=[],
              datas=[],
-             hiddenimports=['statsmodels.tsa.statespace._kalman_filter', 'statsmodels.tsa.statespace._kalman_smoother',
-             'statsmodels.tsa.statespace._representation', 'statsmodels.tsa.statespace._simulation_smoother',
-             'statsmodels.tsa.statespace._statespace', 'statsmodels.tsa.statespace._tools',
-             'statsmodels.tsa.statespace._filters._conventional', 'statsmodels.tsa.statespace._filters._inversions',
-             'statsmodels.tsa.statespace._filters._univariate', 'statsmodels.tsa.statespace._smoothers._alternative',
-             'statsmodels.tsa.statespace._smoothers._classical', 'statsmodels.tsa.statespace._smoothers._conventional',
-             'statsmodels.tsa.statespace._smoothers._univariate'],
+             hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

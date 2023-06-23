@@ -102,6 +102,8 @@ class MAP(object):
         self.north_velocity = None  # Velocity component in North direction
         self.depths = None  # Depths for each MAP vertical
         self.depth_by_transect = None  # Depth for each transect
+        self.temperature = None  # Temperature for each vertical
+        self.temperature_by_transect = None  # Temperature for each transect
 
         self.direction_ens = None  # Main direction of each MAP ensemble
         self.borders_ens = (
@@ -238,7 +240,7 @@ class MAP(object):
 
         # Create empty lists to iterate
         depth_data = []
-        temp_data = []
+        temperature_data = []
         w_vel_x = []
         w_vel_y = []
         w_vel_z = []
@@ -288,6 +290,12 @@ class MAP(object):
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth_transect = depth_selected.depth_processed_m[::-1]
                 cells_depth = depth_selected.depth_cell_depth_m[:, ::-1]
+
+                # Temperature
+                temp_selected = getattr(
+                    transect.sensors.temperature_deg_c,
+                    transect.sensors.temperature_deg_c.selected, )
+                temp_transect = temp_selected.data[::-1]
 
                 # Velocity data
                 vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
@@ -342,17 +350,17 @@ class MAP(object):
                 y_velocity = vel_y[:, valid]
                 z_velocity = vel_z[:, valid]
 
-            # Temperature
-            temp_selected = getattr(
-                transect.sensors.temperature_deg_c,
-                transect.sensors.temperature_deg_c.selected,
-            )
+                # Temperature
+                temp_selected = getattr(
+                    transect.sensors.temperature_deg_c,
+                    transect.sensors.temperature_deg_c.selected,)
+                temp_transect = temp_selected.data
 
             self.x_raw_coordinates.append(x_transect)
             self.y_raw_coordinates.append(y_transect)
             depth_data.append(depth_transect[valid])
             cell_depth.append(cells_depth[:, valid])
-            temp_data.append(temp_selected)
+            temperature_data.append(temp_transect)
             w_vel_x.append(x_velocity)
             w_vel_y.append(y_velocity)
             w_vel_z.append(z_velocity)
@@ -392,7 +400,7 @@ class MAP(object):
             "orig_start_edge": orig_start_edge,
             "invalid_data": invalid_data,
             "cell_depth": cell_depth,
-            "temp_data": temp_data,
+            "temperature_data": temperature_data,
         }
         self.depth_by_transect = depth_data
 
@@ -648,6 +656,7 @@ class MAP(object):
         w_vel_z = data_transects["w_vel_z"]
         cell_depth = data_transects["cell_depth"]
         depth_data = data_transects["depth_data"]
+        temperature_data = data_transects["temperature_data"]
         acs_distance = self.acs_distance
         # borders_ens = self.borders_ens
         # main_depth_layers = self.main_depth_layers
@@ -672,6 +681,10 @@ class MAP(object):
             np.nan, (len(checked_transect_idx), len(node_mid))
         )
 
+        transects_node_temperature = np.tile(
+            np.nan, (len(checked_transect_idx), len(node_mid))
+        )
+
         for id_transect in checked_transect_idx:
             index_transect = checked_transect_idx.index(id_transect)
             w_vel_x_tr = w_vel_x[index_transect]
@@ -679,6 +692,7 @@ class MAP(object):
             w_vel_z_tr = w_vel_z[index_transect]
             cell_depth_tr = cell_depth[index_transect]
             depth_ens_tr = depth_data[index_transect]
+            temperature_ens_tr = temperature_data[index_transect]
 
             # Find the representative mesh of each transect's vertical
             lag_distance = self.borders_ens[1] - self.borders_ens[0]
@@ -703,8 +717,11 @@ class MAP(object):
                 w_vel_z_node = w_vel_z_tr[:, index_node]
                 mid_cell_node = cell_depth_tr[:, index_node]
                 depth_node = depth_ens_tr[index_node]
+                temperature_node = temperature_ens_tr[index_node]
 
                 transects_node_depth[index_transect, node] = np.nanmedian(depth_node)
+                transects_node_temperature[index_transect, node] = \
+                    np.nanmedian(temperature_node)
                 # Determine every transect's cells in the mesh
                 for id_vert in range(len(self.main_depth_layers) - 1):
                     (id_x, id_y) = np.where(
@@ -733,6 +750,7 @@ class MAP(object):
             "vertical_velocity": transects_node_vertical_velocity,
             "depth": transects_node_depth,
             "nodes": transects_nodes,
+            "temperature": transects_node_temperature
         }
 
         return tr_nodes_data
@@ -753,6 +771,7 @@ class MAP(object):
         transects_node_y_velocity = tr_nodes_data["y_velocity"]
         transects_node_vertical_velocity = tr_nodes_data["vertical_velocity"]
         transects_node_depth = tr_nodes_data["depth"]
+        transects_node_temperature = tr_nodes_data["temperature"]
 
         # Define meshs detected by enough transects
         unique_node = list(np.unique([x for l in transects_nodes for x in l]))
@@ -793,6 +812,8 @@ class MAP(object):
             np.nan, (len(self.main_depth_layers) - 1, len(node_range))
         )
         map_depth = np.tile(np.nan, len(node_range))
+
+        map_temperature = np.tile(np.nan, len(node_range))
 
         for node in node_selected:
             index_node = node_range.index(node)
@@ -1125,6 +1146,12 @@ class MAP(object):
         self.direction_ens = np.interp(
             indices, indices[not_nan], self.direction_ens[not_nan]
         )
+
+        # Interpolate Temperatures
+        not_nan = np.logical_not(np.isnan(self.temperature))
+        indices = np.arange(len(self.temperature))
+        self.temperature = np.interp(indices, indices[not_nan],
+                                self.temperature[not_nan])
 
         data_list = [
             self.primary_velocity,
