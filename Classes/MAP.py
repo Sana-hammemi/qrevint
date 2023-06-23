@@ -1535,6 +1535,10 @@ class MAP(object):
             self.vertical_velocity = np.c_[
                 self.vertical_velocity, edge_vertical_velocity[:, ::-1]
             ]
+            self.rssi = np.c_[
+                self.rssi,
+                np.tile(np.nan, edge_primary_velocity.shape)
+            ]
             self.direction_ens = np.append(
                 self.direction_ens,
                 np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]),
@@ -1566,6 +1570,10 @@ class MAP(object):
             self.vertical_velocity = np.c_[
                 edge_vertical_velocity, self.vertical_velocity
             ]
+            self.rssi = np.c_[
+                np.tile(np.nan, edge_primary_velocity.shape),
+                self.rssi,
+            ]
 
             self.direction_ens = np.insert(
                 self.direction_ens,
@@ -1575,7 +1583,6 @@ class MAP(object):
 
             depth = (border_depths[1:] + border_depths[:-1]) / 2
             self.depths = np.insert(self.depths, 0, depth)
-
             self.depth_cells_center = np.c_[mid_cells_y, self.depth_cells_center]
 
             self.borders_ens = np.insert(
