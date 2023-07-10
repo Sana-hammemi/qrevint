@@ -209,6 +209,9 @@ class WTContour(object):
                             ],
                         )
 
+            if cell_plt is None:
+                return 0
+
             self.cell_plt = cell_plt * self.units["L"]
             self.speed_plt = speed_plt * self.units["V"]
 
@@ -462,7 +465,10 @@ class WTContour(object):
             Depth data used to plot the cross section bottom
         """
         if data_type in ["Primary velocity", "Streamwise velocity"]:
-            in_transect_idx = np.arange(transect.primary_velocity.shape[1])
+            if transect.total_discharge is not None:
+                in_transect_idx = np.arange(transect.primary_velocity.shape[1])
+            else:
+                return None, None, None, None, None
         else:
             in_transect_idx = transect.in_transect_idx
         water_speed = None

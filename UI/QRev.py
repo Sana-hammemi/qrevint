@@ -15279,20 +15279,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col_header = tbl.verticalHeader()
             #col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
 
-        if len(self.checked_transects_idx) > 0:
+        if len(self.checked_transects_idx) > 0 and \
+                self.meas.map.total_discharge is not None:
             trans_prop = Measurement.compute_measurement_properties(self.meas)
 
             row = 0
             # MAP Q
             col = 0
             map_q = self.meas.map.total_discharge
-            tbl.setItem(
-                row,
-                col,
-                QtWidgets.QTableWidgetItem(
-                    "{:8}".format(self.q_digits(map_q * self.units["Q"]))
-                ),
-            )
+            if np.isnan(map_q):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(self.q_digits(map_q * self.units["Q"]))
+                    ),
+                )
             # Meas Q
             col += 1
             discharge = Measurement.mean_discharges(self.meas)
@@ -15595,7 +15599,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Save MAP data as csv or txt."""
         # Todo need to move this to the MAP class, out of the UI.
         map_data = self.meas.map
-        if map_data is not None:
+        if map_data is not None and map_data.total_discharge is not None:
             row, col = map_data.primary_velocity.shape
             ens_mid = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) * 0.5
             data = {
@@ -15729,7 +15733,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         np.less(y_adjusted, extents[:, 3]),
                     )
                 )[0]
-                self.current_axis = self.current_fig.fig.axes[ax[-1]]
+                if len(ax) > 0:
+                    self.current_axis = self.current_fig.fig.axes[ax[-1]]
 
                 # Context menu
                 self.figsMenu.exec_(event.globalPos())
