@@ -17,7 +17,7 @@ setup(
     long_description=readme,
     author='David S. Mueller',
     author_email='dmueller@usgs.gov',
-    url='https://hydroacoustics.usgs.gov/movingboat/QRev.shtml',
+    url="https://code.usgs.gov/QRev/QRevPy",
     license=license,
     REQUIRES_PYTHON='>=3.8.10',
     packages=['Classes', 'MiscLibs', 'UI'],
