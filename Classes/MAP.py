@@ -5,6 +5,8 @@ import numpy as np
 import scipy as sc
 import pandas as pd
 from scipy.optimize.minpack import curve_fit
+from Classes import __qrev_version__
+from datetime import datetime
 
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
@@ -77,6 +79,10 @@ class MAP(object):
 
         self.slope = np.nan  # Slope of the average cross-section
         self.intercept = np.nan  # Intercept of the average cross-section
+        self.gps_zone_number = None  # Zone so GPS Coords can be converted
+        # from UTM.
+        self.gps_zone_letter = None  # Zone so GPS Coords can be converted
+        # from UTM.
         self.x_raw_coordinates = (
             []
         )  # East distance from left bank for each selected transect
@@ -122,7 +128,7 @@ class MAP(object):
         self.depth_cells_center = None  # Depth of each MAP cell center
         self.depth_cells_border = None  # Depth layers
         self.distance_cells_center = None  # Distance of each MAP cell center
-        self.cells_area = np.nan # Area of each MAP cell
+        self.cells_area = np.nan  # Area of each MAP cell
         self.left_geometry = None  # Distance and shape coefficient of left bank
         self.right_geometry = None  # Distance and shape coefficient of right bank
 
@@ -281,7 +287,13 @@ class MAP(object):
                         valid[i[0]] = False
                     lat = transect.gps.gga_lat_ens_deg[::-1][valid]
                     lon = transect.gps.gga_lon_ens_deg[::-1][valid]
-                    x_transect, y_transect, _, _ = utm.from_latlon(lat, lon)
+
+                    coords = utm.from_latlon(lat, lon)
+                    x_transect = coords[0]
+                    y_transect = coords[1]
+                    self.gps_zone_number = coords[2]
+                    self.gps_zone_letter = coords[3]
+
                 else:
                     dmg_ind = np.where(
                         abs(ship_data["dmg_m"]) == max(abs(ship_data["dmg_m"]))
@@ -292,6 +304,7 @@ class MAP(object):
                     y_transect = y_track[::-1]
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
+
                 # Depth
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth_transect = depth_selected.depth_processed_m[::-1]
@@ -300,7 +313,8 @@ class MAP(object):
                 # Temperature
                 temp_selected = getattr(
                     transect.sensors.temperature_deg_c,
-                    transect.sensors.temperature_deg_c.selected, )
+                    transect.sensors.temperature_deg_c.selected,
+                )
                 temp_transect = temp_selected.data[::-1]
 
                 # Velocity data
@@ -335,12 +349,18 @@ class MAP(object):
                         valid[i[0]] = False
                     lat = transect.gps.gga_lat_ens_deg[valid]
                     lon = transect.gps.gga_lon_ens_deg[valid]
-                    x_transect, y_transect, _, _ = utm.from_latlon(lat, lon)
+
+                    coords = utm.from_latlon(lat, lon)
+                    x_transect = coords[0]
+                    y_transect = coords[1]
+                    self.gps_zone_number = coords[2]
+                    self.gps_zone_letter = coords[3]
                 else:
                     x_transect = ship_data["track_x_m"]
                     y_transect = ship_data["track_y_m"]
                     x_transect = x_transect[valid]
                     y_transect = y_transect[valid]
+
                 # Depth
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth_transect = depth_selected.depth_processed_m
@@ -364,7 +384,8 @@ class MAP(object):
                 # Temperature
                 temp_selected = getattr(
                     transect.sensors.temperature_deg_c,
-                    transect.sensors.temperature_deg_c.selected,)
+                    transect.sensors.temperature_deg_c.selected,
+                )
                 temp_transect = temp_selected.data
 
                 # RSSI data
@@ -376,7 +397,7 @@ class MAP(object):
             self.y_raw_coordinates.append(y_transect)
             depth_data.append(depth_transect[valid])
             cell_depth.append(cells_depth[:, valid])
-            temperature_data.append(temp_transect)
+            temperature_data.append(temp_transect[valid])
             w_vel_x.append(x_velocity)
             w_vel_y.append(y_velocity)
             w_vel_z.append(z_velocity)
@@ -421,6 +442,7 @@ class MAP(object):
             "temperature_data": temperature_data,
         }
         self.depth_by_transect = depth_data
+        self.temperature_by_transect = temperature_data
 
         return data_transects
 
@@ -747,8 +769,9 @@ class MAP(object):
                 temperature_node = temperature_ens_tr[index_node]
 
                 transects_node_depth[index_transect, node] = np.nanmedian(depth_node)
-                transects_node_temperature[index_transect, node] = \
-                    np.nanmedian(temperature_node)
+                transects_node_temperature[index_transect, node] = np.nanmedian(
+                    temperature_node
+                )
                 # Determine every transect's cells in the mesh
                 for id_vert in range(len(self.main_depth_layers) - 1):
                     (id_x, id_y) = np.where(
@@ -771,9 +794,9 @@ class MAP(object):
                     transects_node_vertical_velocity[
                         index_transect, id_vert, node
                     ] = np.nanmedian(w_vel_z_loc)
-                    transects_node_rssi[
-                        index_transect, id_vert, node
-                    ] = np.nanmedian(rssi_loc)
+                    transects_node_rssi[index_transect, id_vert, node] = np.nanmedian(
+                        rssi_loc
+                    )
 
         tr_nodes_data = {
             "x_velocity": transects_node_x_velocity,
@@ -782,7 +805,7 @@ class MAP(object):
             "depth": transects_node_depth,
             "rssi": transects_node_rssi,
             "nodes": transects_nodes,
-            "temperature": transects_node_temperature
+            "temperature": transects_node_temperature,
         }
 
         return tr_nodes_data
@@ -868,8 +891,10 @@ class MAP(object):
                 vertical_map_cell = transects_node_vertical_velocity[row, :, node]
                 rssi_map_cell = transects_node_rssi[row, :, node]
                 depth_map_cell = transects_node_depth[row, node]
+                temp_map_cell = transects_node_temperature[row, node]
 
                 map_depth[index_node] = np.nanmean(depth_map_cell)
+                map_temperature[index_node] = np.nanmean(temp_map_cell)
 
                 # Cut values under streambed
                 if np.isnan(map_depth[index_node]):
@@ -886,54 +911,21 @@ class MAP(object):
                 vertical_map_cell[:, depth_limit:] = np.nan
                 rssi_map_cell[:, depth_limit:] = np.nan
 
-                # Cut value if not detected by enough transects
-                # self.east_velocity[
-                #     np.count_nonzero(~np.isnan(x_map_cell), axis=0) >= valid_cell, index_node
-                # ] = np.nanmedian(
-                #     x_map_cell[
-                #         :, np.count_nonzero(~np.isnan(x_map_cell), axis=0) >= valid_cell
-                #     ],
-                #     axis=0,
-                # )
-                # self.north_velocity[
-                #     np.count_nonzero(~np.isnan(y_map_cell), axis=0) >= valid_cell, index_node
-                # ] = np.nanmedian(
-                #     y_map_cell[
-                #         :, np.count_nonzero(~np.isnan(y_map_cell), axis=0) >= valid_cell
-                #     ],
-                #     axis=0,
-                # )
-                # map_vertical_velocity[
-                #     np.count_nonzero(~np.isnan(vertical_map_cell), axis=0) >= valid_cell,
-                #     index_node,
-                # ] = np.nanmedian(
-                #     vertical_map_cell[
-                #         :,
-                #         np.count_nonzero(~np.isnan(vertical_map_cell), axis=0) > valid_cell,
-                #     ],
-                #     axis=0,
-                # )
-                # map_rssi[
-                #     np.count_nonzero(~np.isnan(rssi_map_cell), axis=0) >= valid_cell,
-                #     index_node,
-                # ] = np.nanmedian(
-                #     vertical_map_cell[
-                #     :,
-                #     np.count_nonzero(~np.isnan(rssi_map_cell), axis=0) >= valid_cell,
-                #     ],
-                #     axis=0,
-                # )
-
                 self.east_velocity[:, index_node] = np.nanmean(x_map_cell, axis=0)
                 self.north_velocity[:, index_node] = np.nanmean(y_map_cell, axis=0)
-                map_vertical_velocity[:, index_node] = np.nanmean(vertical_map_cell, axis=0)
+                map_vertical_velocity[:, index_node] = np.nanmean(
+                    vertical_map_cell, axis=0
+                )
                 map_rssi[:, index_node] = np.nanmean(rssi_map_cell, axis=0)
-                map_count[:, index_node] = np.count_nonzero(~np.isnan(x_map_cell), axis=0)
+                map_count[:, index_node] = np.count_nonzero(
+                    ~np.isnan(x_map_cell), axis=0
+                )
                 map_depth_cells_border[depth_limit, index_node] = map_depth[index_node]
-                map_depth_cells_border[depth_limit + 1:, index_node] = np.nan
+                map_depth_cells_border[depth_limit + 1 :, index_node] = np.nan
 
             self.vertical_velocity = map_vertical_velocity
             self.rssi = map_rssi
+            self.temperature = map_temperature
             self.count_valid = map_count
             self.depths = map_depth
             self.depth_cells_border = map_depth_cells_border
@@ -1208,8 +1200,9 @@ class MAP(object):
         # Interpolate Temperatures
         not_nan = np.logical_not(np.isnan(self.temperature))
         indices = np.arange(len(self.temperature))
-        self.temperature = np.interp(indices, indices[not_nan],
-                                self.temperature[not_nan])
+        self.temperature = np.interp(
+            indices, indices[not_nan], self.temperature[not_nan]
+        )
 
         data_list = [
             self.primary_velocity,
@@ -1269,6 +1262,8 @@ class MAP(object):
             i += 1
             self.depth_cells_border[x[0], i] = self.depths[i]
             self.depth_cells_border[x[0] + 1 :, i] = np.nan
+
+        # Todo update temperature
 
         y_cell_size = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
         y_centers = self.depth_cells_border[:-1, :] + 0.5 * y_cell_size
@@ -1579,10 +1574,7 @@ class MAP(object):
             self.vertical_velocity = np.c_[
                 self.vertical_velocity, edge_vertical_velocity[:, ::-1]
             ]
-            self.rssi = np.c_[
-                self.rssi,
-                np.tile(np.nan, edge_primary_velocity.shape)
-            ]
+            self.rssi = np.c_[self.rssi, np.tile(np.nan, edge_primary_velocity.shape)]
             self.direction_ens = np.append(
                 self.direction_ens,
                 np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]),
@@ -1593,6 +1585,9 @@ class MAP(object):
             self.depth_cells_center = np.c_[
                 self.depth_cells_center, mid_cells_y[:, ::-1]
             ]
+
+            nan_array = np.tile(np.nan, len(depth))
+            self.temperature = np.append(self.temperature, nan_array)
 
             max_dist = self.borders_ens[-1]
 
@@ -1628,6 +1623,9 @@ class MAP(object):
             depth = (border_depths[1:] + border_depths[:-1]) / 2
             self.depths = np.insert(self.depths, 0, depth)
             self.depth_cells_center = np.c_[mid_cells_y, self.depth_cells_center]
+
+            nan_array = np.tile(np.nan, len(depth))
+            self.temperature = np.insert(self.temperature, 0, nan_array)
 
             self.borders_ens = np.insert(
                 self.borders_ens + edge_distance, 0, nodes[:-1]
@@ -1674,3 +1672,92 @@ class MAP(object):
         self.transverse_velocity = transverse_velocity * unit
         self.cells_discharge = cells_discharge * unit
         self.total_discharge = total_discharge * unit
+
+    def utm_2_distance(self):
+        """Correct UTM coordinates to a (0, 0) starting point.
+
+        Returns:
+            x: np.array
+            y: np.array
+        """
+
+        x = self.x - self.x[0]
+        y = self.y - self.y[0]
+
+        return x[1:], y[1:]
+
+    def utm_2_decimaldegrees(self):
+        """Convert UTM coordinates to decimal degrees.
+
+        Returns:
+            lat: np.array
+            lon: np.array
+        """
+
+        try:
+            lat, lon = utm.to_latlon(
+                self.x,
+                self.y,
+                zone_number=self.gps_zone_number,
+                zone_letter=self.gps_zone_letter,
+            )
+
+        except BaseException:
+            lat = np.tile(np.nan, len(self.y))
+            lon = np.tile(np.nan, len(self.x))
+
+        return lat[1:], lon[1:]
+
+    def export_csv(self, path, units, delimiter=","):
+        """Exports map data to ascii file with specified delimiter.
+
+        Parameters:
+            path: str
+            units: dict
+            delimiter: str
+        """
+        date = datetime.today().strftime("%d-%b-%Y")
+        header = ["# " + __qrev_version__ + "\n", "# Exported " + date + "\n"]
+
+        with open(path, "w") as file:
+            file.writelines(header)
+
+        distance_x, distance_y = self.utm_2_distance()
+        lat, lon = self.utm_2_decimaldegrees()
+
+        row, col = self.primary_velocity.shape
+        ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
+        data = {
+            "Distance (Left bank) "
+            + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
+            "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
+            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) * units["L"],
+            "Latitude": np.repeat(lat, row),
+            "Longitude": np.repeat(lon, row),
+            "Primary velocity "
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
+            "Secondary velocity "
+            + units["label_V"]: self.secondary_velocity.ravel(order="F") * units["V"],
+            "Streamwise velocity "
+            + units["label_V"]: self.streamwise_velocity.ravel(order="F") * units["V"],
+            "Transverse velocity (Left to Right) "
+            + units["label_V"]: self.transverse_velocity.ravel(order="F") * units["V"],
+            "Vertical velocity "
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
+            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units["L"],
+            "Cells discharge "
+            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units["Q"],
+            "Cells area "
+            + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
+            "Distance cells center "
+            + units["label_L"]: self.distance_cells_center.ravel(order="F")
+            * units["L"],
+            "Depth cells center "
+            + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
+            "Temperature": np.repeat(self.temperature, row),
+        }
+
+        df = pd.DataFrame(data)
+        df = df[df["Cells discharge " + units["label_Q"]].notna()]
+
+        df.to_csv(path, sep=delimiter, index=False, mode="a", header=True)

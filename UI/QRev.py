@@ -12,7 +12,6 @@ import simplekml
 from contextlib import contextmanager
 from datetime import datetime
 import numpy as np
-import pandas as pd
 import scipy.io as sio
 import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -653,6 +652,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
                 )
             )
+
+        # ascii file delimiter
+        try:
+            ss = self.sticky_settings.get("Delimiter")
+            self.delimiter = ss
+        except KeyError:
+            self.sticky_settings.new("Delimiter", ",")
+            self.delimiter = ","
 
         # Autonomous GPS
         if "AutonomousGPS" not in self.agency_options.keys():
@@ -1850,6 +1857,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_xs_export.setChecked(False)
 
+        if self.delimiter == ",":
+            options.rb_comma.setChecked(True)
+        elif self.delimiter == ";":
+            options.rb_colon.setChecked(True)
+        else:
+            options.rb_space.setChecked(True)
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -2062,6 +2076,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.sticky_settings.set("XsExport", False)
                     except KeyError:
                         self.sticky_settings.new("XsExport", False)
+
+                # set delimiter
+                if options.rb_comma.isChecked():
+                    self.delimiter == ","
+                elif options.rb_colon.isChecked():
+                    self.delimiter == ";"
+                else:
+                    self.delimiter == " "
+
+                try:
+                    self.sticky_settings.set("Delimiter", self.delimiter)
+                except KeyError:
+                    self.sticky_settings.new("Delimiter", self.delimiter)
 
                 # Update tabs
                 if self.meas is not None:
@@ -15154,7 +15181,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_table()
 
             # MAP figures
-            # self.map_shiptrack()
             self.update_map()
 
             self.canvases = [self.map_canvas]
@@ -15499,7 +15525,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_map_interpolation.blockSignals(True)
             self.cb_map_bed_profiles.blockSignals(True)
 
-            # self.map_bathy()
+            self.plot_map()
 
         elif self.rb_map_temp.isChecked():
             self.combo_map_data.blockSignals(True)
@@ -15512,7 +15538,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_map_interpolation.blockSignals(True)
             self.cb_map_bed_profiles.blockSignals(True)
 
-            # self.map_temp()
+            self.plot_map()
 
         elif self.rb_map_stickship.isChecked():
             self.combo_map_data.blockSignals(True)
@@ -15534,6 +15560,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
             self.data_cursor()
+
+    def plot_map(self):
+        """Creates plot of MAP data."""
+
+        self.map_fig = AdvGraphs(canvas=self.map_canvas)
+
+        self.map_fig.plot_map(self.meas.map,
+                              units=self.units,
+                              bath=self.rb_map_bathymetry.isChecked(),
+                              temp=self.rb_map_temp.isChecked(),
+                              x_axis_type=self.x_axis_type,
+                              plot_transects=True)
+
+        # Draw canvas
+        self.map_canvas.draw()
 
     def map_wt_contour(self):
         """Creates water track profile on MAP data."""
@@ -15597,57 +15638,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def map_save_data(self):
         """Save MAP data as csv or txt."""
-        # Todo need to move this to the MAP class, out of the UI.
-        map_data = self.meas.map
-        if map_data is not None and map_data.total_discharge is not None:
-            row, col = map_data.primary_velocity.shape
-            ens_mid = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) * 0.5
-            data = {
-                "Distance (Left bank) "
-                + self.units["label_L"]: np.repeat(ens_mid, row) * self.units["L"],
-                "Primary velocity "
-                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Secondary velocity "
-                + self.units["label_V"]: map_data.secondary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Streamwise velocity "
-                + self.units["label_V"]: map_data.streamwise_velocity.ravel(order="F")
-                * self.units["V"],
-                "Transverse velocity (Left to Right) "
-                + self.units["label_V"]: map_data.transverse_velocity.ravel(order="F")
-                * self.units["V"],
-                "Vertical velocity "
-                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Depth "
-                + self.units["label_L"]: np.repeat(map_data.depths, row)
-                * self.units["L"],
-                "Cells discharge "
-                + self.units["label_Q"]: map_data.cells_discharge.ravel(order="F")
-                * self.units["Q"],
-                "Cells area "
-                + self.units["label_A"]: map_data.cells_area.ravel(order="F")
-                * self.units["A"],
-                "Distance cells center "
-                + self.units["label_L"]: map_data.distance_cells_center.ravel(order="F")
-                * self.units["L"],
-                "Depth cells center "
-                + self.units["label_L"]: map_data.depth_cells_center.ravel(order="F")
-                * self.units["L"],
-            }
+        if self.meas.map is not None and self.meas.map.total_discharge is not None:
 
-            df = pd.DataFrame(data)
-            df = df[df["Cells discharge " + self.units["label_Q"]].notna()]
             save_map = SaveDialog(parent=self, save_type="MAP")
             if len(save_map.full_Name) > 0:
                 try:
-                    if save_map.file_extension == ".csv":
-                        df.to_csv(save_map.full_Name, sep=";", index=False, header=True)
-                    elif save_map.file_extension == ".txt":
-                        df.to_csv(save_map.full_Name, sep=" ", index=False, header=True)
+
+                    self.meas.map.export_csv(save_map.full_Name,
+                                             units=self.units,
+                                             delimiter=self.delimiter)
                 except Exception:
-                    self.popup_message(self.tr("Impossible to save MAP data."))
+                    self.popup_message(self.tr("Failed to save MAP data."))
 
     def plot_map_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA coordinates and MAP average ship track."""

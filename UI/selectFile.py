@@ -245,8 +245,8 @@ class SaveDialog(QtWidgets.QDialog):
             file_name = folder + "/MAP_" + folder.split("/")[-1]
             title = self.tr("Save MAP")
             filetype = (
-                f"{self.tr('csv (separator: semicolon)')}( *.csv);;"
-                f"{self.tr('text (separator: space)')}(*.txt);;"
+                f"{self.tr('csv')}( *.csv);;"
+                f"{self.tr('text')}(*.txt);;"
                 f"{self.tr('All Files')} (*)"
             )
         # Get the full names (path + file) of the selected file
