@@ -15301,9 +15301,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.verticalHeader().setFont(self.font_bold)
 
             header = tbl.horizontalHeader()
-            #header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
             col_header = tbl.verticalHeader()
-            #col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
 
         if len(self.checked_transects_idx) > 0 and \
                 self.meas.map.total_discharge is not None:
@@ -15571,7 +15569,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                               bath=self.rb_map_bathymetry.isChecked(),
                               temp=self.rb_map_temp.isChecked(),
                               x_axis_type=self.x_axis_type,
-                              plot_transects=True)
+                              plot_transects=self.cb_map_bed_profiles)
 
         # Draw canvas
         self.map_canvas.draw()
@@ -15630,7 +15628,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create the figure with the specified data
         settings = Measurement.current_settings(self.meas)
         self.map_fig.create(
-            map_data=self.meas.map, units=self.units, nav_ref=settings["NavRef"]
+            map_data=self.meas.map, units=self.units,
+            nav_ref=settings["NavRef"], plot_transects=self.cb_map_bed_profiles
         )
 
         # Draw canvas

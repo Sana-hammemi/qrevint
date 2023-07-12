@@ -36,7 +36,7 @@ class Maptrack(object):
         self.annot = None
         self.vectors = None
 
-    def create(self, map_data, units, nav_ref):
+    def create(self, map_data, units, nav_ref, plot_transects=True):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -47,6 +47,7 @@ class Maptrack(object):
             Dictionary of units conversions.
         nav_ref: str
             Navigation reference (bt_vel, gga_vel, vtg_vel)
+        plot_transects: bool
         """
 
         # Assign and save parameters
@@ -108,14 +109,15 @@ class Maptrack(object):
                 label="MAP Average course",
                 zorder=1,
             )
-        for i in range(len(map_data.x_raw_coordinates)):
-            self.fig.ax.plot(
-                map_data.x_raw_coordinates[i],
-                map_data.y_raw_coordinates[i],
-                color="grey",
-                linewidth=1,
-                zorder=0,
-            )
+        if plot_transects:
+            for i in range(len(map_data.x_raw_coordinates)):
+                self.fig.ax.plot(
+                    map_data.x_raw_coordinates[i],
+                    map_data.y_raw_coordinates[i],
+                    color="grey",
+                    linewidth=1,
+                    zorder=0,
+                )
 
         # Customize axes
         if nav_ref == "gga_vel":
