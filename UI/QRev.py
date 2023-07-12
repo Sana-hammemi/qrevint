@@ -15154,6 +15154,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     ),
                     "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                     "combo_map_data": self.combo_map_data.currentText(),
+                    "rb_map_contour": self.rb_map_contour.isChecked(),
+                    "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                    "rb_map_temp": self.rb_map_temp.isChecked(),
+                    "rb_map_stickship": self.rb_map_stickship.isChecked(),
                 }
 
             # Disable MAP open Earth button if not GGA
@@ -15175,6 +15179,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "combo_map_data": self.combo_map_data.currentText(),
+                "rb_map_contour": self.rb_map_contour.isChecked(),
+                "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                "rb_map_temp": self.rb_map_temp.isChecked(),
+                "rb_map_stickship": self.rb_map_stickship.isChecked(),
             }
 
             # MAP table
@@ -15243,6 +15251,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "combo_map_data": self.combo_map_data.currentText(),
+                "rb_map_contour": self.rb_map_contour.isChecked(),
+                "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                "rb_map_temp": self.rb_map_temp.isChecked(),
+                "rb_map_stickship": self.rb_map_stickship.isChecked(),
+
             }
             for key in self.map_settings:
                 if self.map_settings[key] != self.map_current_settings[key]:
@@ -15259,11 +15272,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         change_plot = True
 
+            if self.map_canvas is None:
+                change_plot = True
+
             # Save current parameters
             self.map_current_settings = self.map_settings
 
             # Apply changes
-            if change_data or change_plot:
+            if change_data:
                 if change_data:
                     self.meas.compute_map(
                         node_horizontal_user=self.map_settings["ed_map_cell_width"],
@@ -15272,8 +15288,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         edges_option=self.map_settings["cb_map_edges"],
                         interp_option=self.map_settings["cb_map_interpolation"],
                     )
-                self.map_table(update=True)
-            self.update_map_plot()
+                    self.map_table(update=True)
+            if change_plot:
+                self.update_map_plot()
 
     def map_table(self, update=False):
         """Create and populate MAP results table."""
@@ -15481,7 +15498,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_map_plot(self):
         """Method to update map plot based on selected radio buttons."""
 
-        # If the canvas has not been previously created, create the canvas and add the widget.
+        # If the canvas has not been previously created, create the canvas and
+        # add the widget.
+
+        # Todo fix create of plots. Sometimes they go behind the settings
+        #  panel on the right side of the UI.
         if self.map_canvas is None:
             # Create the canvas
             self.map_canvas = MplCanvas(
@@ -15512,7 +15533,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             self.map_wt_contour()
 
-        elif self.rb_map_bathymetry.isChecked():
+        elif self.rb_map_bathymetry.isChecked() or self.rb_map_temp.isChecked():
             self.combo_map_data.blockSignals(True)
             self.ed_map_secondary_velocity.blockSignals(True)
             self.cb_map_cell_size_auto.blockSignals(True)
@@ -15520,21 +15541,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_map_cell_height.blockSignals(True)
             self.cb_map_top_bottom.blockSignals(True)
             self.cb_map_edges.blockSignals(True)
-            self.cb_map_interpolation.blockSignals(True)
-            self.cb_map_bed_profiles.blockSignals(True)
-
-            self.plot_map()
-
-        elif self.rb_map_temp.isChecked():
-            self.combo_map_data.blockSignals(True)
-            self.ed_map_secondary_velocity.blockSignals(True)
-            self.cb_map_cell_size_auto.blockSignals(True)
-            self.ed_map_cell_width.blockSignals(True)
-            self.ed_map_cell_height.blockSignals(True)
-            self.cb_map_top_bottom.blockSignals(True)
-            self.cb_map_edges.blockSignals(True)
-            self.cb_map_interpolation.blockSignals(True)
-            self.cb_map_bed_profiles.blockSignals(True)
+            self.cb_map_interpolation.blockSignals(False)
+            self.cb_map_bed_profiles.blockSignals(False)
 
             self.plot_map()
 
@@ -15545,14 +15553,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_map_cell_width.blockSignals(True)
             self.ed_map_cell_height.blockSignals(True)
             self.cb_map_top_bottom.blockSignals(True)
-            self.cb_map_edges.blockSignals(True)
-            self.cb_map_interpolation.blockSignals(True)
-            self.cb_map_bed_profiles.blockSignals(True)
+            self.cb_map_edges.blockSignals(False)
+            self.cb_map_interpolation.blockSignals(False)
+            self.cb_map_bed_profiles.blockSignals(False)
 
             self.map_shiptrack()
 
         self.figs = [self.map_fig]
-        # self.fig_calls = [self.map_shiptrack, self.map_wt_contour]
         self.fig_calls = [self.update_map_plot]
 
         # Reset data cursor to work with new figure
@@ -15569,7 +15576,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                               bath=self.rb_map_bathymetry.isChecked(),
                               temp=self.rb_map_temp.isChecked(),
                               x_axis_type=self.x_axis_type,
-                              plot_transects=self.cb_map_bed_profiles)
+                              plot_transects=self.cb_map_bed_profiles.isChecked())
 
         # Draw canvas
         self.map_canvas.draw()
@@ -15629,7 +15636,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         settings = Measurement.current_settings(self.meas)
         self.map_fig.create(
             map_data=self.meas.map, units=self.units,
-            nav_ref=settings["NavRef"], plot_transects=self.cb_map_bed_profiles
+            nav_ref=settings["NavRef"],
+            plot_transects=self.cb_map_bed_profiles.isChecked()
         )
 
         # Draw canvas
