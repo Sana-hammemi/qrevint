@@ -2456,9 +2456,9 @@ class AdvGraphs(object):
         temp_hold = np.copy(self.x)
         if isinstance(temp_hold[0], datetime):
             dummy_time = temp_hold[0] - timedelta(days=1)
-            self.x = [dummy_time, dummy_time, dummy_time, dummy_time, dummy_time]
+            self.x = np.array([dummy_time, dummy_time, dummy_time, dummy_time, dummy_time])
         else:
-            self.x = [-10, -10, -10, -10, -10]
+            self.x = np.array([-10, -10, -10, -10, -10])
         data = ["INV", "INT", "BT", "GGA", "VTG"]
         fmt = [{"color": "w", "linestyle": "-"}]
         data_units = (1, "")
