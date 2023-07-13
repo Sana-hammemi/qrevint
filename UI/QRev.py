@@ -1,74 +1,74 @@
-import shutil
-import ctypes
 import copy
-import os
-import sys
-import webbrowser
-import utm
-import multiprocessing as mp
+import ctypes
 import getpass
 import json
-import simplekml
+import multiprocessing as mp
+import os
+import shutil
+import sys
+import webbrowser
 from contextlib import contextmanager
 from datetime import datetime
+
 import numpy as np
 import scipy.io as sio
-import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import \
+    NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
-from Classes.createconfig import Config
-from Classes.stickysettings import StickySettings as SSet
+
+import UI.QRev_gui as QRev_gui
+from Classes import __qrev_version__, myappid, __app__
+from Classes.CoordError import CoordError
 from Classes.Measurement import Measurement
-from Classes.TransectData import TransectData
+from Classes.MovingBedTests import MovingBedTests
+from Classes.Oursin import Oursin
 from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
-from Classes.MovingBedTests import MovingBedTests
-from Classes.CoordError import CoordError
-from Classes.Oursin import Oursin
+from Classes.TransectData import TransectData
+from Classes.createconfig import Config
+from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
     convert_temperature,
     units_conversion,
     sfrnd,
 )
-from UI.selectFile import SaveDialog
-from UI.OpenMeasurementDialog import OpenMeasurementDialog
-from UI.Comment import Comment
-from UI.Transects2Use import Transects2Use
-from UI.Options import Options
-from UI.MagVar import MagVar
-from UI.HOffset import HOffset
-from UI.HSource import HSource
-from UI.SOSSource import SOSSource
-from UI.TempSource import TempSource
-from UI.Salinity import Salinity
-from UI.ShipTrack import Shiptrack
-
-# from UI.MapWTContour import MapWTContour
-from UI.MapTrack import Maptrack
+from UI.AdvGraphs import AdvGraphs
+from UI.AxesScale import AxesScale
 from UI.BoatSpeed import BoatSpeed
-from UI.Draft import Draft
-from UI.TemperatureTS import TemperatureTS
-from UI.HeadingTS import HeadingTS
-from UI.PRTS import PRTS
+from UI.Comment import Comment
 from UI.DischargeTS import DischargeTS
-from UI.StationaryGraphs import StationaryGraphs
-from UI.WTContour import WTContour
-from UI.Rating import Rating
-from UI.ExtrapPlot import ExtrapPlot
-from UI.StartEdge import StartEdge
-from UI.EdgeType import EdgeType
+from UI.Disclaimer import Disclaimer
+from UI.Draft import Draft
 from UI.EdgeDist import EdgeDist
 from UI.EdgeEns import EdgeEns
-from UI.UMeasurement import UMeasurement
-from UI.UMeasQ import UMeasQ
+from UI.EdgeType import EdgeType
+from UI.ExtrapPlot import ExtrapPlot
+from UI.HOffset import HOffset
+from UI.HSource import HSource
+from UI.HeadingTS import HeadingTS
+from UI.MagVar import MagVar
+# from UI.MapWTContour import MapWTContour
+from UI.MapTrack import Maptrack
 from UI.MplCanvas import MplCanvas
-from UI.Disclaimer import Disclaimer
-from UI.AdvGraphs import AdvGraphs
+from UI.OpenMeasurementDialog import OpenMeasurementDialog
+from UI.Options import Options
+from UI.PRTS import PRTS
+from UI.Rating import Rating
+from UI.SOSSource import SOSSource
+from UI.Salinity import Salinity
+from UI.ShipTrack import Shiptrack
+from UI.StartEdge import StartEdge
+from UI.StationaryGraphs import StationaryGraphs
+from UI.TempSource import TempSource
+from UI.TemperatureTS import TemperatureTS
+from UI.Transects2Use import Transects2Use
 from UI.ULollipopPlot import ULollipopPlot
-from UI.AxesScale import AxesScale
-from Classes import __qrev_version__, myappid, __app__
+from UI.UMeasQ import UMeasQ
+from UI.UMeasurement import UMeasurement
+from UI.WTContour import WTContour
+from UI.selectFile import SaveDialog
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
@@ -2068,22 +2068,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         coordinates.
         """
 
-        kml = simplekml.Kml(open=1)
-        # Create a shiptrack for each checked transect
-        for transect_idx in self.checked_transects_idx:
-            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = self.meas.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
-
         fullname = os.path.join(
             self.sticky_settings.get("Folder"),
             datetime.today().strftime("%Y%m%d_%H%M%S_QRev.kml"),
         )
-        kml.save(fullname)
+
+        self.meas.export_kml(fullname)
+
         try:
             os.startfile(fullname)
         except os.error:
