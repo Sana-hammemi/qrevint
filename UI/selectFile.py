@@ -187,7 +187,9 @@ class SaveDialog(QtWidgets.QDialog):
         Filename with path to save file.
     """
 
-    def __init__(self, group=None, save_type="QRev", parent=None):
+    def __init__(
+        self, group=None, save_type="QRev", parent=None, delimiter="comma delimited"
+    ):
         """Initializes settings and connections.
 
         Parameters
@@ -198,11 +200,14 @@ class SaveDialog(QtWidgets.QDialog):
             group number if split initiation
         save_type: str
             Indicates type of save
+        delimiter: str
+            default delimiter for acsii output
         """
         super(SaveDialog, self).__init__(parent)
         # self.setupUi(self)
         self.full_Name = None
         self.file_extension = None
+        self.delimiter = delimiter
         # Create settings object which contains the default folder
         settings = SSet(parent.settingsFile)
         folder = ""
@@ -216,7 +221,7 @@ class SaveDialog(QtWidgets.QDialog):
                 folder = parent.path
             else:
                 folder = self.default_folder(settings)
-        version = __version__.replace('.', '')
+        version = __version__.replace(".", "")
         # Create default file name
         if save_type == "QRev":
             if group is None:
@@ -244,11 +249,24 @@ class SaveDialog(QtWidgets.QDialog):
         elif save_type == "MAP":
             file_name = folder + "/MAP_" + folder.split("/")[-1]
             title = self.tr("Save MAP")
-            filetype = (
-                f"{self.tr('csv')}( *.csv);;"
-                f"{self.tr('text')}(*.txt);;"
-                f"{self.tr('All Files')} (*)"
-            )
+            f_types = {
+                "comma delimited": f"{self.tr('comma delimited')}( *.csv);;"
+                f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('All Files')} (*)",
+                "colon delimited": f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('comma delimited')}( *.csv);;"
+                f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('All Files')} (*)",
+                "space delimited": f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('comma delimited')}( *.csv);;"
+                f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('All Files')} (*)",
+            }
+            if delimiter in f_types:
+                filetype = f_types[delimiter]
+            else:
+                filetype = f_types["comma delimited"]
         # Get the full names (path + file) of the selected file
         file_save = QtWidgets.QFileDialog.getSaveFileName(
             self, title, file_name, filetype
@@ -257,6 +275,7 @@ class SaveDialog(QtWidgets.QDialog):
         if file_save is not None:
             self.full_Name, file_type = file_save
             file_extension = file_type.split("*")[-1][:-1]
+            self.delimiter = file_type.split("(")[0]
             if len(self.full_Name) > 0:
                 self.file_extension = file_extension
                 if self.full_Name[-len(file_extension) :] != file_extension:

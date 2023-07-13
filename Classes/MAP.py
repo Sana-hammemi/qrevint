@@ -1708,7 +1708,7 @@ class MAP(object):
 
         return lat[1:], lon[1:]
 
-    def export_csv(self, path, units, delimiter=","):
+    def export_csv(self, path, units, delimiter="comma delimited"):
         """Exports map data to ascii file with specified delimiter.
 
         Parameters:
@@ -1760,4 +1760,11 @@ class MAP(object):
         df = pd.DataFrame(data)
         df = df[df["Cells discharge " + units["label_Q"]].notna()]
 
-        df.to_csv(path, sep=delimiter, index=False, mode="a", header=True)
+        if "comma" in delimiter:
+            sep = ","
+        elif "colon" in delimiter:
+            sep = ";"
+        else:
+            sep = " "
+
+        df.to_csv(path, sep=sep, index=False, mode="a", header=True)
