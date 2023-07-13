@@ -15588,58 +15588,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.popup_message(self.tr("Failed to save MAP data."))
 
     def plot_map_google_earth(self):
-        """Creates line plots of transects in Google Earth using GGA coordinates and MAP average ship track."""
-        # Todo move KML creation into map.py out of the UI.
-
-        kml = simplekml.Kml(open=1)
-        # Create a shiptrack for each checked transect
-        lat = np.nan
-        lon = np.nan
-        for transect_idx in self.checked_transects_idx:
-            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = self.meas.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
-
-        # Get utm zone
-        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-        # Define average ship track
-        left_x = np.nanmedian([item[0] for item in self.meas.map.x_raw_coordinates])
-        x_boundaries = [
-            min([min(x) for x in self.meas.map.x_projected]),
-            max([max(x) for x in self.meas.map.x_projected]),
-        ]
-
-        x_utm = np.array(
-            [
-                min(x_boundaries, key=lambda x: abs(x - left_x)),
-                max(x_boundaries, key=lambda x: abs(x - left_x)),
-            ]
-        )
-        y_utm = np.array(
-            [i * self.meas.map.slope + self.meas.map.intercept for i in x_utm]
-        )
-
-        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
-        line_name = "MAP average ship track"
-        lon_lat = tuple(zip(lon, lat))
-        lin = kml.newlinestring(name=line_name, coords=lon_lat)
-        lin.style.linestyle.color = "ff0000ff"
+        """Creates line plots of transects in Google Earth using GGA
+        coordinates and MAP average ship track."""
 
         fullname = os.path.join(
             self.sticky_settings.get("Folder"),
             datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
         )
-        kml.save(fullname)
+
+        self.meas.map.export_kml(self.meas, fullname)
+
         try:
             os.startfile(fullname)
         except os.error:
             self.popup_message(
                 text=self.tr(
-                    "Google Earth is not installed or is not associated with kml files."
+                    "Google Earth is not installed or is not associated with "
+                    "kml files."
                 )
             )
 

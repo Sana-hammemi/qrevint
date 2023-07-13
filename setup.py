@@ -51,7 +51,7 @@ setup(
                       'pywin32-ctypes==0.2.0',
                       'scipy==1.7.3',
                       'setuptools==41.2.0',
-                      'simplekml',
+                      'simplekml~=1.3.6',
                       'sip',
                       'six==1.12.0',
                       'utm',

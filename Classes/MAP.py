@@ -1,15 +1,17 @@
-import utm
 import copy
-from sklearn.linear_model import LinearRegression
-import numpy as np
-import scipy as sc
-import pandas as pd
-from scipy.optimize.minpack import curve_fit
-from Classes import __qrev_version__
 from datetime import datetime
 
-from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
+import numpy as np
+import pandas as pd
+import scipy as sc
+import simplekml
+import utm
+from scipy.optimize.minpack import curve_fit
+from sklearn.linear_model import LinearRegression
+
+from Classes import __qrev_version__
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
+from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
 
 
 class MAP(object):
@@ -1768,3 +1770,52 @@ class MAP(object):
             sep = " "
 
         df.to_csv(path, sep=sep, index=False, mode="a", header=True)
+
+    def export_kml(self, meas, path):
+        """Create KML file for MAP.
+
+        Parameters:
+            meas: Measurement
+            path: str
+        """
+
+        kml = simplekml.Kml(open=1)
+        # Create a shiptrack for each checked transect
+        lat = np.nan
+        lon = np.nan
+        for transect_idx in meas.checked_transect_idx:
+            lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
+            lon = lon[np.logical_not(np.isnan(lon))]
+            lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
+            lat = lat[np.logical_not(np.isnan(lat))]
+            line_name = meas.transects[transect_idx].file_name[:-4]
+            lon_lat = tuple(zip(lon, lat))
+            _ = kml.newlinestring(name=line_name, coords=lon_lat)
+
+        # Get utm zone
+        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
+        # Define average ship track
+        left_x = np.nanmedian(
+            [item[0] for item in meas.map.x_raw_coordinates])
+        x_boundaries = [
+            min([min(x) for x in meas.map.x_projected]),
+            max([max(x) for x in meas.map.x_projected]),
+        ]
+
+        x_utm = np.array(
+            [
+                min(x_boundaries, key=lambda x: abs(x - left_x)),
+                max(x_boundaries, key=lambda x: abs(x - left_x)),
+            ]
+        )
+        y_utm = np.array(
+            [i * self.slope + self.intercept for i in x_utm]
+        )
+
+        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
+        line_name = "MAP average ship track"
+        lon_lat = tuple(zip(lon, lat))
+        lin = kml.newlinestring(name=line_name, coords=lon_lat)
+        lin.style.linestyle.color = "ff0000ff"
+
+        kml.save(path)
