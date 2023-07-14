@@ -301,7 +301,7 @@ class Ui_Options(object):
 
     def retranslateUi(self, Options):
         _translate = QtCore.QCoreApplication.translate
-        Options.setWindowTitle(_translate("Options", "Dialog"))
+        Options.setWindowTitle(_translate("Options", "Settings"))
         self.gb_units.setTitle(_translate("Options", "Units"))
         self.rb_english.setText(_translate("Options", "English"))
         self.rb_si.setText(_translate("Options", "SI"))
