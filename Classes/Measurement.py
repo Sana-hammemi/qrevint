@@ -4837,7 +4837,7 @@ class Measurement(object):
             survey = ETree.SubElement(channel, "CrossSectionSurvey")
 
             for row in range(rows):
-                meas_pts = ETree.SubElement(survey, "MeasurementPoints")
+                meas_pts = ETree.SubElement(survey, "MeasurementPoint")
                 ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(row)
 
                 # latitude
