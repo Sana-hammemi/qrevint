@@ -11,6 +11,7 @@
 - Fix crash resulting from SonTek data with good GGA but no VTG data.
 - Merged in QRevInt updates.
 - Added Multitransect Averaged Profile (MAP) tab and connected to backend code.
+- Added temperature to MAP computations.
 - Added feature to display discharge using number of significant digits or number of decimal places
 - Modified discharge time series graph to show selected transect, cumulative mean discharge, and +/- 5% band on cumulative mean discharge
 - Modified instructions to indicate that zoom out can be done using the right click on the mouse

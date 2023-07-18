@@ -1710,6 +1710,67 @@ class MAP(object):
 
         return lat[1:], lon[1:]
 
+    def create_map_df(self, units):
+        """Create a pandas dataframe of data computed by MAP.
+
+        Parameters:
+            units: dict
+
+        Returns:
+            df: pd.DataFrame
+
+        """
+
+        distance_x, distance_y = self.utm_2_distance()
+        lat, lon = self.utm_2_decimaldegrees()
+
+        row, col = self.primary_velocity.shape
+        ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
+        data = {
+            "Distance (Left bank) "
+            + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
+            "Distance X " + units["label_L"]: np.repeat(distance_x, row) *
+                                              units["L"],
+            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) *
+                                              units["L"],
+            "Latitude": np.repeat(lat, row),
+            "Longitude": np.repeat(lon, row),
+            "Primary velocity "
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units[
+                "V"],
+            "Secondary velocity "
+            + units["label_V"]: self.secondary_velocity.ravel(order="F") *
+                                units["V"],
+            "Streamwise velocity "
+            + units["label_V"]: self.streamwise_velocity.ravel(order="F") *
+                                units["V"],
+            "Transverse velocity (Left to Right) "
+            + units["label_V"]: self.transverse_velocity.ravel(order="F") *
+                                units["V"],
+            "Vertical velocity "
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units[
+                "V"],
+            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units[
+                "L"],
+            "Cells discharge "
+            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units[
+                "Q"],
+            "Cells area "
+            + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
+            "Distance cells center "
+            + units["label_L"]: self.distance_cells_center.ravel(order="F")
+                                * units["L"],
+            "Depth cells center "
+            + units["label_L"]: self.depth_cells_center.ravel(order="F") *
+                                units["L"],
+            "Temperature": np.repeat(self.temperature, row),
+        }
+
+        df = pd.DataFrame(data)
+        df = df[df["Cells discharge " + units["label_Q"]].notna()]
+
+        return df
+
     def export_csv(self, path, units, delimiter="comma delimited"):
         """Exports map data to ascii file with specified delimiter.
 
@@ -1724,43 +1785,7 @@ class MAP(object):
         with open(path, "w") as file:
             file.writelines(header)
 
-        distance_x, distance_y = self.utm_2_distance()
-        lat, lon = self.utm_2_decimaldegrees()
-
-        row, col = self.primary_velocity.shape
-        ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
-        data = {
-            "Distance (Left bank) "
-            + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
-            "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
-            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) * units["L"],
-            "Latitude": np.repeat(lat, row),
-            "Longitude": np.repeat(lon, row),
-            "Primary velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
-            "Secondary velocity "
-            + units["label_V"]: self.secondary_velocity.ravel(order="F") * units["V"],
-            "Streamwise velocity "
-            + units["label_V"]: self.streamwise_velocity.ravel(order="F") * units["V"],
-            "Transverse velocity (Left to Right) "
-            + units["label_V"]: self.transverse_velocity.ravel(order="F") * units["V"],
-            "Vertical velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
-            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units["L"],
-            "Cells discharge "
-            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units["Q"],
-            "Cells area "
-            + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
-            "Distance cells center "
-            + units["label_L"]: self.distance_cells_center.ravel(order="F")
-            * units["L"],
-            "Depth cells center "
-            + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
-            "Temperature": np.repeat(self.temperature, row),
-        }
-
-        df = pd.DataFrame(data)
-        df = df[df["Cells discharge " + units["label_Q"]].notna()]
+        df = self.create_map_df(units=units)
 
         if "comma" in delimiter:
             sep = ","
