@@ -1,6 +1,6 @@
 # QRev Change Log
 
-### [**Version 4.3X**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.3X)
+### [**Version 4.35**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.35)
 
 **Status**: *Recommended*
 
@@ -8,6 +8,16 @@
 - Updated Export Mean Cross-Option signal
 - Fixed XML export fail related to Mean XS comp fail due to invalid data in 
   the XY data during the projection.
+- Fix crash resulting from SonTek data with good GGA but no VTG data.
+- Merged in QRevInt updates.
+- Added Multitransect Averaged Profile (MAP) tab and connected to backend code.
+- Added feature to display discharge using number of significant digits or number of decimal places
+- Modified discharge time series graph to show selected transect, cumulative mean discharge, and +/- 5% band on cumulative mean discharge
+- Modified instructions to indicate that zoom out can be done using the right click on the mouse
+- Added ability to save figures in several common graphic formats
+- Added ability to manual set the axes limits for a graph
+- Added QA check for a custom transformation matrix for TRDI ADCPs
+- Added ability to allow autonomous GPS by default
 
 ### [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 

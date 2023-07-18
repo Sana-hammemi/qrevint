@@ -1166,21 +1166,23 @@ class TransectData(object):
                     vtg_method="Average",
                 )
 
-            self.boat_vel.add_boat_object(
-                source="SonTek",
-                vel_in=self.gps.gga_velocity_ens_mps,
-                freq_in=None,
-                coord_sys_in="Earth",
-                nav_ref_in="GGA",
-            )
+            if self.gps.gga_velocity_ens_mps is not None:
+                self.boat_vel.add_boat_object(
+                    source="SonTek",
+                    vel_in=self.gps.gga_velocity_ens_mps,
+                    freq_in=None,
+                    coord_sys_in="Earth",
+                    nav_ref_in="GGA",
+                )
+            if self.gps.vtg_velocity_ens_mps is not None:
+                self.boat_vel.add_boat_object(
+                    source="SonTek",
+                    vel_in=self.gps.vtg_velocity_ens_mps,
+                    freq_in=None,
+                    coord_sys_in="Earth",
+                    nav_ref_in="VTG",
+                )
 
-            self.boat_vel.add_boat_object(
-                source="SonTek",
-                vel_in=self.gps.vtg_velocity_ens_mps,
-                freq_in=None,
-                coord_sys_in="Earth",
-                nav_ref_in="VTG",
-            )
         ref = "BT"
         if rsdata.Setup.trackReference == 1:
             ref = "BT"
