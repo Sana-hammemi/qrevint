@@ -24,8 +24,14 @@ from Classes.QComp import QComp
 from Classes.TransectData import TransectData
 from Classes.Uncertainty import Uncertainty
 from Classes.WaterData import WaterData
-from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, \
-    azdeg2rad, units_conversion
+from MiscLibs.common_functions import (
+    cart2pol,
+    pol2cart,
+    rad2azdeg,
+    nans,
+    azdeg2rad,
+    units_conversion,
+)
 
 # from profilehooks import profile
 
@@ -4803,26 +4809,26 @@ class Measurement(object):
 
         # Average cross-section
         if self.export_xs and self.map is not None:
-
             # get dataframe for xml output
-            cross_section_all = self.map.create_map_df(
-                units=units_conversion())
+            cross_section_all = self.map.create_map_df(units=units_conversion())
 
             # remove duplicates caused by contour data in df
             cross_section = cross_section_all.drop_duplicates(
-                subset=["Distance (Left bank) (m)"])
+                subset=["Distance (Left bank) (m)"]
+            )
 
             # create copy of df without the data in the XML nodes to save on
             # file size.
-            cross_section_all = cross_section_all.drop(columns=["Latitude",
-                                                                "Longitude",
-                                                                "Distance X "
-                                                                "(m)",
-                                                                "Distance Y "
-                                                                "(m)",
-                                                                "Temperature",
-                                                                "Depth ("
-                                                                "m)"])
+            cross_section_all = cross_section_all.drop(
+                columns=[
+                    "Latitude",
+                    "Longitude",
+                    "Distance X " "(m)",
+                    "Distance Y " "(m)",
+                    "Temperature",
+                    "Depth (" "m)",
+                ]
+            )
 
             # convert df to tab delimited str
             xs_str = cross_section_all.to_string(index=False)
@@ -4832,55 +4838,46 @@ class Measurement(object):
 
             for row in range(rows):
                 meas_pts = ETree.SubElement(survey, "MeasurementPoints")
-                ETree.SubElement(meas_pts, "TableRow",
-                                 type="integer").text = str(
-                    row
-                )
+                ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(row)
 
                 # latitude
-                ETree.SubElement(meas_pts, "Latitude",
-                                 type="double").text = str(
+                ETree.SubElement(meas_pts, "Latitude", type="double").text = str(
                     cross_section.iloc[row]["Latitude"]
                 )
 
                 # Longitude
-                ETree.SubElement(meas_pts, "Longitude",
-                                 type="double").text = str(
+                ETree.SubElement(meas_pts, "Longitude", type="double").text = str(
                     cross_section.iloc[row]["Longitude"]
                 )
 
                 # station
                 value = "{:.3f}".format(
-                    cross_section.iloc[row]["Distance (Left bank) " \
-                                            "(m)"])
+                    cross_section.iloc[row]["Distance (Left bank) " "(m)"]
+                )
                 ETree.SubElement(
                     meas_pts, "Distance", type="double", unitsCode="m"
                 ).text = value
 
                 # distance x
-                value = "{:.3f}".format(cross_section.iloc[row][
-                                            "Distance X (m)"])
+                value = "{:.3f}".format(cross_section.iloc[row]["Distance X (m)"])
                 ETree.SubElement(
                     meas_pts, "DistanceX", type="double", unitsCode="m"
                 ).text = value
 
                 # distance y
-                value = "{:.3f}".format(cross_section.iloc[row][
-                                            "Distance Y (m)"])
+                value = "{:.3f}".format(cross_section.iloc[row]["Distance Y (m)"])
                 ETree.SubElement(
                     meas_pts, "DistanceY", type="double", unitsCode="m"
                 ).text = value
 
                 # depth
-                value = "{:.3f}".format(cross_section.iloc[row]["Depth ("
-                                                                "m)"])
+                value = "{:.3f}".format(cross_section.iloc[row]["Depth (" "m)"])
                 ETree.SubElement(
                     meas_pts, "Depth", type="double", unitsCode="m"
                 ).text = value
 
                 # Temperature
-                value = "{:.2f}".format(
-                    cross_section.iloc[row]["Temperature"])
+                value = "{:.2f}".format(cross_section.iloc[row]["Temperature"])
                 ETree.SubElement(
                     meas_pts, "Temperature", type="double", unitsCode="degC"
                 ).text = value

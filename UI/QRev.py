@@ -14,8 +14,7 @@ import numpy as np
 import scipy.io as sio
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
-from matplotlib.backends.backend_qt5agg import \
-    NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
 import UI.QRev_gui as QRev_gui
@@ -49,7 +48,6 @@ from UI.HOffset import HOffset
 from UI.HSource import HSource
 from UI.HeadingTS import HeadingTS
 from UI.MagVar import MagVar
-# from UI.MapWTContour import MapWTContour
 from UI.MapTrack import Maptrack
 from UI.MplCanvas import MplCanvas
 from UI.OpenMeasurementDialog import OpenMeasurementDialog
