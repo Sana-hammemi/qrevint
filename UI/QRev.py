@@ -15178,7 +15178,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # signals for contour options
                 self.combo_map_data.currentTextChanged.connect(self.update_map)
                 self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
-                self.cb_map_cell_size_auto.clicked.connect(self.update_map)
+                self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
                 self.ed_map_cell_width.editingFinished.connect(self.update_map)
                 self.ed_map_cell_height.editingFinished.connect(self.update_map)
                 self.cb_map_top_bottom.clicked.connect(self.update_map)
@@ -15665,6 +15665,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     "kml files."
                 )
             )
+
+    def map_cell_auto(self):
+        """Enable or disable the width and Height line edits."""
+
+        if self.cb_map_cell_size_auto.isChecked():
+            self.ed_map_cell_width.blockSignals(True)
+            self.ed_map_cell_width.setEnabled(False)
+            self.ed_map_cell_width.clear()
+
+            self.ed_map_cell_height.blockSignals(True)
+            self.ed_map_cell_height.setEnabled(False)
+            self.ed_map_cell_height.clear()
+
+            self.update_map()
+        else:
+            self.ed_map_cell_width.blockSignals(False)
+            self.ed_map_cell_width.setEnabled(True)
+
+            self.ed_map_cell_height.blockSignals(False)
+            self.ed_map_cell_height.setEnabled(True)
 
     # Graphics save
     # =================
