@@ -139,18 +139,20 @@ class MAP(object):
         self.cells_discharge = None  # MAP discharge for each cell
         self.total_discharge = None  # MAP total discharge
 
-        self.settings = {"ed_map_cell_width": False,
-                         "ed_map_cell_height": False,
-                         "cb_map_top_bottom": True,
-                         "cb_map_edges": True,
-                         "cb_map_interpolation": True,
-                         "ed_map_secondary_velocity": False,
-                         "cb_map_bed_profiles": True,
-                         "combo_map_data": "Primary velocity",
-                         "rb_map_contour": True,
-                         "rb_map_bathymetry": False,
-                         "rb_map_temp": False,
-                         "rb_map_stickship": False}
+        self.settings = {
+            "ed_map_cell_width": False,
+            "ed_map_cell_height": False,
+            "cb_map_top_bottom": True,
+            "cb_map_edges": True,
+            "cb_map_interpolation": True,
+            "ed_map_secondary_velocity": False,
+            "cb_map_bed_profiles": True,
+            "combo_map_data": "Primary velocity",
+            "rb_map_contour": True,
+            "rb_map_bathymetry": False,
+            "rb_map_temp": False,
+            "rb_map_stickship": False,
+        }
 
     def populate_data(
         self,
@@ -473,12 +475,17 @@ class MAP(object):
 
         x_med_left = np.nanmedian(x_left)
         y_med_left = np.nanmedian(y_left)
+
         self.slope = (np.nanmedian(y_right) - y_med_left) / (
             np.nanmedian(x_right) - x_med_left
         )
         self.intercept = y_med_left - self.slope * x_med_left
+
         self._x_left = x_med_left
         self._y_left = y_med_left
+
+        # if LEW is > the start bank was REW. If not REW was
+        # the start and velocities should be inversed.
         if x_med_left > np.nanmedian(x_right):
             self._unit = -1
         else:
@@ -647,10 +654,15 @@ class MAP(object):
         if node_horizontal_user is None:
             flat_acs = np.sort(np.concatenate(acs_distance).ravel())
             node_horz = np.nanmax(
-                [np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
-                 np.nanmedian(np.abs(
-                     [np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
-                 )])
+                [
+                    np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
+                    np.nanmedian(
+                        np.abs(
+                            [np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance]
+                        )
+                    ),
+                ]
+            )
 
         else:
             node_horz = node_horizontal_user
@@ -1673,15 +1685,10 @@ class MAP(object):
         cells_discharge = self.cells_area * streamwise_velocity
         total_discharge = np.nansum(cells_discharge)
 
-        if total_discharge < 0:
-            unit = -1
-        else:
-            unit = 1
-
-        self.streamwise_velocity = streamwise_velocity * unit
-        self.transverse_velocity = transverse_velocity * unit
-        self.cells_discharge = cells_discharge * unit
-        self.total_discharge = total_discharge * unit
+        self.streamwise_velocity = streamwise_velocity * -self._unit
+        self.transverse_velocity = transverse_velocity * -self._unit
+        self.cells_discharge = cells_discharge * -self._unit
+        self.total_discharge = total_discharge * -self._unit
 
     def utm_2_distance(self):
         """Correct UTM coordinates to a (0, 0) starting point.
@@ -1737,40 +1744,30 @@ class MAP(object):
         data = {
             "Distance (Left bank) "
             + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
-            "Distance X " + units["label_L"]: np.repeat(distance_x, row) *
-                                              units["L"],
-            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) *
-                                              units["L"],
+            "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
+            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) * units["L"],
             "Latitude": np.repeat(lat, row),
             "Longitude": np.repeat(lon, row),
             "Primary velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units[
-                "V"],
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
             "Secondary velocity "
-            + units["label_V"]: self.secondary_velocity.ravel(order="F") *
-                                units["V"],
+            + units["label_V"]: self.secondary_velocity.ravel(order="F") * units["V"],
             "Streamwise velocity "
-            + units["label_V"]: self.streamwise_velocity.ravel(order="F") *
-                                units["V"],
+            + units["label_V"]: self.streamwise_velocity.ravel(order="F") * units["V"],
             "Transverse velocity (Left to Right) "
-            + units["label_V"]: self.transverse_velocity.ravel(order="F") *
-                                units["V"],
+            + units["label_V"]: self.transverse_velocity.ravel(order="F") * units["V"],
             "Vertical velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units[
-                "V"],
-            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units[
-                "L"],
+            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
+            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units["L"],
             "Cells discharge "
-            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units[
-                "Q"],
+            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units["Q"],
             "Cells area "
             + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
             "Distance cells center "
             + units["label_L"]: self.distance_cells_center.ravel(order="F")
-                                * units["L"],
+            * units["L"],
             "Depth cells center "
-            + units["label_L"]: self.depth_cells_center.ravel(order="F") *
-                                units["L"],
+            + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
             "Temperature": np.repeat(self.temperature, row),
         }
 
@@ -1828,8 +1825,7 @@ class MAP(object):
         # Get utm zone
         _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
         # Define average ship track
-        left_x = np.nanmedian(
-            [item[0] for item in meas.map.x_raw_coordinates])
+        left_x = np.nanmedian([item[0] for item in meas.map.x_raw_coordinates])
         x_boundaries = [
             min([min(x) for x in meas.map.x_projected]),
             max([max(x) for x in meas.map.x_projected]),
@@ -1841,9 +1837,7 @@ class MAP(object):
                 max(x_boundaries, key=lambda x: abs(x - left_x)),
             ]
         )
-        y_utm = np.array(
-            [i * self.slope + self.intercept for i in x_utm]
-        )
+        y_utm = np.array([i * self.slope + self.intercept for i in x_utm])
 
         lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
         line_name = "MAP average ship track"

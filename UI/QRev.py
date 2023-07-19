@@ -15432,11 +15432,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(
                     row,
                     col,
-                    QtWidgets.QTableWidgetItem("{:8}".format(self.q_digits(map_width))),
+                    QtWidgets.QTableWidgetItem("{:8}".format(self.q_digits(
+                        map_width * self.units["L"]))),
                 )
             # Meas. width
             col += 1
-            meas_width = trans_prop["width"][n_transects] * self.units["L"]
+            meas_width = trans_prop["width"][n_transects]
             if np.isnan(meas_width):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
             else:
@@ -15444,7 +15445,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(self.q_digits(meas_width))
+                        "{:8}".format(self.q_digits(meas_width * self.units["L"]))
                     ),
                 )
             # Delta mean depth

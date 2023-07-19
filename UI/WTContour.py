@@ -216,14 +216,19 @@ class WTContour(object):
             self.speed_plt = speed_plt * self.units["V"]
 
             # Determine limits for color map
-            min_limit = 0
+            # min_limit = 0
             if max_limit == 0:
-                if np.sum(speed_plt[speed_plt > -900]) > 0:
+                if np.abs(np.sum(speed_plt[speed_plt > -900])) > 0:
                     max_limit = np.percentile(
                         speed_plt[speed_plt > -900] * units["V"], 99
                     )
+                    min_limit = np.min(
+                        speed_plt[speed_plt > -900] * units["V"])
+                    if 0 < min_limit < 0.1:
+                        min_limit = 0
                 else:
                     max_limit = 1
+                    min_limit = 0
 
             # Create color map
             cmap = cm.get_cmap(color_map)
