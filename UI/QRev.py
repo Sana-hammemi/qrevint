@@ -15495,40 +15495,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if self.rb_map_contour.isChecked():
             self.combo_map_data.blockSignals(False)
             self.ed_map_secondary_velocity.blockSignals(False)
-            self.cb_map_cell_size_auto.blockSignals(False)
-            self.ed_map_cell_width.blockSignals(False)
-            self.ed_map_cell_height.blockSignals(False)
             self.cb_map_top_bottom.blockSignals(False)
-            self.cb_map_edges.blockSignals(False)
-            self.cb_map_interpolation.blockSignals(False)
-            self.cb_map_bed_profiles.blockSignals(False)
-
             self.map_wt_contour()
 
         elif self.rb_map_bathymetry.isChecked() or self.rb_map_temp.isChecked():
             self.combo_map_data.blockSignals(True)
             self.ed_map_secondary_velocity.blockSignals(True)
-            self.cb_map_cell_size_auto.blockSignals(True)
-            self.ed_map_cell_width.blockSignals(True)
-            self.ed_map_cell_height.blockSignals(True)
             self.cb_map_top_bottom.blockSignals(True)
-            self.cb_map_edges.blockSignals(True)
-            self.cb_map_interpolation.blockSignals(False)
-            self.cb_map_bed_profiles.blockSignals(False)
-
             self.plot_map()
 
         elif self.rb_map_stickship.isChecked():
             self.combo_map_data.blockSignals(True)
             self.ed_map_secondary_velocity.blockSignals(True)
-            self.cb_map_cell_size_auto.blockSignals(True)
-            self.ed_map_cell_width.blockSignals(True)
-            self.ed_map_cell_height.blockSignals(True)
             self.cb_map_top_bottom.blockSignals(True)
-            self.cb_map_edges.blockSignals(False)
-            self.cb_map_interpolation.blockSignals(False)
-            self.cb_map_bed_profiles.blockSignals(False)
-
             self.map_shiptrack()
 
         self.figs = [self.map_fig]
