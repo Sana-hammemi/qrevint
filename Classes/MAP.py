@@ -72,6 +72,8 @@ class MAP(object):
 
     cells_discharge: np.array(float) 1D
         MAP discharge for each cell
+    settings: dict
+        MAP settings for processing
     total_discharge: float
         MAP total discharge
     """
@@ -136,6 +138,19 @@ class MAP(object):
 
         self.cells_discharge = None  # MAP discharge for each cell
         self.total_discharge = None  # MAP total discharge
+
+        self.settings = {"ed_map_cell_width": False,
+                         "ed_map_cell_height": False,
+                         "cb_map_top_bottom": True,
+                         "cb_map_edges": True,
+                         "cb_map_interpolation": True,
+                         "ed_map_secondary_velocity": False,
+                         "cb_map_bed_profiles": True,
+                         "combo_map_data": "Primary velocity",
+                         "rb_map_contour": True,
+                         "rb_map_bathymetry": False,
+                         "rb_map_temp": False,
+                         "rb_map_stickship": False}
 
     def populate_data(
         self,
@@ -631,10 +646,12 @@ class MAP(object):
         )
         if node_horizontal_user is None:
             flat_acs = np.sort(np.concatenate(acs_distance).ravel())
-            node_horz = np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95)
-            # node_horz = np.nanmedian(
-            #     np.abs([np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
-            # )
+            node_horz = np.nanmax(
+                [np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
+                 np.nanmedian(np.abs(
+                     [np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
+                 )])
+
         else:
             node_horz = node_horizontal_user
 
@@ -655,9 +672,6 @@ class MAP(object):
             max([max(l) for l in acs_distance]) + 10**-5,
             nb_horz,
         )
-        # self.borders_ens = np.round(np.arange(min([min(l) for l in acs_distance]),
-        #                                       max([max(l) for l in acs_distance]) + node_vertical_user,
-        #                                       node_vertical_user).tolist(), 3)
 
         # Meshes height
         cell_depth = data_transects["cell_depth"]
@@ -703,9 +717,6 @@ class MAP(object):
         depth_data = data_transects["depth_data"]
         temperature_data = data_transects["temperature_data"]
         acs_distance = self.acs_distance
-        # borders_ens = self.borders_ens
-        # main_depth_layers = self.main_depth_layers
-        # orig_start_edge = data_transects['orig_start_edge']
 
         node_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
         # Create list to save transects interpolated on mesh grid
@@ -1189,7 +1200,6 @@ class MAP(object):
 
     def compute_interpolation(self):
         # Todo Add doc string
-        # Todo Add temperature
 
         # Interpolate depth
         not_nan = np.logical_not(np.isnan(self.depths))
@@ -1264,8 +1274,6 @@ class MAP(object):
             i += 1
             self.depth_cells_border[x[0], i] = self.depths[i]
             self.depth_cells_border[x[0] + 1 :, i] = np.nan
-
-        # Todo update temperature
 
         y_cell_size = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
         y_centers = self.depth_cells_border[:-1, :] + 0.5 * y_cell_size

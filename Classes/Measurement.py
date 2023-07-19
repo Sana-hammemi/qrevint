@@ -290,6 +290,9 @@ class Measurement(object):
                 self.uncertainty.compute_uncertainty(self)
                 self.qa = QAData(self)
 
+        if run_map:
+            self.compute_map()
+
     def load_trdi(self, mmt_file, transect_type="Q", checked=False):
         """Method to load TRDI data.
 
@@ -983,9 +986,6 @@ class Measurement(object):
         self.use_measurement_thresholds = self.transects[
             self.checked_transect_idx[0]
         ].boat_vel.bt_vel.use_measurement_thresholds
-
-        if self.run_map:
-            self.compute_map()
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and
@@ -1765,8 +1765,6 @@ class Measurement(object):
         self.compute_discharge()
 
         self.compute_uncertainty()
-        if self.run_map:
-            self.compute_map()
 
     def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -2352,7 +2350,7 @@ class Measurement(object):
         node_vertical_user=None,
         extrap_option=True,
         edges_option=True,
-        interp_option=False,
+        interp_option=True,
     ):
         """Computes Multi-transect Average Profile
 

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1618</width>
-    <height>989</height>
+    <height>994</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -8738,7 +8738,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>Quiver Scale:</string>
+                 <string>Secondary Velocity Scale:</string>
                 </property>
                </widget>
               </item>

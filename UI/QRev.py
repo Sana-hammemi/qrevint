@@ -809,6 +809,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Set initial change switch to false
         self.change = False
+        self.map_change = False
 
         # Set the initial tab to the main tab
         self.current_tab = "Main"
@@ -1100,6 +1101,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.actionSave.triggered.connect(self.split_save)
             self.config_gui()
             self.change = True
+            self.map_change = True
             self.tab_manager(tab_idx=0)
             self.set_tab_color()
             self.processed_data = []
@@ -1421,12 +1423,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
+                        self.map_change = True
                         self.tab_manager(tab_idx=0, subtab_idx=0)
                         # self.set_tab_color()
                 else:
                     self.transect_row = 0
                     self.config_gui()
                     self.change = True
+                    self.map_change = True
                     self.tab_manager(tab_idx=0, subtab_idx=0)
 
     def save_measurement(self):
@@ -1568,6 +1572,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if self.meas is not None:
                     self.meas.comments.append(comment.text_edit_comment.toPlainText())
                 self.change = True
+                self.map_change = True
                 self.update_comments()
 
     def select_q_transects(self):
@@ -1607,6 +1612,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
+                        self.map_change = True
                         self.tab_manager()
 
                 if len(self.checked_transects_idx) == 0:
@@ -1630,6 +1636,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_nav_ref()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_gga(self):
@@ -1670,6 +1677,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     Measurement.apply_settings(self.meas, settings)
                     self.update_toolbar_nav_ref()
                     self.change = True
+                    self.map_change = True
                     self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_vtg(self):
@@ -1686,6 +1694,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_nav_ref()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def comp_tracks_on(self):
@@ -1729,6 +1738,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_composite_tracks()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def comp_tracks_off(self):
@@ -1746,6 +1756,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             Measurement.apply_settings(self.meas, settings)
             self.update_toolbar_composite_tracks()
             self.change = True
+            self.map_change = True
             self.tab_manager(old_discharge=old_discharge)
 
     def qrev_options(self):
@@ -1857,6 +1868,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
                 else:
                     if self.units["ID"] == "English":
                         self.units = units_conversion(units_id="SI")
@@ -1864,6 +1876,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
 
                 # X Axis
                 if options.rb_opt_ensembles.isChecked():
@@ -1892,6 +1905,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
                 else:
                     if self.color_map != "jet":
                         self.color_map = "jet"
@@ -1899,6 +1913,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
 
                 # Save options
                 if options.rb_All.isChecked():
@@ -1931,6 +1946,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Check for change in extraplation weighting
                 if self.use_weighted != use_weighted:
                     self.change = True
+                    self.map_change = True
                     # If change made with measurement loaded recompute
                     # measurement
                     if self.meas is not None:
@@ -1955,6 +1971,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Check for change in filter measurement
                 if self.use_measurement_thresholds != filter_meas:
                     self.change = True
+                    self.map_change = True
                     # If change made with measurement loaded recompute
                     # measurement
                     if self.meas is not None:
@@ -2141,6 +2158,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.meas.apply_settings(settings)
                 self.sticky_settings.set("UseWeighted", self.use_weighted)
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     # Main tab
@@ -5453,6 +5471,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.figs = [self.heading_fig, self.pr_fig]
             self.fig_calls = [self.compass_plot, self.pr_plot]
             self.change = True
+            self.map_change = True
 
         # Magnetic variation
         if column == 1:
@@ -5481,6 +5500,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             new_discharge=self.meas.discharge,
                         )
                         self.change = True
+                        self.map_change = True
 
         # Heading Offset
         elif column == 2:
@@ -5510,6 +5530,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 new_discharge=self.meas.discharge,
                             )
                             self.change = True
+                            self.map_change = True
 
         # Heading Source
         elif column == 3:
@@ -5557,6 +5578,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
         self.tab_compass_2_data.setFocus()
 
     def select_calibration(self, row, column):
@@ -6096,6 +6118,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
 
         # Change salinity
         elif column == 3:
@@ -6129,6 +6152,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             new_discharge=self.meas.discharge,
                         )
                         self.change = True
+                        self.map_change = True
                     except ValueError:
                         pass
 
@@ -6190,6 +6214,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
 
         tbl.blockSignals(False)
 
@@ -6318,6 +6343,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tempsal_comments_messages()
         self.pb_ind_temp_apply.setEnabled(False)
         self.change = True
+        self.map_change = True
 
     def apply_adcp_temp(self):
         """Applies a user entered value for the ADCP temperature. This
@@ -6348,6 +6374,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tempsal_comments_messages()
         self.pb_adcp_temp_apply.setEnabled(False)
         self.change = True
+        self.map_change = True
 
     def user_temp_changed(self):
         """Enables the apply button if the user enters a valid value in the
@@ -6791,6 +6818,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.meas.compute_uncertainty()
                 self.meas.qa.moving_bed_qa(self.meas)
                 self.change = True
+                self.map_change = True
 
         self.update_mb_table()
         self.mb_comments_messages()
@@ -7008,6 +7036,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.meas.qa.moving_bed_qa(self.meas)
             self.update_tab_icons()
             self.change = True
+            self.map_change = True
 
     def mb_comments_messages(self):
         """Displays comments and messages associated with moving-bed tests
@@ -7679,6 +7708,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.bt_plots()
             self.change = True
+            self.map_change = True
         self.tab_bt_2_data.setFocus()
 
     @QtCore.pyqtSlot()
@@ -7744,6 +7774,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_3beam.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7775,6 +7806,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_bt_error_vel_threshold.setText("")
                 self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_error_velocity.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7807,6 +7839,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_bt_vert_vel_threshold.setText("")
                 self.update_bt_tab(s)
                 self.change = True
+                self.map_change = True
             self.combo_bt_vert_velocity.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7834,6 +7867,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_other.blockSignals(False)
 
     @QtCore.pyqtSlot()
@@ -7868,6 +7902,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_bt_error_vel_threshold.blockSignals(False)
 
@@ -7901,6 +7936,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
+                    self.map_change = True
         self.ed_bt_vert_vel_threshold.blockSignals(False)
 
     def bt_comments_messages(self):
@@ -8788,6 +8824,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.gps_plots()
             self.change = True
+            self.map_change = True
         if caller is None:
             self.gps_bt_table_clicked(row + 2, column, caller="gps")
         self.tab_gps_2_data.setFocus()
@@ -8854,6 +8891,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_altitude(self, text):
@@ -8885,6 +8923,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_altitude_threshold.setText("")
                 self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_hdop(self, text):
@@ -8916,6 +8955,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_hdop_threshold.setText("")
                 self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_gps_other(self, text):
@@ -8940,6 +8980,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot()
     def change_altitude_threshold(self):
@@ -8968,6 +9009,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_gps_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_gps_altitude_threshold.blockSignals(False)
 
@@ -8996,6 +9038,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_gps_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_gps_hdop_threshold.blockSignals(False)
 
@@ -9277,6 +9320,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row - 2
             self.gps_bt_plots()
             self.change = True
+            self.map_change = True
         if caller is None:
             self.gps_table_clicked(row - 2, column, caller="gps_bt")
         self.tab_gps_2_gpsbt.setFocus()
@@ -9967,6 +10011,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.depth_plots()
             self.change = True
+            self.map_change = True
 
         # Change draft
         if column == 1:
@@ -10002,6 +10047,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                         self.depth_comments_messages()
                         self.change = True
+                        self.map_change = True
         self.table_depth.blockSignals(False)
         self.tab_depth_2_data.setFocus()
 
@@ -10086,6 +10132,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_ref.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -10107,6 +10154,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_filter.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -10129,6 +10177,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_avg.blockSignals(False)
 
     def depth_comments_messages(self):
@@ -10861,6 +10910,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.wt_plots()
             self.change = True
+            self.map_change = True
         self.tab_wt_2_data.setFocus()
 
     @staticmethod
@@ -10966,6 +11016,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_error(self, text):
@@ -10997,6 +11048,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.update_wt_tab(s)
 
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_vertical(self, text):
@@ -11027,6 +11079,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_wt_vert_vel_threshold.setText("")
                 self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_snr(self, text):
@@ -11051,6 +11104,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot()
     def change_wt_error_vel_threshold(self):
@@ -11083,6 +11137,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_error_vel_threshold.blockSignals(False)
 
@@ -11118,6 +11173,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_vert_vel_threshold.blockSignals(False)
 
@@ -11144,6 +11200,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_excluded_dist.blockSignals(False)
 
@@ -11305,6 +11362,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.q_sensitivity_table()
             self.extrap_comments_messages()
             self.change = True
+            self.map_change = True
         else:
             # Run qa to update messages for user data setting changes if
             # other than Measurement selected
@@ -12429,6 +12487,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_edges
         tbl.blockSignals(True)
         self.change = True
+        self.map_change = True
 
         # Show transect
         if col == 0:
@@ -12440,6 +12499,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 self.edges_graphics()
                 self.change = True
+                self.map_change = True
 
         # Start edge
         if col == 1:
@@ -12474,6 +12534,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.update_edges_table()
                     self.edges_graphics()
                     self.change = True
+                    self.map_change = True
                     QtWidgets.QMessageBox.about(
                         self,
                         self.tr("Start Edge Change"),
@@ -14056,6 +14117,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_measurement_plot()
             self.uncertainty_comments_messages()
             self.change = True
+            self.map_change = True
 
     def user_advanced_settings_change(self):
         """User advanced settings have changed, update settings and
@@ -15033,7 +15095,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def map_tab(self):
         """Initializes and configures MAP tab."""
         if self.meas.map is not None:
-            if self.change:
+            if self.map_change:
                 # Reset settings if change
                 self.cb_map_interpolation.setChecked(True)
                 self.cb_map_top_bottom.setChecked(True)
@@ -15133,8 +15195,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Load MAP parameters and check if there is any change
         with self.wait_cursor():
-            change_data = False
-            change_plot = False
+            if self.map_change:
+                change_data = True
+                change_plot = True
+            else:
+                change_data = False
+                change_plot = False
 
             cell_width = self.check_numeric_input(self.ed_map_cell_width)
             if cell_width is not None:
@@ -15159,20 +15225,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "rb_map_temp": self.rb_map_temp.isChecked(),
                 "rb_map_stickship": self.rb_map_stickship.isChecked(),
             }
-            for key in self.map_settings:
-                if self.map_settings[key] != self.map_current_settings[key]:
-                    if key in [
-                        "cb_map_interpolation",
-                        "ed_map_cell_width",
-                        "ed_map_cell_height",
-                        "cb_map_top_bottom",
-                        "cb_map_edges",
-                    ]:
-                        change_data = True
-                        change_plot = True
-                        break
-                    else:
-                        change_plot = True
+
+            if self.map_change is False:
+                for key in self.map_current_settings:
+                    if self.map_settings[key] != self.map_current_settings[key]:
+                        if key in [
+                            "cb_map_interpolation",
+                            "ed_map_cell_width",
+                            "ed_map_cell_height",
+                            "cb_map_top_bottom",
+                            "cb_map_edges",
+                        ]:
+                            change_data = True
+                            change_plot = True
+                            break
+                        else:
+                            change_plot = True
 
             if self.map_canvas is None:
                 change_plot = True
@@ -15182,17 +15250,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Apply changes
             if change_data:
-                if change_data:
-                    self.meas.compute_map(
-                        node_horizontal_user=self.map_settings["ed_map_cell_width"],
-                        node_vertical_user=self.map_settings["ed_map_cell_height"],
-                        extrap_option=self.map_settings["cb_map_top_bottom"],
-                        edges_option=self.map_settings["cb_map_edges"],
-                        interp_option=self.map_settings["cb_map_interpolation"],
-                    )
-                    self.map_table(update=True)
+                self.meas.compute_map(
+                    node_horizontal_user=self.map_settings["ed_map_cell_width"],
+                    node_vertical_user=self.map_settings["ed_map_cell_height"],
+                    extrap_option=self.map_settings["cb_map_top_bottom"],
+                    edges_option=self.map_settings["cb_map_edges"],
+                    interp_option=self.map_settings["cb_map_interpolation"],
+                )
+                self.map_table(update=True)
             if change_plot:
                 self.update_map_plot()
+
+            self.map_change = False
 
     def map_table(self, update=False):
         """Create and populate MAP results table."""
@@ -15478,7 +15547,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             units=self.units,
             bath=self.rb_map_bathymetry.isChecked(),
             temp=self.rb_map_temp.isChecked(),
-            x_axis_type=self.x_axis_type,
             plot_transects=self.cb_map_bed_profiles.isChecked(),
         )
 
@@ -15945,6 +16013,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Set the change status to True for the main window update
             self.change = True
+            self.map_change = True
 
         self.update_main()
 
@@ -16181,6 +16250,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.transect_row -= 1
                 self.change = True
+                self.map_change = True
                 self.change_selected_transect()
 
             # Select transect below in table or wrap to top
@@ -16190,6 +16260,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.transect_row += 1
                 self.change = True
+                self.map_change = True
                 self.change_selected_transect()
 
         # Change displayed moving-bed test

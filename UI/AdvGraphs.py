@@ -3960,24 +3960,19 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def plot_map(self, map, units, bath=False,
-                 temp=False, x_axis_type='L',
-                 plot_transects=False):
+    def plot_map(self, map_class, units, bath=False,
+                 temp=False, plot_transects=False):
 
         with self.wait_cursor():
             # Initialize data sources
-            self.xs = map
+            self.xs = map_class
 
             # Set x axis type and units
-            self.x_axis_type = x_axis_type
+            self.x_axis_type = 'L'
             self.units = units
 
-            if x_axis_type is 'E':
-                self.x = np.arange(1, len(map.distance_cells_center[0]))
-                label = "Ensemble"
-            else:
-                self.x = map.distance_cells_center[0]
-                label = self.canvas.tr("Length ") + self.units["label_L"]
+            self.x = map_class.distance_cells_center[0]
+            label = self.canvas.tr("Length ") + self.units["label_L"]
 
             # Clear the plot
             self.fig.clear()
@@ -4006,24 +4001,24 @@ class AdvGraphs(object):
                               self.units["label_L"])
 
                 fmt = [{"color": "red", "linewidth": 2}]
-                self.plt_timeseries(data=map.depths,
+                self.plt_timeseries(data=map_class.depths,
                                     data_units=data_units,
                                     fmt=fmt)
 
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
 
-                    for tran in range(len(map.depth_by_transect)):
-                        self.plt_timeseries(data=map.depth_by_transect[tran],
+                    for tran in range(len(map_class.depth_by_transect)):
+                        self.plt_timeseries(data=map_class.depth_by_transect[tran],
                                             data_units=data_units,
-                                            x_override=map.acs_distance[tran],
+                                            x_override=map_class.acs_distance[tran],
                                             fmt=fmt)
 
                 self.ax[-1].invert_yaxis()
 
             if temp:
 
-                y_data = map.temperature
+                y_data = map_class.temperature
 
                 data_units = (1, 'Mean Temp (C)')
                 fmt = [{"color": "red", "linewidth": 2}]
@@ -4034,10 +4029,10 @@ class AdvGraphs(object):
 
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
-                    for tran in range(len(map.temperature_by_transect)):
-                        self.plt_timeseries(data=map.temperature_by_transect[tran],
+                    for tran in range(len(map_class.temperature_by_transect)):
+                        self.plt_timeseries(data=map_class.temperature_by_transect[tran],
                                             data_units=data_units,
-                                            x_override=map.acs_distance[tran],
+                                            x_override=map_class.acs_distance[tran],
                                             fmt=fmt)
 
             self.ax[-1].xaxis.label.set_fontsize(12)
