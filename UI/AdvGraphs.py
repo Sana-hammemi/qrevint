@@ -3478,8 +3478,12 @@ class AdvGraphs(object):
 
             for n in range(data_plt.shape[1]):
                 idx = np.where(data_plt[2:-1, n] > -999)[0]
-                top_valid.append(cell_plt[idx[0] + 2, n])
-                bottom_valid.append(cell_plt[idx[-1] + 2, n])
+                if len(idx) > 0:
+                    top_valid.append(cell_plt[idx[0] + 2, n])
+                    bottom_valid.append(cell_plt[idx[-1] + 2, n])
+                else:
+                    top_valid.append(np.nan)
+                    bottom_valid.append(np.nan)
 
             top_valid.append(top_valid[-1])
             bottom_valid.append(bottom_valid[-1])
