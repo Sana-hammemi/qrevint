@@ -1979,9 +1979,6 @@ class TransectData(object):
         self.w_vel.set_nav_reference(self.boat_vel)
 
         # Reapply water filters and interpolations
-        # Note wt_filters calls apply_filter which automatically calls
-        # apply_interpolation so both filters and interpolations
-        # are applied with this one call
 
         self.w_vel.apply_filter(transect=self)
         self.w_vel.apply_interpolation(transect=self)

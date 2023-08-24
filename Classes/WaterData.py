@@ -235,7 +235,7 @@ class WaterData(object):
         surface_num_cells_in=0,
         ping_type="U",
         use_measurement_thresholds=False,
-        snr_3beam_comp=False,
+        snr_3beam_comp=True,
     ):
 
         """Populates the variables with input, computed, or default values.
@@ -1091,7 +1091,7 @@ class WaterData(object):
         self.valid_data[1] = valid_data2
 
         # Duplicate original to other filters that have yet to be applied
-        self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
+        # self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
@@ -2088,6 +2088,11 @@ class WaterData(object):
                     invalid_snr_idx[0], :, invalid_snr_idx[1]
                 ] = invalid_beam_value
                 self.snr_beam_velocities = beam_velocities
+
+                # Recompute water velocities using snr adjusted beam velocities
+                self.snr_beam_velocities = beam_velocities
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
 
             else:
                 bad_snr_idx = np.greater(self.snr_rng, 12)
