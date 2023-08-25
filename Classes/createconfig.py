@@ -17,18 +17,18 @@ class Config:
         self.config = {
             "Units": {"show": True, "default": "SI"},
             "ColorMap": {"show": True, "default": "viridis"},
-            "RatingPrompt": {"show": True, "default": "false"},
-            "SaveStyleSheet": {"show": True, "default": "false"},
+            "RatingPrompt": {"show": True, "default": False},
+            "SaveStyleSheet": {"show": True, "default": False},
             "ExtrapWeighting": {"show": True, "default": True},
             "FilterUsingMeasurement": {"show": True, "default": False},
             "Uncertainty": {"show": False, "default": "QRev Original"},
             "MovingBedObservation": {"show": False, "default": False},
             "ExportCrossSection": {"show": True, "default": True},
-            "MAP": {"show": False},
+            "MAP": {"show": True},
             "AutonomousGPS": {"allow": False},
             "QDigits": {"method": "sigfig", "digits": 3},
-            "SNR": {"Use3Beam": False},
-            "ExtrapolatedSpeed": {"ShowIcon": False},
+            "SNR": {"Use3Beam": True},
+            "ExtrapolatedSpeed": {"ShowIcon": True},
             "QA": {"MinTransects": 2, "MinDuration": 720},
         }
 

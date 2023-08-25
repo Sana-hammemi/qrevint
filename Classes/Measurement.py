@@ -1,28 +1,41 @@
-import os
+import ctypes
 import datetime
-import numpy as np
+import os
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
-import utm
-from Classes.MMT_TRDI import MMTtrdi
-from Classes.TransectData import TransectData
-from Classes.PreMeasurement import PreMeasurement
-from Classes.MovingBedTests import MovingBedTests
-from Classes.QComp import QComp
-from Classes.MatSonTek import MatSonTek
-from Classes.ComputeExtrap import ComputeExtrap
-from Classes.CrossSectionComp import CrossSectionComp
-from Classes.ExtrapQSensitivity import ExtrapQSensitivity
-from Classes.Uncertainty import Uncertainty
-from Classes.QAData import QAData
-from Classes.BoatStructure import BoatStructure
+
+import numpy as np
+import simplekml
+
+from Classes import __qrev_version__, myappid
 from Classes.BoatData import BoatData
-from Classes.WaterData import WaterData
-from Classes.Oursin import Oursin
+from Classes.BoatStructure import BoatStructure
+from Classes.ComputeExtrap import ComputeExtrap
+from Classes.ExtrapQSensitivity import ExtrapQSensitivity
 from Classes.MAP import MAP
+from Classes.MMT_TRDI import MMTtrdi
+from Classes.MatSonTek import MatSonTek
+from Classes.MovingBedTests import MovingBedTests
+from Classes.Oursin import Oursin
 from Classes.Pd0TRDI_2 import Pd0TRDI
-from MiscLibs.common_functions import cart2pol, pol2cart, rad2azdeg, nans, azdeg2rad
+from Classes.PreMeasurement import PreMeasurement
+from Classes.QAData import QAData
+from Classes.QComp import QComp
+from Classes.TransectData import TransectData
+from Classes.Uncertainty import Uncertainty
+from Classes.WaterData import WaterData
+from MiscLibs.common_functions import (
+    cart2pol,
+    pol2cart,
+    rad2azdeg,
+    nans,
+    azdeg2rad,
+    units_conversion,
+)
+
 # from profilehooks import profile
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
 class Measurement(object):
@@ -211,7 +224,6 @@ class Measurement(object):
                 self.apply_settings(settings)
 
         else:
-
             if source == "TRDI":
                 self.load_trdi(in_file, checked=checked)
 
@@ -228,7 +240,6 @@ class Measurement(object):
 
                 # Set processing type
                 if proc_type == "QRev":
-
                     # Apply QRev default settings
                     settings = self.qrev_default_settings(
                         check_user_excluded_dist=True, use_weighted=use_weighted
@@ -276,6 +287,9 @@ class Measurement(object):
                 self.uncertainty = Uncertainty()
                 self.uncertainty.compute_uncertainty(self)
                 self.qa = QAData(self)
+
+        if run_map:
+            self.compute_map()
 
     def load_trdi(self, mmt_file, transect_type="Q", checked=False):
         """Method to load TRDI data.
@@ -505,7 +519,6 @@ class Measurement(object):
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
-
             # Create transect objects
             transects = self.allocate_transects(mmt, transect_type="MB")
 
@@ -513,7 +526,6 @@ class Measurement(object):
             if len(transects) > 0:
                 self.mb_tests = []
                 for n in range(len(transects)):
-
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
                     mb_test.populate_data(
@@ -972,9 +984,6 @@ class Measurement(object):
         self.use_measurement_thresholds = self.transects[
             self.checked_transect_idx[0]
         ].boat_vel.bt_vel.use_measurement_thresholds
-
-        if self.run_map:
-            self.compute_map()
 
     def create_filter_composites(self):
         """Create composite for water and bottom track difference and
@@ -1485,7 +1494,6 @@ class Measurement(object):
 
         # Apply settings to discharge transects
         for transect in self.transects:
-
             if not settings["UsePingType"]:
                 transect.w_vel.ping_type = np.tile("U", transect.w_vel.ping_type.shape)
                 transect.boat_vel.bt_vel.frequency_khz = np.tile(
@@ -1755,8 +1763,6 @@ class Measurement(object):
         self.compute_discharge()
 
         self.compute_uncertainty()
-        if self.run_map:
-            self.compute_map()
 
     def apply_settings_to_movingbed(self, settings, force_abba=True):
         """Applies reference, filter, and interpolation settings.
@@ -2167,7 +2173,6 @@ class Measurement(object):
         settings["depthComposite"] = "Off"
         for transect in self.transects:
             if transect.checked:
-
                 if (
                     transect.depths.vb_depths is not None
                     or transect.depths.ds_depths is not None
@@ -2343,7 +2348,7 @@ class Measurement(object):
         node_vertical_user=None,
         extrap_option=True,
         edges_option=True,
-        interp_option=False,
+        interp_option=True,
     ):
         """Computes Multi-transect Average Profile
 
@@ -2459,8 +2464,25 @@ class Measurement(object):
             distance.append(dist[ensemble])
             # Report lat and lon if available
             try:
-                lat.append(transect.gps.gga_lat_ens_deg[ensemble])
-                lon.append(transect.gps.gga_lon_ens_deg[ensemble])
+                # Interpolate lat/lon when missing
+                if np.isnan(transect.gps.gga_lat_ens_deg[ensemble]):
+                    good_idx = ~np.isnan(transect.gps.gga_lat_ens_deg)
+                    lat_interp = np.interp(
+                        ensemble,
+                        good_idx.nonzero()[0],
+                        transect.gps.gga_lat_ens_deg[good_idx],
+                    )
+                    lat.append(lat_interp)
+                    lon_interp = np.interp(
+                        ensemble,
+                        good_idx.nonzero()[0],
+                        transect.gps.gga_lon_ens_deg[good_idx],
+                    )
+                    lon.append(lon_interp)
+                else:
+                    lat.append(transect.gps.gga_lat_ens_deg[ensemble])
+                    lon.append(transect.gps.gga_lon_ens_deg[ensemble])
+
             except (ValueError, AttributeError, TypeError):
                 lat.append("")
                 lon.append("")
@@ -2697,7 +2719,6 @@ class Measurement(object):
 
         # Process each transect
         for n, transect in enumerate(self.transects):
-
             # Compute boat track properties
             boat_track = BoatStructure.compute_boat_track(transect)
 
@@ -2716,7 +2737,6 @@ class Measurement(object):
                 )
 
             if np.logical_not(np.all(np.isnan(boat_track["track_x_m"]))):
-
                 # Compute boat course and mean speed
                 [course_radians, dmg] = cart2pol(
                     boat_track["track_x_m"][-1], boat_track["track_y_m"][-1]
@@ -2909,11 +2929,11 @@ class Measurement(object):
 
         return data, serial_time
 
-    def xml_output(self, version, file_name):
+    def xml_output(self, file_name):
         channel = ETree.Element(
             "Channel",
             QRevFilename=os.path.basename(file_name[:-4]),
-            QRevVersion=version,
+            QRevVersion=__qrev_version__,
         )
 
         # (2) SiteInformation Node
@@ -3349,7 +3369,9 @@ class Measurement(object):
         processing = ETree.SubElement(channel, "Processing")
 
         # (3) SoftwareVersion Node
-        ETree.SubElement(processing, "SoftwareVersion", type="char").text = version
+        ETree.SubElement(
+            processing, "SoftwareVersion", type="char"
+        ).text = __qrev_version__
 
         # (3) Type Node
         ETree.SubElement(processing, "Type", type="char").text = self.processing
@@ -4782,99 +4804,82 @@ class Measurement(object):
             ETree.SubElement(channel, "UserComment", type="char").text = temp
 
         # Average cross-section
-        if self.export_xs:
-            # xs = CrossSectionComp(self.transects, file_name)
-            xs = CrossSectionComp(self.transects)
+        if self.export_xs and self.map is not None:
+            # get dataframe for xml output
+            cross_section_all = self.map.create_map_df(units=units_conversion())
 
-            cross_section = xs.cross_section[(len(xs.cross_section) - 1)]
+            # remove duplicates caused by contour data in df
+            cross_section = cross_section_all.drop_duplicates(
+                subset=["Distance (Left bank) (m)"]
+            )
+
+            # create copy of df without the data in the XML nodes to save on
+            # file size.
+            cross_section_all = cross_section_all.drop(
+                columns=[
+                    "Latitude",
+                    "Longitude",
+                    "Distance X " "(m)",
+                    "Distance Y " "(m)",
+                    "Temperature",
+                    "Depth (" "m)",
+                ]
+            )
+
+            # convert df to tab delimited str
+            xs_str = cross_section_all.to_string(index=False)
+
             rows = cross_section.shape[0]
-
             survey = ETree.SubElement(channel, "CrossSectionSurvey")
 
             for row in range(rows):
-                lon = cross_section[row, 0]
-                lat = cross_section[row, 1]
-                dist_x = cross_section[row, 2]
-                dist_y = cross_section[row, 3]
-                station = cross_section[row, 4]
-                depth = cross_section[row, 5]
-
-                if not np.isnan(lon):
-                    try:
-                        lat, lon = utm.to_latlon(
-                            lat,
-                            lon,
-                            zone_number=xs.zone_number,
-                            zone_letter=xs.zone_letter,
-                        )
-                    except BaseException:
-                        lat = np.nan
-                        lon = np.nan
-
-                meas_pts = ETree.SubElement(survey, "MeasurementPoints")
+                meas_pts = ETree.SubElement(survey, "MeasurementPoint")
                 ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(row)
 
                 # latitude
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Latitude"
-                ETree.SubElement(parm, "Units").text = "Degrees"
-                ETree.SubElement(measurements, "Value", type="double").text = str(lat)
+                ETree.SubElement(meas_pts, "Latitude", type="double").text = str(
+                    cross_section.iloc[row]["Latitude"]
+                )
 
                 # Longitude
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Longitude"
-                ETree.SubElement(parm, "Units").text = "Degrees"
-                ETree.SubElement(measurements, "Value", type="double").text = str(lon)
+                ETree.SubElement(meas_pts, "Longitude", type="double").text = str(
+                    cross_section.iloc[row]["Longitude"]
+                )
 
                 # station
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance"
-                ETree.SubElement(parm, "Units").text = "Meters"
+                value = "{:.3f}".format(
+                    cross_section.iloc[row]["Distance (Left bank) " "(m)"]
+                )
                 ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(station)
+                    meas_pts, "Distance", type="double", unitsCode="m"
+                ).text = value
 
                 # distance x
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance X"
-                ETree.SubElement(parm, "Units").text = "Meters"
+                value = "{:.3f}".format(cross_section.iloc[row]["Distance X (m)"])
                 ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(dist_x)
+                    meas_pts, "DistanceX", type="double", unitsCode="m"
+                ).text = value
 
                 # distance y
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Distance Y"
-                ETree.SubElement(parm, "Units").text = "Meters"
+                value = "{:.3f}".format(cross_section.iloc[row]["Distance Y (m)"])
                 ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(dist_y)
+                    meas_pts, "DistanceY", type="double", unitsCode="m"
+                ).text = value
 
                 # depth
-                measurements = ETree.SubElement(meas_pts, "Measurements")
-                sensor = ETree.SubElement(measurements, "Sensor")
-                s_type = ETree.SubElement(sensor, "SensorType")
-                parm = ETree.SubElement(s_type, "Parameter")
-                ETree.SubElement(parm, "Name").text = "Depth"
-                ETree.SubElement(parm, "Units").text = "Meters"
+                value = "{:.3f}".format(cross_section.iloc[row]["Depth (" "m)"])
                 ETree.SubElement(
-                    measurements, "Value", type="double", unitsCode="m"
-                ).text = "{:.3f}".format(depth)
+                    meas_pts, "Depth", type="double", unitsCode="m"
+                ).text = value
+
+                # Temperature
+                value = "{:.2f}".format(cross_section.iloc[row]["Temperature"])
+                ETree.SubElement(
+                    meas_pts, "Temperature", type="double", unitsCode="degC"
+                ).text = value
+
+            # export contour table
+            ETree.SubElement(survey, "Contour", type="char").text = xs_str
 
         # Create xml output file
         with open(file_name, "wb") as xml_file:
@@ -4978,6 +4983,26 @@ class Measurement(object):
                 transects.append(temp)
 
         return transects
+
+    def export_kml(self, path):
+        """Create KML file.
+
+        Parameters:
+            path: str
+        """
+
+        kml = simplekml.Kml(open=1)
+        # Create a shiptrack for each checked transect
+        for transect_idx in self.checked_transect_idx:
+            lon = self.transects[transect_idx].gps.gga_lon_ens_deg
+            lon = lon[np.logical_not(np.isnan(lon))]
+            lat = self.transects[transect_idx].gps.gga_lat_ens_deg
+            lat = lat[np.logical_not(np.isnan(lat))]
+            line_name = self.transects[transect_idx].file_name[:-4]
+            lon_lat = tuple(zip(lon, lat))
+            _ = kml.newlinestring(name=line_name, coords=lon_lat)
+
+        kml.save(path)
 
 
 if __name__ == "__main__":

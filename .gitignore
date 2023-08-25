@@ -3,6 +3,7 @@
 build/
 *.pyo
 *.pyc
+*.pyd
 .spec
 qrevpy.egg-info/
 .idea/

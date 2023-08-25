@@ -1,82 +1,82 @@
-import shutil
 import copy
-import os
-import sys
-import webbrowser
-import utm
-import multiprocessing as mp
+import ctypes
 import getpass
 import json
-import simplekml
+import multiprocessing as mp
+import os
+import shutil
+import sys
+import webbrowser
 from contextlib import contextmanager
 from datetime import datetime
+
 import numpy as np
-import pandas as pd
 import scipy.io as sio
-import UI.QRev_gui as QRev_gui
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
-from Classes.createconfig import Config
-from Classes.stickysettings import StickySettings as SSet
+
+import UI.QRev_gui as QRev_gui
+from Classes import __qrev_version__, myappid, __app__
+from Classes.CoordError import CoordError
 from Classes.Measurement import Measurement
-from Classes.TransectData import TransectData
+from Classes.MovingBedTests import MovingBedTests
+from Classes.Oursin import Oursin
 from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
-from Classes.MovingBedTests import MovingBedTests
-from Classes.CoordError import CoordError
-from Classes.Oursin import Oursin
+from Classes.TransectData import TransectData
+from Classes.createconfig import Config
+from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
     convert_temperature,
     units_conversion,
     sfrnd,
 )
-from UI.selectFile import SaveDialog
-from UI.OpenMeasurementDialog import OpenMeasurementDialog
-from UI.Comment import Comment
-from UI.Transects2Use import Transects2Use
-from UI.Options import Options
-from UI.MagVar import MagVar
-from UI.HOffset import HOffset
-from UI.HSource import HSource
-from UI.SOSSource import SOSSource
-from UI.TempSource import TempSource
-from UI.Salinity import Salinity
-from UI.ShipTrack import Shiptrack
-
-# from UI.MapWTContour import MapWTContour
-from UI.MapTrack import Maptrack
+from UI.AdvGraphs import AdvGraphs
+from UI.AxesScale import AxesScale
 from UI.BoatSpeed import BoatSpeed
-from UI.Draft import Draft
-from UI.TemperatureTS import TemperatureTS
-from UI.HeadingTS import HeadingTS
-from UI.PRTS import PRTS
+from UI.Comment import Comment
 from UI.DischargeTS import DischargeTS
-from UI.StationaryGraphs import StationaryGraphs
-from UI.WTContour import WTContour
-from UI.Rating import Rating
-from UI.ExtrapPlot import ExtrapPlot
-from UI.StartEdge import StartEdge
-from UI.EdgeType import EdgeType
+from UI.Disclaimer import Disclaimer
+from UI.Draft import Draft
 from UI.EdgeDist import EdgeDist
 from UI.EdgeEns import EdgeEns
-from UI.UMeasurement import UMeasurement
-from UI.UMeasQ import UMeasQ
+from UI.EdgeType import EdgeType
+from UI.ExtrapPlot import ExtrapPlot
+from UI.HOffset import HOffset
+from UI.HSource import HSource
+from UI.HeadingTS import HeadingTS
+from UI.MagVar import MagVar
+from UI.MapTrack import Maptrack
 from UI.MplCanvas import MplCanvas
-from UI.Disclaimer import Disclaimer
-from UI.AdvGraphs import AdvGraphs
+from UI.OpenMeasurementDialog import OpenMeasurementDialog
+from UI.Options import Options
+from UI.PRTS import PRTS
+from UI.Rating import Rating
+from UI.SOSSource import SOSSource
+from UI.Salinity import Salinity
+from UI.ShipTrack import Shiptrack
+from UI.StartEdge import StartEdge
+from UI.StationaryGraphs import StationaryGraphs
+from UI.TempSource import TempSource
+from UI.TemperatureTS import TemperatureTS
+from UI.Transects2Use import Transects2Use
 from UI.ULollipopPlot import ULollipopPlot
-from UI.AxesScale import AxesScale
+from UI.UMeasQ import UMeasQ
+from UI.UMeasurement import UMeasurement
+from UI.WTContour import WTContour
+from UI.selectFile import SaveDialog
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 # if there is a splash screen close it
-# if getattr(sys, 'frozen', False):
-#     try:
-#         import pyi_splash
-#
-#         pyi_splash.close()
-#     except:
-#         pass
+try:
+    import pyi_splash
+
+    pyi_splash.close()
+except:
+    pass
 
 
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
@@ -411,11 +411,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         super(QRev, self).__init__(parent)
         self.setupUi(self)
 
-        # Set version of QRev
-        self.QRev_version = "QRevInt 1.23"
-        self.setWindowTitle(self.QRev_version)
-        self.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
-        show_disclaimer = True
+        # Set window title
+        self.setWindowTitle(__qrev_version__)
+        self.setWindowIcon(QtGui.QIcon("../" + __app__ + ".ico"))
+
+        if "Int" in __qrev_version__:
+            self.set_qrevint_ui()
+
+        show_disclaimer = False
 
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
@@ -442,10 +445,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.popup_message(
                 self.tr(
                     "QRev.cfg could not be read due a formatting error. "
-                    "QRev cannot continue."
+                    "A default configuration file will be created that might "
+                    "not match your agency's policy."
                 )
             )
-            sys.exit()
+
+            config = Config()
+            config.export_config()
+
+            # sys.exit()
 
         # Setting file for settings to carry over from one session to the next
         self.settingsFile = "QRev_Settings"
@@ -801,6 +809,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Set initial change switch to false
         self.change = False
+        self.map_change = False
 
         # Set the initial tab to the main tab
         self.current_tab = "Main"
@@ -1031,12 +1040,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_fig = None
         self.adv_graph_toolbar = None
         self.adv_graph_types = []
-        self.map_shiptrack_canvas = None
+        self.map_canvas = None
         self.map_shiptrack_toolbar = None
-        self.map_shiptrack_fig = None
-        self.map_wt_contour_canvas = None
-        self.map_wt_contour_toolbar = None
-        self.map_wt_contour_fig = None
+        self.map_fig = None
+        self.map_canvas = None
+        self.map_toolbar = None
+        self.map_fig = None
         self.current_fig = None
         self.edges_axis_type = "E"
         self.mb_row = 0
@@ -1092,6 +1101,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.actionSave.triggered.connect(self.split_save)
             self.config_gui()
             self.change = True
+            self.map_change = True
             self.tab_manager(tab_idx=0)
             self.set_tab_color()
             self.processed_data = []
@@ -1152,6 +1162,60 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
+    def set_qrevint_ui(self):
+        """If QRevInt set background of UI to blue."""
+
+        # set main window pallete
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
+        self.setPalette(palette)
+
+        self.toolBar.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240)}")
+
     # Toolbar functions
     # =================
     def select_measurement(self):
@@ -1197,7 +1261,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == "SonTek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.pathName)
+                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
 
                     # Create measurement object
                     try:
@@ -1222,7 +1286,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.pathName)
+                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName,
@@ -1242,7 +1306,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif select.type == "TRDI":
                 with self.wait_cursor():
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(self.QRev_version + ": " + select.fullName[0])
+                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName[0],
@@ -1262,7 +1326,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Load QRev data
             elif select.type == "QRev":
                 # Show QRev filename in GUI header
-                self.setWindowTitle(self.QRev_version + ": " + select.fullName[0])
+                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
                 mat_data = sio.loadmat(
                     select.fullName[0], struct_as_record=False, squeeze_me=True
                 )
@@ -1339,12 +1403,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
 
             if self.meas is not None:
-
                 # Identify transects to be used in discharge computation
                 self.checked_transects_idx = Measurement.checked_transects(self.meas)
                 if len(self.checked_transects_idx) > 0:
                     with self.wait_cursor():
-
                         # Determine if external heading is included in the data
                         self.h_external_valid = Measurement.h_external_valid(self.meas)
 
@@ -1360,12 +1422,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
+                        self.map_change = True
                         self.tab_manager(tab_idx=0, subtab_idx=0)
                         # self.set_tab_color()
                 else:
                     self.transect_row = 0
                     self.config_gui()
                     self.change = True
+                    self.map_change = True
                     self.tab_manager(tab_idx=0, subtab_idx=0)
 
     def save_measurement(self):
@@ -1451,20 +1515,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Save data in Matlab format
                 if self.save_all:
                     Python2Matlab.save_matlab_file(
-                        self.meas, save_file.full_Name, self.QRev_version
+                        self.meas, save_file.full_Name, __qrev_version__
                     )
                 else:
                     Python2Matlab.save_matlab_file(
                         self.meas,
                         save_file.full_Name,
-                        self.QRev_version,
+                        __qrev_version__,
                         checked=self.checked_transects_idx,
                     )
 
                 # Save xml file
-                self.meas.xml_output(
-                    self.QRev_version, save_file.full_Name[:-4] + ".xml"
-                )
+                self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
 
                 # Save stylesheet in measurement folder
                 if self.save_stylesheet:
@@ -1506,10 +1568,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # If comment entered and measurement open, save comment,
             # and update comments tab.
             if comment_entered:
-
                 if self.meas is not None:
                     self.meas.comments.append(comment.text_edit_comment.toPlainText())
                 self.change = True
+                self.map_change = True
                 self.update_comments()
 
     def select_q_transects(self):
@@ -1549,6 +1611,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.transect_row = 0
                         self.config_gui()
                         self.change = True
+                        self.map_change = True
                         self.tab_manager()
 
                 if len(self.checked_transects_idx) == 0:
@@ -1572,6 +1635,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_nav_ref()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_gga(self):
@@ -1612,6 +1676,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     Measurement.apply_settings(self.meas, settings)
                     self.update_toolbar_nav_ref()
                     self.change = True
+                    self.map_change = True
                     self.tab_manager(old_discharge=old_discharge)
 
     def set_ref_vtg(self):
@@ -1628,6 +1693,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_nav_ref()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def comp_tracks_on(self):
@@ -1671,6 +1737,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 Measurement.apply_settings(self.meas, settings)
                 self.update_toolbar_composite_tracks()
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     def comp_tracks_off(self):
@@ -1688,6 +1755,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             Measurement.apply_settings(self.meas, settings)
             self.update_toolbar_composite_tracks()
             self.change = True
+            self.map_change = True
             self.tab_manager(old_discharge=old_discharge)
 
     def qrev_options(self):
@@ -1799,6 +1867,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
                 else:
                     if self.units["ID"] == "English":
                         self.units = units_conversion(units_id="SI")
@@ -1806,6 +1875,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
 
                 # X Axis
                 if options.rb_opt_ensembles.isChecked():
@@ -1834,6 +1904,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
                 else:
                     if self.color_map != "jet":
                         self.color_map = "jet"
@@ -1841,6 +1912,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         if self.meas is not None:
                             self.update_main()
                             self.change = True
+                            self.map_change = True
 
                 # Save options
                 if options.rb_All.isChecked():
@@ -1873,6 +1945,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Check for change in extraplation weighting
                 if self.use_weighted != use_weighted:
                     self.change = True
+                    self.map_change = True
                     # If change made with measurement loaded recompute
                     # measurement
                     if self.meas is not None:
@@ -1897,6 +1970,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Check for change in filter measurement
                 if self.use_measurement_thresholds != filter_meas:
                     self.change = True
+                    self.map_change = True
                     # If change made with measurement loaded recompute
                     # measurement
                     if self.meas is not None:
@@ -2008,22 +2082,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         coordinates.
         """
 
-        kml = simplekml.Kml(open=1)
-        # Create a shiptrack for each checked transect
-        for transect_idx in self.checked_transects_idx:
-            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = self.meas.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
-
         fullname = os.path.join(
             self.sticky_settings.get("Folder"),
             datetime.today().strftime("%Y%m%d_%H%M%S_QRev.kml"),
         )
-        kml.save(fullname)
+
+        self.meas.export_kml(fullname)
+
         try:
             os.startfile(fullname)
         except os.error:
@@ -2039,7 +2104,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setIcon(QtWidgets.QMessageBox.Question)
         msg.addButton(self.tr("Users Manual"), msg.ActionRole)
         msg.addButton(self.tr("Technical Manual"), msg.ActionRole)
-        if self.QRev_version[0:5] == "QRev ":
+        if __qrev_version__[0:5] == "QRev ":
             msg.addButton(
                 self.tr("Submit Bug or Feature Request \n " "(Internet Required)"),
                 msg.ActionRole,
@@ -2051,7 +2116,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         msg.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
         msg.exec_()
 
-        help_file = os.path.join(os.getcwd(), "Help")
+        help_file = os.path.join(os.getcwd(), "../Help")
         if msg.clickedButton().text() == "Users Manual":
             help_file = os.path.join(help_file, "QRev_Users.pdf")
             webbrowser.open("file:///" + help_file, new=2, autoraise=True)
@@ -2092,6 +2157,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.meas.apply_settings(settings)
                 self.sticky_settings.set("UseWeighted", self.use_weighted)
                 self.change = True
+                self.map_change = True
                 self.tab_manager(old_discharge=old_discharge)
 
     # Main tab
@@ -2101,7 +2167,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if len(self.checked_transects_idx) > 0:
             with self.wait_cursor():
-
                 # If this is the first time this tab is used setup interface
                 # connections
                 if not self.main_initialized:
@@ -2189,7 +2254,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs_menu_connection()
 
     def update_fig_list(self):
-
         if self.current_tab == "Main":
             # Setup list for use by graphics controls
             if self.run_oursin:
@@ -2741,7 +2805,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Transect column was selected
         if column == 0 and row > 0:
             with self.wait_cursor():
-
                 # Set all files to normal font
                 nrows = len(self.checked_transects_idx)
                 for nrow in range(1, nrows + 1):
@@ -3215,11 +3278,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if self.meas.qa is not None:
             for tab in self.meas.qa.settings_dict:
-
                 if tab != "tab_gps":
-
                     if self.meas.qa.settings_dict[tab] == "Custom":
-
                         self.tab_all.tabBar().setTabTextColor(
                             self.tab_all.indexOf(
                                 self.tab_all.findChild(QtWidgets.QWidget, tab)
@@ -3255,7 +3315,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     if self.tab_all.isTabEnabled(6) is True:
                         if self.meas.qa.settings_dict[tab] == "Custom":
-
                             self.tab_all.tabBar().setTabTextColor(
                                 self.tab_all.indexOf(
                                     self.tab_all.findChild(QtWidgets.QWidget, tab)
@@ -3817,7 +3876,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 
         if len(self.checked_transects_idx) > 0:
-
             # ADCP Test
             tbl.setItem(0, 0, QtWidgets.QTableWidgetItem(self.tr("ADCP Test: ")))
             tbl.item(0, 0).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -4329,7 +4387,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 
         if len(self.checked_transects_idx) > 0:
-
             # Serial number
             tbl.setItem(0, 0, QtWidgets.QTableWidgetItem(self.tr("Serial Number: ")))
             tbl.item(0, 0).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -4551,7 +4608,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Add system tests
         if nrows > 0:
             for row, test in enumerate(self.meas.system_tst):
-
                 # Test identifier
                 col = 0
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem(test.time_stamp))
@@ -4681,7 +4737,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.display_systest_comments.clear()
         self.display_systest_messages.clear()
         if self.meas is not None:
-
             # Comments
             self.display_systest_comments.moveCursor(QtGui.QTextCursor.Start)
             for comment in self.meas.comments:
@@ -4943,7 +4998,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.display_compass_comments.clear()
         self.display_compass_messages.clear()
         if self.meas is not None:
-
             # Comments
             self.display_compass_comments.moveCursor(QtGui.QTextCursor.Start)
             for comment in self.meas.comments:
@@ -4989,7 +5043,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
 
         with self.wait_cursor():
-
             # Populate each row
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
@@ -5417,6 +5470,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.figs = [self.heading_fig, self.pr_fig]
             self.fig_calls = [self.compass_plot, self.pr_plot]
             self.change = True
+            self.map_change = True
 
         # Magnetic variation
         if column == 1:
@@ -5445,6 +5499,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             new_discharge=self.meas.discharge,
                         )
                         self.change = True
+                        self.map_change = True
 
         # Heading Offset
         elif column == 2:
@@ -5458,7 +5513,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         old_discharge = copy.deepcopy(self.meas.discharge)
                         h_offset = self.check_numeric_input(h_offset_dialog.ed_hoffset)
                         if h_offset is not None:
-
                             # Apply change to selected or all transects
                             if h_offset_dialog.rb_all.isChecked():
                                 self.meas.change_h_offset(h_offset=h_offset)
@@ -5475,6 +5529,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 new_discharge=self.meas.discharge,
                             )
                             self.change = True
+                            self.map_change = True
 
         # Heading Source
         elif column == 3:
@@ -5522,6 +5577,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
         self.tab_compass_2_data.setFocus()
 
     def select_calibration(self, row, column):
@@ -6061,10 +6117,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
 
         # Change salinity
         elif column == 3:
-
             # Intialize dialog for user input
             salinity_dialog = Salinity(self)
             salinity_entered = salinity_dialog.exec_()
@@ -6095,6 +6151,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             new_discharge=self.meas.discharge,
                         )
                         self.change = True
+                        self.map_change = True
                     except ValueError:
                         pass
 
@@ -6156,6 +6213,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         new_discharge=self.meas.discharge,
                     )
                     self.change = True
+                    self.map_change = True
 
         tbl.blockSignals(False)
 
@@ -6284,6 +6342,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tempsal_comments_messages()
         self.pb_ind_temp_apply.setEnabled(False)
         self.change = True
+        self.map_change = True
 
     def apply_adcp_temp(self):
         """Applies a user entered value for the ADCP temperature. This
@@ -6314,6 +6373,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tempsal_comments_messages()
         self.pb_adcp_temp_apply.setEnabled(False)
         self.change = True
+        self.map_change = True
 
     def user_temp_changed(self):
         """Enables the apply button if the user enters a valid value in the
@@ -6408,7 +6468,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Populates the moving-bed table with the current settings and data."""
 
         with self.wait_cursor():
-
             tbl = self.table_moving_bed
             tbl.blockSignals(True)
             self.mb_row_selected = 0
@@ -6417,7 +6476,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setColumnHidden(2, True)
             # Populate each row
             for row in range(tbl.rowCount()):
-
                 # User Valid
                 col = 0
                 checked = QtWidgets.QTableWidgetItem("")
@@ -6680,10 +6738,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                     test_quality = test.test_quality
                             unique_types = set(test_type)
                             if len(unique_types) == 1:
-
                                 # Check for errors
                                 if "Errors" not in test_quality:
-
                                     # Multiple loops not allowed
                                     if test_type == "Loop" and len(test_type) > 1:
                                         self.meas.mb_tests[row].use_2_correct = False
@@ -6761,6 +6817,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.meas.compute_uncertainty()
                 self.meas.qa.moving_bed_qa(self.meas)
                 self.change = True
+                self.map_change = True
 
         self.update_mb_table()
         self.mb_comments_messages()
@@ -6978,6 +7035,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.meas.qa.moving_bed_qa(self.meas)
             self.update_tab_icons()
             self.change = True
+            self.map_change = True
 
     def mb_comments_messages(self):
         """Displays comments and messages associated with moving-bed tests
@@ -7231,14 +7289,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.qa.bt_vel["q_total_warning"][transect_id, 0]
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 0]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 0]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 0]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7285,14 +7341,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 1]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 1]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 1]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7316,14 +7370,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 5]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 5]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 5]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7347,14 +7399,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 2]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 2]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 2]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7378,14 +7428,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 3]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 3]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 3]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7409,14 +7457,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.bt_vel["q_max_run_warning"][transect_id, 4]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.bt_vel["q_total_caution"][transect_id, 4]
                     or self.meas.qa.bt_vel["q_max_run_caution"][transect_id, 4]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -7435,10 +7481,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(
-                            self.q_digits(
-                                old_discharge[transect_id].total * self.units["Q"]
-                            )
+                        "{:8.3f}".format(
+                            old_discharge[transect_id].total * self.units["Q"]
                         )
                     ),
                 )
@@ -7450,10 +7494,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(
-                            self.q_digits(
-                                new_discharge[transect_id].total * self.units["Q"]
-                            )
+                        "{:8.3f}".format(
+                            new_discharge[transect_id].total * self.units["Q"]
                         )
                     ),
                 )
@@ -7665,6 +7707,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.bt_plots()
             self.change = True
+            self.map_change = True
         self.tab_bt_2_data.setFocus()
 
     @QtCore.pyqtSlot()
@@ -7730,6 +7773,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_3beam.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7761,6 +7805,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_bt_error_vel_threshold.setText("")
                 self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_error_velocity.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7793,6 +7838,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_bt_vert_vel_threshold.setText("")
                 self.update_bt_tab(s)
                 self.change = True
+                self.map_change = True
             self.combo_bt_vert_velocity.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -7820,6 +7866,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_bt_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_bt_other.blockSignals(False)
 
     @QtCore.pyqtSlot()
@@ -7830,7 +7877,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.ed_bt_error_vel_threshold.blockSignals(True)
         with self.wait_cursor():
-
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_bt_error_vel_threshold)
             if threshold is not None:
@@ -7855,6 +7901,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_bt_error_vel_threshold.blockSignals(False)
 
@@ -7864,7 +7911,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.ed_bt_vert_vel_threshold.blockSignals(True)
         with self.wait_cursor():
-
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_bt_vert_vel_threshold)
             if threshold is not None:
@@ -7889,6 +7935,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_bt_tab(s)
                     self.change = True
+                    self.map_change = True
         self.ed_bt_vert_vel_threshold.blockSignals(False)
 
     def bt_comments_messages(self):
@@ -8215,14 +8262,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.gga_vel["q_max_run_warning"][transect_id, 1]
                     or self.meas.qa.gga_vel["all_invalid"][transect_id]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.gga_vel["q_total_caution"][transect_id, 1]
                     or self.meas.qa.gga_vel["q_max_run_caution"][transect_id, 1]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8243,14 +8288,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.vtg_vel["q_max_run_warning"][transect_id, 1]
                     or self.meas.qa.vtg_vel["all_invalid"][transect_id]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.vtg_vel["q_total_caution"][transect_id, 1]
                     or self.meas.qa.vtg_vel["q_max_run_caution"][transect_id, 1]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8273,14 +8316,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.gga_vel["q_max_run_warning"][transect_id, 2]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.gga_vel["q_total_caution"][transect_id, 2]
                     or self.meas.qa.gga_vel["q_max_run_caution"][transect_id, 2]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8308,14 +8349,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.gga_vel["q_max_run_warning"][transect_id, 3]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.gga_vel["q_total_caution"][transect_id, 3]
                     or self.meas.qa.gga_vel["q_max_run_caution"][transect_id, 3]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8345,7 +8384,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.vtg_vel["q_max_run_warning"][transect_id, 5]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
@@ -8354,7 +8392,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.vtg_vel["q_total_caution"][transect_id, 5]
                     or self.meas.qa.vtg_vel["q_max_run_caution"][transect_id, 5]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8393,7 +8430,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.vtg_vel["q_max_run_warning"][transect_id, 4]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
@@ -8402,7 +8438,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.vtg_vel["q_total_caution"][transect_id, 4]
                     or self.meas.qa.vtg_vel["q_max_run_caution"][transect_id, 4]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -8477,7 +8512,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @staticmethod
     def gps_create_tooltip(self, row, column):
-
         # Identify transect associated with the row
         transect_id = self.checked_transects_idx[row]
 
@@ -8789,6 +8823,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.gps_plots()
             self.change = True
+            self.map_change = True
         if caller is None:
             self.gps_bt_table_clicked(row + 2, column, caller="gps")
         self.tab_gps_2_data.setFocus()
@@ -8855,6 +8890,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_altitude(self, text):
@@ -8886,6 +8922,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_altitude_threshold.setText("")
                 self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_hdop(self, text):
@@ -8917,6 +8954,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_gps_hdop_threshold.setText("")
                 self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_gps_other(self, text):
@@ -8941,6 +8979,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_gps_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot()
     def change_altitude_threshold(self):
@@ -8969,6 +9008,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_gps_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_gps_altitude_threshold.blockSignals(False)
 
@@ -8983,7 +9023,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Get threshold and convert to SI units
             threshold = self.check_numeric_input(self.ed_gps_hdop_threshold)
             if threshold is not None:
-
                 # Get current settings
                 s = self.meas.current_settings()
                 # Because editingFinished is used if return is pressed and
@@ -8998,6 +9037,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_gps_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_gps_hdop_threshold.blockSignals(False)
 
@@ -9075,14 +9115,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         QtWidgets.QTableWidgetItem("{:10.1f}".format(gga_lag)),
                     )
                     if self.meas.qa.gga_vel["lag_status"] == "warning":
-
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
                         tbl.item(row + 2, col).setToolTip(
                             "GGA: BT and GGA do not appear to be sychronized"
                         )
 
                     elif self.meas.qa.gga_vel["lag_status"] == "caution":
-
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
                         tbl.item(row + 2, col).setToolTip(
                             "gga: BT and GGA do not appear to be sychronized"
@@ -9153,14 +9191,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
                     tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
                     if self.meas.qa.vtg_vel["lag_status"] == "warning":
-
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
                         tbl.item(row + 2, col).setToolTip(
                             "VTG: BT and VTG do not appear to be sychronized"
                         )
 
                     elif self.meas.qa.vtg_vel["lag_status"] == "caution":
-
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
                         tbl.item(row + 2, col).setToolTip(
                             "vtg: BT and VTG do not appear to be sychronized"
@@ -9283,6 +9319,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row - 2
             self.gps_bt_plots()
             self.change = True
+            self.map_change = True
         if caller is None:
             self.gps_table_clicked(row - 2, column, caller="gps_bt")
         self.tab_gps_2_gpsbt.setFocus()
@@ -9707,14 +9744,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.depths["q_max_run_warning"][transect_id]
                     or self.meas.qa.depths["all_invalid"][transect_id]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.depths["q_total_caution"][transect_id]
                     or self.meas.qa.depths["q_max_run_caution"][transect_id]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -9975,6 +10010,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.depth_plots()
             self.change = True
+            self.map_change = True
 
         # Change draft
         if column == 1:
@@ -10010,6 +10046,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                         self.depth_comments_messages()
                         self.change = True
+                        self.map_change = True
         self.table_depth.blockSignals(False)
         self.tab_depth_2_data.setFocus()
 
@@ -10094,6 +10131,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_ref.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -10115,6 +10153,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_filter.blockSignals(False)
 
     @QtCore.pyqtSlot(str)
@@ -10137,6 +10176,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_depth_tab(s)
             self.change = True
+            self.map_change = True
             self.combo_depth_avg.blockSignals(False)
 
     def depth_comments_messages(self):
@@ -10447,14 +10487,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_total_warning"][transect_id, 0]
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 0]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 0]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 0]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
@@ -10474,14 +10512,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 1]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 1]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 1]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -10505,14 +10541,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 5]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 5]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 5]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -10536,14 +10570,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 2]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 2]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 2]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -10567,14 +10599,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 3]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 3]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 3]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -10598,14 +10628,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 4]
                     or percent_invalid == 100
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                 elif (
                     self.meas.qa.w_vel["q_total_caution"][transect_id, 4]
                     or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 4]
                 ):
-
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                 else:
@@ -10630,14 +10658,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         or self.meas.qa.w_vel["q_max_run_warning"][transect_id, 7]
                         or percent_invalid == 100
                     ):
-
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 77, 77))
 
                     elif (
                         self.meas.qa.w_vel["q_total_caution"][transect_id, 7]
                         or self.meas.qa.w_vel["q_max_run_caution"][transect_id, 7]
                     ):
-
                         tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
 
                     else:
@@ -10883,6 +10909,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.transect_row = row
             self.wt_plots()
             self.change = True
+            self.map_change = True
         self.tab_wt_2_data.setFocus()
 
     @staticmethod
@@ -10974,7 +11001,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """
 
         with self.wait_cursor():
-
             # Get current settings
             s = self.meas.current_settings()
 
@@ -10989,6 +11015,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_error(self, text):
@@ -11020,6 +11047,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.update_wt_tab(s)
 
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_vertical(self, text):
@@ -11050,6 +11078,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_wt_vert_vel_threshold.setText("")
                 self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot(str)
     def change_wt_snr(self, text):
@@ -11074,6 +11103,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update measurement and display
             self.update_wt_tab(s)
             self.change = True
+            self.map_change = True
 
     @QtCore.pyqtSlot()
     def change_wt_error_vel_threshold(self):
@@ -11106,6 +11136,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_error_vel_threshold.blockSignals(False)
 
@@ -11141,6 +11172,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_vert_vel_threshold.blockSignals(False)
 
@@ -11167,6 +11199,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Update measurement and display
                     self.update_wt_tab(s)
                     self.change = True
+                    self.map_change = True
 
         self.ed_wt_excluded_dist.blockSignals(False)
 
@@ -11190,7 +11223,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Display each message on a new line
             self.display_wt_messages.moveCursor(QtGui.QTextCursor.Start)
             for message in self.meas.qa.w_vel["messages"]:
-
                 if type(message) is str:
                     self.display_wt_messages.textCursor().insertText(message)
                 else:
@@ -11329,6 +11361,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.q_sensitivity_table()
             self.extrap_comments_messages()
             self.change = True
+            self.map_change = True
         else:
             # Run qa to update messages for user data setting changes if
             # other than Measurement selected
@@ -11698,7 +11731,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Update list of figs
         self.figs = [self.extrap_fig]
-        self.fig_calls = [self.extrap_plot]
 
         # Reset data cursor to work with new figure
         if self.actionData_Cursor.isChecked():
@@ -11827,7 +11859,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # If data entered.
         with self.wait_cursor():
             try:
-
                 use_q = True
                 sub_from_left = True
                 self.txt_extrap_subsection.setText("Subsection (% L to R, x:x):")
@@ -12455,6 +12486,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_edges
         tbl.blockSignals(True)
         self.change = True
+        self.map_change = True
 
         # Show transect
         if col == 0:
@@ -12466,6 +12498,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 self.edges_graphics()
                 self.change = True
+                self.map_change = True
 
         # Start edge
         if col == 1:
@@ -12500,6 +12533,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.update_edges_table()
                     self.edges_graphics()
                     self.change = True
+                    self.map_change = True
                     QtWidgets.QMessageBox.about(
                         self,
                         self.tr("Start Edge Change"),
@@ -14082,6 +14116,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_measurement_plot()
             self.uncertainty_comments_messages()
             self.change = True
+            self.map_change = True
 
     def user_advanced_settings_change(self):
         """User advanced settings have changed, update settings and
@@ -14416,7 +14451,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tr("Actual Q " + self.units["label_Q"]),
             self.tr("Distance " + self.units["label_L"]),
             self.tr("Depth " + self.units["label_L"]),
-            self.tr("Velocity " + self.units["label_L"]),
+            self.tr("Velocity " + self.units["label_V"]),
             self.tr("Latitude (D M.M)"),
             self.tr("Longitude (D M.M)"),
         ]
@@ -14610,13 +14645,34 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             except ValueError:
+                col += 1
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
+                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                col += 1
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
+                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-                col += 1
-                tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
-                tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+        # If nothing in Percent Q column, clear the rest of the row
+        for row in range(tbl.rowCount()):
+            try:
+                if tbl.item(row, 0).text() == "":
+                    for col in range(1, 8):
+                        tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
+                        tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                        col += 1
+            except AttributeError:
+                pass
+
+        # Clear rows that should be blank
+        # If Percent Q has been deleted from the middle of the table, the
+        # final row(s) can be duplicated
+        if tbl.rowCount() > len(self.edi_results["percent"]):
+            for row in range(len(self.edi_results["percent"]), tbl.rowCount()):
+                tbl.setItem(row, 0, QtWidgets.QTableWidgetItem(""))
+                for col in range(1, 8):
+                    tbl.setItem(row, col, QtWidgets.QTableWidgetItem(""))
+                    tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                    col += 1
 
     def edi_compute(self):
         """Coordinates the computation of the EDI results."""
@@ -14635,23 +14691,36 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             try:
                 percent = float(self.tbl_edi_results.item(row, 0).text())
                 percents.append(percent)
-            except AttributeError:
+            except (AttributeError, ValueError):
                 pass
 
-        # If the selected transect has computed discharge compute EDI results
-        if np.abs(self.meas.discharge[selected_idx].total) > 0:
-            # Compute EDI results
-            self.edi_results = Measurement.compute_edi(
-                self.meas, selected_idx, percents
+        # Warn user if less than 3 verticals are entered
+        if len(percents) < 3:
+            self.popup_message(
+                self.tr("3 verticals are required for EDI calculations.")
             )
-            # Update EDI results table
-            self.edi_update_table()
-            # Create topoquad file is requested
-            if self.cb_edi_topoquad.checkState() == QtCore.Qt.Checked:
-                self.create_topoquad_file()
         else:
-            # Display message to user
-            self.popup_message(self.tr("The selected transect has no discharge"))
+            # If the selected transect has computed discharge compute EDI
+            # results
+            if np.abs(self.meas.discharge[selected_idx].total) > 0:
+                # Check that no Percent Q values are >= 100
+                if not any(percent >= 100.0 for percent in percents):
+                    # Compute EDI results
+                    self.edi_results = Measurement.compute_edi(
+                        self.meas, selected_idx, percents
+                    )
+                else:
+                    # Warn user if vertical >= 100 is entered
+                    self.popup_message(self.tr("Percent Q must be less than 100."))
+
+                # Update EDI results table
+                self.edi_update_table()
+                # Create topoquad file is requested
+                if self.cb_edi_topoquad.checkState() == QtCore.Qt.Checked:
+                    self.create_topoquad_file()
+            else:
+                # Display message to user
+                self.popup_message(self.tr("The selected transect has no discharge"))
 
     def create_topoquad_file(self):
         """Create an ASCII file that can be loaded into TopoQuads to mark
@@ -15025,12 +15094,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def map_tab(self):
         """Initializes and configures MAP tab."""
         if self.meas.map is not None:
-            if self.change:
+            if self.map_change:
                 # Reset settings if change
-                self.cb_map_interpolation.setChecked(False)
+                self.cb_map_interpolation.setChecked(True)
                 self.cb_map_top_bottom.setChecked(True)
                 self.cb_map_edges.setChecked(True)
-                self.cb_map_bed_profiles.setChecked(False)
+                self.cb_map_bed_profiles.setChecked(True)
                 self.ed_map_cell_width.setText("")
                 self.ed_map_cell_height.setText("")
                 self.ed_map_secondary_velocity.setText("")
@@ -15050,6 +15119,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     ),
                     "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                     "combo_map_data": self.combo_map_data.currentText(),
+                    "rb_map_contour": self.rb_map_contour.isChecked(),
+                    "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                    "rb_map_temp": self.rb_map_temp.isChecked(),
+                    "rb_map_stickship": self.rb_map_stickship.isChecked(),
                 }
 
             # Disable MAP open Earth button if not GGA
@@ -15071,26 +15144,47 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "combo_map_data": self.combo_map_data.currentText(),
+                "rb_map_contour": self.rb_map_contour.isChecked(),
+                "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                "rb_map_temp": self.rb_map_temp.isChecked(),
+                "rb_map_stickship": self.rb_map_stickship.isChecked(),
             }
 
             # MAP table
             self.map_table()
 
             # MAP figures
-            self.map_shiptrack()
-            self.map_wt_contour()
+            self.update_map()
 
-            self.canvases = [self.map_shiptrack_canvas, self.map_wt_contour_canvas]
-            self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
-            self.fig_calls = [self.map_shiptrack, self.map_wt_contour]
-            self.toolbars = [self.map_shiptrack_toolbar, self.map_wt_contour_toolbar]
+            self.canvases = [self.map_canvas]
+            self.figs = [self.map_fig]
+            self.fig_calls = [self.map_wt_contour]
+            self.toolbars = [self.map_toolbar]
             self.ui_parents = [i.parent() for i in self.canvases]
             self.figs_menu_connection()
 
             if not self.map_initialized:
+                # Todo add signals for any change to the map properties
                 # Configure dictionary of plot options
                 self.map_current_settings = self.map_settings
-                self.pb_map_apply.clicked.connect(self.update_map)
+
+                # radio button signals for plot type
+                self.rb_map_contour.clicked.connect(self.update_map)
+                self.rb_map_bathymetry.clicked.connect(self.update_map)
+                self.rb_map_temp.clicked.connect(self.update_map)
+                self.rb_map_stickship.clicked.connect(self.update_map)
+
+                # signals for contour options
+                self.combo_map_data.currentTextChanged.connect(self.update_map)
+                self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
+                self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
+                self.ed_map_cell_width.editingFinished.connect(self.update_map)
+                self.ed_map_cell_height.editingFinished.connect(self.update_map)
+                self.cb_map_top_bottom.clicked.connect(self.update_map)
+                self.cb_map_edges.clicked.connect(self.update_map)
+                self.cb_map_interpolation.clicked.connect(self.update_map)
+                self.cb_map_bed_profiles.clicked.connect(self.update_map)
+
                 self.pb_map_save.clicked.connect(self.map_save_data)
                 self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
                 self.map_initialized = True
@@ -15100,12 +15194,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Load MAP parameters and check if there is any change
         with self.wait_cursor():
-            change_data = False
-            change_plot = False
+            if self.map_change:
+                change_data = True
+                change_plot = True
+            else:
+                change_data = False
+                change_plot = False
+
+            cell_width = self.check_numeric_input(self.ed_map_cell_width)
+            if cell_width is not None:
+                cell_width = cell_width * 1 / self.units["L"]
+            cell_height = self.check_numeric_input(self.ed_map_cell_height)
+            if cell_height is not None:
+                cell_height = cell_height * 1 / self.units["L"]
+
             self.map_settings = {
                 "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
-                "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
-                "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
+                "ed_map_cell_width": cell_width,
+                "ed_map_cell_height": cell_height,
                 "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
                 "cb_map_edges": self.cb_map_edges.isChecked(),
                 "ed_map_secondary_velocity": self.check_numeric_input(
@@ -15113,45 +15219,48 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "combo_map_data": self.combo_map_data.currentText(),
+                "rb_map_contour": self.rb_map_contour.isChecked(),
+                "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                "rb_map_temp": self.rb_map_temp.isChecked(),
+                "rb_map_stickship": self.rb_map_stickship.isChecked(),
             }
-            for key in self.map_settings:
-                if self.map_settings[key] != self.map_current_settings[key]:
-                    if key in [
-                        "cb_map_interpolation",
-                        "ed_map_cell_width",
-                        "ed_map_cell_height",
-                        "cb_map_top_bottom",
-                        "cb_map_edges",
-                    ]:
-                        change_data = True
-                        change_plot = True
-                        break
-                    else:
-                        change_plot = True
+
+            if self.map_change is False:
+                for key in self.map_current_settings:
+                    if self.map_settings[key] != self.map_current_settings[key]:
+                        if key in [
+                            "cb_map_interpolation",
+                            "ed_map_cell_width",
+                            "ed_map_cell_height",
+                            "cb_map_top_bottom",
+                            "cb_map_edges",
+                        ]:
+                            change_data = True
+                            change_plot = True
+                            break
+                        else:
+                            change_plot = True
+
+            if self.map_canvas is None:
+                change_plot = True
 
             # Save current parameters
             self.map_current_settings = self.map_settings
 
             # Apply changes
-            if change_data or change_plot:
-                if change_data:
-                    self.meas.compute_map(
-                        node_horizontal_user=self.map_settings["ed_map_cell_width"],
-                        node_vertical_user=self.map_settings["ed_map_cell_height"],
-                        extrap_option=self.map_settings["cb_map_top_bottom"],
-                        edges_option=self.map_settings["cb_map_edges"],
-                        interp_option=self.map_settings["cb_map_interpolation"],
-                    )
+            if change_data:
+                self.meas.compute_map(
+                    node_horizontal_user=self.map_settings["ed_map_cell_width"],
+                    node_vertical_user=self.map_settings["ed_map_cell_height"],
+                    extrap_option=self.map_settings["cb_map_top_bottom"],
+                    edges_option=self.map_settings["cb_map_edges"],
+                    interp_option=self.map_settings["cb_map_interpolation"],
+                )
                 self.map_table(update=True)
-                self.map_wt_contour()
-                self.map_shiptrack()
+            if change_plot:
+                self.update_map_plot()
 
-                self.figs = [self.map_shiptrack_fig, self.map_wt_contour_fig]
-                self.fig_calls = [self.map_shiptrack, self.map_wt_contour]
-
-                # Reset data cursor to work with new figure
-                if self.actionData_Cursor.isChecked():
-                    self.data_cursor()
+            self.map_change = False
 
     def map_table(self, update=False):
         """Create and populate MAP results table."""
@@ -15179,24 +15288,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.verticalHeader().setFont(self.font_bold)
 
             header = tbl.horizontalHeader()
-            header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
             col_header = tbl.verticalHeader()
-            col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
 
-        if len(self.checked_transects_idx) > 0:
+        if (
+            len(self.checked_transects_idx) > 0
+            and self.meas.map.total_discharge is not None
+        ):
             trans_prop = Measurement.compute_measurement_properties(self.meas)
 
             row = 0
             # MAP Q
             col = 0
             map_q = self.meas.map.total_discharge
-            tbl.setItem(
-                row,
-                col,
-                QtWidgets.QTableWidgetItem(
-                    "{:8}".format(self.q_digits(map_q * self.units["Q"]))
-                ),
-            )
+            if np.isnan(map_q):
+                tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
+            else:
+                tbl.setItem(
+                    row,
+                    col,
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(self.q_digits(map_q * self.units["Q"]))
+                    ),
+                )
             # Meas Q
             col += 1
             discharge = Measurement.mean_discharges(self.meas)
@@ -15318,11 +15431,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(
                     row,
                     col,
-                    QtWidgets.QTableWidgetItem("{:8}".format(self.q_digits(map_width))),
+                    QtWidgets.QTableWidgetItem("{:8}".format(self.q_digits(
+                        map_width * self.units["L"]))),
                 )
             # Meas. width
             col += 1
-            meas_width = trans_prop["width"][n_transects] * self.units["L"]
+            meas_width = trans_prop["width"][n_transects]
             if np.isnan(meas_width):
                 tbl.setItem(row, col, QtWidgets.QTableWidgetItem("N/A"))
             else:
@@ -15330,7 +15444,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:8}".format(self.q_digits(meas_width))
+                        "{:8}".format(self.q_digits(meas_width * self.units["L"]))
                     ),
                 )
             # Delta mean depth
@@ -15351,13 +15465,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(2, 0).setFont(self.font_bold)
             tbl.item(3, 0).setFont(self.font_bold)
 
-    def map_wt_contour(self):
-        """Creates water track profile on MAP data."""
+        tbl.resizeColumnsToContents()
+        tbl.resizeRowsToContents()
 
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.map_wt_contour_canvas is None:
+    def update_map_plot(self):
+        """Method to update map plot based on selected radio buttons."""
+
+        # If the canvas has not been previously created, create the canvas and
+        # add the widget.
+
+        # Todo fix create of plots. Sometimes they go behind the settings
+        #  panel on the right side of the UI.
+        if self.map_canvas is None:
             # Create the canvas
-            self.map_wt_contour_canvas = MplCanvas(
+            self.map_canvas = MplCanvas(
                 parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80
             )
             # Assign layout to widget to allow auto scaling
@@ -15365,15 +15486,57 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
             # Add the canvas
-            layout.addWidget(self.map_wt_contour_canvas)
+            layout.addWidget(self.map_canvas)
             # Initialize hidden toolbar for use by graphics controls
-            self.map_wt_contour_toolbar = NavigationToolbar(
-                self.map_wt_contour_canvas, self
-            )
-            self.map_wt_contour_toolbar.hide()
+            self.map_toolbar = NavigationToolbar(self.map_canvas, self)
+            self.map_toolbar.hide()
+
+        if self.rb_map_contour.isChecked():
+            self.combo_map_data.blockSignals(False)
+            self.ed_map_secondary_velocity.blockSignals(False)
+            self.cb_map_top_bottom.blockSignals(False)
+            self.map_wt_contour()
+
+        elif self.rb_map_bathymetry.isChecked() or self.rb_map_temp.isChecked():
+            self.combo_map_data.blockSignals(True)
+            self.ed_map_secondary_velocity.blockSignals(True)
+            self.cb_map_top_bottom.blockSignals(True)
+            self.plot_map()
+
+        elif self.rb_map_stickship.isChecked():
+            self.combo_map_data.blockSignals(True)
+            self.ed_map_secondary_velocity.blockSignals(True)
+            self.cb_map_top_bottom.blockSignals(True)
+            self.map_shiptrack()
+
+        self.figs = [self.map_fig]
+        self.fig_calls = [self.update_map_plot]
+
+        # Reset data cursor to work with new figure
+        if self.actionData_Cursor.isChecked():
+            self.data_cursor()
+
+    def plot_map(self):
+        """Creates plot of MAP data."""
+
+        self.map_fig = AdvGraphs(canvas=self.map_canvas)
+
+        self.map_fig.plot_map(
+            self.meas.map,
+            units=self.units,
+            bath=self.rb_map_bathymetry.isChecked(),
+            temp=self.rb_map_temp.isChecked(),
+            plot_transects=self.cb_map_bed_profiles.isChecked(),
+        )
+
+        # Draw canvas
+        self.map_canvas.draw()
+
+    def map_wt_contour(self):
+        """Creates water track profile on MAP data."""
 
         # Initialize the boat speed figure and assign to the canvas
-        self.map_wt_contour_fig = WTContour(canvas=self.map_wt_contour_canvas)
+        self.map_fig = WTContour(canvas=self.map_canvas)
 
         # Quiver parameters
         if self.map_settings["combo_map_data"] == "Primary velocity":
@@ -15400,7 +15563,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             bed_profiles = None
 
-        self.map_wt_contour_fig.create(
+        self.map_fig.create(
             transect=self.meas.map,
             units=self.units,
             data_type=self.map_settings["combo_map_data"],
@@ -15409,150 +15572,97 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             color_map=self.color_map,
             x_axis_type="MAP",
         )
-        self.map_wt_contour_fig.fig.subplots_adjust(
+        self.map_fig.fig.subplots_adjust(
             left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0
         )
         # Draw canvas
-        self.map_wt_contour_canvas.draw()
+        self.map_canvas.draw()
 
     def map_shiptrack(self):
         """Creates shiptrack plot for MAP cross-section and transects' track."""
 
-        # If the canvas has not been previously created, create the canvas and add the widget.
-        if self.map_shiptrack_canvas is None:
-            # Create the canvas
-            self.map_shiptrack_canvas = MplCanvas(
-                parent=self.graphics_map_track, width=4, height=3, dpi=80
-            )
-            # Assign layout to widget to allow auto scaling
-            layout = QtWidgets.QVBoxLayout(self.graphics_map_track)
-            # Adjust margins of layout to maximize graphic area
-            layout.setContentsMargins(1, 1, 1, 1)
-            # Add the canvas
-            layout.addWidget(self.map_shiptrack_canvas)
-            # Initialize hidden toolbar for use by graphics controls
-            self.map_shiptrack_toolbar = NavigationToolbar(
-                self.map_shiptrack_canvas, self
-            )
-            self.map_shiptrack_toolbar.hide()
-
         # Initialize the shiptrack figure and assign to the canvas
-        self.map_shiptrack_fig = Maptrack(canvas=self.map_shiptrack_canvas)
+        self.map_fig = Maptrack(canvas=self.map_canvas)
         # Create the figure with the specified data
         settings = Measurement.current_settings(self.meas)
-        self.map_shiptrack_fig.create(
-            map_data=self.meas.map, units=self.units, nav_ref=settings["NavRef"]
+        self.map_fig.create(
+            map_data=self.meas.map,
+            units=self.units,
+            nav_ref=settings["NavRef"],
+            plot_transects=self.cb_map_bed_profiles.isChecked(),
         )
 
         # Draw canvas
-        self.map_shiptrack_canvas.draw()
+        self.map_canvas.draw()
 
     def map_save_data(self):
         """Save MAP data as csv or txt."""
-        map_data = self.meas.map
-        if map_data is not None:
-            row, col = map_data.primary_velocity.shape
-            ens_mid = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) * 0.5
-            data = {
-                "Distance (Left bank) "
-                + self.units["label_L"]: np.repeat(ens_mid, row) * self.units["L"],
-                "Primary velocity "
-                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Secondary velocity "
-                + self.units["label_V"]: map_data.secondary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Streamwise velocity "
-                + self.units["label_V"]: map_data.streamwise_velocity.ravel(order="F")
-                * self.units["V"],
-                "Transverse velocity (Left to Right) "
-                + self.units["label_V"]: map_data.transverse_velocity.ravel(order="F")
-                * self.units["V"],
-                "Vertical velocity "
-                + self.units["label_V"]: map_data.primary_velocity.ravel(order="F")
-                * self.units["V"],
-                "Depth "
-                + self.units["label_L"]: np.repeat(map_data.depths, row)
-                * self.units["L"],
-                "Cells discharge "
-                + self.units["label_Q"]: map_data.cells_discharge.ravel(order="F")
-                * self.units["Q"],
-                "Cells area "
-                + self.units["label_A"]: map_data.cells_area.ravel(order="F")
-                * self.units["A"],
-                "Distance cells center "
-                + self.units["label_L"]: map_data.distance_cells_center.ravel(order="F")
-                * self.units["L"],
-                "Depth cells center "
-                + self.units["label_L"]: map_data.depth_cells_center.ravel(order="F")
-                * self.units["L"],
-            }
+        if self.meas.map is not None and self.meas.map.total_discharge is not None:
+            # ascii file delimiter
+            try:
+                ss = self.sticky_settings.get("Delimiter")
+                delimiter = ss
+            except KeyError:
+                self.sticky_settings.new("Delimiter", "comma delimited")
+                delimiter = "comma delimited"
 
-            df = pd.DataFrame(data)
-            df = df[df["Cells discharge " + self.units["label_Q"]].notna()]
-            save_map = SaveDialog(parent=self, save_type="MAP")
+            save_map = SaveDialog(parent=self, save_type="MAP", delimiter=delimiter)
+
             if len(save_map.full_Name) > 0:
                 try:
-                    if save_map.file_extension == ".csv":
-                        df.to_csv(save_map.full_Name, sep=";", index=False, header=True)
-                    elif save_map.file_extension == ".txt":
-                        df.to_csv(save_map.full_Name, sep=" ", index=False, header=True)
+                    try:
+                        self.sticky_settings.set("Delimiter", save_map.delimiter)
+                    except KeyError:
+                        self.sticky_settings.new("Delimiter", save_map.delimiter)
+
+                    self.meas.map.export_csv(
+                        save_map.full_Name,
+                        units=self.units,
+                        delimiter=save_map.delimiter,
+                    )
                 except Exception:
-                    self.popup_message(self.tr("Impossible to save MAP data."))
+                    self.popup_message(self.tr("Failed to save MAP data."))
 
     def plot_map_google_earth(self):
-        """Creates line plots of transects in Google Earth using GGA coordinates and MAP average ship track."""
-        kml = simplekml.Kml(open=1)
-        # Create a shiptrack for each checked transect
-        lat = np.nan
-        lon = np.nan
-        for transect_idx in self.checked_transects_idx:
-            lon = self.meas.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = self.meas.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = self.meas.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
-
-        # Get utm zone
-        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-        # Define average ship track
-        left_x = np.nanmedian([item[0] for item in self.meas.map.x_raw_coordinates])
-        x_boundaries = [
-            min([min(x) for x in self.meas.map.x_projected]),
-            max([max(x) for x in self.meas.map.x_projected]),
-        ]
-
-        x_utm = np.array(
-            [
-                min(x_boundaries, key=lambda x: abs(x - left_x)),
-                max(x_boundaries, key=lambda x: abs(x - left_x)),
-            ]
-        )
-        y_utm = np.array(
-            [i * self.meas.map.slope + self.meas.map.intercept for i in x_utm]
-        )
-
-        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
-        line_name = "MAP average ship track"
-        lon_lat = tuple(zip(lon, lat))
-        lin = kml.newlinestring(name=line_name, coords=lon_lat)
-        lin.style.linestyle.color = "ff0000ff"
+        """Creates line plots of transects in Google Earth using GGA
+        coordinates and MAP average ship track."""
 
         fullname = os.path.join(
             self.sticky_settings.get("Folder"),
             datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
         )
-        kml.save(fullname)
+
+        self.meas.map.export_kml(self.meas, fullname)
+
         try:
             os.startfile(fullname)
         except os.error:
             self.popup_message(
                 text=self.tr(
-                    "Google Earth is not installed or is not associated with kml files."
+                    "Google Earth is not installed or is not associated with "
+                    "kml files."
                 )
             )
+
+    def map_cell_auto(self):
+        """Enable or disable the width and Height line edits."""
+
+        if self.cb_map_cell_size_auto.isChecked():
+            self.ed_map_cell_width.blockSignals(True)
+            self.ed_map_cell_width.setEnabled(False)
+            self.ed_map_cell_width.clear()
+
+            self.ed_map_cell_height.blockSignals(True)
+            self.ed_map_cell_height.setEnabled(False)
+            self.ed_map_cell_height.clear()
+
+            self.update_map()
+        else:
+            self.ed_map_cell_width.blockSignals(False)
+            self.ed_map_cell_width.setEnabled(True)
+
+            self.ed_map_cell_height.blockSignals(False)
+            self.ed_map_cell_height.setEnabled(True)
 
     # Graphics save
     # =================
@@ -15582,7 +15692,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         np.less(y_adjusted, extents[:, 3]),
                     )
                 )[0]
-                self.current_axis = self.current_fig.fig.axes[ax[-1]]
+                if len(ax) > 0:
+                    self.current_axis = self.current_fig.fig.axes[ax[-1]]
 
                 # Context menu
                 self.figsMenu.exec_(event.globalPos())
@@ -15810,7 +15921,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_plots()
 
     def show_extrapolated(self):
-
         if not self.plot_extrapolated:
             self.plot_extrapolated = True
             self.actionShow_Extrapolated.setChecked(True)
@@ -15902,6 +16012,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Set the change status to True for the main window update
             self.change = True
+            self.map_change = True
 
         self.update_main()
 
@@ -15947,23 +16058,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             save_file = SaveDialog(group=group, parent=self)
 
             if len(save_file.full_Name) > 0:
-
                 # Save data in Matlab format
                 if self.save_all:
                     Python2Matlab.save_matlab_file(
-                        self.meas, save_file.full_Name, self.QRev_version
+                        self.meas, save_file.full_Name, __qrev_version__
                     )
                 else:
                     Python2Matlab.save_matlab_file(
                         self.meas,
                         save_file.full_Name,
-                        self.QRev_version,
+                        __qrev_version__,
                         checked=self.groupings[self.group_idx],
                     )
 
                 # Save xml file
                 self.meas.xml_output(
-                    self.QRev_version, save_file.full_Name[:-4] + ".xml"
+                    __qrev_version__, save_file.full_Name[:-4] + ".xml"
                 )
 
                 # Notify user when save complete
@@ -16132,7 +16242,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Change displayed transect
         if self.current_tab != "MovBedTst" and self.current_tab != "SysTest":
-
             # Select transect above in table or wrap to bottom
             if e.key() == QtCore.Qt.Key_Up:
                 if self.transect_row - 1 < 0:
@@ -16140,6 +16249,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.transect_row -= 1
                 self.change = True
+                self.map_change = True
                 self.change_selected_transect()
 
             # Select transect below in table or wrap to top
@@ -16149,6 +16259,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.transect_row += 1
                 self.change = True
+                self.map_change = True
                 self.change_selected_transect()
 
         # Change displayed moving-bed test
@@ -16296,7 +16407,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Main tab
         if tab_idx == "Main":
-
             if subtab_idx is not None:
                 self.tab_summary.setCurrentIndex(0)
 
@@ -16614,6 +16724,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 event.accept()
         else:
             event.accept()
+
+
+# Adjust scaling based on users resolution.
+if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
 
 # Main

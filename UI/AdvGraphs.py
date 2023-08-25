@@ -3840,6 +3840,7 @@ class AdvGraphs(object):
         data_mask=None,
         fmt=None,
         set_annot=True,
+            x_override=[],
     ):
         """Create timeseries plot.
 
@@ -3859,6 +3860,8 @@ class AdvGraphs(object):
             List of dictionary providing plot format properties
         set_annot: bool
             Indicates if annotation should be associated.
+        x_override: np.ndarray()
+            1-D array of data to be plotted.
         """
 
         # Use last subplot if not defined
@@ -3881,9 +3884,15 @@ class AdvGraphs(object):
 
         # Compute x coordinates in selected units
         if self.x_axis_type == "L":
-            x_coords = self.x * self.units["L"]
+            if len(x_override) > 0:
+                x_coords = x_override * self.units["L"]
+            else:
+                x_coords = self.x * self.units["L"]
         else:
-            x_coords = self.x
+            if len(x_override) > 0:
+                x_coords = x_override
+            else:
+                x_coords = self.x
 
         # First call to plot uses masked data if there is no primary data
         if data is not None:
@@ -3953,6 +3962,86 @@ class AdvGraphs(object):
             )
 
             self.annot[-1].set_visible(False)
+
+        self.canvas.draw()
+
+    def plot_map(self, map_class, units, bath=False,
+                 temp=False, plot_transects=False):
+
+        with self.wait_cursor():
+            # Initialize data sources
+            self.xs = map_class
+
+            # Set x axis type and units
+            self.x_axis_type = 'L'
+            self.units = units
+
+            self.x = map_class.distance_cells_center[0]
+            label = self.canvas.tr("Length ") + self.units["label_L"]
+
+            # Clear the plot
+            self.fig.clear()
+
+            # Determine number of subplots
+            self.n_subplots = 1
+
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
+
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar.
+            # It is blank but present even for time series
+            # plots to allow the sharing of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50,
+                                                                          1])
+
+            # Create first subplot
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+
+            if bath:
+
+                data_units = (self.units["L"], self.canvas.tr("Depth") + " " +
+                              self.units["label_L"])
+
+                fmt = [{"color": "red", "linewidth": 2}]
+                self.plt_timeseries(data=map_class.depths,
+                                    data_units=data_units,
+                                    fmt=fmt)
+
+                if plot_transects:
+                    fmt = [{"color": "grey", "linewidth": 1}]
+
+                    for tran in range(len(map_class.depth_by_transect)):
+                        self.plt_timeseries(data=map_class.depth_by_transect[tran],
+                                            data_units=data_units,
+                                            x_override=map_class.acs_distance[tran],
+                                            fmt=fmt)
+
+                self.ax[-1].invert_yaxis()
+
+            if temp:
+
+                y_data = map_class.temperature
+
+                data_units = (1, 'Mean Temp (C)')
+                fmt = [{"color": "red", "linewidth": 2}]
+                self.plt_timeseries(data=y_data,
+                                    data_units=data_units,
+                                    ax=self.ax[-1],
+                                    fmt=fmt)
+
+                if plot_transects:
+                    fmt = [{"color": "grey", "linewidth": 1}]
+                    for tran in range(len(map_class.temperature_by_transect)):
+                        self.plt_timeseries(data=map_class.temperature_by_transect[tran],
+                                            data_units=data_units,
+                                            x_override=map_class.acs_distance[tran],
+                                            fmt=fmt)
+
+            self.ax[-1].xaxis.label.set_fontsize(12)
+            self.ax[-1].set_xlabel(label)
 
         self.canvas.draw()
 

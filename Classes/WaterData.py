@@ -61,7 +61,7 @@ class WaterData(object):
             Horizontal velocity in x-direction, earth coord, nav ref,
             filtered, and interpolated.
         v_processed_mps: np.array(float)
-            Horizontal veloctiy in y-direction, earth coord, nav ref,
+            Horizontal velocity in y-direction, earth coord, nav ref,
             filtered, and interpolated.
         w_mps: np.array(float)
             Vertical velocity (+ up), in m/s.

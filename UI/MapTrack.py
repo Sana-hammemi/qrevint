@@ -36,7 +36,7 @@ class Maptrack(object):
         self.annot = None
         self.vectors = None
 
-    def create(self, map_data, units, nav_ref):
+    def create(self, map_data, units, nav_ref, plot_transects=True):
         """Create the axes and lines for the figure.
 
         Parameters
@@ -47,6 +47,7 @@ class Maptrack(object):
             Dictionary of units conversions.
         nav_ref: str
             Navigation reference (bt_vel, gga_vel, vtg_vel)
+        plot_transects: bool
         """
 
         # Assign and save parameters
@@ -68,53 +69,55 @@ class Maptrack(object):
 
         direction_section = np.arctan2(map_data.slope, 1)
 
-        u = map_data.streamwise_velocity * np.sin(direction_section) + \
-            map_data.transverse_velocity * np.cos(direction_section)
-        v = map_data.transverse_velocity * np.sin(direction_section) - \
-            map_data.streamwise_velocity * np.cos(direction_section)
+        if map_data.streamwise_velocity is not None:
+            u = map_data.streamwise_velocity * np.sin(direction_section) + \
+                map_data.transverse_velocity * np.cos(direction_section)
+            v = map_data.transverse_velocity * np.sin(direction_section) - \
+                map_data.streamwise_velocity * np.cos(direction_section)
 
-        u = u * -1 * map_data._unit
-        v = v * -1 * map_data._unit
+            u = u * -1 * map_data._unit
+            v = v * -1 * map_data._unit
 
-        u_mean = np.nanmean(u, axis=0)
-        v_mean = np.nanmean(v, axis=0)
+            u_mean = np.nanmean(u, axis=0)
+            v_mean = np.nanmean(v, axis=0)
 
-        x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
-        y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
+            x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
+            y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
 
-        speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
-        if len(speed) > 0:
-            max_speed = np.nanmax(speed)
-        else:
-            max_speed = 0
+            speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
+            if len(speed) > 0:
+                max_speed = np.nanmax(speed)
+            else:
+                max_speed = 0
 
-        self.vectors = self.fig.ax.quiver(
-            x_plt,
-            y_plt,
-            u_mean * units["V"],
-            v_mean * units["V"],
-            units="dots",
-            width=1,
-            scale_units="width",
-            scale=4 * max_speed,
-        )
-
-        self.acs = self.fig.ax.plot(
-            map_data.x,
-            map_data.y,
-            color="firebrick",
-            linewidth=2,
-            label="MAP Average course",
-            zorder=1,
-        )
-        for i in range(len(map_data.x_raw_coordinates)):
-            self.fig.ax.plot(
-                map_data.x_raw_coordinates[i],
-                map_data.y_raw_coordinates[i],
-                color="grey",
-                linewidth=1,
-                zorder=0,
+            self.vectors = self.fig.ax.quiver(
+                x_plt,
+                y_plt,
+                u_mean * units["V"],
+                v_mean * units["V"],
+                units="dots",
+                width=1,
+                scale_units="width",
+                scale=4 * max_speed,
             )
+
+            self.acs = self.fig.ax.plot(
+                map_data.x,
+                map_data.y,
+                color="firebrick",
+                linewidth=2,
+                label="MAP Average course",
+                zorder=1,
+            )
+        if plot_transects:
+            for i in range(len(map_data.x_raw_coordinates)):
+                self.fig.ax.plot(
+                    map_data.x_raw_coordinates[i],
+                    map_data.y_raw_coordinates[i],
+                    color="grey",
+                    linewidth=1,
+                    zorder=0,
+                )
 
         # Customize axes
         if nav_ref == "gga_vel":
