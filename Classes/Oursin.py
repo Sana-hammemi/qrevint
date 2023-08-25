@@ -1068,6 +1068,7 @@ class Oursin(object):
         # 3. Run all the simulations to compute possible discharges
         self.run_simulations(meas)
 
+        self.sim_original.replace(0, np.nan, inplace=True)
         # 4. Compute uncertainty terms based on simulations and assuming a
         # rectangular law
         self.uncertainty_top_discharge()

@@ -422,31 +422,32 @@ class AdvGraphs(object):
         # Compute x-axis variable, this applies units
         self.compute_x_axis()
 
-        # Initialize variable for subplots
-        self.ax = []
-        self.annot = []
-        self.data_plotted = []
+        if self.x is not None:
+            # Initialize variable for subplots
+            self.ax = []
+            self.annot = []
+            self.data_plotted = []
 
-        # Create grid specification
-        # Note: the second column of the grid is for the color bar. It is
-        # blank but present even for time series plots to allow the sharing
-        # of the x-axis between all plots
-        self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+            # Create grid specification
+            # Note: the second column of the grid is for the color bar. It is
+            # blank but present even for time series plots to allow the sharing
+            # of the x-axis between all plots
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
-        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
-        self.wt_speed_final_contour()
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+            self.wt_speed_final_contour()
 
-        # Adjust the spacing of the subplots
-        self.fig.subplots_adjust(
-            left=0.08, bottom=0.2, right=0.92, top=0.97, wspace=0.02, hspace=0
-        )
+            # Adjust the spacing of the subplots
+            self.fig.subplots_adjust(
+                left=0.08, bottom=0.2, right=0.92, top=0.97, wspace=0.02, hspace=0
+            )
 
-        # Apply the x-axis label to the bottom x-axis
-        idx = -2
-        self.ax[idx].xaxis.label.set_fontsize(12)
-        self.set_x_axis(idx)
+            # Apply the x-axis label to the bottom x-axis
+            idx = -2
+            self.ax[idx].xaxis.label.set_fontsize(12)
+            self.set_x_axis(idx)
 
-        self.canvas.draw()
+            self.canvas.draw()
 
     def create_depth_tab_graphs(
         self,
@@ -3109,13 +3110,13 @@ class AdvGraphs(object):
             )
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"]
-            self.x = x[self.transect.in_transect_idx]
+                self.x = x[self.transect.in_transect_idx]
 
-            # Shift data to account for edge distance
-            if self.transect.start_edge == "Left":
-                self.x = self.x + self.transect.edges.left.distance_m
-            else:
-                self.x = self.x + self.transect.edges.right.distance_m
+                # Shift data to account for edge distance
+                if self.transect.start_edge == "Left":
+                    self.x = self.x + self.transect.edges.left.distance_m
+                else:
+                    self.x = self.x + self.transect.edges.right.distance_m
 
         # x axis is ensembles
         elif self.x_axis_type == "E":

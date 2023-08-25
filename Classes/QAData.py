@@ -701,7 +701,10 @@ class QAData(object):
 
                 # Invalid ensembles at left and/or right edge
                 boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
-                valid_bt = boat_selected.valid_data[0, :]
+                if boat_selected is None:
+                    valid_bt = np.tile(False, transect.boat_vel.bt_vel.u_mps.size)
+                else:
+                    valid_bt = boat_selected.valid_data[0, :]
                 valid_wt = np.any(transect.w_vel.valid_data[0, :, :], axis=0)
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 valid_depth = depth_selected.valid_data
