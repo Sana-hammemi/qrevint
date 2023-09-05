@@ -875,6 +875,9 @@ class QAData(object):
         self.system_tst["messages"] = []
         self.system_tst["status"] = "good"
 
+        if "tab_systst" not in self.settings_dict:
+            self.settings_dict["tab_systst"] = "Default"
+
         # Determine if a system test was recorded
         if not meas.system_tst:
             # No system test data recorded
@@ -2026,296 +2029,6 @@ class QAData(object):
         else:
             self.depths["status"] = "inactive"
 
-    def boat_qa1(self, meas):
-        """Apply quality checks to boat data.
-
-        Parameters
-        ----------
-        meas: Measurement
-            Object of class Measurement
-        """
-
-        # Initialize variables
-        n_transects = len(meas.transects)
-        data_type = {
-            "BT": {
-                "class": "bt_vel",
-                "warning": "BT-",
-                "caution": "bt-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("ErrorVel: ", 2),
-                    ("VertVel: ", 3),
-                    ("Other: ", 4),
-                    ("3Beams: ", 5),
-                ],
-            },
-            "GGA": {
-                "class": "gga_vel",
-                "warning": "GGA-",
-                "caution": "gga-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("DGPS: ", 2),
-                    ("Altitude: ", 3),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
-                ],
-            },
-            "VTG": {
-                "class": "vtg_vel",
-                "warning": "VTG-",
-                "caution": "vtg-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
-                ],
-            },
-        }
-        self.boat["messages"] = []
-
-        for dt_key, dt_value in data_type.items():
-            boat = getattr(self, dt_value["class"])
-
-            # Initialize dictionaries for each data type
-            boat["q_total_caution"] = np.tile(False, (n_transects, 6))
-            boat["q_max_run_caution"] = np.tile(False, (n_transects, 6))
-            boat["q_total_warning"] = np.tile(False, (n_transects, 6))
-            boat["q_max_run_warning"] = np.tile(False, (n_transects, 6))
-            boat["all_invalid"] = np.tile(False, n_transects)
-            boat["q_total"] = np.tile(np.nan, (n_transects, 6))
-            boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
-            boat["messages"] = []
-            status_switch = 0
-            avg_speed_check = 0
-
-            # Check the results of each filter
-            for dt_filter in dt_value["filter"]:
-                boat["status"] = "inactive"
-
-                # Quality check each transect
-                for n, transect in enumerate(meas.transects):
-
-                    # Evaluate on transects used in the discharge computation
-                    if transect.checked:
-
-                        in_transect_idx = transect.in_transect_idx
-
-                        # Check to see if data are available for the data_type
-                        if getattr(transect.boat_vel, dt_value["class"]) is not None:
-                            boat["status"] = "good"
-
-                            # Compute quality characteristics
-                            valid = getattr(
-                                transect.boat_vel, dt_value["class"]
-                            ).valid_data[dt_filter[1], in_transect_idx]
-                            q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
-                                valid, meas.discharge[n]
-                            )
-                            boat["q_total"][n, dt_filter[1]] = q_total
-                            boat["q_max_run"][n, dt_filter[1]] = q_max_run
-
-                            # Compute percentage compared to total
-                            if meas.discharge[n].total == 0.0:
-                                q_total_percent = np.nan
-                                q_max_run_percent = np.nan
-                            else:
-                                q_total_percent = np.abs(
-                                    (q_total / meas.discharge[n].total) * 100
-                                )
-                                q_max_run_percent = np.abs(
-                                    (q_max_run / meas.discharge[n].total) * 100
-                                )
-
-                            # Check if all invalid
-                            if dt_filter[1] == 0 and not np.any(valid):
-                                boat["all_invalid"][n] = True
-
-                            # Apply total interpolated discharge threshold
-                            if q_total_percent > self.q_total_threshold_warning:
-                                boat["q_total_warning"][n, dt_filter[1]] = True
-                            elif q_total_percent > self.q_total_threshold_caution:
-                                boat["q_total_caution"][n, dt_filter[1]] = True
-
-                            # Apply interpolated discharge run thresholds
-                            if q_max_run_percent > self.q_run_threshold_warning:
-                                boat["q_max_run_warning"][n, dt_filter[1]] = True
-                            elif q_max_run_percent > self.q_run_threshold_caution:
-                                boat["q_max_run_caution"][n, dt_filter[1]] = True
-
-                            # Check boat velocity for vtg data
-                            if (
-                                dt_key == "VTG"
-                                and transect.boat_vel.selected == "vtg_vel"
-                                and avg_speed_check == 0
-                            ):
-                                if transect.boat_vel.vtg_vel.u_mps is not None:
-                                    avg_speed = np.nanmean(
-                                        (
-                                            transect.boat_vel.vtg_vel.u_mps**2
-                                            + transect.boat_vel.vtg_vel.v_mps**2
-                                        )
-                                        ** 0.5
-                                    )
-                                    if avg_speed < 0.24:
-                                        boat["q_total_caution"][n, 2] = True
-                                        if status_switch < 1:
-                                            status_switch = 1
-                                        boat["messages"].append(
-                                            [
-                                                "vtg-AvgSpeed: VTG data may "
-                                                "not be accurate for average "
-                                                "boat speed "
-                                                "less than" + "0.24 m/s (0.8 "
-                                                "ft/s);",
-                                                2,
-                                                8,
-                                            ]
-                                        )
-                                        avg_speed_check = 1
-
-                # Create message for consecutive invalid discharge
-                if boat["q_max_run_warning"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["warning"]
-                            + dt_filter[0]
-                            + "Int. Q for consecutive invalid ensembles exceeds "
-                            + "%3.1f" % self.q_run_threshold_warning
-                            + "%;",
-                            1,
-                            module_code,
-                        ]
-                    )
-                    status_switch = 2
-                elif boat["q_max_run_caution"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["caution"]
-                            + dt_filter[0]
-                            + "Int. Q for consecutive invalid ensembles exceeds "
-                            + "%3.1f" % self.q_run_threshold_caution
-                            + "%;",
-                            2,
-                            module_code,
-                        ]
-                    )
-                    if status_switch < 1:
-                        status_switch = 1
-
-                # Create message for total invalid discharge
-                if boat["q_total_warning"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["warning"]
-                            + dt_filter[0]
-                            + "Int. Q for invalid ensembles in a transect exceeds"
-                            " " + "%3.1f" % self.q_total_threshold_warning + "%;",
-                            1,
-                            module_code,
-                        ]
-                    )
-                    status_switch = 2
-                elif boat["q_total_caution"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["caution"]
-                            + dt_filter[0]
-                            + "Int. Q for invalid ensembles in a transect exceeds "
-                            "" + "%3.1f" % self.q_total_threshold_caution + "%;",
-                            2,
-                            module_code,
-                        ]
-                    )
-                    if status_switch < 1:
-                        status_switch = 1
-
-            # Create message for all data invalid
-            if boat["all_invalid"].any():
-                boat["status"] = "warning"
-                if dt_key == "BT":
-                    module_code = 7
-                else:
-                    module_code = 8
-                boat["messages"].append(
-                    [
-                        dt_value["warning"]
-                        + dt_value["filter"][0][0]
-                        + "There are no valid data for one or more transects.;",
-                        1,
-                        module_code,
-                    ]
-                )
-
-            # Set status
-            if status_switch == 2:
-                boat["status"] = "warning"
-            elif status_switch == 1:
-                boat["status"] = "caution"
-
-            setattr(self, dt_value["class"], boat)
-
-        lag_gga = []
-        lag_vtg = []
-        self.gga_vel["lag_status"] = "good"
-        self.vtg_vel["lag_status"] = "good"
-        for transect in meas.transects:
-            gga, vtg = TransectData.compute_gps_lag(transect)
-            if gga is not None:
-                lag_gga.append(gga)
-            if vtg is not None:
-                lag_vtg.append(vtg)
-        if len(lag_gga) > 0:
-            if np.mean(np.abs(lag_gga)) > 10:
-                self.gga_vel["messages"].append(
-                    ["GGA: BT and GGA do not appear to be sychronized", 1, 8]
-                )
-                if self.gga_vel["status"] != "warning":
-                    self.gga_vel["status"] = "warning"
-                    self.gga_vel["lag_status"] = "warning"
-            elif np.mean(np.abs(lag_gga)) > 2:
-                self.gga_vel["messages"].append(
-                    ["gga: Lag between BT and GGA > 2 sec", 2, 8]
-                )
-                if self.gga_vel["status"] != "warning":
-                    self.gga_vel["status"] = "caution"
-                    self.gga_vel["lag_status"] = "caution"
-        if len(lag_vtg) > 0:
-            if np.mean(np.abs(lag_vtg)) > 10:
-                self.vtg_vel["messages"].append(
-                    ["VTG: BT and VTG do not appear to be sychronized", 1, 8]
-                )
-                if self.vtg_vel["status"] != "warning":
-                    self.vtg_vel["status"] = "warning"
-                    self.vtg_vel["lag status"] = "warning"
-            elif np.mean(np.abs(lag_vtg)) > 2:
-                self.vtg_vel["messages"].append(
-                    ["vtg: Lag between BT and VTG > 2 sec", 2, 8]
-                )
-                if self.vtg_vel["status"] != "warning":
-                    self.vtg_vel["status"] = "caution"
-                    self.vtg_vel["lag_status"] = "caution"
-
     def boat_qa(self, meas):
         """Apply quality checks to boat data.
 
@@ -2840,259 +2553,6 @@ class QAData(object):
                 self.extrapolation["status"] = "caution"
         else:
             self.extrapolation["status"] = "inactive"
-
-    def edges_qa1(self, meas):
-        """Apply quality checks to edge estimates
-
-        Parameters
-        ----------
-        meas: Measurement
-            Object of class Measurement
-        """
-
-        # Initialize variables
-        self.edges["messages"] = []
-        checked = []
-        left_q = []
-        right_q = []
-        total_q = []
-        edge_dist_left = []
-        edge_dist_right = []
-        dist_moved_left = []
-        dist_moved_right = []
-        dist_made_good = []
-        left_type = []
-        right_type = []
-        transect_idx = []
-
-        for n, transect in enumerate(meas.transects):
-            checked.append(transect.checked)
-
-            if transect.checked:
-                left_q.append(meas.discharge[n].left)
-                right_q.append(meas.discharge[n].right)
-                total_q.append(meas.discharge[n].total)
-                dmr, dml, dmg = QAData.edge_distance_moved(transect)
-                dist_moved_right.append(dmr)
-                dist_moved_left.append(dml)
-                dist_made_good.append(dmg)
-                edge_dist_left.append(transect.edges.left.distance_m)
-                edge_dist_right.append(transect.edges.right.distance_m)
-                left_type.append(transect.edges.left.type)
-                right_type.append(transect.edges.right.type)
-                transect_idx.append(n)
-
-        if any(checked):
-            # Set default status to good
-            self.edges["status"] = "good"
-
-            mean_total_q = np.nanmean(total_q)
-
-            # Check left edge q > 5%
-            self.edges["left_q"] = 0
-
-            left_q_percent = (np.nanmean(left_q) / mean_total_q) * 100
-            temp_idx = np.where(left_q / mean_total_q > 0.05)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_q_idx"] = np.array(transect_idx)[temp_idx]
-            else:
-                self.edges["left_q_idx"] = []
-            if np.abs(left_q_percent) > 5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Left edge Q is greater than 5%;", 1, 13]
-                )
-                self.edges["left_q"] = 1
-            elif len(self.edges["left_q_idx"]) > 0:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    [
-                        "Edges: One or more transects have a left edge Q "
-                        "greater than 5%;",
-                        1,
-                        13,
-                    ]
-                )
-                self.edges["left_q"] = 1
-
-            # Check right edge q > 5%
-            self.edges["right_q"] = 0
-            right_q_percent = (np.nanmean(right_q) / mean_total_q) * 100
-            temp_idx = np.where(right_q / mean_total_q > 0.05)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_q_idx"] = np.array(transect_idx)[temp_idx]
-            else:
-                self.edges["right_q_idx"] = []
-            if np.abs(right_q_percent) > 5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Right edge Q is greater than 5%;", 1, 13]
-                )
-                self.edges["right_q"] = 1
-            elif len(self.edges["right_q_idx"]) > 0:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    [
-                        "Edges: One or more transects have a right edge Q "
-                        "greater than 5%;",
-                        1,
-                        13,
-                    ]
-                )
-                self.edges["right_q"] = 1
-
-            # Check for consistent sign
-            q_positive = []
-            self.edges["left_sign"] = 0
-            for q in left_q:
-                if q >= 0:
-                    q_positive.append(True)
-                else:
-                    q_positive.append(False)
-            if len(np.unique(q_positive)) > 1 and left_q_percent > 0.5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Sign of left edge Q is not consistent;", 2, 13]
-                )
-                self.edges["left_sign"] = 1
-
-            q_positive = []
-            self.edges["right_sign"] = 0
-            for q in right_q:
-                if q >= 0:
-                    q_positive.append(True)
-                else:
-                    q_positive.append(False)
-            if len(np.unique(q_positive)) > 1 and right_q_percent > 0.5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Sign of right edge Q is not consistent;", 2, 13]
-                )
-                self.edges["right_sign"] = 1
-
-            # Check distance moved
-            dmg_5_percent = 0.05 * np.nanmean(dist_made_good)
-            avg_right_edge_dist = np.nanmean(edge_dist_right)
-            right_threshold = np.nanmin([dmg_5_percent, avg_right_edge_dist])
-            temp_idx = np.where(dist_moved_right > right_threshold)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_dist_moved_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in right edge ensembles;", 2, 13]
-                )
-            else:
-                self.edges["right_dist_moved_idx"] = []
-
-            avg_left_edge_dist = np.nanmean(edge_dist_left)
-            left_threshold = np.nanmin([dmg_5_percent, avg_left_edge_dist])
-            temp_idx = np.where(dist_moved_left > left_threshold)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_dist_moved_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in left edge ensembles;", 2, 13]
-                )
-            else:
-                self.edges["left_dist_moved_idx"] = []
-
-            # Check for edge ensembles marked invalid due to excluded distance
-            self.edges["invalid_transect_left_idx"] = []
-            self.edges["invalid_transect_right_idx"] = []
-            for n, transect in enumerate(meas.transects):
-                if transect.checked:
-                    ens_invalid = np.nansum(transect.w_vel.valid_data[0, :, :], 0) > 0
-                    ens_cells_above_sl = np.nansum(transect.w_vel.cells_above_sl, 0) > 0
-                    ens_invalid = np.logical_not(
-                        np.logical_and(ens_invalid, ens_cells_above_sl)
-                    )
-                    if np.any(ens_invalid):
-                        if transect.start_edge == "Left":
-                            invalid_left = ens_invalid[
-                                0 : int(transect.edges.left.number_ensembles)
-                            ]
-                            invalid_right = ens_invalid[
-                                -int(transect.edges.right.number_ensembles) :
-                            ]
-                        else:
-                            invalid_right = ens_invalid[
-                                0 : int(transect.edges.right.number_ensembles)
-                            ]
-                            invalid_left = ens_invalid[
-                                -int(transect.edges.left.number_ensembles) :
-                            ]
-                        if len(invalid_left) > 0:
-                            left_invalid_percent = sum(invalid_left) / len(invalid_left)
-                        else:
-                            left_invalid_percent = 0
-                        if len(invalid_right) > 0:
-                            right_invalid_percent = sum(invalid_right) / len(
-                                invalid_right
-                            )
-                        else:
-                            right_invalid_percent = 0
-                        max_invalid_percent = (
-                            max([left_invalid_percent, right_invalid_percent]) * 100
-                        )
-                        if max_invalid_percent > 25:
-                            self.edges["status"] = "caution"
-                            if np.any(invalid_left):
-                                self.edges["invalid_transect_left_idx"].append(n)
-                            if np.any(invalid_right):
-                                self.edges["invalid_transect_right_idx"].append(n)
-
-            if (
-                len(self.edges["invalid_transect_left_idx"]) > 0
-                or len(self.edges["invalid_transect_right_idx"]) > 0
-            ):
-                self.edges["messages"].append(
-                    [
-                        "Edges: The percent of invalid ensembles exceeds 25% in"
-                        + " one or more transects.",
-                        2,
-                        13,
-                    ]
-                )
-
-            # Check edges for zero discharge
-            self.edges["left_zero"] = 0
-            temp_idx = np.where(np.round(left_q, 4) == 0)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_zero_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(["EDGES: Left edge has zero Q;", 1, 13])
-                self.edges["left_zero"] = 2
-            else:
-                self.edges["left_zero_idx"] = []
-
-            self.edges["right_zero"] = 0
-            temp_idx = np.where(np.round(right_q, 4) == 0)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_zero_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(["EDGES: Right edge has zero Q;", 1, 13])
-                self.edges["right_zero"] = 2
-            else:
-                self.edges["right_zero_idx"] = []
-
-            # Check consistent edge type
-            self.edges["left_type"] = 0
-            if len(np.unique(left_type)) > 1:
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(
-                    ["EDGES: Left edge type is not consistent;", 1, 13]
-                )
-                self.edges["left_type"] = 2
-
-            self.edges["right_type"] = 0
-            if len(np.unique(right_type)) > 1:
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(
-                    ["EDGES: Right edge type is not consistent;", 1, 13]
-                )
-                self.edges["right_type"] = 2
-        else:
-            self.edges["status"] = "inactive"
 
     def edges_qa(self, meas):
         """Apply quality checks to edge estimates
@@ -4050,3 +3510,36 @@ class QAData(object):
             if not np.isnan(meas.oursin.user_specified_u[key]):
                 self.settings_dict["tab_uncertainty"] = "Custom"
                 break
+
+    def systest_added(self, meas):
+        """Peforms a quality check after a system test has been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.system_tst_qa(meas)
+        self.system_tst["messages"].append(
+            ["System Test: A system test as been manually added to the measurement.", 2, 3]
+        )
+
+        self.settings_dict["tab_systest"] = "Custom"
+
+    def compass_added(self, meas):
+        """Performs a quality check after a compass calibration / evalution has
+        been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.compass_qa(meas)
+        self.compass["messages"].append(
+            ["Compass: A compass cal/eval as been manually added to the measurement.", 2,
+             3])
+
+        self.settings_dict["tab_compass"] = "Custom"

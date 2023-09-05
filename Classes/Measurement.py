@@ -131,6 +131,7 @@ class Measurement(object):
         run_map=True,
         gps_quality_threshold=2,
         snr_3beam_comp=False,
+        excluded=None,
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -165,6 +166,10 @@ class Measurement(object):
             Indicates if the MAP computation should be run
         gps_quality_threshold: int
             Sets the threshold for which the GPS quality must equal to or greater than
+        snr_3beam_comp: bool
+            Indicates if 3 beam solutions should be used for ensembles with invalid SNR
+        excluded: dict
+            Dictionary containting the excluded distances for the RioPro and M9
         """
 
         self.use_ping_type = use_ping_type
@@ -207,6 +212,16 @@ class Measurement(object):
         self.export_xs = export_xs
         self.run_map = run_map
         self.gps_quality_threshold = gps_quality_threshold
+        if excluded is None:
+            self.excluded = {
+                "RioPro": 0.25,
+                "M9": 0.16,
+            }
+        else:
+            self.excluded = {
+                "RioPro": excluded["RioPro"],
+                "M9": excluded["M9"],
+            }
 
         # Load data from selected source
         if source == "QRev":
@@ -487,35 +502,75 @@ class Measurement(object):
         """
 
         # ADCP Test
+        self.trdi_add_systest(mmt)
+
+        # Compass calibration
+        self.trdi_add_compass_cal(mmt)
+
+        # Compass evaluation
+        self.trdi_add_compass_eval(mmt)
+
+        # Moving-bed tests
+        self.trdi_add_moving_bed_tests(mmt)
+
+    def trdi_add_systest(self, mmt):
+        """Processes system test
+
+        Parameters
+        ----------
+        mmt: MMTtrdi
+            Object of MMT_TRDI
+        """
+
+        # ADCP Test
         if "RG_Test" in mmt.qaqc:
             for n in range(len(mmt.qaqc["RG_Test"])):
                 p_m = PreMeasurement()
-                p_m.populate_data(
-                    mmt.qaqc["RG_Test_TimeStamp"][n], mmt.qaqc["RG_Test"][n], "TST"
-                )
+                p_m.populate_data(mmt.qaqc["RG_Test_TimeStamp"][n],
+                    mmt.qaqc["RG_Test"][n], "TST")
                 self.system_tst.append(p_m)
+
+    def trdi_add_compass_cal (self, mmt):
+        """Process TRDI compass calibration
+
+        Parameters
+        ----------
+        mmt: MMTtrdi
+            Object of MMT_TRDI
+        """
 
         # Compass calibration
         if "Compass_Calibration" in mmt.qaqc:
             for n in range(len(mmt.qaqc["Compass_Calibration"])):
                 cc = PreMeasurement()
-                cc.populate_data(
-                    mmt.qaqc["Compass_Calibration_TimeStamp"][n],
-                    mmt.qaqc["Compass_Calibration"][n],
-                    "TCC",
-                )
+                cc.populate_data(mmt.qaqc["Compass_Calibration_TimeStamp"][n],
+                    mmt.qaqc["Compass_Calibration"][n], "TCC", )
                 self.compass_cal.append(cc)
 
-        # Compass evaluation
+    def trdi_add_compass_eval(self, mmt):
+        """Process TRDI compass evaluation
+
+        Parameters
+        ----------
+        mmt: MMTtrdi
+            Object of MMT_TRDI
+        """
+
         if "Compass_Evaluation" in mmt.qaqc:
             for n in range(len(mmt.qaqc["Compass_Evaluation"])):
                 ce = PreMeasurement()
-                ce.populate_data(
-                    mmt.qaqc["Compass_Evaluation_TimeStamp"][n],
-                    mmt.qaqc["Compass_Evaluation"][n],
-                    "TCC",
-                )
+                ce.populate_data(mmt.qaqc["Compass_Evaluation_TimeStamp"][n],
+                    mmt.qaqc["Compass_Evaluation"][n], "TCC", )
                 self.compass_eval.append(ce)
+
+    def trdi_add_moving_bed_tests(self, mmt):
+        """Process TRDI moving-bed tests.
+
+        Parameters
+        ----------
+        mmt: MMTtrdi
+            Object of MMT_TRDI
+        """
 
         # Check for moving-bed tests
         if len(mmt.mbt_transects) > 0:
@@ -528,23 +583,14 @@ class Measurement(object):
                 for n in range(len(transects)):
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
-                    mb_test.populate_data(
-                        source="TRDI",
-                        file=transects[n],
-                        test_type=mmt.mbt_transects[n].moving_bed_type,
-                    )
+                    mb_test.populate_data(source="TRDI", file=transects[n],
+                        test_type=mmt.mbt_transects[n].moving_bed_type, )
 
                     # Save notes from mmt files in comments
                     notes = getattr(mmt.mbt_transects[n], "Notes")
                     for note in notes:
-                        note_text = (
-                            " File: "
-                            + note["NoteFileNo"]
-                            + " "
-                            + note["NoteDate"]
-                            + ": "
-                            + note["NoteText"]
-                        )
+                        note_text = (" File: " + note["NoteFileNo"] + " " + note[
+                            "NoteDate"] + ": " + note["NoteText"])
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
@@ -601,21 +647,23 @@ class Measurement(object):
         fullnames.sort()
 
         for file in fullnames:
-            # Read data file
-            rsdata = MatSonTek(file)
-            pathname, file_name = os.path.split(file)
+            # Read data file excluding moving-bed tests
+            _, f = os.path.split(file)
+            if not f.lower().startswith("loop") and not f.lower().startswith("smba"):
+                rsdata = MatSonTek(file)
+                pathname, file_name = os.path.split(file)
 
-            if hasattr(rsdata, "BottomTrack"):
-                # Create transect objects for each discharge transect
-                self.transects.append(TransectData())
-                self.transects[-1].sontek(
-                    rsdata, file_name, snr_3beam_comp=snr_3beam_comp
-                )
-            else:
-                self.comments.append(
-                    file + " is incomplete and is not included in "
-                    "measurement processing"
-                )
+                if hasattr(rsdata, "BottomTrack"):
+                    # Create transect objects for each discharge transect
+                    self.transects.append(TransectData())
+                    self.transects[-1].sontek(
+                        rsdata, file_name, snr_3beam_comp=snr_3beam_comp
+                    )
+                else:
+                    self.comments.append(
+                        file + " is incomplete and is not included in "
+                        "measurement processing"
+                    )
 
         # Identify checked transects
         self.checked_transect_idx = self.checked_transects(self)
@@ -717,44 +765,68 @@ class Measurement(object):
         time_stamp = None
         if os.path.isdir(compass_cal_folder):
             for file in os.listdir(compass_cal_folder):
-                valid_file = False
-                # G3 compasses
-                if file.endswith(".ccal"):
-                    time_stamp = file.split("_")
-                    time_stamp = time_stamp[0] + "_" + time_stamp[1]
-                    valid_file = True
-
-                # G2 compasses
-                elif file.endswith(".txt"):
-                    prefix, _ = os.path.splitext(file)
-                    time_stamp = prefix.split("l")[1]
-                    valid_file = True
-
-                if valid_file:
-                    with open(os.path.join(compass_cal_folder, file)) as f:
-                        cal_data = f.read()
-                        cal = PreMeasurement()
-                        cal.populate_data(time_stamp, cal_data, "SCC")
-                        self.compass_cal.append(cal)
+                self.sontek_add_compass(compass_cal_folder, file)
 
         # System Test
         system_test_folder = os.path.join(pathname, "SystemTest")
         if os.path.isdir(system_test_folder):
             for file in os.listdir(system_test_folder):
-                # Find system test files.
-                if file.startswith("SystemTest"):
-                    with open(os.path.join(system_test_folder, file)) as f:
-                        test_data = f.read()
-                        test_data = test_data.replace("\x00", "")
-                    time_stamp = file[10:24]
-                    sys_test = PreMeasurement()
-                    sys_test.populate_data(
-                        time_stamp=time_stamp, data_in=test_data, data_type="SST"
-                    )
-                    self.system_tst.append(sys_test)
+                self.sontek_add_systest(system_test_folder, file)
 
         # Moving-bed tests
         self.sontek_moving_bed_tests(pathname, snr_3beam_comp=snr_3beam_comp)
+
+    def sontek_add_systest(self, path, file):
+        """Process SonTek system test.
+
+        Parameters
+        ----------
+        path: str
+            Path to file
+        file: str
+            File name containing test data
+        """
+
+        if file.startswith("SystemTest"):
+            with open(os.path.join(path, file)) as f:
+                test_data = f.read()
+            test_data = test_data.replace("\x00", "")
+            time_stamp = file[10:24]
+            sys_test = PreMeasurement()
+            sys_test.populate_data(time_stamp=time_stamp, data_in=test_data,
+                data_type="SST")
+            self.system_tst.append(sys_test)
+
+    def sontek_add_compass_cal(self, path, file):
+        """Process SonTek compass calibration.
+
+        Parameters
+        ----------
+         path: str
+            Path to file
+        file: str
+            File name containing test data
+        """
+
+        valid_file = False
+        # G3 compasses
+        if file.endswith(".ccal"):
+            time_stamp = file.split("_")
+            time_stamp = time_stamp[0] + "_" + time_stamp[1]
+            valid_file = True
+
+        # G2 compasses
+        elif file.endswith(".txt"):
+            prefix, _ = os.path.splitext(file)
+            time_stamp = prefix.split("l")[1]
+            valid_file = True
+
+        if valid_file:
+            with open(os.path.join(path, file)) as f:
+                cal_data = f.read()
+                cal = PreMeasurement()
+                cal.populate_data(time_stamp, cal_data, "SCC")
+                self.compass_cal.append(cal)
 
     def sontek_moving_bed_tests(self, pathname, snr_3beam_comp):
         """Locates and processes SonTek moving-bed tests.
@@ -2128,13 +2200,16 @@ class Measurement(object):
             excluded_dist = np.nanmin([x.excluded_dist_m for x in temp])
         else:
             excluded_dist = 0
-        if excluded_dist < 0.158 and self.transects[ref_transect].adcp.model == "M9":
-            settings["WTExcludedDistance"] = 0.16
-        elif (
-            excluded_dist < 0.248
-            and self.transects[ref_transect].adcp.model == "RioPro"
+        if (
+            self.transects[ref_transect].adcp.model == "M9"
+            and excluded_dist < self.excluded["M9"]
         ):
-            settings["WTExcludedDistance"] = 0.25
+            settings["WTExcludedDistance"] = self.excluded["M9"]
+        elif (
+            self.transects[ref_transect].adcp.model == "RioPro"
+            and excluded_dist < self.excluded["RioPro"]
+        ):
+            settings["WTExcludedDistance"] = self.excluded["RioPro"]
         else:
             settings["WTExcludedDistance"] = excluded_dist
 

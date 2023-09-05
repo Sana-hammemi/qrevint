@@ -26,6 +26,7 @@ from Classes.Oursin import Oursin
 from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
 from Classes.TransectData import TransectData
+from Classes.MMT_TRDI import MMTtrdi
 from Classes.createconfig import Config
 from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
@@ -801,6 +802,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             sys.exit()
 
+        # Excluded
+        # Values not in agency options will be assigned recommended default values
+        if "Excluded" not in self.agency_options.keys():
+            self.agency_options["Excluded"] = {}
+        if "RioPro" not in self.agency_options["Excluded"].keys():
+            self.agency_options["Excluded"]["RioPro"] = 0.25
+        if "M9" not in self.agency_options["Excluded"].keys():
+            self.agency_options["Excluded"]["M9"] = 0.16
+
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
             "use_measurement_thresholds": self.use_measurement_thresholds,
@@ -1278,6 +1288,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
+                            excluded=self.agency_options["Excluded"],
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1321,6 +1332,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         export_xs=self.xs_export,
                         run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
+                        excluded=self.agency_options["Excluded"],
                     )
 
             # Load QRev data
@@ -4726,6 +4738,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if not self.systest_initialized:
             tbl.cellClicked.connect(self.select_systest)
+            self.pb_add_systest.clicked.connect(self.add_systest)
             self.systest_initialized = True
 
         self.systest_comments_messages()
@@ -4782,6 +4795,52 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Update contour and shiptrack plot
                 self.system_tab(idx_systest=row)
 
+    def add_systest(self):
+        """Allows user to associate a system test with this measurement
+        that was collected as part of another measurement.
+        """
+
+        self.pb_add_systest.blockSignals(True)
+        # Determine manufacturer
+        for transect in self.meas.transects:
+            if transect.adcp is not None:
+                manufacturer = transect.adcp.manufacturer
+                if manufacturer == "TRDI":
+                    file_type = "TRDI mmt File (*.mmt);;"
+                else:
+                    file_type = "System Test File (*.txt);;"
+                break
+
+        # Get folder
+        folder = self.default_folder()
+
+        # Get the full names (path + file) of the selected files
+        add_file = \
+        QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
+            self.tr(file_type, ))[0]
+
+        if len(add_file) > 0:
+            # Add TRDI system test(s)
+            if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                # Read mmt file
+                mmt = MMTtrdi(add_file[0])
+                self.meas.trdi_add_systest(mmt)
+
+            else:
+                # Add multiple SonTek system tests
+                for file in add_file:
+                    path, filename = os.path.split(file)
+                    self.meas.sontek_add_systest(path, filename)
+
+            # Add message to qa
+            self.meas.qa.systest_added(self.meas)
+
+            # Update system test tab
+            self.pb_add_systest.blockSignals(False)
+            self.change = True
+            self.tab_manager()
+
+
     # Compass tab
     # ===========
     def compass_tab(self, old_discharge=None):
@@ -4833,6 +4892,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_pitch.stateChanged.connect(self.pr_plot)
             self.cb_roll.stateChanged.connect(self.pr_plot)
             self.compass_pr_initialized = True
+            self.pb_add_compass_cal_eval.connect(self.add_compass_cal_eval)
 
         # Configure mag field error
         self.cb_mag_field.blockSignals(True)
@@ -5722,6 +5782,52 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.pr_canvas.draw()
 
         self.tab_compass_2_data.setFocus()
+
+    def add_compass_cal_eval(self):
+        """Allows user to associate a compass calibration and/or evalution
+         with this measurement that was collected as part of another measurement.
+        """
+
+        self.pb_add_compass_call_eval.blockSignals(True)
+        # Determine manufacturer
+        for transect in self.meas.transects:
+            if transect.adcp is not None:
+                manufacturer = transect.adcp.manufacturer
+                if manufacturer == "TRDI":
+                    file_type = "TRDI mmt File (*.mmt);;"
+                else:
+                    file_type = "System Test File (*.txt *.ccal);;"
+                break
+
+        # Get folder
+        folder = self.default_folder()
+
+        # Get the full names (path + file) of the selected files
+        add_file = \
+        QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
+            self.tr(file_type, ))[0]
+
+        if len(add_file) > 0:
+            # Add TRDI system test(s)
+            if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                # Read mmt file
+                mmt = MMTtrdi(add_file[0])
+                self.meas.trdi_add_compass_cal(mmt)
+                self.meas.trdi_add_compass_eval(mmt)
+
+            else:
+                # Add multiple SonTek system tests
+                for file in add_file:
+                    path, filename = os.path.split(file)
+                    self.meas.sontek_add_compass_cal(path, filename)
+
+            # Add message to qa
+            self.meas.qa.compass_added(self.meas)
+
+            # Update system test tab
+            self.pb_add_compass_cal_eval.blockSignals(False)
+            self.change = True
+            self.tab_manager()
 
     # Temperature & Salinity Tab
     # ==========================
@@ -16689,6 +16795,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             return sfrnd(q, self.agency_options["QDigits"]["digits"])
         else:
             return np.round(q, self.agency_options["QDigits"]["digits"])
+
+    def default_folder(self):
+        """Returns default folder.
+
+        Returns the folder stored in settings or if no folder is stored,
+        then the current working folder is returned.
+        """
+        try:
+            folder = self.sticky_settings.get("Folder")
+            if not folder:
+                folder = os.getcwd()
+        except KeyError:
+            self.sticky_settings.new("Folder", os.getcwd())
+            folder = self.sticky_settings.get("Folder")
+        return folder
+
 
     def closeEvent(self, event):
         """Warns user when closing QRev.

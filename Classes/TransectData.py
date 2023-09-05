@@ -513,63 +513,30 @@ class TransectData(object):
 
             ensemble_ping_type = self.trdi_ping_type(pd0_data)
 
-            # Check for RiverRay and RiverPro data
-            firmware = str(pd0_data.Inst.firm_ver[0])
-            excluded_dist = 0
-            if (firmware[:2] == "56") and (
-                np.nanmax(pd0_data.Sensor.vert_beam_status) < 0.9
-            ):
-                excluded_dist = 0.25
-
-            if (firmware[:2] == "44") or (firmware[:2] == "56"):
-                # Process water velocities for RiverRay and RiverPro
-                self.w_vel = WaterData()
-                self.w_vel.populate_data(
-                    vel_in=pd0_data.Wt.vel_mps,
-                    freq_in=freq_ts,
-                    coord_sys_in=pd0_data.Cfg.coord_sys,
-                    nav_ref_in="None",
-                    rssi_in=pd0_data.Wt.rssi,
-                    rssi_units_in="Counts",
-                    excluded_dist_in=excluded_dist,
-                    cells_above_sl_in=cells_above_sl,
-                    sl_cutoff_per_in=sl_cutoff_per,
-                    sl_cutoff_num_in=0,
-                    sl_cutoff_type_in="Percent",
-                    sl_lag_effect_in=sl_lag_effect_m,
-                    sl_cutoff_m=sl_cutoff_m,
-                    wm_in=pd0_data.Cfg.wm[0],
-                    blank_in=pd0_data.Cfg.wf_cm[0] / 100,
-                    corr_in=pd0_data.Wt.corr,
-                    surface_vel_in=pd0_data.Surface.vel_mps,
-                    surface_rssi_in=pd0_data.Surface.rssi,
-                    surface_corr_in=pd0_data.Surface.corr,
-                    surface_num_cells_in=pd0_data.Surface.no_cells,
-                    ping_type=ensemble_ping_type,
-                )
-
-            else:
-                # Process water velocities for non-RiverRay ADCPs
-                self.w_vel = WaterData()
-                self.w_vel.populate_data(
-                    vel_in=pd0_data.Wt.vel_mps,
-                    freq_in=freq_ts,
-                    coord_sys_in=pd0_data.Cfg.coord_sys[0],
-                    nav_ref_in="None",
-                    rssi_in=pd0_data.Wt.rssi,
-                    rssi_units_in="Counts",
-                    excluded_dist_in=excluded_dist,
-                    cells_above_sl_in=cells_above_sl,
-                    sl_cutoff_per_in=sl_cutoff_per,
-                    sl_cutoff_num_in=0,
-                    sl_cutoff_type_in="Percent",
-                    sl_lag_effect_in=sl_lag_effect_m,
-                    sl_cutoff_m=sl_cutoff_m,
-                    wm_in=pd0_data.Cfg.wm[0],
-                    blank_in=pd0_data.Cfg.wf_cm[0] / 100,
-                    corr_in=pd0_data.Wt.corr,
-                    ping_type=ensemble_ping_type,
-                )
+            # Process water velocities
+            self.w_vel = WaterData()
+            self.w_vel.populate_data(
+                vel_in=pd0_data.Wt.vel_mps,
+                freq_in=freq_ts,
+                coord_sys_in=pd0_data.Cfg.coord_sys,
+                nav_ref_in="None",
+                rssi_in=pd0_data.Wt.rssi,
+                rssi_units_in="Counts",
+                cells_above_sl_in=cells_above_sl,
+                sl_cutoff_per_in=sl_cutoff_per,
+                sl_cutoff_num_in=0,
+                sl_cutoff_type_in="Percent",
+                sl_lag_effect_in=sl_lag_effect_m,
+                sl_cutoff_m=sl_cutoff_m,
+                wm_in=pd0_data.Cfg.wm[0],
+                blank_in=pd0_data.Cfg.wf_cm[0] / 100,
+                corr_in=pd0_data.Wt.corr,
+                surface_vel_in=pd0_data.Surface.vel_mps,
+                surface_rssi_in=pd0_data.Surface.rssi,
+                surface_corr_in=pd0_data.Surface.corr,
+                surface_num_cells_in=pd0_data.Surface.no_cells,
+                ping_type=ensemble_ping_type,
+            )
 
             # Create Edges Object
             self.edges = Edges()

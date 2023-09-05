@@ -219,7 +219,6 @@ class WaterData(object):
         nav_ref_in,
         rssi_in,
         rssi_units_in,
-        excluded_dist_in,
         cells_above_sl_in,
         sl_cutoff_per_in,
         sl_cutoff_num_in,
@@ -236,6 +235,8 @@ class WaterData(object):
         ping_type="U",
         use_measurement_thresholds=False,
         snr_3beam_comp=True,
+        excluded_dist_in=0,
+
     ):
 
         """Populates the variables with input, computed, or default values.
@@ -2106,7 +2107,10 @@ class WaterData(object):
             # Combine all filter data and update processed properties
             self.all_valid_data()
         elif transect.adcp.manufacturer == "SonTek":
-            self.snr_beam_velocities = None
+            if self.snr_beam_velocities is not None:
+                self.snr_beam_velocities = None
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 
