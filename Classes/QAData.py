@@ -3543,3 +3543,20 @@ class QAData(object):
              3])
 
         self.settings_dict["tab_compass"] = "Custom"
+
+    def moving_bed_test_added(self, meas):
+        """Performs a quality check after a moving-bed test has
+        been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.moving_bed_qa(meas)
+        self.movingbed["messages"].append(
+            ["Compass: A compass cal/eval as been manually added to the measurement.", 2,
+             3])
+
+        self.settings_dict["tab_mbt"] = "Custom"

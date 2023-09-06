@@ -96,8 +96,6 @@ class Measurement(object):
         Indicates the setting for use_weighted to be used for reprocessing
     use_ping_type: bool
         Indicates if ping types should be used in BT and WT filters
-    use_measurement_thresholds: bool
-        Indicates if the entire measurement should be used to set filter thresholds
     stage_start_m: float
         Stage at start of measurement
     stage_end_m: float
@@ -579,7 +577,6 @@ class Measurement(object):
 
             # Process moving-bed tests
             if len(transects) > 0:
-                self.mb_tests = []
                 for n in range(len(transects)):
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
@@ -765,7 +762,7 @@ class Measurement(object):
         time_stamp = None
         if os.path.isdir(compass_cal_folder):
             for file in os.listdir(compass_cal_folder):
-                self.sontek_add_compass(compass_cal_folder, file)
+                self.sontek_add_compass_cal(compass_cal_folder, file)
 
         # System Test
         system_test_folder = os.path.join(pathname, "SystemTest")
@@ -774,7 +771,11 @@ class Measurement(object):
                 self.sontek_add_systest(system_test_folder, file)
 
         # Moving-bed tests
-        self.sontek_moving_bed_tests(pathname, snr_3beam_comp=snr_3beam_comp)
+        for file in os.listdir(pathname):
+            # Find moving-bed test files.
+            if file.endswith(".mat"):
+                # Process Loop test
+                self.sontek_moving_bed_tests(pathname, file, snr_3beam_comp=snr_3beam_comp)
 
     def sontek_add_systest(self, path, file):
         """Process SonTek system test.
@@ -828,7 +829,7 @@ class Measurement(object):
                 cal.populate_data(time_stamp, cal_data, "SCC")
                 self.compass_cal.append(cal)
 
-    def sontek_moving_bed_tests(self, pathname, snr_3beam_comp):
+    def sontek_moving_bed_tests(self, pathname, file, snr_3beam_comp):
         """Locates and processes SonTek moving-bed tests.
 
         Searches the pathname for Matlab files that start with Loop or SMBA.
@@ -838,30 +839,30 @@ class Measurement(object):
         ----------
         pathname: str
             Path to discharge transect files.
+        file: str
+            Name of file
         snr_3beam_comp: bool
             Indicates the use of 3-beam velocity computations when invalid SNR is found
         """
-        for file in os.listdir(pathname):
-            # Find moving-bed test files.
-            if file.endswith(".mat"):
-                # Process Loop test
-                if file.lower().startswith("loop"):
-                    self.mb_tests.append(MovingBedTests())
-                    self.mb_tests[-1].populate_data(
-                        source="SonTek",
-                        file=os.path.join(pathname, file),
-                        test_type="Loop",
-                        snr_3beam_comp=snr_3beam_comp,
-                    )
-                # Process Stationary test
-                elif file.lower().startswith("smba"):
-                    self.mb_tests.append(MovingBedTests())
-                    self.mb_tests[-1].populate_data(
-                        source="SonTek",
-                        file=os.path.join(pathname, file),
-                        test_type="Stationary",
-                        snr_3beam_comp=snr_3beam_comp,
-                    )
+
+        # Process Loop test
+        if file.lower().startswith("loop"):
+            self.mb_tests.append(MovingBedTests())
+            self.mb_tests[-1].populate_data(
+                source="SonTek",
+                file=os.path.join(pathname, file),
+                test_type="Loop",
+                snr_3beam_comp=snr_3beam_comp,
+            )
+        # Process Stationary test
+        elif file.lower().startswith("smba"):
+            self.mb_tests.append(MovingBedTests())
+            self.mb_tests[-1].populate_data(
+                source="SonTek",
+                file=os.path.join(pathname, file),
+                test_type="Stationary",
+                snr_3beam_comp=snr_3beam_comp,
+            )
 
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
@@ -1875,7 +1876,6 @@ class Measurement(object):
 
             # Moving-boat ensembles
             if "Processing" in settings.keys():
-                transect.change_q_ensembles(proc_method=settings["Processing"])
                 self.processing = settings["Processing"]
 
             # Set difference velocity BT filter

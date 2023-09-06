@@ -1497,14 +1497,14 @@ class WaterData(object):
         # and all cells below side lobe are nan
         temp = copy.deepcopy(self)
         temp.filter_beam(4)
-        valid_bool = temp.valid_data[5, :, :]
+        valid_bool = temp.valid_data[5, :, transect.in_transect_idx].T
         valid = valid_bool.astype(float)
-        valid[np.logical_not(temp.cells_above_sl)] = 0
-        valid[np.logical_not(temp.valid_data[1, :, :])] = 0
+        valid[np.logical_not(temp.cells_above_sl[:, transect.in_transect_idx])] = 0
+        valid[np.logical_not(temp.valid_data[1, :, transect.in_transect_idx].T)] = 0
 
         # Initialize processed velocity data variables
-        temp.u_processed_mps = copy.deepcopy(temp.u_mps)
-        temp.v_processed_mps = copy.deepcopy(temp.v_mps)
+        temp.u_processed_mps = copy.deepcopy(temp.u_mps[:, transect.in_transect_idx])
+        temp.v_processed_mps = copy.deepcopy(temp.v_mps[:, transect.in_transect_idx])
 
         # Set invalid data to nan in processed velocity data variables
         temp.u_processed_mps[np.logical_not(valid)] = np.nan
@@ -1516,11 +1516,8 @@ class WaterData(object):
         # Check for presence of 3-beam solutions
         if len(rows_3b) > 0:
             # Initialize velocity data variables
-            u = copy.deepcopy(self.u_mps)
-            v = copy.deepcopy(self.v_mps)
-
-            u = u[:, transect.in_transect_idx]
-            v = v[:, transect.in_transect_idx]
+            u = copy.deepcopy(self.u_mps[:, transect.in_transect_idx])
+            v = copy.deepcopy(self.v_mps[:, transect.in_transect_idx])
 
             u[
                 np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)
@@ -1554,7 +1551,7 @@ class WaterData(object):
                     # n += 1
 
                 # Update object with filter results
-                self.valid_data[5, :, :] = valid_bool
+                self.valid_data[5, :, transect.in_transect_idx] = valid_bool.T
             else:
                 self.valid_data[5, :, :] = temp.valid_data[5, :, :]
         else:

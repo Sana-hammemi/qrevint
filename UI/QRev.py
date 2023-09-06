@@ -4799,47 +4799,52 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Allows user to associate a system test with this measurement
         that was collected as part of another measurement.
         """
+        add_file = []
+        with self.wait_cursor():
+            self.pb_add_systest.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "System Test File (*.txt);;"
+                    break
 
-        self.pb_add_systest.blockSignals(True)
-        # Determine manufacturer
-        for transect in self.meas.transects:
-            if transect.adcp is not None:
-                manufacturer = transect.adcp.manufacturer
-                if manufacturer == "TRDI":
-                    file_type = "TRDI mmt File (*.mmt);;"
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_systest(mmt)
+
                 else:
-                    file_type = "System Test File (*.txt);;"
-                break
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_add_systest(path, filename)
 
-        # Get folder
-        folder = self.default_folder()
+                # Add message to qa
+                self.meas.qa.systest_added(self.meas)
 
-        # Get the full names (path + file) of the selected files
-        add_file = \
-        QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
-            self.tr(file_type, ))[0]
+                # Update system test tab
+                self.change = True
+                self.tab_manager()
 
-        if len(add_file) > 0:
-            # Add TRDI system test(s)
-            if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
-                # Read mmt file
-                mmt = MMTtrdi(add_file[0])
-                self.meas.trdi_add_systest(mmt)
-
-            else:
-                # Add multiple SonTek system tests
-                for file in add_file:
-                    path, filename = os.path.split(file)
-                    self.meas.sontek_add_systest(path, filename)
-
-            # Add message to qa
-            self.meas.qa.systest_added(self.meas)
-
-            # Update system test tab
             self.pb_add_systest.blockSignals(False)
-            self.change = True
-            self.tab_manager()
 
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
 
     # Compass tab
     # ===========
@@ -4892,7 +4897,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_pitch.stateChanged.connect(self.pr_plot)
             self.cb_roll.stateChanged.connect(self.pr_plot)
             self.compass_pr_initialized = True
-            self.pb_add_compass_cal_eval.connect(self.add_compass_cal_eval)
+            self.pb_add_compass_cal_eval.clicked.connect(self.add_compass_cal_eval)
 
         # Configure mag field error
         self.cb_mag_field.blockSignals(True)
@@ -5035,16 +5040,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 tble.item(nrows - 1, 1).setBackground(QtGui.QColor(255, 255, 255))
 
-            # Display selected evaluation in text box
-            if idx_eval is not None:
-                self.display_compass_result.clear()
-                tble.item(idx_eval, 0).setFont(self.font_bold)
-                self.display_compass_result.textCursor().insertText(
-                    evals[idx_eval].data
-                )
+        # Display selected evaluation in text box
+        if idx_eval is not None:
+            self.display_compass_result.clear()
+            tble.item(idx_eval, 0).setFont(self.font_bold)
+            self.display_compass_result.setPlainText(evals[idx_eval].data)
 
-            tble.resizeColumnsToContents()
-            tble.resizeRowsToContents()
+        tble.resizeColumnsToContents()
+        tble.resizeRowsToContents()
 
         if tble.rowCount() == 0 and tblc.rowCount() == 0:
             self.display_compass_result.clear()
@@ -5664,9 +5667,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Update
                 self.display_compass_result.clear()
-                self.display_compass_result.textCursor().insertText(
-                    self.meas.compass_cal[row].data
-                )
+                self.display_compass_result.setPlainText(
+                    self.meas.compass_cal[row].data)
 
     def select_evaluation(self, row, column):
         """Displays selected compass evaluation.
@@ -5698,13 +5700,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer
                     == "SonTek"
                 ):
-                    self.display_compass_result.textCursor().insertText(
-                        self.meas.compass_cal[row].data
-                    )
+                    self.display_compass_result.setPlainText(
+                        self.meas.compass_cal[row].data)
                 else:
-                    self.display_compass_result.textCursor().insertText(
-                        self.meas.compass_eval[row].data
-                    )
+                    self.display_compass_result.setPlainText(
+                        self.meas.compass_eval[row].data)
 
     def compass_plot(self):
         """Generates the graph of heading and magnetic change."""
@@ -5788,46 +5788,53 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
          with this measurement that was collected as part of another measurement.
         """
 
-        self.pb_add_compass_call_eval.blockSignals(True)
-        # Determine manufacturer
-        for transect in self.meas.transects:
-            if transect.adcp is not None:
-                manufacturer = transect.adcp.manufacturer
-                if manufacturer == "TRDI":
-                    file_type = "TRDI mmt File (*.mmt);;"
+        add_file = []
+        with self.wait_cursor():
+            self.pb_add_compass_cal_eval.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "System Test File (*.txt *.ccal);;"
+                    break
+
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Compass Cal/Eval"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_compass_cal(mmt)
+                    self.meas.trdi_add_compass_eval(mmt)
+
                 else:
-                    file_type = "System Test File (*.txt *.ccal);;"
-                break
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_add_compass_cal(path, filename)
 
-        # Get folder
-        folder = self.default_folder()
+                # Add message to qa
+                self.meas.qa.compass_added(self.meas)
 
-        # Get the full names (path + file) of the selected files
-        add_file = \
-        QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
-            self.tr(file_type, ))[0]
+                # Update tab
+                self.change = True
+                self.tab_manager()
 
-        if len(add_file) > 0:
-            # Add TRDI system test(s)
-            if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
-                # Read mmt file
-                mmt = MMTtrdi(add_file[0])
-                self.meas.trdi_add_compass_cal(mmt)
-                self.meas.trdi_add_compass_eval(mmt)
-
-            else:
-                # Add multiple SonTek system tests
-                for file in add_file:
-                    path, filename = os.path.split(file)
-                    self.meas.sontek_add_compass_cal(path, filename)
-
-            # Add message to qa
-            self.meas.qa.compass_added(self.meas)
-
-            # Update system test tab
             self.pb_add_compass_cal_eval.blockSignals(False)
-            self.change = True
-            self.tab_manager()
+
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
 
     # Temperature & Salinity Tab
     # ==========================
@@ -6566,6 +6573,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_mb_vectors.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_observed_no.stateChanged.connect(self.mb_observed_change)
 
+            self.pb_add_moving_bed_test.clicked.connect(self.mb_add_test)
+
             self.mb_initialized = True
         self.mb_row = self.mb_row_selected
         self.mb_plots(idx=self.mb_row_selected)
@@ -7185,6 +7194,64 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.display_mb_messages.textCursor().insertBlock()
 
             self.update_tab_icons()
+
+    def mb_add_test(self):
+        """Allows user to associate a moving-bed test
+         with this measurement that was collected as part of another measurement.
+        """
+
+        add_file = []
+
+        with self.wait_cursor():
+            self.pb_add_moving_bed_test.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "System Test File (*.mat);;"
+                    break
+
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Moving-Bed Test"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_moving_bed_tests(mmt)
+
+                else:
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_moving_bed_tests(path, filename, self.agency_options["SNR"]["Use3Beam"])
+
+                # Add message to qa
+                self.meas.qa.moving_bed_test_added(self.meas)
+
+
+                # Process moving-bed tests and update measurement processing
+                settings = self.meas.current_settings()
+                self.meas.apply_settings(settings)
+
+                # Update tab
+                self.change = True
+                self.tab_manager()
+
+            self.pb_add_moving_bed_test.blockSignals(False)
+
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
 
     # Bottom track tab
     # ================

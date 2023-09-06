@@ -1664,7 +1664,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_compass_2_data">
            <attribute name="title">
@@ -2472,7 +2472,7 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_22">
             <item row="0" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout_14">
+             <layout class="QVBoxLayout" name="verticalLayout_14" stretch="1,0,0,0,2">
               <item>
                <widget class="QTableWidget" name="table_moving_bed">
                 <property name="font">
@@ -2498,7 +2498,7 @@
                <widget class="QPushButton" name="pb_add_moving_bed_test">
                 <property name="maximumSize">
                  <size>
-                  <width>400</width>
+                  <width>700</width>
                   <height>16777215</height>
                  </size>
                 </property>
