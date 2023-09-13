@@ -2790,6 +2790,7 @@ class Measurement(object):
             "avg_depth": np.array([np.nan] * (n_transects + 1)),
             "max_depth": np.array([np.nan] * (n_transects + 1)),
             "max_water_speed": np.array([np.nan] * (n_transects + 1)),
+            "start_bank": [],
         }
 
         # Process each transect
@@ -2920,6 +2921,9 @@ class Measurement(object):
                 trans_prop["max_water_speed"][n] = np.nanpercentile(water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)
+
+                # Start bank
+                trans_prop["start_bank"].append(transect.start_edge)
 
             # Only transects used for discharge are included in measurement
             # properties

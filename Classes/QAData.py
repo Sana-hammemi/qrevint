@@ -3522,7 +3522,7 @@ class QAData(object):
 
         self.system_tst_qa(meas)
         self.system_tst["messages"].append(
-            ["System Test: A system test as been manually added to the measurement.", 2, 3]
+            ["System Test: A system test has been manually added to the measurement.", 2, 3]
         )
 
         self.settings_dict["tab_systest"] = "Custom"
@@ -3539,7 +3539,7 @@ class QAData(object):
 
         self.compass_qa(meas)
         self.compass["messages"].append(
-            ["Compass: A compass cal/eval as been manually added to the measurement.", 2,
+            ["Compass: A compass cal/eval has been manually added to the measurement.", 2,
              3])
 
         self.settings_dict["tab_compass"] = "Custom"
@@ -3556,7 +3556,7 @@ class QAData(object):
 
         self.moving_bed_qa(meas)
         self.movingbed["messages"].append(
-            ["Compass: A compass cal/eval as been manually added to the measurement.", 2,
+            ["Moving-Bed Test: A moving-bed test has been manually added to the measurement.", 2,
              3])
 
         self.settings_dict["tab_mbt"] = "Custom"

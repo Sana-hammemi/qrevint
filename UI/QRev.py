@@ -4953,7 +4953,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs_menu_connection()
 
         # Initialize the calibration/evaluation tab
-        self.compass_cal_eval(idx_eval=0)
+        self.compass_cal_eval(idx_eval=None)
 
     def compass_cal_eval(self, idx_cal=None, idx_eval=None):
         """Displays data in the calibration / evaluation tab.
@@ -7211,7 +7211,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if manufacturer == "TRDI":
                         file_type = "TRDI mmt File (*.mmt);;"
                     else:
-                        file_type = "System Test File (*.mat);;"
+                        file_type = "Moving-bed test file (*.mat);;"
                     break
 
             # Get folder
