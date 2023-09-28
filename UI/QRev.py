@@ -434,7 +434,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.popup_message(
                 self.tr(
                     "QRev.cfg was not found so a default configuration "
-                    "file was created."
+                    "file was created. This default configuration may not "
+                    "comply with your agency standards. Obtain an approved "
+                    "QRev.cfg before final processing of your measurement."
                 )
             )
 
@@ -4986,8 +4988,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tblc.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Display selected calibration in text box
+            self.display_compass_result.clear()
             if idx_cal is not None:
-                self.display_compass_result.clear()
                 tblc.item(idx_cal, 0).setFont(self.font_bold)
                 self.display_compass_result.textCursor().insertText(
                     self.meas.compass_cal[idx_cal].data

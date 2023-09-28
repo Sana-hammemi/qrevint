@@ -3117,6 +3117,10 @@ class AdvGraphs(object):
                     self.x = self.x + self.transect.edges.left.distance_m
                 else:
                     self.x = self.x + self.transect.edges.right.distance_m
+            else:
+                self.x_axis_type = "E"
+                x = np.arange(1, len(self.transect.depths.bt_depths.depth_processed_m) + 1)
+                self.x = x[self.transect.in_transect_idx]
 
         # x axis is ensembles
         elif self.x_axis_type == "E":

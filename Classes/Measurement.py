@@ -3536,9 +3536,7 @@ class Measurement(object):
         temp = nav_data.gps_altitude_filter
         if temp:
             if temp == "Manual":
-                temp = self.transects[
-                    self.checked_transect_idx[0]
-                ].boat_vel.gps_altitude_filter_change
+                nav_data.gps_altitude_filter_change
             ETree.SubElement(
                 navigation, "GPSAltitudeFilter", type="char", unitsCode="m"
             ).text = str(temp)
@@ -3548,9 +3546,7 @@ class Measurement(object):
         if temp:
             if temp == "Manual":
                 temp = "{:.2f}".format(
-                    self.transects[
-                        self.checked_transect_idx[0]
-                    ].boat_vel.gps_hdop_filter_change
+                    nav_data.gps_HDOP_filter_change
                 )
             ETree.SubElement(navigation, "HDOPChangeFilter", type="char").text = temp
 
@@ -3559,9 +3555,7 @@ class Measurement(object):
         if temp:
             if temp == "Manual":
                 temp = "{:.2f}".format(
-                    self.transects[
-                        self.checked_transect_idx[0]
-                    ].boat_vel.gps_HDOP_filter_max
+                    nav_data.gps_HDOP_filter_max
                 )
             ETree.SubElement(navigation, "HDOPThresholdFilter", type="char").text = temp
 
