@@ -2185,7 +2185,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # connections
                 if not self.main_initialized:
                     self.main_table_summary.cellClicked.connect(self.select_transect)
-                    self.main_table_details.cellClicked.connect(self.select_transect)
                     self.ed_site_name.editingFinished.connect(self.update_site_name)
                     self.ed_site_number.editingFinished.connect(self.update_site_number)
                     self.ed_persons.editingFinished.connect(self.update_persons)
@@ -2195,6 +2194,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust
+                    )
+                    self.main_table_details.cellClicked.connect(
+                        self.details_table_row_adjust
                     )
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
@@ -2823,12 +2825,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 nrows = len(self.checked_transects_idx)
                 for nrow in range(1, nrows + 1):
                     self.main_table_summary.item(nrow, 0).setFont(self.font_normal)
-                    self.main_table_details.item(nrow, 0).setFont(self.font_normal)
+                    self.main_table_details.item(nrow + 1, 0).setFont(self.font_normal)
                     self.table_settings.item(nrow + 2, 0).setFont(self.font_normal)
 
                 # Set selected file to bold font
                 self.main_table_summary.item(row, 0).setFont(self.font_bold)
-                self.main_table_details.item(row, 0).setFont(self.font_bold)
+                self.main_table_details.item(row + 1, 0).setFont(self.font_bold)
                 self.table_settings.item(row + 2, 0).setFont(self.font_bold)
                 self.transect_row = row - 1
 
@@ -3710,7 +3712,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         ]
         ncols = len(summary_header)
         nrows = len(self.checked_transects_idx)
-        tbl.setRowCount(nrows + 1)
+        tbl.setRowCount(nrows + 2)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(summary_header)
         tbl.horizontalHeader().setFont(self.font_bold)
@@ -3719,65 +3721,91 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if len(self.checked_transects_idx) > 0:
             trans_prop = Measurement.compute_measurement_properties(self.meas)
+            left_width = []
+            left_area = []
+            left_boat_speed = []
+            left_boat_course = []
+            left_water_speed = []
+            left_water_dir = []
+            right_width = []
+            right_area = []
+            right_boat_speed = []
+            right_boat_course = []
+            right_water_speed = []
+            right_water_dir = []
 
             # Add transect data
             for row in range(nrows):
                 col = 0
                 transect_id = self.checked_transects_idx[row]
+                if trans_prop["start_bank"][transect_id] == "Left":
+                    left_width.append(trans_prop["width"][transect_id])
+                    left_area.append(trans_prop["area"][transect_id])
+                    left_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
+                    left_boat_course.append(trans_prop["avg_boat_course"][transect_id])
+                    left_water_speed.append(trans_prop["avg_water_speed"][transect_id])
+                    left_water_dir.append(trans_prop["avg_water_dir"][transect_id])
+                else:
+                    right_width.append(trans_prop["width"][transect_id])
+                    right_area.append(trans_prop["area"][transect_id])
+                    right_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
+                    right_boat_course.append(trans_prop["avg_boat_course"][transect_id])
+                    right_water_speed.append(trans_prop["avg_water_speed"][transect_id])
+                    right_water_dir.append(trans_prop["avg_water_dir"][transect_id])
 
                 # File/transect name
                 tbl.setItem(
-                    row + 1,
+                    row + 2,
                     col,
                     QtWidgets.QTableWidgetItem(
                         self.meas.transects[transect_id].file_name[:-4]
                     ),
                 )
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect width
                 col += 1
                 item = "{:10.2f}".format(
                     trans_prop["width"][transect_id] * self.units["L"]
                 )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect area
                 col += 1
                 item = "{:10.2f}".format(
                     trans_prop["area"][transect_id] * self.units["A"]
                 )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat speed
                 col += 1
                 item = "{:6.2f}".format(
                     trans_prop["avg_boat_speed"][transect_id] * self.units["V"]
                 )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat course
                 col += 1
                 item = "{:6.2f}".format(trans_prop["avg_boat_course"][transect_id])
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water speed
                 col += 1
                 item = "{:6.2f}".format(
                     trans_prop["avg_water_speed"][transect_id] * self.units["V"]
                 )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water direction
                 col += 1
                 item = "{:6.2f}".format(trans_prop["avg_water_dir"][transect_id])
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Add measurement summaries
             n_transects = len(self.meas.transects)
@@ -3787,17 +3815,39 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(self.tr("Average")))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(self.tr("L/R Difference")))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average width
             col += 1
             item = "{:10.2f}".format(trans_prop["width"][n_transects] * self.units["L"])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference width
+            if len(left_width) > 0 and len(right_width) > 0:
+                item = "{:10.2f}".format(np.abs(np.nanmean(left_width) - np.nanmean(right_width)) * self.units["L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average area
             col += 1
             item = "{:10.2f}".format(trans_prop["area"][n_transects] * self.units["A"])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference area
+            if len(left_area) > 0 and len(right_area) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(np.nanmean(left_area) - np.nanmean(right_area)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
 
             # Average boat speed
             col += 1
@@ -3807,8 +3857,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference boat speed
+            if len(left_boat_speed) > 0 and len(right_boat_speed) > 0:
+                item = "{:6.2f}".format(
+                    np.abs(np.nanmean(left_boat_speed) - np.nanmean(right_boat_speed)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Skip average boat course
             col += 1
+
+            # LR difference boat course
+            if len(left_boat_course) > 0 and len(right_boat_course) > 0:
+                diff_dir = np.abs(
+                    np.nanmean(left_boat_course) - np.nanmean(right_boat_course))
+                if diff_dir > 180:
+                    diff_dir = diff_dir - 360
+                item = "{:6.2f}".format(diff_dir)
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Average water speed
             col += 1
@@ -3818,22 +3890,61 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference water_speed
+            if len(left_water_speed) > 0 and len(right_water_speed) > 0:
+                item = "{:6.2f}".format(
+                    np.abs(np.nanmean(left_water_speed) - np.nanmean(right_water_speed)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average water direction
             col += 1
             item = "{:6.2f}".format(trans_prop["avg_water_dir"][n_transects])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference water_direction
+            if len(left_water_dir) > 0 and len(right_water_dir) > 0:
+                diff_dir = np.abs(np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
+                if diff_dir > 180:
+                    diff_dir = diff_dir - 360
+                item = "{:6.2f}".format(diff_dir)
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Set average row font to bold
             for col in range(ncols):
                 if col != 4:
                     tbl.item(0, col).setFont(self.font_bold)
+                tbl.item(1, col).setFont(self.font_bold)
 
-            tbl.item(self.transect_row + 1, 0).setFont(self.font_bold)
-            tbl.scrollToItem(tbl.item(self.transect_row + 1, 0))
+            tbl.item(self.transect_row + 2, 0).setFont(self.font_bold)
+            if self.transect_row < 3:
+                tbl.scrollToItem(tbl.item(self.transect_row, 0))
+            else:
+                tbl.scrollToItem(tbl.item(self.transect_row + 2, 0))
 
             tbl.resizeColumnsToContents()
             tbl.resizeRowsToContents()
+
+    def details_table_row_adjust(self, row, col):
+        """Allows proper selection of transect to display from the details
+        table which has custom header rows.
+
+            Parameter
+            =========
+            row: int
+                row selected
+            col: int
+                column selected
+        """
+        row = row - 1
+        self.select_transect(row, col)
 
     def main_premeasurement_table(self):
         """Initialize and populate the premeasurement table."""
