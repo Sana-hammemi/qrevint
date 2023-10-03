@@ -12,7 +12,8 @@ tracking ADCPs. QRev improves the consistency and efficiency of processing strea
 * An estimated uncertainty to help guide the user in rating the measurement
 
 
-A history of changes with links to various releases can be found **[here](/changelog.md)**.
+A history of changes with links to various releases can be found **[here]
+(./docs/source/changelog.md)**.
 
 **IMPORTANT NOTES ON DISCHARGE COMPUTATION:**
 

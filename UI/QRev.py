@@ -18,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.ticker import AutoLocator
 
 import UI.QRev_gui as QRev_gui
-from Classes import __qrev_version__, myappid, __app__
+from Classes import __qrev_version__, __company__, myappid, __app__
 from Classes.CoordError import CoordError
 from Classes.Measurement import Measurement
 from Classes.MovingBedTests import MovingBedTests
@@ -413,7 +413,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Set window title
         self.setWindowTitle(__qrev_version__)
-        self.setWindowIcon(QtGui.QIcon("../" + __app__ + ".ico"))
+
+        qrev_icon = self.get_icon()
+
+        if os.path.exists(qrev_icon):
+            self.setWindowIcon(QtGui.QIcon(qrev_icon))
 
         if "Int" in __qrev_version__:
             self.set_qrevint_ui()
@@ -1162,6 +1166,45 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
+    @staticmethod
+    def get_icon():
+        """Returns path to icon
+
+        Returns:
+            icon_path: str
+        """
+
+        # Code to call sphinx documentation adopted from SurfVelTool
+
+        # Use development-specific settings. Using __file__ path, so it
+        # will work when called by other projects using QRev.
+
+        if __company__ == "USGS":
+            icon = "QRev.ico"
+        else:
+            icon = "QRevInt.ico"
+
+        icon_path = ""
+
+        path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', "docs",
+                         "source", "assets", "files", icon))
+
+        if os.path.exists(path):
+            icon_path = path
+
+        else:
+            # Use production-specific settings
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+            path = os.path.join(base_path,
+                                        'qrev_files',
+                                        icon)
+            if os.path.exists(path):
+                icon_path = path
+
+        return icon_path
+
     def set_qrevint_ui(self):
         """If QRevInt set background of UI to blue."""
 
@@ -1531,15 +1574,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Save stylesheet in measurement folder
                 if self.save_stylesheet:
+                    meas_folder, _ = os.path.split(save_file.full_Name)
+                    dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
+
                     if self.units["ID"] == "SI":
                         stylesheet = "QRevStylesheet_si.xsl"
                     else:
                         stylesheet = "QRevStylesheet_english.xsl"
 
-                    stylesheet_file = os.path.join(os.getcwd(), stylesheet)
-                    meas_folder, _ = os.path.split(save_file.full_Name)
-                    dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
-                    shutil.copy2(stylesheet_file, dest)
+                    self.export_stylesheet(stylesheet, dest)
 
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(
@@ -2101,43 +2144,61 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def help(self):
         """Opens pdf help file user's default pdf viewer."""
 
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Question)
-        msg.addButton(self.tr("Users Manual"), msg.ActionRole)
-        msg.addButton(self.tr("Technical Manual"), msg.ActionRole)
-        if __qrev_version__[0:5] == "QRev ":
-            msg.addButton(
-                self.tr("Submit Bug or Feature Request \n " "(Internet Required)"),
-                msg.ActionRole,
-            )
-        msg.addButton(self.tr("About"), msg.ActionRole)
-        msg.addButton(self.tr("Cancel"), msg.ActionRole)
-        # msg.setInformativeText('Select option:')
-        msg.setWindowTitle("Help")
-        msg.setWindowIcon(QtGui.QIcon("QRevInt.ico"))
-        msg.exec_()
+        """Opens the user guide using the default web browser on the
+        user's system."""
 
-        help_file = os.path.join(os.getcwd(), "../Help")
-        if msg.clickedButton().text() == "Users Manual":
-            help_file = os.path.join(help_file, "QRev_Users.pdf")
-            webbrowser.open("file:///" + help_file, new=2, autoraise=True)
-        elif msg.clickedButton().text() == "Technical Manual":
-            help_file = os.path.join(help_file, "QRev_Tech.pdf")
-            webbrowser.open("file:///" + help_file, new=2, autoraise=True)
-        elif msg.clickedButton().text() == "About":
-            help_file = os.path.join(help_file, "QRev_About.pdf")
-            webbrowser.open("file:///" + help_file, new=2, autoraise=True)
-        elif (
-            msg.clickedButton().text() == "Submit Bug or Feature Request "
-            "\n (Internet Required)"
-        ):
-            webbrowser.open(
-                "https://forms.office.com/Pages/ResponsePage.aspx"
-                "?id=urWTBhhLe02TQfMvQApUlAlv4jGjsJhOstclxasDPuZUO"
-                "E1UWkZIV0JKWVY0NDdHVVlDVkxNNkFKNiQlQCN0PWcu",
-                new=2,
-                autoraise=True,
-            )
+        # Code to call sphinx documentation adopted from SurfVelTool
+
+        # Use development-specific settings. Using __file__ path, so it
+        # will work when called by other projects using AC3.
+        landing_page = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', "docs",
+                         "_build", "html", "index.html"))
+
+        if os.path.exists(landing_page):
+            webbrowser.open("file://" + landing_page)
+
+        else:
+            # Use production-specific settings
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+            landing_page = os.path.join(base_path,
+                                        'qrev_documentation',
+                                        "index.html")
+            if os.path.exists(landing_page):
+                webbrowser.open("file://" + landing_page)
+
+    @staticmethod
+    def export_stylesheet(stylesheet, destination):
+        """Exports stylesheet on save.
+
+        Parameters:
+            stylesheet: str
+                stylesheet to use
+            destination: str
+                path to copy stylesheet to
+        """
+
+        # Code to call sphinx documentation adopted from SurfVelTool
+
+        # Use development-specific settings. Using __file__ path, so it
+        # will work when called by other projects using QRev.
+        path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', "docs",
+                         "source", "assets", "files", stylesheet))
+
+        if os.path.exists(path):
+            shutil.copy2(path, destination)
+
+        else:
+            # Use production-specific settings
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+            path = os.path.join(base_path,
+                                'qrev_files',
+                                stylesheet)
+            if os.path.exists(path):
+                shutil.copy2(path, destination)
 
     def set_use_weighted(self):
         """Called by shortcut key cntrl+w toggle between use weighted and

@@ -1,8 +1,17 @@
+import os
+
 __author__ = "USGS"
 __company__ = "USGS"
 __version__ = "4.35"
 __app__ = "QRev"
 __qrev_version__ = __app__ + " " + __version__
+
+__doc_path__ = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', "docs",
+                             "_build", "html"))
+__icon_path__ = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "docs", "source",
+                             "assets", "files", "*"))
 
 
 # Fix for Windows users to propagate the UI icon to the Taskbar. This is

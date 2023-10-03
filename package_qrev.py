@@ -24,24 +24,12 @@ PyInstaller.__main__.run(["app.spec"])
 print("Verifying QRev.EXE was created.")
 path = os.path.join(os.getcwd(), "dist", __app__ + ".exe")
 if os.path.exists(path):
-    print("QRev was packaged, creating compressed distribution package.")
-    about = os.path.join(os.getcwd(), "Help", "QRev_About.pdf")
-    change_log = os.path.join(os.getcwd(), "Help", "QRev_Change_Log.pdf")
-    tech_man = os.path.join(os.getcwd(), "Help", "QRev_Tech.pdf")
-    user_man = os.path.join(os.getcwd(), "Help", "QRev_Users.pdf")
+    print("QRev was packaged, creating distribution package.")
 
     qrev_package = __app__ + __version__.replace(".", "")
     qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
-    help_folder = os.path.join(os.getcwd(), "dist", qrev_package, "Help")
 
     os.mkdir(qrev_dir)
-    os.mkdir(help_folder)
-
-    # copy in help docs
-    shutil.copy(about, os.path.join(help_folder, "QRev_About.pdf"))
-    shutil.copy(change_log, os.path.join(help_folder, "QRev_Change_Log.pdf"))
-    shutil.copy(tech_man, os.path.join(help_folder, "QRev_Tech.pdf"))
-    shutil.copy(user_man, os.path.join(help_folder, "QRev_Users.pdf"))
 
     # copy QRev exe
     shutil.copy(
@@ -52,19 +40,6 @@ if os.path.exists(path):
     # Copy cfg file
     shutil.copy(
         os.path.join(os.getcwd(), "QRev.cfg"), os.path.join(qrev_dir, "QRev.cfg")
-    )
-    # Copy icon
-    shutil.copy(
-        os.path.join(os.getcwd(), "QRev.ico"), os.path.join(qrev_dir, "QRev.ico")
-    )
-    # copy stylesheets
-    shutil.copy(
-        os.path.join(os.getcwd(), "UI", "QRevStylesheet_english.xsl"),
-        os.path.join(qrev_dir, "QRevStylesheet_english.xsl"),
-    )
-    shutil.copy(
-        os.path.join(os.getcwd(), "UI", "QRevStylesheet_si.xsl"),
-        os.path.join(qrev_dir, "QRevStylesheet_si.xsl"),
     )
 
     print("Please sign QRev.EXE before zipping the directory. Packaging " "Complete")

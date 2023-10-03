@@ -23,10 +23,10 @@ Contents:
 
 The QRev documentation is organized into topics:
 
-* `User Manual <./source/user.md>`_
-* `Technical Manual <./source/technical.md>`_
-* `Change Log <./source/changelog.md>`_
-* `About <./source/about.md>`_
+* `User Manual <./source/user.html>`_
+* `Technical Manual <./source/technical.html>`_
+* `Change Log <./source/changelog.html>`_
+* `About <./source/about.html>`_
 
 The left navigation pane contains a table of contents where it is possible
 to browse through the entire documentation.

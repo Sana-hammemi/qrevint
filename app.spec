@@ -2,11 +2,14 @@
 
 block_cipher = None
 from Classes import __app__
-icon = __app__ + '.ico'
+icon = "docs\\source\\assets\\files\\" + __app__ + '.ico'
+
+added_files = [('docs\\_build\\html', 'qrev_documentation'),
+               ("docs\\source\\assets\\files\\*", "qrev_files")]
 
 a = Analysis(['app.py'],
              binaries=[],
-             datas=[],
+             datas=added_files,
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
