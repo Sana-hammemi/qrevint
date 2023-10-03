@@ -19,6 +19,7 @@
 - Added ability to manual set the axes limits for a graph
 - Added QA check for a custom transformation matrix for TRDI ADCPs
 - Added ability to allow autonomous GPS by default
+- Converted documentation from external pdfs to built-in html
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
