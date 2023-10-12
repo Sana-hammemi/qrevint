@@ -20,6 +20,7 @@
 - Added QA check for a custom transformation matrix for TRDI ADCPs
 - Added ability to allow autonomous GPS by default
 - Converted documentation from external pdfs to built-in html
+- Fixed crash when using Nortek Sig500 ADCP.
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
