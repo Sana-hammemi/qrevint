@@ -174,6 +174,7 @@ class AdvGraphs(object):
             "U": "N/A",
         }
         self.bt_legend_dict = {
+            "500": "500 kHz",
             "600": "600 kHz",
             "1200": "1200 kHz",
             "1000": "1 MHz",
@@ -191,6 +192,7 @@ class AdvGraphs(object):
         }
         self.freq_color = {
             "0": "b",
+            "500": "b",
             "600": "b",
             "1200": "b",
             "1000": "b",
@@ -200,6 +202,7 @@ class AdvGraphs(object):
         }
         self.freq_marker = {
             "0": ".",
+            "500": ".",
             "600": ".",
             "1200": ".",
             "1000": ".",
