@@ -82,6 +82,7 @@ boat velocities and depths. Thus, the final discharge is based on the best
 boat velocities, depths, and water velocities that are available.
 
 ![](./assets/tech_manual/main_gui.png)
+
 **Figure 1.** QRev main user interface.
 
 The text on the tabs will turn green, yellow, red or blue and have a green 
@@ -154,7 +155,9 @@ ensemble can now be computed because each ensemble has a depth, boat
 velocity, and water velocity. All the valid data are used, and any invalid 
 data are interpolated.
 
-Table 1. Summary of difference in software filter capabilities and handling of invalid data.
+**Table 1.** Summary of difference in software filter capabilities and 
+handling of invalid data.
+
 ![](./assets/tech_manual/Table_1.png)
 
 ### Coordinate Transformation
@@ -429,13 +432,16 @@ scheme that includes the quality of the differential correction, as used by
 RiverSurveyor Live, or that includes some combining of all available 
 sources like a Kalman filter may be considered for future development.
 
-Table 2. Progression of boat velocity reference in RiverSurveyor Live when 
+**Table 2.** Progression of boat velocity reference in RiverSurveyor Live when 
 composite tracks are enabled (D.S. Mueller, U.S. Geological Survey, written 
 commun., 2008). [BT, bottom track, RTK, real-time kinematic]
+
 ![](./assets/tech_manual/table_2.png)
 
 
-Table 3. Progression of boat velocity reference in QRev when composite tracks are enabled. [BT, bottom track, RTK, real-time kinematic]
+**Table 3.** Progression of boat velocity reference in QRev when composite 
+tracks are enabled. [BT, bottom track, RTK, real-time kinematic]
+
 ![](./assets/tech_manual/table_3.png)
 
 ### Depths
@@ -515,6 +521,7 @@ Composite depths allows the use of the depth from a secondary depth source when 
 
 **Table 4.** QRev priority for composite depths. [BT, average depth from four 
 slant beams; DS, depth from external depth sounder; VB, depth from vertical beam]
+
 ![](./assets/tech_manual/table_4.png)
 
 ### Water Track
@@ -537,6 +544,7 @@ computed as follows:
 ![](./assets/tech_manual/side_lobe_equ.png)
 
 ![](./assets/tech_manual/figure_2.png)
+
 **Figure 2.** Acoustic Doppler current profiler beam pattern and locations of 
 unmeasured areas in each profile (from Simpson, 2002).
 
@@ -705,6 +713,7 @@ This filter is only applied to data collected with SonTek ADCPs.
 QRev interpolates water velocity data that have been determined to be invalid by using a different approach than that used by the manufacturers. There are no interpolation algorithms in RiverSurveyor Live for water data. TRDI in WinRiver II does not interpolate water velocities but accounts for the invalid data by interpolating or extrapolating the cross product of the water and boat velocities used in the discharge computation (see “Computing Discharge from Invalid Data” section). QRev uses a different approach for estimating water velocities. Previous Matlab based versions of QRev used a two-dimensional linear interpolation method called scatteredInterpolant, which is available in Matlab version 2015b, in combination with TRDI’s approach for invalid data at the top and bottom of the profile. QRev 4.xx uses a purpose-built interpolation method called ABBA (above, below, before, after). The velocity for all depth cells with invalid velocities between the bottom of the blank or excluded distance and the side lobe cutoff are estimated using the abba method.
 
 ![](./assets/tech_manual/figure_3.png)
+
 **Figure 3.** Example of air entrainment partially blocking the acoustic 
 signal in beam 1 from RiverSurveyor Live. [ft, feet; SNR, signal to noise ratio; dB, decibels; MHz, megahertz; IC, incoherent].
 
@@ -759,6 +768,7 @@ selection of an appropriate extrapolation fit for the measurement. The
 automatically selected
 
 ![](./assets/tech_manual/figure_4.png)
+
 **Figure 4.** Illustration of measured and unmeasured zones of an acoustic 
 Doppler current profiler transect.
 
@@ -1026,6 +1036,7 @@ in a rectangular edge coefficient defined by equation 34 as follows:
 
 **Table 5.** Laboratory data on velocity near vertical walls (Rantz and others,
 1982).
+
 ![](./assets/tech_manual/table_5.png)
 
 The rectangular edge coefficient options for values of ![](./assets/tech_manual/ldm.png) from 0 to 2 are 
@@ -1037,6 +1048,7 @@ unknown, QRev defaults to 0.91 for simplicity and until additional research is c
 more accurate approach is documented.
 
 ![](./assets/tech_manual/figure_5.png)
+
 **Figure 5.** Comparison of proposed rectangular edge coefficients.
 
 The value for L must be measured and entered by the user. To obtain a good
@@ -1098,6 +1110,7 @@ situations and provides the user feedback as shown in Table 6.
 
 
 **Table 6.** Transect quality checks and messages.
+
 ![](./assets/tech_manual/table_6.png)
 
 ### System Test
@@ -1111,7 +1124,9 @@ Results from multiple system tests can be loaded. The results will be
 identified by date and time, or if loaded manually, the results will be identified by filename.
 
 A system test is a series of different tests for various aspects of the ADCP. A complete series of discrete tests is referred to as a “system test”, and a single test within that series is referred to as a “discrete test”. QRev automatically scans the results, reports the number of failed tests, and provides feedback to the user by coloring the system test button and providing messages as shown in Table 7.
+
 **Table 7.** System test quality checks and messages.
+
 ![](./assets/tech_manual/table_7.png)
 
 ### Compass, Pitch, and Roll
@@ -1143,11 +1158,13 @@ Consistent with USGS policy, if the difference in temperatures exceed 2
 degrees Celsius, a warning is issued.
 
 **Table 8.** Compass, pitch, and roll quality checks and messages.
+
 ![](./assets/tech_manual/table_8.png)
 
 QRev also evaluates the change in ADCP measured water temperature for the duration of the measurement. At some sites, the water temperature may change during the measurement or spatially in the cross section. However, a change in measured water temperature during a measurement is often indicative of the ADCP not being given sufficient time to equilibrate to the water temperature. In this situation, the ADCP is measuring the wrong water temperature and, thus, using the wrong speed of sound. Checks used to assess water temperature and the feedback messages are shown in Table 9.
 
 **Table 9.** Temperature quality checks and messages.
+
 ![](./assets/tech_manual/table_9.png)
 
 ### Moving-Bed Tests
@@ -1194,18 +1211,22 @@ magnetic variation, heading offset, and heading source can be changed by
 changing them on the Compass P/R tab and applying to all transects.
 
 **Table 10.** Loop moving-bed test quality checks and messages.
+
 ![](./assets/tech_manual/table_10.png)
 
 **Table 11.** Loop moving-bed test moving-bed determination checks and 
 messages.
+
 ![](./assets/tech_manual/table_11.png)
 
 Unlike WinRiver II, RiverSurveyor Live, or SMBA, QRev evaluates the quality of individual stationary moving-bed tests. The evaluation examines the percentage of ensembles with invalid bottom track velocities, the duration of the test, and if the test appears to have reached equilibrium. Data with invalid bottom track are excluded from the stationary test. The logic for the evaluation of stationary moving-bed test is provided in Tables 12 and 13.
 
 **Table 12.** Stationary moving-bed test quality checks and messages.
+
 ![](./assets/tech_manual/table_12.png)
 
 **Table 13.** Stationary moving-bed test moving-bed determination.
+
 ![](./assets/tech_manual/table_13.png)
 
 If more than one loop test or a loop test(s) and stationary test(s) are 
@@ -1237,16 +1258,20 @@ and (3) the total number of invalid ensembles. The quality checks and
 resulting messages are provided in Tables 15-16.
 
 **Table 14.** Moving-bed test quality checks and messages.
+
 ![](./assets/tech_manual/table_14.png)
 
 **Table 15.** Summary of quality assessment messages for boat velocity. 
 [<ref>: bt, gga, or vtg; <REF> BT, GGA, VTG]
+
 ![](./assets/tech_manual/table_15.png)
 
 **Table 16.** Summary of quality assessment messages for depth.
+
 ![](./assets/tech_manual/table_16.png)
 
 **Table 17.** Summary of quality assessment messages for water velocity.
+
 ![](./assets/tech_manual/table_17.png)
 
 ### Extrapolation
@@ -1256,6 +1281,7 @@ extrapolation uncertainty). The quality checks and resulting messages are
 provided in Table 18.
 
 **Table 18.** Extrapolation Quality Checks
+
 ![](./assets/tech_manual/table_18.png)
 
 ### Edges
@@ -1273,6 +1299,7 @@ Computing the uncertainty of an ADCP moving-boat discharge measurement is a comp
 2. OURSIN model based on the framework of the Guide to the expression of Uncertainty in Measurement (GUM).
 
 **Table 19.** Edge discharge quality checks and messages.
+
 ![](./assets/tech_manual/table_19.png)
 
 ### QRev-UA
@@ -1325,6 +1352,7 @@ The OURSIN method follows the main steps proposed by the GUM (JCGM, 2008). The l
 
 **Table 20.** List of error sources in ADCP discharge measurements covered by 
 the OURSIN method, with their nature (type A or B, Bias, Random or Both) and the method used for their quantification).
+
 ![](./assets/tech_manual/table_20.png)
 
 #### System
@@ -1482,232 +1510,299 @@ The total 95% uncertainty for the measurement (𝑈𝑀) is computed by estimati
 The QRev allows the user to directly specify any of the uncertainties for the measurement except the coefficient of variation. If the user specifies an uncertainty it is applied to all transects and the uncertainty is shown as a User 95% Uncertainty and the Automatic 95% Uncertainty remains unchanged. Additionally, the user can override the default assumptions used in the computations using the table in the Advanced Settings tab. User changes in the Advance Setting tab are applied to the Automatic 95% Uncertainty for both the transects and measurement.
 
 ## Data File Formats
-QRev imports data from TRDI WinRiver II and SonTek RiverSurveyor Live. QRev can read the raw data files (*.mmt and *.pd0) produced by WinRiver II for all TRDI ADCPs. The raw data format for SonTek *.riv and *.rivr files is not available; therefore, QRev can only use the *.mat files produced by RiverSurveyor Live and RSQ. Versions of RiverSurveyor Live prior to version 3.81 produced *.mat files that cannot be read by Matlab versions 2014 or later.
-QRev’s internal data storage format is documented in the source code. The data can be saved in a Matlab file, which QRev can read for future review or processing. With the exception of using Python naming and formatting conventions, QRev 4.xx internal data storage format is similar to the Matlab output format defined in Appendix 2. This format maintains the original data. The data are processed and then stored in a standardized format so that computational and filtering algorithms can be independent of the ADCP used to collect the data.
-QRev also produces an XML output file that can be used to import QRev processed results into the USGS SVMAQ software or other agency databases. The XML format is defined in appendix 3.
-Summary and Need for Further Development
-Summary and Need for Further Development
-QRev provides common and consistent computational algorithms combined with automated filtering and quality assessment of the data that substantially improves the quality and efficiency of streamflow measurements and helps ensure that streamflow measurements are consistent, accurate, and independent of the manufacturer of the instrument used to make the measurement. QRev represents a substantial step towards standard processing algorithms and quality assessment that is instrument independent; however, there is a need for additional
-87
-research and development. This research and development should improve interpolation and filter algorithms, provide more complex quality assessments, improve and standardize methods for estimating the discharge in unmeasured areas, and provide a more robust approach to estimating the uncertainty of a measurement. In addition, the data structure used is QRev serves as a good starting point for developing a standard data format that would be common among all hydroacoustic instrumentation.
-References
-References
+QRev imports data from TRDI WinRiver II and SonTek RiverSurveyor Live. QRev 
+can read the raw data files (*.mmt and *.pd0) produced by WinRiver II for 
+all TRDI ADCPs. The raw data format for SonTek *.riv and *.rivr files is 
+not available; therefore, QRev can only use the *.mat files produced by 
+RiverSurveyor Live and RSQ. Versions of RiverSurveyor Live prior to version 
+3.81 produced *.mat files that cannot be read by Matlab versions 2014 or later.
+
+QRev’s internal data storage format is documented in the source code. The 
+data can be saved in a Matlab file, which QRev can read for future review 
+or processing. With the exception of using Python naming and formatting 
+conventions, QRev 4.xx internal data storage format is similar to the 
+Matlab output format defined in Appendix 2. This format maintains the 
+original data. The data are processed and then stored in a standardized 
+format so that computational and filtering algorithms can be independent of 
+the ADCP used to collect the data.
+
+QRev also produces an XML output file that can be used to import QRev 
+processed results into the USGS SVMAQ software or other agency databases. 
+The XML format is defined in appendix 3.
+
+## Summary and Need for Further Development
+QRev provides common and consistent computational algorithms combined with 
+automated filtering and quality assessment of the data that substantially 
+improves the quality and efficiency of streamflow measurements and helps 
+ensure that streamflow measurements are consistent, accurate, and 
+independent of the manufacturer of the instrument used to make the 
+measurement. QRev represents a substantial step towards standard processing 
+algorithms and quality assessment that is instrument independent; however, 
+there is a need for additional research and development. This research and 
+development should improve interpolation and filter algorithms, provide 
+more complex quality assessments, improve and standardize methods for 
+estimating the discharge in unmeasured areas, and provide a more robust 
+approach to estimating the uncertainty of a measurement. In addition, the 
+data structure used is QRev serves as a good starting point for developing 
+a standard data format that would be common among all hydroacoustic 
+instrumentation.
+
+## References
 Chen, Cheng-Lung, 1989, Power law of flow resistance in open channels—Manning’s formula revisited: Proceedings of the International Conference on Channel Flow and Catchment Runoff, Centennial of Manning’s Formula and Kuichling’s Rational Formula, May 22–26, 1989, Charlottesville, Va., v. 8, p. 17–48.
+
 Cleveland, W.S., 1979, Robust locally weighted regression and smoothing scatterplots: Journal of the American Statistical Association, v. 74, no. 368, p. 829–836, accessed April 6, 2016, at http://www.stat.washington.edu/courses/stat527/s13/readings/Cleveland_JASA_1979.pdf.
+
 Cleveland, W.S., and Devlin, S.J., 1988, Locally weighted regression—An approach to Regression analysis by local fitting: Journal of the American Statistical Association v. 83, no. 403, p. 596–610, accessed April 6, 2016, at http://www.stat.washington.edu/courses/stat527/s13/readings/Cleveland_Delvin_JASA_1988.pdf.
+
 Despax, A., Le Coz, J., Hauet, A., Mueller, D. S., Engel, F. L., Blanquart, B., . . . Oberg, K. A., 2019, Decomposition of uncertainty sources in acoustic Doppler current profiler streamflow measurements using repeated measures experiments. Water Resources Research.
+
 Despax, A., Le Coz, J., Mueller, D.S., Naudet, G., Pierrefeu, G., Delamarre, K., Moore, S.A., and Jamieson, E.C., 2021, DRAFT, Empirical vs analytical methods for modeling the uncertainty of ADCP discharge measurements.
+
 Fulford, J.M., and Sauer, V.B., 1986, Comparison of velocity interpolation methods for computing open-channel discharge, in Subitsky, S.Y., ed., Selected papers in the hydrologic sciences: U.S. Geological Survey Water-Supply Paper 2290, 154 p, accessed April 6, 2016 at http://pubs.usgs.gov/wsp/wsp2290/.
+
 Hagan, Ross E., 1989, Measuring discharge with current meters: International Irrigation Center, Utah State University, Logan, Utah, 39 p.
-88
+
 Huang, H., 2018, Estimating uncertainty of streamflow measurements with moving boat acoustic Doppler current profilers. Hydrological Sciences Journal , 63 ,353-368.
+
 ISO. (2009). ISO 748:2009 - Hydrometry 􀀀 measurement of liquid ow in open channels using current-meters or floats. (58 p.)
+
 Joint Committee for Guides in Metrology, 2008, Evaluation of measurement data—Guide to the expression of uncertainty in measurement (GUM 1995 with minor corrections): Geneva, Switzerland.
+
 Khan, M.A., Mahmood, K., and Skogerboe, G.V., 1997, Current meter discharge measurements for steady and unsteady flow conditions in irrigation channels: IWMI Pakistan Report T-007, International Irrigation Management Institute, Pakistan National Program.
+
 Le Coz, J., Camenen, B., Peyrard, X., and Dramais, G., 2012, Uncertainty in open-channel discharges measured with the velocity-area method. Flow Measurement and Instrumentation, 26 , 18-29.
+
 Le Coz, J., Blanquart, B., Pobanz, K., Dramais, G., Pierrefeu, G., Hauet, A., and Despax, A. (2016). Estimating the Uncertainty of Streamgauging Techniques Using In Situ Collaborative Interlaboratory Experiments. Journal of Hydraulic Engineering, 7 (142), 04016011.
+
 Mueller, D.S., 2013, extrap—Software to assist the selection of extrapolation methods for moving-boat ADCP streamflow measurements: Computers & Geosciences, v. 54, p. 211–218, accessed April 6, 2016 at http://www.sciencedirect.com/science/article/pii/S009830041300037X.
+
 Mueller, D.S., 2016, QRev—Software for computation and quality assurance of acoustic Doppler current profiler moving-boat streamflow measurements—User’s manual (ver.2.80): U.S. Geological Survey Open-File Report 2016–1052, 56 p.
+
 Mueller, D.S., 2015, Velocity bias induced by flow patterns around ADCPs and associated deployment platforms– Proceedings of the IEEE/OES Eleventh Current, Waves and Turbulence Measurement Workshop, St. Petersburg, Fla., March 2–6, 2015: New York, IEEE, 7 p, accessed April 6, 2016 at http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7098103&filter%3DAND%28p_IS_Number%3A7098093%29.
+
 Mueller, D. S., 2018, Assessment of acoustic doppler current profiler heading errors on water velocity and discharge measurements. Flow Measurement and Instrumentation, 64 , 224-233.
+
 Mueller, D.S., Abad, J.D., García, C.M., Gartner, J.W., García, M.H., and Oberg, K.A., 2007, Errors in acoustic Doppler profiler velocity measurements caused by flow disturbance: Journal of Hydraulic Engineering, v. 133, no. 12, p. 1411–1420, accessed April 6, 2016 at http://ascelibrary.org/doi/abs/10.1061/%28ASCE%290733-9429%282007%29133%3A12%281411%29.
+
 Mueller, D.S., Wagner, C.R., Rehmel, M.S., Oberg, K.A, and Rainville, Francois, 2013, Measuring discharge with acoustic Doppler current profilers from a moving boat: U.S.
-89
+
 Geological Survey Techniques and Methods, book 3, chap. A22, 95 p., http://dx.doi.org/10.3133/tm3A22.
+
 National Marine Electronics Association, 2002, NMEA 0183—Standard for interfacing marine electronic devices, version 3.01: National Marine Electronics Association, 88 p, accessed April 6, 2016 at http://www.plaisance-pratique.com/IMG/pdf/NMEA0183-2.pdf.
+
 Naudet, G., Pierrefeu, G., Berthet, T., Triol, T., Delamarre, K., and Blanquart, B., 2019, Oursin: Outil de repartition des incertitudes de mesure de debit par adcp mobile. La Houille Blanche(3-4), 93-101.
+
 Oberg, K.A., and Schmidt, A.R., 1994, Measurements of leakage from Lake Michigan through three control structures near Chicago, Illinois, April–October 1993: U.S. Geological
+
 Survey Water-Resources Investigations Report 94–4112, 48 p, accessed April 6, 2016 at https://pubs.er.usgs.gov/publication/wri944112.
+
 Office of Surface Water, 2013, Policy on required minimum screening distance for the RiverSurveyor M9: U.S. Geological Survey, Office of Surface Water Technical Memorandum 2014.02, 6 p, accessed on, April 6, 2016, at http://water.usgs.gov/admin/memo/SW/sw1402.pdf.
+
 Rantz, S.E., and others, 1982, Measurement and computation of streamflow—Volume 1, Measurement of stage and discharge: U.S. Geological Survey Water-Supply Paper 2175, 284 p, accessed April 6, 2016 at http://pubs.usgs.gov/wsp/wsp2175/.
+
 Schlichting, H., 1979, Boundary layer theory (7th ed.): New York, McGraw-Hill.
+
 Seo, I., and Baek, K., 2004, Estimation of the longitudinal dispersion coefficient using the velocity profile in natural streams: American Society of Civil Engineers, Journal of Hydraulic Engineering, v. 130, no. 3, p. 227–236, accessed April 6, 2016 at http://ascelibrary.org/doi/abs/10.1061/(ASCE)0733-9429(2004)130%3A3(227).
+
 Simpson, M.R., 2002, Discharge measurements using a broadband acoustic Doppler current profiler: U.S. Geological Survey Open-File Report 01–01, 123 p., accessed April 6, 2016, at http://pubs.usgs.gov/of/2001/ofr0101/.
+
 Simpson, M.R., and Oltmann, R.N., 1993, Discharge-measurement system using an acoustic Doppler current profiler with applications to large rivers and estuaries: U.S. Geological Survey Water-Supply Paper 2395, 32 p, accessed April 6, 2016 at http://pubs.usgs.gov/wsp/wsp2395/.
+
 SonTek, 2003, Principles of river discharge measurement: San Diego, Calif., SonTek, A Xylem Brand, 6 p.
+
 SonTek, 2015, RiverSurveyor S5/M9 system manual firmware version 3.81: SonTek, San Diego, Calif., 162 p.
+
 Teledyne RD Instruments, 1998, ADCP coordinate transformation—Formulas and calculations: San Diego, Calif., Teledyne RD Instruments, P/N 951-6079-00, 29 p, accessed April 6, 2016 at http://support.rdinstruments.com/SoftwareFirmware/downloadSoftware.aspx?software=XFORM!.EXE.
-90
+
+
 Teledyne RD Instruments, 2007, Workhorse Rio Grande acoustic Doppler current profiler technical manual: San Diego, Calif., Teledyne RD Instruments, P/N 957–6241–00, 264 p, accessed April 6, 2016 at http://support.rdinstruments.com/SoftwareFirmware/downloadSoftware.aspx?software=WHRIOMN!.EXE.
+
 Teledyne RD Instruments, 2014, WinRiver II user’s guide: San Diego, Calif., Teledyne RD Instruments, P/N 957–6231–00, 298 p.
+
 Wagner, C.R., and Mueller, D.S., 2011, Comparison of bottom-track to global positioning system referenced discharges measured using an acoustic Doppler current profiler: Journal of Hydrology, v. 401, p. 250–258.
-91
-Appendix 1
-Appendix 1——Evaluation of Compass for Loop Test Evaluation of Compass for Loop Test
-The validity and accuracy of the loop moving-bed test is dependent on the accuracy of the headings reported by the compass. To assess the validity of the loop moving-bed test the effect of heading errors are evaluated. The apex of the loop is identified using a method adapted from http://www.mathworks.de/matlabcentral/newsreader/view_thread/164048. Once the apex is identified the loop is split into an outgoing leg and a return leg. The evaluation considers 3 aspects: 1) the mean and standard deviation of the flow direction of each leg; 2) the 95% uncertainty associated with the difference in flow direction, and 3) the potential error caused by heading error. The mean and standard deviation flow direction for each leg is computed using discharge weighting of the depth cell velocities. The unmeasured areas are not considered. The 95% uncertainty of the difference in flow direction is computed as the sum of the standard deviations times 2. The potential error in loop moving-bed test caused by heading error is computed as 2 times the width times the sine of the difference in flow direction time 100 divided by the duration of the loop test times the mean flow speed. A caution is triggered if 1) the difference in flow direction is greater than 3 degrees and 2) the difference in flow direction is greater than the 95% uncertainty of the flow direction and 3) the potential error of the loop test is greater than 5%.
-92
-Appendix
-Appendix 22——MatlabMatlab Data Format Data Format
+
+## Appendix 1——Evaluation of Compass for Loop Test
+The validity and accuracy of the loop moving-bed test is dependent on the 
+accuracy of the headings reported by the compass. To assess the validity of 
+the loop moving-bed test the effect of heading errors are evaluated. The 
+apex of the loop is identified using a method adapted from http://www.mathworks.de/matlabcentral/newsreader/view_thread/164048. Once the apex is 
+identified the loop is split into an outgoing leg and a return leg. The 
+evaluation considers 3 aspects: 1) the mean and standard deviation of the 
+flow direction of each leg; 2) the 95% uncertainty associated with the 
+difference in flow direction, and 3) the potential error caused by heading 
+error. The mean and standard deviation flow direction for each leg is 
+computed using discharge weighting of the depth cell velocities. The 
+unmeasured areas are not considered. The 95% uncertainty of the difference 
+in flow direction is computed as the sum of the standard deviations times 2.
+The potential error in loop moving-bed test caused by heading error is 
+computed as 2 times the width times the sine of the difference in flow 
+direction time 100 divided by the duration of the loop test times the mean 
+flow speed. A caution is triggered if 1) the difference in flow direction 
+is greater than 3 degrees and 2) the difference in flow direction is 
+greater than the 95% uncertainty of the flow direction and 3) the potential 
+error of the loop test is greater than 5%.
+
+## Appendix 22——Matlab Data Format
 Overview of the top two levels of Matlab data format used by QRev
-version: Version number for QRev
-meas_struct: structure
-contains all the objects, methods, and variables associated with a measurement
-stationName: name of location of measurement
-stationNumber: station number of measurement
-persons: person(s) collecting and/or processing the measurement
-meas_number: measurement number
-stage_start_m: stage in m at start of measurement
-stage_end_m: stage in m at end of measurement
-stage_meas_m: stage in m assigned to measurement
-processing: sets the processing algorithms (SonTek, TRDI, QRev)
-comments: notes from mmt file and comments entered by user in QRev
-userRating: rating of measurement assigned by the user (Excellent, Good, Fair, Poor)
-extTempChk: structure that stores manual and ADCP temperature check data
-adcp: ADCP temperature recorded by user at time of external check
-adcp_orig: original ADCP temperature recorded by the user at time of external check
-user: user recorded temperature from independent sensor
-user_orig: original temperature from independent sensor
-units: temperature units
-initialSettings: data structure with the settings as originally loaded from the manufacturer
-comments: comments provided by the user
-use_weighted: indicates the setting if discharge weighting should be used for extrapolation
-use_ping_type: indicates if ping types should be used in BT and WT filters
-use_measurement_thresholds: indicates if the entire measurement should be used to set filter thresholds
+
+- version: Version number for QRev
+- meas_struct: structure; contains all the objects, methods, and variables 
+  associated with a 
+  measurement
+    - stationName: name of location of measurement
+    - stationNumber: station number of measurement
+    - persons: person(s) collecting and/or processing the measurement
+    - meas_number: measurement number
+    - stage_start_m: stage in m at start of measurement
+    - stage_end_m: stage in m at end of measurement
+    - stage_meas_m: stage in m assigned to measurement
+    - processing: sets the processing algorithms (SonTek, TRDI, QRev)
+    - comments: notes from mmt file and comments entered by user in QRev
+    - userRating: rating of measurement assigned by the user (Excellent, Good, Fair, Poor)
+    - extTempChk: structure that stores manual and ADCP temperature check data
+        - adcp: ADCP temperature recorded by user at time of external check
+        - adcp_orig: original ADCP temperature recorded by the user at time of external check
+        - user: user recorded temperature from independent sensor
+        - user_orig: original temperature from independent sensor
+        - units: temperature units
+    - initialSettings: data structure with the settings as originally loaded from the manufacturer
+    - comments: comments provided by the user
+    - use_weighted: indicates the setting if discharge weighting should be used for extrapolation
+    - use_ping_type: indicates if ping types should be used in BT and WT filters
+    - use_measurement_thresholds: indicates if the entire measurement should be used to set filter thresholds
 observed_no_moving_bed: indicates if a no moving bed condition was observed
-run_oursin: indicates if the OURSIN uncertainty model is used
-export_xs: indicates if average cross-section should be computed and exported
-gps_quality_threshold: sets the threshold for which the GPS quality must be equal to or greater than
-run_map: indicates if the MAP computation should be run
-snr_3beam_comp: indicates the use of 3-beam velocity computations when invalid SNR is found
-transects: structure
-contains structures and variables associated with each transect and associated methods
-mbTests: structure
-contains moving-bed test data and results
-sysTest: structure
-93
-contains time stamp and output from system test
-compassCal: structure
-contains time stamp and output from compass calibration
-compassEval: structure
-contains time stamp and output from compass evaluation
-extrapFit: structure
-contains all of the normalized data used to select an extrapolation method
-discharge: structure
-contains the resulting computed discharges
-uncertainty: structure
-contains the uncertainty data
-qa: structure
-contains the results of the quality assurance checks
-oursin: structure
-contains the results of simulations and uncertainty analysis, if oursin uncertainty model is used
-94
-Full details of each structure
-transects: structure
-filename: filename of transect data file
-checked: transect was checked for use in the mmt file; assumed checked for SonTek
-inTransectIdx: index of ensemble data associated with the moving-boat portion of the transect
-startEdge: starting edge of transect looking downstream (Left or Right)
-orig_start_edge: original start edge
-adcp: structure
+    - run_oursin: indicates if the OURSIN uncertainty model is used
+    - export_xs: indicates if average cross-section should be computed and exported
+    - gps_quality_threshold: sets the threshold for which the GPS quality must be equal to or greater than
+    - run_map: indicates if the MAP computation should be run
+    - snr_3beam_comp: indicates the use of 3-beam velocity computations when invalid SNR is found
+    - transects: structure; contains structures and variables associated 
+      with each transect and associated methods
+    - mbTests: structure; contains moving-bed test data and results
+    - sysTest: structure; contains time stamp and output from system test
+    - compassCal: structure; contains time stamp and output from compass 
+      calibration
+    - compassEval: structure; contains time stamp and output from compass 
+      evaluation
+    - extrapFit: structure; contains all the normalized data used to 
+      select an extrapolation method
+    - discharge: structure; contains the resulting computed discharges
+    - uncertainty: structure; contains the uncertainty data
+    - qa: structure; contains the results of the quality assurance checks
+    - oursin: structure; contains the results of simulations and uncertainty 
+      analysis, if oursin uncertainty model is used
+
+### Full details of each structure
+- transects: structure
+    - filename: filename of transect data file
+    - checked: transect was checked for use in the mmt file; assumed checked for SonTek
+    - inTransectIdx: index of ensemble data associated with the moving-boat portion of the transect
+    - startEdge: starting edge of transect looking downstream (Left or Right)
+    - orig_start_edge: original start edge
+    - adcp: structure; 
 contains specific information about the ADCP used to collect the transect
-wVel: structure
+    - wVel: structure; 
 contains all the water velocity data
-boatVel: structure
+    - boatVel: structure; 
 contains all the boat velocity data
-gps: structure
+    - gps: structure; 
 contains all the GPS data
-sensors: structure
+    - sensors: structure
 contains structures for the various sensors and speed of sound
-depths: structure
+    - depths: structure; 
 contains all the depth data
-edges: structure
-contains the data for edge discharge estimates
-extrap: structure
-contains the extrapolation method and exponent for computing top and bottom extrapolation
-dateTime: structure
-contains all time associated data for the transect
-95
-mbTests: structure
-type: Loop or Stationary
-duration_sec: duration of test in secs
-percentInvalidBT: percent of invalid bottom track
-compassDiff_deg: difference in heading for out and back of loop
-flowDir_deg: mean flow direction from loop test
-mbDir_deg: moving bed or closure error direction
-distUS_m: potential error caused by a moving bed in percent
-flowSpd_mps: magnitude of water velocity in mps
-mbSpd_mps: magnitude of moving-bed velocity in mps
-percentMB: potential error caused by a moving bed in percent
-movingBed: moving bed determined ('Yes' or 'No')
-userValid: logical to allow user to determine if test should be considered a valid test
-testQuality: quality of test ('Valid', 'Warnings', 'Invalid')
-use2Correct: use this test to correct discharge
-selected: selected as valid moving-bed test to use for correction or determining moving-bed condition
-messages: cell array of warning and error messages based on data processing
-nearBedSpeed_mps: mean near-bed water speed for test in mps
-stationaryUSTrack: upstream component of the bottom track referenced ship track
-stationaryCSTrack: cross-stream component of the bottom track referenced ship track
-stationaryMBVel: moving-bed velocity by ensemble
-ref: reference used to compute moving-bed BT or GPS
-bt_percent_mb: potential error caused by a moving bed in percent computed using BT only
-bt_dist_us_m: potential error caused by a moving bed in percent computed using BT only
-bt_mb_dir: closure error direction computed using BT only
-bt_mb_spd_mps: magnitude of moving-bed velocity in mps computed using BT only
-bt_flow_spd_mps: magnitude of water velocity in mps computed using BT only
-bt_percent_mb: potential error caused by a moving bed in percent computed using BT only
-gps_dist_us_m: potential error caused by a moving bed in percent computed using BT and GPS
-gps_mb_dir: closure error direction computed using BT and GPS
-gps_mb_spd_mps: magnitude of moving-bed velocity in mps computed using BT and GPS
-gps_flow_spd_mps: magnitude of water velocity in mps computed using BT and GPS
-bt_percent_mb: potential error caused by a moving bed in percent computed using BT and GPS
-transect: structure
-sysTest: structure
-timestamp: time stamp of test
-data: data from test, typically all text
-result: results of test
-SysTest: results of system tests
-nTests: Number of test run
-96
-nFailed: Number of tests that failed
-pt3: results of pt3 tests
-hardLimit: results of hard limit tests
-hw: high gain, wide bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-hn: high gain, narrow bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-lw: low gain, wide bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-ln: low gain, narrow bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-linear: results of linear tests
-hw: high gain, wide bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-hn: high gain, narrow bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-lw: low gain, wide bandwidth
-corrTable: correlation table
-sdc: sine
-cdc: cosine
-noiseFloor: noise flow in counts
-ln: low gain, narrow bandwidth
-corrTable: correlation table
-sdc: sine
-97
-cdc: cosine
-noiseFloor: noise flow in counts
-compassCal: structure
-contains time stamp and output from compass calibration
-timestamp: time stamp of test
-data: data from text, typically all text
-result: results of test
+    - edges: structure; contains the data for edge discharge estimates
+    - extrap: structure; contains the extrapolation method and exponent for computing top and bottom extrapolation
+    - dateTime: structure; contains all time associated data for the transect
+- mbTests: structure
+   - type: Loop or Stationary
+   - duration_sec: duration of test in secs
+   - percentInvalidBT: percent of invalid bottom track
+   - compassDiff_deg: difference in heading for out and back of loop
+   - flowDir_deg: mean flow direction from loop test
+   - mbDir_deg: moving bed or closure error direction
+   - distUS_m: potential error caused by a moving bed in percent
+   - flowSpd_mps: magnitude of water velocity in mps
+   - mbSpd_mps: magnitude of moving-bed velocity in mps
+   - percentMB: potential error caused by a moving bed in percent
+   - movingBed: moving bed determined ('Yes' or 'No')
+   - userValid: logical to allow user to determine if test should be considered a valid test
+   - testQuality: quality of test ('Valid', 'Warnings', 'Invalid')
+   - use2Correct: use this test to correct discharge
+   - selected: selected as valid moving-bed test to use for correction or determining moving-bed condition
+   - messages: cell array of warning and error messages based on data processing
+   - nearBedSpeed_mps: mean near-bed water speed for test in mps
+   - stationaryUSTrack: upstream component of the bottom track referenced ship track
+   - stationaryCSTrack: cross-stream component of the bottom track referenced ship track
+   - stationaryMBVel: moving-bed velocity by ensemble
+   - ref: reference used to compute moving-bed BT or GPS
+   - bt_percent_mb: potential error caused by a moving bed in percent computed using BT only
+   - bt_dist_us_m: potential error caused by a moving bed in percent computed using BT only
+   - bt_mb_dir: closure error direction computed using BT only
+   - bt_mb_spd_mps: magnitude of moving-bed velocity in mps computed using BT only
+   - bt_flow_spd_mps: magnitude of water velocity in mps computed using BT only
+   - bt_percent_mb: potential error caused by a moving bed in percent computed using BT only
+   - gps_dist_us_m: potential error caused by a moving bed in percent computed using BT and GPS
+   - gps_mb_dir: closure error direction computed using BT and GPS
+   - gps_mb_spd_mps: magnitude of moving-bed velocity in mps computed using BT and GPS
+   - gps_flow_spd_mps: magnitude of water velocity in mps computed using BT and GPS
+   - bt_percent_mb: potential error caused by a moving bed in percent computed using BT and GPS
+   - transect: structure
+- sysTest: structure
+   - timestamp: time stamp of test
+   - data: data from test, typically all text
+   - result: results of test
+      - SysTest: results of system tests
+         - nTests: Number of test run
+         - nFailed: Number of tests that failed
+      - pt3: results of pt3 tests
+      - hardLimit: results of hard limit tests
+         - hw: high gain, wide bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - hn: high gain, narrow bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - lw: low gain, wide bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - ln: low gain, narrow bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+      - linear: results of linear tests
+         - hw: high gain, wide bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - hn: high gain, narrow bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - lw: low gain, wide bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+         - ln: low gain, narrow bandwidth
+           - corrTable: correlation table
+           - sdc: sine
+           - cdc: cosine
+           - noiseFloor: noise flow in counts
+- compassCal: structure; contains time stamp and output from compass 
+  calibration
+   - timestamp: time stamp of test
+   - data: data from text, typically all text
+   - result: results of test
 compass: structure
 error: compass error
 compassEval: structure
