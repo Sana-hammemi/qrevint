@@ -266,7 +266,7 @@ class WTContour(object):
                         data_quiver["vy"] * units["V"],
                         data_quiver["vz"] * units["V"],
                         units="inches",
-                        scale=5 * data_quiver["scale"],
+                        scale=data_quiver["scale"],
                         pivot="tail",
                     )
 
