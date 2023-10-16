@@ -1860,7 +1860,49 @@ The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with the uncertainty computations. The bottom panel 
 shows all the comments associated with the measurement.
 
-## 17. REFERENCES
+## 17. MAP
+
+![](./assets/user_guide/map_tab.png)
+
+The Multitransect Average Profile (MAP) tab allows the user to view the 
+measurement data projected and averaged. The data displayed on the plot can 
+be toggled using the radio buttons above the plot. The current options are 
+contour, bathymetry, temperature, and stick ship.
+
+### 17.1 Options
+
+![](./assets/user_guide/map_options.png)
+
+The data displayed can be further customized by changing the settings in 
+the options section of tab. 
+
+The Velocity Type can be toggled between 
+Primary and Streamwise Velocity to change the data depicted in the Contour 
+plot. 
+
+![](./assets/user_guide/map_velocitytype.png)
+
+If the user wishes to view the Secondary velocities plotted on the contour 
+plot, values for the Secondary Velocity Scale can be entered. The scale is 
+used to relate the velocities to a quiver length in inches. 
+
+![](./assets/user_guide/map_quiverscale.png)
+
+The cell size for the mesh grid can be modified by unchecking the 
+Auto checkbox and entering values in the Width and Height fields. Click out 
+of the field or pressing the return key will trigger the computation to run 
+with the new values.
+
+![](./assets/user_guide/map_cellsize.png)
+
+The checkboxes at the bottom of the options section enable or disable 
+different processing settings with the exception of the Individual 
+Bathymetry setting which is only used to show or hide the transect data. 
+The Top/Bottom Extrap and Edges Extrap buttons enable the display and use of 
+the estimated zones of the cross-section. The Interpolation check box 
+enables the interpolation of missing data.
+
+## 18. REFERENCES
 
 Despax, A., Le Coz, J., Hauet, A., Mueller, D. S., Engel, F. 
 L., Blanquart, B., . . . Oberg, K. A., 2019, Decomposition of uncertainty sources in acoustic Doppler current profiler streamflow measurements using repeated measures experiments. Water Resources Research.
