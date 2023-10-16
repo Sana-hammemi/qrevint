@@ -11,17 +11,17 @@ print("Checking if package exits...")
 qrev_package = __app__ + __version__.replace(".", "")
 qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
 
-try:
+if os.path.exists(qrev_dir):
     os.mkdir(qrev_dir)
-except FileExistsError:
     if click.confirm('QRev version already exists. Overwrite?',
                      default=True, abort=True):
         try:
             shutil.rmtree(qrev_dir)
-            os.mkdir(qrev_dir)
         except BaseException:
             print("Something went wrong, exiting build.")
             sys.exit()
+
+os.mkdir(qrev_dir)
 
 print("Updating version information")
 pyinstaller_versionfile.create_versionfile(
