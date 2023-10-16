@@ -1,9 +1,27 @@
 import os
+import sys
+import click
 import pyinstaller_versionfile
 import PyInstaller.__main__
 import shutil
 
 from Classes import __version__, __app__, __company__
+
+print("Checking if package exits...")
+qrev_package = __app__ + __version__.replace(".", "")
+qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
+
+try:
+    os.mkdir(qrev_dir)
+except FileExistsError:
+    if click.confirm('QRev version already exists. Overwrite?',
+                     default=True, abort=True):
+        try:
+            shutil.rmtree(qrev_dir)
+            os.mkdir(qrev_dir)
+        except BaseException:
+            print("Something went wrong, exiting build.")
+            sys.exit()
 
 print("Updating version information")
 pyinstaller_versionfile.create_versionfile(
@@ -23,13 +41,9 @@ PyInstaller.__main__.run(["app.spec"])
 
 print("Verifying QRev.EXE was created.")
 path = os.path.join(os.getcwd(), "dist", __app__ + ".exe")
+
 if os.path.exists(path):
     print("QRev was packaged, creating distribution package.")
-
-    qrev_package = __app__ + __version__.replace(".", "")
-    qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
-
-    os.mkdir(qrev_dir)
 
     # copy QRev exe
     shutil.copy(
@@ -42,4 +56,5 @@ if os.path.exists(path):
         os.path.join(os.getcwd(), "QRev.cfg"), os.path.join(qrev_dir, "QRev.cfg")
     )
 
-    print("Please sign QRev.EXE before zipping the directory. Packaging " "Complete")
+    print("Please sign QRev.EXE before zipping the directory. "
+          "Packaging Complete")
