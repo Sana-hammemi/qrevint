@@ -1642,7 +1642,7 @@ is greater than 3 degrees and 2) the difference in flow direction is
 greater than the 95% uncertainty of the flow direction and 3) the potential 
 error of the loop test is greater than 5%.
 
-## Appendix 22——Matlab Data Format
+## Appendix 2——Matlab Data Format
 Overview of the top two levels of Matlab data format used by QRev
 
 - version: Version number for QRev
@@ -1803,842 +1803,842 @@ contains all the depth data
    - timestamp: time stamp of test
    - data: data from text, typically all text
    - result: results of test
-compass: structure
-error: compass error
-compassEval: structure
-contains time stamp and output from compass evaluation
-timestamp: time stamp of test
-data: data from text, typically all text
-result: results of test
-compass: structure
-error: compass error
-extrapFit: structure
-threshold: threshold as a percent for determining if a median is valid
-subsection: percent of discharge.
-fitMethod: method used to determine fit (Automatic or Manual)
-use_weighted: weighted used = 1, weighted not used = 0
-use_q: discharge used for subsectioning = 1, cross product used = 0
-sub_from_left: subsectioning from left to right = 1, subsectioning from start bank = 0
-messages: variable for messages to user
-normData: structure
-fileName: name of transect file
-cellDepthNormalized: normalized depth of cell
-unitNormalized: normalized discharge or velocity for all depth cells
-unitNormalizedMed: median of normalized data within 5 percent partitions
-unitNormalizedNo: number of data points in each median
-unitNormalizedz: relative depth for each median (5 percent increments)
-unitNormalized25: value for which 25 percent of normalized values are smaller
-unitNormalized75: value for which 25 percent of normalized values are larger
-dataType: type of data (velocity or discharge)
-dataExtent: extents of data defined by user input subsection percentages
-validData: index of median values with point count greater than threshold cutoff
-weights: weights for each cell computed based on the relative discharge or velocity of the ensemble
-98
-use_weighted: weighted used = 1, weighted not used = 0
-use_q: discharge used for subsectioning = 1, cross product used = 0
-sub_from_left: subsectioning from left to right = 1, subsectioning from start bank = 0
-selFit: structure
-filename: name of transect file
-topMethod: top extrapolation method
-botMethod: bottom extrapolation method
-coef: power fit coefficient
-exponent: power fit exponent
-u: fit values of the variable
-uAuto: fit values from automatic fit
-z: distance from the streambed for fit variable
-zAuto: z values for automatic fit
-expMethod: method to determine exponent (default, optimize, or manual)
-dataType: type of data (velocity or unit discharge)
-exponent95confint: 95% confidence intervals for optimized exponent
-residuals: residuals from fit
-rsqr: adjusted r^2 for optimized exponent
-fitMethod: user selected method (Automatic or Manual)
-botMethodAuto: selected extrapolation for top
-topMethodAuto: selected extrapolation for bottom
-exponentAuto: selected exponent
-topfitr2: top fit custom coefficient of determination
-topmaxdiff: maximum difference between power and three-point at top
-botdiff: difference between power and no slip at 10 percent of the depth from the bottom
-botrsqr: bottom fit coefficient of determination
-fitrsqr: selected fit of selected power/no slip fit
-nsexponent: no slip optimized exponent
-ppexponent: “Power, power” fit optimized exponent
-topr2: coefficient of determination for linear fit through top four median cells
-qSensitivity: structure
-qPPmean: discharge “power, power” with 1/6 exponent
-qPPoptmean: discharge “power, power“ optimized
-qCNSmean: discharge “constant, no slip with 1/6 exponent”
-qCNSoptmean: discharge “constant, optimized no slip”
-q3pNSmean: discharge ”three point, no slip with 1/6 exponent”
-q3pNSoptmean: discharge “three-point, optimized no slip”
-qPPoptperdiff: ”power, power” fit optimized percent difference from “power, power” with 1/6 exponent
-qCNSperdiff: ”constant, no slip with 1/6 exponent” percent difference from “power, power”
-99
-with 1/6 exponent
-qCNSoptperdiff: ”constant, optimized no slip” percent difference from “power, power” with 1/6 exponent
-q3pNSperdiff: “three point, no slip with 1/6 exponent” percent difference from “power, power” with 1/6 exponent
-q3pNSoptperdiff: “three point, optimized no slip” percent difference from “power, power” with 1/6 exponent
-ppExponent: optimized “power, power” exponent
-nsExponent: optimized no slip exponent
-manTop: manually specified top method
-manBot: manually specified bottom method
-manExp: manually specified exponent
-qManmean: mean discharge for manually specified extrapolations
-qManperdiff: manually specified extrapolations percent difference from “power, power” with 1/6 exponent
-q_3p_ns_list: discharge for each transect and measurement using 3-point and no slip 1/6th
-q_3p_ns_opt_list: discharge for each transect and measurement using 3-point and no slip optimized
-q_bot_3p_ns_list: bottom discharge for each transect and measurement using 3-point and no slip 1/6th
-q_bot_3p_ns_opt_list: bottom discharge for each transect and measurement using 3-point and no slip optimized
-q_bot_cns_list: bottom discharge for each transect and measurement using constant and no slip 1/6th
-q_bot_cns_opt_list: bottom discharge for each transect and measurement using constant and no slip optimized
-q_bot_ pp_list: bottom discharge for each transect and measurement using power 1/6th
-q_ bot_pp_opt_list: bottom discharge for each transect and measurement using power optimized
-q_ cns_list: discharge for each transect and measurement using constant and no slip 1/6th
-q_ cns_opt_list: discharge for each transect and measurement using constant and no slip optimized
-q_ pp_list: discharge for each transect and measurement using power 1/6th
-q_ pp_opt_list: discharge for each transect and measurement using power optimized
-q_top_3p_ns_list: top discharge for each transect and measurement using 3-point and no slip 1/6th
-q_top_3p_ns_opt_list: top discharge for each transect and measurement using 3-point and no slip optimized
-q_top_cns_list: top discharge for each transect and measurement using constant and no slip 1/6th
-q_top_cns_opt_list: top discharge for each transect and measurement using constant and no slip optimized
-100
-q_top_ pp_list: top discharge for each transect and measurement using power 1/6th
-q_ top_pp_opt_list: top discharge for each transect and measurement using power optimized
-discharge: structure
-top: transect total extrapolated top discharge
-middle: transect total measured middle discharge including interpolations
-bottom: transect total extrapolated bottom discharge
-topEns: extrapolated top discharge by ensemble
-middleCells: measured middle discharge including interpolations by cell
-middleEns: measured middle discharge including interpolations by ensemble
-bottomEns: extrapolate bottom discharge by ensemble
-left: left edge discharge
-leftidx: ensembles used for left edge
-right: right edge discharge
-rightidx: ensembles used for right edge
-totalUncorrected: total discharge for transect uncorrected for moving bed, if required
-total: total discharge with moving-bed correction applied if necessary
-correctionFactor: moving-bed correction factor, if required
-intCells: total discharge computed for invalid depth cells excluding invalid ensembles
-intEns: total discharge computed for invalid ensembles
-top_speed: computed speed from top extrapolation for each ensemble
-bottom_speed: computed speed from bottom extrapolation for each ensemble
-left_edge_speed: computed speed in the left edge based on edge settings
-right_edge_speed: computed speed in the right edge based on edge settings
-uncertainty: structure
-cov: coefficient of variation for all used transect discharges
-cov95: coefficient of variation inflated by the 95% coverage factor
-invalid95: estimated 95% uncertainty for discharge in invalid bins and ensembles
-edges95: estimated 95% uncertainty for the computed edge discharges
-extrapolation95: estimated 95% uncertainty in discharge due to top and bottom extrapolations
-movingBed95: estimated 95% uncertainty due to moving-bed tests and conditions
-systematic: systematic error estimated at 1.5%
-total95: estimated 95% uncertainty in discharge using automated values
-cov95User: user provided value for random uncertainty
-invalid95User: user provided estimate of uncertainty for invalid data
-edges95User: user provided estimate of uncertainty for edges
-extrapolation95User: user provided estimate of uncertainty for top and bottom extrapolation
-movingBed95User: user provided estimate of uncertainty due to moving-bed conditions
-systematicUser: user provided estimate of systematic uncertainty
-total95User: estimated 95% uncertainty in discharge using user provide values to override automated values
-101
-qa: structure
-qRunThresholdCaution: caution threshold for interpolated discharge for a run of invalid ensembles, in percent
-qRunThresholdWarning: warning threshold for interpolated discharge for a run of invalid ensembles, in percent
-qTotalThresholdWarning: warning threshold for total interpolated discharge for invalid ensembles, in percent
-qTotalThresholdCaution: caution threshold for total interpolated discharge for invalid ensembles
-settings_dict: indicates if a user has changed something on the tab
-transects: data structure for quality assurance checks of transects
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-uncertainty: code for only two transects (0-good, 1-caution)
-duration: code for check that duration is > 720 sec (0-good, 1-caution)
-number: code for the number of transects to use (0-good, 1-caution, 2-warning)
-recip: code for reciprocal transects (0-good, 2-warning)
-sign: code for consistent sign in total discharge (0-good, 2-warning)
-batt_voltage: caution for low battery voltage
-systemTest: data structure for quality assurance checks of system tests
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-compass: data structure for quality assurance checks of compass tests and evaluations
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-status1: status of compass calibration and evaluation
-status2: status of magnetic variation and pitch and roll sensors
-magvar: 0-magvar consistent, 1-magvar inconsistent, 2-magvar=0
-magvarIdx: indices of transects with magvar=0
-magErrorIdx: indices of transects with a magnetic error exceeding threshold (SonTek G3 only)
-pitchMeanWarningIdx: indices of transects with mean pitch exceeding warning threshold
-pitchMeanCautionIdx: indices of transects with mean pitch exceeding caution threshold
-pitchStdCautionIdx: indices of transects with pitch standard deviations exceeding threshold
-rollMeanWarningIdx: indices of transects with mean roll exceeding warning threshold
-rollMeanCautionIdx: indices of transects with mean roll exceeding caution threshold
-rollStdCautionIdx: indices of transects with roll standard deviations exceeding threshold
-temperature: data structure for quality assurance checks of temperature comparisons and change
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-movingbed: data structure for quality assurance checks of moving-bed tests and conditions
-messages: quality assessment messages to the user
-code: quality code, 1-Good, 2-Caution, 3-Warning
-102
-status: overall status, good, caution, or warning
-user: data structure for quality assurance checks of user input data
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-staName: checks for a station name (0-good, 1-caution)
-staNumber: checks for a station number (0-good, 1-caution)
-depths: data structure for quality assurance checks of depth data
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-draft: draft consistency and zero value check (0-good, 1-caution, 2-warning)
-qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
-qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
-qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
-qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
-qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
-qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
-allInvalid: logical array indication what transects contain all invalid data
-btVel: data structure for quality assurance checks of bottom track velocities
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
-qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
-qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
-qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
-qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
-qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
-allInvalid: logical array indication what transects contain all invalid data
-ggaVel: data structure for quality assurance checks of GGA boat velocities
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-lag_status: status of lag check, good, caution, or warning
-qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
-103
-qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
-qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
-qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
-qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
-qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
-allInvalid: logical array indication what transects contain all invalid data
-vtgVel: data structure for quality assurance checks of VTG boat velocities
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-lag_status: status of lag check, good, caution, or warning
-qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
-qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
-qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
-qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
-qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
-qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
-allInvalid: logical array indication what transects contain all invalid data
-wVel: data structure for quality assurance checks of water track velocities
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
-qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
-qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
-qRunCaution: logical array indicating what which transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
-qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
-qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
-104
-allInvalid: logical array indication what transects contain all invalid data
-extrapolation: data structure for quality assurance checks of extrapolations
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-edges: data structure for quality assurance checks of edge discharge estimates
-messages: quality assessment messages to the user
-status: overall status, good, caution, or warning
-rightSign: discharge sign of right edge not consistent, caution (1)
-leftSign: discharge sign of left edge not consistent, caution (1)
-leftzero: left edge with zero discharge, warning (2)
-leftZeroIdx: indices of transects with leftzero
-rightzero: right edge with zero discharge, warning (2)
-rightZeroIdx: indices of transects with rightzero
-leftType: left edge type is inconsistent, warning (2)
-rightType: right edge type is inconsistent, warning (2)
-leftQ: left edge discharge is greater than 5 percent, caution (1)
-leftQIdx: indices of transects for leftQ
-rightQ: right edge discharge is greater than 5 percent, caution (1)
-rigthQIdx: indices of transects for rightQ
-leftDistMovedIdx: indices of transects exceeding boat movement threshold
-rightDistMovedIdx: indices of transects exceeding boat movement threshold
-invalidTransLeftIdx: indices of transects with invalid left edge ensembles
-invalidTransRightIdx: indices of transects with invalid right edge ensembles
-oursin: structure
-bot_meth: the method proposed by Extrap for each transect
-exp_95ic_min: the min range of 95% interval if power-power method is used for transect
-exp_95ic_max: the max range of 95% interval if power-power method is used for transect
-pp_exp: the power-power exponent computed by Extrap for Power-Power transect only
-ns_exp: the no-slip exponent computed by Extrap for No-Slip method transect only
-exp_pp_min: minimum power-power exponent used for simulating possible discharge
-exp_pp_max: maximum power-power exponent used for simulating possible discharge
-exp_ns_min: minimum no-slip exponent used for simulating possible discharge
-exp_ns_max: maximum no-slip exponent used for simulating possible discharge
-d_right_error_min: the minimum right distance (in m) used for simulating the discharge for each transect
-d_left_error_min: the minimum left distance (in m) used for simulating the discharge for each transect
-d_right_error_max: the maximum right distance (in m) used for simulating the discharge for each transect
-d_left_error_max: the maximum left distance (in m) used for simulating the discharge for each transect
-105
-draft_error_list: the draft (in cm) used for simulating the discharge for each transect
-u_syst_list: the computed systematic uncertainty (68%) for each transect
-u_compass_list: the computed uncertainty (68%) due to compass error for each transect
-u_meas_list: the computed measured area uncertainty (68%) for each transect
-u_ens_list: the computed uncertainty (68%) due to limited number of ensemble for each transect
-u_movbed_list: the estimated uncertainty (68%) due to moving bed for each transect
-u_invalid_water_list: the computed uncertainty (68%) due to invalid water velocities for each transect
-u_invalid_boat_list: the computed uncertainty (68%) due to invalid boat velocities for each transect
-u_invalid_depth_list: the computed uncertainty (68%) due to invalid depths for each transect
-u_top_list: the computed uncertainty (68%) due to top discharge extrapolation for each transect
-u_bot_list: the computed uncertainty (68%) due to bottom discharge extrapolation for each transect
-u_left_list: the computed uncertainty (68%) due to left discharge extrapolation for each transect
-u_right_list: the computed uncertainty (68%) due to right discharge extrapolation for each transect
-u_syst_mean_user_list: the user specified systematic uncertainty (68%) for each transect
-u_compass_user_list: user specified uncertainty (68%) due to compass error for each transect
-u_meas_mean_user_list: the user specified measured area uncertainty (68%) for each transect
-u_ens_user_list: the user specified uncertainty (68%) due to limited number of ensemble for each transect
-u_movbed_user_list: the user specified uncertainty (68%) due to moving bed for each transect
-u_invalid_water_user_list: the user specified uncertainty (68%) due to invalid water velocities for each transect
-u_invalid_boat_user_list: the user specified uncertainty (68%) due to invalid boat velocities for each transect
-u_invalid_depth_user_list: the user specified uncertainty (68%) due to invalid depths for each transect
-u_top_mean_user_list: the user specified uncertainty (68%) due to top discharge extrapolation for each transect
-u_bot_mean_user_list: the user specified uncertainty (68%) due to bottom discharge extrapolation for each transect
-u_left_mean_user_list: the user specified uncertainty (68%) due to left discharge extrapolation for each transect
-u_right_mean_user_list: the user specified uncertainty (68%) due to right discharge extrapolation for each transect
-cov_68: computed uncertainty (68%) due to coefficient of variation
-sim_original: discharges (total, and subareas) computed for the processed discharge
-sim_extrap_pp_16: discharges (total, and subareas) computed using power fit with 1/6th exponent
-sim_extrap_pp_min: discharges (total, and subareas) computed using power fit with minimum exponent
-sim_extrap_pp_max: discharges (total, and subareas) computed using power fit with maximum exponent
-106
-sim_extrap_cns_16: discharges (total, and subareas) computed using constant no slip with 1/6th exponent
-sim_extrap_cns_min: discharges (total, and subareas) computed using constant no slip with minimum exponent
-sim_extrap_cns_max: discharges (total, and subareas) computed using constant no slip with maximum exponent
-sim_extrap_3pns_16: discharges (total, and subareas) computed using 3pt no slip with 1/6the exponent
-sim_extrap_3pns_opt: discharges (total, and subareas) computed using 3pt no slip with optimized exponent
-sim_edge_min: discharges (total, and subareas) computed using minimum edge q
-sim_edge_max: discharges (total, and subareas) computed using maximum edge q
-sim_draft_min: discharges (total, and subareas) computed using minimum draft
-sim_draft_max: discharges (total, and subareas) computed using maximum draft
-sim_cells_trdi: discharges (total, and subareas) computed using TRDI method for invalid cells
-sim_cells_above: discharges (total, and subareas) computed using cells above for invalid cells
-sim_cells_below: discharges (total, and subareas) computed using cells below for invalid cells
-sim_cells_before: discharges (total, and subareas) computed for using cells before for invalid cells
-sim_cells_after: discharges (total, and subareas) computed for using cells before for invalid cells
-nb_transects: number of transects used
-checked_idx: indices of checked transects
-user_advanced_settings: user specified advanced settings
-exp_pp_min_user: user specified minimum exponent for power fit
-exp_pp_max_user: user specified maximum exponent for power fit
-exp_ns_min_user: user specified minimum exponent for no slip fit
-exp_ns_max_user: user specified maximum exponent for no slip fit
-draft_error_user: user specified draft error in m
-dzi_prct_user: user specified percent error in depth cell size
-right_edge_dist_prct_user: user specified percent error in right edge distance
-left_edge_dist_prct_user: user specified percent error in left edge distance
-gga_boat_user: user specified standard deviation of boat velocities based on gga in m/s
-vtg_boat_user: user specified standard deviation of boat velocities based on vtg in m/s
-compass_error_user: user specified compass error in degrees
-default_advanced_settings: default values for advanced settings
-exp_pp_min: default minimum exponent for power fit
-exp_pp_max: default maximum exponent for power fit
-exp_ns_min: default minimum exponent for no slip fit
-exp_ns_max: default maximum exponent for no slip fit
-draft_error: default draft error in m
-dzi_prct: default percent error in depth cell size
-right_edge_dist_prct: default percent error in right edge distance
-left_edge_dist_prct: default percent error in left edge distance
-107
-gga_boat: default standard deviation of boat velocities based on gga in m/s
-vtg_boat: default standard deviation of boat velocities based on vtg in m/s
-compass_error: default compass error in degrees
-user_specified_u: user specified uncertainties as standard deviation in percent
-u_syst_mean_user: user specified uncertianty (bias) due to the system, in percent
-u_movbed_user: user specified uncertianty (bias) due to the moving-bed conditions, in percent
-u_compass_user: user specified uncertianty (bias) due to the compass error, in percent
-u_ens_user: user specified uncertianty (bias) due to the number of ensembles collected, in percent
-u_meas_mean_user: user specified uncertianty (random) of the measured portion of the cross section, in percent
-u_top_mean_user: user specified uncertianty (bias) due to the top extrapolation, in percent
-u_bot_mean_user: user specified uncertianty (bias) due to the bottom extrapolation, in percent
-u_right_mean_user: user specified uncertianty (bias) due to the right edge discharge estimate, in percent
-u_left_mean_user: user specified uncertianty (bias) due to the left edge discharge estimate, in percent
-u_invalid_boat_user: user specified uncertianty (bias) due to invalid boat velocities, in percent
-u_invalid_depth_user: specified uncertianty (bias) due to invalid depths, in percent
-u_invalid_water_user: user specified uncertianty (bias) due to invalid water velocities, in percent
-u: standard deviations in percent for each transect: u_syst, u_compass, u_movbed, u_ens,
-u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
-u_contribution_meas: measured discharge uncertainty contribution from: boat, water, depth, and dzi
-u_measurement: standard deviations in percent for the whole measurement: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
-u_contribution_measurement: uncertainty contribution in percent from: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
-u_user: standard deviations in percent for each transect: u_syst, u_compass, u_movbed, u_ens,
-u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
-u_measurement_user: standard deviations in percent for the whole measurement: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
-u_contribution_measurement_user: uncertainty contribution in percent from: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
-Data structures in TransectData
-108
-adcp: structure
-serialNum: serial number of ADCP
-manufacturer: manufacturer of ADCP (SonTek, TRDI)
-model: model of ADCP (Rio Grande, StreamPro, RiverRay, M9, S5)
-firmware: firmware version
-frequency_hz: frequency of ADCP (could be "Multi")
-beamAngle_deg: angle of beam from vertical
-beamPattern: pattern of beams (concave or convex)
-configurationCommands: configuration commands sent to ADCP
-tMatrix: object of clsTransformationMatrix
-source: source of matrix (Nominal, ADCP)
-matrix: transformation matrix, 4x4 matrix for TRDI, 4x4x3 or 2 for SonTek.
-wVel: object of clsWaterData
-rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
-frequency: defines ADCP frequency used for velocity measurement
-origCoordSys: defines the original raw data velocity coordinate system "Beam", "Inst", "Ship", "Earth"
-origNavRef: defines the original raw data navigation reference: "None", "BT", "GGA", "VTG"
-corr: correlation values for WT, if available
-rssi: returned acoustic signal strength.
-rssiUnits: units for returned acoustic signal strength: "Counts", "dB", "SNR"
-waterMode: water mode for TRDI or 'Variable' for SonTek
-blankingDistance_m: distance below transducer where data are marked invalid due to potential ringing interference
-cellsAboveSL: logical array of depth cells above the side lobe cutoff based on selected depth reference
-cellsAboveSLbt: logical array of depth cells above the side-lobe cutoff based on BT
-slLagEffect_m: side lobe distance due to lag and transmit length
-uEarthNoRef_mps: horizontal velocity in x-direction with no boat referenced applied, in meters per second
-vEarthNoRef_mps: horizontal velocity in y-direction with no boat referenced applied, in meters per second
-u_mps: horizontal velocity in x-direction, in meters per second
-v_mps: horizontal velocity in y-direction, in meters per second
-uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
-vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
-w_mps: vertical velocity (+ up), in meters per second
-d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
-invalidIndex: index of ensembles with no valid raw velocity data
-numInvalid: estimated number of depth cells in ensembles with no valid raw velocity data
-109
-validData: 3–dimensional logical array of valid data
-Dim3 1–composite
-Dim3 2–original, cells above side lobe
-Dim3 3–dFilter
-Dim3 4–wFilter
-Dim3 5–smoothFilter
-Dim3 6–beamFilter
-Dim3 7–excludedFilter
-Dim3 8–snrFilter
-Dim3 9–validDepthFilter
-beamFilter: 3 for three-beam solutions, 4 for four-beam solutions
-dFilter: difference velocity filter "Auto", ”Manual”, "Off"
-dFilterThreshold: threshold for difference velocity filter
-wFilter: vertical velocity filter "Auto", “Manual”, "Off"
-wFilterThreshold: threshold for vertical velocity filter
-excludedDist: distance below transducer above which data are marked invalid
-smoothFilter: filter based on smoothing function “Auto”, “Off”
-smoothSpeed: smoothed boat speed
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-snrFilter: signal to noise ratio filter for SonTek data
-snrRng: range of beam averaged signal to noise ratio
-wtDepthFilter: water track in ensembles with invalid depth are marked invalid
-interpolateEns: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", ”TRDI”
-interpolateCells: type of interpolation: “None”, “TRDI”, “Linear”
-coordSys: defines the velocity coordinate system "Beam", "Inst", "Ship", "Earth"
-navRef: defines the navigation reference: "None", "BT", "GGA", "VTG"
-slCutoffPer: percentage of range to mark invalid due to side-lobe interference
-slCutoffNum: number of user specified cells to mark invalid instead of using percentage
-slCutoffType: type of side lobe cutoff used “Percent” or user specified number of cells “Number”
-slCutoff_m: side lobe cutoff in meters
-use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
-d_meas_thresholds: thresholds for difference velocity filter using entire measurement
-w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
-ping_type: type of ping used
-snr_3beam_comp: indicates if 3-beam solutions should be used for invalid SNR filter
-snr_beam_velocities: velocities used if snr 3-beam solutions
-boatVel: structure
-selected: name of structure selected as primary reference
-composite: composite tracks On or Off
-btVel: structure
-110
-rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
-frequency_Hz: defines ADCP frequency used for velocity measurement
-origCoordSys: defines the original raw data velocity coordinate system "Beam", "Inst", "Ship", "Earth"
-navRef: “BT”
-coordSys: defines the current coordinate system "Beam", "Inst", "Ship", "Earth" for u, v, w, and d
-corr: correlation values, in counts (TRDI only)
-rssi: return signal strength, in counts (TRDI only)
-u_mps: horizontal velocity in x-direction, in meters per second
-v_mps: horizontal velocity in y-direction, in meters per second
-w_mps: vertical velocity (+ up), in meters per second
-d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
-numInvalid: number of ensembles with invalid velocity data
-bottomMode: bottom track mode for TRDI, 'Variable' for SonTek
-uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
-vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
-processedSource: source of velocity: BT, VTG, GGA, INT
-dFilter: difference velocity filter "Auto", ”Manual”, "Off"
-dFilterThreshold: threshold for difference velocity filter
-wFilter: vertical velocity filter "Auto", “Manual”, "Off"
-wFilterThreshold: threshold for vertical velocity filter
-gpsDiffQualFilter: not applicable
-gpsAltitudeFilter: not applicable
-gpsAltitudeFilterChange: not applicable
-gpsHDOPFilter: not applicable
-gpsHDOPFilterMax: not applicable
-gpsHDOPFilterChange: not applicable
-smoothFilter: filter based on smoothing function “Auto”, “Off”
-smoothSpeed: smoothed boat speed
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
-beamFilter: 3 for three-beam solutions, 4 for four-beam solutions, -1 for automatic
-validData: logical array of identifying valid and invalid data for each filter applied Row 1–composite Row 2–original Row 3–dFilter or diffQual Row 4–wFilter or altitude
-111
-Row 5–smoothFilter Row 6–beamFilter or HDOP
-use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
-d_meas_thresholds: thresholds for difference velocity filter using entire measurement
-w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
-ping_type: type of bottom track ping
-ggaVel: structure
-rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
-frequency_Hz: not applicable
-origCoordSys: “Earth”
-navRef: “GGA”
-coordSys: "Earth" for u, v, w, and d
-corr: not applicable
-rssi: not applicable
-u_mps: horizontal velocity in x-direction, in meters per second
-v_mps: horizontal velocity in y-direction, in meters per second
-w_mps: vertical velocity (+ up), in meters per second
-d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
-numInvalid: number of ensembles with invalid velocity data
-bottomMode: not applicable
-uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
-vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
-processedSource: source of velocity: BT, VTG, GGA, INT
-dFilter: not applicable
-dFilterThreshold: not applicable
-wFilter: not applicable
-wFilterThreshold: not applicable
-gpsDiffQualFilter: differential correction quality (1, 2, 4)
-gpsAltitudeFilter: change in altitude filter "Auto", "Manual", "Off"
-gpsAltitudeFilterChange: threshold from mean for altitude filter
-gpsHDOPFilter: horizontal dilution of precision filter "Auto", "Manual", "Off"
-gpsHDOPFilterMax: max acceptable value of HDOP
-gpsHDOPFilterChange: maximum change allowed from mean
-smoothFilter: filter based on smoothing function “Auto”, “Off”
-smoothSpeed: smoothed boat speed
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
-112
-beamFilter: Nan
-validData: Logical array of identifying valid and invalid data for each filter applied Row 1–composite Row 2–original Row 3–dFilter or diffQual Row 4–wFilter or altitude Row 5–smoothFilter Row 6–beamFilter or HDOP
-use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
-d_meas_thresholds: thresholds for difference velocity filter using entire measurement
-w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
-ping_type: type of bottom track ping
-vtgVel: structure
-rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
-frequency_Hz: not applicable
-origCoordSys: “Earth”
-navRef: “VTG”
-coordSys: "Earth" for u, v, w, and d
-corr: not applicable
-rssi: not applicable
-u_mps: horizontal velocity in x-direction, in meters per second
-v_mps: horizontal velocity in y-direction, in meters per second
-w_mps: vertical velocity (+ up), in m/s
-d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
-numInvalid: number of ensembles with invalid velocity data
-bottomMode: not applicable
-uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
-vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
-processedSource: source of velocity: BT, VTG, GGA, INT
-dFilter: not applicable
-dFilterThreshold: not applicable
-wFilter: not applicable
-wFilterThreshold: not applicable
-gpsDiffQualFilter: differential correction quality (1, 2, 4)
-gpsAltitudeFilter: change in altitude filter "Auto", "Manual", "Off"
-gpsAltitudeFilterChange: threshold from mean for altitude filter
-gpsHDOPFilter: horizontal dilution of precision filter "Auto", "Manual", "Off"
-gpsHDOPFilterMax: max acceptable value of HDOP
-gpsHDOPFilterChange: maximum change allowed from mean
-113
-smoothFilter: filter based on smoothing function “Auto”, “Off”
-smoothSpeed: smoothed boat speed
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
-beamFilter: not applicable
-validData: logical array of identifying valid and invalid data for each filter applied Row 1–composite Row 2–original Row 3–dFilter or diffQual Row 4–wFilter or altitude Row 5–smoothFilter Row 6–beamFilter or HDOP
-use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
-d_meas_thresholds: thresholds for difference velocity filter using entire measurement
-w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
-ping_type: type of bottom track ping
-gps: structure
-rawGGALat_deg: raw latitude in degrees, [n,ensemble]
-rawGGALon_deg: raw longitude in degrees, [n,ensemble]
-rawGGAAltitude_m: raw altitude in meters, [n,ensemble]
-rawGGADifferential: differential correction indicator, [n,ensemble]
-rawGGAHDOP: horizontal dilution of precision, [n,ensemble]
-rawGGAUTC: UTC time, hhmmss.ss, [n,ensemble]
-rawGGASerialTime: UTC time of gga data in seconds past midnight, [n,ensemble]
-rawGGANumSats: number of satellites reported in GGA sentence, [n,ensemble]
-rawVTGCourse_deg: course in degrees, [n, ensemble]
-rawVTGSpeed_mps: speed in meters per second, [n, ensemble]
-rawVTGDeltaTime: VTG delta time (sec)
-rawGGADeltaTime: GGA delta time (sec)
-extGGALat_deg: raw latitude in degrees computed by external source, [1,ensemble]
-extGGALon_deg: raw longitude in degrees computed by external source, [1,ensemble]
-extGGAAltitude_m: raw altitude in meters computed by external source, [1,ensemble]
-extGGADifferential: differential correction indicator computed by external source, [1,ensemble]
-extGGAHDOP: horizontal dilution of precision computed by external source, [1,ensemble]
-extGGAUTC: UTC time, hhmmss.ss computed by external source, [1,ensemble]
-extGGASerialTime: UTC time of gga data in seconds past midnight computed by external source, [1,ensemble]
-extGGANumSats: number of satellites computed by external source [1,ensemble]
-114
-extVTGCourse_deg: course in degrees computed by external source, [1, ensemble]
-extVTGSpeed_mps: speed in meters per second computed by external source, [1, ensemble]
-ggaPositionMethod: method used to process gga data for position ('End', 'Average', 'External')
-ggaVelocityMethod: method used to process gga data for velocity ('End', 'Average', 'External')
-vtgVelocityMethod: method used to process vtg data for velocity ('Average', 'External)
-ggaLatEns_deg: processed latitude in degrees, [1,ensemble]
-ggaLonEns_deg: processed longitude in degrees, [1,ensemble]
-UTMEns_m: UTM position from processed gga data, [2,ensemble]
-ggaVelocityEns_mps: Boat velocity computed from gga data [2,ensemble]
-ggaSerialTimeEns: UTC time of gga data in seconds past midnight, [1,ensemble]
-vtgVelocityEns_mps: boat velocity computed from vtg data [2,ensemble]
-perGoodEns: percentage of available data used to compute ensemble value
-hdopEns: horizontal dilution of precision for each ensemble using velocity method
-numSatsEns: number of satellites for each ensemble, using velocity method
-altitudeEns_m: altitude for each ensemble, using velocity method
-diffQualEns: differential quality for each ensemble, using velocity method
-sensors: structure
-battery_voltage: structure
-selected: name of selected source “internal”, ”external”, ”user”
-internal: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-external: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-heading_deg: structure
-selected: name of selected source “internal”, ”external”
-internal: structure
-data: corrected heading data
-orginalData: original uncorrected heading data
-source: source of heading data (Internal, GPS, Gyro, Other)
-magvar_deg: magnetic variation for these heading data
-magvarOrig_deg: original magnetic variation
-alignCorrection_deg: alignment correction to align compass with instrument
-align_correction_orig_deg: original alignment correction to align compass with
-115
-instrument
-magError: magnetic error for each ensemble (SonTek G3 compass only)
-pitchLimit: pitch limit of compass calibration (SonTek G3 compass only)
-rollLimit: roll limit of compass calibration (SonTek G3 compass only)
-external: structure
-data: corrected heading data
-orginalData: original uncorrected heading data
-source: source of heading data (Internal, GPS, Gyro, Other)
-magvar_deg: magnetic variation for these heading data
-magvarOrig_deg: original magnetic variation
-alignCorrection_deg: alignment correction to align compass with instrument
-magError: not applicable
-pitchLimit: not applicable
-rollLimit: not applicable
-user: structure
-data: set to zeros
-orginalData: set to zeros
-source: user
-magvar_deg: set to zero
-magvarOrig_deg: set to zero
-alignCorrection_deg: set to zero
-magError: not applicable
-pitchLimit: not applicable
-rollLimit: not applicable
-pitch_deg: structure
-selected: name of selected source “internal”, ”external”, ”user”
-internal: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-external: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-roll_deg: structure
-selected: name of selected source “internal”, ”external”, ”user”
-internal: structure
-116
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-external: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-temperature_degC: structure
-selected: name of selected source “internal”, ”external”, ”user”
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-external: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-salinity_ppt: structure
-selected: name of selected source “internal”, ”external”, ”user”
-internal: object of clsSensorData
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-external: object of clsSensorData
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: object of clsSensorData
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-speedOfSound_mps: structure
-selected: name of selected source “internal”, ”external”, ”user”
-internal: structure
-data: time series data for sensor
-117
-dataOrig: original time series data for sensor
-source: source of data
-external: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-user: structure
-data: time series data for sensor
-dataOrig: original time series data for sensor
-source: source of data
-depths: structure
-selected: name of depth structure used to compute discharge
-composite: turn composite depths “On” or “Off”
-btDepths: structure
-depthOrig_m: original multibeam depth data from transect file (includes draftOrig), in m
-depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
-depthProcessed_m: depth data filtered and interpolated
-depthFreq_Hz: defines ADCP frequency used of each raw data point
-depthInvalidIndex: index of depths marked invalid
-depthSource: source of depth data (BT, VB, DS)
-depthSourceEns: source of each depth value
-draftOrig_m: original draft from data files, in meters
-draftUse_m: draft used in computation of depth_m and depthCellDepths_m
-depthCellDepthOrig_m: depth cell range from the transducer, in meters
-depthCellDepth_m: depth to centerline of depth cells, in meters
-depthCellSize_m: size of depth cells, in meters
-depthCellSizeOrig_m: size of depth cells, in meters
-smoothDepth: smoothed beam depth
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-avgMethod: defines averaging method: "Simple", "IDW"
-filterType: type of filter: "None", "TRDI", "Smooth"
-interpType: type of interpolation: "None", "Linear", "Smooth"
-validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
-validBeams: logical array, one row for each beam identifying valid data
-validData: logical array of valid mean depth for each ensemble
-vbDepths: structure
-depthOrig_m: original depth data from transect file (includes draftOrig), in meters
-depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
-depthProcessed_m: depth data filtered and interpolated
-depthFreq_Hz: defines ADCP frequency used of each raw data point
-118
-depthInvalidIndex: index of depths marked invalid
-depthSource: source of depth data (BT, VB, DS)
-depthSourceEns: source of each depth value
-draftOrig_m: original draft from data files, in meters
-draftUse_m: draft used in computation of depth_m and depthCellDepths_meters
-depthCellDepthOrig_m: depth cell range from the transducer, in meters
-depthCellDepth_m: depth to centerline of depth cells, in meters
-depthCellSize_m: size of depth cells, in meters
-depthCellSizeOrig_m: size of depth cells, in meters
-smoothDepth: smoothed beam depth
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-avgMethod: defines averaging method: "Simple", "IDW"
-filterType: type of filter: "None", "TRDI", "Smooth"
-interpType: type of interpolation: "None", "Linear", "Smooth"
-validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
-validBeams: logical array, 1 row for each beam identifying valid data
-validData: logical array of valid mean depth for each ensemble
-dsDepths: structure
-depthOrig_m: original depth data from transect file (includes draftOrig), in meters
-depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
-depthProcessed_m: depth data filtered and interpolated
-depthFreq_Hz: defines ADCP frequency used of each raw data point
-depthInvalidIndex: index of depths marked invalid
-depthSource: source of depth data (BT, VB, DS)
-depthSourceEns: source of each depth value
-draftOrig_m: original draft from data files, in meters
-draftUse_m: draft used in computation of depth_m and depthCellDepths_m
-depthCellDepthOrig_m: depth cell range from the transducer, in meters
-depthCellDepth_m: depth to centerline of depth cells, in meters
-depthCellSize_m: size of depth cells, in meters
-depthCellSizeOrig_m: size of depth cells, in meters
-smoothDepth: smoothed beam depth
-smoothUpperLimit: smooth function upper limit of window
-smoothLowerLimit: smooth function lower limit of window
-avgMethod: defines averaging method: "Simple", "IDW"
-filterType: type of filter: "None", "TRDI", "Smooth"
-interpType: type of interpolation: "None", "Linear", "Smooth"
-validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
-validBeams: logical array, 1 row for each beam identifying valid data
-validData: logical array of valid mean depth for each ensemble
-119
-edges: structure
-recEdgeMethod: “Variable” uses SonTek’s equation, “Fixed” uses 0.91
-velMethod: “VectorProf” uses SonTek’s method, “MeasMag” uses TRDI’s method
-left: structure
-type: type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
-dist_m: distance to shore
-custCoef: discharge computation coefficient
-numEns2Avg: number of ensembles to average for depth and velocity
-userQ_cms: discharge provided directly from user
-orig_type: original type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
-orig_distance_m: original distance to shore
-orig_cust_coef: original discharge computation coefficient
-orig_number_ensembles: original number of ensembles to average for depth and velocity
-orig_user_discharge_cms: original discharge provided directly from user
-right: structure
-type: type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
-dist_m: distance to shore
-custCoef: discharge computation coefficient
-numEns2Avg: number of ensembles to average for depth and velocity
-userQ_cms: discharge provided directly from user
-orig_type: original type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
-orig_distance_m: original distance to shore
-orig_cust_coef: original discharge computation coefficient
-orig_number_ensembles: original number of ensembles to average for depth and velocity
-orig_user_discharge_cms: original discharge provided directly from user
-extrap: structure
-topMethodOrig: extrapolation method for top of profile: “Power”, “Constant”, “3-Point”
-botMethodOrig: extrapolation method for bottom of profile: “Power”, “No Slip”
-exponentOrig: exponent for power of no slip methods
-topMethod: extrapolation method for top of profile: “Power”, “Constant”, “3-Point”
-botMethod: extrapolation method for bottom of profile: “Power”, “No Slip”
-exponent: exponent for power of no slip methods
-dateTime: structure
-date: measurement date
-startSerialTime: Matlab serial time for start time
-120
-endSerialTime: Matlab serial time for end time
-transectDuration_sec: duration of transect in seconds
-ensDuration_sec: duration of each ensemble in seconds
+     - compass: structure
+        - error: compass error
+- compassEval: structure ;contains time stamp and output from compass 
+  evaluation
+   - timestamp: time stamp of test
+   - data: data from text, typically all text
+   - result: results of test
+     - compass: structure
+        - error: compass error
+- extrapFit: structure
+   - threshold: threshold as a percent for determining if a median is valid
+   - subsection: percent of discharge.
+   - fitMethod: method used to determine fit (Automatic or Manual)
+   - use_weighted: weighted used = 1, weighted not used = 0
+   - use_q: discharge used for subsectioning = 1, cross product used = 0
+   - sub_from_left: subsectioning from left to right = 1, subsectioning from start bank = 0
+   - messages: variable for messages to user
+   - normData: structure
+     - fileName: name of transect file
+     - cellDepthNormalized: normalized depth of cell
+     - unitNormalized: normalized discharge or velocity for all depth cells
+     - unitNormalizedMed: median of normalized data within 5 percent partitions
+     - unitNormalizedNo: number of data points in each median
+     - unitNormalizedz: relative depth for each median (5 percent increments)
+     - unitNormalized25: value for which 25 percent of normalized values are smaller
+     - unitNormalized75: value for which 25 percent of normalized values are larger
+     - dataType: type of data (velocity or discharge)
+     - dataExtent: extents of data defined by user input subsection percentages
+     - validData: index of median values with point count greater than threshold cutoff
+     - weights: weights for each cell computed based on the relative discharge or velocity of the ensemble
+     - use_weighted: weighted used = 1, weighted not used = 0
+     - use_q: discharge used for subsectioning = 1, cross product used = 0
+     - sub_from_left: subsectioning from left to right = 1, subsectioning from start bank = 0
+   - selFit: structure
+     - filename: name of transect file
+     - topMethod: top extrapolation method
+     - botMethod: bottom extrapolation method
+     - coef: power fit coefficient
+     - exponent: power fit exponent
+     - u: fit values of the variable
+     - uAuto: fit values from automatic fit
+     - z: distance from the streambed for fit variable
+     - zAuto: z values for automatic fit
+     - expMethod: method to determine exponent (default, optimize, or manual)
+     - dataType: type of data (velocity or unit discharge)
+     - exponent95confint: 95% confidence intervals for optimized exponent
+     - residuals: residuals from fit
+     - rsqr: adjusted r^2 for optimized exponent
+     - fitMethod: user selected method (Automatic or Manual)
+     - botMethodAuto: selected extrapolation for top
+     - topMethodAuto: selected extrapolation for bottom
+     - exponentAuto: selected exponent
+     - topfitr2: top fit custom coefficient of determination
+     - topmaxdiff: maximum difference between power and three-point at top
+     - botdiff: difference between power and no slip at 10 percent of the depth from the bottom
+     - botrsqr: bottom fit coefficient of determination
+     - fitrsqr: selected fit of selected power/no slip fit
+     - nsexponent: no slip optimized exponent
+     - ppexponent: “Power, power” fit optimized exponent
+     - topr2: coefficient of determination for linear fit through top four median cells
+   - qSensitivity: structure
+     - qPPmean: discharge “power, power” with 1/6 exponent
+     - qPPoptmean: discharge “power, power“ optimized
+     - qCNSmean: discharge “constant, no slip with 1/6 exponent”
+     - qCNSoptmean: discharge “constant, optimized no slip”
+     - q3pNSmean: discharge ”three point, no slip with 1/6 exponent”
+     - q3pNSoptmean: discharge “three-point, optimized no slip”
+     - qPPoptperdiff: ”power, power” fit optimized percent difference from “power, power” with 1/6 exponent
+     - qCNSperdiff: ”constant, no slip with 1/6 exponent” percent difference from “power, power” with 1/6 exponent
+     - qCNSoptperdiff: ”constant, optimized no slip” percent difference from “power, power” with 1/6 exponent
+     - q3pNSperdiff: “three point, no slip with 1/6 exponent” percent difference from “power, power” with 1/6 exponent
+     - q3pNSoptperdiff: “three point, optimized no slip” percent difference from “power, power” with 1/6 exponent
+     - ppExponent: optimized “power, power” exponent
+     - nsExponent: optimized no slip exponent
+     - manTop: manually specified top method
+     - manBot: manually specified bottom method
+     - manExp: manually specified exponent
+     - qManmean: mean discharge for manually specified extrapolations
+     - qManperdiff: manually specified extrapolations percent difference from “power, power” with 1/6 exponent
+     - q_3p_ns_list: discharge for each transect and measurement using 3-point and no slip 1/6th
+     - q_3p_ns_opt_list: discharge for each transect and measurement using 3-point and no slip optimized
+     - q_bot_3p_ns_list: bottom discharge for each transect and measurement using 3-point and no slip 1/6th
+     - q_bot_3p_ns_opt_list: bottom discharge for each transect and measurement using 3-point and no slip optimized
+     - q_bot_cns_list: bottom discharge for each transect and measurement using constant and no slip 1/6th
+     - q_bot_cns_opt_list: bottom discharge for each transect and measurement using constant and no slip optimized
+     - q_bot_ pp_list: bottom discharge for each transect and measurement using power 1/6th
+     - q_ bot_pp_opt_list: bottom discharge for each transect and measurement using power optimized
+     - q_ cns_list: discharge for each transect and measurement using constant and no slip 1/6th
+     - q_ cns_opt_list: discharge for each transect and measurement using constant and no slip optimized
+     - q_ pp_list: discharge for each transect and measurement using power 1/6th
+     - q_ pp_opt_list: discharge for each transect and measurement using power optimized
+     - q_top_3p_ns_list: top discharge for each transect and measurement using 3-point and no slip 1/6th
+     - q_top_3p_ns_opt_list: top discharge for each transect and measurement using 3-point and no slip optimized
+     - q_top_cns_list: top discharge for each transect and measurement using constant and no slip 1/6th
+     - q_top_cns_opt_list: top discharge for each transect and measurement using constant and no slip optimized
+     - q_top_pp_list: top discharge for each transect and measurement using power 1/6th
+     - q_top_pp_opt_list: top discharge for each transect and measurement using power optimized
+- discharge: structure
+   - top: transect total extrapolated top discharge
+   - middle: transect total measured middle discharge including interpolations
+   - bottom: transect total extrapolated bottom discharge
+   - topEns: extrapolated top discharge by ensemble
+   - middleCells: measured middle discharge including interpolations by cell
+   - middleEns: measured middle discharge including interpolations by ensemble
+   - bottomEns: extrapolate bottom discharge by ensemble
+   - left: left edge discharge
+   - leftidx: ensembles used for left edge
+   - right: right edge discharge
+   - rightidx: ensembles used for right edge
+   - totalUncorrected: total discharge for transect uncorrected for moving bed, if required
+   - total: total discharge with moving-bed correction applied if necessary
+   - correctionFactor: moving-bed correction factor, if required
+   - intCells: total discharge computed for invalid depth cells excluding invalid ensembles
+   - intEns: total discharge computed for invalid ensembles
+   - top_speed: computed speed from top extrapolation for each ensemble
+   - bottom_speed: computed speed from bottom extrapolation for each ensemble
+   - left_edge_speed: computed speed in the left edge based on edge settings
+   - right_edge_speed: computed speed in the right edge based on edge settings
+- uncertainty: structure
+   - cov: coefficient of variation for all used transect discharges
+   - cov95: coefficient of variation inflated by the 95% coverage factor
+   - invalid95: estimated 95% uncertainty for discharge in invalid bins and ensembles
+   - edges95: estimated 95% uncertainty for the computed edge discharges
+   - extrapolation95: estimated 95% uncertainty in discharge due to top and bottom extrapolations
+   - movingBed95: estimated 95% uncertainty due to moving-bed tests and conditions
+   - systematic: systematic error estimated at 1.5%
+   - total95: estimated 95% uncertainty in discharge using automated values
+   - cov95User: user provided value for random uncertainty
+   - invalid95User: user provided estimate of uncertainty for invalid data
+   - edges95User: user provided estimate of uncertainty for edges
+   - extrapolation95User: user provided estimate of uncertainty for top and bottom extrapolation
+   - movingBed95User: user provided estimate of uncertainty due to moving-bed conditions
+   - systematicUser: user provided estimate of systematic uncertainty
+   - total95User: estimated 95% uncertainty in discharge using user provide values to override automated values
+- qa: structure
+   - qRunThresholdCaution: caution threshold for interpolated discharge for a run of invalid ensembles, in percent
+   - qRunThresholdWarning: warning threshold for interpolated discharge for a run of invalid ensembles, in percent
+   - qTotalThresholdWarning: warning threshold for total interpolated discharge for invalid ensembles, in percent
+   - qTotalThresholdCaution: caution threshold for total interpolated discharge for invalid ensembles
+   - settings_dict: indicates if a user has changed something on the tab
+   - transects: data structure for quality assurance checks of transects
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - uncertainty: code for only two transects (0-good, 1-caution)
+      - duration: code for check that duration is > 720 sec (0-good, 1-caution)
+      - number: code for the number of transects to use (0-good, 1-caution, 
+        2-warning)
+      - recip: code for reciprocal transects (0-good, 2-warning)
+      - sign: code for consistent sign in total discharge (0-good, 2-warning)
+      - batt_voltage: caution for low battery voltage
+   - systemTest: data structure for quality assurance checks of system tests
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+   - compass: data structure for quality assurance checks of compass tests and evaluations
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - status1: status of compass calibration and evaluation
+      - status2: status of magnetic variation and pitch and roll sensors
+      - magvar: 0-magvar consistent, 1-magvar inconsistent, 2-magvar=0
+      - magvarIdx: indices of transects with magvar=0
+      - magErrorIdx: indices of transects with a magnetic error exceeding threshold (SonTek G3 only)
+      - pitchMeanWarningIdx: indices of transects with mean pitch exceeding warning threshold
+      - pitchMeanCautionIdx: indices of transects with mean pitch exceeding caution threshold
+      - pitchStdCautionIdx: indices of transects with pitch standard deviations exceeding threshold
+      - rollMeanWarningIdx: indices of transects with mean roll exceeding warning threshold
+      - rollMeanCautionIdx: indices of transects with mean roll exceeding caution threshold
+      - rollStdCautionIdx: indices of transects with roll standard deviations exceeding threshold
+   - temperature: data structure for quality assurance checks of temperature comparisons and change
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+   - movingbed: data structure for quality assurance checks of moving-bed tests and conditions
+      - messages: quality assessment messages to the user
+      - code: quality code, 1-Good, 2-Caution, 3-Warning
+      - status: overall status, good, caution, or warning
+   - user: data structure for quality assurance checks of user input data
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - staName: checks for a station name (0-good, 1-caution)
+      - staNumber: checks for a station number (0-good, 1-caution)
+   - depths: data structure for quality assurance checks of depth data
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - draft: draft consistency and zero value check (0-good, 1-caution, 2-warning)
+      - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
+      - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
+      - qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
+      - qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
+      - qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
+      - qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
+      - allInvalid: logical array indication what transects contain all invalid data
+   - btVel: data structure for quality assurance checks of bottom track velocities
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
+      - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
+      - qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
+      - qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
+      - qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
+      - qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
+      - allInvalid: logical array indication what transects contain all invalid data
+   - ggaVel: data structure for quality assurance checks of GGA boat velocities
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - lag_status: status of lag check, good, caution, or warning
+      - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
+      - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
+      - qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
+      - qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
+      - qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
+      - qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
+      - allInvalid: logical array indication what transects contain all invalid data
+   - vtgVel: data structure for quality assurance checks of VTG boat velocities
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - lag_status: status of lag check, good, caution, or warning
+      - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
+      - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
+      - qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
+      - qRunCaution: logical array indicating what transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
+      - qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
+      - qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
+      - allInvalid: logical array indication what transects contain all invalid data
+   - wVel: data structure for quality assurance checks of water track velocities
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
+      - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
+      - qTotalWaring: logical array indicating what transects and tests exceed the qTotalThresholdWarning. Each transect as a row and each filter as a column
+      - qRunCaution: logical array indicating what which transects and tests exceed the qRunThresholdCaution. Each transect as a row and each filter as a column
+      - qTotalCaution: logical array indicating what transects and tests exceed the qTotalThresholdCaution. Each transect as a row and each filter as a column
+      - qRunWarning: logical array indicating what transects and tests exceed the qRunThresholdWarning. Each transect as a row and each filter as a column
+      - allInvalid: logical array indication what transects contain all invalid data
+   - extrapolation: data structure for quality assurance checks of extrapolations
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+   - edges: data structure for quality assurance checks of edge discharge estimates
+      - messages: quality assessment messages to the user
+      - status: overall status, good, caution, or warning
+      - rightSign: discharge sign of right edge not consistent, caution (1)
+      - leftSign: discharge sign of left edge not consistent, caution (1)
+      - leftzero: left edge with zero discharge, warning (2)
+      - leftZeroIdx: indices of transects with leftzero
+      - rightzero: right edge with zero discharge, warning (2)
+      - rightZeroIdx: indices of transects with rightzero
+      - leftType: left edge type is inconsistent, warning (2)
+      - rightType: right edge type is inconsistent, warning (2)
+      - leftQ: left edge discharge is greater than 5 percent, caution (1)
+      - leftQIdx: indices of transects for leftQ
+      - rightQ: right edge discharge is greater than 5 percent, caution (1)
+      - rigthQIdx: indices of transects for rightQ
+      - leftDistMovedIdx: indices of transects exceeding boat movement threshold
+      - rightDistMovedIdx: indices of transects exceeding boat movement threshold
+      - invalidTransLeftIdx: indices of transects with invalid left edge ensembles
+      - invalidTransRightIdx: indices of transects with invalid right edge ensembles
+- oursin: structure
+   - bot_meth: the method proposed by Extrap for each transect
+   - exp_95ic_min: the min range of 95% interval if power-power method is used for transect
+   - exp_95ic_max: the max range of 95% interval if power-power method is used for transect
+   - pp_exp: the power-power exponent computed by Extrap for Power-Power transect only
+   - ns_exp: the no-slip exponent computed by Extrap for No-Slip method transect only
+   - exp_pp_min: minimum power-power exponent used for simulating possible discharge
+   - exp_pp_max: maximum power-power exponent used for simulating possible discharge
+   - exp_ns_min: minimum no-slip exponent used for simulating possible discharge
+   - exp_ns_max: maximum no-slip exponent used for simulating possible discharge
+   - d_right_error_min: the minimum right distance (in m) used for simulating the discharge for each transect
+   - d_left_error_min: the minimum left distance (in m) used for simulating the discharge for each transect
+   - d_right_error_max: the maximum right distance (in m) used for simulating the discharge for each transect
+   - d_left_error_max: the maximum left distance (in m) used for simulating the discharge for each transect
+   - draft_error_list: the draft (in cm) used for simulating the discharge for each transect
+   - u_syst_list: the computed systematic uncertainty (68%) for each transect
+   - u_compass_list: the computed uncertainty (68%) due to compass error for each transect
+   - u_meas_list: the computed measured area uncertainty (68%) for each transect
+   - u_ens_list: the computed uncertainty (68%) due to limited number of ensemble for each transect
+   - u_movbed_list: the estimated uncertainty (68%) due to moving bed for each transect
+   - u_invalid_water_list: the computed uncertainty (68%) due to invalid water velocities for each transect
+   - u_invalid_boat_list: the computed uncertainty (68%) due to invalid boat velocities for each transect
+   - u_invalid_depth_list: the computed uncertainty (68%) due to invalid depths for each transect
+   - u_top_list: the computed uncertainty (68%) due to top discharge extrapolation for each transect
+   - u_bot_list: the computed uncertainty (68%) due to bottom discharge extrapolation for each transect
+   - u_left_list: the computed uncertainty (68%) due to left discharge extrapolation for each transect
+   - u_right_list: the computed uncertainty (68%) due to right discharge extrapolation for each transect
+   - u_syst_mean_user_list: the user specified systematic uncertainty (68%) for each transect
+   - u_compass_user_list: user specified uncertainty (68%) due to compass error for each transect
+   - u_meas_mean_user_list: the user specified measured area uncertainty (68%) for each transect
+   - u_ens_user_list: the user specified uncertainty (68%) due to limited number of ensemble for each transect
+   - u_movbed_user_list: the user specified uncertainty (68%) due to moving bed for each transect
+   - u_invalid_water_user_list: the user specified uncertainty (68%) due to invalid water velocities for each transect
+   - u_invalid_boat_user_list: the user specified uncertainty (68%) due to invalid boat velocities for each transect
+   - u_invalid_depth_user_list: the user specified uncertainty (68%) due to invalid depths for each transect
+   - u_top_mean_user_list: the user specified uncertainty (68%) due to top discharge extrapolation for each transect
+   - u_bot_mean_user_list: the user specified uncertainty (68%) due to bottom discharge extrapolation for each transect
+   - u_left_mean_user_list: the user specified uncertainty (68%) due to left discharge extrapolation for each transect
+   - u_right_mean_user_list: the user specified uncertainty (68%) due to right discharge extrapolation for each transect
+   - cov_68: computed uncertainty (68%) due to coefficient of variation
+   - sim_original: discharges (total, and subareas) computed for the processed discharge
+   - sim_extrap_pp_16: discharges (total, and subareas) computed using power fit with 1/6th exponent
+   - sim_extrap_pp_min: discharges (total, and subareas) computed using power fit with minimum exponent
+   - sim_extrap_pp_max: discharges (total, and subareas) computed using power fit with maximum exponent
+   - sim_extrap_cns_16: discharges (total, and subareas) computed using constant no slip with 1/6th exponent
+   - sim_extrap_cns_min: discharges (total, and subareas) computed using constant no slip with minimum exponent
+   - sim_extrap_cns_max: discharges (total, and subareas) computed using constant no slip with maximum exponent
+   - sim_extrap_3pns_16: discharges (total, and subareas) computed using 3pt no slip with 1/6the exponent
+   - sim_extrap_3pns_opt: discharges (total, and subareas) computed using 3pt no slip with optimized exponent
+   - sim_edge_min: discharges (total, and subareas) computed using minimum edge q
+   - sim_edge_max: discharges (total, and subareas) computed using maximum edge q
+   - sim_draft_min: discharges (total, and subareas) computed using minimum draft
+   - sim_draft_max: discharges (total, and subareas) computed using maximum draft
+   - sim_cells_trdi: discharges (total, and subareas) computed using TRDI method for invalid cells
+   - sim_cells_above: discharges (total, and subareas) computed using cells above for invalid cells
+   - sim_cells_below: discharges (total, and subareas) computed using cells below for invalid cells
+   - sim_cells_before: discharges (total, and subareas) computed for using cells before for invalid cells
+   - sim_cells_after: discharges (total, and subareas) computed for using cells before for invalid cells
+   - nb_transects: number of transects used
+   - checked_idx: indices of checked transects
+   - user_advanced_settings: user specified advanced settings
+   - exp_pp_min_user: user specified minimum exponent for power fit
+   - exp_pp_max_user: user specified maximum exponent for power fit
+   - exp_ns_min_user: user specified minimum exponent for no slip fit
+   - exp_ns_max_user: user specified maximum exponent for no slip fit
+   - draft_error_user: user specified draft error in m
+   - dzi_prct_user: user specified percent error in depth cell size
+   - right_edge_dist_prct_user: user specified percent error in right edge distance
+   - left_edge_dist_prct_user: user specified percent error in left edge distance
+   - gga_boat_user: user specified standard deviation of boat velocities based on gga in m/s
+   - vtg_boat_user: user specified standard deviation of boat velocities based on vtg in m/s
+   - compass_error_user: user specified compass error in degrees
+   - default_advanced_settings: default values for advanced settings
+   - exp_pp_min: default minimum exponent for power fit
+   - exp_pp_max: default maximum exponent for power fit
+   - exp_ns_min: default minimum exponent for no slip fit
+   - exp_ns_max: default maximum exponent for no slip fit
+   - draft_error: default draft error in m
+   - dzi_prct: default percent error in depth cell size
+   - right_edge_dist_prct: default percent error in right edge distance
+   - left_edge_dist_prct: default percent error in left edge distance
+   - gga_boat: default standard deviation of boat velocities based on gga in m/s
+   - vtg_boat: default standard deviation of boat velocities based on vtg in m/s
+   - compass_error: default compass error in degrees
+   - user_specified_u: user specified uncertainties as standard deviation in percent
+   - u_syst_mean_user: user specified uncertianty (bias) due to the system, in percent
+   - u_movbed_user: user specified uncertianty (bias) due to the moving-bed conditions, in percent
+   - u_compass_user: user specified uncertianty (bias) due to the compass error, in percent
+   - u_ens_user: user specified uncertianty (bias) due to the number of ensembles collected, in percent
+   - u_meas_mean_user: user specified uncertianty (random) of the measured portion of the cross section, in percent
+   - u_top_mean_user: user specified uncertianty (bias) due to the top extrapolation, in percent
+   - u_bot_mean_user: user specified uncertianty (bias) due to the bottom extrapolation, in percent
+   - u_right_mean_user: user specified uncertianty (bias) due to the right edge discharge estimate, in percent
+   - u_left_mean_user: user specified uncertianty (bias) due to the left edge discharge estimate, in percent
+   - u_invalid_boat_user: user specified uncertianty (bias) due to invalid boat velocities, in percent
+   - u_invalid_depth_user: specified uncertianty (bias) due to invalid depths, in percent
+   - u_invalid_water_user: user specified uncertianty (bias) due to invalid water velocities, in percent
+   - u: standard deviations in percent for each transect: u_syst, u_compass, u_movbed, u_ens,
+   - u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
+   - u_contribution_meas: measured discharge uncertainty contribution from: boat, water, depth, and dzi
+   - u_measurement: standard deviations in percent for the whole measurement: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
+   - u_contribution_measurement: uncertainty contribution in percent from: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
+   - u_user: standard deviations in percent for each transect: u_syst, u_compass, u_movbed, u_ens,
+   - u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
+   - u_measurement_user: standard deviations in percent for the whole measurement: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, total, and total_95
+   - u_contribution_measurement_user: uncertainty contribution in percent from: u_syst, u_compass, u_movbed, u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water, u_cov, and total
+
+#### Data structures in TransectData
+
+- adcp: structure
+   - serialNum: serial number of ADCP
+   - manufacturer: manufacturer of ADCP (SonTek, TRDI)
+   - model: model of ADCP (Rio Grande, StreamPro, RiverRay, M9, S5)
+   - firmware: firmware version
+   - frequency_hz: frequency of ADCP (could be "Multi")
+   - beamAngle_deg: angle of beam from vertical
+   - beamPattern: pattern of beams (concave or convex)
+   - configurationCommands: configuration commands sent to ADCP
+   - tMatrix: object of clsTransformationMatrix
+      - source: source of matrix (Nominal, ADCP)
+      - matrix: transformation matrix, 4x4 matrix for TRDI, 4x4x3 or 2 for SonTek.
+- wVel: object of clsWaterData
+   - rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
+   - frequency: defines ADCP frequency used for velocity measurement
+   - origCoordSys: defines the original raw data velocity coordinate system "Beam", "Inst", "Ship", "Earth"
+   - origNavRef: defines the original raw data navigation reference: "None", "BT", "GGA", "VTG"
+   - corr: correlation values for WT, if available
+   - rssi: returned acoustic signal strength.
+   - rssiUnits: units for returned acoustic signal strength: "Counts", "dB", "SNR"
+   - waterMode: water mode for TRDI or 'Variable' for SonTek
+   - blankingDistance_m: distance below transducer where data are marked invalid due to potential ringing interference
+   - cellsAboveSL: logical array of depth cells above the side lobe cutoff based on selected depth reference
+   - cellsAboveSLbt: logical array of depth cells above the side-lobe cutoff based on BT
+   - slLagEffect_m: side lobe distance due to lag and transmit length
+   - uEarthNoRef_mps: horizontal velocity in x-direction with no boat referenced applied, in meters per second
+   - vEarthNoRef_mps: horizontal velocity in y-direction with no boat referenced applied, in meters per second
+   - u_mps: horizontal velocity in x-direction, in meters per second
+   - v_mps: horizontal velocity in y-direction, in meters per second
+   - uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
+   - vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
+   - w_mps: vertical velocity (+ up), in meters per second
+   - d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
+   - invalidIndex: index of ensembles with no valid raw velocity data
+   - numInvalid: estimated number of depth cells in ensembles with no valid raw velocity data
+   - validData: 3–dimensional logical array of valid data
+      - Dim3 1–composite
+      - Dim3 2–original, cells above side lobe
+      - Dim3 3–dFilter
+      - Dim3 4–wFilter
+      - Dim3 5–smoothFilter
+      - Dim3 6–beamFilter
+      - Dim3 7–excludedFilter
+      - Dim3 8–snrFilter
+      - Dim3 9–validDepthFilter
+   - beamFilter: 3 for three-beam solutions, 4 for four-beam solutions
+   - dFilter: difference velocity filter "Auto", ”Manual”, "Off"
+   - dFilterThreshold: threshold for difference velocity filter
+   - wFilter: vertical velocity filter "Auto", “Manual”, "Off"
+   - wFilterThreshold: threshold for vertical velocity filter
+   - excludedDist: distance below transducer above which data are marked invalid
+   - smoothFilter: filter based on smoothing function “Auto”, “Off”
+   - smoothSpeed: smoothed boat speed
+   - smoothUpperLimit: smooth function upper limit of window
+   - smoothLowerLimit: smooth function lower limit of window
+   - snrFilter: signal to noise ratio filter for SonTek data
+   - snrRng: range of beam averaged signal to noise ratio
+   - wtDepthFilter: water track in ensembles with invalid depth are marked invalid
+   - interpolateEns: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", ”TRDI”
+   - interpolateCells: type of interpolation: “None”, “TRDI”, “Linear”
+   - coordSys: defines the velocity coordinate system "Beam", "Inst", "Ship", "Earth"
+   - navRef: defines the navigation reference: "None", "BT", "GGA", "VTG"
+   - slCutoffPer: percentage of range to mark invalid due to side-lobe interference
+   - slCutoffNum: number of user specified cells to mark invalid instead of using percentage
+   - slCutoffType: type of side lobe cutoff used “Percent” or user specified number of cells “Number”
+   - slCutoff_m: side lobe cutoff in meters
+   - use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
+   - d_meas_thresholds: thresholds for difference velocity filter using entire measurement
+   - w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
+   - ping_type: type of ping used
+   - snr_3beam_comp: indicates if 3-beam solutions should be used for invalid SNR filter
+   - snr_beam_velocities: velocities used if snr 3-beam solutions
+- boatVel: structure
+   - selected: name of structure selected as primary reference
+   - composite: composite tracks On or Off
+   - btVel: structure
+      - rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 
+      1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
+      - frequency_Hz: defines ADCP frequency used for velocity measurement
+      - origCoordSys: defines the original raw data velocity coordinate system "Beam", "Inst", "Ship", "Earth"
+      - navRef: “BT”
+      - coordSys: defines the current coordinate system "Beam", "Inst", "Ship", "Earth" for u, v, w, and d
+      - corr: correlation values, in counts (TRDI only)
+      - rssi: return signal strength, in counts (TRDI only)
+      - u_mps: horizontal velocity in x-direction, in meters per second
+      - v_mps: horizontal velocity in y-direction, in meters per second
+      - w_mps: vertical velocity (+ up), in meters per second
+      - d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
+      - numInvalid: number of ensembles with invalid velocity data
+      - bottomMode: bottom track mode for TRDI, 'Variable' for SonTek
+      - uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
+      - vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
+      - processedSource: source of velocity: BT, VTG, GGA, INT
+      - dFilter: difference velocity filter "Auto", ”Manual”, "Off"
+      - dFilterThreshold: threshold for difference velocity filter
+      - wFilter: vertical velocity filter "Auto", “Manual”, "Off"
+      - wFilterThreshold: threshold for vertical velocity filter
+      - gpsDiffQualFilter: not applicable
+      - gpsAltitudeFilter: not applicable
+      - gpsAltitudeFilterChange: not applicable
+      - gpsHDOPFilter: not applicable
+      - gpsHDOPFilterMax: not applicable
+      - gpsHDOPFilterChange: not applicable
+      - smoothFilter: filter based on smoothing function “Auto”, “Off”
+      - smoothSpeed: smoothed boat speed
+      - smoothUpperLimit: smooth function upper limit of window
+      - smoothLowerLimit: smooth function lower limit of window
+      - interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
+      - beamFilter: 3 for three-beam solutions, 4 for four-beam solutions, -1 for automatic
+      - validData: logical array of identifying valid and invalid data for each filter applied 
+        - Row 1–composite 
+        - Row 2–original 
+        - Row 3–dFilter or diffQual 
+        - Row 4–wFilter or altitude
+        - Row 5–smoothFilter 
+        - Row 6–beamFilter or HDOP
+      - use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
+      - d_meas_thresholds: thresholds for difference velocity filter using entire measurement
+      - w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
+      - ping_type: type of bottom track ping
+   - ggaVel: structure
+      - rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
+      - frequency_Hz: not applicable
+      - origCoordSys: “Earth”
+      - navRef: “GGA”
+      - coordSys: "Earth" for u, v, w, and d
+      - corr: not applicable
+      - rssi: not applicable
+      - u_mps: horizontal velocity in x-direction, in meters per second
+      - v_mps: horizontal velocity in y-direction, in meters per second
+      - w_mps: vertical velocity (+ up), in meters per second
+      - d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
+      - numInvalid: number of ensembles with invalid velocity data
+      - bottomMode: not applicable
+      - uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
+      - vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
+      - processedSource: source of velocity: BT, VTG, GGA, INT
+      - dFilter: not applicable
+      - dFilterThreshold: not applicable
+      - wFilter: not applicable
+      - wFilterThreshold: not applicable
+      - gpsDiffQualFilter: differential correction quality (1, 2, 4)
+      - gpsAltitudeFilter: change in altitude filter "Auto", "Manual", "Off"
+      - gpsAltitudeFilterChange: threshold from mean for altitude filter
+      - gpsHDOPFilter: horizontal dilution of precision filter "Auto", "Manual", "Off"
+      - gpsHDOPFilterMax: max acceptable value of HDOP
+      - gpsHDOPFilterChange: maximum change allowed from mean
+      - smoothFilter: filter based on smoothing function “Auto”, “Off”
+      - smoothSpeed: smoothed boat speed
+      - smoothUpperLimit: smooth function upper limit of window
+      - smoothLowerLimit: smooth function lower limit of window
+      - interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
+      - beamFilter: Nan
+      - validData: Logical array of identifying valid and invalid data for each filter applied 
+        - Row 1–composite 
+        - Row 2–original 
+        - Row 3–dFilter or diffQual 
+        - Row 4–wFilter or altitude 
+        - Row 5–smoothFilter 
+        - Row 6–beamFilter or HDOP
+      - use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
+      - d_meas_thresholds: thresholds for difference velocity filter using entire measurement
+      - w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
+      - ping_type: type of bottom track ping
+   - vtgVel: structure
+      - rawVel_mps: contains the raw unfiltered velocity data in m/s. Rows 1–4 are beams 1, 2, 3, and 4 if beam or u, v, w, and d if otherwise
+      - frequency_Hz: not applicable
+      - origCoordSys: “Earth”
+      - navRef: “VTG”
+      - coordSys: "Earth" for u, v, w, and d
+      - corr: not applicable
+      - rssi: not applicable
+      - u_mps: horizontal velocity in x-direction, in meters per second
+      - v_mps: horizontal velocity in y-direction, in meters per second
+      - w_mps: vertical velocity (+ up), in m/s
+      - d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
+      - numInvalid: number of ensembles with invalid velocity data
+      - bottomMode: not applicable
+      - uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
+      - vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
+      - processedSource: source of velocity: BT, VTG, GGA, INT
+      - dFilter: not applicable
+      - dFilterThreshold: not applicable
+      - wFilter: not applicable
+      - wFilterThreshold: not applicable
+      - gpsDiffQualFilter: differential correction quality (1, 2, 4)
+      - gpsAltitudeFilter: change in altitude filter "Auto", "Manual", "Off"
+      - gpsAltitudeFilterChange: threshold from mean for altitude filter
+      - gpsHDOPFilter: horizontal dilution of precision filter "Auto", "Manual", "Off"
+      - gpsHDOPFilterMax: max acceptable value of HDOP
+      - gpsHDOPFilterChange: maximum change allowed from mean
+      - smoothFilter: filter based on smoothing function “Auto”, “Off”
+      - smoothSpeed: smoothed boat speed
+      - smoothUpperLimit: smooth function upper limit of window
+      - smoothLowerLimit: smooth function lower limit of window
+      - interpolate: type of interpolation: "None", “ExpandedT”, “Hold9”, “HoldLast”, "Linear", “Smooth”
+      - beamFilter: not applicable
+      - validData: logical array of identifying valid and invalid data for each filter applied 
+        - Row 1–composite 
+        - Row 2–original 
+        - Row 3–dFilter or diffQual 
+        - Row 4–wFilter or altitude 
+        - Row 5–smoothFilter 
+        - Row 6–beamFilter or HDOP
+      - use_measurement_thresholds: use measurement thresholds = 1, use transect thresholds = 0
+      - d_meas_thresholds: thresholds for difference velocity filter using entire measurement
+      - w_meas_thresholds: thresholds for vertical velocity filter using entire measurement
+      - ping_type: type of bottom track ping
+   - gps: structure
+      - rawGGALat_deg: raw latitude in degrees, [n,ensemble]
+      - rawGGALon_deg: raw longitude in degrees, [n,ensemble]
+      - rawGGAAltitude_m: raw altitude in meters, [n,ensemble]
+      - rawGGADifferential: differential correction indicator, [n,ensemble]
+      - rawGGAHDOP: horizontal dilution of precision, [n,ensemble]
+      - rawGGAUTC: UTC time, hhmmss.ss, [n,ensemble]
+      - rawGGASerialTime: UTC time of gga data in seconds past midnight, [n,ensemble]
+      - rawGGANumSats: number of satellites reported in GGA sentence, [n,ensemble]
+      - rawVTGCourse_deg: course in degrees, [n, ensemble]
+      - rawVTGSpeed_mps: speed in meters per second, [n, ensemble]
+      - rawVTGDeltaTime: VTG delta time (sec)
+      - rawGGADeltaTime: GGA delta time (sec)
+      - extGGALat_deg: raw latitude in degrees computed by external source, [1,ensemble]
+      - extGGALon_deg: raw longitude in degrees computed by external source, [1,ensemble]
+      - extGGAAltitude_m: raw altitude in meters computed by external source, [1,ensemble]
+      - extGGADifferential: differential correction indicator computed by external source, [1,ensemble]
+      - extGGAHDOP: horizontal dilution of precision computed by external source, [1,ensemble]
+      - extGGAUTC: UTC time, hhmmss.ss computed by external source, [1,ensemble]
+      - extGGASerialTime: UTC time of gga data in seconds past midnight computed by external source, [1,ensemble]
+      - extGGANumSats: number of satellites computed by external source [1,ensemble]
+      - extVTGCourse_deg: course in degrees computed by external source, [1, ensemble]
+      - extVTGSpeed_mps: speed in meters per second computed by external source, [1, ensemble]
+      - ggaPositionMethod: method used to process gga data for position ('End', 'Average', 'External')
+      - ggaVelocityMethod: method used to process gga data for velocity ('End', 'Average', 'External')
+      - vtgVelocityMethod: method used to process vtg data for velocity ('Average', 'External)
+      - ggaLatEns_deg: processed latitude in degrees, [1,ensemble]
+      - ggaLonEns_deg: processed longitude in degrees, [1,ensemble]
+      - UTMEns_m: UTM position from processed gga data, [2,ensemble]
+      - ggaVelocityEns_mps: Boat velocity computed from gga data [2,ensemble]
+      - ggaSerialTimeEns: UTC time of gga data in seconds past midnight, [1,ensemble]
+      - vtgVelocityEns_mps: boat velocity computed from vtg data [2,ensemble]
+      - perGoodEns: percentage of available data used to compute ensemble value
+      - hdopEns: horizontal dilution of precision for each ensemble using velocity method
+      - numSatsEns: number of satellites for each ensemble, using velocity method
+      - altitudeEns_m: altitude for each ensemble, using velocity method
+      - diffQualEns: differential quality for each ensemble, using velocity method
+   - sensors: structure
+     - battery_voltage: structure
+       - selected: name of selected source “internal”, ”external”, ”user”
+       - internal: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - external: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - user: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+     - heading_deg: structure
+       - selected: name of selected source “internal”, ”external”
+       - internal: structure
+         - data: corrected heading data
+         - orginalData: original uncorrected heading data
+         - source: source of heading data (Internal, GPS, Gyro, Other)
+         - magvar_deg: magnetic variation for these heading data
+         - magvarOrig_deg: original magnetic variation
+         - alignCorrection_deg: alignment correction to align compass with instrument
+         - align_correction_orig_deg: original alignment correction to align 
+           compass with instrument
+         - magError: magnetic error for each ensemble (SonTek G3 compass only)
+         - pitchLimit: pitch limit of compass calibration (SonTek G3 compass only)
+         - rollLimit: roll limit of compass calibration (SonTek G3 compass only)
+     - external: structure
+         - data: corrected heading data
+         - orginalData: original uncorrected heading data
+         - source: source of heading data (Internal, GPS, Gyro, Other)
+         - magvar_deg: magnetic variation for these heading data
+         - magvarOrig_deg: original magnetic variation
+         - alignCorrection_deg: alignment correction to align compass with instrument
+         - magError: not applicable
+         - pitchLimit: not applicable
+         - rollLimit: not applicable
+     - user: structure
+       - data: set to zeros
+       - orginalData: set to zeros
+       - source: user
+       - magvar_deg: set to zero
+       - magvarOrig_deg: set to zero
+       - alignCorrection_deg: set to zero
+       - magError: not applicable
+       - pitchLimit: not applicable
+       - rollLimit: not applicable
+     - pitch_deg: structure
+       - selected: name of selected source “internal”, ”external”, ”user”
+         - internal: structure
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+         - external: structure
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+         - user: structure
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+     - roll_deg: structure
+       - selected: name of selected source “internal”, ”external”, ”user”
+       - internal: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - external: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - user: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+     - temperature_degC: structure
+       - selected: name of selected source “internal”, ”external”, ”user”
+       - data: time series data for sensor
+       - dataOrig: original time series data for sensor
+       - source: source of data
+       - external: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - user: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+     - salinity_ppt: structure
+         - selected: name of selected source “internal”, ”external”, ”user”
+         - internal: object of clsSensorData
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+         - external: object of clsSensorData
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+           - user: object of clsSensorData
+           - data: time series data for sensor
+           - dataOrig: original time series data for sensor
+           - source: source of data
+     - speedOfSound_mps: structure
+       - selected: name of selected source “internal”, ”external”, ”user”
+       - internal: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+       - external: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+         - user: structure
+         - data: time series data for sensor
+         - dataOrig: original time series data for sensor
+         - source: source of data
+   - depths: structure
+     - selected: name of depth structure used to compute discharge
+     - composite: turn composite depths “On” or “Off”
+     - btDepths: structure
+       - depthOrig_m: original multibeam depth data from transect file 
+         (includes draftOrig), in m
+       - depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
+       - depthProcessed_m: depth data filtered and interpolated
+       - depthFreq_Hz: defines ADCP frequency used of each raw data point
+       - depthInvalidIndex: index of depths marked invalid
+       - depthSource: source of depth data (BT, VB, DS)
+       - depthSourceEns: source of each depth value
+       - draftOrig_m: original draft from data files, in meters
+       - draftUse_m: draft used in computation of depth_m and depthCellDepths_m
+       - depthCellDepthOrig_m: depth cell range from the transducer, in meters
+       - depthCellDepth_m: depth to centerline of depth cells, in meters
+       - depthCellSize_m: size of depth cells, in meters
+       - depthCellSizeOrig_m: size of depth cells, in meters
+       - smoothDepth: smoothed beam depth
+       - smoothUpperLimit: smooth function upper limit of window
+       - smoothLowerLimit: smooth function lower limit of window
+       - avgMethod: defines averaging method: "Simple", "IDW"
+       - filterType: type of filter: "None", "TRDI", "Smooth"
+       - interpType: type of interpolation: "None", "Linear", "Smooth"
+       - validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
+       - validBeams: logical array, one row for each beam identifying valid data
+       - validData: logical array of valid mean depth for each ensemble
+     - vbDepths: structure
+       - depthOrig_m: original depth data from transect file (includes draftOrig), in meters
+       - depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
+       - depthProcessed_m: depth data filtered and interpolated
+       - depthFreq_Hz: defines ADCP frequency used of each raw data point
+       - depthInvalidIndex: index of depths marked invalid
+       - depthSource: source of depth data (BT, VB, DS)
+       - depthSourceEns: source of each depth value
+       - draftOrig_m: original draft from data files, in meters
+       - draftUse_m: draft used in computation of depth_m and depthCellDepths_meters
+       - depthCellDepthOrig_m: depth cell range from the transducer, in meters
+       - depthCellDepth_m: depth to centerline of depth cells, in meters
+       - depthCellSize_m: size of depth cells, in meters
+       - depthCellSizeOrig_m: size of depth cells, in meters
+       - smoothDepth: smoothed beam depth
+       - smoothUpperLimit: smooth function upper limit of window
+       - smoothLowerLimit: smooth function lower limit of window
+       - avgMethod: defines averaging method: "Simple", "IDW"
+       - filterType: type of filter: "None", "TRDI", "Smooth"
+       - interpType: type of interpolation: "None", "Linear", "Smooth"
+       - validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
+       - validBeams: logical array, 1 row for each beam identifying valid data
+       - validData: logical array of valid mean depth for each ensemble
+     - dsDepths: structure
+       - depthOrig_m: original depth data from transect file (includes draftOrig), in meters
+       - depthBeams_m: depth data from transect file adjusted for any draft changes, in meters
+       - depthProcessed_m: depth data filtered and interpolated
+       - depthFreq_Hz: defines ADCP frequency used of each raw data point
+       - depthInvalidIndex: index of depths marked invalid
+       - depthSource: source of depth data (BT, VB, DS)
+       - depthSourceEns: source of each depth value
+       - draftOrig_m: original draft from data files, in meters
+       - draftUse_m: draft used in computation of depth_m and 
+          depthCellDepths_m
+       - depthCellDepthOrig_m: depth cell range from the transducer, in meters
+       - depthCellDepth_m: depth to centerline of depth cells, in meters
+       - depthCellSize_m: size of depth cells, in meters
+       - depthCellSizeOrig_m: size of depth cells, in meters
+       - smoothDepth: smoothed beam depth
+       - smoothUpperLimit: smooth function upper limit of window
+       - smoothLowerLimit: smooth function lower limit of window
+       - avgMethod: defines averaging method: "Simple", "IDW"
+       - filterType: type of filter: "None", "TRDI", "Smooth"
+       - interpType: type of interpolation: "None", "Linear", "Smooth"
+       - validDataMethod: “QRev” requires two valid beams, “TRDI” requires three valid beams
+       - validBeams: logical array, 1 row for each beam identifying valid data
+       - validData: logical array of valid mean depth for each ensemble
+   - edges: structure
+     - recEdgeMethod: “Variable” uses SonTek’s equation, “Fixed” uses 0.91
+     - velMethod: “VectorProf” uses SonTek’s method, “MeasMag” uses TRDI’s method
+     - left: structure
+       - type: type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
+       - dist_m: distance to shore
+       - custCoef: discharge computation coefficient
+       - numEns2Avg: number of ensembles to average for depth and velocity
+       - userQ_cms: discharge provided directly from user
+       - orig_type: original type or shape of edge: “Triangular”, “Square:”, 
+         “Custom”, “User Q”
+       - orig_distance_m: original distance to shore
+       - orig_cust_coef: original discharge computation coefficient
+       - orig_number_ensembles: original number of ensembles to average for depth and velocity
+       - orig_user_discharge_cms: original discharge provided directly from user
+     - right: structure
+       - type: type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
+       - dist_m: distance to shore
+       - custCoef: discharge computation coefficient
+       - numEns2Avg: number of ensembles to average for depth and velocity
+       - userQ_cms: discharge provided directly from user
+       - orig_type: original type or shape of edge: “Triangular”, “Square:”, “Custom”, “User Q”
+       - orig_distance_m: original distance to shore
+       - orig_cust_coef: original discharge computation coefficient
+       - orig_number_ensembles: original number of ensembles to average for depth and velocity
+       - orig_user_discharge_cms: original discharge provided directly from user
+   - extrap: structure
+     - topMethodOrig: extrapolation method for top of profile: “Power”, “Constant”, “3-Point”
+     - botMethodOrig: extrapolation method for bottom of profile: “Power”, “No Slip”
+     - exponentOrig: exponent for power of no slip methods
+     - topMethod: extrapolation method for top of profile: “Power”, “Constant”, “3-Point”
+     - botMethod: extrapolation method for bottom of profile: “Power”, “No Slip”
+     - exponent: exponent for power of no slip methods
+     - dateTime: structure
+       - date: measurement date
+       - startSerialTime: Matlab serial time for start time
+       - endSerialTime: Matlab serial time for end time
+       - transectDuration_sec: duration of transect in seconds
+       - ensDuration_sec: duration of each ensemble in seconds
