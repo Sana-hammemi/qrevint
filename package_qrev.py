@@ -12,7 +12,6 @@ qrev_package = __app__ + __version__.replace(".", "")
 qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
 
 if os.path.exists(qrev_dir):
-    os.mkdir(qrev_dir)
     if click.confirm('QRev version already exists. Overwrite?',
                      default=True, abort=True):
         try:
