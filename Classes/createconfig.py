@@ -31,6 +31,7 @@ class Config:
             "ExtrapolatedSpeed": {"ShowIcon": True},
             "Excluded": {"RioPro": 0.25, "M9": 0.16},
             "QA": {"MinTransects": 2, "MinDuration": 720},
+            "LeftRightFlowDirDiff": {"threshold": 8.1}
         }
 
     def export_config(self):

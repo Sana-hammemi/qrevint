@@ -130,6 +130,7 @@ class Measurement(object):
         gps_quality_threshold=2,
         snr_3beam_comp=False,
         excluded=None,
+        water_dir_diff_threshold=8.1,
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -170,6 +171,7 @@ class Measurement(object):
             Dictionary containting the excluded distances for the RioPro and M9
         """
 
+        self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
         self.use_measurement_thresholds = use_measurement_thresholds
         self.run_oursin = run_oursin
@@ -2749,7 +2751,7 @@ class Measurement(object):
 
         Returns
         -------
-        trans_prop: dict
+        trans_prop: dict{}
         Dictionary of transect properties
             width: float
                 width in m
@@ -2797,6 +2799,9 @@ class Measurement(object):
         for n, transect in enumerate(self.transects):
             # Compute boat track properties
             boat_track = BoatStructure.compute_boat_track(transect)
+
+            # Start bank
+            trans_prop["start_bank"].append(transect.start_edge)
 
             # Get boat speeds
             in_transect_idx = transect.in_transect_idx
@@ -2921,9 +2926,6 @@ class Measurement(object):
                 trans_prop["max_water_speed"][n] = np.nanpercentile(water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)
-
-                # Start bank
-                trans_prop["start_bank"].append(transect.start_edge)
 
             # Only transects used for discharge are included in measurement
             # properties

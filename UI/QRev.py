@@ -455,6 +455,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             config.export_config()
+            with open(options_file, "r") as f:
+                self.agency_options = json.load(f)
 
             # sys.exit()
 
@@ -812,6 +814,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.agency_options["Excluded"]["RioPro"] = 0.25
         if "M9" not in self.agency_options["Excluded"].keys():
             self.agency_options["Excluded"]["M9"] = 0.16
+
+        # Left Right Flow Direction Difference
+        if "LeftRightFlowDirDiff" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: LeftRightFlowDirDiff parameter not found."))
+            sys.exit()
+        if "threshold" not in self.agency_options["LeftRightFlowDirDiff"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg LeftRightFlowDirDiff: threshold parameter not found.")
+            )
+            sys.exit()
 
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
@@ -1291,6 +1303,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             gps_quality_threshold=self.gps_quality_threshold,
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                             excluded=self.agency_options["Excluded"],
+                            water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"]["threshold"],
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1313,6 +1326,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         export_xs=self.xs_export,
                         run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
+                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                            "threshold"],
                     )
 
             # Load and process TRDI data
@@ -1335,6 +1350,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
                         excluded=self.agency_options["Excluded"],
+                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                            "threshold"],
                     )
 
             # Load QRev data
@@ -1399,6 +1416,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             export_xs=self.xs_export,
                             run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
+                            water_dir_diff_threshold=
+                            self.agency_options["LeftRightFlowDirDiff"]["threshold"],
                         )
 
                 # Settings based on measurement settings
@@ -3765,45 +3784,57 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Transect width
                 col += 1
-                item = "{:10.2f}".format(
-                    trans_prop["width"][transect_id] * self.units["L"]
-                )
+                item = ""
+                if not np.isnan(trans_prop["width"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["width"][transect_id] * self.units["L"]
+                    )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect area
                 col += 1
-                item = "{:10.2f}".format(
-                    trans_prop["area"][transect_id] * self.units["A"]
-                )
+                item = ""
+                if not np.isnan(trans_prop["area"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["area"][transect_id] * self.units["A"]
+                    )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat speed
                 col += 1
-                item = "{:6.2f}".format(
-                    trans_prop["avg_boat_speed"][transect_id] * self.units["V"]
-                )
+                item = ""
+                if not np.isnan(trans_prop["avg_boat_speed"][transect_id]):
+                    item = "{:6.2f}".format(
+                        trans_prop["avg_boat_speed"][transect_id] * self.units["V"]
+                    )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat course
                 col += 1
-                item = "{:6.2f}".format(trans_prop["avg_boat_course"][transect_id])
+                item = ""
+                if not np.isnan(trans_prop["avg_boat_course"][transect_id]):
+                    item = "{:6.2f}".format(trans_prop["avg_boat_course"][transect_id])
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water speed
                 col += 1
-                item = "{:6.2f}".format(
-                    trans_prop["avg_water_speed"][transect_id] * self.units["V"]
-                )
+                item = ""
+                if not np.isnan(trans_prop["avg_water_speed"][transect_id]):
+                    item = "{:6.2f}".format(
+                        trans_prop["avg_water_speed"][transect_id] * self.units["V"]
+                    )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water direction
                 col += 1
-                item = "{:6.2f}".format(trans_prop["avg_water_dir"][transect_id])
+                item = ""
+                if not np.isnan(trans_prop["avg_water_dir"][transect_id]):
+                    item = "{:6.2f}".format(trans_prop["avg_water_dir"][transect_id])
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
@@ -5264,6 +5295,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
 
+                elif (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "internal"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr(
+                        "Difference in left and right water direction threshold exeeded"))
+
                 # Magvar is zero
                 elif self.meas.qa.compass["magvar"] == 2:
                     if transect_id in self.meas.qa.compass["magvar_idx"]:
@@ -5294,6 +5331,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     ),
                 )
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                if (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "external"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr(
+                        "Difference in left and right water direction threshold exeeded"))
+                else:
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
                 # Heading source
                 col += 1
