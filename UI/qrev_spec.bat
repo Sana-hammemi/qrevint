@@ -1,1 +1,0 @@
-pyinstaller QRev.spec
