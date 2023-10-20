@@ -219,7 +219,6 @@ class WaterData(object):
         nav_ref_in,
         rssi_in,
         rssi_units_in,
-        excluded_dist_in,
         cells_above_sl_in,
         sl_cutoff_per_in,
         sl_cutoff_num_in,
@@ -235,7 +234,9 @@ class WaterData(object):
         surface_num_cells_in=0,
         ping_type="U",
         use_measurement_thresholds=False,
-        snr_3beam_comp=False,
+        snr_3beam_comp=True,
+        excluded_dist_in=0,
+
     ):
 
         """Populates the variables with input, computed, or default values.
@@ -1091,7 +1092,7 @@ class WaterData(object):
         self.valid_data[1] = valid_data2
 
         # Duplicate original to other filters that have yet to be applied
-        self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
+        # self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
@@ -1496,14 +1497,14 @@ class WaterData(object):
         # and all cells below side lobe are nan
         temp = copy.deepcopy(self)
         temp.filter_beam(4)
-        valid_bool = temp.valid_data[5, :, :]
+        valid_bool = temp.valid_data[5, :, transect.in_transect_idx].T
         valid = valid_bool.astype(float)
-        valid[np.logical_not(temp.cells_above_sl)] = 0
-        valid[np.logical_not(temp.valid_data[1, :, :])] = 0
+        valid[np.logical_not(temp.cells_above_sl[:, transect.in_transect_idx])] = 0
+        valid[np.logical_not(temp.valid_data[1, :, transect.in_transect_idx].T)] = 0
 
         # Initialize processed velocity data variables
-        temp.u_processed_mps = copy.deepcopy(temp.u_mps)
-        temp.v_processed_mps = copy.deepcopy(temp.v_mps)
+        temp.u_processed_mps = copy.deepcopy(temp.u_mps[:, transect.in_transect_idx])
+        temp.v_processed_mps = copy.deepcopy(temp.v_mps[:, transect.in_transect_idx])
 
         # Set invalid data to nan in processed velocity data variables
         temp.u_processed_mps[np.logical_not(valid)] = np.nan
@@ -1515,11 +1516,8 @@ class WaterData(object):
         # Check for presence of 3-beam solutions
         if len(rows_3b) > 0:
             # Initialize velocity data variables
-            u = copy.deepcopy(self.u_mps)
-            v = copy.deepcopy(self.v_mps)
-
-            u = u[:, transect.in_transect_idx]
-            v = v[:, transect.in_transect_idx]
+            u = copy.deepcopy(self.u_mps[:, transect.in_transect_idx])
+            v = copy.deepcopy(self.v_mps[:, transect.in_transect_idx])
 
             u[
                 np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)
@@ -1553,7 +1551,7 @@ class WaterData(object):
                     # n += 1
 
                 # Update object with filter results
-                self.valid_data[5, :, :] = valid_bool
+                self.valid_data[5, :, transect.in_transect_idx] = valid_bool.T
             else:
                 self.valid_data[5, :, :] = temp.valid_data[5, :, :]
         else:
@@ -2089,6 +2087,11 @@ class WaterData(object):
                 ] = invalid_beam_value
                 self.snr_beam_velocities = beam_velocities
 
+                # Recompute water velocities using snr adjusted beam velocities
+                self.snr_beam_velocities = beam_velocities
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
+
             else:
                 bad_snr_idx = np.greater(self.snr_rng, 12)
                 valid = np.copy(self.cells_above_sl)
@@ -2101,7 +2104,10 @@ class WaterData(object):
             # Combine all filter data and update processed properties
             self.all_valid_data()
         elif transect.adcp.manufacturer == "SonTek":
-            self.snr_beam_velocities = None
+            if self.snr_beam_velocities is not None:
+                self.snr_beam_velocities = None
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 

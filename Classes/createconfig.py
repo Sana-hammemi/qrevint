@@ -27,9 +27,11 @@ class Config:
             "MAP": {"show": True},
             "AutonomousGPS": {"allow": False},
             "QDigits": {"method": "sigfig", "digits": 3},
-            "SNR": {"Use3Beam": True},
+            "SNR": {"Use3Beam": False},
             "ExtrapolatedSpeed": {"ShowIcon": True},
+            "Excluded": {"RioPro": 0.25, "M9": 0.16},
             "QA": {"MinTransects": 2, "MinDuration": 720},
+            "LeftRightFlowDirDiff": {"threshold": 8.1}
         }
 
     def export_config(self):

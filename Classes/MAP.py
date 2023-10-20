@@ -19,6 +19,10 @@ class MAP(object):
 
     Attributes
     ----------
+    auto_node_horz: float
+        Minimum horizontal node size.
+    auto_node_vert: float
+        Minimum vertical node size.
     slope: float
         Slope of the average cross-section
     intercept: float
@@ -138,6 +142,9 @@ class MAP(object):
 
         self.cells_discharge = None  # MAP discharge for each cell
         self.total_discharge = None  # MAP total discharge
+
+        self.auto_node_horz = None
+        self.auto_node_vert = None
 
         self.settings = {
             "ed_map_cell_width": False,
@@ -621,6 +628,40 @@ class MAP(object):
 
         self.acs_distance = acs_translated
 
+    def compute_auto_node_size(self, data_transects):
+        """Computes auto node sizes.
+
+        Parameters:
+            data_transects: dict
+                Dictionary of transects data loaded from Measurement
+
+        """
+
+        # compute width widths
+        acs_distance = self.acs_distance
+
+        flat_acs = np.sort(np.concatenate(acs_distance).ravel())
+        self.auto_node_horz = np.nanmax(
+            [
+                np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
+                np.nanmedian(
+                    np.abs([np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
+                ),
+            ]
+        )
+
+        # compute vertical
+        self.auto_node_vert = np.nanmax(
+            [
+                0.1,
+                2
+                * (
+                    data_transects["cell_depth"][0][1, 0]
+                    - data_transects["cell_depth"][0][0, 0]
+                ),
+            ]
+        )
+
     def compute_node_size(
         self,
         meas,
@@ -631,8 +672,7 @@ class MAP(object):
     ):
         """Define horizontal and vertical mesh
 
-        Attributes
-        ----------
+        Parameters:
         meas: Measurement
             Object of Measurement class
         data_transects: dict
@@ -652,18 +692,9 @@ class MAP(object):
             [min(l) for l in acs_distance]
         )
         if node_horizontal_user is None:
-            flat_acs = np.sort(np.concatenate(acs_distance).ravel())
-            node_horz = np.nanmax(
-                [
-                    np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
-                    np.nanmedian(
-                        np.abs(
-                            [np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance]
-                        )
-                    ),
-                ]
-            )
-
+            if self.auto_node_horz is None:
+                self.compute_auto_node_size(data_transects)
+            node_horz = self.auto_node_horz
         else:
             node_horz = node_horizontal_user
 
@@ -686,7 +717,6 @@ class MAP(object):
         )
 
         # Meshes height
-        cell_depth = data_transects["cell_depth"]
         depth_data = data_transects["depth_data"]
         all_depth = np.array([item for subarray in depth_data for item in subarray])
         if node_vertical_user:
@@ -699,13 +729,16 @@ class MAP(object):
                 3,
             )
         else:
-            lag = np.nanmax([0.1, 2 * (cell_depth[0][1, 0] - cell_depth[0][0, 0])])
+            if self.auto_node_vert is None:
+                self.compute_auto_node_size(data_transects)
+            lag = self.auto_node_vert
             self.main_depth_layers = np.arange(
                 top_cell, np.nanmax(all_depth) + lag, lag
             )
 
     def compute_nodes_velocity(self, checked_transect_idx, data_transects):
-        """Compute transect median velocity on each mesh (North, East and vertical velocities)
+        """Compute transect median velocity on each mesh (North, East and
+        vertical velocities)
         and depth on each vertical
 
         Attributes

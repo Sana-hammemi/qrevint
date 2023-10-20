@@ -26,6 +26,7 @@ from Classes.Oursin import Oursin
 from Classes.Python2Matlab import Python2Matlab
 from Classes.Sensors import Sensors
 from Classes.TransectData import TransectData
+from Classes.MMT_TRDI import MMTtrdi
 from Classes.createconfig import Config
 from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
@@ -437,7 +438,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.popup_message(
                 self.tr(
                     "QRev.cfg was not found so a default configuration "
-                    "file was created."
+                    "file was created. This default configuration may not "
+                    "comply with your agency standards. Obtain an approved "
+                    "QRev.cfg before final processing of your measurement."
                 )
             )
 
@@ -456,6 +459,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             config.export_config()
+            with open(options_file, "r") as f:
+                self.agency_options = json.load(f)
 
             # sys.exit()
 
@@ -802,6 +807,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if "ShowIcon" not in self.agency_options["ExtrapolatedSpeed"].keys():
             self.popup_message(
                 self.tr("QRev.cfg: ExtrapolatedSpeed ShowIcon parameter " "not found.")
+            )
+            sys.exit()
+
+        # Excluded
+        # Values not in agency options will be assigned recommended default values
+        if "Excluded" not in self.agency_options.keys():
+            self.agency_options["Excluded"] = {}
+        if "RioPro" not in self.agency_options["Excluded"].keys():
+            self.agency_options["Excluded"]["RioPro"] = 0.25
+        if "M9" not in self.agency_options["Excluded"].keys():
+            self.agency_options["Excluded"]["M9"] = 0.16
+
+        # Left Right Flow Direction Difference
+        if "LeftRightFlowDirDiff" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: LeftRightFlowDirDiff parameter not found."))
+            sys.exit()
+        if "threshold" not in self.agency_options["LeftRightFlowDirDiff"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg LeftRightFlowDirDiff: threshold parameter not found.")
             )
             sys.exit()
 
@@ -1260,6 +1284,60 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240)}")
 
+    def set_qrevint_ui(self):
+        """If QRevInt set background of UI to blue."""
+
+        # set main window pallete
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
+        self.setPalette(palette)
+
+        self.toolBar.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240)}")
+
     # Toolbar functions
     # =================
     def select_measurement(self):
@@ -1322,6 +1400,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
+                            excluded=self.agency_options["Excluded"],
+                            water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"]["threshold"],
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1344,6 +1424,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         export_xs=self.xs_export,
                         run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
+                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                            "threshold"],
                     )
 
             # Load and process TRDI data
@@ -1365,6 +1447,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         export_xs=self.xs_export,
                         run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
+                        excluded=self.agency_options["Excluded"],
+                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                            "threshold"],
                     )
 
             # Load QRev data
@@ -1429,6 +1514,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             export_xs=self.xs_export,
                             run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
+                            water_dir_diff_threshold=
+                            self.agency_options["LeftRightFlowDirDiff"]["threshold"],
                         )
 
                 # Settings based on measurement settings
@@ -2233,7 +2320,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # connections
                 if not self.main_initialized:
                     self.main_table_summary.cellClicked.connect(self.select_transect)
-                    self.main_table_details.cellClicked.connect(self.select_transect)
                     self.ed_site_name.editingFinished.connect(self.update_site_name)
                     self.ed_site_number.editingFinished.connect(self.update_site_number)
                     self.ed_persons.editingFinished.connect(self.update_persons)
@@ -2243,6 +2329,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust
+                    )
+                    self.main_table_details.cellClicked.connect(
+                        self.details_table_row_adjust
                     )
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
@@ -2871,12 +2960,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 nrows = len(self.checked_transects_idx)
                 for nrow in range(1, nrows + 1):
                     self.main_table_summary.item(nrow, 0).setFont(self.font_normal)
-                    self.main_table_details.item(nrow, 0).setFont(self.font_normal)
+                    self.main_table_details.item(nrow + 1, 0).setFont(self.font_normal)
                     self.table_settings.item(nrow + 2, 0).setFont(self.font_normal)
 
                 # Set selected file to bold font
                 self.main_table_summary.item(row, 0).setFont(self.font_bold)
-                self.main_table_details.item(row, 0).setFont(self.font_bold)
+                self.main_table_details.item(row + 1, 0).setFont(self.font_bold)
                 self.table_settings.item(row + 2, 0).setFont(self.font_bold)
                 self.transect_row = row - 1
 
@@ -3758,7 +3847,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         ]
         ncols = len(summary_header)
         nrows = len(self.checked_transects_idx)
-        tbl.setRowCount(nrows + 1)
+        tbl.setRowCount(nrows + 2)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(summary_header)
         tbl.horizontalHeader().setFont(self.font_bold)
@@ -3767,65 +3856,103 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if len(self.checked_transects_idx) > 0:
             trans_prop = Measurement.compute_measurement_properties(self.meas)
+            left_width = []
+            left_area = []
+            left_boat_speed = []
+            left_boat_course = []
+            left_water_speed = []
+            left_water_dir = []
+            right_width = []
+            right_area = []
+            right_boat_speed = []
+            right_boat_course = []
+            right_water_speed = []
+            right_water_dir = []
 
             # Add transect data
             for row in range(nrows):
                 col = 0
                 transect_id = self.checked_transects_idx[row]
+                if trans_prop["start_bank"][transect_id] == "Left":
+                    left_width.append(trans_prop["width"][transect_id])
+                    left_area.append(trans_prop["area"][transect_id])
+                    left_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
+                    left_boat_course.append(trans_prop["avg_boat_course"][transect_id])
+                    left_water_speed.append(trans_prop["avg_water_speed"][transect_id])
+                    left_water_dir.append(trans_prop["avg_water_dir"][transect_id])
+                else:
+                    right_width.append(trans_prop["width"][transect_id])
+                    right_area.append(trans_prop["area"][transect_id])
+                    right_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
+                    right_boat_course.append(trans_prop["avg_boat_course"][transect_id])
+                    right_water_speed.append(trans_prop["avg_water_speed"][transect_id])
+                    right_water_dir.append(trans_prop["avg_water_dir"][transect_id])
 
                 # File/transect name
                 tbl.setItem(
-                    row + 1,
+                    row + 2,
                     col,
                     QtWidgets.QTableWidgetItem(
                         self.meas.transects[transect_id].file_name[:-4]
                     ),
                 )
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect width
                 col += 1
-                item = "{:10.2f}".format(
-                    trans_prop["width"][transect_id] * self.units["L"]
-                )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["width"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["width"][transect_id] * self.units["L"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect area
                 col += 1
-                item = "{:10.2f}".format(
-                    trans_prop["area"][transect_id] * self.units["A"]
-                )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["area"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["area"][transect_id] * self.units["A"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat speed
                 col += 1
-                item = "{:6.2f}".format(
-                    trans_prop["avg_boat_speed"][transect_id] * self.units["V"]
-                )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["avg_boat_speed"][transect_id]):
+                    item = "{:6.2f}".format(
+                        trans_prop["avg_boat_speed"][transect_id] * self.units["V"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat course
                 col += 1
-                item = "{:6.2f}".format(trans_prop["avg_boat_course"][transect_id])
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["avg_boat_course"][transect_id]):
+                    item = "{:6.2f}".format(trans_prop["avg_boat_course"][transect_id])
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water speed
                 col += 1
-                item = "{:6.2f}".format(
-                    trans_prop["avg_water_speed"][transect_id] * self.units["V"]
-                )
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["avg_water_speed"][transect_id]):
+                    item = "{:6.2f}".format(
+                        trans_prop["avg_water_speed"][transect_id] * self.units["V"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average water direction
                 col += 1
-                item = "{:6.2f}".format(trans_prop["avg_water_dir"][transect_id])
-                tbl.setItem(row + 1, col, QtWidgets.QTableWidgetItem(item))
-                tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                item = ""
+                if not np.isnan(trans_prop["avg_water_dir"][transect_id]):
+                    item = "{:6.2f}".format(trans_prop["avg_water_dir"][transect_id])
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Add measurement summaries
             n_transects = len(self.meas.transects)
@@ -3835,17 +3962,39 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(self.tr("Average")))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(self.tr("L/R Difference")))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average width
             col += 1
             item = "{:10.2f}".format(trans_prop["width"][n_transects] * self.units["L"])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference width
+            if len(left_width) > 0 and len(right_width) > 0:
+                item = "{:10.2f}".format(np.abs(np.nanmean(left_width) - np.nanmean(right_width)) * self.units["L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average area
             col += 1
             item = "{:10.2f}".format(trans_prop["area"][n_transects] * self.units["A"])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference area
+            if len(left_area) > 0 and len(right_area) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(np.nanmean(left_area) - np.nanmean(right_area)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
 
             # Average boat speed
             col += 1
@@ -3855,8 +4004,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference boat speed
+            if len(left_boat_speed) > 0 and len(right_boat_speed) > 0:
+                item = "{:6.2f}".format(
+                    np.abs(np.nanmean(left_boat_speed) - np.nanmean(right_boat_speed)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Skip average boat course
             col += 1
+
+            # LR difference boat course
+            if len(left_boat_course) > 0 and len(right_boat_course) > 0:
+                diff_dir = np.abs(
+                    np.nanmean(left_boat_course) - np.nanmean(right_boat_course))
+                if diff_dir > 180:
+                    diff_dir = diff_dir - 360
+                item = "{:6.2f}".format(diff_dir)
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Average water speed
             col += 1
@@ -3866,22 +4037,61 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference water_speed
+            if len(left_water_speed) > 0 and len(right_water_speed) > 0:
+                item = "{:6.2f}".format(
+                    np.abs(np.nanmean(left_water_speed) - np.nanmean(right_water_speed)) * self.units[
+                        "L"])
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average water direction
             col += 1
             item = "{:6.2f}".format(trans_prop["avg_water_dir"][n_transects])
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # LR difference water_direction
+            if len(left_water_dir) > 0 and len(right_water_dir) > 0:
+                diff_dir = np.abs(np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
+                if diff_dir > 180:
+                    diff_dir = diff_dir - 360
+                item = "{:6.2f}".format(diff_dir)
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Set average row font to bold
             for col in range(ncols):
                 if col != 4:
                     tbl.item(0, col).setFont(self.font_bold)
+                tbl.item(1, col).setFont(self.font_bold)
 
-            tbl.item(self.transect_row + 1, 0).setFont(self.font_bold)
-            tbl.scrollToItem(tbl.item(self.transect_row + 1, 0))
+            tbl.item(self.transect_row + 2, 0).setFont(self.font_bold)
+            if self.transect_row < 3:
+                tbl.scrollToItem(tbl.item(self.transect_row, 0))
+            else:
+                tbl.scrollToItem(tbl.item(self.transect_row + 2, 0))
 
             tbl.resizeColumnsToContents()
             tbl.resizeRowsToContents()
+
+    def details_table_row_adjust(self, row, col):
+        """Allows proper selection of transect to display from the details
+        table which has custom header rows.
+
+            Parameter
+            =========
+            row: int
+                row selected
+            col: int
+                column selected
+        """
+        row = row - 1
+        self.select_transect(row, col)
 
     def main_premeasurement_table(self):
         """Initialize and populate the premeasurement table."""
@@ -4788,6 +4998,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if not self.systest_initialized:
             tbl.cellClicked.connect(self.select_systest)
+            self.pb_add_systest.clicked.connect(self.add_systest)
             self.systest_initialized = True
 
         self.systest_comments_messages()
@@ -4844,6 +5055,57 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Update contour and shiptrack plot
                 self.system_tab(idx_systest=row)
 
+    def add_systest(self):
+        """Allows user to associate a system test with this measurement
+        that was collected as part of another measurement.
+        """
+        add_file = []
+        with self.wait_cursor():
+            self.pb_add_systest.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "System Test File (*.txt);;"
+                    break
+
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_systest(mmt)
+
+                else:
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_add_systest(path, filename)
+
+                # Add message to qa
+                self.meas.qa.systest_added(self.meas)
+
+                # Update system test tab
+                self.change = True
+                self.tab_manager()
+
+            self.pb_add_systest.blockSignals(False)
+
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
+
     # Compass tab
     # ===========
     def compass_tab(self, old_discharge=None):
@@ -4895,6 +5157,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_pitch.stateChanged.connect(self.pr_plot)
             self.cb_roll.stateChanged.connect(self.pr_plot)
             self.compass_pr_initialized = True
+            self.pb_add_compass_cal_eval.clicked.connect(self.add_compass_cal_eval)
 
         # Configure mag field error
         self.cb_mag_field.blockSignals(True)
@@ -4950,7 +5213,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs_menu_connection()
 
         # Initialize the calibration/evaluation tab
-        self.compass_cal_eval(idx_eval=0)
+        self.compass_cal_eval(idx_eval=None)
 
     def compass_cal_eval(self, idx_cal=None, idx_eval=None):
         """Displays data in the calibration / evaluation tab.
@@ -4983,8 +5246,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tblc.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
             # Display selected calibration in text box
+            self.display_compass_result.clear()
             if idx_cal is not None:
-                self.display_compass_result.clear()
                 tblc.item(idx_cal, 0).setFont(self.font_bold)
                 self.display_compass_result.textCursor().insertText(
                     self.meas.compass_cal[idx_cal].data
@@ -5037,16 +5300,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 tble.item(nrows - 1, 1).setBackground(QtGui.QColor(255, 255, 255))
 
-            # Display selected evaluation in text box
-            if idx_eval is not None:
-                self.display_compass_result.clear()
-                tble.item(idx_eval, 0).setFont(self.font_bold)
-                self.display_compass_result.textCursor().insertText(
-                    evals[idx_eval].data
-                )
+        # Display selected evaluation in text box
+        if idx_eval is not None:
+            self.display_compass_result.clear()
+            tble.item(idx_eval, 0).setFont(self.font_bold)
+            self.display_compass_result.setPlainText(evals[idx_eval].data)
 
-            tble.resizeColumnsToContents()
-            tble.resizeRowsToContents()
+        tble.resizeColumnsToContents()
+        tble.resizeRowsToContents()
 
         if tble.rowCount() == 0 and tblc.rowCount() == 0:
             self.display_compass_result.clear()
@@ -5150,6 +5411,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
 
+                elif (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "internal"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr(
+                        "Difference in left and right water direction threshold exeeded"))
+
                 # Magvar is zero
                 elif self.meas.qa.compass["magvar"] == 2:
                     if transect_id in self.meas.qa.compass["magvar_idx"]:
@@ -5180,6 +5447,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     ),
                 )
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+                if (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "external"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
+                    tbl.item(row, col).setToolTip(self.tr(
+                        "Difference in left and right water direction threshold exeeded"))
+                else:
+                    tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
                 # Heading source
                 col += 1
@@ -5666,9 +5940,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Update
                 self.display_compass_result.clear()
-                self.display_compass_result.textCursor().insertText(
-                    self.meas.compass_cal[row].data
-                )
+                self.display_compass_result.setPlainText(
+                    self.meas.compass_cal[row].data)
 
     def select_evaluation(self, row, column):
         """Displays selected compass evaluation.
@@ -5700,13 +5973,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer
                     == "SonTek"
                 ):
-                    self.display_compass_result.textCursor().insertText(
-                        self.meas.compass_cal[row].data
-                    )
+                    self.display_compass_result.setPlainText(
+                        self.meas.compass_cal[row].data)
                 else:
-                    self.display_compass_result.textCursor().insertText(
-                        self.meas.compass_eval[row].data
-                    )
+                    self.display_compass_result.setPlainText(
+                        self.meas.compass_eval[row].data)
 
     def compass_plot(self):
         """Generates the graph of heading and magnetic change."""
@@ -5784,6 +6055,59 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.pr_canvas.draw()
 
         self.tab_compass_2_data.setFocus()
+
+    def add_compass_cal_eval(self):
+        """Allows user to associate a compass calibration and/or evalution
+         with this measurement that was collected as part of another measurement.
+        """
+
+        add_file = []
+        with self.wait_cursor():
+            self.pb_add_compass_cal_eval.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "System Test File (*.txt *.ccal);;"
+                    break
+
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Compass Cal/Eval"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_compass_cal(mmt)
+                    self.meas.trdi_add_compass_eval(mmt)
+
+                else:
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_add_compass_cal(path, filename)
+
+                # Add message to qa
+                self.meas.qa.compass_added(self.meas)
+
+                # Update tab
+                self.change = True
+                self.tab_manager()
+
+            self.pb_add_compass_cal_eval.blockSignals(False)
+
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
 
     # Temperature & Salinity Tab
     # ==========================
@@ -6522,6 +6846,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_mb_vectors.stateChanged.connect(self.mb_plot_change)
             self.cb_mb_observed_no.stateChanged.connect(self.mb_observed_change)
 
+            self.pb_add_moving_bed_test.clicked.connect(self.mb_add_test)
+
             self.mb_initialized = True
         self.mb_row = self.mb_row_selected
         self.mb_plots(idx=self.mb_row_selected)
@@ -7141,6 +7467,64 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.display_mb_messages.textCursor().insertBlock()
 
             self.update_tab_icons()
+
+    def mb_add_test(self):
+        """Allows user to associate a moving-bed test
+         with this measurement that was collected as part of another measurement.
+        """
+
+        add_file = []
+
+        with self.wait_cursor():
+            self.pb_add_moving_bed_test.blockSignals(True)
+            # Determine manufacturer
+            for transect in self.meas.transects:
+                if transect.adcp is not None:
+                    manufacturer = transect.adcp.manufacturer
+                    if manufacturer == "TRDI":
+                        file_type = "TRDI mmt File (*.mmt);;"
+                    else:
+                        file_type = "Moving-bed test file (*.mat);;"
+                    break
+
+            # Get folder
+            folder = self.default_folder()
+
+            # Get the full names (path + file) of the selected files
+            add_file = \
+            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Moving-Bed Test"), folder,
+                self.tr(file_type, ))[0]
+
+            if len(add_file) > 0:
+                # Add TRDI system test(s)
+                if manufacturer == "TRDI" and add_file[0].endswith("mmt"):
+                    # Read mmt file
+                    mmt = MMTtrdi(add_file[0])
+                    self.meas.trdi_add_moving_bed_tests(mmt)
+
+                else:
+                    # Add multiple SonTek system tests
+                    for file in add_file:
+                        path, filename = os.path.split(file)
+                        self.meas.sontek_moving_bed_tests(path, filename, self.agency_options["SNR"]["Use3Beam"])
+
+                # Add message to qa
+                self.meas.qa.moving_bed_test_added(self.meas)
+
+
+                # Process moving-bed tests and update measurement processing
+                settings = self.meas.current_settings()
+                self.meas.apply_settings(settings)
+
+                # Update tab
+                self.change = True
+                self.tab_manager()
+
+            self.pb_add_moving_bed_test.blockSignals(False)
+
+        # Request user comment
+        if len(add_file) > 0:
+            self.add_comment()
 
     # Bottom track tab
     # ================
@@ -15094,7 +15478,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.adv_graph_canvas = MplCanvas(
                 parent=self.graph_adv_graph, width=10, height=8, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_adv_graph)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(0, 0, 0, 0)
@@ -15264,11 +15648,29 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 change_plot = False
 
             cell_width = self.check_numeric_input(self.ed_map_cell_width)
+            min_width = self.meas.map.auto_node_horz
             if cell_width is not None:
                 cell_width = cell_width * 1 / self.units["L"]
+
+                if cell_width < min_width:
+                    cell_width = min_width
+                    self.ed_map_cell_width.setText("{:3.2f}".format(
+                        cell_width * self.units["L"]))
+            else:
+                self.ed_map_cell_width.setText("{:3.2f}".format(
+                    min_width * self.units["L"]))
+
             cell_height = self.check_numeric_input(self.ed_map_cell_height)
+            min_height = self.meas.map.auto_node_vert
             if cell_height is not None:
                 cell_height = cell_height * 1 / self.units["L"]
+                if cell_height < min_height:
+                    cell_height = min_height
+                    self.ed_map_cell_height.setText("{:3.2f}".format(
+                        min_height * self.units["L"]))
+            else:
+                self.ed_map_cell_height.setText("{:3.2f}".format(
+                    min_height * self.units["L"]))
 
             self.map_settings = {
                 "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
@@ -16751,6 +17153,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             return sfrnd(q, self.agency_options["QDigits"]["digits"])
         else:
             return np.round(q, self.agency_options["QDigits"]["digits"])
+
+    def default_folder(self):
+        """Returns default folder.
+
+        Returns the folder stored in settings or if no folder is stored,
+        then the current working folder is returned.
+        """
+        try:
+            folder = self.sticky_settings.get("Folder")
+            if not folder:
+                folder = os.getcwd()
+        except KeyError:
+            self.sticky_settings.new("Folder", os.getcwd())
+            folder = self.sticky_settings.get("Folder")
+        return folder
+
 
     def closeEvent(self, event):
         """Warns user when closing QRev.

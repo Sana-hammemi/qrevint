@@ -47,6 +47,15 @@ class QComp(object):
         ensembles
     int_ens: float
         Total discharge computed for invalid ensembles
+    top_speed: nd.array(float)
+        Computed speed from top extrapolation for each ensemble
+    bottom_speed: nd.array(float)
+        Computed speed from bottom extrapolation for each ensemble
+    left_edge_speed: float
+        Computed speed in the left edge based on edge settings
+    right_edge_speed: float
+        Computed speed in the right edge based on edge settings
+
     """
 
     def __init__(self):
@@ -534,22 +543,22 @@ class QComp(object):
 
         if transect is not None:
             # Prepare water track data
-            cells_above_sl = np.array(transect.w_vel.cells_above_sl).astype(float)
+            cells_above_sl = np.array(transect.w_vel.cells_above_sl[:, transect.in_transect_idx]).astype(float)
             cells_above_sl[cells_above_sl < 0.5] = np.nan
-            w_vel_x = transect.w_vel.u_processed_mps * cells_above_sl
-            w_vel_y = transect.w_vel.v_processed_mps * cells_above_sl
+            w_vel_x = transect.w_vel.u_processed_mps[:, transect.in_transect_idx] * cells_above_sl
+            w_vel_y = transect.w_vel.v_processed_mps[:, transect.in_transect_idx] * cells_above_sl
 
             # Get navigation data from object properties
             trans_select = getattr(transect.boat_vel, transect.boat_vel.selected)
             if trans_select is not None:
-                b_vel_x = trans_select.u_processed_mps
-                b_vel_y = trans_select.v_processed_mps
+                b_vel_x = trans_select.u_processed_mps[transect.in_transect_idx]
+                b_vel_y = trans_select.v_processed_mps[transect.in_transect_idx]
             else:
                 b_vel_x = np.tile(
-                    [np.nan], transect.boat_vel.bt_vel.u_processed_mps.shape
+                    [np.nan], transect.in_transect_idx.shape
                 )
                 b_vel_y = np.tile(
-                    [np.nan], transect.boat_vel.bt_vel.v_processed_mps.shape
+                    [np.nan], transect.in_transect_idx.shape
                 )
 
             start_edge = transect.start_edge
@@ -593,7 +602,7 @@ class QComp(object):
 
         # Determine is xprod contains edge data and process appropriately
         q_mid_cells = np.multiply(
-            xprod[:, in_transect_idx] * cell_size[:, in_transect_idx], delta_t
+            xprod * cell_size[:, in_transect_idx], delta_t
         )
 
         return q_mid_cells

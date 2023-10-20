@@ -7,6 +7,9 @@ import shutil
 
 from Classes import __version__, __app__, __company__
 
+# before running, if updates the docs have occurred, user should through a
+# terminal activate the QRev env, navigate to the docs folder, type ./make html
+
 print("Checking if package exits...")
 qrev_package = __app__ + __version__.replace(".", "")
 qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)

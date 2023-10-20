@@ -4,6 +4,7 @@ from Classes.Uncertainty import Uncertainty
 from Classes.QComp import QComp
 from Classes.MovingBedTests import MovingBedTests
 from Classes.TransectData import TransectData
+from MiscLibs.common_functions import cosd
 
 
 class QAData(object):
@@ -701,7 +702,10 @@ class QAData(object):
 
                 # Invalid ensembles at left and/or right edge
                 boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
-                valid_bt = boat_selected.valid_data[0, :]
+                if boat_selected is None:
+                    valid_bt = np.tile(False, transect.boat_vel.bt_vel.u_mps.size)
+                else:
+                    valid_bt = boat_selected.valid_data[0, :]
                 valid_wt = np.any(transect.w_vel.valid_data[0, :, :], axis=0)
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 valid_depth = depth_selected.valid_data
@@ -872,6 +876,9 @@ class QAData(object):
         self.system_tst["messages"] = []
         self.system_tst["status"] = "good"
 
+        if "tab_systst" not in self.settings_dict:
+            self.settings_dict["tab_systst"] = "Default"
+
         # Determine if a system test was recorded
         if not meas.system_tst:
             # No system test data recorded
@@ -1000,23 +1007,18 @@ class QAData(object):
             Object of class Measurement
         """
 
+        # Initialize variables
         self.compass["messages"] = []
-
-        checked = []
-        for transect in meas.transects:
-            checked.append(transect.checked)
-
-        if np.any(checked):
-            heading = np.unique(
-                meas.transects[checked.index(1)].sensors.heading_deg.internal.data
-            )
-        else:
-            heading = np.array([0])
-
-        # Initialize variable as if ADCP has no compass
         self.compass["status"] = "inactive"
         self.compass["status1"] = "good"
         self.compass["status2"] = "good"
+        self.compass["lr_water_dir"] = "good"
+
+        # Check to see if measurement has compass data
+        if not self.compass_qa_has_compass(meas):
+            return
+
+        # Initialize variables
         self.compass["magvar"] = 0
         self.compass["magvar_idx"] = []
         self.compass["mag_error_idx"] = []
@@ -1027,374 +1029,445 @@ class QAData(object):
         self.compass["roll_mean_caution_idx"] = []
         self.compass["roll_std_caution_idx"] = []
 
-        if len(heading) > 1 and np.any(np.not_equal(heading, 0)):
-            # ADCP has a compass
-            # A compass calibration is required if a loop test or GPS are used
+        # Check calibration and evaluation of compass
+        magvar_required = self.compass_qa_calibration(meas)
 
-            # Check for loop test
-            loop = False
-            for test in meas.mb_tests:
-                if test.type == "Loop":
-                    loop = True
+        # Compute data to check heading, pitch, and roll
+        hpr = self.compass_qa_hpr(meas)
 
-            # Check for GPS data
-            gps = False
-            if (
-                meas.transects[checked.index(True)].boat_vel.gga_vel is not None
-                or meas.transects[checked.index(True)].boat_vel.vtg_vel is not None
-            ):
+        # Check magvar consistency
+        if len(np.unique(hpr["magvar"])) > 1:
+            self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Compass: Magnetic variation is not consistent among transects;", 2, 4]
+            )
+            self.compass["magvar"] = 1
+
+        # Check heading offset consistency
+        if len(np.unique(hpr["align"])) > 1:
+            self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Compass: Heading offset is not consistent among " "transects;", 2, 4]
+            )
+            self.compass["align"] = 1
+
+        # Check that magvar was set if GPS data are available
+        if magvar_required:
+            if 0 in hpr["magvar"]:
+                self.compass["status2"] = "warning"
+                self.compass["messages"].append(
+                    ["COMPASS: Magnetic variation is 0 and GPS data are present;", 1, 4]
+                )
+                self.compass["magvar"] = 2
+                self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
+                    0
+                ].tolist()
+
+        # Check pitch mean
+        if np.any(np.asarray(np.abs(hpr["pitch_mean"])) > 8):
+            self.compass["status2"] = "warning"
+            self.compass["messages"].append(
+                ["PITCH: One or more transects have a mean pitch > 8 deg;", 1, 4]
+            )
+            temp = np.where(np.abs(hpr["pitch_mean"]) > 8)[0]
+            if len(temp) > 0:
+                self.compass["pitch_mean_warning_idx"] = np.array(meas.checked_transect_idx)[
+                    temp
+                ]
+            else:
+                self.compass["pitch_mean_warning_idx"] = []
+
+        elif np.any(np.asarray(np.abs(hpr["pitch_mean"])) > 4):
+            if self.compass["status2"] == "good":
+                self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Pitch: One or more transects have a mean pitch > 4 deg;", 2, 4]
+            )
+            temp = np.where(np.abs(hpr["pitch_mean"]) > 4)[0]
+            if len(temp) > 0:
+                self.compass["pitch_mean_caution_idx"] = np.array(meas.checked_transect_idx)[
+                    temp
+                ]
+            else:
+                self.compass["pitch_mean_caution_idx"] = []
+
+        # Check roll mean
+        if np.any(np.asarray(np.abs(hpr["roll_mean"])) > 8):
+            self.compass["status2"] = "warning"
+            self.compass["messages"].append(
+                ["ROLL: One or more transects have a mean roll > 8 deg;", 1, 4]
+            )
+            temp = np.where(np.abs(hpr["roll_mean"]) > 8)[0]
+            if len(temp) > 0:
+                self.compass["roll_mean_warning_idx"] = np.array(meas.checked_transect_idx)[temp]
+            else:
+                self.compass["roll_mean_warning_idx"] = []
+
+        elif np.any(np.asarray(np.abs(hpr["roll_mean"])) > 4):
+            if self.compass["status2"] == "good":
+                self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Roll: One or more transects have a mean roll > 4 deg;", 2, 4]
+            )
+            temp = np.where(np.abs(hpr["roll_mean"]) > 4)[0]
+            if len(temp) > 0:
+                self.compass["roll_mean_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+            else:
+                self.compass["roll_mean_caution_idx"] = []
+
+        # Check pitch standard deviation
+        if np.any(np.asarray(hpr["pitch_std"]) > 5):
+            if self.compass["status2"] == "good":
+                self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Pitch: One or more transects have a pitch std dev > 5 deg;", 2, 4]
+            )
+            temp = np.where(np.abs(hpr["pitch_std"]) > 5)[0]
+            if len(temp) > 0:
+                self.compass["pitch_std_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+            else:
+                self.compass["pitch_std_caution_idx"] = []
+
+        # Check roll standard deviation
+        if np.any(np.asarray(hpr["roll_std"]) > 5):
+            if self.compass["status2"] == "good":
+                self.compass["status2"] = "caution"
+            self.compass["messages"].append(
+                ["Roll: One or more transects have a roll std dev > 5 deg;", 2, 4]
+            )
+            temp = np.where(np.abs(hpr["roll_std"]) > 5)[0]
+            if len(temp) > 0:
+                self.compass["roll_std_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+            else:
+                self.compass["roll_std_caution_idx"] = []
+
+        # Check difference in water direction
+        if magvar_required and (hpr["water_dir_diff"] > meas.water_dir_diff_threshold):
+            error = cosd(hpr["water_dir_diff"])
+            self.compass["lr_water_dir"] = "caution"
+            self.compass["messages"].append(
+                ["Compass: The difference in the left and right water directions could "
+                 "cause an error in average Q of {:3.1f}% ;".format(error), 2, 4, ]
+            )
+
+        # Additional checks for SonTek G3 compass
+        if meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "SonTek":
+            # Check if pitch limits were exceeded
+            if any(hpr["pitch_exceeded"]):
+                if self.compass["status2"] == "good":
+                    self.compass["status2"] = "caution"
+                self.compass["messages"].append(
+                    [
+                        "Compass: One or more transects have pitch "
+                        "exceeding calibration limits;",
+                        2,
+                        4,
+                    ]
+                )
+
+            # Check if roll limits were exceeded
+            if any(hpr["roll_exceeded"]):
+                if self.compass["status2"] == "good":
+                    self.compass["status2"] = "caution"
+                self.compass["messages"].append(
+                    [
+                        "Compass: One or more transects have roll "
+                        "exceeding calibration limits;",
+                        2,
+                        4,
+                    ]
+                )
+
+            # Check if magnetic error was exceeded
+            self.compass["mag_error_idx"] = []
+            if len(hpr["mag_error_exceeded"]) > 0:
+                self.compass["mag_error_idx"] = np.array(hpr["mag_error_exceeded"])
+                if self.compass["status2"] == "good":
+                    self.compass["status2"] = "caution"
+                self.compass["messages"].append(
+                    [
+                        "Compass: One or more transects have a change in "
+                        "mag field exceeding 2%;",
+                        2,
+                        4,
+                    ]
+                )
+
+        # Determine status of compass tab
+        if (
+            self.compass["status1"] == "warning"
+            or self.compass["status2"] == "warning"
+        ):
+            self.compass["status"] = "warning"
+        elif (
+            self.compass["status1"] == "caution"
+            or self.compass["status2"] == "caution"
+            or self.compass["lr_water_dir"] == "caution"
+        ):
+            self.compass["status"] = "caution"
+        else:
+            self.compass["status"] = "good"
+
+    def compass_qa_has_compass(self, meas):
+        """Determine if the data has heading data and thus a compass.
+
+         Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+
+        Returns
+        -------
+        True or False
+        """
+
+        if len(meas.checked_transect_idx) > 0:
+            heading = np.unique(
+                meas.transects[meas.checked_transect_idx[0]].sensors.heading_deg.internal.data)
+            if len(heading) > 1:
+                return True
+
+        return False
+
+    def compass_qa_calibration(self, meas):
+        """Determine if a compass calibration is required and if they have been
+        completed appropriately. A compass calibration is required if a loop test
+        or GPS are used.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+
+        Returns
+        -------
+        gps: bool
+            Indicates that gps is used and magvar is required.
+        """
+
+        # Check for loop test
+        loop = False
+        for test in meas.mb_tests:
+            if test.type == "Loop":
+                loop = True
+                break
+
+        # Check for GPS data
+        gps = False
+        for idx in meas.checked_transect_idx:
+            if (meas.transects[idx].boat_vel.gga_vel is not None or
+                    meas.transects[idx].boat_vel.vtg_vel is not None):
                 gps = True
+                break
 
-            if gps or loop:
-                # Compass calibration is required
+        if gps or loop:
 
-                # Determine the ADCP manufacturer
-                if meas.transects[checked.index(True)].adcp.manufacturer == "SonTek":
-                    # SonTek ADCP
-                    if len(meas.compass_cal) == 0:
-                        # No compass calibration
-                        self.compass["status1"] = "warning"
-                        self.compass["messages"].append(
-                            ["COMPASS: No compass calibration;", 1, 4]
-                        )
-                    elif meas.compass_cal[-1].result["compass"]["error"] == "N/A":
-                        # If the error cannot be decoded from the
-                        # calibration assume the calibration is good
+            # Calibration required
+            if meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "SonTek":
+                self.compass_qa_sontek_cal(meas)
+
+            elif meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "TRDI":
+                self.compass_qa_trdi_caleval(meas)
+
+        else:
+
+            # Compass not required
+            if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
+                # No compass calibration or evaluation
+                self.compass["status1"] = "default"
+            else:
+                # Compass was calibrated and evaluated
+                self.compass["status1"] = "good"
+
+        return gps
+
+    def compass_qa_sontek_cal(self, meas):
+        """Evaluate compass calibration for SonTek ADCP.
+
+         Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        # SonTek ADCP
+        if len(meas.compass_cal) == 0:
+            # No compass calibration
+            self.compass["status1"] = "warning"
+            self.compass["messages"].append(["COMPASS: No compass calibration;", 1, 4])
+        elif meas.compass_cal[-1].result["compass"]["error"] == "N/A":
+            # If the error cannot be decoded from the
+            # calibration assume the calibration is good
+            self.compass["status1"] = "good"
+        else:
+            if meas.compass_cal[-1].result["compass"]["error"] <= 0.2:
+                self.compass["status1"] = "good"
+            else:
+                self.compass["status1"] = "caution"
+                self.compass["messages"].append(
+                    ["Compass: Calibration result > 0.2 deg;", 2, 4])
+
+    def compass_qa_trdi_caleval(self, meas):
+        """Evaluate compass calibration and/or evaluation for TRDI ADCPs.
+
+         Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        # TRDI ADCP
+        if len(meas.compass_cal) == 0:
+            # No compass calibration
+            if len(meas.compass_eval) == 0:
+                # No calibration or evaluation
+                self.compass["status1"] = "warning"
+                self.compass["messages"].append(["COMPASS: No "
+                                                 "compass "
+                                                 "calibration "
+                                                 "or "
+                                                 "evaluation;", 1, 4, ])
+
+            else:
+                # No calibration but an evaluation was completed
+                self.compass["status1"] = "caution"
+                self.compass["messages"].append(
+                    ["Compass: No compass calibration;", 2, 4])
+        else:
+            # Compass was calibrated
+            if len(meas.compass_eval) == 0:
+                # No compass evaluation
+                self.compass["status1"] = "caution"
+                self.compass["messages"].append(["Compass: No compass evaluation;", 2, 4])
+            else:
+                # Check results of evaluation
+                try:
+                    if (float(meas.compass_eval[-1].result["compass"]["error"]) <= 1):
                         self.compass["status1"] = "good"
                     else:
-                        if meas.compass_cal[-1].result["compass"]["error"] <= 0.2:
-                            self.compass["status1"] = "good"
-                        else:
-                            self.compass["status1"] = "caution"
-                            self.compass["messages"].append(
-                                ["Compass: Calibration result > 0.2 deg;", 2, 4]
-                            )
-
-                elif meas.transects[checked.index(True)].adcp.manufacturer == "TRDI":
-                    # TRDI ADCP
-                    if len(meas.compass_cal) == 0:
-                        # No compass calibration
-                        if len(meas.compass_eval) == 0:
-                            # No calibration or evaluation
-                            self.compass["status1"] = "warning"
-                            self.compass["messages"].append(
-                                [
-                                    "COMPASS: No "
-                                    "compass "
-                                    "calibration "
-                                    "or "
-                                    "evaluation;",
-                                    1,
-                                    4,
-                                ]
-                            )
-
-                        else:
-                            # No calibration but an evaluation was completed
-                            self.compass["status1"] = "caution"
-                            self.compass["messages"].append(
-                                ["Compass: No compass calibration;", 2, 4]
-                            )
-                    else:
-                        # Compass was calibrated
-                        if len(meas.compass_eval) == 0:
-                            # No compass evaluation
-                            self.compass["status1"] = "caution"
-                            self.compass["messages"].append(
-                                ["Compass: No compass evaluation;", 2, 4]
-                            )
-                        else:
-                            # Check results of evaluation
-                            try:
-                                if (
-                                    float(
-                                        meas.compass_eval[-1].result["compass"]["error"]
-                                    )
-                                    <= 1
-                                ):
-                                    self.compass["status1"] = "good"
-                                else:
-                                    self.compass["status1"] = "caution"
-                                    self.compass["messages"].append(
-                                        ["Compass: Evaluation result > 1 deg;", 2, 4]
-                                    )
-                            except ValueError:
-                                self.compass["status1"] = "good"
-            else:
-                # Compass not required
-                if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
-                    # No compass calibration or evaluation
-                    self.compass["status1"] = "default"
-                else:
-                    # Compass was calibrated and evaluated
+                        self.compass["status1"] = "caution"
+                        self.compass["messages"].append(
+                            ["Compass: Evaluation result > 1 deg;", 2, 4])
+                except ValueError:
                     self.compass["status1"] = "good"
 
-            # Check for consistent magvar and pitch and roll mean and variation
-            magvar = []
-            align = []
-            mag_error_exceeded = []
-            pitch_mean = []
-            pitch_std = []
-            pitch_exceeded = []
-            roll_mean = []
-            roll_std = []
-            roll_exceeded = []
-            transect_idx = []
-            for n, transect in enumerate(meas.transects):
-                if transect.checked:
-                    transect_idx.append(n)
-                    heading_source_selected = getattr(
-                        transect.sensors.heading_deg,
-                        transect.sensors.heading_deg.selected,
-                    )
-                    pitch_source_selected = getattr(
-                        transect.sensors.pitch_deg, transect.sensors.pitch_deg.selected
-                    )
-                    roll_source_selected = getattr(
-                        transect.sensors.roll_deg, transect.sensors.roll_deg.selected
-                    )
+    @staticmethod
+    def compass_qa_hpr(meas):
+        """Compute data and statistics needed to check the heading, pitch, and roll.
 
-                    magvar.append(transect.sensors.heading_deg.internal.mag_var_deg)
-                    if transect.sensors.heading_deg.external is not None:
-                        align.append(
-                            transect.sensors.heading_deg.external.align_correction_deg
-                        )
+         Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
 
-                    pitch_mean.append(np.nanmean(pitch_source_selected.data))
-                    pitch_std.append(np.nanstd(pitch_source_selected.data, ddof=1))
-                    roll_mean.append(np.nanmean(roll_source_selected.data))
-                    roll_std.append(np.nanstd(roll_source_selected.data, ddof=1))
+        Returns
+        -------
+        hpr: dict{}
+            Dictionary with computed data and statistics.
+        """
 
-                    # SonTek G3 compass provides pitch, roll, and magnetic
-                    # error parameters that can be checked
-                    if transect.adcp.manufacturer == "SonTek":
-                        if heading_source_selected.pitch_limit is not None:
-                            # Check for bug in SonTek data where pitch and
-                            # roll was n x 3 use n x 1
-                            if len(pitch_source_selected.data.shape) == 1:
-                                pitch_data = pitch_source_selected.data
-                            else:
-                                pitch_data = pitch_source_selected.data[:, 0]
-                            idx_max = np.where(
-                                pitch_data > heading_source_selected.pitch_limit[0]
-                            )[0]
-                            idx_min = np.where(
-                                pitch_data < heading_source_selected.pitch_limit[1]
-                            )[0]
-                            if len(idx_max) > 0 or len(idx_min) > 0:
-                                pitch_exceeded.append(True)
-                            else:
-                                pitch_exceeded.append(False)
+        # Initialize local variables
+        magvar = []
+        align = []
+        mag_error_exceeded = []
+        pitch_mean = []
+        pitch_std = []
+        pitch_exceeded = []
+        roll_mean = []
+        roll_std = []
+        roll_exceeded = []
+        left_water_dir = []
+        right_water_dir = []
 
-                        if heading_source_selected.roll_limit is not None:
-                            if len(roll_source_selected.data.shape) == 1:
-                                roll_data = roll_source_selected.data
-                            else:
-                                roll_data = roll_source_selected.data[:, 0]
-                            idx_max = np.where(
-                                roll_data > heading_source_selected.pitch_limit[0]
-                            )[0]
-                            idx_min = np.where(
-                                roll_data < heading_source_selected.pitch_limit[1]
-                            )[0]
-                            if len(idx_max) > 0 or len(idx_min) > 0:
-                                roll_exceeded.append(True)
-                            else:
-                                roll_exceeded.append(False)
+        # Compute transect properties to evaluation direction issues
+        trans_prop = meas.compute_measurement_properties(meas)
 
-                        if heading_source_selected.mag_error is not None:
-                            idx_max = np.where(heading_source_selected.mag_error > 2)[0]
-                            if len(idx_max) > 0:
-                                mag_error_exceeded.append(n)
-            # Check magvar consistency
-            if len(np.unique(magvar)) > 1:
-                self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    [
-                        "Compass: Magnetic variation is not consistent among "
-                        "transects;",
-                        2,
-                        4,
-                    ]
-                )
-                self.compass["magvar"] = 1
+        # Process each transect used for discharge
+        for n, idx in enumerate(meas.checked_transect_idx):
+            transect = meas.transects[idx]
 
-            # Check magvar consistency
-            if len(np.unique(align)) > 1:
-                self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    [
-                        "Compass: Heading offset is not consistent among " "transects;",
-                        2,
-                        4,
-                    ]
-                )
-                self.compass["align"] = 1
+            heading_source_selected = getattr(transect.sensors.heading_deg,
+                transect.sensors.heading_deg.selected, )
+            pitch_source_selected = getattr(transect.sensors.pitch_deg,
+                transect.sensors.pitch_deg.selected)
+            roll_source_selected = getattr(transect.sensors.roll_deg,
+                transect.sensors.roll_deg.selected)
 
-            # Check that magvar was set if GPS data are available
-            if gps:
-                if 0 in magvar:
-                    self.compass["status2"] = "warning"
-                    self.compass["messages"].append(
-                        [
-                            "COMPASS: Magnetic variation is 0 and GPS data "
-                            "are present;",
-                            1,
-                            4,
-                        ]
-                    )
-                    self.compass["magvar"] = 2
-                    self.compass["magvar_idx"] = np.where(np.array(magvar) == 0)[
-                        0
-                    ].tolist()
+            magvar.append(transect.sensors.heading_deg.internal.mag_var_deg)
+            if transect.sensors.heading_deg.external is not None:
+                align.append(
+                    transect.sensors.heading_deg.external.align_correction_deg)
 
-            # Check pitch mean
-            if np.any(np.asarray(np.abs(pitch_mean)) > 8):
-                self.compass["status2"] = "warning"
-                self.compass["messages"].append(
-                    ["PITCH: One or more transects have a mean pitch > 8 deg;", 1, 4]
-                )
-                temp = np.where(np.abs(pitch_mean) > 8)[0]
-                if len(temp) > 0:
-                    self.compass["pitch_mean_warning_idx"] = np.array(transect_idx)[
-                        temp
-                    ]
-                else:
-                    self.compass["pitch_mean_warning_idx"] = []
+            pitch_mean.append(np.nanmean(pitch_source_selected.data))
+            pitch_std.append(np.nanstd(pitch_source_selected.data, ddof=1))
+            roll_mean.append(np.nanmean(roll_source_selected.data))
+            roll_std.append(np.nanstd(roll_source_selected.data, ddof=1))
 
-            elif np.any(np.asarray(np.abs(pitch_mean)) > 4):
-                if self.compass["status2"] == "good":
-                    self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    ["Pitch: One or more transects have a mean pitch > 4 deg;", 2, 4]
-                )
-                temp = np.where(np.abs(pitch_mean) > 4)[0]
-                if len(temp) > 0:
-                    self.compass["pitch_mean_caution_idx"] = np.array(transect_idx)[
-                        temp
-                    ]
-                else:
-                    self.compass["pitch_mean_caution_idx"] = []
-
-            # Check roll mean
-            if np.any(np.asarray(np.abs(roll_mean)) > 8):
-                self.compass["status2"] = "warning"
-                self.compass["messages"].append(
-                    ["ROLL: One or more transects have a mean roll > 8 deg;", 1, 4]
-                )
-                temp = np.where(np.abs(roll_mean) > 8)[0]
-                if len(temp) > 0:
-                    self.compass["roll_mean_warning_idx"] = np.array(transect_idx)[temp]
-                else:
-                    self.compass["roll_mean_warning_idx"] = []
-
-            elif np.any(np.asarray(np.abs(roll_mean)) > 4):
-                if self.compass["status2"] == "good":
-                    self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    ["Roll: One or more transects have a mean roll > 4 deg;", 2, 4]
-                )
-                temp = np.where(np.abs(roll_mean) > 4)[0]
-                if len(temp) > 0:
-                    self.compass["roll_mean_caution_idx"] = np.array(transect_idx)[temp]
-                else:
-                    self.compass["roll_mean_caution_idx"] = []
-
-            # Check pitch standard deviation
-            if np.any(np.asarray(pitch_std) > 5):
-                if self.compass["status2"] == "good":
-                    self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    [
-                        "Pitch: One or more "
-                        "transects have a pitch "
-                        "std dev > 5 deg;",
-                        2,
-                        4,
-                    ]
-                )
-
-                temp = np.where(np.abs(pitch_std) > 5)[0]
-                if len(temp) > 0:
-                    self.compass["pitch_std_caution_idx"] = np.array(transect_idx)[temp]
-                else:
-                    self.compass["pitch_std_caution_idx"] = []
-
-            # Check roll standard deviation
-            if np.any(np.asarray(roll_std) > 5):
-                if self.compass["status2"] == "good":
-                    self.compass["status2"] = "caution"
-                self.compass["messages"].append(
-                    [
-                        "Roll: One or more "
-                        "transects have a roll "
-                        "std dev > 5 deg;",
-                        2,
-                        4,
-                    ]
-                )
-
-                temp = np.where(np.abs(roll_std) > 5)[0]
-                if len(temp) > 0:
-                    self.compass["roll_std_caution_idx"] = np.array(transect_idx)[temp]
-                else:
-                    self.compass["roll_std_caution_idx"] = []
-
-            # Additional checks for SonTek G3 compass
-            if meas.transects[checked.index(True)].adcp.manufacturer == "SonTek":
-                # Check if pitch limits were exceeded
-                if any(pitch_exceeded):
-                    if self.compass["status2"] == "good":
-                        self.compass["status2"] = "caution"
-                    self.compass["messages"].append(
-                        [
-                            "Compass: One or more transects have pitch "
-                            "exceeding calibration limits;",
-                            2,
-                            4,
-                        ]
-                    )
-
-                # Check if roll limits were exceeded
-                if any(roll_exceeded):
-                    if self.compass["status2"] == "good":
-                        self.compass["status2"] = "caution"
-                    self.compass["messages"].append(
-                        [
-                            "Compass: One or more transects have roll "
-                            "exceeding calibration limits;",
-                            2,
-                            4,
-                        ]
-                    )
-
-                # Check if magnetic error was exceeded
-                self.compass["mag_error_idx"] = []
-                if len(mag_error_exceeded) > 0:
-                    self.compass["mag_error_idx"] = np.array(mag_error_exceeded)
-                    if self.compass["status2"] == "good":
-                        self.compass["status2"] = "caution"
-                    self.compass["messages"].append(
-                        [
-                            "Compass: One or more transects have a change in "
-                            "mag field exceeding 2%;",
-                            2,
-                            4,
-                        ]
-                    )
-
-            if (
-                self.compass["status1"] == "warning"
-                or self.compass["status2"] == "warning"
-            ):
-                self.compass["status"] = "warning"
-            elif (
-                self.compass["status1"] == "caution"
-                or self.compass["status2"] == "caution"
-            ):
-                self.compass["status"] = "caution"
+            if trans_prop["start_bank"][n] == "Left":
+                left_water_dir.append(trans_prop["avg_water_dir"][n])
             else:
-                self.compass["status"] = "good"
+                right_water_dir.append(trans_prop["avg_water_dir"][n])
+
+            # SonTek G3 compass provides pitch, roll, and magnetic
+            # error parameters that can be checked
+            if transect.adcp.manufacturer == "SonTek":
+                if heading_source_selected.pitch_limit is not None:
+                    # Check for bug in SonTek data where pitch and
+                    # roll was n x 3 use n x 1
+                    if len(pitch_source_selected.data.shape) == 1:
+                        pitch_data = pitch_source_selected.data
+                    else:
+                        pitch_data = pitch_source_selected.data[:, 0]
+                    idx_max = \
+                    np.where(pitch_data > heading_source_selected.pitch_limit[0])[0]
+                    idx_min = \
+                    np.where(pitch_data < heading_source_selected.pitch_limit[1])[0]
+                    if len(idx_max) > 0 or len(idx_min) > 0:
+                        pitch_exceeded.append(True)
+                    else:
+                        pitch_exceeded.append(False)
+
+                if heading_source_selected.roll_limit is not None:
+                    if len(roll_source_selected.data.shape) == 1:
+                        roll_data = roll_source_selected.data
+                    else:
+                        roll_data = roll_source_selected.data[:, 0]
+                    idx_max = \
+                    np.where(roll_data > heading_source_selected.pitch_limit[0])[0]
+                    idx_min = \
+                    np.where(roll_data < heading_source_selected.pitch_limit[1])[0]
+                    if len(idx_max) > 0 or len(idx_min) > 0:
+                        roll_exceeded.append(True)
+                    else:
+                        roll_exceeded.append(False)
+
+                if heading_source_selected.mag_error is not None:
+                    idx_max = np.where(heading_source_selected.mag_error > 2)[0]
+                    if len(idx_max) > 0:
+                        mag_error_exceeded.append(n)
+
+        # LR difference water_direction
+        diff_dir = np.nan
+        if len(left_water_dir) > 0 and len(right_water_dir) > 0:
+            diff_dir = np.abs(
+                np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
+            if diff_dir > 180:
+                diff_dir = diff_dir - 360
+
+        hpr = {
+            "magvar": magvar,
+            "align": align,
+            "mag_error_exceeded": mag_error_exceeded,
+            "pitch_mean": pitch_mean,
+            "pitch_std": pitch_std,
+            "pitch_exceeded": pitch_exceeded,
+            "roll_mean": roll_mean,
+            "roll_std": roll_std,
+            "roll_exceeded": roll_exceeded,
+            "water_dir_diff": diff_dir
+               }
+
+        return hpr
 
     def temperature_qa(self, meas):
         """Apply QA checks to temperature.
@@ -1809,14 +1882,21 @@ class QAData(object):
                         self.movingbed["status"] = "caution"
 
             if len(loop) > 0:
-                if self.compass["status1"] != "good":
-                    self.movingbed["messages"].append(
-                        "Moving-Bed Test: Loop test used but compass calibration is "
-                        + self.compass["status1"]
-                    )
-                    if self.movingbed["code"] < 3:
-                        self.movingbed["code"] = 2
+                if "Loop" in mb_test_type:
+                    if self.compass['status'] == 'inactive':
+                        self.movingbed["messages"].append(
+                            "MOVING-BED TEST: Loop test is not valid. ADCP has no compass.")
+                        self.movingbed["code"] = 3
                         self.movingbed["status"] = "caution"
+
+                    if self.compass["status1"] != "good":
+                        self.movingbed["messages"].append(
+                            "Moving-Bed Test: Loop test used but compass calibration is "
+                            + self.compass["status1"]
+                        )
+                        if self.movingbed["code"] < 3:
+                            self.movingbed["code"] = 2
+                            self.movingbed["status"] = "caution"
 
         self.check_mbt_settings(meas)
 
@@ -2022,296 +2102,6 @@ class QAData(object):
 
         else:
             self.depths["status"] = "inactive"
-
-    def boat_qa1(self, meas):
-        """Apply quality checks to boat data.
-
-        Parameters
-        ----------
-        meas: Measurement
-            Object of class Measurement
-        """
-
-        # Initialize variables
-        n_transects = len(meas.transects)
-        data_type = {
-            "BT": {
-                "class": "bt_vel",
-                "warning": "BT-",
-                "caution": "bt-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("ErrorVel: ", 2),
-                    ("VertVel: ", 3),
-                    ("Other: ", 4),
-                    ("3Beams: ", 5),
-                ],
-            },
-            "GGA": {
-                "class": "gga_vel",
-                "warning": "GGA-",
-                "caution": "gga-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("DGPS: ", 2),
-                    ("Altitude: ", 3),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
-                ],
-            },
-            "VTG": {
-                "class": "vtg_vel",
-                "warning": "VTG-",
-                "caution": "vtg-",
-                "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
-                ],
-            },
-        }
-        self.boat["messages"] = []
-
-        for dt_key, dt_value in data_type.items():
-            boat = getattr(self, dt_value["class"])
-
-            # Initialize dictionaries for each data type
-            boat["q_total_caution"] = np.tile(False, (n_transects, 6))
-            boat["q_max_run_caution"] = np.tile(False, (n_transects, 6))
-            boat["q_total_warning"] = np.tile(False, (n_transects, 6))
-            boat["q_max_run_warning"] = np.tile(False, (n_transects, 6))
-            boat["all_invalid"] = np.tile(False, n_transects)
-            boat["q_total"] = np.tile(np.nan, (n_transects, 6))
-            boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
-            boat["messages"] = []
-            status_switch = 0
-            avg_speed_check = 0
-
-            # Check the results of each filter
-            for dt_filter in dt_value["filter"]:
-                boat["status"] = "inactive"
-
-                # Quality check each transect
-                for n, transect in enumerate(meas.transects):
-
-                    # Evaluate on transects used in the discharge computation
-                    if transect.checked:
-
-                        in_transect_idx = transect.in_transect_idx
-
-                        # Check to see if data are available for the data_type
-                        if getattr(transect.boat_vel, dt_value["class"]) is not None:
-                            boat["status"] = "good"
-
-                            # Compute quality characteristics
-                            valid = getattr(
-                                transect.boat_vel, dt_value["class"]
-                            ).valid_data[dt_filter[1], in_transect_idx]
-                            q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
-                                valid, meas.discharge[n]
-                            )
-                            boat["q_total"][n, dt_filter[1]] = q_total
-                            boat["q_max_run"][n, dt_filter[1]] = q_max_run
-
-                            # Compute percentage compared to total
-                            if meas.discharge[n].total == 0.0:
-                                q_total_percent = np.nan
-                                q_max_run_percent = np.nan
-                            else:
-                                q_total_percent = np.abs(
-                                    (q_total / meas.discharge[n].total) * 100
-                                )
-                                q_max_run_percent = np.abs(
-                                    (q_max_run / meas.discharge[n].total) * 100
-                                )
-
-                            # Check if all invalid
-                            if dt_filter[1] == 0 and not np.any(valid):
-                                boat["all_invalid"][n] = True
-
-                            # Apply total interpolated discharge threshold
-                            if q_total_percent > self.q_total_threshold_warning:
-                                boat["q_total_warning"][n, dt_filter[1]] = True
-                            elif q_total_percent > self.q_total_threshold_caution:
-                                boat["q_total_caution"][n, dt_filter[1]] = True
-
-                            # Apply interpolated discharge run thresholds
-                            if q_max_run_percent > self.q_run_threshold_warning:
-                                boat["q_max_run_warning"][n, dt_filter[1]] = True
-                            elif q_max_run_percent > self.q_run_threshold_caution:
-                                boat["q_max_run_caution"][n, dt_filter[1]] = True
-
-                            # Check boat velocity for vtg data
-                            if (
-                                dt_key == "VTG"
-                                and transect.boat_vel.selected == "vtg_vel"
-                                and avg_speed_check == 0
-                            ):
-                                if transect.boat_vel.vtg_vel.u_mps is not None:
-                                    avg_speed = np.nanmean(
-                                        (
-                                            transect.boat_vel.vtg_vel.u_mps**2
-                                            + transect.boat_vel.vtg_vel.v_mps**2
-                                        )
-                                        ** 0.5
-                                    )
-                                    if avg_speed < 0.24:
-                                        boat["q_total_caution"][n, 2] = True
-                                        if status_switch < 1:
-                                            status_switch = 1
-                                        boat["messages"].append(
-                                            [
-                                                "vtg-AvgSpeed: VTG data may "
-                                                "not be accurate for average "
-                                                "boat speed "
-                                                "less than" + "0.24 m/s (0.8 "
-                                                "ft/s);",
-                                                2,
-                                                8,
-                                            ]
-                                        )
-                                        avg_speed_check = 1
-
-                # Create message for consecutive invalid discharge
-                if boat["q_max_run_warning"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["warning"]
-                            + dt_filter[0]
-                            + "Int. Q for consecutive invalid ensembles exceeds "
-                            + "%3.1f" % self.q_run_threshold_warning
-                            + "%;",
-                            1,
-                            module_code,
-                        ]
-                    )
-                    status_switch = 2
-                elif boat["q_max_run_caution"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["caution"]
-                            + dt_filter[0]
-                            + "Int. Q for consecutive invalid ensembles exceeds "
-                            + "%3.1f" % self.q_run_threshold_caution
-                            + "%;",
-                            2,
-                            module_code,
-                        ]
-                    )
-                    if status_switch < 1:
-                        status_switch = 1
-
-                # Create message for total invalid discharge
-                if boat["q_total_warning"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["warning"]
-                            + dt_filter[0]
-                            + "Int. Q for invalid ensembles in a transect exceeds"
-                            " " + "%3.1f" % self.q_total_threshold_warning + "%;",
-                            1,
-                            module_code,
-                        ]
-                    )
-                    status_switch = 2
-                elif boat["q_total_caution"][:, dt_filter[1]].any():
-                    if dt_key == "BT":
-                        module_code = 7
-                    else:
-                        module_code = 8
-                    boat["messages"].append(
-                        [
-                            dt_value["caution"]
-                            + dt_filter[0]
-                            + "Int. Q for invalid ensembles in a transect exceeds "
-                            "" + "%3.1f" % self.q_total_threshold_caution + "%;",
-                            2,
-                            module_code,
-                        ]
-                    )
-                    if status_switch < 1:
-                        status_switch = 1
-
-            # Create message for all data invalid
-            if boat["all_invalid"].any():
-                boat["status"] = "warning"
-                if dt_key == "BT":
-                    module_code = 7
-                else:
-                    module_code = 8
-                boat["messages"].append(
-                    [
-                        dt_value["warning"]
-                        + dt_value["filter"][0][0]
-                        + "There are no valid data for one or more transects.;",
-                        1,
-                        module_code,
-                    ]
-                )
-
-            # Set status
-            if status_switch == 2:
-                boat["status"] = "warning"
-            elif status_switch == 1:
-                boat["status"] = "caution"
-
-            setattr(self, dt_value["class"], boat)
-
-        lag_gga = []
-        lag_vtg = []
-        self.gga_vel["lag_status"] = "good"
-        self.vtg_vel["lag_status"] = "good"
-        for transect in meas.transects:
-            gga, vtg = TransectData.compute_gps_lag(transect)
-            if gga is not None:
-                lag_gga.append(gga)
-            if vtg is not None:
-                lag_vtg.append(vtg)
-        if len(lag_gga) > 0:
-            if np.mean(np.abs(lag_gga)) > 10:
-                self.gga_vel["messages"].append(
-                    ["GGA: BT and GGA do not appear to be sychronized", 1, 8]
-                )
-                if self.gga_vel["status"] != "warning":
-                    self.gga_vel["status"] = "warning"
-                    self.gga_vel["lag_status"] = "warning"
-            elif np.mean(np.abs(lag_gga)) > 2:
-                self.gga_vel["messages"].append(
-                    ["gga: Lag between BT and GGA > 2 sec", 2, 8]
-                )
-                if self.gga_vel["status"] != "warning":
-                    self.gga_vel["status"] = "caution"
-                    self.gga_vel["lag_status"] = "caution"
-        if len(lag_vtg) > 0:
-            if np.mean(np.abs(lag_vtg)) > 10:
-                self.vtg_vel["messages"].append(
-                    ["VTG: BT and VTG do not appear to be sychronized", 1, 8]
-                )
-                if self.vtg_vel["status"] != "warning":
-                    self.vtg_vel["status"] = "warning"
-                    self.vtg_vel["lag status"] = "warning"
-            elif np.mean(np.abs(lag_vtg)) > 2:
-                self.vtg_vel["messages"].append(
-                    ["vtg: Lag between BT and VTG > 2 sec", 2, 8]
-                )
-                if self.vtg_vel["status"] != "warning":
-                    self.vtg_vel["status"] = "caution"
-                    self.vtg_vel["lag_status"] = "caution"
 
     def boat_qa(self, meas):
         """Apply quality checks to boat data.
@@ -2837,259 +2627,6 @@ class QAData(object):
                 self.extrapolation["status"] = "caution"
         else:
             self.extrapolation["status"] = "inactive"
-
-    def edges_qa1(self, meas):
-        """Apply quality checks to edge estimates
-
-        Parameters
-        ----------
-        meas: Measurement
-            Object of class Measurement
-        """
-
-        # Initialize variables
-        self.edges["messages"] = []
-        checked = []
-        left_q = []
-        right_q = []
-        total_q = []
-        edge_dist_left = []
-        edge_dist_right = []
-        dist_moved_left = []
-        dist_moved_right = []
-        dist_made_good = []
-        left_type = []
-        right_type = []
-        transect_idx = []
-
-        for n, transect in enumerate(meas.transects):
-            checked.append(transect.checked)
-
-            if transect.checked:
-                left_q.append(meas.discharge[n].left)
-                right_q.append(meas.discharge[n].right)
-                total_q.append(meas.discharge[n].total)
-                dmr, dml, dmg = QAData.edge_distance_moved(transect)
-                dist_moved_right.append(dmr)
-                dist_moved_left.append(dml)
-                dist_made_good.append(dmg)
-                edge_dist_left.append(transect.edges.left.distance_m)
-                edge_dist_right.append(transect.edges.right.distance_m)
-                left_type.append(transect.edges.left.type)
-                right_type.append(transect.edges.right.type)
-                transect_idx.append(n)
-
-        if any(checked):
-            # Set default status to good
-            self.edges["status"] = "good"
-
-            mean_total_q = np.nanmean(total_q)
-
-            # Check left edge q > 5%
-            self.edges["left_q"] = 0
-
-            left_q_percent = (np.nanmean(left_q) / mean_total_q) * 100
-            temp_idx = np.where(left_q / mean_total_q > 0.05)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_q_idx"] = np.array(transect_idx)[temp_idx]
-            else:
-                self.edges["left_q_idx"] = []
-            if np.abs(left_q_percent) > 5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Left edge Q is greater than 5%;", 1, 13]
-                )
-                self.edges["left_q"] = 1
-            elif len(self.edges["left_q_idx"]) > 0:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    [
-                        "Edges: One or more transects have a left edge Q "
-                        "greater than 5%;",
-                        1,
-                        13,
-                    ]
-                )
-                self.edges["left_q"] = 1
-
-            # Check right edge q > 5%
-            self.edges["right_q"] = 0
-            right_q_percent = (np.nanmean(right_q) / mean_total_q) * 100
-            temp_idx = np.where(right_q / mean_total_q > 0.05)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_q_idx"] = np.array(transect_idx)[temp_idx]
-            else:
-                self.edges["right_q_idx"] = []
-            if np.abs(right_q_percent) > 5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Right edge Q is greater than 5%;", 1, 13]
-                )
-                self.edges["right_q"] = 1
-            elif len(self.edges["right_q_idx"]) > 0:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    [
-                        "Edges: One or more transects have a right edge Q "
-                        "greater than 5%;",
-                        1,
-                        13,
-                    ]
-                )
-                self.edges["right_q"] = 1
-
-            # Check for consistent sign
-            q_positive = []
-            self.edges["left_sign"] = 0
-            for q in left_q:
-                if q >= 0:
-                    q_positive.append(True)
-                else:
-                    q_positive.append(False)
-            if len(np.unique(q_positive)) > 1 and left_q_percent > 0.5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Sign of left edge Q is not consistent;", 2, 13]
-                )
-                self.edges["left_sign"] = 1
-
-            q_positive = []
-            self.edges["right_sign"] = 0
-            for q in right_q:
-                if q >= 0:
-                    q_positive.append(True)
-                else:
-                    q_positive.append(False)
-            if len(np.unique(q_positive)) > 1 and right_q_percent > 0.5:
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Sign of right edge Q is not consistent;", 2, 13]
-                )
-                self.edges["right_sign"] = 1
-
-            # Check distance moved
-            dmg_5_percent = 0.05 * np.nanmean(dist_made_good)
-            avg_right_edge_dist = np.nanmean(edge_dist_right)
-            right_threshold = np.nanmin([dmg_5_percent, avg_right_edge_dist])
-            temp_idx = np.where(dist_moved_right > right_threshold)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_dist_moved_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in right edge ensembles;", 2, 13]
-                )
-            else:
-                self.edges["right_dist_moved_idx"] = []
-
-            avg_left_edge_dist = np.nanmean(edge_dist_left)
-            left_threshold = np.nanmin([dmg_5_percent, avg_left_edge_dist])
-            temp_idx = np.where(dist_moved_left > left_threshold)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_dist_moved_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "caution"
-                self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in left edge ensembles;", 2, 13]
-                )
-            else:
-                self.edges["left_dist_moved_idx"] = []
-
-            # Check for edge ensembles marked invalid due to excluded distance
-            self.edges["invalid_transect_left_idx"] = []
-            self.edges["invalid_transect_right_idx"] = []
-            for n, transect in enumerate(meas.transects):
-                if transect.checked:
-                    ens_invalid = np.nansum(transect.w_vel.valid_data[0, :, :], 0) > 0
-                    ens_cells_above_sl = np.nansum(transect.w_vel.cells_above_sl, 0) > 0
-                    ens_invalid = np.logical_not(
-                        np.logical_and(ens_invalid, ens_cells_above_sl)
-                    )
-                    if np.any(ens_invalid):
-                        if transect.start_edge == "Left":
-                            invalid_left = ens_invalid[
-                                0 : int(transect.edges.left.number_ensembles)
-                            ]
-                            invalid_right = ens_invalid[
-                                -int(transect.edges.right.number_ensembles) :
-                            ]
-                        else:
-                            invalid_right = ens_invalid[
-                                0 : int(transect.edges.right.number_ensembles)
-                            ]
-                            invalid_left = ens_invalid[
-                                -int(transect.edges.left.number_ensembles) :
-                            ]
-                        if len(invalid_left) > 0:
-                            left_invalid_percent = sum(invalid_left) / len(invalid_left)
-                        else:
-                            left_invalid_percent = 0
-                        if len(invalid_right) > 0:
-                            right_invalid_percent = sum(invalid_right) / len(
-                                invalid_right
-                            )
-                        else:
-                            right_invalid_percent = 0
-                        max_invalid_percent = (
-                            max([left_invalid_percent, right_invalid_percent]) * 100
-                        )
-                        if max_invalid_percent > 25:
-                            self.edges["status"] = "caution"
-                            if np.any(invalid_left):
-                                self.edges["invalid_transect_left_idx"].append(n)
-                            if np.any(invalid_right):
-                                self.edges["invalid_transect_right_idx"].append(n)
-
-            if (
-                len(self.edges["invalid_transect_left_idx"]) > 0
-                or len(self.edges["invalid_transect_right_idx"]) > 0
-            ):
-                self.edges["messages"].append(
-                    [
-                        "Edges: The percent of invalid ensembles exceeds 25% in"
-                        + " one or more transects.",
-                        2,
-                        13,
-                    ]
-                )
-
-            # Check edges for zero discharge
-            self.edges["left_zero"] = 0
-            temp_idx = np.where(np.round(left_q, 4) == 0)[0]
-            if len(temp_idx) > 0:
-                self.edges["left_zero_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(["EDGES: Left edge has zero Q;", 1, 13])
-                self.edges["left_zero"] = 2
-            else:
-                self.edges["left_zero_idx"] = []
-
-            self.edges["right_zero"] = 0
-            temp_idx = np.where(np.round(right_q, 4) == 0)[0]
-            if len(temp_idx) > 0:
-                self.edges["right_zero_idx"] = np.array(transect_idx)[temp_idx]
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(["EDGES: Right edge has zero Q;", 1, 13])
-                self.edges["right_zero"] = 2
-            else:
-                self.edges["right_zero_idx"] = []
-
-            # Check consistent edge type
-            self.edges["left_type"] = 0
-            if len(np.unique(left_type)) > 1:
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(
-                    ["EDGES: Left edge type is not consistent;", 1, 13]
-                )
-                self.edges["left_type"] = 2
-
-            self.edges["right_type"] = 0
-            if len(np.unique(right_type)) > 1:
-                self.edges["status"] = "warning"
-                self.edges["messages"].append(
-                    ["EDGES: Right edge type is not consistent;", 1, 13]
-                )
-                self.edges["right_type"] = 2
-        else:
-            self.edges["status"] = "inactive"
 
     def edges_qa(self, meas):
         """Apply quality checks to edge estimates
@@ -4047,3 +3584,53 @@ class QAData(object):
             if not np.isnan(meas.oursin.user_specified_u[key]):
                 self.settings_dict["tab_uncertainty"] = "Custom"
                 break
+
+    def systest_added(self, meas):
+        """Peforms a quality check after a system test has been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.system_tst_qa(meas)
+        self.system_tst["messages"].append(
+            ["System Test: A system test has been manually added to the measurement.", 2, 3]
+        )
+
+        self.settings_dict["tab_systest"] = "Custom"
+
+    def compass_added(self, meas):
+        """Performs a quality check after a compass calibration / evalution has
+        been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.compass_qa(meas)
+        self.compass["messages"].append(
+            ["Compass: A compass cal/eval has been manually added to the measurement.", 2,
+             3])
+
+        self.settings_dict["tab_compass"] = "Custom"
+
+    def moving_bed_test_added(self, meas):
+        """Performs a quality check after a moving-bed test has
+        been added.
+
+        Parameters
+        ----------
+        meas: Measurement
+            Object of class Measurement
+        """
+
+        self.moving_bed_qa(meas)
+        self.movingbed["messages"].append(
+            ["Moving-Bed Test: A moving-bed test has been manually added to the measurement.", 2,
+             3])
+
+        self.settings_dict["tab_mbt"] = "Custom"

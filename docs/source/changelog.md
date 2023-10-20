@@ -21,6 +21,11 @@
 - Added ability to allow autonomous GPS by default
 - Converted documentation from external pdfs to built-in html
 - Fixed crash when using Nortek Sig500 ADCP.
+- Added option to import additional compass calibrations and moving bed tests.
+- Added additional row in main details' table to display difference between 
+  left and right transects
+- Added additional QA check using the difference in flow direction between 
+  Left and Right transects.
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
