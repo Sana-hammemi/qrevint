@@ -889,6 +889,15 @@ class AdvGraphs(object):
                 self.wt_snr_ts()
             elif speed:
                 self.wt_avg_speed_ts()
+                self.bt_speed_ts()
+
+                self.ax[-1].set_ylabel(self.canvas.tr("Speed " + units[
+                    "label_V"]))
+
+                # Create legend
+                legend_txt = ["Water", "Boat"]
+                self.ax[-1].legend(legend_txt, loc="upper left",
+                                   bbox_to_anchor=(1, 1), frameon=False)
 
             self.fig_no += 2
             # Create additional subplots as specified, sharing x axis for all
@@ -1176,9 +1185,13 @@ class AdvGraphs(object):
         mean_v = np.nansum(water_v * weight, axis=0) / np.nansum(weight, axis=0)
         avg_speed = np.sqrt(mean_u**2 + mean_v**2)
 
+        # specify format
+        fmt = [{"color": "k", "linestyle": "-"}]
+
         # Plot data
         data_units = (self.units["V"], "Water speed " + self.units["label_V"])
-        self.plt_timeseries(data=avg_speed, data_units=data_units, ax=self.ax[-1])
+        self.plt_timeseries(data=avg_speed, fmt=fmt, data_units=data_units,
+                            ax=self.ax[-1])
 
     def wt_corr_beam_contour(self):
         """Create contour plots of the correlation in each beam."""

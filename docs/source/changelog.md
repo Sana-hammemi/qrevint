@@ -26,6 +26,7 @@
   left and right transects
 - Added additional QA check using the difference in flow direction between 
   Left and Right transects.
+- Added boat speed to speed plot on WT tab.
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
