@@ -2415,30 +2415,37 @@ class AdvGraphs(object):
             # Plot smooth
             speed = np.sqrt(data.u_mps**2 + data.v_mps**2)
             invalid_other_vel = np.logical_not(data.valid_data[4, :])
+
+            # convert x coordinates if axis type is Length
+            if self.x_axis_type == "L":
+                x_coords = self.x * self.units["L"]
+            else:
+                x_coords = self.x
+
             if data.smooth_filter == "On":
                 self.ax[-1].plot(
-                    self.x, data.smooth_lower_limit * self.units["V"], color="#d5dce6"
+                    x_coords, data.smooth_lower_limit * self.units["V"], color="#d5dce6"
                 )
                 self.ax[-1].plot(
-                    self.x, data.smooth_upper_limit * self.units["V"], color="#d5dce6"
+                    x_coords, data.smooth_upper_limit * self.units["V"], color="#d5dce6"
                 )
                 self.ax[-1].fill_between(
-                    self.x,
+                    x_coords,
                     data.smooth_lower_limit * self.units["V"],
                     data.smooth_upper_limit * self.units["V"],
                     facecolor="#d5dce6",
                 )
 
-                self.ax[-1].plot(self.x, speed * self.units["V"], data_color)
-                self.ax[-1].plot(self.x, data.smooth_speed * self.units["V"])
+                self.ax[-1].plot(x_coords, speed * self.units["V"], data_color)
+                self.ax[-1].plot(x_coords, data.smooth_speed * self.units["V"])
                 self.ax[-1].plot(
-                    self.x[invalid_other_vel],
+                    x_coords[invalid_other_vel],
                     speed[invalid_other_vel] * self.units["V"],
                     "ko",
                     linestyle="",
                 )
             else:
-                self.ax[-1].plot(self.x, speed * self.units["V"], data_color)
+                self.ax[-1].plot(x_coords, speed * self.units["V"], data_color)
             self.ax[-1].set_ylabel(self.canvas.tr("Speed " + self.units["label_V"]))
 
     def gga_source_ts(self):
