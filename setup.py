@@ -2,7 +2,7 @@
 
 # Learn more: https://github.com/kennethreitz/setup.py
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open('README.md') as f:
     readme = f.read()
@@ -57,6 +57,9 @@ setup(
                       'utm',
                       'wcwidth==0.1.7',
                       'xmltodict==0.12.0',
-                      'zipp==0.6.0'], )
-
-
+                      'zipp==0.6.0',
+                      'sphinx-markdown-builder',
+                      'sphinx',
+                      'myst-parser',
+                      'sphinx_book_theme'
+                      ], )
