@@ -302,7 +302,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#edit-edge-distance">13.1.4 Edit Edge Distance</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#edit-number-of-edge-ensembles">13.1.5 Edit Number of Edge Ensembles</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#id35">13.1.6 Graphics</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#message">13.1.7 MESSAGE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id36">13.1.7 Messages</a></li>
 </ul>
 </li>
 </ul>
@@ -331,19 +331,19 @@
 <li class="toctree-l3"><a class="reference internal" href="#select-x-axis">15.9 SELECT X-AXIS</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id36">16. UNCERTAINTY</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id37">16.1 DATA</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id38">16.1.1 Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id37">16. UNCERTAINTY</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id38">16.1 DATA</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id39">16.1.1 Table</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#contributions-to-meas-q-uncertainty">16.1.2 Contributions to Meas. Q Uncertainty</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#contributions-to-measurement-uncertainty">16.1.3 Contributions to Measurement Uncertainty</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#advanced-settings">16.2 ADVANCED SETTINGS</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id39">16.3 MESSAGES</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id40">16.3 MESSAGES</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#map">17. MAP</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id40">17.1 Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id41">17.1 Options</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#references">18. REFERENCES</a></li>
@@ -698,7 +698,7 @@ document.write(`
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#edit-edge-distance">13.1.4 Edit Edge Distance</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#edit-number-of-edge-ensembles">13.1.5 Edit Number of Edge Ensembles</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id35">13.1.6 Graphics</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#message">13.1.7 MESSAGE</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">13.1.7 Messages</a></li>
 </ul>
 </li>
 </ul>
@@ -727,19 +727,19 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#select-x-axis">15.9 SELECT X-AXIS</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">16. UNCERTAINTY</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">16.1 DATA</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">16.1.1 Table</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">16. UNCERTAINTY</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">16.1 DATA</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">16.1.1 Table</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#contributions-to-meas-q-uncertainty">16.1.2 Contributions to Meas. Q Uncertainty</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#contributions-to-measurement-uncertainty">16.1.3 Contributions to Measurement Uncertainty</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-settings">16.2 ADVANCED SETTINGS</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">16.3 MESSAGES</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">16.3 MESSAGES</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#map">17. MAP</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">17.1 Options</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id41">17.1 Options</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">18. REFERENCES</a></li>
@@ -1814,7 +1814,8 @@ vertical velocity filter.</p>
 <p>The SNR option displays the range of average SNR above the side lobe cutoff
 among the beams for each ensemble. Red circles indicate data that have been
 determined to be invalid by the SNR filter.</p>
-<p>The Speed option displays a time series of the ensemble average water speed.
+<p><img alt="" src="../_images/wt_speed_ts.png" /></p>
+<p>The Speed option displays a time series of the ensemble average water speed and boat speed.
 Invalid data are indicated by letters on the appropriate ensembles:
 O-invalid original data, E-error velocity filter, V-vertical velocity
 filter, B-beam filter, R-SNR filter.</p>
@@ -2161,8 +2162,8 @@ the discharge in the right edge by entering the discharge in the Right Discharge
 <p><img alt="" src="../_images/edges_plt.png" /></p>
 <p>The data used in the computation of the left and right edge discharges are displayed in the Left Edge and Right Edge panels. The transect data displayed are selected by clicking on the filename in the table. The filename of the transect being displayed is in bold font in the table. Each edge panel contains a color contour graph of the water speed and a ship track graph. These graphs only contain data from the edge ensembles. The color contour graph should be used to evaluate the consistency of the depth and water speed. The ship track graph should be used to evaluate boat movement during the collection of the edge ensembles. The black square also indicates the end of the transect closest to shore. The black arrows represent the depth averaged velocity vectors.</p>
 </section>
-<section id="message">
-<h4>13.1.7 MESSAGE<a class="headerlink" href="#message" title="Permalink to this heading">#</a></h4>
+<section id="id36">
+<h4>13.1.7 Messages<a class="headerlink" href="#id36" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/edges_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the edge data and settings. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
@@ -2329,15 +2330,15 @@ discharge as a percentage of the total transect discharge for the selected trans
 </ul>
 </section>
 </section>
-<section id="id36">
-<h2>16. UNCERTAINTY<a class="headerlink" href="#id36" title="Permalink to this heading">#</a></h2>
-<p><img alt="" src="source/assets/user_guide/unc_tab.png" /></p>
-<p>The Uncertainty tab is only shown if Oursin is selected as the uncertainty model. The Uncertainty tab consists of three subtabs: Data, Advanced Settings, and Messages.</p>
 <section id="id37">
-<h3>16.1 DATA<a class="headerlink" href="#id37" title="Permalink to this heading">#</a></h3>
-<p>The Data subtab consists of a table at the top and two stacked bar graphs at the bottom. This combination provides the user details on the source and magnitude of the uncertainty for each transect and the entire measurement.</p>
+<h2>16. UNCERTAINTY<a class="headerlink" href="#id37" title="Permalink to this heading">#</a></h2>
+<p><img alt="" src="../_images/unc_tab.png" /></p>
+<p>The Uncertainty tab is only shown if Oursin is selected as the uncertainty model. The Uncertainty tab consists of three subtabs: Data, Advanced Settings, and Messages.</p>
 <section id="id38">
-<h4>16.1.1 Table<a class="headerlink" href="#id38" title="Permalink to this heading">#</a></h4>
+<h3>16.1 DATA<a class="headerlink" href="#id38" title="Permalink to this heading">#</a></h3>
+<p>The Data subtab consists of a table at the top and two stacked bar graphs at the bottom. This combination provides the user details on the source and magnitude of the uncertainty for each transect and the entire measurement.</p>
+<section id="id39">
+<h4>16.1.1 Table<a class="headerlink" href="#id39" title="Permalink to this heading">#</a></h4>
 <p>The table at the top of the tab displays the uncertainty standard deviation as a percentage of the total discharge for each uncertainty source considered in the Oursin model. The uncertainties are computed for each transect automatically using the assumptions and algorithms of the Oursin model. The user has two ways to modify the automatically computed uncertainties:</p>
 <ol class="arabic simple">
 <li><p>the user can override some of the assumptions in the model using the Advanced Setting tab and then let the model recompute uncertainties based on the new assumptions or</p></li>
@@ -2452,8 +2453,8 @@ depths is less than 2.50 m and then the default value is 0.02. The value is used
 <li><p><strong>Bayesian COV Prior Uncertainty:</strong> The default value is 0.2 (20 percent) based on references cited in the Bayesian COV Prior section. This value is used in the computation of the coefficient of variation.</p></li>
 </ul>
 </section>
-<section id="id39">
-<h3>16.3 MESSAGES<a class="headerlink" href="#id39" title="Permalink to this heading">#</a></h3>
+<section id="id40">
+<h3>16.3 MESSAGES<a class="headerlink" href="#id40" title="Permalink to this heading">#</a></h3>
 <p>The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with the uncertainty computations. The bottom panel
 shows all the comments associated with the measurement.</p>
@@ -2466,8 +2467,8 @@ shows all the comments associated with the measurement.</p>
 measurement data projected and averaged. The data displayed on the plot can
 be toggled using the radio buttons above the plot. The current options are
 contour, bathymetry, temperature, and stick ship.</p>
-<section id="id40">
-<h3>17.1 Options<a class="headerlink" href="#id40" title="Permalink to this heading">#</a></h3>
+<section id="id41">
+<h3>17.1 Options<a class="headerlink" href="#id41" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/map_options.png" /></p>
 <p>The data displayed can be further customized by changing the settings in
 the options section of tab.</p>
@@ -2861,7 +2862,7 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#edit-edge-distance">13.1.4 Edit Edge Distance</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#edit-number-of-edge-ensembles">13.1.5 Edit Number of Edge Ensembles</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id35">13.1.6 Graphics</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#message">13.1.7 MESSAGE</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">13.1.7 Messages</a></li>
 </ul>
 </li>
 </ul>
@@ -2890,19 +2891,19 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#select-x-axis">15.9 SELECT X-AXIS</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">16. UNCERTAINTY</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">16.1 DATA</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">16.1.1 Table</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">16. UNCERTAINTY</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">16.1 DATA</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">16.1.1 Table</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#contributions-to-meas-q-uncertainty">16.1.2 Contributions to Meas. Q Uncertainty</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#contributions-to-measurement-uncertainty">16.1.3 Contributions to Measurement Uncertainty</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-settings">16.2 ADVANCED SETTINGS</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">16.3 MESSAGES</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">16.3 MESSAGES</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#map">17. MAP</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">17.1 Options</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id41">17.1 Options</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">18. REFERENCES</a></li>
