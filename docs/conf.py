@@ -8,15 +8,10 @@
 
 import os
 import sys
-from Classes import __version__, __author__, __app__
 
 sys.path.insert(0, os.path.abspath("../.."))
 sys.path.append("C:/REPOS/qrev")
 sys.path.append("C:/REPOS/qrev/docs")
-
-project = __app__
-author = __author__
-release = __version__
 
 html_sidebars = { "**": ["globaltoc.html", "relations.html",
                          "sourcelink.html", "searchbox.html"]

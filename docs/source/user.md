@@ -1192,7 +1192,9 @@ The SNR option displays the range of average SNR above the side lobe cutoff
 among the beams for each ensemble. Red circles indicate data that have been 
 determined to be invalid by the SNR filter.
 
-The Speed option displays a time series of the ensemble average water speed.
+![](./assets/user_guide/wt_speed_ts.png)
+
+The Speed option displays a time series of the ensemble average water speed and boat speed.
 Invalid data are indicated by letters on the appropriate ensembles: 
 O-invalid original data, E-error velocity filter, V-vertical velocity 
 filter, B-beam filter, R-SNR filter.
@@ -1553,7 +1555,7 @@ Clicking on the row under the Left or Right # Valid opens a dialog window that a
 
 The data used in the computation of the left and right edge discharges are displayed in the Left Edge and Right Edge panels. The transect data displayed are selected by clicking on the filename in the table. The filename of the transect being displayed is in bold font in the table. Each edge panel contains a color contour graph of the water speed and a ship track graph. These graphs only contain data from the edge ensembles. The color contour graph should be used to evaluate the consistency of the depth and water speed. The ship track graph should be used to evaluate boat movement during the collection of the edge ensembles. The black square also indicates the end of the transect closest to shore. The black arrows represent the depth averaged velocity vectors.
 
-#### 13.1.7 MESSAGE
+#### 13.1.7 Messages
 
 ![](./assets/user_guide/edges_msg_tab.png)
 
