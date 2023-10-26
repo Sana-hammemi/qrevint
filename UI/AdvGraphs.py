@@ -890,6 +890,14 @@ class AdvGraphs(object):
             elif speed:
                 self.wt_avg_speed_ts()
                 self.bt_speed_ts()
+                y_all = np.hstack((self.data_plotted[0]["y"], self.data_plotted[1]["y"]))
+                max_y = (np.nanmax(y_all) + np.abs(np.nanmax(y_all) * 0.02)) * \
+                        self.units["V"]
+                min_y = (np.nanmin(y_all) - np.abs(np.nanmin(y_all)) * 0.02) * \
+                        self.units["V"]
+                if min_y == 0:
+                    min_y = max_y * -0.02
+                self.ax[-1].set_ylim(top=max_y, bottom=min_y)
 
                 self.ax[-1].set_ylabel(self.canvas.tr("Speed " + units[
                     "label_V"]))
@@ -3938,7 +3946,8 @@ class AdvGraphs(object):
             elif data is None:
                 all_data = data_2
             else:
-                all_data = np.concatenate([data, data_2])
+                # all_data = np.concatenate([data, data_2])
+                all_data = data
 
             # Plot calls for other masked data
             for n in range(1, len(fmt)):
