@@ -651,10 +651,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if "show" not in self.agency_options["MAP"].keys():
             self.popup_message(self.tr("QRev.cfg MAP: show parameter not found."))
             sys.exit()
-        if self.agency_options["MAP"]["show"]:
-            self.show_map = True
-        else:
-            self.show_map = False
+        try:
+            self.show_map = self.sticky_settings.get("MAP")
+        except KeyError:
+            if self.agency_options["MAP"]["show"]:
+                self.show_map = True
+            else:
+                self.show_map = False
+            self.sticky_settings.new("MAP", self.show_map)
+
+        if self.show_map == False:
             self.tab_all.removeTab(
                 self.tab_all.indexOf(
                     self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
@@ -1397,7 +1403,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options["QA"]["MinTransects"],
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
-                            run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                             excluded=self.agency_options["Excluded"],
@@ -1422,7 +1427,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         min_transects=self.agency_options["QA"]["MinTransects"],
                         min_duration=self.agency_options["QA"]["MinDuration"],
                         export_xs=self.xs_export,
-                        run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
                         water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
                             "threshold"],
@@ -1445,7 +1449,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         min_transects=self.agency_options["QA"]["MinTransects"],
                         min_duration=self.agency_options["QA"]["MinDuration"],
                         export_xs=self.xs_export,
-                        run_map=self.show_map,
                         gps_quality_threshold=self.gps_quality_threshold,
                         excluded=self.agency_options["Excluded"],
                         water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
@@ -1498,7 +1501,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             source="QRev",
                             proc_type="None",
                             export_xs=self.xs_export,
-                            run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
                         )
                     elif msg_box.clickedButton() == reprocess_btn:
@@ -1512,7 +1514,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_transects=self.agency_options["QA"]["MinTransects"],
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
-                            run_map=self.show_map,
                             gps_quality_threshold=self.gps_quality_threshold,
                             water_dir_diff_threshold=
                             self.agency_options["LeftRightFlowDirDiff"]["threshold"],
@@ -1982,6 +1983,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_xs_export.setChecked(False)
 
+        if self.show_map:
+            options.cb_map.setChecked(True)
+        else:
+            options.cb_map.setChecked(False)
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -2201,6 +2207,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except KeyError:
                         self.sticky_settings.new("XsExport", False)
 
+                if options.cb_map.isChecked():
+                    self.show_map = True
+                    self.sticky_settings.set("MAP", True)
+                    if self.tab_all.indexOf(
+                self.tab_all.findChild(QtWidgets.QWidget, "tab_map")) < 0:
+                        self.tab_all.addTab(self.tab_map, "MAP")
+                else:
+                    self.show_map = False
+                    self.sticky_settings.set("MAP", False)
+                    tab_idx = self.tab_all.indexOf(
+                        self.tab_all.findChild(QtWidgets.QWidget, "tab_map"))
+                    if  tab_idx > 0:
+                        self.tab_all.removeTab(tab_idx)
+
                 # Update tabs
                 if self.meas is not None:
                     if old_discharge is None:
@@ -2386,7 +2406,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.main_shiptrack_canvas.draw()
 
                 self.update_main_uncertainty()
-                self.map_tab()
+                if self.map_change:
+                    self.meas.run_map = True
                 self.set_user_rating()
                 self.update_fig_list()
 
@@ -15539,50 +15560,56 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ==============
     def map_tab(self):
         """Initializes and configures MAP tab."""
-        if self.meas.map is not None:
-            if self.map_change:
-                # Reset settings if change
-                self.cb_map_interpolation.setChecked(True)
-                self.cb_map_top_bottom.setChecked(True)
-                self.cb_map_edges.setChecked(True)
-                self.cb_map_bed_profiles.setChecked(True)
-                self.ed_map_cell_width.setText("")
-                self.ed_map_cell_height.setText("")
-                self.ed_map_secondary_velocity.setText("")
-                self.combo_map_data.setCurrentIndex(0)
-                self.map_current_settings = {
-                    "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
-                    "ed_map_cell_width": self.check_numeric_input(
-                        self.ed_map_cell_width
-                    ),
-                    "ed_map_cell_height": self.check_numeric_input(
-                        self.ed_map_cell_height
-                    ),
-                    "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
-                    "cb_map_edges": self.cb_map_edges.isChecked(),
-                    "ed_map_secondary_velocity": self.check_numeric_input(
-                        self.ed_map_secondary_velocity
-                    ),
-                    "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
-                    "combo_map_data": self.combo_map_data.currentText(),
-                    "rb_map_contour": self.rb_map_contour.isChecked(),
-                    "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
-                    "rb_map_temp": self.rb_map_temp.isChecked(),
-                    "rb_map_stickship": self.rb_map_stickship.isChecked(),
-                }
-
-            # Disable MAP open Earth button if not GGA
-            settings = Measurement.current_settings(self.meas)
-            if settings["NavRef"] == "gga_vel":
-                self.pb_map_open_earth.setEnabled(True)
-            else:
-                self.pb_map_open_earth.setEnabled(False)
-
-            # Save MAP parameters as dic
+        if self.meas.map is None:
+            self.meas.compute_map()
             self.map_settings = {
+                "cb_map_interpolation": True,
+                "ed_map_cell_width": self.meas.map.auto_node_horz,
+                "ed_map_cell_height": self.meas.map.auto_node_vert,
+                "cb_map_top_bottom": True,
+                "cb_map_edges": True,
+                "ed_map_secondary_velocity": None,
+                "cb_map_bed_profiles": True,
+                "combo_map_data": "Primary velocity",
+                "rb_map_contour": True,
+                "rb_map_bathymetry": False,
+                "rb_map_temp": False,
+                "rb_map_stickship": False, }
+
+            # Initialize tab
+            self.map_tab_initialize()
+            self.cb_map_interpolation.setChecked(True)
+            self.cb_map_top_bottom.setChecked(True)
+            self.cb_map_edges.setChecked(True)
+            self.cb_map_bed_profiles.setChecked(True)
+            min_width = self.meas.map.auto_node_horz
+            self.ed_map_cell_width.setText("{:3.2f}".format(min_width * self.units["L"]))
+            min_height = self.meas.map.auto_node_vert
+            self.ed_map_cell_height.setText(
+                "{:3.2f}".format(min_height * self.units["L"]))
+            self.ed_map_secondary_velocity.setText("")
+            self.combo_map_data.setCurrentIndex(0)
+
+            self.map_change = False
+
+        if self.map_change:
+            # Reset settings if change
+            self.cb_map_interpolation.setChecked(True)
+            self.cb_map_top_bottom.setChecked(True)
+            self.cb_map_edges.setChecked(True)
+            self.cb_map_bed_profiles.setChecked(True)
+            self.ed_map_cell_width.setText("")
+            self.ed_map_cell_height.setText("")
+            self.ed_map_secondary_velocity.setText("")
+            self.combo_map_data.setCurrentIndex(0)
+            self.map_current_settings = {
                 "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
-                "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
-                "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
+                "ed_map_cell_width": self.check_numeric_input(
+                    self.ed_map_cell_width
+                ),
+                "ed_map_cell_height": self.check_numeric_input(
+                    self.ed_map_cell_height
+                ),
                 "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
                 "cb_map_edges": self.cb_map_edges.isChecked(),
                 "ed_map_secondary_velocity": self.check_numeric_input(
@@ -15596,44 +15623,71 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "rb_map_stickship": self.rb_map_stickship.isChecked(),
             }
 
-            # MAP table
-            self.map_table()
+        # Disable MAP open Earth button if not GGA
+        settings = Measurement.current_settings(self.meas)
+        if settings["NavRef"] == "gga_vel":
+            self.pb_map_open_earth.setEnabled(True)
+        else:
+            self.pb_map_open_earth.setEnabled(False)
 
-            # MAP figures
-            self.update_map()
+        # Save MAP parameters as dict
+        secondary_velocity_scale = self.check_numeric_input(
+                self.ed_map_secondary_velocity)
+        self.map_settings = {
+            "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
+            "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
+            "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
+            "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
+            "cb_map_edges": self.cb_map_edges.isChecked(),
+            "ed_map_secondary_velocity": secondary_velocity_scale,
+            "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
+            "combo_map_data": self.combo_map_data.currentText(),
+            "rb_map_contour": self.rb_map_contour.isChecked(),
+            "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+            "rb_map_temp": self.rb_map_temp.isChecked(),
+            "rb_map_stickship": self.rb_map_stickship.isChecked(),
+        }
 
-            self.canvases = [self.map_canvas]
-            self.figs = [self.map_fig]
-            self.fig_calls = [self.map_wt_contour]
-            self.toolbars = [self.map_toolbar]
-            self.ui_parents = [i.parent() for i in self.canvases]
-            self.figs_menu_connection()
+        # MAP table
+        self.map_table()
 
-            if not self.map_initialized:
-                # Todo add signals for any change to the map properties
-                # Configure dictionary of plot options
-                self.map_current_settings = self.map_settings
+        # MAP figures
+        self.update_map()
 
-                # radio button signals for plot type
-                self.rb_map_contour.clicked.connect(self.update_map)
-                self.rb_map_bathymetry.clicked.connect(self.update_map)
-                self.rb_map_temp.clicked.connect(self.update_map)
-                self.rb_map_stickship.clicked.connect(self.update_map)
+        self.canvases = [self.map_canvas]
+        self.figs = [self.map_fig]
+        self.fig_calls = [self.map_wt_contour]
+        self.toolbars = [self.map_toolbar]
+        self.ui_parents = [i.parent() for i in self.canvases]
+        self.figs_menu_connection()
 
-                # signals for contour options
-                self.combo_map_data.currentTextChanged.connect(self.update_map)
-                self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
-                self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
-                self.ed_map_cell_width.editingFinished.connect(self.update_map)
-                self.ed_map_cell_height.editingFinished.connect(self.update_map)
-                self.cb_map_top_bottom.clicked.connect(self.update_map)
-                self.cb_map_edges.clicked.connect(self.update_map)
-                self.cb_map_interpolation.clicked.connect(self.update_map)
-                self.cb_map_bed_profiles.clicked.connect(self.update_map)
 
-                self.pb_map_save.clicked.connect(self.map_save_data)
-                self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
-                self.map_initialized = True
+    def map_tab_initialize(self):
+
+            # Todo add signals for any change to the map properties
+            # Configure dictionary of plot options
+            self.map_current_settings = self.map_settings
+
+            # radio button signals for plot type
+            self.rb_map_contour.clicked.connect(self.update_map)
+            self.rb_map_bathymetry.clicked.connect(self.update_map)
+            self.rb_map_temp.clicked.connect(self.update_map)
+            self.rb_map_stickship.clicked.connect(self.update_map)
+
+            # signals for contour options
+            self.combo_map_data.currentTextChanged.connect(self.update_map)
+            self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
+            self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
+            self.ed_map_cell_width.editingFinished.connect(self.update_map)
+            self.ed_map_cell_height.editingFinished.connect(self.update_map)
+            self.cb_map_top_bottom.clicked.connect(self.update_map)
+            self.cb_map_edges.clicked.connect(self.update_map)
+            self.cb_map_interpolation.clicked.connect(self.update_map)
+            self.cb_map_bed_profiles.clicked.connect(self.update_map)
+
+            self.pb_map_save.clicked.connect(self.map_save_data)
+            self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
+            # self.map_initialized = True
 
     def update_map(self):
         """Updates MAP with user's parameters."""
@@ -16121,6 +16175,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_map_cell_height.clear()
 
             self.update_map()
+
         else:
             self.ed_map_cell_width.blockSignals(False)
             self.ed_map_cell_width.setEnabled(True)

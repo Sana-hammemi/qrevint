@@ -126,7 +126,7 @@ class Measurement(object):
         min_transects=2,
         min_duration=720,
         export_xs=True,
-        run_map=True,
+        run_map=False,
         gps_quality_threshold=2,
         snr_3beam_comp=False,
         excluded=None,
@@ -2462,6 +2462,7 @@ class Measurement(object):
                 edges_option,
                 interp_option,
             )
+        self.run_map = False
 
     @staticmethod
     def compute_edi(meas, selected_idx, percents):
@@ -4880,7 +4881,10 @@ class Measurement(object):
             ETree.SubElement(channel, "UserComment", type="char").text = temp
 
         # Average cross-section
-        if self.export_xs and self.map is not None:
+        if self.export_xs:
+            # If map hasn't been computed, compute with default settings
+            if self.map is None or self.run_map:
+                self.compute_map()
             # get dataframe for xml output
             cross_section_all = self.map.create_map_df(units=units_conversion())
 
