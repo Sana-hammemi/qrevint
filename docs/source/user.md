@@ -182,7 +182,7 @@ In the Options window (discussed in section 2.5) the user can select to be promp
 
 ![](./assets/user_guide/options_dialog.png)
 
-The Options button opens a window that allows the user to select from various options that affect units, display, and computations. Not all options may be available to the user based on agency policy and configuration. However, all options are defined herein.
+The Options button opens a window that allows the user to select from various options that affect units, display, and computations. Not all options may be available to the user based on agency policy and configuration. It may also be necessary to use the scrollbar on the right to see all options. However, all options are defined herein.
 
 #### 2.3.3.1 Units
 
@@ -250,6 +250,9 @@ If the Oursin option is chosen, the uncertainty is displayed in a lollipop plot 
 This option when checked will show a checkbox in the MovBedTst tab that allows the user to certify that they have visually observed the streambed and that there is no moving-bed condition.
 
 ![](./assets/user_guide/mb_cb.png)
+
+#### 2.3.3.12 MAP Tab
+This option indicates whether or not the MAP tab is displayed and accessable to the user.
 
 ### 2.3.4 Comment
 

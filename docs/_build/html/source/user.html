@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html lang="en" >
+<html >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>User Manual &#8212; Python  documentation</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -33,13 +33,13 @@
     <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'source/user';</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -47,7 +47,7 @@
     <link rel="next" title="Technical Manual" href="technical.html" />
     <link rel="prev" title="QRev" href="../index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -56,15 +56,6 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  
-  <div id="pst-scroll-pixel-helper"></div>
-
-  
-  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>
-    Back to top
-  </button>
-
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -153,6 +144,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#wt-bt-filters">2.3.3.9 WT, BT Filters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#uncertainty">2.3.3.10 Uncertainty</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#moving-bed">2.3.3.11 Moving Bed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#map-tab">2.3.3.12 MAP Tab</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#comment">2.3.4 Comment</a></li>
@@ -356,16 +348,12 @@
 </ul>
 </div>
         <div class="sidebar-primary-item">
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="../index.html"
-                          title="previous chapter">QRev</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="technical.html"
-                          title="next chapter">Technical Manual</a></p>
-  </div></div>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">QRev</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="technical.html"
+                        title="next chapter">Technical Manual</a></p></div>
         <div class="sidebar-primary-item">
   <div class="tocsection sourcelink">
     <a href="../_sources/source/user.md">
@@ -479,10 +467,10 @@
 
 <script>
 document.write(`
-  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
   </button>
 `);
 </script>
@@ -490,7 +478,7 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+    <i class="fa-solid fa-magnifying-glass"></i>
   </button>
 `);
 </script>
@@ -549,6 +537,7 @@ document.write(`
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#wt-bt-filters">2.3.3.9 WT, BT Filters</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainty">2.3.3.10 Uncertainty</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#moving-bed">2.3.3.11 Moving Bed</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#map-tab">2.3.3.12 MAP Tab</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comment">2.3.4 Comment</a></li>
@@ -756,9 +745,9 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section id="user-manual">
-<h1>User Manual<a class="headerlink" href="#user-manual" title="Permalink to this heading">#</a></h1>
+<h1>User Manual<a class="headerlink" href="#user-manual" title="Permalink to this headline">#</a></h1>
 <section id="introduction">
-<h2>1. INTRODUCTION:<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
+<h2>1. INTRODUCTION:<a class="headerlink" href="#introduction" title="Permalink to this headline">#</a></h2>
 <p>The use of acoustic Doppler current profilers (ADCPs) from a moving boat is
 a commonly used method for measuring streamflow. These measurements have
 been reviewed and post-processed using manufacturer supplied software and
@@ -800,7 +789,7 @@ the user to assist them in properly rating the measurement. QRev saves an
 extensible markup language (XML) file that can be imported into databases
 or electronic field notes software, such as, SVMobile.</p>
 <section id="purpose-and-scope">
-<h3>1.1 PURPOSE AND SCOPE<a class="headerlink" href="#purpose-and-scope" title="Permalink to this heading">#</a></h3>
+<h3>1.1 PURPOSE AND SCOPE<a class="headerlink" href="#purpose-and-scope" title="Permalink to this headline">#</a></h3>
 <p>The original QRev was developed using Matlab. In order to move to
 open-source software and to provide a more modern user interface QRev has
 been rewritten in Python. The purpose of this guide is to describe the user
@@ -809,7 +798,7 @@ report will present all the windows and describe the function and intended
 use of all the interactive controls of QRev’s graphical user interface (GUI).</p>
 </section>
 <section id="software-design-objectives">
-<h3>1.2 SOFTWARE DESIGN OBJECTIVES:<a class="headerlink" href="#software-design-objectives" title="Permalink to this heading">#</a></h3>
+<h3>1.2 SOFTWARE DESIGN OBJECTIVES:<a class="headerlink" href="#software-design-objectives" title="Permalink to this headline">#</a></h3>
 <p>The general design of QRev was guided by the following criteria:</p>
 <ol class="arabic simple">
 <li><p>Process SonTek and TRDI data.</p></li>
@@ -831,7 +820,7 @@ consistency of data quality assessments.</p>
 </section>
 </section>
 <section id="main-window">
-<h2>2. MAIN WINDOW<a class="headerlink" href="#main-window" title="Permalink to this heading">#</a></h2>
+<h2>2. MAIN WINDOW<a class="headerlink" href="#main-window" title="Permalink to this headline">#</a></h2>
 <p>The Main Window is designed to be logical and tablet friendly. The
 information available from this main window provides the user an overview
 of the measurement quality and totals. The color highlighting and messages
@@ -859,7 +848,7 @@ While QRev is processing, the cursor will appear with the busy shape and<br />
 no other buttons or selections should be made. Once QRev has finished<br />
 processing, the cursor will return to the default shape.</p>
 <section id="tab-icons-and-colors">
-<h3>2.1 TAB ICONS AND COLORS<a class="headerlink" href="#tab-icons-and-colors" title="Permalink to this heading">#</a></h3>
+<h3>2.1 TAB ICONS AND COLORS<a class="headerlink" href="#tab-icons-and-colors" title="Permalink to this headline">#</a></h3>
 <p>Each tab will have a color and optionally an icon to identify the status of the data presented in that tab.</p>
 <p><img alt="" src="../_images/greentab.png" /> Green text with a green check mark indicates that the data presented in this tab has passed all the internal quality checks.</p>
 <p><img alt="" src="../_images/yellowtab.png" /> Yellow or orange text and a triangle with an exclamation mark indicates that the data presented in this tab has failed some of the internal quality checks and the user should evaluate that data.</p>
@@ -870,16 +859,16 @@ indicates that the data presented in this tab has failed some of the internal qu
 <p><img alt="" src="../_images/blacktab.png" /> Black text with no icon indicates a feature that has no automated quality assurance checks.</p>
 </section>
 <section id="window-title">
-<h3>2.2 WINDOW TITLE<a class="headerlink" href="#window-title" title="Permalink to this heading">#</a></h3>
+<h3>2.2 WINDOW TITLE<a class="headerlink" href="#window-title" title="Permalink to this headline">#</a></h3>
 <p>The window title shows the QRev version, and the path of the measurement loaded.</p>
 </section>
 <section id="toolbar">
-<h3>2.3 TOOLBAR<a class="headerlink" href="#toolbar" title="Permalink to this heading">#</a></h3>
+<h3>2.3 TOOLBAR<a class="headerlink" href="#toolbar" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/toolbar.png" /></p>
 <p>The toolbar functions are available from any tab.</p>
 </section>
 <section id="open">
-<h3>2.3.1 Open<a class="headerlink" href="#open" title="Permalink to this heading">#</a></h3>
+<h3>2.3.1 Open<a class="headerlink" href="#open" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/open.png" /></p>
 <p>Open a measurement for processing.
 Clicking on the open icon in the toolbar opens a measurement selection dialog.</p>
@@ -893,22 +882,22 @@ Clicking on the open icon in the toolbar opens a measurement selection dialog.</
 <p>Select the appropriate file (*_QRev.mat or <em>.mmt) or files (</em>.mat) and QRev will determine the data type selected automatically. If a QRev or mmt file is included in a multifile selection a dialog will notify the user that only one QRev or mmt file can be loaded. Details on loading each file type are discussed in the following sections.</p>
 <p><img alt="" src="../_images/opendialog_sontek.png" /></p>
 <section id="load-sontek-data">
-<h4>2.3.1.1 Load SonTek Data<a class="headerlink" href="#load-sontek-data" title="Permalink to this heading">#</a></h4>
+<h4>2.3.1.1 Load SonTek Data<a class="headerlink" href="#load-sontek-data" title="Permalink to this headline">#</a></h4>
 <p>For RSL measurements, moving-bed tests and transects must be exported from RSL using the MATLAB export feature. These files must be output using east, north, up (ENU) coordinates and BT, GGA, or VTG track reference. The files selected by the user from the Open File window should include the *.mat files for all transects in the measurement (Windows commonly does not display the file extension and considers <em>.mat files to be Microsoft Access Table Shortcuts.). QRev will automatically load associated moving-bed tests, system tests, and compass evaluations provided they follow the standard RSL naming and file storage conventions. Moving-bed tests filenames must begin with “Smba_” or “Loop_” and be exported to the MATLAB format (</em>.mat). The system tests and compass calibration must be stored in subfolders of the measurement folder and be named System Test and CompassCal, respectively.</p>
 </section>
 <section id="load-trdi-data">
-<h4>2.3.1.2 Load TRDI Data<a class="headerlink" href="#load-trdi-data" title="Permalink to this heading">#</a></h4>
+<h4>2.3.1.2 Load TRDI Data<a class="headerlink" href="#load-trdi-data" title="Permalink to this headline">#</a></h4>
 <p>For TRDI ADCPs, select the *.mmt file in the Open File dialog and the transects and supporting data will be loaded from the associated *.pd0 files. The user will be prompted to load only the checked files rather than all files. The default is to load all files.</p>
 <p><img alt="" src="../_images/rdi_checked_only.png" /></p>
 </section>
 <section id="load-qrev-data">
-<h4>2.3.1.3 Load QRev Data<a class="headerlink" href="#load-qrev-data" title="Permalink to this heading">#</a></h4>
+<h4>2.3.1.3 Load QRev Data<a class="headerlink" href="#load-qrev-data" title="Permalink to this headline">#</a></h4>
 <p>The QRev data type is for a measurement that has already been processed and saved by QRev. The file should be a “*_QRev.mat” file. This file contains all the data and settings used in QRev. A dialog is presented to the user asking if they would like to view the measurement as save or reprocess the measurement using the latest QRev algorithms. If the measurement is simply viewed but a change is made to the measurement the data will be reprocessed using the features of the current version, including the setting for “Use weighted” in the Extrapolation box of the Options dialog (section 2.5).</p>
 <p><img alt="" src="../_images/view_reprocess.png" /></p>
 </section>
 </section>
 <section id="save">
-<h3>2.3.2 Save<a class="headerlink" href="#save" title="Permalink to this heading">#</a></h3>
+<h3>2.3.2 Save<a class="headerlink" href="#save" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/saveicon.png" /></p>
 <p>The Save button allows the user to save a MATLAB file of the measurement as processed in QRev and an XML file that can be loaded into other software. A save file dialog window provides a default name for the MATLAB file, which can be changed by the user prior to saving. QRev will automatically add the “.mat” if not included in a user provided file name. The same name with an xml suffix will be used for the XML file. The default filename is based on the date and time of the save (yyyymmddHHMMSS_QRev.mat or yyyymmdd_HHMMSS_QRev.xml). If the user attempts to overwrite an existing file, a dialog is displayed indicating a file with the same name exits and asking the user if they wish to overwrite the existing file. Upon saving a file a comment is automatically added that includes the date, time, user ID, total discharge, and estimated 95% uncertainty.</p>
 <p><img alt="" src="../_images/save_dialog.png" /></p>
@@ -916,19 +905,19 @@ Clicking on the open icon in the toolbar opens a measurement selection dialog.</
 <p>In the Options window (discussed in section 2.5) the user can select to be prompted to assign a rating to the measurement. If the option to prompt for rating is selected a dialog to allow the measurement will be provided. A note indicating that the rating should include the uncertainty of the stage, in addition to the discharge, is displayed to remind the user to consider the stage uncertainty. The uncertainty of the discharge as computed by QRev is presented and the rating associated with that uncertainty is selected by default. The user can select any rating by clicking the radio buttons. If cancel is selected the rating will not be applied but the user can continue to save the measurement.</p>
 </section>
 <section id="options">
-<h3>2.3.3 Options<a class="headerlink" href="#options" title="Permalink to this heading">#</a></h3>
+<h3>2.3.3 Options<a class="headerlink" href="#options" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/options_dialog.png" /></p>
-<p>The Options button opens a window that allows the user to select from various options that affect units, display, and computations. Not all options may be available to the user based on agency policy and configuration. However, all options are defined herein.</p>
+<p>The Options button opens a window that allows the user to select from various options that affect units, display, and computations. Not all options may be available to the user based on agency policy and configuration. It may also be necessary to use the scrollbar on the right to see all options. However, all options are defined herein.</p>
 <section id="units">
-<h4>2.3.3.1 Units<a class="headerlink" href="#units" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.1 Units<a class="headerlink" href="#units" title="Permalink to this headline">#</a></h4>
 <p>A change to the units can be made at any time. This setting only affects the display of the data and does not have to be consistent with the original units of the loaded data. All data in QRev are stored internally in SI units. The units setting is persistent so that the setting will be retained when QRev is closed and reopened.</p>
 </section>
 <section id="default-x-axis">
-<h4>2.3.3.2 Default X-Axis<a class="headerlink" href="#default-x-axis" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.2 Default X-Axis<a class="headerlink" href="#default-x-axis" title="Permalink to this headline">#</a></h4>
 <p>The Default X-Axis radio buttons allow the user to set the initial variable used for the X-Axis of the various plots in QRev. This setting is saved so that whenever QRev is started the variable selected here will be used for the X-Axis. The initial default is Ensembles. The X-Axis variable can be changed at any time using the shortcut keys (see 2.3.8.5 or 2.4), however, those changes only apply until QRev is closed.</p>
 </section>
 <section id="color-map">
-<h4>2.3.3.3 Color Map<a class="headerlink" href="#color-map" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.3 Color Map<a class="headerlink" href="#color-map" title="Permalink to this headline">#</a></h4>
 <p>The default color map is viridis. Viridis provides a continuous blue to yellow scale that renders detail much more clearly than other palettes. The viridis palette is visible to those with color.
 The jet color map is provided for those that prefer consistency with the manufacturer’s software.
 “Jet is very pleasing because it is flashy, colorful, and it does not require you to think about your color scale: even if you have just a few outliers, you still get “all the features” in your plot. You said it yourself: jet almost never lacks contrast.
@@ -936,39 +925,39 @@ However, this comes at a very high price: jet literally shows things that do not
 <p>This option is retained between session, so the user only has to make the choice one time.</p>
 </section>
 <section id="save-options">
-<h4>2.3.3.4 Save Options<a class="headerlink" href="#save-options" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.4 Save Options<a class="headerlink" href="#save-options" title="Permalink to this headline">#</a></h4>
 <p>The Save Options can also be changed at any time.</p>
 <section id="all-transects">
-<h5>2.3.3.4.1 All Transects<a class="headerlink" href="#all-transects" title="Permalink to this heading">#</a></h5>
+<h5>2.3.3.4.1 All Transects<a class="headerlink" href="#all-transects" title="Permalink to this headline">#</a></h5>
 <p>Save All Transects is the default and will save information for all transects loaded whether they are checked to be used in the discharge computation or not.</p>
 </section>
 <section id="only-checked-transects">
-<h5>2.3.3.4.2 Only Checked Transects<a class="headerlink" href="#only-checked-transects" title="Permalink to this heading">#</a></h5>
+<h5>2.3.3.4.2 Only Checked Transects<a class="headerlink" href="#only-checked-transects" title="Permalink to this headline">#</a></h5>
 <p>Saving only the checked transects will only save information from those transects that are checked to be included in the final discharge and will include all supporting information, such as, system and moving-bed tests. This setting will only be retained until changed or QRev is closed.</p>
 </section>
 </section>
 <section id="prompt-for-rating-on-save">
-<h4>2.3.3.5 Prompt for rating on save<a class="headerlink" href="#prompt-for-rating-on-save" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.5 Prompt for rating on save<a class="headerlink" href="#prompt-for-rating-on-save" title="Permalink to this headline">#</a></h4>
 <p>Checking the “Prompt for rating on save” will present the user with a dialog that allows the user to select a rating for the measurement during the save process. See section 2.4 for details on the rating dialog. This setting is persistent and will be retained when QRev is closed and reopened.</p>
 </section>
 <section id="style-sheet">
-<h4>2.3.3.6 Style Sheet<a class="headerlink" href="#style-sheet" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.6 Style Sheet<a class="headerlink" href="#style-sheet" title="Permalink to this headline">#</a></h4>
 <p>Checking the “Save style sheet with data” option will save a stylesheet called QRevStylesheet.xsl in the folder with the *_QRev.xml file so that the xml file can be viewed using the style sheet. Simply double click the *_QRev.xml file. The QRevStylesheet is only an example. Users are encouraged to modify the style sheet to meet their needs, but the modified style sheet must be stored in the QRev folder and be named QRevStylesheet.xsl. This setting is persistent and will be retained when QRev is closed and reopened.</p>
 </section>
 <section id="export-mean-cross-section">
-<h4>2.3.3.7 Export Mean Cross-Section<a class="headerlink" href="#export-mean-cross-section" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.7 Export Mean Cross-Section<a class="headerlink" href="#export-mean-cross-section" title="Permalink to this headline">#</a></h4>
 <p>If checked a mean cross section based on the transects used to compute discharge is computed and the coordinates saved in the xml file.</p>
 </section>
 <section id="extrapolation">
-<h4>2.3.3.8 Extrapolation<a class="headerlink" href="#extrapolation" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.8 Extrapolation<a class="headerlink" href="#extrapolation" title="Permalink to this headline">#</a></h4>
 <p>Checking the “Discharge weighted” option will cause the extrapolation algorithms to use and display median values that have been discharge weighted. The default is to use unweighted medians which was the only method in QRev version 4.23 and earlier. This setting is persistent and will be retained when QRev is closed and reopened.</p>
 </section>
 <section id="wt-bt-filters">
-<h4>2.3.3.9 WT, BT Filters<a class="headerlink" href="#wt-bt-filters" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.9 WT, BT Filters<a class="headerlink" href="#wt-bt-filters" title="Permalink to this headline">#</a></h4>
 <p>The automatically computed error and vertical velocity filters for water track (WT) and bottom track (BT) have previously been computed in QRev using data for each individual transect. The result is potentially a different threshold for each transect. Conversely if a manual setting were applied that setting was applied to all transects uniformly. This option provides the ability to have QRev automatically compute the error and vertical velocity thresholds for WT and BT using all the data in the measurement, resulting in a single set of thresholds that are applied to all the transects.</p>
 </section>
 <section id="uncertainty">
-<h4>2.3.3.10 Uncertainty<a class="headerlink" href="#uncertainty" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.10 Uncertainty<a class="headerlink" href="#uncertainty" title="Permalink to this headline">#</a></h4>
 <p>QRev has two options for estimating the measurement uncertainty. QRev Original is a simplified approach that was introduced with the first version of QRev and is based on experienced user estimates of typical uncertainties. Oursin is a more comprehensive uncertainty model based on principles presented in the Guide to the expression of Uncertainty in Measurement (GUM, JCGM 2008). Details of the Oursin model are documented in Despax et al (2021). If the QRev option is chosen, the uncertainty will be displayed in a table.</p>
 <p><img alt="" src="../_images/original_unc.png" /></p>
 <p>If the Oursin option is chosen, the uncertainty is displayed in a lollipop plot and the details and user overrides are done in a separate uncertainty tab.</p>
@@ -976,19 +965,23 @@ However, this comes at a very high price: jet literally shows things that do not
 <p><img alt="" src="../_images/oursin_tab.png" /></p>
 </section>
 <section id="moving-bed">
-<h4>2.3.3.11 Moving Bed<a class="headerlink" href="#moving-bed" title="Permalink to this heading">#</a></h4>
+<h4>2.3.3.11 Moving Bed<a class="headerlink" href="#moving-bed" title="Permalink to this headline">#</a></h4>
 <p>This option when checked will show a checkbox in the MovBedTst tab that allows the user to certify that they have visually observed the streambed and that there is no moving-bed condition.</p>
 <p><img alt="" src="../_images/mb_cb.png" /></p>
 </section>
+<section id="map-tab">
+<h4>2.3.3.12 MAP Tab<a class="headerlink" href="#map-tab" title="Permalink to this headline">#</a></h4>
+<p>This option indicates whether or not the MAP tab is displayed and accessable to the user.</p>
+</section>
 </section>
 <section id="comment">
-<h3>2.3.4 Comment<a class="headerlink" href="#comment" title="Permalink to this heading">#</a></h3>
+<h3>2.3.4 Comment<a class="headerlink" href="#comment" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/notes_icon.png" /></p>
 <p>Clicking on this button will open the comment dialog. The user comment is automatically tagged with the tab that they are viewing, the date, time, and user name of the person making the comment. The user should enter comments explaining any observations associated with the data or field conditions or any changes in QRev settings. All comments can be viewed by clicking the Comments tab at the bottom of the Main tab or by clicking on the Messages tab in any of the other tabs. Comments cannot be edited or deleted after they are entered.</p>
 <p><img alt="" src="../_images/comment_dialog.png" /></p>
 </section>
 <section id="transect-selection">
-<h3>2.3.5 Transect Selection<a class="headerlink" href="#transect-selection" title="Permalink to this heading">#</a></h3>
+<h3>2.3.5 Transect Selection<a class="headerlink" href="#transect-selection" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/check_icon.png" /></p>
 <p>The transect selection button opens a dialog that allows the user to select which transects in the measurement will be used to compute the measurement discharge. Check All and Uncheck All buttons are provided at the bottom left of the dialog.</p>
 <p><img alt="" src="../_images/select_trans_dialog.png" /></p>
@@ -997,48 +990,48 @@ computation of discharge for the measurement. If all transects are not used
 the button icon will change from the green checkmark <img alt="" src="../_images/check_icon.png" /> to an orange checkmark <img alt="" src="../_images/orange_check_icon.png" /> to notify the user that all transects are not being used.</p>
 </section>
 <section id="navigation-reference">
-<h3>2.3.6 Navigation Reference<a class="headerlink" href="#navigation-reference" title="Permalink to this heading">#</a></h3>
+<h3>2.3.6 Navigation Reference<a class="headerlink" href="#navigation-reference" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/nav_ref_tb.png" /></p>
 <p>The Navigation Reference shows the currently selected reference in bold and
 allows the user to change the reference by clicking on the desired setting. If a navigation reference is not available for that measurement it is inactive and cannot be selected.</p>
 </section>
 <section id="composite-tracks">
-<h3>2.3.7 Composite Tracks<a class="headerlink" href="#composite-tracks" title="Permalink to this heading">#</a></h3>
+<h3>2.3.7 Composite Tracks<a class="headerlink" href="#composite-tracks" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/comp_tracks_tb.png" /></p>
 <p>Composite tracks is a feature that will automatically substitute one of the other valid navigation references for the selected navigation reference if the selected reference is invalid. If only BT is available composite tracks is turn off and no selection can be made by the user . The approach used for composite tracks in QRev is summarized in the table below. These settings apply to all transects and cannot be set differently for individual transects. QRev defaults the navigation reference to that used in the raw data. Composite tracks defaults to off.</p>
 <p><img alt="" src="../_images/ref_tbl.png" /></p>
 </section>
 <section id="graphics-controls">
-<h3>2.3.8 Graphics Controls<a class="headerlink" href="#graphics-controls" title="Permalink to this heading">#</a></h3>
+<h3>2.3.8 Graphics Controls<a class="headerlink" href="#graphics-controls" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/graphic_controls.png" /></p>
 <p>The graphics controls work on all graphics in any of the tabs. For BT, GPS, Depth, WT, and Adv. Graph tabs the home, zoom and pan will keep the plots x-axes synchronized.</p>
 <section id="rest-to-default-or-home">
-<h4>2.3.8.1 Rest to Default or Home<a class="headerlink" href="#rest-to-default-or-home" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.1 Rest to Default or Home<a class="headerlink" href="#rest-to-default-or-home" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/homeicon.png" /></p>
 <p>Resets all the graphs on the tab to their original scaling.</p>
 </section>
 <section id="zoom-window">
-<h4>2.3.8.2 Zoom Window<a class="headerlink" href="#zoom-window" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.2 Zoom Window<a class="headerlink" href="#zoom-window" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/zoomicon.png" /></p>
 <p>Left-clicking on a graph allows the user to zoom in on a graph using a windowing technique. Right clicking on a graph allows the user to zoom out on a graph using a windowing technique.</p>
 </section>
 <section id="pan">
-<h4>2.3.8.3 Pan<a class="headerlink" href="#pan" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.3 Pan<a class="headerlink" href="#pan" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/panicon.png" /></p>
 <p>Allows the user to pan in a graph.</p>
 </section>
 <section id="probe-graph-for-data-values">
-<h4>2.3.8.4 Probe Graph for Data Values<a class="headerlink" href="#probe-graph-for-data-values" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.4 Probe Graph for Data Values<a class="headerlink" href="#probe-graph-for-data-values" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/datacursoricon.png" /></p>
 <p>Allows the user to click in a graph to display the graph coordinates of the data point or cursor location. Most graphs will automatically snap to the nearest data points, but others may only provide the cursor location.</p>
 </section>
 <section id="show-extrapolated-speed">
-<h4>2.3.8.5 Show Extrapolated Speed<a class="headerlink" href="#show-extrapolated-speed" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.5 Show Extrapolated Speed<a class="headerlink" href="#show-extrapolated-speed" title="Permalink to this headline">#</a></h4>
 <p>Shows the extrapolated speed for the top, bottom, and edges in the final speed color contour plot on the Main, WT, and Adv Graph tabs. This is only applicable if the x-axis type is length. The white dashed line separates the measured from extrapolated data.</p>
 <p><img alt="" src="../_images/show_extrap_speed.png" /></p>
 </section>
 <section id="x-axis-variable">
-<h4>2.3.8.6 X-Axis Variable<a class="headerlink" href="#x-axis-variable" title="Permalink to this heading">#</a></h4>
+<h4>2.3.8.6 X-Axis Variable<a class="headerlink" href="#x-axis-variable" title="Permalink to this headline">#</a></h4>
 <p>The variable plotted on the x-axis defaults to the ensemble number. However, the variable used for the x-axis can be changed using keyboard shortcuts.</p>
 <ul class="simple">
 <li><p><strong>Ctrl-E:</strong> Use ensembles for x-axis</p></li>
@@ -1048,24 +1041,24 @@ allows the user to change the reference by clicking on the desired setting. If a
 </section>
 </section>
 <section id="google-earth">
-<h3>2.3.8.7 Google Earth<a class="headerlink" href="#google-earth" title="Permalink to this heading">#</a></h3>
+<h3>2.3.8.7 Google Earth<a class="headerlink" href="#google-earth" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/ge_icon.png" /></p>
 <p>Allows the user to plot the transect’s shiptracks based on GGA data to Google Earth. A kml file is created and opened in Google Earth, if Google Earth has been installed on the computer running QRev. If Google Earth is not installed, nothing will happen.</p>
 </section>
 <section id="help">
-<h3>2.3.8.8 Help<a class="headerlink" href="#help" title="Permalink to this heading">#</a></h3>
+<h3>2.3.8.8 Help<a class="headerlink" href="#help" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/helpicon.png" /></p>
 <p>Opens this help file. Opening the help file can also be achieved using F1.</p>
 </section>
 <section id="close">
-<h3>2.3.8.9 Close<a class="headerlink" href="#close" title="Permalink to this heading">#</a></h3>
+<h3>2.3.8.9 Close<a class="headerlink" href="#close" title="Permalink to this headline">#</a></h3>
 <p>QRev can be closed by clicking the x at the top right of window. After clicking the x the user will be presented with the following dialog.</p>
 <p><img alt="" src="../_images/close_dialog.png" /></p>
 <p>Clicking yes will close QRev. Clicking Cancel returns the user back to QRev and allows the to continue to work or save the file before closing.</p>
 </section>
 </section>
 <section id="keyboard-shortcuts">
-<h2>2.4 KEYBOARD SHORTCUTS<a class="headerlink" href="#keyboard-shortcuts" title="Permalink to this heading">#</a></h2>
+<h2>2.4 KEYBOARD SHORTCUTS<a class="headerlink" href="#keyboard-shortcuts" title="Permalink to this headline">#</a></h2>
 <p>The following keyboard shortcuts are supported:</p>
 <ul class="simple">
 <li><p><strong>Ctrl-F:</strong> Open file</p></li>
@@ -1086,28 +1079,28 @@ allows the user to change the reference by clicking on the desired setting. If a
 </ul>
 </section>
 <section id="graph-options">
-<h2>2.5 GRAPH OPTIONS<a class="headerlink" href="#graph-options" title="Permalink to this heading">#</a></h2>
+<h2>2.5 GRAPH OPTIONS<a class="headerlink" href="#graph-options" title="Permalink to this headline">#</a></h2>
 <p>Right-clicking on any graph will display the following context menu:</p>
 <p><img alt="" src="../_images/graph_rightclick.png" /></p>
 <section id="save-figure">
-<h3>2.5.1 Save Figure<a class="headerlink" href="#save-figure" title="Permalink to this heading">#</a></h3>
+<h3>2.5.1 Save Figure<a class="headerlink" href="#save-figure" title="Permalink to this headline">#</a></h3>
 <p>Clicking Save Figure with open a save dialog allowing the user to save the figure as a png, jpeg, pdf, or svg file.</p>
 <p><img alt="" src="../_images/save_fig_diag.png" /></p>
 </section>
 <section id="set-axes-limits">
-<h3>2.5.2 Set Axes Limits<a class="headerlink" href="#set-axes-limits" title="Permalink to this heading">#</a></h3>
+<h3>2.5.2 Set Axes Limits<a class="headerlink" href="#set-axes-limits" title="Permalink to this headline">#</a></h3>
 <p>Clicking Set Axes Limits will open a dialog allowing the user to set the maximum and minimum values for each axes or choose to use the automatic setting.</p>
 <p><img alt="" src="../_images/axes_scale.png" /></p>
 </section>
 </section>
 <section id="main-tab">
-<h2>3. MAIN TAB<a class="headerlink" href="#main-tab" title="Permalink to this heading">#</a></h2>
+<h2>3. MAIN TAB<a class="headerlink" href="#main-tab" title="Permalink to this headline">#</a></h2>
 <p>The Main tab is always shown when opening a measurement. The Main tab consists of 4 sub-tabs at the top, 2 sub-tabs at the bottom, four graphs, and two tables at the right. Selecting any of the sub-tabs does not change the graphics or two uncertainty tables at the right.</p>
 <p>The data displayed in the color contour and ship track graphs are controlled by selecting a transect for display from the tables shown in the Summary, Details, or Settings tabs. When a new measurement is opened the first transect is selected for display in the color contour and ship track graphs. Other transects can be displayed by either clicking on the transect name in the tables shown in the Summary, Details, or Settings tabs or by using the up and down arrow keys to select the desired transect.</p>
 <p>The vertical space occupied by each of the three main horizontal sections of the Main tab can be changed by the user by positioning the cursor on the separator line and dragging the line up or down. The manually spaced display will remain until QRev is closed. The default spacing will be restored when QRev is opened again.</p>
 <p><img alt="" src="../_images/main_tab.png" /></p>
 <section id="summary-tab">
-<h3>3.1 SUMMARY TAB<a class="headerlink" href="#summary-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.1 SUMMARY TAB<a class="headerlink" href="#summary-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/sum_tab.png" /></p>
 <p>The Summary tab displays a summary of the measurement and transect discharges. This table cannot be edited. The table consists of the following data:</p>
 <ul class="simple">
@@ -1128,7 +1121,7 @@ composite of the transects.</p></li>
 <p>The transect selected for display in the color contour and ship track graphs is identified by a bold typeface. Other transects can be displayed by either clicking on the transect name in the table or by using the up and down arrow keys to select the desired transect. If all the data is not visible in the table scrollbars will be automatically provided and can be used to scroll up or down or left or right as necessary. The column widths can also be changed by placing the cursor in the column labels and dragging the column divider.</p>
 </section>
 <section id="details-tab">
-<h3>3.2 DETAILS TAB<a class="headerlink" href="#details-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.2 DETAILS TAB<a class="headerlink" href="#details-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/details_tab.png" /></p>
 <p>The Details tab provides additional information about the measurement cross-section, boat operation, and water velocity. The table contains the following data:
 Transect: File name of the transect.</p>
@@ -1143,7 +1136,7 @@ Transect: File name of the transect.</p>
 <p>The transect selected for display in the color contour and ship track graphs is identified by a bold typeface. Other transects can be displayed by either clicking on the transect name in the table or by using the up and down arrow keys to select the desired transect. If all the data is not visible in the table scrollbars will be automatically provided and can be used to scroll up or down or left or right as necessary. The column widths can also be changed by placing the cursor in the column labels and dragging the column divider.</p>
 </section>
 <section id="premeasurement-tab">
-<h3>3.3 PREMEASUREMENT TAB<a class="headerlink" href="#premeasurement-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.3 PREMEASUREMENT TAB<a class="headerlink" href="#premeasurement-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/premeas_tab.png" /></p>
 <p>The Premeasurement tab provides information on the completion status and results of procedures that should be completed to ensure an identifiable and defendable measurement.</p>
 <ul class="simple">
@@ -1167,7 +1160,7 @@ Transect: File name of the transect.</p>
 </ul>
 </section>
 <section id="settings-tab">
-<h3>3.4 SETTINGS TAB<a class="headerlink" href="#settings-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.4 SETTINGS TAB<a class="headerlink" href="#settings-tab" title="Permalink to this headline">#</a></h3>
 <p>The Settings tab provides a summary of the non-filter related settings set by the user or automatically by QRev, which are required to compute the measurement discharge. This table cannot be edited. To change any of the values requires the user to go to the associated tab to make the desired change.</p>
 <p><img alt="" src="../_images/setting_tab.png" /></p>
 <ul class="simple">
@@ -1189,7 +1182,7 @@ Transect: File name of the transect.</p>
 <p>The transect selected for display in the color contour and ship track graphs is identified by a bold typeface. Other transects can be displayed by either clicking on the transect name in the table or by using the up and down arrow keys to select the desired transect. If all the data is not visible in the table scrollbars will be automatically provided and can be used to scroll up or down or left or right as necessary. The column widths can also be changed by placing the cursor in the column labels and dragging the column divider.</p>
 </section>
 <section id="adcp-tab">
-<h3>3.5 ADCP TAB<a class="headerlink" href="#adcp-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.5 ADCP TAB<a class="headerlink" href="#adcp-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/adcp_tab.png" /></p>
 <p>The ADCP tab identifies the ADCP, its characteristics and settings. These data cannot be edited in this table.</p>
 <ul class="simple">
@@ -1204,7 +1197,7 @@ Transect: File name of the transect.</p>
 </ul>
 </section>
 <section id="messages-tab">
-<h3>3.6 MESSAGES TAB<a class="headerlink" href="#messages-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.6 MESSAGES TAB<a class="headerlink" href="#messages-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/msg_tab.png" /></p>
 <p>The Messages tab displays messages reported by the automated data quality
 assessment (ADQA). Each message is identified as a warning or a caution
@@ -1216,7 +1209,7 @@ buttons that are red and cautions with buttons that are yellow. The scroll
 bar on the right allows the user to scroll through messages if the messages exceed the panel size.</p>
 </section>
 <section id="comments-tab">
-<h3>3.7 COMMENTS TAB<a class="headerlink" href="#comments-tab" title="Permalink to this heading">#</a></h3>
+<h3>3.7 COMMENTS TAB<a class="headerlink" href="#comments-tab" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/comments_tab.png" /></p>
 <p>The Comments tab shows comments that were either imported from the data
 files or have been added in QRev. This tab is for viewing comments only. To
@@ -1229,28 +1222,28 @@ original data. To change a comment, add an additional comment to correct an
 earlier comment.</p>
 </section>
 <section id="color-contour-graph">
-<h3>3.8 COLOR CONTOUR GRAPH<a class="headerlink" href="#color-contour-graph" title="Permalink to this heading">#</a></h3>
+<h3>3.8 COLOR CONTOUR GRAPH<a class="headerlink" href="#color-contour-graph" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/contour_graph.png" /></p>
 <p>The color contour graph shows the final water and depth data that will be used to compute discharge. The data have been filtered and interpolated. If that data were processed from raw data a red line will be drawn to delineate the top of the topmost depth cells and the side lobe cutoff for the bottom of the depth cells. If the data were loaded from a QRev.mat file processed with QRev prior to version 4 the red line will not be displayed.</p>
 </section>
 <section id="ship-track-graph">
-<h3>3.9 SHIP TRACK GRAPH<a class="headerlink" href="#ship-track-graph" title="Permalink to this heading">#</a></h3>
+<h3>3.9 SHIP TRACK GRAPH<a class="headerlink" href="#ship-track-graph" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/shiptrack_graph.png" /></p>
 <p>The ship track graph shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble.</p>
 </section>
 <section id="discharge-graph">
-<h3>3.10 DISCHARGE GRAPH<a class="headerlink" href="#discharge-graph" title="Permalink to this heading">#</a></h3>
+<h3>3.10 DISCHARGE GRAPH<a class="headerlink" href="#discharge-graph" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/qts_graph.png" /></p>
 <p>The discharge graph shows the total discharge for each transect as a horizontal line extending from the start time to the end time for each transect. A bold line indicates the currently selected transect. The
 darker blue line shows the cumulative mean discharge. The shaded area bordered by the lighter blue lines indicates +/- 5% from the cumulative mean discharge.</p>
 </section>
 <section id="extrapolation-graph">
-<h3>3.11 EXTRAPOLATION GRAPH<a class="headerlink" href="#extrapolation-graph" title="Permalink to this heading">#</a></h3>
+<h3>3.11 EXTRAPOLATION GRAPH<a class="headerlink" href="#extrapolation-graph" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/extrap_graph.png" /></p>
 <p>The extrapolation graph shows the normalized depth and discharge for the entire measurement (checked transects only). The blue shaded dots are every depth cell in the measurement. The darker the blue the more discharge is in the ensembled containing that cell (discharge weighted). The black squares show the median values of normalized Q at the mean normalized depth for all data within 5 percent increments of normalized depth. The method used to determine the medians is show in the text in the upper left of the figure. The medians can be computed from unweighted normalized unit Q or discharge weighted normalized unit Q (see section 2.5 Options for choosing this option). The whiskers on the black squares show the range of 50 percent of the data in that median. The selected extrapolation methods are shown with a black line, and the extrapolation methods based on the automatic methods in QRev are shown with a wider green line. QRev defaults to the extrapolation methods based on the automatic selection algorithms; however, the user can choose to override that automatic selection in the Extrap tab.</p>
 </section>
 <section id="id1">
-<h3>3.12 UNCERTAINTY<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h3>
+<h3>3.12 UNCERTAINTY<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/unc_graph.png" /></p>
 <p>Two tables or a table and a graph are provided with information to assist the user in rating the quality and uncertainty of the measurement. The top table is always shown and provides the coefficient of variation in percent (COV %) for the total discharge, the cross-section width, and the cross-sectional area in the first two columns. The percentage of total discharge (% Q) in the left and right edges (Left/Right Edge), in invalid cells (Invalid Cells), and in invalid ensembles (Invalid Ens.) are provided in the last two columns.</p>
 <p>The uncertainty table at the bottom is has two columns for the uncertainty of the various aspects of the measurement and is shown in the QRev uncertainty model is selected. The column labeled “Automatic” contains the values generated by QRev based on assumptions and computations defined in Mueller (2016) and briefly in the following paragraphs. Because the assumptions and computations used to generate the values in the “Automatic” column are simplistic, the values may not accurately represent the uncertainty for all conditions. The column labeled “User” allows the user to override the automatic values with a user supplied value. A value entered by a user should be supported with a comment. The total estimated 95 percent uncertainty value will be recomputed each time a new “user” value is input. The uncertainty categories are defined as follows.</p>
@@ -1271,26 +1264,26 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 </section>
 </section>
 <section id="systest-tab">
-<h2>4. SYSTEST TAB<a class="headerlink" href="#systest-tab" title="Permalink to this heading">#</a></h2>
+<h2>4. SYSTEST TAB<a class="headerlink" href="#systest-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/systest_tab.png" /></p>
 <p>The SysTest tab provides the user the ability to review the results of the system test(s) completed during the measurement. The SysTest tab has two sub-tabs a Results tab and a Messages tab.</p>
 <section id="results-tab">
-<h3>4.1 RESULTS TAB<a class="headerlink" href="#results-tab" title="Permalink to this heading">#</a></h3>
+<h3>4.1 RESULTS TAB<a class="headerlink" href="#results-tab" title="Permalink to this headline">#</a></h3>
 <p>The results tab has two panels. The panel on the left is a table showing the summary of all system tests completed for this measurement. If more than one system test was completed, the table would have multiple rows. The table identifies the system test by the date and time of the test. Each system test consists of a varying number of component tests. The number of component tests comprising the system test is shown in the second column. The third column shows the number of component tests that have failed. If the ADCP is from TRDI an additional evaluation of the PT3 test is made and receives a Pass or Fail. If the ADCP is from SonTek then the PT3 column will show N/A.</p>
 <p>The panel on the right shows the text output from the system test selected in the table at the left. The Date/Time of the test displayed is in Bold typeface in the table on the left. If multiple system tests were completed, the user can select the test to be shown by clicking on the date/time of the desired system test in the table on the left. Scroll bars will be automatically displayed on the right panel if the output from the test exceeds the height or width of the panel.</p>
 </section>
 <section id="id2">
-<h3>4.2 MESSAGES TAB<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h3>
+<h3>4.2 MESSAGES TAB<a class="headerlink" href="#id2" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/messages_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the system test(s). The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="compass-p-r-tab">
-<h2>5. COMPASS/P/R TAB<a class="headerlink" href="#compass-p-r-tab" title="Permalink to this heading">#</a></h2>
+<h2>5. COMPASS/P/R TAB<a class="headerlink" href="#compass-p-r-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/compass_tab.png" /></p>
 <p>The Compass/P/R tab presents the ADCP heading, pitch, and roll data and results of the compass calibration and evaluation. This tab has three sub-tabs Data, Calibration / Evaluation, and Messages.</p>
 <section id="data">
-<h3>5.1 DATA<a class="headerlink" href="#data" title="Permalink to this heading">#</a></h3>
+<h3>5.1 DATA<a class="headerlink" href="#data" title="Permalink to this headline">#</a></h3>
 <p>The Data tab consists of a table, two graphs, and checkbox controls for the two graphs.</p>
 <p>The table at the top provides a summary of settings and heading, pitch, and roll data and highlights areas where the ADAQ found potential issues. Clicking the magnetic variation, heading offset, and heading source columns opens a dialog that allows each of these settings to be changed for that transect or for all transects. The Heading Offset and Heading Source columns are only active if external heading data, such as, from a GPS Compass is included in the measurement.</p>
 <p>If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.</p>
@@ -1309,22 +1302,22 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <p>The pitch / roll time series displays the pitch (red) and roll (blue) from the internal sensors. Data are always displayed by ensemble from left to right.</p>
 </section>
 <section id="calibration-evaluation">
-<h3>5.2 CALIBRATION / EVALUATION<a class="headerlink" href="#calibration-evaluation" title="Permalink to this heading">#</a></h3>
+<h3>5.2 CALIBRATION / EVALUATION<a class="headerlink" href="#calibration-evaluation" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/comp_eval_tab.png" /></p>
 <p>The Calibration / Evaluation tab displays the results of the compass calibration and evaluation, if available. The Compass Calibration table lists the date and time of each calibration conducted during the measurement. Clicking on a row in the Date/Time column will display the results of the calibration in the right panel. The Compass Evaluation table lists the data, time, and results of each evaluation conducted during the measurement. Clicking on a row in the Data/Time column will display the results of the evaluation in the right panel. SonTek ADCPs with the G2 compass there is no evaluation data. For SonTek ADCPs with the G3 compass the evaluation results are taken from the calibration as there is no separate evaluation.</p>
 </section>
 <section id="messages">
-<h3>5.3 MESSAGES<a class="headerlink" href="#messages" title="Permalink to this heading">#</a></h3>
+<h3>5.3 MESSAGES<a class="headerlink" href="#messages" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/comp_msg.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the compass, pitch, and roll sensors. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="temp-sal-tab">
-<h2>6. TEMP/SAL TAB<a class="headerlink" href="#temp-sal-tab" title="Permalink to this heading">#</a></h2>
+<h2>6. TEMP/SAL TAB<a class="headerlink" href="#temp-sal-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/temp_sal_tab.png" /></p>
 <p>The Temp/Sal tab has two sub-tabs Data and Messages. The Data tab displays the temperature, salinity, and speed of sound settings and the time series of the ADCP temperature readings.</p>
 <section id="id3">
-<h3>6.1 DATA<a class="headerlink" href="#id3" title="Permalink to this heading">#</a></h3>
+<h3>6.1 DATA<a class="headerlink" href="#id3" title="Permalink to this headline">#</a></h3>
 <p>The Water Temperature panel displays a time series of the temperature readings for all of the transects in the measurement. This is useful to determine if the ADCP has reached equilibrium water temperature prior to the start of the measurement and to identify any substantial temperature changes in the cross section. USGS policy requires an independent temperature reading be made, recorded, and compared to a simultaneous temperature reading from the ADCP. These temperature reading can be entered in the edit boxes for Independent and ADCP and the appropriate units selected from the radio buttons. If the ADCP temperature is not provided the ADCP average temperature will be compared to the Independent temperature. If no Independent temperature is provided, the ADAQ will flag this violation of policy. If the labels are colored orange or red by the automated data quality assessment, placing the cursor on that label will display a tooltip indicating the quality issue.</p>
 <p>The table at the top of the Data tab displays the speed of sound, the parameters that affect the speed of sound, and allows the user to make changes directly to the speed of sound or to the parameters. The Temperature Source can be changed by clicking in a row under the Temperature Source column. This will open a dialog that allows the user to manually set a water temperature or to use the ADCP internal sensor to determine the water temperature for the purpose of computing the speed of sound.</p>
 <p><img alt="" src="../_images/temp_src.png" /></p>
@@ -1335,16 +1328,16 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 </section>
 </section>
 <section id="id4">
-<h2>6.2 MESSAGES<a class="headerlink" href="#id4" title="Permalink to this heading">#</a></h2>
+<h2>6.2 MESSAGES<a class="headerlink" href="#id4" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/temp_sal_msg.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the speed of sound and associated parameters and policies. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 <section id="movbedtst-tab">
-<h2>7. MOVBEDTST TAB<a class="headerlink" href="#movbedtst-tab" title="Permalink to this heading">#</a></h2>
+<h2>7. MOVBEDTST TAB<a class="headerlink" href="#movbedtst-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/MOVBEDTST_tab.png" /></p>
 <p>The MovBedTst tab allows the user to review moving-bed test results, mark tests invalid, use GPS as the test reference, and override the automatic determination of which moving-bed tests should be used to correct the measured discharge. The MovBedTst tab consist of two additional tabs Data and Messages.</p>
 <section id="id5">
-<h3>7.1 DATA<a class="headerlink" href="#id5" title="Permalink to this heading">#</a></h3>
+<h3>7.1 DATA<a class="headerlink" href="#id5" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/MOVBEDTST_data_tab.png" /></p>
 <p>When the Data tab is first displayed, the first file is automatically displayed in the graphs at the bottom of the window. To display a different file, click in the table on the filename to be displayed or use the up or down cursor keys to change the displayed test. The filename of the moving-bed test displayed is shown immediately above the graphs. The graphs at the bottom change depending on whether the displayed test is a loop test or a stationary test.</p>
 <p>Three graphs are shown for the stationary test. The graph at the left is a cumulative average of the moving-bed speed. Red dots indicate ensembles where the bottom track was invalid. For a good test the blue line should reach equilibrium (nearly horizontal) by the end of the test. The middle graph is the shiptrack produced by plotting the upstream or cross stream movement based on bottom track relative to the direction of flow for each ensemble. The graph on the right is a ship track plot of all available references.</p>
@@ -1381,20 +1374,20 @@ Based on criteria documented in Mueller (2016), the quality of the measurement i
 </ul>
 </section>
 <section id="id6">
-<h3>7.2 MESSAGES<a class="headerlink" href="#id6" title="Permalink to this heading">#</a></h3>
+<h3>7.2 MESSAGES<a class="headerlink" href="#id6" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/mbt_msgs.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with moving-bed test. These messages include details about each test not included in the messages shown on the Main tab. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="bt-tab">
-<h2>8. BT TAB<a class="headerlink" href="#bt-tab" title="Permalink to this heading">#</a></h2>
+<h2>8. BT TAB<a class="headerlink" href="#bt-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/bt_tab.png" /></p>
 <p>The BT tab allows the user to evaluate the bottom track data for each transect and change the filter settings. Filter settings are applied to all transects and cannot be set for individual transects.</p>
 <section id="id7">
-<h3>8.1 DATA<a class="headerlink" href="#id7" title="Permalink to this heading">#</a></h3>
+<h3>8.1 DATA<a class="headerlink" href="#id7" title="Permalink to this headline">#</a></h3>
 <p>The Data tab provides the information and filter settings to allow the user to evaluate and optimize the bottom track data.</p>
 <section id="table">
-<h4>8.1.1 Table<a class="headerlink" href="#table" title="Permalink to this heading">#</a></h4>
+<h4>8.1.1 Table<a class="headerlink" href="#table" title="Permalink to this headline">#</a></h4>
 <p>The table at the top of the tab allows the user to select which transect to graph (by clicking on the desired row), provides information on the percentage of ensembles that have been determined to be invalid by the various filters, and shows the effect of a filter change on the computed discharge. Cells in the table contain color codes associated with cautions or warnings generated from the ADQA. This table does not have any editable cells. The columns in the table are as follows:</p>
 <ul class="simple">
 <li><p><strong>Filename:</strong> Filename of the transect.</p></li>
@@ -1413,7 +1406,7 @@ Based on criteria documented in Mueller (2016), the quality of the measurement i
 <p>If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.</p>
 </section>
 <section id="upper-graph">
-<h4>8.1.2 Upper Graph<a class="headerlink" href="#upper-graph" title="Permalink to this heading">#</a></h4>
+<h4>8.1.2 Upper Graph<a class="headerlink" href="#upper-graph" title="Permalink to this headline">#</a></h4>
 <p>The data displayed in the upper graph are controlled by the radio buttons at the top of the graph. Blue dots indicate valid data and blue dots with red circles indicate invalid data. Examples of the options are:</p>
 <p><strong>3 Beam Solutions:</strong></p>
 <p><img alt="" src="../_images/bt_3beam_plt.png" /></p>
@@ -1429,17 +1422,17 @@ Based on criteria documented in Mueller (2016), the quality of the measurement i
 <p><img alt="" src="../_images/bt_src_plt.png" /></p>
 </section>
 <section id="lower-graph">
-<h4>8.1.3 Lower Graph<a class="headerlink" href="#lower-graph" title="Permalink to this heading">#</a></h4>
+<h4>8.1.3 Lower Graph<a class="headerlink" href="#lower-graph" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/bt_lower_plt.png" /></p>
 <p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the check boxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the check boxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, B for beam filter, E for error velocity filter, V for vertical velocity filter, and S for other filter.</p>
 </section>
 <section id="id8">
-<h4>8.1.4 Ship Track Graph<a class="headerlink" href="#id8" title="Permalink to this heading">#</a></h4>
+<h4>8.1.4 Ship Track Graph<a class="headerlink" href="#id8" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/bt_shiptrack_plt.png" /></p>
 <p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the check boxes at the top of the graph.</p>
 </section>
 <section id="beam-filter">
-<h4>8.1.5 Beam Filter<a class="headerlink" href="#beam-filter" title="Permalink to this heading">#</a></h4>
+<h4>8.1.5 Beam Filter<a class="headerlink" href="#beam-filter" title="Permalink to this headline">#</a></h4>
 <p>The Beam Filter panel shows the current setting and allows the user to change the filters as necessary from the following options:</p>
 <ul class="simple">
 <li><p><strong>Auto:</strong> (Default) Evaluates 3 beams solutions using neighboring data to
@@ -1449,7 +1442,7 @@ determine the validity of the 3 beam solution. Details are documented in Mueller
 </ul>
 </section>
 <section id="error-velocity-filter">
-<h4>8.1.6 Error Velocity Filter<a class="headerlink" href="#error-velocity-filter" title="Permalink to this heading">#</a></h4>
+<h4>8.1.6 Error Velocity Filter<a class="headerlink" href="#error-velocity-filter" title="Permalink to this headline">#</a></h4>
 <p>The Error Velocity Filter panel shows the current setting and allows the user to change the filters as necessary from the following options:</p>
 <ul class="simple">
 <li><p><strong>Auto:</strong> (Default) Use the variance of the error velocity data to
@@ -1461,7 +1454,7 @@ applied to all transects in the measurement.</p></li>
 <p>The frequency of the bottom track ping is represented by different colors and symbols for multi-frequency ADCPs. Using the Auto filter, the filter thresholds are computed separately for each frequency.</p>
 </section>
 <section id="vertical-velocity-filter">
-<h4>8.1.7 Vertical Velocity Filter<a class="headerlink" href="#vertical-velocity-filter" title="Permalink to this heading">#</a></h4>
+<h4>8.1.7 Vertical Velocity Filter<a class="headerlink" href="#vertical-velocity-filter" title="Permalink to this headline">#</a></h4>
 <p>The Vertical Velocity Filter panel shows the current setting and allows the user to change the filters as necessary from the following options:</p>
 <ul class="simple">
 <li><p><strong>Auto:</strong> (Default) Use the variance of the vertical velocity data to
@@ -1474,7 +1467,7 @@ all transects in the measurement.</p></li>
 <p>The frequency of the bottom track ping is represented by different colors and symbols for multi-frequency ADCPs. Using the Auto filter, the filter thresholds are computed separately for each frequency.</p>
 </section>
 <section id="other-filter">
-<h4>8.1.8 Other Filter<a class="headerlink" href="#other-filter" title="Permalink to this heading">#</a></h4>
+<h4>8.1.8 Other Filter<a class="headerlink" href="#other-filter" title="Permalink to this headline">#</a></h4>
 <p>The Other Filter panel shows the current setting and allows the user to change the filters as necessary from the following options:</p>
 <ul class="simple">
 <li><p><strong>Off:</strong> (Default) No spike detection type filter is applied.</p></li>
@@ -1484,19 +1477,19 @@ dynamic moving window is applied. Details are documented in Mueller (2016).</p><
 </section>
 </section>
 <section id="id9">
-<h3>8.2 MESSAGES TAB<a class="headerlink" href="#id9" title="Permalink to this heading">#</a></h3>
+<h3>8.2 MESSAGES TAB<a class="headerlink" href="#id9" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/bt_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with bottom tracking. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="gps-tab">
-<h2>9 GPS TAB<a class="headerlink" href="#gps-tab" title="Permalink to this heading">#</a></h2>
+<h2>9 GPS TAB<a class="headerlink" href="#gps-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/gps_tab.png" /></p>
 <p>The GPS tab allows the user to evaluate the GGA and VTG data for each transect and change the filter settings. Filter settings are applied to all transects and cannot be set for individual transects.</p>
 <section id="id10">
-<h3>9.1 DATA<a class="headerlink" href="#id10" title="Permalink to this heading">#</a></h3>
+<h3>9.1 DATA<a class="headerlink" href="#id10" title="Permalink to this headline">#</a></h3>
 <section id="id11">
-<h4>9.1.1 Table<a class="headerlink" href="#id11" title="Permalink to this heading">#</a></h4>
+<h4>9.1.1 Table<a class="headerlink" href="#id11" title="Permalink to this headline">#</a></h4>
 <p>The summary table allows the user to select the transect to be graphed (by clicking on the desired row) and provides information about the quality of the GPS data. This table has no editable cells. The columns in the table are defined as follows:</p>
 <ul class="simple">
 <li><p><strong>Filename:</strong> Filename of the transect.</p></li>
@@ -1514,7 +1507,7 @@ dynamic moving window is applied. Details are documented in Mueller (2016).</p><
 <p>If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.</p>
 </section>
 <section id="id12">
-<h4>9.1.2 Upper Graph<a class="headerlink" href="#id12" title="Permalink to this heading">#</a></h4>
+<h4>9.1.2 Upper Graph<a class="headerlink" href="#id12" title="Permalink to this headline">#</a></h4>
 <p>The data displayed in the upper graph are controlled by the radio buttons at the top of the graph. Blue dots indicate valid data and blue dots with red circles indicate invalid data. Examples of the options are:</p>
 <p><strong>Quality:</strong></p>
 <ul class="simple">
@@ -1539,17 +1532,17 @@ than 4):</strong></p>
 <p><img alt="" src="../_images/gps_src_plt.png" /></p>
 </section>
 <section id="id13">
-<h4>9.1.3 Lower Graph<a class="headerlink" href="#id13" title="Permalink to this heading">#</a></h4>
+<h4>9.1.3 Lower Graph<a class="headerlink" href="#id13" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/gps_speed_plt.png" /></p>
 <p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the check boxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the check boxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, Q for quality filter (GGA only), A for altitude filter (GGA only), H for HDOP filter, S for other filter</p>
 </section>
 <section id="id14">
-<h4>9.1.4 Ship Track Graph<a class="headerlink" href="#id14" title="Permalink to this heading">#</a></h4>
+<h4>9.1.4 Ship Track Graph<a class="headerlink" href="#id14" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/gps_shiptrack_plt.png" /></p>
 <p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the check boxes at the top of the graph.</p>
 </section>
 <section id="minimum-quality-gga-filter">
-<h4>9.1.5 Minimum Quality (GGA) Filter<a class="headerlink" href="#minimum-quality-gga-filter" title="Permalink to this heading">#</a></h4>
+<h4>9.1.5 Minimum Quality (GGA) Filter<a class="headerlink" href="#minimum-quality-gga-filter" title="Permalink to this headline">#</a></h4>
 <p>Applies to GGA data only and allows the user to set the minimum allowable differential correction quality.</p>
 <ul class="simple">
 <li><p><strong>1:</strong> Autonomous</p></li>
@@ -1558,7 +1551,7 @@ than 4):</strong></p>
 </ul>
 </section>
 <section id="altitude-change-gga-filter">
-<h4>9.1.6 Altitude Change (GGA) Filter<a class="headerlink" href="#altitude-change-gga-filter" title="Permalink to this heading">#</a></h4>
+<h4>9.1.6 Altitude Change (GGA) Filter<a class="headerlink" href="#altitude-change-gga-filter" title="Permalink to this headline">#</a></h4>
 <p>Applies to GGA data only.</p>
 <ul class="simple">
 <li><p><strong>Auto:</strong> (Default) The threshold for altitude change is set to 3 meters.</p></li>
@@ -1567,7 +1560,7 @@ altitude is applied.</p></li>
 </ul>
 </section>
 <section id="hdop-filter">
-<h4>9.1.7 HDOP Filter<a class="headerlink" href="#hdop-filter" title="Permalink to this heading">#</a></h4>
+<h4>9.1.7 HDOP Filter<a class="headerlink" href="#hdop-filter" title="Permalink to this headline">#</a></h4>
 <p>Applies to GGA and VTG data, if GGA data are available.</p>
 <ul class="simple">
 <li><p><strong>Auto:</strong> (Default) Sets the maximum allowable HDOP to 4.0 and the
@@ -1578,7 +1571,7 @@ maximum allowable change in HDOP.</p></li>
 </ul>
 </section>
 <section id="id15">
-<h4>9.1.8 Other Filter<a class="headerlink" href="#id15" title="Permalink to this heading">#</a></h4>
+<h4>9.1.8 Other Filter<a class="headerlink" href="#id15" title="Permalink to this headline">#</a></h4>
 <p>Sets the smooth filter to on or off.</p>
 <ul class="simple">
 <li><p><strong>Off:</strong> (Default) No other filter is applied.</p></li>
@@ -1587,12 +1580,12 @@ maximum allowable change in HDOP.</p></li>
 </section>
 </section>
 <section id="gps-bt">
-<h3>9.2 GPS – BT<a class="headerlink" href="#gps-bt" title="Permalink to this heading">#</a></h3>
+<h3>9.2 GPS – BT<a class="headerlink" href="#gps-bt" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/gps_bt_plt.png" /></p>
 <p>The GPS – BT tab allows the user to evaluate how closely the GPS data
 correlate with the bottom track data.</p>
 <section id="id16">
-<h4>9.2.1 Table<a class="headerlink" href="#id16" title="Permalink to this heading">#</a></h4>
+<h4>9.2.1 Table<a class="headerlink" href="#id16" title="Permalink to this headline">#</a></h4>
 <p>The table presents the following data:</p>
 <p><img alt="" src="../_images/gps_tbl_plt.png" /></p>
 <ul class="simple">
@@ -1613,7 +1606,7 @@ divided by the difference made good of the GPS track.</p></li>
 </ul>
 </section>
 <section id="id17">
-<h4>9.2.2 Lower Graph<a class="headerlink" href="#id17" title="Permalink to this heading">#</a></h4>
+<h4>9.2.2 Lower Graph<a class="headerlink" href="#id17" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/gps_lower_plt.png" /></p>
 <p>The lower graph displays the boat speed vs ensembles. The boat speeds shown
 are controlled by the checkboxes associated with the ship track graph. The
@@ -1625,7 +1618,7 @@ filter (GGA only), A for altitude filter (GGA only), H for HDOP filter, and S
 for other filter.</p>
 </section>
 <section id="id18">
-<h4>9.2.3 Ship Track Graph<a class="headerlink" href="#id18" title="Permalink to this heading">#</a></h4>
+<h4>9.2.3 Ship Track Graph<a class="headerlink" href="#id18" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/gps_shiptrack_plt.png" /></p>
 <p>The graph on the right is a ship track graph that shows the ship track of
 all available navigation references (Red = BT, Blue = GGA, Green = VTG).
@@ -1635,7 +1628,7 @@ graph are controlled by the checkboxes at the top of the graph.</p>
 </section>
 </section>
 <section id="id19">
-<h3>9.3 MESSAGES<a class="headerlink" href="#id19" title="Permalink to this heading">#</a></h3>
+<h3>9.3 MESSAGES<a class="headerlink" href="#id19" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/gps_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with GPS data. The bottom panel shows all the
@@ -1643,7 +1636,7 @@ comments associated with the measurement.</p>
 </section>
 </section>
 <section id="depth-tab">
-<h2>10. DEPTH TAB<a class="headerlink" href="#depth-tab" title="Permalink to this heading">#</a></h2>
+<h2>10. DEPTH TAB<a class="headerlink" href="#depth-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/depth_tab.png" /></p>
 <p>The Depth tab allows the user to review the measured depths from each beam
 and the final processed cross-section. The user can also change the
@@ -1652,9 +1645,9 @@ defaults to using inverse depth weighting to compute the mean depth when
 the 4 slant beams are used. The user can also change the filter type to try
 and eliminate unreasonable and erroneous spikes in the data.</p>
 <section id="id20">
-<h3>10.1 DATA<a class="headerlink" href="#id20" title="Permalink to this heading">#</a></h3>
+<h3>10.1 DATA<a class="headerlink" href="#id20" title="Permalink to this headline">#</a></h3>
 <section id="id21">
-<h4>10.1.1 Table<a class="headerlink" href="#id21" title="Permalink to this heading">#</a></h4>
+<h4>10.1.1 Table<a class="headerlink" href="#id21" title="Permalink to this headline">#</a></h4>
 <p>The summary table allows the user to select which transect is displayed in
 the graphs (by clicking on the desired row), provides information on beams
 with invalid depths, and allows the user to change the draft.</p>
@@ -1678,7 +1671,7 @@ with invalid depths, and allows the user to change the draft.</p>
 <p>If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.</p>
 </section>
 <section id="graphics">
-<h4>10.1.2 Graphics<a class="headerlink" href="#graphics" title="Permalink to this heading">#</a></h4>
+<h4>10.1.2 Graphics<a class="headerlink" href="#graphics" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/depth_graphics.png" /></p>
 <p>The top graph displays the depth recorded for each beam. The user can
 change which beams are displayed using the check boxed on the right. Red
@@ -1688,7 +1681,7 @@ discharge. Using the checkboxes at the right the user can compare the
 final cross-section to the 4-beam average, vertical beam, or depth sounder.</p>
 </section>
 <section id="depth-reference">
-<h4>10.1.3 Depth Reference<a class="headerlink" href="#depth-reference" title="Permalink to this heading">#</a></h4>
+<h4>10.1.3 Depth Reference<a class="headerlink" href="#depth-reference" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/depth_ref.png" /></p>
 <p>The Depth Reference is a popup menu that allows the user to select from all
 available depth sources.</p>
@@ -1720,7 +1713,7 @@ priority defined in the table below:</p></li>
 </ul>
 </section>
 <section id="bt-averaging-method">
-<h4>10.1.4 BT Averaging Method<a class="headerlink" href="#bt-averaging-method" title="Permalink to this heading">#</a></h4>
+<h4>10.1.4 BT Averaging Method<a class="headerlink" href="#bt-averaging-method" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/depth_avg_method.png" /></p>
 <p>BT Beam Averaging determines if the average depth from the 4 slant beams is
 computed using a simple average or an inverse depth-weighted method (IDW).
@@ -1729,7 +1722,7 @@ However, to allow duplication of RSL computations, the simple average
 option is available.</p>
 </section>
 <section id="filter">
-<h4>10.1.5 Filter<a class="headerlink" href="#filter" title="Permalink to this heading">#</a></h4>
+<h4>10.1.5 Filter<a class="headerlink" href="#filter" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/depth_filter.png" /></p>
 <p>The two options available to filter out spikes in the depths are the method
 used in WR2 and a method based on a LOWESS smooth. The method used in WR2
@@ -1741,7 +1734,7 @@ to Smooth but can also be turned off.</p>
 </section>
 </section>
 <section id="id22">
-<h3>10.2 MESSAGES<a class="headerlink" href="#id22" title="Permalink to this heading">#</a></h3>
+<h3>10.2 MESSAGES<a class="headerlink" href="#id22" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/depth_msg.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with depth data. The bottom panel shows all the
@@ -1749,15 +1742,15 @@ comments associated with the measurement.</p>
 </section>
 </section>
 <section id="wt-tab">
-<h2>11 WT TAB<a class="headerlink" href="#wt-tab" title="Permalink to this heading">#</a></h2>
+<h2>11 WT TAB<a class="headerlink" href="#wt-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/wt_tab.png" /></p>
 <p>The WT Filters button opens a window that allows the user to evaluate the
 water track data for each transect and change the filter settings. Filter
 settings are applied to all transects and cannot be set for individual transects.</p>
 <section id="id23">
-<h3>11.1 DATA<a class="headerlink" href="#id23" title="Permalink to this heading">#</a></h3>
+<h3>11.1 DATA<a class="headerlink" href="#id23" title="Permalink to this headline">#</a></h3>
 <section id="id24">
-<h4>11.1.1 Table<a class="headerlink" href="#id24" title="Permalink to this heading">#</a></h4>
+<h4>11.1.1 Table<a class="headerlink" href="#id24" title="Permalink to this headline">#</a></h4>
 <p>The Summary Table allows the user to select which transect to graph (by clicking on the desired row), provides information on the percentage of depth cells that have been determined to be invalid by the various filters, and shows the effect of a filter change on the computed discharge. Cells in the table contain color codes associated with cautions or warnings generated from the ADQA. No editable cells are in this table. The columns in the table are:</p>
 <ul class="simple">
 <li><p><strong>Filename:</strong> Filename of the transect.</p></li>
@@ -1795,7 +1788,7 @@ quality assessment, placing the cursor on that cell will display a tooltip
 indicating the quality issue.</p>
 </section>
 <section id="id25">
-<h4>11.1.2 Upper Graph<a class="headerlink" href="#id25" title="Permalink to this heading">#</a></h4>
+<h4>11.1.2 Upper Graph<a class="headerlink" href="#id25" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_radio_buttons.png" /></p>
 <p>The display in the upper graph is controlled by the radio buttons across the top.</p>
 <p><img alt="" src="../_images/wt_contour.png" /></p>
@@ -1821,7 +1814,7 @@ O-invalid original data, E-error velocity filter, V-vertical velocity
 filter, B-beam filter, R-SNR filter.</p>
 </section>
 <section id="id26">
-<h4>11.1.3 Lower Graph<a class="headerlink" href="#id26" title="Permalink to this heading">#</a></h4>
+<h4>11.1.3 Lower Graph<a class="headerlink" href="#id26" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_lower_plt.png" /></p>
 <p>The lower graph is a color contour showing the measured and interpolated
 data. These are the data that will be used to compute discharge. If that
@@ -1831,7 +1824,7 @@ the depth cells. If the data were loaded from a QRev.mat file processed
 with QRev prior to version 4 the red line will not be displayed.</p>
 </section>
 <section id="id27">
-<h4>11.1.4 Ship Track Graph<a class="headerlink" href="#id27" title="Permalink to this heading">#</a></h4>
+<h4>11.1.4 Ship Track Graph<a class="headerlink" href="#id27" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/gps_shiptrack_plt.png" /></p>
 <p>The graph on the right is a ship track graph that shows the ship track of
 all available navigation references (Red = BT, Blue = GGA, Green = VTG).
@@ -1840,7 +1833,7 @@ water velocity for each ensemble. What navigation references shown in the
 graph are controlled by the checkboxes at the top of the graph.</p>
 </section>
 <section id="excluded-distance">
-<h4>11.1.5 Excluded Distance<a class="headerlink" href="#excluded-distance" title="Permalink to this heading">#</a></h4>
+<h4>11.1.5 Excluded Distance<a class="headerlink" href="#excluded-distance" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_excluded.png" /></p>
 <p>The Excluded Distance is the distance below the transducer for which
 measured WT data will not be used. This value defaults to zero except for:</p>
@@ -1849,7 +1842,7 @@ measured WT data will not be used. This value defaults to zero except for:</p>
 <li><p><strong>TRDI RioPro:</strong> default = 25 cm</p></li>
 </ul>
 <section id="beam-solutions">
-<h5>11.1.6 3 Beam Solutions<a class="headerlink" href="#beam-solutions" title="Permalink to this heading">#</a></h5>
+<h5>11.1.6 3 Beam Solutions<a class="headerlink" href="#beam-solutions" title="Permalink to this headline">#</a></h5>
 <p><img alt="" src="../_images/wt_3BeamSolutions.png" /></p>
 <p>The Beam Filter panel shows the current setting and allows the user to
 change the filters as necessary from the following options:</p>
@@ -1863,7 +1856,7 @@ Mueller (2016).</p></li>
 </section>
 </section>
 <section id="id28">
-<h4>11.1.7 Error Velocity Filter<a class="headerlink" href="#id28" title="Permalink to this heading">#</a></h4>
+<h4>11.1.7 Error Velocity Filter<a class="headerlink" href="#id28" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_ErrorVelFilter.png" /></p>
 <p>The Error Velocity Filter panel shows the current setting and allows the
 user to change the filters as necessary from the following options:</p>
@@ -1885,7 +1878,7 @@ ADCPs and not recomputed, the display will show the different ping types
 but the filter thresholds will have been computed without regard to ping type.</p>
 </section>
 <section id="id29">
-<h4>11.1.8 Vertical Velocity Filter<a class="headerlink" href="#id29" title="Permalink to this heading">#</a></h4>
+<h4>11.1.8 Vertical Velocity Filter<a class="headerlink" href="#id29" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_VertVelFilter.png" /></p>
 <p>The Vertical Velocity Filter panel shows the current setting and allows the
 user to change the filters as necessary from the following options:</p>
@@ -1908,7 +1901,7 @@ types but the filter thresholds will have been computed without regard to
 ping type.</p>
 </section>
 <section id="snr-filter">
-<h4>11.1.9 SNR Filter<a class="headerlink" href="#snr-filter" title="Permalink to this heading">#</a></h4>
+<h4>11.1.9 SNR Filter<a class="headerlink" href="#snr-filter" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/wt_SnrFilter.png" /></p>
 <p>The SNR Filter panel shows the current setting and allows the user to
 change the filter as necessary from the following options:</p>
@@ -1920,7 +1913,7 @@ thresholds to RSL data only. Details are documented in Mueller (2016).</p></li>
 </section>
 </section>
 <section id="id30">
-<h3>11.2 MESSAGES<a class="headerlink" href="#id30" title="Permalink to this heading">#</a></h3>
+<h3>11.2 MESSAGES<a class="headerlink" href="#id30" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/wt_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with WT data. The bottom panel shows all the
@@ -1928,7 +1921,7 @@ comments associated with the measurement.</p>
 </section>
 </section>
 <section id="extrap-tab">
-<h2>12. EXTRAP TAB<a class="headerlink" href="#extrap-tab" title="Permalink to this heading">#</a></h2>
+<h2>12. EXTRAP TAB<a class="headerlink" href="#extrap-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/extrap_tab.png" /></p>
 <p>The Extrapolation tab is similar to the extrap program (Mueller, 2013),
 except the extrapolation tab has been redesigned with buttons instead of
@@ -1937,9 +1930,9 @@ from the extrap algorithms. The user can use the Extrapolation tab to
 switch to or explore other extrapolation settings, apply manually selected
 extrapolation settings, and evaluate the sensitivity of the discharge to the extrapolation settings.</p>
 <section id="id31">
-<h3>12.1 DATA<a class="headerlink" href="#id31" title="Permalink to this heading">#</a></h3>
+<h3>12.1 DATA<a class="headerlink" href="#id31" title="Permalink to this headline">#</a></h3>
 <section id="fit-settings-when-tab-opened">
-<h4>12.1.1 Fit Settings When Tab Opened<a class="headerlink" href="#fit-settings-when-tab-opened" title="Permalink to this heading">#</a></h4>
+<h4>12.1.1 Fit Settings When Tab Opened<a class="headerlink" href="#fit-settings-when-tab-opened" title="Permalink to this headline">#</a></h4>
 <p>The extrapolation setting when the tab is opened are stored and shown in
 the Fit Settings When Tab Opened panel. Changes made by the user are
 automatically applied. If the user decides not to keep the changes they can
@@ -1948,7 +1941,7 @@ when the tab was opened will be restored. This allows the user to quickly
 reset the extrapolation settings after exploring other options.</p>
 </section>
 <section id="points">
-<h4>12.1.2 Points<a class="headerlink" href="#points" title="Permalink to this heading">#</a></h4>
+<h4>12.1.2 Points<a class="headerlink" href="#points" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/extrap_pnts_tab.png" /></p>
 <p>The normalized distance from the streambed is divided into 5 percent
 segments (0.05; from 0 to 1). A median value of the normalized unit
@@ -1966,7 +1959,7 @@ for an individual transect are colored black if the number of points in the
 segment exceeds the threshold and red if they do not.</p>
 </section>
 <section id="profile">
-<h4>12.1.3 Profile<a class="headerlink" href="#profile" title="Permalink to this heading">#</a></h4>
+<h4>12.1.3 Profile<a class="headerlink" href="#profile" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/extrap_profile_tab.png" /></p>
 <p>The primary panel in the extrapolation tab is the Profile panel. The graph
 in the profile panel displays the following data depending on the
@@ -2038,7 +2031,7 @@ composite measurement.</p></li>
 right are shown in magenta and those moving from right to left in blue.</p>
 </section>
 <section id="fit-parameters">
-<h4>12.1.4 Fit Parameters<a class="headerlink" href="#fit-parameters" title="Permalink to this heading">#</a></h4>
+<h4>12.1.4 Fit Parameters<a class="headerlink" href="#fit-parameters" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/extrap_fit_parms.png" /></p>
 <p>The Fit panel provides the user the ability to control what data are shown
 in the Profile and Data panels and change the fit type, extrapolation
@@ -2068,7 +2061,7 @@ changed by manually typing a value in the edit.</p></li>
 </ul>
 </section>
 <section id="data-used-for-extrap-fitting">
-<h4>12.1.5 Data Used for Extrap Fitting<a class="headerlink" href="#data-used-for-extrap-fitting" title="Permalink to this heading">#</a></h4>
+<h4>12.1.5 Data Used for Extrap Fitting<a class="headerlink" href="#data-used-for-extrap-fitting" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/extrap_fitting.png" /></p>
 <p>The Data Use for Extrap Fitting panel allows the user to change settings that affect what data are used in the extrapolation fit process. By default these are set automatically but the user can change this to manual and activate the Type, Subsection, and Threshold settings in order to manually change them.</p>
 <ul class="simple">
@@ -2078,25 +2071,25 @@ changed by manually typing a value in the edit.</p></li>
 </ul>
 </section>
 <section id="discharge-sensitivity">
-<h4>12.1.6 Discharge Sensitivity<a class="headerlink" href="#discharge-sensitivity" title="Permalink to this heading">#</a></h4>
+<h4>12.1.6 Discharge Sensitivity<a class="headerlink" href="#discharge-sensitivity" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/extrap_q_sense.png" /></p>
 <p>The sensitivity of the extrapolation method for the top and bottom extrapolation is evaluated by computing the discharge for each combination of top and bottom extrapolation methods with a default and with least squares fit exponents and reporting the percent difference from the selected fit (from the Fit panel). If a manual fit is used for the composite measurement, then an additional line will be added to the table that represents the manual fit. This table can be used to help determine the effect of extrapolation choices on the final discharge. The user can also click in the table to quickly evaluate other fits. Clicking a row in the table to set and display those fit parameters.</p>
 </section>
 </section>
 <section id="id32">
-<h3>12.2 MESSAGES<a class="headerlink" href="#id32" title="Permalink to this heading">#</a></h3>
+<h3>12.2 MESSAGES<a class="headerlink" href="#id32" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/extrap_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the extrapolation. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="edges-tab">
-<h2>13 EDGES TAB<a class="headerlink" href="#edges-tab" title="Permalink to this heading">#</a></h2>
+<h2>13 EDGES TAB<a class="headerlink" href="#edges-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/edges_tab.png" /></p>
 <p>The Edges tab allows the user to review data and change settings associated with the edges discharge computations. Highlighted cells in the table indicate a message from the ADQA.</p>
 <section id="id33">
-<h3>13.1 DATA<a class="headerlink" href="#id33" title="Permalink to this heading">#</a></h3>
+<h3>13.1 DATA<a class="headerlink" href="#id33" title="Permalink to this headline">#</a></h3>
 <section id="id34">
-<h4>13.1.1 Table<a class="headerlink" href="#id34" title="Permalink to this heading">#</a></h4>
+<h4>13.1.1 Table<a class="headerlink" href="#id34" title="Permalink to this headline">#</a></h4>
 <p>The Summary Table shows the edge settings and resulting discharge.</p>
 <ul>
 <li><p><strong>Filename:</strong> Filename of transect.</p></li>
@@ -2137,57 +2130,57 @@ the discharge in the right edge by entering the discharge in the Right Discharge
 <p>If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.</p>
 </section>
 <section id="edit-start-edge">
-<h4>13.1.2 Edit Start Edge<a class="headerlink" href="#edit-start-edge" title="Permalink to this heading">#</a></h4>
+<h4>13.1.2 Edit Start Edge<a class="headerlink" href="#edit-start-edge" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_start.png" /></p>
 <p>Clicking on a row under Start Edge opens a dialog window to allow the user to change the start edge of that transect.</p>
 </section>
 <section id="edit-edge-type">
-<h4>13.1.3 Edit Edge Type<a class="headerlink" href="#edit-edge-type" title="Permalink to this heading">#</a></h4>
+<h4>13.1.3 Edit Edge Type<a class="headerlink" href="#edit-edge-type" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_type.png" /></p>
 <p>Clicking on a row under the Edge Type, Coef, or Discharge for either the left or right edges will display the following dialog.</p>
 <p>The left or right edge type and associated custom coefficient or user specified discharge can be set using this dialog. The setting can be applied to All Transects or only to the selected transect (Transect Only).</p>
 </section>
 <section id="edit-edge-distance">
-<h4>13.1.4 Edit Edge Distance<a class="headerlink" href="#edit-edge-distance" title="Permalink to this heading">#</a></h4>
+<h4>13.1.4 Edit Edge Distance<a class="headerlink" href="#edit-edge-distance" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_dist.png" /></p>
 <p>Clicking on a row under the Left or Right Edge Dist. columns will open a dialog window to allow the user to change the edge distance for that transect or all transects. The default is to change only that transect.</p>
 </section>
 <section id="edit-number-of-edge-ensembles">
-<h4>13.1.5 Edit Number of Edge Ensembles<a class="headerlink" href="#edit-number-of-edge-ensembles" title="Permalink to this heading">#</a></h4>
+<h4>13.1.5 Edit Number of Edge Ensembles<a class="headerlink" href="#edit-number-of-edge-ensembles" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_ens.png" /></p>
 <p>Clicking on the row under the Left or Right # Valid opens a dialog window that allows the user to change the number of valid ensembles used to compute the average velocity and depth for that edge. The user can apply this value to only that transect or all transects. The default is to apply to only that transect.</p>
 </section>
 <section id="id35">
-<h4>13.1.6 Graphics<a class="headerlink" href="#id35" title="Permalink to this heading">#</a></h4>
+<h4>13.1.6 Graphics<a class="headerlink" href="#id35" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_plt.png" /></p>
 <p>The data used in the computation of the left and right edge discharges are displayed in the Left Edge and Right Edge panels. The transect data displayed are selected by clicking on the filename in the table. The filename of the transect being displayed is in bold font in the table. Each edge panel contains a color contour graph of the water speed and a ship track graph. These graphs only contain data from the edge ensembles. The color contour graph should be used to evaluate the consistency of the depth and water speed. The ship track graph should be used to evaluate boat movement during the collection of the edge ensembles. The black square also indicates the end of the transect closest to shore. The black arrows represent the depth averaged velocity vectors.</p>
 </section>
 <section id="id36">
-<h4>13.1.7 Messages<a class="headerlink" href="#id36" title="Permalink to this heading">#</a></h4>
+<h4>13.1.7 Messages<a class="headerlink" href="#id36" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/edges_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the edge data and settings. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 </section>
 <section id="edi-tab">
-<h2>14 EDI TAB<a class="headerlink" href="#edi-tab" title="Permalink to this heading">#</a></h2>
+<h2>14 EDI TAB<a class="headerlink" href="#edi-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/edi_tab.png" /></p>
 <p>The EDI tab allows the user to select a transect to use to compute the location, depth, and depth averaged velocity for equal-discharge sediment and water quality sampling.</p>
 <section id="select-transect">
-<h3>14.1 SELECT TRANSECT<a class="headerlink" href="#select-transect" title="Permalink to this heading">#</a></h3>
+<h3>14.1 SELECT TRANSECT<a class="headerlink" href="#select-transect" title="Permalink to this headline">#</a></h3>
 <p>EDI computations can only use a single transect. The user selects which transect to use by checking the box next to the desire transect.</p>
 </section>
 <section id="zero-distance-offset">
-<h3>14.2 ZERO DISTANCE OFFSET<a class="headerlink" href="#zero-distance-offset" title="Permalink to this heading">#</a></h3>
+<h3>14.2 ZERO DISTANCE OFFSET<a class="headerlink" href="#zero-distance-offset" title="Permalink to this headline">#</a></h3>
 <p>Enter the appropriate Zero Distance Offset. If the distance reference is from the edge of water then the Zero Distance Offset is set to zero. However, if referencing from a target on the bank then the distance from the target to edge of water should be entered.</p>
 </section>
 <section id="create-topoquad-file">
-<h3>14.3 CREATE TOPOQUAD FILE<a class="headerlink" href="#create-topoquad-file" title="Permalink to this heading">#</a></h3>
+<h3>14.3 CREATE TOPOQUAD FILE<a class="headerlink" href="#create-topoquad-file" title="Permalink to this headline">#</a></h3>
 <p>If you collected GPS data along with the ADCP data and you use DeLorme
 TopoQuads to assist in navigating to the sample locations, clicking the Create TopoQuads check box will create a TopoQuad compatible file that when loaded into TopoQuads will mark each computed sample location. You will be prompted to name this file after you click on Compute Stations. The file will be located in the same directory as the input file you processed.</p>
 </section>
 <section id="edi-table">
-<h3>14.4 EDI TABLE<a class="headerlink" href="#edi-table" title="Permalink to this heading">#</a></h3>
+<h3>14.4 EDI TABLE<a class="headerlink" href="#edi-table" title="Permalink to this headline">#</a></h3>
 <p>The standard set of discharge percentages are available by default, but
 they can be edited and changed by the user. If additional percentages are
 needed the user can click on the Add Row button and a row will be added to
@@ -2195,7 +2188,7 @@ the EDI Table. The user can then enter the desire percentage in the Percent
 Q column of the new row.</p>
 </section>
 <section id="compute-stations">
-<h3>14.5 COMPUTE STATIONS<a class="headerlink" href="#compute-stations" title="Permalink to this heading">#</a></h3>
+<h3>14.5 COMPUTE STATIONS<a class="headerlink" href="#compute-stations" title="Permalink to this headline">#</a></h3>
 <p>Once a transect has been selected the Compute Stations button will be
 activated. When the user has completed entering data in the tab clicking
 the Compute Stations button will populate the EDI table with the computed information.</p>
@@ -2215,11 +2208,11 @@ sampling location.</p></li>
 </section>
 </section>
 <section id="adv-graph-tab">
-<h2>15. ADV GRAPH TAB<a class="headerlink" href="#adv-graph-tab" title="Permalink to this heading">#</a></h2>
+<h2>15. ADV GRAPH TAB<a class="headerlink" href="#adv-graph-tab" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/adv_graphs_tab.png" /></p>
 <p>The Adv Graph Tab allows experienced users to further analyze a measurement by plotting and comparing various characteristics of the measurement. The Plot Control allows the user to select which plots they would like. The plots are generated by clicking the Create Plot button. Depending on the measurement, not all plots may be available. If a plot variable is not available, the option will be inactive (gray) and cannot be selected. Although any number of plots are possible, the physical space of the screen practically limits the number of plots to 4 to 6.</p>
 <section id="controls">
-<h3>15.1 CONTROLS<a class="headerlink" href="#controls" title="Permalink to this heading">#</a></h3>
+<h3>15.1 CONTROLS<a class="headerlink" href="#controls" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/adv_graphs_controls.png" /></p>
 <p>The transect plotted is selected from the dropdown list at the upper left of the tab.</p>
 <p><img alt="" src="../_images/adv_graphs_hide_controls.png" /></p>
@@ -2230,9 +2223,9 @@ sampling location.</p></li>
 <p>The graphics controls in the toolbar are synchronized with all the plots displayed, so that zooming or panning on one of the plots zooms or pans the other plots also. The data cursor also works on all plots.</p>
 </section>
 <section id="water-track">
-<h3>15.2 WATER TRACK<a class="headerlink" href="#water-track" title="Permalink to this heading">#</a></h3>
+<h3>15.2 WATER TRACK<a class="headerlink" href="#water-track" title="Permalink to this headline">#</a></h3>
 <section id="contour">
-<h4>15.2.1 Contour<a class="headerlink" href="#contour" title="Permalink to this heading">#</a></h4>
+<h4>15.2.1 Contour<a class="headerlink" href="#contour" title="Permalink to this headline">#</a></h4>
 <ul>
 <li><p><strong>Speed – Filtered:</strong> Water speed with invalid data shown as missing.
 Same as
@@ -2254,7 +2247,7 @@ PC/BB. Unspecified.</p>
 </ul>
 </section>
 <section id="time-series">
-<h4>15.2.2 Time Series<a class="headerlink" href="#time-series" title="Permalink to this heading">#</a></h4>
+<h4>15.2.2 Time Series<a class="headerlink" href="#time-series" title="Permalink to this headline">#</a></h4>
 <ul class="simple">
 <li><p><strong>Average Speed:</strong> Time series plot of the average water speed using a cell size weighted average of the measured data. The top and bottom extrapolated areas are not included.</p></li>
 <li><p><strong>Projected Speed:</strong> Time series plot of the average water speed using a cell size weighted average of the measured data projected in the direction of the specified projection angle. The top and bottom extrapolated areas are not included.</p></li>
@@ -2266,12 +2259,12 @@ PC/BB. Unspecified.</p>
 </section>
 </section>
 <section id="projection-angle">
-<h3>15.3 PROJECTION ANGLE<a class="headerlink" href="#projection-angle" title="Permalink to this heading">#</a></h3>
+<h3>15.3 PROJECTION ANGLE<a class="headerlink" href="#projection-angle" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/adv_graphs_proj_angle.png" /></p>
 <p>The projection angle is used in the Speed Projected Contour and Projected Speed time series plots. The angle is computed automatically by QRev, but any angle can be entered by the user. Clicking the Auto button will compute and set the automatically computed projection angle. The automatically computed projection angle is computed from the u and v components of the average water speed using a discharge weighted average of the measured data. The top and bottom extrapolated areas are not included.</p>
 </section>
 <section id="bottom-track">
-<h3>15.4 BOTTOM TRACK<a class="headerlink" href="#bottom-track" title="Permalink to this heading">#</a></h3>
+<h3>15.4 BOTTOM TRACK<a class="headerlink" href="#bottom-track" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Boat Speed (BT):</strong> Time series of the boat speed based on bottom track for each ensemble. Same as BT Tab.</p></li>
 <li><p><strong>3 Beam Solutions:</strong> Time series showing the number of beams used in the velocity solution of each ensemble. Same as BT Tab.</p></li>
@@ -2282,7 +2275,7 @@ PC/BB. Unspecified.</p>
 </ul>
 </section>
 <section id="gps">
-<h3>15.5 GPS<a class="headerlink" href="#gps" title="Permalink to this heading">#</a></h3>
+<h3>15.5 GPS<a class="headerlink" href="#gps" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Boat Speed (GGA):</strong> Time series of boat speed based on GGA data. Same as GPS Tab.</p></li>
 <li><p><strong>Boat Speed (VTG):</strong> Time series of boat speed based on VTG data. Same as GPS Tab.</p></li>
@@ -2295,7 +2288,7 @@ PC/BB. Unspecified.</p>
 </ul>
 </section>
 <section id="discharge">
-<h3>15.6 DISCHARGE<a class="headerlink" href="#discharge" title="Permalink to this heading">#</a></h3>
+<h3>15.6 DISCHARGE<a class="headerlink" href="#discharge" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Discharge Time Series:</strong> Time series of cumulative ensemble discharges
 for the selected transect from the starting bank to the ending bank.</p></li>
@@ -2304,7 +2297,7 @@ discharge as a percentage of the total transect discharge for the selected trans
 </ul>
 </section>
 <section id="compass-p-r">
-<h3>15.7 COMPASS/P/R<a class="headerlink" href="#compass-p-r" title="Permalink to this heading">#</a></h3>
+<h3>15.7 COMPASS/P/R<a class="headerlink" href="#compass-p-r" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Heading (ADCP):</strong> Time series of heading from the ADCP’s internal compass. Same as Compass/P/R Tab.</p></li>
 <li><p><strong>Heading (External):</strong> Time series of heading from an external source like a GPS compass. Same as Compass/P/R Tab.</p></li>
@@ -2314,7 +2307,7 @@ discharge as a percentage of the total transect discharge for the selected trans
 </ul>
 </section>
 <section id="depth">
-<h3>15.8 DEPTH<a class="headerlink" href="#depth" title="Permalink to this heading">#</a></h3>
+<h3>15.8 DEPTH<a class="headerlink" href="#depth" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Beam Depths:</strong> Time series of the depth from each beam. Same as Depth Tab.</p></li>
 <li><p><strong>Final Depths:</strong> Times series of the final depths for the transect used to compute discharge. Same as Depth Tab.</p></li>
@@ -2322,7 +2315,7 @@ discharge as a percentage of the total transect discharge for the selected trans
 </ul>
 </section>
 <section id="select-x-axis">
-<h3>15.9 SELECT X-AXIS<a class="headerlink" href="#select-x-axis" title="Permalink to this heading">#</a></h3>
+<h3>15.9 SELECT X-AXIS<a class="headerlink" href="#select-x-axis" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p><strong>Ensemble:</strong> Ensemble number starting at 1 as the start edge is used for the x-axis.</p></li>
 <li><p><strong>Time:</strong> The time of day for each ensemble is used for the x-axis.</p></li>
@@ -2331,14 +2324,14 @@ discharge as a percentage of the total transect discharge for the selected trans
 </section>
 </section>
 <section id="id37">
-<h2>16. UNCERTAINTY<a class="headerlink" href="#id37" title="Permalink to this heading">#</a></h2>
+<h2>16. UNCERTAINTY<a class="headerlink" href="#id37" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/unc_tab.png" /></p>
 <p>The Uncertainty tab is only shown if Oursin is selected as the uncertainty model. The Uncertainty tab consists of three subtabs: Data, Advanced Settings, and Messages.</p>
 <section id="id38">
-<h3>16.1 DATA<a class="headerlink" href="#id38" title="Permalink to this heading">#</a></h3>
+<h3>16.1 DATA<a class="headerlink" href="#id38" title="Permalink to this headline">#</a></h3>
 <p>The Data subtab consists of a table at the top and two stacked bar graphs at the bottom. This combination provides the user details on the source and magnitude of the uncertainty for each transect and the entire measurement.</p>
 <section id="id39">
-<h4>16.1.1 Table<a class="headerlink" href="#id39" title="Permalink to this heading">#</a></h4>
+<h4>16.1.1 Table<a class="headerlink" href="#id39" title="Permalink to this headline">#</a></h4>
 <p>The table at the top of the tab displays the uncertainty standard deviation as a percentage of the total discharge for each uncertainty source considered in the Oursin model. The uncertainties are computed for each transect automatically using the assumptions and algorithms of the Oursin model. The user has two ways to modify the automatically computed uncertainties:</p>
 <ol class="arabic simple">
 <li><p>the user can override some of the assumptions in the model using the Advanced Setting tab and then let the model recompute uncertainties based on the new assumptions or</p></li>
@@ -2404,7 +2397,7 @@ values entered in the data table are used for the measurement and transect
 uncertainty computations rather than the automatically determined values.</p>
 </section>
 <section id="contributions-to-meas-q-uncertainty">
-<h4>16.1.2 Contributions to Meas. Q Uncertainty<a class="headerlink" href="#contributions-to-meas-q-uncertainty" title="Permalink to this heading">#</a></h4>
+<h4>16.1.2 Contributions to Meas. Q Uncertainty<a class="headerlink" href="#contributions-to-meas-q-uncertainty" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/unc_contr_measq.png" /></p>
 <p>The Contributions to Meas. Q Uncertainty graph shows the relative
 contribution of the boat velocity, water velocity, and depth cell size
@@ -2417,7 +2410,7 @@ measured discharge may contribute very little to the overall uncertainty
 and thus the water mode or measured portion of the discharge is of little concern.</p>
 </section>
 <section id="contributions-to-measurement-uncertainty">
-<h4>16.1.3 Contributions to Measurement Uncertainty<a class="headerlink" href="#contributions-to-measurement-uncertainty" title="Permalink to this heading">#</a></h4>
+<h4>16.1.3 Contributions to Measurement Uncertainty<a class="headerlink" href="#contributions-to-measurement-uncertainty" title="Permalink to this headline">#</a></h4>
 <p><img alt="" src="../_images/unc_contr_meas.png" /></p>
 <p>The Contributions to Measurement Uncertainty graph is a stacked bar graph
 showing the relative contributions of uncertainty by source for each
@@ -2431,7 +2424,7 @@ variability in the uncertainty sources among transects can be evaluated.</p>
 </section>
 </section>
 <section id="advanced-settings">
-<h3>16.2 ADVANCED SETTINGS<a class="headerlink" href="#advanced-settings" title="Permalink to this heading">#</a></h3>
+<h3>16.2 ADVANCED SETTINGS<a class="headerlink" href="#advanced-settings" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/unc_settings.png" /></p>
 <p>The Advanced Settings tab displays the default values for settings used in
 the uncertainty simulations. The user can override the default settings by
@@ -2454,21 +2447,21 @@ depths is less than 2.50 m and then the default value is 0.02. The value is used
 </ul>
 </section>
 <section id="id40">
-<h3>16.3 MESSAGES<a class="headerlink" href="#id40" title="Permalink to this heading">#</a></h3>
+<h3>16.3 MESSAGES<a class="headerlink" href="#id40" title="Permalink to this headline">#</a></h3>
 <p>The Messages tab has two panels. The top panel shows any messages generated
 by the ADQA associated with the uncertainty computations. The bottom panel
 shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="map">
-<h2>17. MAP<a class="headerlink" href="#map" title="Permalink to this heading">#</a></h2>
+<h2>17. MAP<a class="headerlink" href="#map" title="Permalink to this headline">#</a></h2>
 <p><img alt="" src="../_images/map_tab.png" /></p>
 <p>The Multitransect Average Profile (MAP) tab allows the user to view the
 measurement data projected and averaged. The data displayed on the plot can
 be toggled using the radio buttons above the plot. The current options are
 contour, bathymetry, temperature, and stick ship.</p>
 <section id="id41">
-<h3>17.1 Options<a class="headerlink" href="#id41" title="Permalink to this heading">#</a></h3>
+<h3>17.1 Options<a class="headerlink" href="#id41" title="Permalink to this headline">#</a></h3>
 <p><img alt="" src="../_images/map_options.png" /></p>
 <p>The data displayed can be further customized by changing the settings in
 the options section of tab.</p>
@@ -2494,7 +2487,7 @@ enables the interpolation of missing data.</p>
 </section>
 </section>
 <section id="references">
-<h2>18. REFERENCES<a class="headerlink" href="#references" title="Permalink to this heading">#</a></h2>
+<h2>18. REFERENCES<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>
 <p>Despax, A., Le Coz, J., Hauet, A., Mueller, D. S., Engel, F.
 L., Blanquart, B., … Oberg, K. A., 2019, Decomposition of uncertainty sources in acoustic Doppler current profiler streamflow measurements using repeated measures experiments. Water Resources Research.</p>
 <p>Despax, A., Le Coz, J., Mueller, D.S., Naudet, G., Pierrefeu, G., Delamarre, K., Moore, S.A., and Jamieson, E.C., 2021, DRAFT, Empirical vs analytical methods for modeling the uncertainty of ADCP discharge measurements.</p>
@@ -2511,7 +2504,7 @@ L., Blanquart, B., … Oberg, K. A., 2019, Decomposition of uncertainty sources 
 <p>Oberg, K., &amp; Mueller, D., 2007, Validation of streamflow measurements made with acoustic Doppler current profilers. Journal of Hydraulic Engineering, 133 (12), 1421-1432.</p>
 </section>
 <section id="appendix-1agency-custom-configuration">
-<h2>APPENDIX 1—AGENCY CUSTOM CONFIGURATION<a class="headerlink" href="#appendix-1agency-custom-configuration" title="Permalink to this heading">#</a></h2>
+<h2>APPENDIX 1—AGENCY CUSTOM CONFIGURATION<a class="headerlink" href="#appendix-1agency-custom-configuration" title="Permalink to this headline">#</a></h2>
 <p>QRev has options that may not be used or recommended by every agency making
 use of QRev. To avoid confusing users with options they haven’t been
 trained with and perhaps shouldn’t use based on agency policy, QRev uses a
@@ -2643,10 +2636,11 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 
               
               
-              
-              
-                <footer class="prev-next-footer">
-                  <!-- Previous / next buttons -->
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="../index.html"
@@ -2666,7 +2660,10 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
+</div></div>
+  
 </div>
+
                 </footer>
               
             </div>
@@ -2713,6 +2710,7 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#wt-bt-filters">2.3.3.9 WT, BT Filters</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainty">2.3.3.10 Uncertainty</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#moving-bed">2.3.3.11 Moving Bed</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#map-tab">2.3.3.12 MAP Tab</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comment">2.3.4 Comment</a></li>
@@ -2944,8 +2942,8 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
 
   <footer class="bd-footer">
   </footer>
