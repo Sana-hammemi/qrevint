@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html >
+<html lang="en" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Technical Manual &#8212; Python  documentation</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -33,13 +33,13 @@
     <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'source/technical';</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -47,7 +47,7 @@
     <link rel="next" title="QRev Change Log" href="changelog.html" />
     <link rel="prev" title="User Manual" href="user.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="None"/>
+  <meta name="docsearch:language" content="en"/>
   </head>
   
   
@@ -56,6 +56,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -239,12 +248,16 @@
 </ul>
 </div>
         <div class="sidebar-primary-item">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="user.html"
-                        title="previous chapter">User Manual</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="changelog.html"
-                        title="next chapter">QRev Change Log</a></p></div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="user.html"
+                          title="previous chapter">User Manual</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="changelog.html"
+                          title="next chapter">QRev Change Log</a></p>
+  </div></div>
         <div class="sidebar-primary-item">
   <div class="tocsection sourcelink">
     <a href="../_sources/source/technical.md">
@@ -358,10 +371,10 @@
 
 <script>
 document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
   </button>
 `);
 </script>
@@ -369,7 +382,7 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -527,10 +540,10 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section id="technical-manual">
-<h1>Technical Manual<a class="headerlink" href="#technical-manual" title="Permalink to this headline">#</a></h1>
+<h1>Technical Manual<a class="headerlink" href="#technical-manual" title="Permalink to this heading">#</a></h1>
 <p><img alt="" src="../_images/conversion_factors.png" /></p>
 <section id="abstract">
-<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this headline">#</a></h2>
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this heading">#</a></h2>
 <p>The software program, QRev applies common and consistent computational
 algorithms combined with automated filtering and quality assessment of the
 data to improve the quality and efficiency of streamflow measurements and
@@ -546,7 +559,7 @@ extensible markup language (XML) file that can be imported into databases
 or electronic field notes software.</p>
 </section>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">#</a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
 <p>The use of acoustic Doppler current profilers (ADCPs) from a moving boat is
 a commonly used method for measuring streamflow or discharge. The
 development of the ADCP has provided hydrographers and hydrologists with a
@@ -573,7 +586,7 @@ measurement. QRev saves an extensible markup language (XML) file that can
 be combined with field notes collected in SVMAQ to facilitate efficient
 loading of results into USGS databases.</p>
 <section id="purpose-and-scope">
-<h3>Purpose and Scope<a class="headerlink" href="#purpose-and-scope" title="Permalink to this headline">#</a></h3>
+<h3>Purpose and Scope<a class="headerlink" href="#purpose-and-scope" title="Permalink to this heading">#</a></h3>
 <p>The purpose of this report is to document the algorithms used to process,
 filter, and interpolate the ADCP data; check the measurement for potential
 quality issues; compute discharge; and estimate the uncertainty of the
@@ -581,7 +594,7 @@ measurement.</p>
 </section>
 </section>
 <section id="description-of-software">
-<h2>Description of Software<a class="headerlink" href="#description-of-software" title="Permalink to this headline">#</a></h2>
+<h2>Description of Software<a class="headerlink" href="#description-of-software" title="Permalink to this heading">#</a></h2>
 <p>QRev was originally developed using Matlab and compiled for release in 2015
 using Matlab version 2015b and compiler and runtime libraries version 9.0.
 QRev has been ported to Python with improvements to the user interface and
@@ -625,7 +638,7 @@ process that particular aspect of the data. Details on the various windows
 are discussed in the QRev User’s Manual.</p>
 </section>
 <section id="data-processing-algorithms">
-<h2>Data Processing Algorithms<a class="headerlink" href="#data-processing-algorithms" title="Permalink to this headline">#</a></h2>
+<h2>Data Processing Algorithms<a class="headerlink" href="#data-processing-algorithms" title="Permalink to this heading">#</a></h2>
 <p>Before velocity and depth data measured by the ADCP can be used to compute
 discharge, these data must be processed. The processing includes
 transforming the data into Earth coordinates, filtering the data to
@@ -642,7 +655,7 @@ accuracy and efficiency when compared to the current approaches used by the
 manufacturer. A summary of the differences in data processing among
 WinRiver II, RiverSurveyor Live, and QRev is listed in Table 1.</p>
 <section id="computing-discharge-from-invalid-data">
-<h3>Computing Discharge from Invalid Data<a class="headerlink" href="#computing-discharge-from-invalid-data" title="Permalink to this headline">#</a></h3>
+<h3>Computing Discharge from Invalid Data<a class="headerlink" href="#computing-discharge-from-invalid-data" title="Permalink to this heading">#</a></h3>
 <p>WinRiver II provides the user the ability to filter data that appear to be
 erroneous by manually setting the parameters of several different types of
 filters. Properly setting these parameters requires some experience and may
@@ -686,7 +699,7 @@ handling of invalid data.</p>
 <p><img alt="" src="../_images/Table_1.png" /></p>
 </section>
 <section id="coordinate-transformation">
-<h3>Coordinate Transformation<a class="headerlink" href="#coordinate-transformation" title="Permalink to this headline">#</a></h3>
+<h3>Coordinate Transformation<a class="headerlink" href="#coordinate-transformation" title="Permalink to this heading">#</a></h3>
 <p>Coordinate transformation is required to transform the raw data collected by the ADCP
 into orthogonal coordinates that are more convenient for the user. The Doppler shift is along
 (parallel to) the acoustic beams. Thus, the ADCP measures velocity vectors parallel to the four
@@ -737,7 +750,7 @@ coordinates is then calculated in the usual way using the first three rows
 of the instrument transformation matrix.</p>
 </section>
 <section id="boat-velocity">
-<h3>Boat Velocity<a class="headerlink" href="#boat-velocity" title="Permalink to this headline">#</a></h3>
+<h3>Boat Velocity<a class="headerlink" href="#boat-velocity" title="Permalink to this heading">#</a></h3>
 <p>To compute the water velocity, the velocity of the ADCP traversing the
 stream must be measured. Because the ADCP is typically deployed on a boat
 manned or tethered, the velocity of the ADCP is often referred to as the
@@ -749,7 +762,7 @@ boat velocity references if the composite tracks function is turned on.
 Although the filters for the various boat velocity references are different,
 the interpolation algorithm for invalid data is the same.</p>
 <section id="bottom-track-filters">
-<h4>Bottom Track Filters<a class="headerlink" href="#bottom-track-filters" title="Permalink to this headline">#</a></h4>
+<h4>Bottom Track Filters<a class="headerlink" href="#bottom-track-filters" title="Permalink to this heading">#</a></h4>
 <p>QRev includes the same filters used by WinRiver II: three-beam solutions,
 error velocity, and vertical velocity. Unlike WinRiver II where these
 filters must be set manually, QRev automatically determines the appropriate
@@ -757,7 +770,7 @@ thresholds and applies the filters to data collected by either TRDI or
 SonTek ADCPs. In addition, QRev implements an outlier detection method.</p>
 </section>
 <section id="beam-filter">
-<h4>Beam Filter<a class="headerlink" href="#beam-filter" title="Permalink to this headline">#</a></h4>
+<h4>Beam Filter<a class="headerlink" href="#beam-filter" title="Permalink to this heading">#</a></h4>
 <p>Current (2020) TRDI and SonTek ADCPs are based on a four-beam Janus
 configuration. Most bottom track velocity solutions will use all four beams,
 although three beams are all that is required to compute u, v, and w
@@ -779,7 +792,7 @@ velocities is not within +/- 50 percent of the respective components for
 the four-beam velocities, the three-beam velocity is marked invalid.</p>
 </section>
 <section id="error-velocity">
-<h4>Error Velocity<a class="headerlink" href="#error-velocity" title="Permalink to this headline">#</a></h4>
+<h4>Error Velocity<a class="headerlink" href="#error-velocity" title="Permalink to this heading">#</a></h4>
 <p>QRev applies equation 4 to data from TRDI and SonTek ADCPs and uses the
 results of the equation to identify and mark erroneous data invalid.
 Horizontal velocities in an ensemble where the error velocities are outside
@@ -802,7 +815,7 @@ measurement. Using the entire measurement results in a threshold for each
 ping type.</p>
 </section>
 <section id="vertical-velocity">
-<h4>Vertical Velocity<a class="headerlink" href="#vertical-velocity" title="Permalink to this headline">#</a></h4>
+<h4>Vertical Velocity<a class="headerlink" href="#vertical-velocity" title="Permalink to this heading">#</a></h4>
 <p>Typically, ADCPs deployed on a boat, manned or tethered, traversing a
 stream would have little or no vertical boat velocity relative to the
 streambed, except for that caused by wave action. On average, assuming that
@@ -816,7 +829,7 @@ of the assumptions is invalid. QRev applies the same approach to filtering
 vertical boat velocity as that described for error velocity.</p>
 </section>
 <section id="other-outlier-identification-methods">
-<h4>Other Outlier Identification Methods<a class="headerlink" href="#other-outlier-identification-methods" title="Permalink to this headline">#</a></h4>
+<h4>Other Outlier Identification Methods<a class="headerlink" href="#other-outlier-identification-methods" title="Permalink to this heading">#</a></h4>
 <p>The boat velocity for a transect is a time series of velocities. The
 variation in velocity from one ensemble to the next is a function of the
 time between ensembles and boat operation. A best practice for measuring
@@ -831,7 +844,7 @@ filter is not applied automatically and defaults to off. Other algorithms
 that are more robust may be researched and included in future releases.</p>
 </section>
 <section id="computing-boat-velocity-from-gga-data">
-<h4>Computing Boat Velocity from GGA Data<a class="headerlink" href="#computing-boat-velocity-from-gga-data" title="Permalink to this headline">#</a></h4>
+<h4>Computing Boat Velocity from GGA Data<a class="headerlink" href="#computing-boat-velocity-from-gga-data" title="Permalink to this heading">#</a></h4>
 <p>The GGA sentence is defined by the NMEA 0183 standard (National Marine Electronics
 Association, 2002) and contains the time, horizontal position, differential quality, measure of
 horizontal dilution of precision, and altitude among other variables. The boat velocity is
@@ -847,7 +860,7 @@ algorithms used in QRev. QRev is using the TRDI equations for consistency with p
 measurements.</p>
 </section>
 <section id="gga-filters">
-<h4>GGA Filters<a class="headerlink" href="#gga-filters" title="Permalink to this headline">#</a></h4>
+<h4>GGA Filters<a class="headerlink" href="#gga-filters" title="Permalink to this heading">#</a></h4>
 <p>Use of differentiated position requires accurate position solutions. The accuracy of the
 position data is affected by the differential correction applied to the data, the configuration of the
 satellites, and the path of the signal from the satellite to the GPS antenna (multipath).</p>
@@ -867,7 +880,7 @@ one or greater, two or greater, and four or greater. The default is two or
 greater. Any position that does not meet or exceed the quality setting is
 marked invalid.</p>
 <section id="altitude-filter">
-<h5>Altitude Filter<a class="headerlink" href="#altitude-filter" title="Permalink to this headline">#</a></h5>
+<h5>Altitude Filter<a class="headerlink" href="#altitude-filter" title="Permalink to this heading">#</a></h5>
 <p>Data collected from a boat traversing a stream should have a nearly
 constant altitude, excepting vertical movement because of wave action,
 which for inland waterways is typically minimal. Thus, the altitude
@@ -909,12 +922,12 @@ criteria. The user can change the filter to manual and adjust the HDOP and
 the change in HDOP thresholds or turn the filter off.</p>
 </section>
 <section id="id1">
-<h5>Other Outlier Identification Methods<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h5>
+<h5>Other Outlier Identification Methods<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h5>
 <p>The same outlier identification methods discussed in “Bottom Track Filters” can be applied to boat velocities referenced to GGA. This filter is not applied automatically and defaults to off.</p>
 </section>
 </section>
 <section id="vtg-filters">
-<h4>VTG Filters<a class="headerlink" href="#vtg-filters" title="Permalink to this headline">#</a></h4>
+<h4>VTG Filters<a class="headerlink" href="#vtg-filters" title="Permalink to this heading">#</a></h4>
 <p>The velocity reported in the NMEA VTG sentence contains only a velocity and
 direction. The velocity is typically based on measured Doppler shifts in
 the satellite signals, but some receivers may use differentiation of
@@ -928,21 +941,21 @@ by differential corrections. This velocity measurement can be robust
 because it is resistant to some of the errors that are problematic for
 position determination, such as multipath errors.</p>
 <section id="horizontal-dilution-of-precision-hdop">
-<h5>Horizontal Dilution of Precision (HDOP)<a class="headerlink" href="#horizontal-dilution-of-precision-hdop" title="Permalink to this headline">#</a></h5>
+<h5>Horizontal Dilution of Precision (HDOP)<a class="headerlink" href="#horizontal-dilution-of-precision-hdop" title="Permalink to this heading">#</a></h5>
 <p>The geometry of the satellites affects the accuracy of the velocity
 measured by the Doppler shift. The VTG sentence does not provide any data
 quality parameters. If the GGA sentence is available, QRev applies the same
 HDOP filtering to VTG data as described for GGA data.</p>
 </section>
 <section id="id2">
-<h5>Other Outlier Identification Methods<a class="headerlink" href="#id2" title="Permalink to this headline">#</a></h5>
+<h5>Other Outlier Identification Methods<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h5>
 <p>The same outlier identification methods discussed in “Bottom Track Filters”
 can be applied to boat velocities referenced to VTG. This filter is not
 applied automatically and defaults to off.</p>
 </section>
 </section>
 <section id="interpolation">
-<h4>Interpolation<a class="headerlink" href="#interpolation" title="Permalink to this headline">#</a></h4>
+<h4>Interpolation<a class="headerlink" href="#interpolation" title="Permalink to this heading">#</a></h4>
 <p>Linear interpolation is used to estimate boat velocities that have been
 determined to be invalid. The same interpolation algorithm is used for boat
 velocities referenced to bottom track, GGA, and VTG. Linear interpolation
@@ -951,7 +964,7 @@ independent variable. QRev maintains a record of the source of the velocity
 so that those velocities that have been interpolated are easily identified.</p>
 </section>
 <section id="composite-tracks">
-<h4>Composite Tracks<a class="headerlink" href="#composite-tracks" title="Permalink to this headline">#</a></h4>
+<h4>Composite Tracks<a class="headerlink" href="#composite-tracks" title="Permalink to this heading">#</a></h4>
 <p>Composite tracks allows use of one of the other available boat velocity
 references to replace invalid data in the primary boat velocity data.
 RiverSurveyor Live implements composite tracks as listed in table 2. QRev
@@ -969,7 +982,7 @@ tracks are enabled. [BT, bottom track, RTK, real-time kinematic]</p>
 </section>
 </section>
 <section id="depths">
-<h3>Depths<a class="headerlink" href="#depths" title="Permalink to this headline">#</a></h3>
+<h3>Depths<a class="headerlink" href="#depths" title="Permalink to this heading">#</a></h3>
 <p>The depth from water surface to streambed used to compute discharge is
 determined from the draft of the ADCP and either from the average of the
 four beam depths from the four slant beams (referred to hereafter as BT) or
@@ -999,7 +1012,7 @@ Teledyne RD Instruments, 2014). QRev uses the IDW average computed using
 the following equations:</p>
 <p><img alt="" src="../_images/idw_equations.png" /></p>
 <section id="filters">
-<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">#</a></h4>
+<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this heading">#</a></h4>
 <p>Depths from individual beams, whether slant beams or the vertical beam, occasionally
 contain spikes in the measured depth. These spikes may be shallow and caused by aquatic life or
 by debris somewhere in the water column. These spikes may also be deep and caused by the
@@ -1034,26 +1047,26 @@ user. Other algorithms that are more robust may be researched and included
 in future releases.</p>
 </section>
 <section id="id3">
-<h4>Interpolation<a class="headerlink" href="#id3" title="Permalink to this headline">#</a></h4>
+<h4>Interpolation<a class="headerlink" href="#id3" title="Permalink to this heading">#</a></h4>
 <p>QRev uses linear interpolation to estimate beam depths for any data determined to be invalid. The linear interpolation is applied to each beam prior to computing the average depth for an ensemble. The independent variable in the linear interpolation is the cumulative length along the transect path.</p>
 </section>
 </section>
 <section id="composite-depths">
-<h3>Composite Depths<a class="headerlink" href="#composite-depths" title="Permalink to this headline">#</a></h3>
+<h3>Composite Depths<a class="headerlink" href="#composite-depths" title="Permalink to this heading">#</a></h3>
 <p>Composite depths allows the use of the depth from a secondary depth source when the depth from the primary source is invalid. Composite depths is available for TRDI ADCPs equipped with a vertical beam (RiverRay and RiverPro). TRDI’s implementation gives first preference to the vertical beam, then to the depth sounder (if available), and then to the average of the four slant beams (Teledyne RD Instruments, 2014). This setting is the default setting in WinRiver II. SonTek’s implementation of composite depths does not support an external depth sounder and allows the user to select the primary reference (average of the four slant beams or the vertical beam) and sets the other as the secondary reference (SonTek, 2015). QRev extends the manufacturers’ implementations to support user selection of the primary reference and to include the external depth sounder and linearly interpolated depths as other options (table 4). If data from an external depth sounder are available, QRev assumes that the user had a good reason for collecting data with the depth sounder; therefore, depth sounder data (if not selected as primary) are assumed as the first option. If none of the available depth sources provide a valid depth, QRev will use a value determined from linear interpolation of the valid composite depths.</p>
 <p><strong>Table 4.</strong> QRev priority for composite depths. [BT, average depth from four
 slant beams; DS, depth from external depth sounder; VB, depth from vertical beam]</p>
 <p><img alt="" src="../_images/table_4.png" /></p>
 </section>
 <section id="water-track">
-<h3>Water Track<a class="headerlink" href="#water-track" title="Permalink to this headline">#</a></h3>
+<h3>Water Track<a class="headerlink" href="#water-track" title="Permalink to this heading">#</a></h3>
 <p>Water track data can only be processed after valid depths and boat
 velocities have been determined. The valid depths are used to determine the
 location of the side lobe cutoff. The boat velocity is used to compute a
 water velocity relative to a fixed reference rather than a moving
 boat. Finally, the water velocities are filtered, and invalid data interpolated.</p>
 <section id="side-lobe-cutoff">
-<h4>Side Lobe Cutoff<a class="headerlink" href="#side-lobe-cutoff" title="Permalink to this headline">#</a></h4>
+<h4>Side Lobe Cutoff<a class="headerlink" href="#side-lobe-cutoff" title="Permalink to this heading">#</a></h4>
 <p>An ADCP cannot measure the water velocity near the streambed because of side-lobe
 interference (fig. 2). Most transducers that are developed using current (2020) technology emit
 parasitic side lobes off of the main acoustic beam. The magnitude of the energy in a side lobe
@@ -1091,7 +1104,7 @@ and TRDI allow the user to specify additional bins above the side lobe to be mar
 feature is not supported in QRev but will be considered for a future release.</p>
 </section>
 <section id="id4">
-<h4>Filters<a class="headerlink" href="#id4" title="Permalink to this headline">#</a></h4>
+<h4>Filters<a class="headerlink" href="#id4" title="Permalink to this heading">#</a></h4>
 <p>QRev includes the same water track filters used by WinRiver II—three-beam
 solutions, error velocity, and vertical velocity and in addition, a
 signal-to-noise ratio (SNR) filter. QRev defaults to an automated
@@ -1100,7 +1113,7 @@ vertical velocity filters are applied to the water velocity in individual
 depth cells. The SNR filter is only applied to SonTek data and is applied
 to an ensemble.</p>
 <section id="id5">
-<h5>Beam Filter<a class="headerlink" href="#id5" title="Permalink to this headline">#</a></h5>
+<h5>Beam Filter<a class="headerlink" href="#id5" title="Permalink to this heading">#</a></h5>
 <p>Current (2015) TRDI and SonTek ADCPs are based on a four-beam Janus
 configuration. Most water track velocity solutions will use all four beams,
 although only three beams are required to compute u, v, and w velocities in
@@ -1124,7 +1137,7 @@ from interpolation, the three-beam velocity is assumed valid, if not, the
 three-beam velocity is marked invalid.</p>
 </section>
 <section id="id6">
-<h5>Error Velocity<a class="headerlink" href="#id6" title="Permalink to this headline">#</a></h5>
+<h5>Error Velocity<a class="headerlink" href="#id6" title="Permalink to this heading">#</a></h5>
 <p>QRev applies equation 4 to water velocities in individual depth cells for
 TRDI and SonTek data and uses the equation to identify and mark erroneous
 data invalid. Horizontal velocities in a depth cell where the error
@@ -1153,7 +1166,7 @@ measurement. Using the entire measurement results in a single threshold for
 each ping type.</p>
 </section>
 <section id="id7">
-<h5>Vertical Velocity<a class="headerlink" href="#id7" title="Permalink to this headline">#</a></h5>
+<h5>Vertical Velocity<a class="headerlink" href="#id7" title="Permalink to this heading">#</a></h5>
 <p>Generally, the vertical velocities in a cross-section would average to zero;
 however, depending on channel configuration and proximity to hydraulic
 structures, this assumption may not be valid. Because vertical velocities
@@ -1167,7 +1180,7 @@ velocities. If significant real variations exist in the vertical velocity,
 the data may be better represented by turning off the vertical filter.</p>
 </section>
 <section id="flow-disturbance">
-<h5>Flow Disturbance<a class="headerlink" href="#flow-disturbance" title="Permalink to this headline">#</a></h5>
+<h5>Flow Disturbance<a class="headerlink" href="#flow-disturbance" title="Permalink to this heading">#</a></h5>
 <p>The immersion of the ADCP into the flowing water and the boat and mount
 used to deploy the ADCP will create a disturbed flow field around the ADCP
 that no longer represents the free stream velocities (Mueller and others,
@@ -1193,7 +1206,7 @@ of 0.25 meters so QRev automatically sets the excluded distance to 0.25
 meters for the RioPro.</p>
 </section>
 <section id="signal-to-noise-ratio-filter">
-<h5>Signal-to-Noise Ratio Filter<a class="headerlink" href="#signal-to-noise-ratio-filter" title="Permalink to this headline">#</a></h5>
+<h5>Signal-to-Noise Ratio Filter<a class="headerlink" href="#signal-to-noise-ratio-filter" title="Permalink to this heading">#</a></h5>
 <p>Air entrainment beneath the SonTek RiverSurveyor ADCPs can cause the
 effective beam angles to deviate from the actual angles, and experience has
 indicated that this deviation often results in measured velocities and
@@ -1224,7 +1237,7 @@ ensembles where one beam is marked invalid due to the SNR filter.</p>
 </section>
 </section>
 <section id="id8">
-<h4>Interpolation<a class="headerlink" href="#id8" title="Permalink to this headline">#</a></h4>
+<h4>Interpolation<a class="headerlink" href="#id8" title="Permalink to this heading">#</a></h4>
 <p>QRev interpolates water velocity data that have been determined to be invalid by using a different approach than that used by the manufacturers. There are no interpolation algorithms in RiverSurveyor Live for water data. TRDI in WinRiver II does not interpolate water velocities but accounts for the invalid data by interpolating or extrapolating the cross product of the water and boat velocities used in the discharge computation (see “Computing Discharge from Invalid Data” section). QRev uses a different approach for estimating water velocities. Previous Matlab based versions of QRev used a two-dimensional linear interpolation method called scatteredInterpolant, which is available in Matlab version 2015b, in combination with TRDI’s approach for invalid data at the top and bottom of the profile. QRev 4.xx uses a purpose-built interpolation method called ABBA (above, below, before, after). The velocity for all depth cells with invalid velocities between the bottom of the blank or excluded distance and the side lobe cutoff are estimated using the abba method.</p>
 <p><img alt="" src="../_images/figure_3.png" /></p>
 <p><strong>Figure 3.</strong> Example of air entrainment partially blocking the acoustic
@@ -1252,7 +1265,7 @@ not logically be considered a neighbor.</p>
 </section>
 </section>
 <section id="extrapolation-methods">
-<h3>Extrapolation Methods<a class="headerlink" href="#extrapolation-methods" title="Permalink to this headline">#</a></h3>
+<h3>Extrapolation Methods<a class="headerlink" href="#extrapolation-methods" title="Permalink to this heading">#</a></h3>
 <p>The ADCP is unable to measure the water column (fig. 4). Near the water
 surface, an unmeasured zone is associated with the immersion of the ADCP
 into the water and a distance below the transducers where valid data cannot
@@ -1425,7 +1438,7 @@ logic to automatically select a three-point fit for the top.</p>
 </section>
 </section>
 <section id="discharge-computation">
-<h2>Discharge Computation<a class="headerlink" href="#discharge-computation" title="Permalink to this headline">#</a></h2>
+<h2>Discharge Computation<a class="headerlink" href="#discharge-computation" title="Permalink to this heading">#</a></h2>
 <p>The discharge computed by an ADCP is a summation of the measured portion of the
 cross-section and extrapolated discharge estimates for unmeasured portions of the cross-section
 at the top, bottom, and both edges (fig. 4). The discharge for the measured, top, and bottom
@@ -1439,7 +1452,7 @@ RD Instruments, 2014; SonTek, 2003) and are mostly consistent among the
 manufacturers;
 therefore, only a brief summary is provided herein.</p>
 <section id="measured-discharge">
-<h3>Measured Discharge<a class="headerlink" href="#measured-discharge" title="Permalink to this headline">#</a></h3>
+<h3>Measured Discharge<a class="headerlink" href="#measured-discharge" title="Permalink to this heading">#</a></h3>
 <p>The measured discharge is computed using the cross product of the water and boat velocities.
 The equation for discharge in each depth cell, bin Q , can be written in terms of the water- and boatvelocity
 vector components as follows:</p>
@@ -1450,7 +1463,7 @@ vector components as follows:</p>
 data are available to apply equation 19.</p>
 </section>
 <section id="top-discharge">
-<h3>Top Discharge<a class="headerlink" href="#top-discharge" title="Permalink to this headline">#</a></h3>
+<h3>Top Discharge<a class="headerlink" href="#top-discharge" title="Permalink to this heading">#</a></h3>
 <p>The top discharge is computed using the selected top extrapolation method—constant,
 power, or three-point fit. The extrapolation method for computing the top discharge can be
 applied to the individual velocity components (approach used by SonTek) or to the cross product
@@ -1458,7 +1471,7 @@ from equation 19 (approach used by TRDI). Both approaches are mathematically ide
 uses the cross product; therefore, only the equations associated with that approach are presented
 herein.</p>
 <section id="constant">
-<h4>Constant<a class="headerlink" href="#constant" title="Permalink to this headline">#</a></h4>
+<h4>Constant<a class="headerlink" href="#constant" title="Permalink to this heading">#</a></h4>
 <p>The simplest assumption for estimating the top discharge is to assume that the velocity
 (cross product) in the topmost valid depth cell is a good estimate of the mean velocity between
 that depth cell and the water surface. This method is typically referred to as the constant
@@ -1468,7 +1481,7 @@ extrapolation method as follows:</p>
 velocity profile exists through the measured portion of the water column.</p>
 </section>
 <section id="power">
-<h4>Power<a class="headerlink" href="#power" title="Permalink to this headline">#</a></h4>
+<h4>Power<a class="headerlink" href="#power" title="Permalink to this heading">#</a></h4>
 <p>The power fit is based on the power law (Chen, 1989). The power-law equation is
 represented in terms of the cross product as follows:</p>
 <p><img alt="" src="../_images/equ_22.png" /></p>
@@ -1479,7 +1492,7 @@ depth cell with valid water velocities as follows:</p>
 <p><img alt="" src="../_images/equ_23.png" /></p>
 </section>
 <section id="three-point-fit">
-<h4>Three-Point Fit<a class="headerlink" href="#three-point-fit" title="Permalink to this headline">#</a></h4>
+<h4>Three-Point Fit<a class="headerlink" href="#three-point-fit" title="Permalink to this heading">#</a></h4>
 <p>QRev uses the TRDI implementation of the three-point fit method for the top
 extrapolation. This method uses the top three bins to estimate a slope, and this slope is then
 applied from the top bin to the water surface. A constant value or slope of zero is assumed if less
@@ -1488,7 +1501,7 @@ than six bins are present in the profile (Teledyne RD Instruments, 2014).</p>
 </section>
 </section>
 <section id="bottom-discharge">
-<h3>Bottom Discharge<a class="headerlink" href="#bottom-discharge" title="Permalink to this headline">#</a></h3>
+<h3>Bottom Discharge<a class="headerlink" href="#bottom-discharge" title="Permalink to this heading">#</a></h3>
 <p>ADCPs cannot measure the water velocity near the streambed because of side-lobe
 interference. Unlike the top discharge estimation problem where the velocity at the water surface
 is not known, the water velocity at the streambed is somewhat known. Fluid mechanics theory
@@ -1504,7 +1517,7 @@ to depth cells in the bottom 20 percent of the profile, or in the absence of val
 bottom 20 percent, the last valid depth cell is used to compute a .</p>
 </section>
 <section id="edge-discharge">
-<h3>Edge Discharge<a class="headerlink" href="#edge-discharge" title="Permalink to this headline">#</a></h3>
+<h3>Edge Discharge<a class="headerlink" href="#edge-discharge" title="Permalink to this heading">#</a></h3>
 <p>The unmeasured discharge at the edges of the stream is estimated using a ratio
 interpolation method documented by Fulford and Sauer (1986), which can be used to estimate a
 velocity at an unmeasured location between the riverbank and the first or last measured velocity
@@ -1566,7 +1579,7 @@ edge. The user is presented a warning in such cases and can manually adjust the 
 ensembles.</p>
 </section>
 <section id="discharge-for-invalid-data">
-<h3>Discharge for Invalid Data<a class="headerlink" href="#discharge-for-invalid-data" title="Permalink to this headline">#</a></h3>
+<h3>Discharge for Invalid Data<a class="headerlink" href="#discharge-for-invalid-data" title="Permalink to this heading">#</a></h3>
 <p>The discharge for ensembles with invalid data is computed from the interpolated values
 of boat velocity, depth, and water velocity. By interpolating these basic variables, the discharge
 is computed rather than interpolated. Boat velocity, depth, and water velocity are never
@@ -1581,7 +1594,7 @@ the depth and duration of those ensembles to achieve discharge for those ensembl
 </section>
 </section>
 <section id="measurement-quality-assessment">
-<h2>Measurement Quality Assessment<a class="headerlink" href="#measurement-quality-assessment" title="Permalink to this headline">#</a></h2>
+<h2>Measurement Quality Assessment<a class="headerlink" href="#measurement-quality-assessment" title="Permalink to this heading">#</a></h2>
 <p>The person making the discharge measurement is concerned with the quality
 of the data being collected. QRev assists the user by automatically
 checking many quality indicators and providing color coded, symbol coded,
@@ -1599,7 +1612,7 @@ the interpolated ensembles is computed by multiplying the interpolated
 value by the depth and duration of those ensembles to achieve discharge for
 those ensembles.</p>
 <section id="transects">
-<h3>Transects<a class="headerlink" href="#transects" title="Permalink to this headline">#</a></h3>
+<h3>Transects<a class="headerlink" href="#transects" title="Permalink to this heading">#</a></h3>
 <p>The USGS policy is that a measurement be comprised of at least one pair of
 reciprocal transects (two transects) and that the combined duration of all
 transects be at least 720 seconds (Mueller and others, 2013). A single
@@ -1616,7 +1629,7 @@ situations and provides the user feedback as shown in Table 6.</p>
 <p><img alt="" src="../_images/table_6.png" /></p>
 </section>
 <section id="system-test">
-<h3>System Test<a class="headerlink" href="#system-test" title="Permalink to this headline">#</a></h3>
+<h3>System Test<a class="headerlink" href="#system-test" title="Permalink to this heading">#</a></h3>
 <p>The USGS policy is that a system test be completed prior to making a
 discharge measurement with an ADCP (Mueller and others, 2013). System test
 results for TRDI ADCPs are typically stored in the*.mmt file and for SonTek
@@ -1630,7 +1643,7 @@ identified by date and time, or if loaded manually, the results will be identifi
 <p><img alt="" src="../_images/table_7.png" /></p>
 </section>
 <section id="compass-pitch-and-roll">
-<h3>Compass, Pitch, and Roll<a class="headerlink" href="#compass-pitch-and-roll" title="Permalink to this headline">#</a></h3>
+<h3>Compass, Pitch, and Roll<a class="headerlink" href="#compass-pitch-and-roll" title="Permalink to this heading">#</a></h3>
 <p>Most ADCPs contain an internal compass and procedures for calibrating the
 compass. In addition, some ADCPs have procedures for evaluating the compass
 after an initial calibration. A compass calibration is required if a loop
@@ -1645,7 +1658,7 @@ velocity. The quality checks for the compass, pitch, and roll sensors are
 shown in Table 8.</p>
 </section>
 <section id="water-temperature-validation">
-<h3>Water Temperature Validation<a class="headerlink" href="#water-temperature-validation" title="Permalink to this headline">#</a></h3>
+<h3>Water Temperature Validation<a class="headerlink" href="#water-temperature-validation" title="Permalink to this heading">#</a></h3>
 <p>The accuracy of discharge measurements made with an ADCP is dependent on an
 accurate speed of sound, which is dependent on an accurate water
 temperature. The USGS policy is that an independent water temperature be
@@ -1665,7 +1678,7 @@ degrees Celsius, a warning is issued.</p>
 <p><img alt="" src="../_images/table_9.png" /></p>
 </section>
 <section id="moving-bed-tests">
-<h3>Moving-Bed Tests<a class="headerlink" href="#moving-bed-tests" title="Permalink to this headline">#</a></h3>
+<h3>Moving-Bed Tests<a class="headerlink" href="#moving-bed-tests" title="Permalink to this heading">#</a></h3>
 <p>The USGS policy requires a moving-bed test to be completed for every ADCP
 moving-boat discharge measurement (Mueller and others, 2013). A loop or
 stationary moving-bed test method can be used. The quality assessment of
@@ -1727,7 +1740,7 @@ referenced discharge.</p>
 <p>The general quality assessment uses the selected moving-bed test to set the tab color and symbol and provide messages to the user. The quality checks and messages for moving-bed tests are shown in Table 14.</p>
 </section>
 <section id="user-input">
-<h3>User Input<a class="headerlink" href="#user-input" title="Permalink to this headline">#</a></h3>
+<h3>User Input<a class="headerlink" href="#user-input" title="Permalink to this heading">#</a></h3>
 <p>QRev checks that a station name and station number have been entered. If
 the station name and number are entered in WinRiver II, QRev will read and
 use those values. The Matlab output from SonTek does not provide a station
@@ -1735,7 +1748,7 @@ name and number; therefore, for SonTek ADCPs, the user must enter the
 station name and number manually in QRev.</p>
 </section>
 <section id="measured-discharge-variables">
-<h3>Measured Discharge Variables<a class="headerlink" href="#measured-discharge-variables" title="Permalink to this headline">#</a></h3>
+<h3>Measured Discharge Variables<a class="headerlink" href="#measured-discharge-variables" title="Permalink to this heading">#</a></h3>
 <p>The measured discharge variables are boat velocity, depth, and water
 velocity. For each of these variables, the ensembles with invalid data are
 identified and the discharge is computed for those invalid ensembles based
@@ -1755,7 +1768,7 @@ resulting messages are provided in Tables 15-16.</p>
 <p><img alt="" src="../_images/table_17.png" /></p>
 </section>
 <section id="extrapolation">
-<h3>Extrapolation<a class="headerlink" href="#extrapolation" title="Permalink to this headline">#</a></h3>
+<h3>Extrapolation<a class="headerlink" href="#extrapolation" title="Permalink to this heading">#</a></h3>
 <p>The quality of the extrapolation is based on the extrapolation uncertainty
 (see “Uncertainty Computation” section for details on estimating the
 extrapolation uncertainty). The quality checks and resulting messages are
@@ -1764,7 +1777,7 @@ provided in Table 18.</p>
 <p><img alt="" src="../_images/table_18.png" /></p>
 </section>
 <section id="edges">
-<h3>Edges<a class="headerlink" href="#edges" title="Permalink to this headline">#</a></h3>
+<h3>Edges<a class="headerlink" href="#edges" title="Permalink to this heading">#</a></h3>
 <p>The quality assessment of edges is a combination of USGS policy,
 reasonableness of edge estimates, and consistency. The USGS policy requires
 supporting documentation or data for any edge estimate that exceeds 5
@@ -1775,7 +1788,7 @@ the edges is provided in Table 19.</p>
 </section>
 </section>
 <section id="uncertainty-computation">
-<h2>Uncertainty Computation<a class="headerlink" href="#uncertainty-computation" title="Permalink to this headline">#</a></h2>
+<h2>Uncertainty Computation<a class="headerlink" href="#uncertainty-computation" title="Permalink to this heading">#</a></h2>
 <p>Computing the uncertainty of an ADCP moving-boat discharge measurement is a complex task. Although many researchers have proposed approaches to determining the uncertainty of an ADCP moving-boat discharge measurement, an uncertainty model that has been generally accepted and that can be applied to actual field measurements does not exist. QRev provides two options for estimating the uncertainty of a measurement:</p>
 <ol class="arabic simple">
 <li><p>original QRev model (QRev-UA) based on simple assumptions of what are likely the largest error sources, and</p></li>
@@ -1784,7 +1797,7 @@ the edges is provided in Table 19.</p>
 <p><strong>Table 19.</strong> Edge discharge quality checks and messages.</p>
 <p><img alt="" src="../_images/table_19.png" /></p>
 <section id="qrev-ua">
-<h3>QRev-UA<a class="headerlink" href="#qrev-ua" title="Permalink to this headline">#</a></h3>
+<h3>QRev-UA<a class="headerlink" href="#qrev-ua" title="Permalink to this heading">#</a></h3>
 <p>The approach used in QRev-UA is neither detailed nor comprehensive but is presented as a guide to the user in rating the measurement. QRev assesses the uncertainty based on the following six categories:</p>
 <ol class="arabic simple">
 <li><p>random,</p></li>
@@ -1796,19 +1809,19 @@ the edges is provided in Table 19.</p>
 </ol>
 <p>The approach used to assign the uncertainty to each of these categories is discussed in the following sections.</p>
 <section id="random-uncertainty">
-<h4>Random Uncertainty<a class="headerlink" href="#random-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Random Uncertainty<a class="headerlink" href="#random-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The 95 percent random uncertainty expands the discharge coefficient of variation (QCOV) to a 95 percent level by applying a coverage factor from the Student’s t-distribution based on the number or degrees of freedom and then dividing by the square root of the number of transects. When only two transects comprise a measurement, the theoretical Student’s t approach is abandoned and the 95 percent uncertainty is computed as the QCOV * 3.3.</p>
 </section>
 <section id="invalid-data-uncertainty">
-<h4>Invalid Data Uncertainty<a class="headerlink" href="#invalid-data-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Invalid Data Uncertainty<a class="headerlink" href="#invalid-data-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The 95 percent uncertainty for invalid data is assumed to be 20 percent of the percent discharge for invalid cells and ensembles.</p>
 </section>
 <section id="edge-discharge-uncertainty">
-<h4>Edge Discharge Uncertainty<a class="headerlink" href="#edge-discharge-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Edge Discharge Uncertainty<a class="headerlink" href="#edge-discharge-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The 95 percent uncertainty for the edge discharge is assumed to be 30 percent of the total discharge in the edges. This uncertainty accounts for uncertainty in the edge shape, roughness, distance to shore, depth, and velocity.</p>
 </section>
 <section id="extrapolation-uncertainty">
-<h4>Extrapolation Uncertainty<a class="headerlink" href="#extrapolation-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Extrapolation Uncertainty<a class="headerlink" href="#extrapolation-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The percent extrapolation uncertainty is determined by computing the percent difference in discharge from the selected extrapolation method to other possible extrapolation methods and averaging the best four options. The following is a list of the possible extrapolation methods:</p>
 <ol class="arabic simple">
 <li><p>top power, bottom power, 1/6th exponent;</p></li>
@@ -1821,24 +1834,24 @@ the edges is provided in Table 19.</p>
 </ol>
 </section>
 <section id="moving-bed-test-uncertainty">
-<h4>Moving-Bed Test Uncertainty<a class="headerlink" href="#moving-bed-test-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Moving-Bed Test Uncertainty<a class="headerlink" href="#moving-bed-test-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>If bottom track is not the navigation reference, the percent moving-bed test uncertainty is set to zero. If bottom track is used and a moving-bed test is valid, the percent moving-bed test uncertainty is set to 1 percent if the test indicates no moving bed is present and to 1.5 percent if a moving bed is present. If the moving-bed test is invalid or not completed, the uncertainty is set to 3 percent.</p>
 </section>
 <section id="systematic-uncertainty">
-<h4>Systematic Uncertainty<a class="headerlink" href="#systematic-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Systematic Uncertainty<a class="headerlink" href="#systematic-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>Systematic uncertainty is assumed to be 1.5 percent at one standard deviation.</p>
 </section>
 <section id="estimated-95-percent-uncertainty">
-<h4>Estimated 95 Percent Uncertainty<a class="headerlink" href="#estimated-95-percent-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Estimated 95 Percent Uncertainty<a class="headerlink" href="#estimated-95-percent-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The standard approach to computing the 95 percent uncertainty is to compute the square root of the sum of the squares of the standard deviations of the various sources of uncertainty (assuming independence) and then multiply by two to get a 95 percent value (Joint Committee for Guides in Metrology, 2008). So that the random uncertainty receives the proper coverage factor for the number of transects, each of the categories is estimated at the 95 percent level. The values are then each divided by two before taking the square root of the sum of the squares. Finally, the result is multiplied by two to achieve a 95 percent uncertainty for the measurement. The final value should not be viewed as strictly quantitative but more as a qualitative guide. The algorithms for the various sources of uncertainty are based on approximations and simple assumptions.</p>
 </section>
 <section id="user-override">
-<h4>User Override<a class="headerlink" href="#user-override" title="Permalink to this headline">#</a></h4>
+<h4>User Override<a class="headerlink" href="#user-override" title="Permalink to this heading">#</a></h4>
 <p>QRev allows the user to override the automatic uncertainty values by entering a different value. The user value for that category will then be used to compute the final uncertainty.</p>
 </section>
 </section>
 <section id="oursin">
-<h3>OURSIN<a class="headerlink" href="#oursin" title="Permalink to this headline">#</a></h3>
+<h3>OURSIN<a class="headerlink" href="#oursin" title="Permalink to this heading">#</a></h3>
 <p>OURSIN was first developed by Dramais (2011) and then extended and
 implemented into software (Naudet et al, 2019) for computing the
 uncertainty of measurements acquired with Teledyne RDI ADCPs. OURSIN has
@@ -1848,11 +1861,11 @@ The OURSIN method follows the main steps proposed by the GUM (JCGM, 2008). The l
 the OURSIN method, with their nature (type A or B, Bias, Random or Both) and the method used for their quantification).</p>
 <p><img alt="" src="../_images/table_20.png" /></p>
 <section id="system">
-<h4>System<a class="headerlink" href="#system" title="Permalink to this headline">#</a></h4>
+<h4>System<a class="headerlink" href="#system" title="Permalink to this heading">#</a></h4>
 <p>The discharge uncertainty due to systematic errors (𝑢𝑠𝑦𝑠) accounts for all the residual errors that remain after the ADCP calibration. It is representative of the minimum uncertainty of an ADCP discharge measurement under ideal conditions. Using data from Oberg and Mueller (2007) and Naudet et al. (2019) a systematic uncertainty of 1.31% was estimated for bottom track referenced discharge measurements. This same value is used for GPS referenced discharge measurements.</p>
 </section>
 <section id="compass">
-<h4>Compass<a class="headerlink" href="#compass" title="Permalink to this headline">#</a></h4>
+<h4>Compass<a class="headerlink" href="#compass" title="Permalink to this heading">#</a></h4>
 <p>The potential bias in the discharge due to dynamic compass errors (𝑢𝑐𝑜𝑚𝑝𝑎𝑠𝑠)
 when GPS (GGA or VTG) is used as the navigation reference is computed using
 equation 41 from Mueller (2018) assuming a heading error of 1 degree. The
@@ -1860,17 +1873,17 @@ user can change this assumption in the Advanced Settings tab. The compass
 uncertainty is zero when bottom track is used as the navigation reference.</p>
 </section>
 <section id="moving-bed">
-<h4>Moving-Bed<a class="headerlink" href="#moving-bed" title="Permalink to this headline">#</a></h4>
+<h4>Moving-Bed<a class="headerlink" href="#moving-bed" title="Permalink to this heading">#</a></h4>
 <p>The moving-bed uncertainty (𝑢𝑚𝑏) uses the same assumptions as the original
 QRev-UA. If bottom track is used and a moving-bed test is valid, the moving-bed uncertainty is 0.5 percent if the test indicates no moving bed is present and to 0.75 percent if a moving bed is present. If the moving-bed test is invalid or not completed, the uncertainty is set to 1.5 percent. If bottom track is not the navigation reference, the percent moving-bed test uncertainty is set to zero.</p>
 </section>
 <section id="number-of-ensembles">
-<h4>Number of Ensembles<a class="headerlink" href="#number-of-ensembles" title="Permalink to this headline">#</a></h4>
+<h4>Number of Ensembles<a class="headerlink" href="#number-of-ensembles" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty due to a limited number of ensembles is computed using the equation proposed by Le Coz et al. (2012) as an approximation of the tabulated values proposed by ISO (2009).</p>
 <p><img alt="" src="../_images/equ_35.png" /></p>
 </section>
 <section id="id9">
-<h4>Measured Discharge<a class="headerlink" href="#id9" title="Permalink to this headline">#</a></h4>
+<h4>Measured Discharge<a class="headerlink" href="#id9" title="Permalink to this heading">#</a></h4>
 <p>The measured discharge is that portion of the discharge that is measured in
 valid depth cells and does not include any of the extrapolated areas (top,
 bottom, left edge, or right edge). It is the combination of the random
@@ -1888,7 +1901,7 @@ deviation of the horizontal velocities (Mueller et al., 2013).</p>
 <p><img alt="" src="../_images/equ_40.png" /></p>
 </section>
 <section id="id10">
-<h4>Top Discharge<a class="headerlink" href="#id10" title="Permalink to this headline">#</a></h4>
+<h4>Top Discharge<a class="headerlink" href="#id10" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the top discharge is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 10 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Selected – top discharge using selected extrapolation.</p></li>
@@ -1907,7 +1920,7 @@ deviation of the horizontal velocities (Mueller et al., 2013).</p>
 <p><img alt="" src="../_images/equ_41.png" /></p>
 </section>
 <section id="id11">
-<h4>Bottom Discharge<a class="headerlink" href="#id11" title="Permalink to this headline">#</a></h4>
+<h4>Bottom Discharge<a class="headerlink" href="#id11" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the bottom discharge is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 8 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Selected – bottom discharge using selected extrapolation.</p></li>
@@ -1923,7 +1936,7 @@ deviation of the horizontal velocities (Mueller et al., 2013).</p>
 <p><img alt="" src="../_images/equ_41.png" /></p>
 </section>
 <section id="left-discharge">
-<h4>Left Discharge<a class="headerlink" href="#left-discharge" title="Permalink to this headline">#</a></h4>
+<h4>Left Discharge<a class="headerlink" href="#left-discharge" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the left edge discharge is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 5 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Selected – left edge discharge using the selected settings.</p></li>
@@ -1937,7 +1950,7 @@ deviation of the horizontal velocities (Mueller et al., 2013).</p>
 <p><img alt="" src="../_images/equ_43.png" /></p>
 </section>
 <section id="right-discharge">
-<h4>Right Discharge<a class="headerlink" href="#right-discharge" title="Permalink to this headline">#</a></h4>
+<h4>Right Discharge<a class="headerlink" href="#right-discharge" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the right edge discharge is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 5 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Selected – right edge discharge using the selected settings.</p></li>
@@ -1951,7 +1964,7 @@ deviation of the horizontal velocities (Mueller et al., 2013).</p>
 <p><img alt="" src="../_images/equ_44.png" /></p>
 </section>
 <section id="invalid-boat-velocity">
-<h4>Invalid Boat Velocity<a class="headerlink" href="#invalid-boat-velocity" title="Permalink to this headline">#</a></h4>
+<h4>Invalid Boat Velocity<a class="headerlink" href="#invalid-boat-velocity" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the discharge due to invalid boat velocities is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 3 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Liner Interpolation – The discharge is computed by estimating the invalid
@@ -1963,7 +1976,7 @@ boat velocities using linear interpolation.</p></li>
 <p><img alt="" src="../_images/equ_45.png" /></p>
 </section>
 <section id="invalid-depths">
-<h4>Invalid Depths<a class="headerlink" href="#invalid-depths" title="Permalink to this headline">#</a></h4>
+<h4>Invalid Depths<a class="headerlink" href="#invalid-depths" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the discharge due to invalid depths is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 3 different simulations.</p>
 <ol class="arabic simple">
 <li><p>Liner Interpolation – The discharge is computed by estimating the invalid
@@ -1975,7 +1988,7 @@ depths using linear interpolation.</p></li>
 <img alt="" src="../_images/equ_46.png" /></p>
 </section>
 <section id="invalid-water-velocities">
-<h4>Invalid Water Velocities<a class="headerlink" href="#invalid-water-velocities" title="Permalink to this headline">#</a></h4>
+<h4>Invalid Water Velocities<a class="headerlink" href="#invalid-water-velocities" title="Permalink to this heading">#</a></h4>
 <p>The uncertainty of the discharge due to invalid water velocities is estimated by assuming a rectangular distribution. The limits of the distribution are determined from 7 different simulations.</p>
 <ol class="arabic simple">
 <li><p>ABBA – Measured discharge with invalid water velocity estimated using ABBA
@@ -1991,11 +2004,11 @@ interpolation (for details see Water Track, Interpolation section).</p></li>
 <img alt="" src="../_images/equ_47.png" /></p>
 </section>
 <section id="coefficient-of-variation">
-<h4>Coefficient of Variation<a class="headerlink" href="#coefficient-of-variation" title="Permalink to this headline">#</a></h4>
+<h4>Coefficient of Variation<a class="headerlink" href="#coefficient-of-variation" title="Permalink to this heading">#</a></h4>
 <p>The coefficient of variation (𝑢𝑐𝑜𝑣) is computed using a Bayesian approach. The Bayesian approach to the coefficient of variation combines information from the transects comprising the measurement and a prior estimation of the coefficient of variation. The use of a prior estimate provides a way to estimate the coefficient of variation when only 1 or 2 transects comprise the measurement. The prior estimation of the coefficient of variation is set to 3% with an uncertainty of 20%. Both values can be changed by the user in the Advanced Setting tab, but the user cannot directly set the coefficient of variation in the Data table. The coefficient of variation computed for the measurement is used for each transect to compute the total uncertainty associated with each transect. For details on the Bayesian coefficient of variation the readers is referred to Despax et al. (2021).</p>
 </section>
 <section id="total-95-uncertainty">
-<h4>Total 95% Uncertainty<a class="headerlink" href="#total-95-uncertainty" title="Permalink to this headline">#</a></h4>
+<h4>Total 95% Uncertainty<a class="headerlink" href="#total-95-uncertainty" title="Permalink to this heading">#</a></h4>
 <p>The total 95% uncertainty for transect (𝑈𝑇) is computed as,</p>
 <p><img alt="" src="../_images/equ_48.png" /></p>
 <p>The total 95% uncertainty for the measurement (𝑈𝑀) is computed by estimating the bias terms for the measurement as the mean of those terms for the transects.</p>
@@ -2005,7 +2018,7 @@ interpolation (for details see Water Track, Interpolation section).</p></li>
 </section>
 </section>
 <section id="data-file-formats">
-<h2>Data File Formats<a class="headerlink" href="#data-file-formats" title="Permalink to this headline">#</a></h2>
+<h2>Data File Formats<a class="headerlink" href="#data-file-formats" title="Permalink to this heading">#</a></h2>
 <p>QRev imports data from TRDI WinRiver II and SonTek RiverSurveyor Live. QRev
 can read the raw data files (*.mmt and *.pd0) produced by WinRiver II for
 all TRDI ADCPs. The raw data format for SonTek *.riv and *.rivr files is
@@ -2025,7 +2038,7 @@ processed results into the USGS SVMAQ software or other agency databases.
 The XML format is defined in appendix 3.</p>
 </section>
 <section id="summary-and-need-for-further-development">
-<h2>Summary and Need for Further Development<a class="headerlink" href="#summary-and-need-for-further-development" title="Permalink to this headline">#</a></h2>
+<h2>Summary and Need for Further Development<a class="headerlink" href="#summary-and-need-for-further-development" title="Permalink to this heading">#</a></h2>
 <p>QRev provides common and consistent computational algorithms combined with
 automated filtering and quality assessment of the data that substantially
 improves the quality and efficiency of streamflow measurements and helps
@@ -2043,7 +2056,7 @@ a standard data format that would be common among all hydroacoustic
 instrumentation.</p>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">#</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">#</a></h2>
 <p>Chen, Cheng-Lung, 1989, Power law of flow resistance in open channels—Manning’s formula revisited: Proceedings of the International Conference on Channel Flow and Catchment Runoff, Centennial of Manning’s Formula and Kuichling’s Rational Formula, May 22–26, 1989, Charlottesville, Va., v. 8, p. 17–48.</p>
 <p>Cleveland, W.S., 1979, Robust locally weighted regression and smoothing scatterplots: Journal of the American Statistical Association, v. 74, no. 368, p. 829–836, accessed April 6, 2016, at http://www.stat.washington.edu/courses/stat527/s13/readings/Cleveland_JASA_1979.pdf.</p>
 <p>Cleveland, W.S., and Devlin, S.J., 1988, Locally weighted regression—An approach to Regression analysis by local fitting: Journal of the American Statistical Association v. 83, no. 403, p. 596–610, accessed April 6, 2016, at http://www.stat.washington.edu/courses/stat527/s13/readings/Cleveland_Delvin_JASA_1988.pdf.</p>
@@ -2082,7 +2095,7 @@ instrumentation.</p>
 <p>Wagner, C.R., and Mueller, D.S., 2011, Comparison of bottom-track to global positioning system referenced discharges measured using an acoustic Doppler current profiler: Journal of Hydrology, v. 401, p. 250–258.</p>
 </section>
 <section id="appendix-1evaluation-of-compass-for-loop-test">
-<h2>Appendix 1——Evaluation of Compass for Loop Test<a class="headerlink" href="#appendix-1evaluation-of-compass-for-loop-test" title="Permalink to this headline">#</a></h2>
+<h2>Appendix 1——Evaluation of Compass for Loop Test<a class="headerlink" href="#appendix-1evaluation-of-compass-for-loop-test" title="Permalink to this heading">#</a></h2>
 <p>The validity and accuracy of the loop moving-bed test is dependent on the
 accuracy of the headings reported by the compass. To assess the validity of
 the loop moving-bed test the effect of heading errors are evaluated. The
@@ -2104,7 +2117,7 @@ greater than the 95% uncertainty of the flow direction and 3) the potential
 error of the loop test is greater than 5%.</p>
 </section>
 <section id="appendix-2matlab-data-format">
-<h2>Appendix 2——Matlab Data Format<a class="headerlink" href="#appendix-2matlab-data-format" title="Permalink to this headline">#</a></h2>
+<h2>Appendix 2——Matlab Data Format<a class="headerlink" href="#appendix-2matlab-data-format" title="Permalink to this heading">#</a></h2>
 <p>Overview of the top two levels of Matlab data format used by QRev</p>
 <ul class="simple">
 <li><p>version: Version number for QRev</p></li>
@@ -2161,7 +2174,7 @@ analysis, if oursin uncertainty model is used</p></li>
 </li>
 </ul>
 <section id="full-details-of-each-structure">
-<h3>Full details of each structure<a class="headerlink" href="#full-details-of-each-structure" title="Permalink to this headline">#</a></h3>
+<h3>Full details of each structure<a class="headerlink" href="#full-details-of-each-structure" title="Permalink to this heading">#</a></h3>
 <ul class="simple">
 <li><p>transects: structure</p>
 <ul>
@@ -2761,7 +2774,7 @@ evaluation</p>
 </li>
 </ul>
 <section id="data-structures-in-transectdata">
-<h4>Data structures in TransectData<a class="headerlink" href="#data-structures-in-transectdata" title="Permalink to this headline">#</a></h4>
+<h4>Data structures in TransectData<a class="headerlink" href="#data-structures-in-transectdata" title="Permalink to this heading">#</a></h4>
 <ul class="simple">
 <li><p>adcp: structure</p>
 <ul>
@@ -3395,11 +3408,10 @@ depthCellDepths_m</p></li>
 
               
               
-                <footer class="bd-footer-article">
-                  
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
+              
+              
+                <footer class="prev-next-footer">
+                  <!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="user.html"
@@ -3419,10 +3431,7 @@ depthCellDepths_m</p></li>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
-</div></div>
-  
 </div>
-
                 </footer>
               
             </div>
@@ -3592,8 +3601,8 @@ depthCellDepths_m</p></li>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
   </footer>

@@ -1,9 +1,9 @@
 import os
 
-__author__ = "David S Mueller"
-__company__ = "Genesis HydroTech LLC"
-__version__ = "1.25"
-__app__ = "QRevInt"
+__author__ = "USGS"
+__company__ = "USGS"
+__version__ = "4.35"
+__app__ = "QRev"
 __qrev_version__ = __app__ + " " + __version__
 
 __doc_path__ = os.path.abspath(

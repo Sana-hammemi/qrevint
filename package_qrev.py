@@ -15,8 +15,9 @@ qrev_package = __app__ + __version__.replace(".", "")
 qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
 
 if os.path.exists(qrev_dir):
-    if click.confirm('QRev version already exists. Overwrite?',
-                     default=True, abort=True):
+    if click.confirm(
+        "QRev version already exists. Overwrite?", default=True, abort=True
+    ):
         try:
             shutil.rmtree(qrev_dir)
         except BaseException:
@@ -49,14 +50,16 @@ if os.path.exists(path):
 
     # copy QRev exe
     shutil.copy(
-        os.path.join(os.getcwd(), "dist", "QRev.exe"),
-        os.path.join(qrev_dir, "QRev.exe"),
+        os.path.join(path),
+        os.path.join(qrev_dir, __app__ + ".exe"),
     )
+
+    # remove copied QRev exe from source directory
+    os.remove(path)
 
     # Copy cfg file
     shutil.copy(
         os.path.join(os.getcwd(), "QRev.cfg"), os.path.join(qrev_dir, "QRev.cfg")
     )
 
-    print("Please sign QRev.EXE before zipping the directory. "
-          "Packaging Complete")
+    print("Please sign QRev.EXE before zipping the directory. Packaging Complete")
