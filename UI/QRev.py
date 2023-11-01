@@ -433,7 +433,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if os.path.exists(options_file) is False:
             config = Config()
-            config.export_config()
+            if __company__ == "USGS":
+                config.export_config()
+            else:
+                config.export_international_config()
 
             self.popup_message(
                 self.tr(
@@ -2258,9 +2261,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Use development-specific settings. Using __file__ path, so it
         # will work when called by other projects using AC3.
-        landing_page = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', "docs",
-                         "_build", "html", "index.html"))
+        if __company__ == "USGS":
+            landing_page = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', "docs", "_build", "html",
+                             "index.html"))
+        else:
+            landing_page = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', "docs_QRevInt",
+                             "_build", "html", "index.html"))
 
         if os.path.exists(landing_page):
             webbrowser.open("file://" + landing_page)
