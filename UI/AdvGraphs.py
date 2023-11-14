@@ -3722,7 +3722,7 @@ class AdvGraphs(object):
         # Fix expanded_water_speed for excluded depth cells
         for n in range(expanded_water_speed.shape[1]):
             idx = np.where(self.transect.w_vel.valid_data[6, :, n])
-            if idx[0][0] > 0:
+            if len(idx[0]) > 0 and idx[0][0] > 0:
                 for row in range(idx[0][0]):
                     expanded_water_speed[row + 1, n] = expanded_water_speed[row, n]
 

@@ -39,7 +39,7 @@ class Config:
         path = os.path.join(os.getcwd(), "QRev.cfg")
 
         with open(path, "w") as file:
-            json.dump(self.config, file)
+            json.dump(self.config, file, indent=4)
 
     def export_international_config(self):
         int_config = {
@@ -64,4 +64,4 @@ class Config:
         path = os.path.join(os.getcwd(), "QRev.cfg")
 
         with open(path, "w") as file:
-            json.dump(int_config, file)
+            json.dump(int_config, file, indent=4)
