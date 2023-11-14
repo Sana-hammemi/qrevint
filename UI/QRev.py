@@ -5661,6 +5661,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         with self.wait_cursor():
             # Populate each row
+            tbl.blockSignals(True)
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
 
@@ -5772,6 +5773,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.compass_plot()
             self.pr_plot()
             self.compass_comments_messages()
+            tbl.blockSignals(False)
 
     @QtCore.pyqtSlot(QtCore.QPoint)
     def compass_table_right_click(self, pos):

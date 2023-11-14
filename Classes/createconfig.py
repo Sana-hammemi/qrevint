@@ -34,9 +34,17 @@ class Config:
             "LeftRightFlowDirDiff": {"threshold": 8.1}
         }
 
-    def export_config(self):
+    def export_config(self, output_path=None):
+        """Export default configuration files.
 
-        path = os.path.join(os.getcwd(), "QRev.cfg")
+        Parameters:
+            output_path: str
+        """
+
+        if output_path is None:
+            path = os.path.join(os.getcwd(), "QRev.cfg")
+        else:
+            path = os.path.join(output_path, "QRev.cfg")
 
         with open(path, "w") as file:
             json.dump(self.config, file)
