@@ -2478,8 +2478,8 @@ class Oursin(object):
             draft_error = draft_error_m_user
 
         # Compute draft max and min
-        draft_min = transect.depths.bt_depths.draft_orig_m - draft_error
-        draft_max = transect.depths.bt_depths.draft_orig_m + draft_error
+        draft_min = transect.depths.bt_depths.draft_use_m - draft_error
+        draft_max = transect.depths.bt_depths.draft_use_m + draft_error
 
         if draft_min <= 0:
             draft_min = 0.01
