@@ -139,14 +139,14 @@ class BoatSpeed(object):
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"] * units["L"]
         elif x_axis_type == "E":
-            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m) + 1)
+            x = np.arange(1, len(transect.depths.bt_depths.depth_processed_m[transect.in_transect_idx]) + 1)
         elif x_axis_type == "T":
             timestamp = (
                 np.nancumsum(transect.date_time.ens_duration_sec)
                 + transect.date_time.start_serial_time
             )
             x = []
-            for stamp in timestamp:
+            for stamp in timestamp[transect.in_transect_idx]:
                 x.append(datetime.utcfromtimestamp(stamp))
             x = np.array(x)
 

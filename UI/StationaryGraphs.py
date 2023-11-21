@@ -59,6 +59,9 @@ class StationaryGraphs(object):
             Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
 
+        # get index for x values
+        in_transect_idx = mb_test.transect.in_transect_idx
+
         # Set default axis
         if x_axis_type is None:
             x_axis_type = "E"
@@ -99,14 +102,16 @@ class StationaryGraphs(object):
                 # Length doesn't make sense for this plot so default to
                 # ensembles
                 x = np.arange(
-                    1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1
+                    1, len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[in_transect_idx]) + 1
                 )
             elif x_axis_type == "E":
                 x = np.arange(
-                    1, len(mb_test.transect.depths.bt_depths.depth_processed_m) + 1
+                    1, len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[in_transect_idx]) + 1
                 )
             elif x_axis_type == "T":
-                x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec)
+                x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec[in_transect_idx])
 
             self.mb = self.fig.axmb.plot(
                 x, mb_test.stationary_mb_vel * units["V"], "b-"
