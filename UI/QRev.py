@@ -844,13 +844,45 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if "DateFormat" not in self.agency_options.keys():
             self.popup_message(self.tr("QRevMS.cfg: DateFormat parameter not found."))
             sys.exit()
-        if "format" not in self.agency_options["DateFormat"].keys():
+        if "default" not in self.agency_options["DateFormat"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg: DateFormat format parameter not found."))
+                self.tr("QRevMS.cfg DateFormat: default parameter not found."))
             sys.exit()
-        else:
-            datedict = {"m": "%m", "d": "%d", "y": "%Y"}
-            self.date_format = dateformat(self.agency_options["DateFormat"]["format"])
+        if "show" not in self.agency_options["DateFormat"].keys():
+            self.popup_message(
+                self.tr("QRevMS.cfg DateFormat: show parameter not found."))
+            sys.exit()
+        try:
+            if self.agency_options["DateFormat"]["show"]:
+                ss = self.sticky_settings.get("DateFormat")
+                self.date_format = ss
+            else:
+                self.date_format = dateformat(self.agency_options["DateFormat"]["default"])
+        except KeyError:
+            self.sticky_settings.new("DateFormat", dateformat(self.agency_options["DateFormat"]["default"]))
+            self.date_format = dateformat(self.agency_options["DateFormat"]["default"])
+
+        # PDF Summary
+        if "PDFSummary" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRevMS.cfg: PDFSummary parameter not found."))
+            sys.exit()
+        if "default" not in self.agency_options["PDFSummary"].keys():
+            self.popup_message(
+                self.tr("QRevMS.cfg PDFSummary: default parameter not found."))
+            sys.exit()
+        if "show" not in self.agency_options["PDFSummary"].keys():
+            self.popup_message(
+                self.tr("QRevMS.cfg PDFSummary: show parameter not found."))
+            sys.exit()
+        try:
+            if self.agency_options["PDFSummary"]["show"]:
+                ss = self.sticky_settings.get("PDFSummary")
+                self.pdf_setting = ss
+            else:
+                self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
+        except KeyError:
+            self.sticky_settings.new("PDFSummary", self.agency_options["PDFSummary"]["default"])
+            self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
 
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
@@ -1644,44 +1676,52 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             save_file = SaveDialog(parent=self)
 
-            if len(save_file.full_Name) > 0:
-                with self.wait_cursor():
-                    # Add comment when saving file
-                    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    user_name = getpass.getuser()
-                    discharge = Measurement.mean_discharges(self.meas)
-                    uncertainty = "N/A"
-                    if self.run_oursin:
-                        if not np.isnan(self.meas.oursin.u_measurement_user["total_95"][0]):
-                            uncertainty = "{:4.1f}".format(self.meas.oursin.u_measurement_user["total_95"][0])
-                    else:
-                        if not np.isnan(self.meas.uncertainty.total_95_user):
-                            uncertainty = "{:4.1f}".format(self.meas.uncertainty.total_95_user)
-                    text = (
-                        "["
-                        + time_stamp
-                        + ", "
-                        + user_name
-                        + "]: File Saved Q = "
-                        + "{:8.2f}".format(discharge["total_mean"] * self.units["Q"])
-                        + " "
-                        + self.units["label_Q"][1:-1]
-                        + " (Uncertainty: "
-                        + uncertainty
-                        + "%)"
-                    )
-                    self.meas.comments.append(text)
-                    self.comments_tab()
+            if len(save_file.full_Name) > 0:                
+                # Add comment when saving file
+                time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                user_name = getpass.getuser()
+                discharge = Measurement.mean_discharges(self.meas)
+                uncertainty = "N/A"
+                if self.run_oursin:
+                    if not np.isnan(self.meas.oursin.u_measurement_user["total_95"][0]):
+                        uncertainty = "{:4.1f}".format(self.meas.oursin.u_measurement_user["total_95"][0])
+                else:
+                    if not np.isnan(self.meas.uncertainty.total_95_user):
+                        uncertainty = "{:4.1f}".format(self.meas.uncertainty.total_95_user)
+                text = (
+                    "["
+                    + time_stamp
+                    + ", "
+                    + user_name
+                    + "]: File Saved Q = "
+                    + "{:8.2f}".format(discharge["total_mean"] * self.units["Q"])
+                    + " "
+                    + self.units["label_Q"][1:-1]
+                    + " (Uncertainty: "
+                    + uncertainty
+                    + "%)"
+                )
+                self.meas.comments.append(text)
+                self.comments_tab()
 
-                    # if self.pdf_setting == "Prompt":
-                    #     reply = QtWidgets.QMessageBox.question(self, "PDF Summary",
-                    #         "Would you like to save a PDF Report Summary",
-                    #         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                    #         QtWidgets.QMessageBox.No, )
-                    #     if reply == QtWidgets.QMessageBox.Yes:
-                    pdf_fullName = save_file.full_Name[:-4] + ".pdf"
-                    pdf = Report(pdf_fullName, self)
-                    pdf.create()
+                # Save PDF Summary Report
+                create_pdf = False
+                if self.pdf_setting == "Always":
+                    create_pdf = True
+
+                if self.pdf_setting == "Prompt":
+                    reply = QtWidgets.QMessageBox.question(self, "PDF Summary",
+                        "Would you like to save a PDF Report Summary",
+                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                        QtWidgets.QMessageBox.No, )
+                    if reply == QtWidgets.QMessageBox.Yes:
+                        create_pdf = True
+
+                with self.wait_cursor():
+                    if create_pdf:
+                        pdf_fullName = save_file.full_Name[:-4] + ".pdf"
+                        pdf = Report(pdf_fullName, self)
+                        pdf.create()
 
                     # Save data in Matlab format
                     if self.save_all:
@@ -2027,6 +2067,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.cb_map.setChecked(False)
 
+        if not self.agency_options["PDFSummary"]["show"]:
+            options.gb_pdf.hide()
+        if self.pdf_setting == "No":
+            options.rb_pdf_no.setChecked(True)
+        elif self.pdf_setting == "Prompt":
+            options.rb_pdf_prompt.setChecked(True)
+        else:
+            options.rb_pdf_always.setChecked(True)
+            
+        if not self.agency_options["DateFormat"]["show"]:
+            options.gb_dateformat.hide()
+        else:
+            options.ed_dateformat.setText(self.date_format.replace("%", "").lower())
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -2111,6 +2165,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     self.rating_prompt = False
                     self.sticky_settings.set("UserRating", False)
+
+                # PDF Summary
+                if options.rb_pdf_no.isChecked():
+                    self.pdf_setting = "No"
+                elif options.rb_pdf_prompt.isChecked():
+                    self.pdf_setting = "Prompt"
+                elif options.rb_pdf_always.isChecked():
+                    self.pdf_setting = "Always"
+                self.sticky_settings.set("PDFSummary", self.pdf_setting)
 
                 # Use of weighted medians for extrapolation fit
                 if options.cb_weighted_extrap.isChecked():
@@ -2259,6 +2322,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.tab_all.findChild(QtWidgets.QWidget, "tab_map"))
                     if  tab_idx > 0:
                         self.tab_all.removeTab(tab_idx)
+
+                if len(options.ed_dateformat.text()) > 0:
+                    self.date_format = dateformat(options.ed_dateformat.text())
+                    self.sticky_settings.set("DateFormat", self.date_format)
 
                 # Update tabs
                 if self.meas is not None:
@@ -3264,8 +3331,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def combine_qa_messages(self):
         # Initialize local variables
         qa = self.meas.qa
-        tbl = self.main_message_table
-        tbl.clear()
         qa_check_keys = [
             "bt_vel",
             "compass",
@@ -3311,6 +3376,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         messages = self.combine_qa_messages()
         # Setup table
         tbl = self.main_message_table
+        tbl.clear()
         main_message_header = [self.tr("Status"), self.tr("Message")]
         ncols = len(main_message_header)
         nrows = len(messages)

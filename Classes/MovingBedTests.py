@@ -190,18 +190,18 @@ class MovingBedTests(object):
                 if type(meas_struct.mbTests) == np.ndarray:
                     for test in meas_struct.mbTests:
                         temp = MovingBedTests()
-                        temp.populate_from_qrev_mat(test)
+                        temp.populate_from_qrev_mat(test, meas_struct)
                         mb_tests.append(temp)
                 # If only one test, that test is not stored in an array
                 else:
                     temp = MovingBedTests()
-                    temp.populate_from_qrev_mat(meas_struct.mbTests)
+                    temp.populate_from_qrev_mat(meas_struct.mbTests, meas_struct)
                     mb_tests.append(temp)
             except (TypeError, AttributeError):
                 pass
         return mb_tests
 
-    def populate_from_qrev_mat(self, mat_data):
+    def populate_from_qrev_mat(self, mat_data, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -213,7 +213,7 @@ class MovingBedTests(object):
 
         self.type = mat_data.type
         self.transect = TransectData()
-        self.transect.populate_from_qrev_mat(mat_data.transect)
+        self.transect.populate_from_qrev_mat(mat_data.transect, meas_struct)
 
         # If QRev.mat may return and empty array instead of a float
         self.duration_sec = self.return_float(mat_data.duration_sec)
