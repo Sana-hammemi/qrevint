@@ -61,41 +61,51 @@ class ULollipopPlot(object):
                 "Inv. Water",
                 "COV",
             ]
-            self.plot_df = self.plot_df.transpose()
-            self.plot_df = self.plot_df.sort_values(by="Percent")
 
-            # Generate plot
-            self.fig.ax.hlines(
-                y=self.plot_df.index, xmin=0, xmax=self.plot_df["Percent"]
-            )
-            self.fig.ax.plot(
-                self.plot_df["Percent"], self.plot_df.index, "o", markersize=11
-            )
-            self.fig.ax.set_xlabel(self.canvas.tr("Percent of Total"))
-            self.fig.ax.xaxis.label.set_fontsize(12)
-            self.fig.ax.tick_params(axis="both", which="major", labelsize=10)
             if np.isnan(meas.oursin.u_measurement_user["total_95"][0]):
-                self.fig.ax.set_title(self.canvas.tr("95% Total Uncertainty: N/A"))
+                title_text = self.canvas.tr("95% Total Uncertainty: N/A")
             else:
-                self.fig.ax.set_title(
-                    self.canvas.tr("95% Total Uncertainty: ")
-                    + "%5.1f" % meas.oursin.u_measurement_user["total_95"][0],
-                    fontweight="bold",
-                )
-
-            # Setup annotation features
-            self.annot = self.fig.ax.annotate(
-                "",
-                xy=(0, 0),
-                xytext=(-20, 20),
-                textcoords="offset points",
-                bbox=dict(boxstyle="round", fc="w"),
-                arrowprops=dict(arrowstyle="->"),
+                title_text = (
+                    self.canvas.tr("95% Total Uncertainty: ") + "%5.1f" %
+                    meas.oursin.u_measurement_user["total_95"][0]
             )
+        else:
+            self.plot_df = meas.uncertainty.compute_contribution()
+            if np.isnan(meas.uncertainty.total_95_user):
+                title_text = self.canvas.tr("95% Total Uncertainty: N/A")
+            else:
+                title_text = (
+                    self.canvas.tr("95% Total Uncertainty: ") + "%5.1f" %
+                    meas.uncertainty.total_95_user
+            )
+        self.plot_df = self.plot_df.transpose()
+        self.plot_df = self.plot_df.sort_values(by="Percent")
 
-            self.annot.set_visible(False)
+        # Generate plot
+        self.fig.ax.hlines(
+            y=self.plot_df.index, xmin=0, xmax=self.plot_df["Percent"]
+        )
+        self.fig.ax.plot(
+            self.plot_df["Percent"], self.plot_df.index, "o", markersize=11
+        )
+        self.fig.ax.set_xlabel(self.canvas.tr("Percent of Total"))
+        self.fig.ax.xaxis.label.set_fontsize(12)
+        self.fig.ax.tick_params(axis="both", which="major", labelsize=10)
+        self.fig.ax.set_title(title_text, fontweight="bold",)
 
-            self.canvas.draw()
+        # Setup annotation features
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
+
+        self.annot.set_visible(False)
+
+        self.canvas.draw()
 
     def update_annot(self, name, u_value, event):
         """Updates the location and text and makes visible the previously

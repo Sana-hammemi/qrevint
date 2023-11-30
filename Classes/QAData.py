@@ -178,7 +178,7 @@ class QAData(object):
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, "magvar"):
                 self.compass["magvar"] = meas_struct.qa.compass.magvar
-            else:
+            elif hasattr(new_qa.compass, "magvar"):
                 self.compass["magvar"] = new_qa.compass["magvar"]
                 self.compass["status"] = new_qa.compass["status"]
 
@@ -187,20 +187,16 @@ class QAData(object):
                 self.compass["magvar_idx"] = self.make_array(
                     meas_struct.qa.compass.magvarIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "magvar_idx"):
                 self.compass["magvar_idx"] = new_qa.compass["magvar_idx"]
                 self.compass["status"] = new_qa.compass["status"]
-
-            # Changed mag_error_idx from bool to int array in QRevPy
-            self.compass["mag_error_idx"] = new_qa.compass["mag_error_idx"]
-            self.compass["status"] = new_qa.compass["status"]
 
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, "pitchMeanWarningIdx"):
                 self.compass["pitch_mean_warning_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchMeanWarningIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "pitch_mean_warning_idx"):
                 self.compass["pitch_mean_warning_idx"] = new_qa.compass[
                     "pitch_mean_warning_idx"
                 ]
@@ -211,7 +207,7 @@ class QAData(object):
                 self.compass["roll_mean_warning_idx"] = self.make_array(
                     meas_struct.qa.compass.rollMeanWarningIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "roll_mean_warning_idx"):
                 self.compass["roll_mean_warning_idx"] = new_qa.compass[
                     "roll_mean_warning_idx"
                 ]
@@ -222,7 +218,7 @@ class QAData(object):
                 self.compass["pitch_mean_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchMeanCautionIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "pitch_mean_caution_idx"):
                 self.compass["pitch_mean_caution_idx"] = new_qa.compass[
                     "pitch_mean_caution_idx"
                 ]
@@ -233,7 +229,7 @@ class QAData(object):
                 self.compass["roll_mean_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.rollMeanCautionIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "roll_mean_caution_idx"):
                 self.compass["roll_mean_caution_idx"] = new_qa.compass[
                     "roll_mean_caution_idx"
                 ]
@@ -244,7 +240,7 @@ class QAData(object):
                 self.compass["pitch_std_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchStdCautionIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "pitch_std_caution_idx"):
                 self.compass["pitch_std_caution_idx"] = new_qa.compass[
                     "pitch_std_caution_idx"
                 ]
@@ -255,7 +251,7 @@ class QAData(object):
                 self.compass["roll_std_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.rollStdCautionIdx
                 )
-            else:
+            elif hasattr(new_qa.compass, "roll_std_caution_idx"):
                 self.compass["roll_std_caution_idx"] = new_qa.compass[
                     "roll_std_caution_idx"
                 ]
@@ -1891,8 +1887,9 @@ class QAData(object):
 
                     if self.compass["status1"] != "good":
                         self.movingbed["messages"].append(
-                            "Moving-Bed Test: Loop test used but compass calibration is "
-                            + self.compass["status1"]
+                            ["Moving-Bed Test: Loop test used but compass calibration is "
+                            + self.compass["status1"], 2,
+                            6,]
                         )
                         if self.movingbed["code"] < 3:
                             self.movingbed["code"] = 2

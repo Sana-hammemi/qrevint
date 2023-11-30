@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.stats import t
 
 
@@ -223,6 +224,66 @@ class Uncertainty(object):
             ** 0.5
         )
 
+    def compute_contribution(self):
+        """Computes the percent contribution of each category to the 
+        total uncertainty.
+        
+        Returns
+        -------
+        u_contribution: DataFrame
+            DataFrame containing contributions
+        """
+
+        u_contribution = pd.DataFrame(
+            columns=[
+                "COV",
+                "Invalid",
+                "Edges",
+                "Extrap.",
+                "Moving-bed",
+                "Systematic"
+            ]
+        )
+
+        if self.cov_95_user is None:
+            u_contribution["COV"] = [self.cov_95 / 200.]
+        else:
+            u_contribution["COV"] = [self.cov_95_user /200.]
+
+        if self.invalid_95_user is None:
+            u_contribution["Invalid"] = [self.invalid_95 / 200.]
+        else:
+            u_contribution["Invalid"] = [self.invalid_95_user / 200.]
+
+        if self.edges_95_user is None:
+            u_contribution["Edges"] = [self.edges_95 / 200.]
+        else:
+            u_contribution["Edges"] = [self.edges_95_user / 200.]
+
+        if self.extrapolation_95_user is None:
+            u_contribution["Extrap."] = [self.extrapolation_95 / 200.]
+        else:
+            u_contribution["Extrap."] = [self.extrapolation_95_user / 200.]
+
+        if self.moving_bed_95_user is None:
+            u_contribution["Moving-bed"] = [self.moving_bed_95 / 200.]
+        else:
+            u_contribution["Moving-bed"] = [self.moving_bed_95_user / 200.]
+
+        if self.systematic_user is None:
+            u_contribution["Systematic"] = [self.systematic / 100]
+        else:
+            u_contribution["Systematic"] = [self.systematic_user / 100]
+
+        u_contribution = u_contribution**2
+
+        u_contribution = u_contribution.div((self.total_95_user / 200.)**2, axis=0)
+        
+        u_contribution = u_contribution.mul(100.)
+        u_contribution.index = ["Percent"]
+        
+        return u_contribution
+        
     @staticmethod
     def get_array_attr(list_in, prop):
         """Create an array of the requested attribute from a list of objects

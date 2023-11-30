@@ -528,3 +528,13 @@ def rotate_coordinates(x, y, angle_d):
     xr = x * cosd(angle_d) + y * sind(angle_d)
     yr = -x * sind(angle_d) + y * cosd(angle_d)
     return xr, yr
+
+def dateformat (input_str):
+    datedict = {"m": "%m", "d": "%d", "y": "%Y"}
+    date_format = ""
+    for chr in input_str:
+        if chr in datedict:
+            date_format = date_format + datedict[chr]
+        else:
+            date_format = date_format + chr
+    return date_format

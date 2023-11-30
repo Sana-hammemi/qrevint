@@ -32,7 +32,7 @@ from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
     convert_temperature,
     units_conversion,
-    sfrnd,
+    sfrnd, dateformat
 )
 from UI.AdvGraphs import AdvGraphs
 from UI.AxesScale import AxesScale
@@ -68,6 +68,7 @@ from UI.UMeasQ import UMeasQ
 from UI.UMeasurement import UMeasurement
 from UI.WTContour import WTContour
 from UI.selectFile import SaveDialog
+from UI.PDFSummaryReport import Report
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
@@ -420,6 +421,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if os.path.exists(qrev_icon):
             self.setWindowIcon(QtGui.QIcon(qrev_icon))
 
+        self.version = __qrev_version__
         if "Int" in __qrev_version__:
             self.set_qrevint_ui()
 
@@ -837,6 +839,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tr("QRev.cfg LeftRightFlowDirDiff: threshold parameter not found.")
             )
             sys.exit()
+
+        # Date format
+        if "DateFormat" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRevMS.cfg: DateFormat parameter not found."))
+            sys.exit()
+        if "format" not in self.agency_options["DateFormat"].keys():
+            self.popup_message(
+                self.tr("QRevMS.cfg: DateFormat format parameter not found."))
+            sys.exit()
+        else:
+            datedict = {"m": "%m", "d": "%d", "y": "%Y"}
+            self.date_format = dateformat(self.agency_options["DateFormat"]["format"])
 
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
@@ -1410,6 +1424,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                             excluded=self.agency_options["Excluded"],
                             water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"]["threshold"],
+                            date_format=self.date_format
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1433,6 +1448,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         gps_quality_threshold=self.gps_quality_threshold,
                         water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
                             "threshold"],
+                        date_format=self.date_format
                     )
 
             # Load and process TRDI data
@@ -1456,6 +1472,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         excluded=self.agency_options["Excluded"],
                         water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
                             "threshold"],
+                        date_format=self.date_format
                     )
 
             # Load QRev data
@@ -1520,6 +1537,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             gps_quality_threshold=self.gps_quality_threshold,
                             water_dir_diff_threshold=
                             self.agency_options["LeftRightFlowDirDiff"]["threshold"],
+                            date_format=self.date_format
                         )
 
                 # Settings based on measurement settings
@@ -1627,53 +1645,71 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             save_file = SaveDialog(parent=self)
 
             if len(save_file.full_Name) > 0:
-                # Add comment when saving file
-                time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                user_name = getpass.getuser()
-                discharge = Measurement.mean_discharges(self.meas)
-                text = (
-                    "["
-                    + time_stamp
-                    + ", "
-                    + user_name
-                    + "]: File Saved Q = "
-                    + "{:8.2f}".format(discharge["total_mean"] * self.units["Q"])
-                    + " "
-                    + self.units["label_Q"][1:-1]
-                    + " (Uncertainty: "
-                    + "{:4.1f}".format(self.meas.uncertainty.total_95_user)
-                    + "%)"
-                )
-                self.meas.comments.append(text)
-                self.comments_tab()
-
-                # Save data in Matlab format
-                if self.save_all:
-                    Python2Matlab.save_matlab_file(
-                        self.meas, save_file.full_Name, __qrev_version__
-                    )
-                else:
-                    Python2Matlab.save_matlab_file(
-                        self.meas,
-                        save_file.full_Name,
-                        __qrev_version__,
-                        checked=self.checked_transects_idx,
-                    )
-
-                # Save xml file
-                self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
-
-                # Save stylesheet in measurement folder
-                if self.save_stylesheet:
-                    meas_folder, _ = os.path.split(save_file.full_Name)
-                    dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
-
-                    if self.units["ID"] == "SI":
-                        stylesheet = "QRevStylesheet_si.xsl"
+                with self.wait_cursor():
+                    # Add comment when saving file
+                    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    user_name = getpass.getuser()
+                    discharge = Measurement.mean_discharges(self.meas)
+                    uncertainty = "N/A"
+                    if self.run_oursin:
+                        if not np.isnan(self.meas.oursin.u_measurement_user["total_95"][0]):
+                            uncertainty = "{:4.1f}".format(self.meas.oursin.u_measurement_user["total_95"][0])
                     else:
-                        stylesheet = "QRevStylesheet_english.xsl"
+                        if not np.isnan(self.meas.uncertainty.total_95_user):
+                            uncertainty = "{:4.1f}".format(self.meas.uncertainty.total_95_user)
+                    text = (
+                        "["
+                        + time_stamp
+                        + ", "
+                        + user_name
+                        + "]: File Saved Q = "
+                        + "{:8.2f}".format(discharge["total_mean"] * self.units["Q"])
+                        + " "
+                        + self.units["label_Q"][1:-1]
+                        + " (Uncertainty: "
+                        + uncertainty
+                        + "%)"
+                    )
+                    self.meas.comments.append(text)
+                    self.comments_tab()
 
-                    self.export_stylesheet(stylesheet, dest)
+                    # if self.pdf_setting == "Prompt":
+                    #     reply = QtWidgets.QMessageBox.question(self, "PDF Summary",
+                    #         "Would you like to save a PDF Report Summary",
+                    #         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                    #         QtWidgets.QMessageBox.No, )
+                    #     if reply == QtWidgets.QMessageBox.Yes:
+                    pdf_fullName = save_file.full_Name[:-4] + ".pdf"
+                    pdf = Report(pdf_fullName, self)
+                    pdf.create()
+
+                    # Save data in Matlab format
+                    if self.save_all:
+                        Python2Matlab.save_matlab_file(
+                            self.meas, save_file.full_Name, __qrev_version__
+                        )
+                    else:
+                        Python2Matlab.save_matlab_file(
+                            self.meas,
+                            save_file.full_Name,
+                            __qrev_version__,
+                            checked=self.checked_transects_idx,
+                        )
+
+                    # Save xml file
+                    self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
+
+                    # Save stylesheet in measurement folder
+                    if self.save_stylesheet:
+                        meas_folder, _ = os.path.split(save_file.full_Name)
+                        dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
+
+                        if self.units["ID"] == "SI":
+                            stylesheet = "QRevStylesheet_si.xsl"
+                        else:
+                            stylesheet = "QRevStylesheet_english.xsl"
+
+                        self.export_stylesheet(stylesheet, dest)
 
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(
@@ -3225,9 +3261,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
         self.main_discharge_canvas.draw()
 
-    def messages_tab(self):
-        """Update messages tab."""
-
+    def combine_qa_messages(self):
         # Initialize local variables
         qa = self.meas.qa
         tbl = self.main_message_table
@@ -3269,6 +3303,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Sort messages with warning at top
         messages.sort(key=lambda x: x[1])
 
+        return messages
+
+    def messages_tab(self):
+        """Update messages tab."""
+
+        messages = self.combine_qa_messages()
         # Setup table
         tbl = self.main_message_table
         main_message_header = [self.tr("Status"), self.tr("Message")]
@@ -3735,10 +3775,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Row label
             col = 0
-            mdy = self.meas.transects[
-                self.checked_transects_idx[0]
-            ].date_time.date.split("/")
-            meas_date = mdy[-1] + "." + mdy[0] + "." + mdy[1]
+
+            meas_date = datetime.strftime(datetime.utcfromtimestamp(self.meas.transects[self.checked_transects_idx[0]
+            ].date_time.start_serial_time), self.date_format)
             item = self.tr("Measurement") + " (" + meas_date + ")"
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)

@@ -93,9 +93,10 @@ class DischargeTS(object):
         self.fig.ax.plot(x_flat, y_upper, color="cornflowerblue")
         self.fig.ax.plot(x_flat, y_lower, color="cornflowerblue")
         self.fig.ax.plot(x_flat, avg_y, color="blue")
-        self.fig.ax.plot(
-            save_x[transect_idx], save_y[transect_idx], color="black", linewidth=5
-        )
+        if transect_idx is not None:
+            self.fig.ax.plot(
+                save_x[transect_idx], save_y[transect_idx], color="black", linewidth=5
+            )
 
         # Customize axis
         time_fmt = mdates.DateFormatter("%H:%M:%S")

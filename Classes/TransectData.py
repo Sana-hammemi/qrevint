@@ -1632,7 +1632,7 @@ class TransectData(object):
                 if len(meas_struct.transects) > 0:
                     for transect in meas_struct.transects:
                         trans = TransectData()
-                        trans.populate_from_qrev_mat(transect)
+                        trans.populate_from_qrev_mat(transect, meas_struct)
                         transects.append(trans)
             except TypeError:
                 trans = TransectData()
@@ -1641,7 +1641,7 @@ class TransectData(object):
 
         return transects
 
-    def populate_from_qrev_mat(self, transect):
+    def populate_from_qrev_mat(self, transect, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -1652,7 +1652,7 @@ class TransectData(object):
         """
 
         self.adcp = InstrumentData()
-        self.adcp.populate_from_qrev_mat(transect)
+        self.adcp.populate_from_qrev_mat(transect, meas_struct)
         self.file_name = os.path.basename(transect.fileName)
         self.w_vel = WaterData()
         self.w_vel.populate_from_qrev_mat(transect)

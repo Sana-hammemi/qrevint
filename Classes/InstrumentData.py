@@ -94,6 +94,14 @@ class InstrumentData(object):
         mmt_config = getattr(mmt_transect, "active_config")
 
         self.serial_num = mmt_site["ADCPSerialNmb"]
+        if len(self.serial_num) == 0:
+            if "RG_Test" in mmt.qaqc:
+                for test in mmt.qaqc["RG_Test"]:
+                    idx = test.find("Serial Number:")
+                    if idx > 0:
+                        idx_end = test[idx::].find("\n")
+                        self.serial_num = test[idx + 15: idx + idx_end].strip()
+                        break
 
         # Determine TRDI model
         num = float(self.firmware)
@@ -291,7 +299,7 @@ class InstrumentData(object):
         self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
-    def populate_from_qrev_mat(self, transect):
+    def populate_from_qrev_mat(self, transect, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
          file.
 
@@ -300,8 +308,24 @@ class InstrumentData(object):
         transect: mat_struct
             Matlab data structure obtained from sio.loadmat
         """
-
         self.serial_num = str(transect.adcp.serialNum)
+        if self.serial_num == "[]":
+            self.serial_num = ""
+            if hasattr(meas_struct, "sysTest"):
+                if type(meas_struct.sysTest) == np.ndarray:
+                    for test in meas_struct.sysTest:
+                        idx = test.data.find("Serial Number:")
+                        if idx > 0:
+                            idx_end = test.data[idx::].find("\n")
+                            self.serial_num = test.data[
+                                              idx + 15: idx + idx_end].strip()
+                            break
+                else:
+                    idx = meas_struct.sysTest.data.find("Serial Number:")
+                    if idx > 0:
+                        idx_end = meas_struct.sysTest.data[idx::].find("\n")
+                        self.serial_num = meas_struct.sysTest.data[idx + 15: idx + idx_end].strip()
+
         self.manufacturer = transect.adcp.manufacturer
         self.model = transect.adcp.model
         self.firmware = transect.adcp.firmware

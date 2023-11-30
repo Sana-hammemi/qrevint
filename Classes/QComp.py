@@ -69,9 +69,9 @@ class QComp(object):
         self.middle_ens = None
         self.bottom_ens = None
         self.left = None
-        self.left_idx = []
+        self.left_idx = np.array([]).astype(int)
         self.right = None
-        self.right_idx = []
+        self.right_idx = np.array([]).astype(int)
         self.total_uncorrected = None
         self.total = None
         self.correction_factor = 1
@@ -241,7 +241,7 @@ class QComp(object):
             )
         else:
             self.right = data_in.edges.right.user_discharge_cms
-            self.right_idx = []
+            self.right_idx = np.array([]).astype(int)
 
         # Compute left edge discharge
         if data_in.edges.left.type != "User Q":
@@ -250,7 +250,7 @@ class QComp(object):
             )
         else:
             self.left = data_in.edges.left.user_discharge_cms
-            self.left_idx = []
+            self.left_idx = np.array([]).astype(int)
 
         # Compute moving-bed correction, if applicable.  Two checks are used
         # to account for the way the meas object is created.

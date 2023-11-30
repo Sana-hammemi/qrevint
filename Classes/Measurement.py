@@ -131,6 +131,7 @@ class Measurement(object):
         snr_3beam_comp=False,
         excluded=None,
         water_dir_diff_threshold=8.1,
+        date_format="%Y.%m.%d"
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -169,8 +170,11 @@ class Measurement(object):
             Indicates if 3 beam solutions should be used for ensembles with invalid SNR
         excluded: dict
             Dictionary containting the excluded distances for the RioPro and M9
+        date_format: str
+            Format string for date 
         """
 
+        self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
         self.use_measurement_thresholds = use_measurement_thresholds
