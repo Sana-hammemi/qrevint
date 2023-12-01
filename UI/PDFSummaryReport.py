@@ -52,6 +52,7 @@ class Report:
         self.styles = getSampleStyleSheet()
         self.width, self.height = letter
         self.discharge = self.parent.meas.mean_discharges(parent.meas)
+        self.tr = self.parent.tr
 
     def header(self, page, doc):
         """Create header for each page of report.
@@ -67,10 +68,10 @@ class Report:
         # Configure for QRev and QRevInt
         if "Int" in self.parent.version:
             logo = Image("QRevInt.ico", width=30, height=30)
-            title = "<font size=14><b>QRevInt Discharge Measurement Report</b></font>"
+            title = "<font size=14><b>" + self.tr("QRevInt Discharge Measurement Report") + "</b></font>"
         else:
             logo = Image("QRev.ico", width=30, height=30)
-            title = "<font size=14><b>QRev Discharge Measurement Report</b></font>"
+            title = "<font size=14><b>" + self.tr("QRev Discharge Measurement Report") + "</b></font>"
 
         # Logo
         logo.wrapOn(page, self.width, self.height)
@@ -85,7 +86,7 @@ class Report:
         y = 0.85
 
         # Station Name
-        ptext = "<font size = 10> <b>Station Name:</b> {}</font>".format(
+        ptext = "<font size = 10> <b>" + self.tr("Station Name") + ":</b> {}</font>".format(
             self.parent.meas.station_name)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
@@ -95,7 +96,7 @@ class Report:
         y = 1.05
 
         # Station Number
-        ptext = "<font size = 10> <b>Station Number:</b>  {}</font>".format(
+        ptext = "<font size = 10> <b>" + self.tr("Station Number") + ":</b>  {}</font>".format(
             self.parent.meas.station_number)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
@@ -105,13 +106,13 @@ class Report:
         start = self.parent.meas.transects[
             self.parent.meas.checked_transect_idx[0]].date_time.start_serial_time
         date = datetime.utcfromtimestamp(start).strftime(self.parent.date_format)
-        ptext = "<font size = 10> <b>Measurement Date:</b> {}</font>".format(date)
+        ptext = "<font size = 10> <b>" + self.tr("Measurement Date") + ":</b> {}</font>".format(date)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
         p.drawOn(page, 2.8 * inch, self.height - y * inch)
 
         # Measurement Number
-        ptext = "<font size = 10> <b>Measurement Number:</b> {}</font>".format(
+        ptext = "<font size = 10> <b>" + self.tr("Measurement Number") + ":</b> {}</font>".format(
             self.parent.meas.meas_number)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
@@ -121,7 +122,7 @@ class Report:
         y = 1.25
 
         # Discharge
-        ptext = "<font size = 10> <b>Discharge:</b> {:8} </font>".format(self.parent.q_digits(
+        ptext = "<font size = 10> <b>" + self.tr("Discharge") + ":</b> {:8} </font>".format(self.parent.q_digits(
             self.discharge["total_mean"] * self.parent.units["Q"]))
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
@@ -133,20 +134,20 @@ class Report:
         else:
             stage_mean = "{:.2f}".format(
                 self.parent.meas.stage_meas_m * self.parent.units["L"])
-        ptext = "<font size = 10> <b>Stage:</b> {} </font>".format(stage_mean)
+        ptext = "<font size = 10> <b>" + self.tr("Stage") + ":</b> {} </font>".format(stage_mean)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
         p.drawOn(page, 2.4 * inch, self.height - y * inch)
 
         # User Rating
-        ptext = "<font size = 10><b>User Rating:</b> {} </font>".format(
+        ptext = "<font size = 10><b>" + self.tr("User Rating") + ":</b> {} </font>".format(
             self.parent.meas.user_rating)
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
         p.drawOn(page, 3.4 * inch, self.height - y * inch)
 
         # Processed
-        ptext = "<font size = 10> <b>Processed:</b> {}</font>".format(
+        ptext = "<font size = 10> <b>" + self.tr("Processed") + ":</b> {}</font>".format(
             datetime.now().strftime(self.parent.date_format + " %H:%M:%S"))
         p = Paragraph(ptext, self.styles["Normal"])
         p.wrapOn(page, self.width, self.height)
@@ -228,7 +229,7 @@ class Report:
             )
 
         if meas.uncertainty is None or np.isnan(meas.uncertainty.cov):
-            q_cov = "N/A"
+            q_cov = selr.tr("N/A")
         else:
             q_cov = "{:5.2f}".format(meas.uncertainty.cov)
 
@@ -238,31 +239,31 @@ class Report:
 
         left = (self.discharge["left_mean"] / self.discharge["total_mean"]) * 100
         if np.isnan(left):
-            left_q = "N/A"
+            left_q = self.tr("N/A")
         else:
             left_q = "{:5.2f}".format(left)
 
         right = (self.discharge["right_mean"] / self.discharge["total_mean"]) * 100
         if np.isnan(right):
-            right_q = "N/A"
+            right_q = self.tr("N/A")
         else:
             right_q = "{:5.2f}".format(right)
 
         value = (self.discharge["int_cells_mean"] / self.discharge["total_mean"]) * 100
         if np.isnan(value):
-            invalid_cells = "N/A"
+            invalid_cells = self.tr("N/A")
         else:
             invalid_cells = "{:5.2f}".format(value)
 
         value = (self.discharge["int_ensembles_mean"] / self.discharge["total_mean"]) * 100
         if np.isnan(value):
-            invalid_ens = "N/A"
+            invalid_ens = self.tr("N/A")
         else:
             invalid_ens = "{:5.2f}".format(value)
             
         if meas.run_oursin:
             if np.isnan(meas.oursin.u_measurement_user["total_95"][0]):
-                uncertainty = "N/A"
+                uncertainty = self.tr("N/A")
             else:
                 uncertainty = "%5.1f".format(meas.oursin.u_measurement_user["total_95"][0])
         else:
@@ -300,25 +301,25 @@ class Report:
 
         # Build table data
         data = [
-            ["Discharge Summary", ""],
-            ["Discharge {}:".format(self.parent.units["label_Q"]), discharge],
-            ["Navigation Ref.:", nav_reference],
-            ["Total Duration (s):", duration],
-            ["Start Time:", start_time],
-            ["End Time:", end_time],
-            ["Stage Start:", stage_start],
-            ["Stage End:", stage_end],
-            ["Mean Stage:", stage_mean],
-            ["Mean Boat Speed {}:".format(self.parent.units["label_V"]), mean_boat_speed],
-            ["Top Extrap:", top_extrap],
-            ["Bottom Extrap:", bottom_extrap],
-            ["Extrap Exponent:", exponent],
-            ["Discharg COV (%): ", q_cov],
-            ["Top Q (%): ", top_q], ["Measured Q (%): ", measured_q],
-            ["Left Q (%): ", left_q], ["Right Q (%): ", right_q],
-            ["Bottom Q (%): ", bottom_q],
-            ["Invalid Cells Q (%): ", invalid_cells],
-            ["Invalid Ensembles Q (%): ", invalid_ens],
+            [self.tr("Discharge Summary"), ""],
+            [self.tr("Discharge") + " {}:".format(self.parent.units["label_Q"]), discharge],
+            [self.tr("Navigation Ref.") + ":", nav_reference],
+            [self.tr("Total Duration") + " (s):", duration],
+            [self.tr("Start Time") + ":", start_time],
+            [self.tr("End Time") + ":", end_time],
+            [self.tr("Stage Start") + ":", stage_start],
+            [self.tr("Stage End") + ":", stage_end],
+            [self.tr("Mean Stage") + ":", stage_mean],
+            [self.tr("Mean Boat Speed") + " {}:".format(self.parent.units["label_V"]), mean_boat_speed],
+            [self.tr("Top Extrap") + ":", top_extrap],
+            [self.tr("Bottom Extrap") + ":", bottom_extrap],
+            [self.tr("Extrap Exponent") + ":", exponent],
+            [self.tr("Discharg COV") + " (%): ", q_cov],
+            [self.tr("Top Q") + " (%): ", top_q], ["Measured Q (%): ", measured_q],
+            [self.tr("Left Q") + " (%): ", left_q], ["Right Q (%): ", right_q],
+            [self.tr("Bottom Q") + " (%): ", bottom_q],
+            [self.tr("Invalid Cells Q") + " (%): ", invalid_cells],
+            [self.tr("Invalid Ensembles Q") + " (%): ", invalid_ens],
         ]
 
 
@@ -351,10 +352,10 @@ class Report:
         first_id = meas.checked_transect_idx[0]
 
         freq = meas.transects[first_id].adcp.frequency_khz
-        if isinstance(freq, float):
+        if isinstance(freq, float) or isinstance(freq, int):
             freq = freq
         elif freq is list:
-            freq = "Multi"
+            freq = self.tr("Multi")
         else:
             freq = freq[0]
 
@@ -368,11 +369,11 @@ class Report:
             adcp_temp = ""
 
         if len(meas.system_tst) == 0:
-            system_test = "None"
+            system_test = self.tr("None")
         elif meas.system_tst[-1].result["sysTest"]["n_failed"]:
-            system_test = "Failed"
+            system_test = self.tr("Failed")
         else:
-            system_test = "Passed"
+            system_test = self.tr("Passed")
 
         # Compass cal / eval
         if meas.transects[first_id].adcp.manufacturer == "SonTek":
@@ -381,16 +382,14 @@ class Report:
             evals = meas.compass_eval
 
         if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
-            compass = "None"
+            compass = self.tr("None")
         elif len(evals) > 0:
             if type(evals[-1].result["compass"]["error"]) == str:
                 compass = evals[-1].result["compass"]["error"]
             else:
                 compass = "{:2.2f}".format(evals[-1].result["compass"]["error"])
         else:
-            compass = "Cal"
-
-        
+            compass = self.tr("Cal")
 
         # MB test type
         n_tests = len(meas.mb_tests)
@@ -405,13 +404,13 @@ class Report:
                 test = meas.mb_tests[n]
 
             # MB test result
-            mb_result = "Unknown"
+            mb_result = self.tr("Unknown")
             for idx in selected_idx:
                 if meas.mb_tests[idx].moving_bed == "Yes":
-                    mb_result = "Yes"
+                    mb_result = self.tr("Yes")
                     break
                 elif meas.mb_tests[idx].moving_bed == "No":
-                    mb_result = "No"
+                    mb_result = self.tr("No")
 
             # Max moving bed
             percent_mb = []
@@ -424,7 +423,7 @@ class Report:
             max_mb_per = "{:.2f}".format(np.nanmax(np.array(percent_mb)))
             quality = list(set(quality))
             if len(quality) > 1:
-                quality = "Varied"
+                quality = self.tr("Varied")
             elif len(quality) == 1:
                 quality = quality[0]
             else:
@@ -444,35 +443,35 @@ class Report:
             per_correction = "{:.2f}".format(((self.discharge["total_mean"] / self.discharge[
                 "uncorrected_mean"]) - 1) * 100)
         else:
-            mb_test_type = "None"
-            quality = "N/A"
+            mb_test_type = self.tr("None")
+            quality = self.tr("N/A")
             mb_duration = 0
-            max_mb_per = "N/A"
+            max_mb_per = self.tr("N/A")
             per_correction = "0"
         
         # Build table data
         data = [
-            ["Field Crew:", meas.persons],
-            ["Processed By: ", getpass.getuser()],
-            ["Software: ", self.parent.version.split(" ")[0]],
-            ["Version:", self.parent.version.split(" ")[1]],
-            ["ADCP", ""],
-            ["Manufacturer:", meas.transects[first_id].adcp.manufacturer],
-            ["Model:", meas.transects[first_id].adcp.model],
-            ["Serial Number:",meas.transects[first_id].adcp.serial_num],
-            ["Firmware:", meas.transects[first_id].adcp.firmware],
-            ["Frequency (kHz):", freq],
-            ["Premeasurement", ""],
-            ["W. Temp. (C):", user_temp],
-            ["W. Temp. ADCP (C):", adcp_temp],
-            ["System Test:", system_test],
-            ["Compass Cal/Eval:", compass],
-            ["Magnetic Variaton:", meas.transects[first_id].sensors.heading_deg.internal.mag_var_deg],
-            ["MovBed Test Type:", mb_test_type],
-            ["MovBed Test Quality: ", quality],
-            ["MovBed Test Dur.(s):", "{:.1f}".format(mb_duration)],
-            ["Max MovBed (%)", max_mb_per],
-            ["Q Correction (%):", per_correction],
+            [self.tr("Field Crew") + ":", meas.persons],
+            [self.tr("Processed By") + ":", getpass.getuser()],
+            [self.tr("Software") + ":", self.parent.version.split(" ")[0]],
+            [self.tr("Version") + ":", self.parent.version.split(" ")[1]],
+            [self.tr("ADCP"), ""],
+            [self.tr("Manufacturer") + ":", meas.transects[first_id].adcp.manufacturer],
+            [self.tr("Model") + ":", meas.transects[first_id].adcp.model],
+            [self.tr("Serial Number") + ":",meas.transects[first_id].adcp.serial_num],
+            [self.tr("Firmware") + ":", meas.transects[first_id].adcp.firmware],
+            [self.tr("Frequency (kHz)") + ":", freq],
+            [self.tr("Premeasurement"), ""],
+            [self.tr("W. Temp.") + " (C):", user_temp],
+            [self.tr("W. Temp. ADCP") + " (C):", adcp_temp],
+            [self.tr("System Test") + ":", system_test],
+            [self.tr("Compass Cal/Eval") + ":", compass],
+            [self.tr("Magnetic Variaton") + ":", meas.transects[first_id].sensors.heading_deg.internal.mag_var_deg],
+            [self.tr("MovBed Test Type") + ":", mb_test_type],
+            [self.tr("MovBed Test Quality") + ":", quality],
+            [self.tr("MovBed Test Dur.") + "(s):", "{:.1f}".format(mb_duration)],
+            [self.tr("Max MovBed") + " (%):", max_mb_per],
+            [self.tr("Q Correction") + " (%):", per_correction],
         ]
 
         # Create and style table
@@ -518,33 +517,33 @@ class Report:
         width = "{:.3f}".format(trans_prop["width"][-1] * self.parent.units["L"])
 
         if np.isnan(trans_prop["width_cov"][-1]):
-            width_cov = "N/A"
+            width_cov = self.tr("N/A")
         else:
             width_cov = "{:5.2f}".format(trans_prop["width_cov"][-1])
 
         if np.isnan(trans_prop["area_cov"][-1]):
-            area_cov = "N/A"
+            area_cov = selt.tr("N/A")
         else:
             area_cov = "{:5.2f}".format(trans_prop["area_cov"][-1])
 
         if self.parent.run_oursin:
-            u_method = "Oursin"
+            u_method = self.tr("Oursin")
         else:
-            u_method = "QRev"
+            u_method = self.tr("QRev")
 
         # Build table data
         data = [
-            ["Cross Section", ""],
-            ["Mean Velocity {}:".format(self.parent.units["label_V"]), mean_velocity],
-            ["Max. Velocity {}:".format(self.parent.units["label_V"]), max_velocity],
-            ["Mean Depth {}:".format(self.parent.units["label_L"]), mean_depth],
-            ["Max. Depth {}:".format(self.parent.units["label_L"]), max_depth],
-            ["Width {}:".format(self.parent.units["label_L"]), width],
-            ["Width COV (%): ", width_cov],
-            ["Area {}:".format(self.parent.units["label_A"]), area],
-            ["Area COV (%): ", area_cov],
-            ["Uncertainty", ""],
-            ["Uncertainty Method:", u_method],
+            [self.tr("Cross Section"), ""],
+            [self.tr("Mean Velocity") + " {}:".format(self.parent.units["label_V"]), mean_velocity],
+            [self.tr("Max. Velocity") + " {}:".format(self.parent.units["label_V"]), max_velocity],
+            [self.tr("Mean Depth") + " {}:".format(self.parent.units["label_L"]), mean_depth],
+            [self.tr("Max. Depth") + " {}:".format(self.parent.units["label_L"]), max_depth],
+            [self.tr("Width") + " {}:".format(self.parent.units["label_L"]), width],
+            [self.tr("Width COV") + " (%): ", width_cov],
+            [self.tr("Area") + " {}:".format(self.parent.units["label_A"]), area],
+            [self.tr("Area COV") + " (%): ", area_cov],
+            [self.tr("Uncertainty"), ""],
+            [self.tr("Uncertainty Method") + ":", u_method],
             [self.uncertainty_fig(), ""]
         ]
 
@@ -731,7 +730,7 @@ class Report:
         """Creates a table of ID numbers to filename"""
 
         data = [
-            [self.label("ID", bold=True, center=False), self.label("File Name", bold=True, center=False)]
+            [self.label(self.tr("ID"), bold=True, center=False), self.label(self.tr("File Name"), bold=True, center=False)]
         ]
         meas = self.parent.meas
         for idx in meas.checked_transect_idx:
@@ -741,13 +740,14 @@ class Report:
 
         # Create style list
         style_list = [
-                      ("ALIGN", (0, 0), (0, 0), "RIGHT"),
+            ("ALIGN", (0, 0), (0, 0), "RIGHT"),
             ("ALIGN", (0, 1), (0, -1), "RIGHT"),
-                      ("ALIGN", (1, 0), (1, -1), "LEFT"),
-                      ("FONT", (0, 0), (-1, -1), "Helvetica", 9),
-                      ("LINEABOVE", (0, 0), (-1, 0), 1, colors.black),
-                      ("LINEBELOW", (0, 0), (-1, 0), 1, colors.black),
-                      ("LINEBELOW", (0, -1), (-1, -1), 1, colors.black), ]
+            ("ALIGN", (1, 0), (1, -1), "LEFT"),
+            ("FONT", (0, 0), (-1, -1), "Helvetica", 9),
+            ("LINEABOVE", (0, 0), (-1, 0), 1, colors.black),
+            ("LINEBELOW", (0, 0), (-1, 0), 1, colors.black),
+            ("LINEBELOW", (0, -1), (-1, -1), 1, colors.black),
+        ]
 
         # Create and style table
         file_table = Table(data, colWidths=[0.3 * inch, 5 * inch], rowHeights=None, repeatRows=1, hAlign="LEFT")
@@ -768,17 +768,17 @@ class Report:
         # Column labels
         data = [
             [
-                self.label("Transect<br/>ID", bold=True),
-                self.label("Start<br/>Edge", bold=True),
-                self.label("Start Time", bold=True),
-                self.label("End Time", bold=True),
-                self.label("Duration<br/>(sec)", bold=True),
-                self.label("Top Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
-                self.label("Middle Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
-                self.label("Bottom Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
-                self.label("Left Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
-                self.label("Right Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
-                self.label("Total Q<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Transect") + "<br/>" + self.tr("ID"), bold=True),
+                self.label(self.tr("Start") + "<br/>" + self.tr("Edge"), bold=True),
+                self.label(self.tr("Start Time"), bold=True),
+                self.label(self.tr("End Time"), bold=True),
+                self.label(self.tr("Duration") + "<br/>(sec)", bold=True),
+                self.label(self.tr("Top Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Middle Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Bottom Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Left Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Right Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
+                self.label(self.tr("Total Q") + "<br/>{}".format(self.parent.units["label_Q"]), bold=True),
              ]
         ]
 
@@ -877,18 +877,18 @@ class Report:
         # Column labels
         data = [
             [
-                self.label("Transect<br/>ID", bold=True),
-                self.label("Start<br/>Edge", bold=True),
-                self.label("Left<br/>Edge<br/>Type", bold=True),
-                self.label("Left<br/>Dist<br/>{}".format(self.parent.units["label_L"]),
+                self.label(self.tr("Transect") + "<br/>" + self.tr("ID"), bold=True),
+                self.label(self.tr("Start") + "<br/>" + self.tr("Edge"), bold=True),
+                self.label(self.tr("Left") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("Type"), bold=True),
+                self.label(self.tr("Left") + "<br/>" + self.tr("Dist.") + "<br/>{}".format(self.parent.units["label_L"]),
                            bold=True),
-                self.label("Left<br/>Edge<br/> # Ens.", bold=True),
-                self.label("Left<br/>Edge<br/>Coeff.", bold=True),
-                self.label("Right<br/>Edge<br/>Type", bold=True),
-                self.label("Right<br/>Dist<br/>{}".format(self.parent.units["label_L"]),
+                self.label(self.tr("Left") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("# Ens."), bold=True),
+                self.label(self.tr("Left") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("Coeff."), bold=True),
+                self.label(self.tr("Right") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("Type"), bold=True),
+                self.label(self.tr("Right") + "<br/>" + self.tr("Dist") + "<br/>{}".format(self.parent.units["label_L"]),
                            bold=True),
-                self.label("Right<br/>Edge<br/># Ens.", bold=True),
-                self.label("Right<br/>Edge<br/>Coeff.", bold=True),
+                self.label(self.tr("Right") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("# Ens."), bold=True),
+                self.label(self.tr("Right") + "<br/>" + self.tr("Edge") + "<br/>" + self.tr("Coeff."), bold=True),
             ]
         ]
         
