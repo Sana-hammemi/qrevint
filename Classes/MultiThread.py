@@ -14,7 +14,6 @@ class MultiThread(threading.Thread):
         self.args = args
 
     def run(self):
-
         if self.args is not None:
             self.function(**self.args)
         else:

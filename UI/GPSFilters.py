@@ -203,7 +203,6 @@ class GPSFilters(object):
             self.fig.ax.set_ylabel(self.canvas.tr("Number of Satellites"))
 
         elif selected == "other":
-
             # Select an object to use for the smooth
             if transect.boat_vel.selected == "gga_vel":
                 boat_gps = transect.boat_vel.gga_vel

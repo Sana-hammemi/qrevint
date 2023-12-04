@@ -589,7 +589,6 @@ class Oursin(object):
         )
 
     def populate_from_qrev_mat(self, meas_struct):
-
         # User provided parameters
         self.user_advanced_settings = {
             "exp_pp_min_user": meas_struct.oursin.user_advanced_settings.exp_pp_min_user,
@@ -1424,7 +1423,6 @@ class Oursin(object):
 
         # Compute the uncertainty due to the measured area
         for transect_id in self.checked_idx:
-
             # Relative standard deviation of error velocity (Water Track)
             std_ev_wt_ens = self.water_std_by_error_velocity(
                 meas.transects[transect_id]
@@ -1868,7 +1866,6 @@ class Oursin(object):
         self.cov_68 = np.nan
 
         if method == "QRev":
-
             # Only compute for multiple transects
             if self.nb_transects > 1:
                 total_q = []
@@ -1895,7 +1892,6 @@ class Oursin(object):
                     )
                     self.cov_68 = cov_95 / 2
         elif method == "Bayes":
-
             # Set prior
             if np.isnan(meas.oursin.user_advanced_settings["cov_prior_user"]):
                 cov_prior = meas.oursin.default_advanced_settings["cov_prior"]

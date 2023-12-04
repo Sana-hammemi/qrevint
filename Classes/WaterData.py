@@ -236,9 +236,7 @@ class WaterData(object):
         use_measurement_thresholds=False,
         snr_3beam_comp=True,
         excluded_dist_in=0,
-
     ):
-
         """Populates the variables with input, computed, or default values.
 
         Parameters
@@ -773,7 +771,6 @@ class WaterData(object):
         new_sys = None
 
         if o_coord_sys != new_coord_sys:
-
             # Assign the transformation matrix and retrieve the sensor data
             t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
             t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
@@ -810,7 +807,6 @@ class WaterData(object):
             # Check to ensure the new coordinate system is a higher order than
             # the original system
             if new_sys - orig_sys > 0:
-
                 # Compute trig function for heaing, pitch and roll
                 ch = np.cos(np.deg2rad(h))
                 sh = np.sin(np.deg2rad(h))
@@ -822,7 +818,6 @@ class WaterData(object):
                 n_ens = self.raw_vel_mps.shape[2]
 
                 for ii in range(n_ens):
-
                     # Compute matrix for heading, pitch, and roll
                     hpr_matrix = np.array(
                         [
@@ -842,7 +837,6 @@ class WaterData(object):
 
                     # Transform beam coordinates
                     if o_coord_sys == "Beam":
-
                         # Determine frequency index for transformation
                         if len(t_matrix.shape) > 2:
                             idx_freq = np.where(t_matrix_freq == self.frequency[ii])
@@ -924,7 +918,6 @@ class WaterData(object):
                 self.nav_ref = self.orig_nav_ref
 
             else:
-
                 # Reset velocity properties to raw values
                 self.u_mps = np.copy(self.raw_vel_mps[0])
                 self.v_mps = np.copy(self.raw_vel_mps[1])
@@ -948,7 +941,6 @@ class WaterData(object):
                 self.v_processed_mps = np.copy(self.v_mps)
 
         else:
-
             # Reset velocity properties to raw values
             self.u_mps = np.copy(self.raw_vel_mps[0])
             self.v_mps = np.copy(self.raw_vel_mps[1])
@@ -1009,7 +1001,6 @@ class WaterData(object):
         # Process each ensemble
         n_ens = self.raw_vel_mps.shape[2]
         for ii in range(n_ens):
-
             # Compute matrix for heading, pitch, and roll
             hpr_matrix = np.array(
                 [
@@ -1269,7 +1260,6 @@ class WaterData(object):
             )
             > 1
         ):
-
             # Because the snr filter may apply 3-beam solutions the result
             # could affect other filters, thus it should be run first
             if snr is not None:
@@ -1387,6 +1377,25 @@ class WaterData(object):
             else:
                 sl_lag_effect_m = self.sl_lag_effect_m
 
+            # # If the lag effect is not available estimate from nearest neighbors
+            # idx_nan = np.where(np.isnan(sl_lag_effect_m))
+            # if len(idx_nan) > 0:
+            #     for idx_n in idx_nan[0]:
+            #         est_sl_lag = []
+            #         idx_before = idx[idx_n]
+            #         while idx_before > 0:
+            #             idx_before = idx_before - 1
+            #             if not np.isnan(self.sl_lag_effect_m[idx_before]):
+            #                 self.sl_lag_effect_m[idx_n] = self.sl_lag_effect_m[idx_before]
+            #                 break
+            #         else:
+            #             idx_after = idx[idx_n]
+            #             while idx_after < self.sl_lag_effect_m.size - 1:
+            #                 idx_after = idx_after + 1
+            #                 if not np.isnan(self.sl_lag_effect_m[idx_after]):
+            #                     self.sl_lag_effect_m[idx_n] = self.sl_lag_effect_m[idx_after]
+            #                     break
+
             sl_cutoff_int = (
                 (depth_selected.depth_processed_m[idx] - depth_selected.draft_use_m)
                 * np.cos(np.deg2rad(transect.adcp.beam_angle_deg))
@@ -1455,7 +1464,6 @@ class WaterData(object):
         # In manual mode (3 or 4) determine number of raw invalid and number
         # of 2 beam solutions
         if self.beam_filter > 0:
-
             # Find invalid raw data
             valid_vel = np.array([self.cells_above_sl] * 4)
             if self.snr_beam_velocities is None:
@@ -1479,7 +1487,6 @@ class WaterData(object):
             self.all_valid_data()
 
         else:
-
             # Apply automatic filter
             self.automatic_beam_filter_abba_interpolation(transect)
 
@@ -1641,7 +1648,6 @@ class WaterData(object):
 
             # Compute unique threshold for each transect using ping types
             elif self.ping_type.size > 1:
-
                 # Identify the ping types used in the transect
                 p_types = np.unique(self.ping_type)
 
@@ -1714,7 +1720,6 @@ class WaterData(object):
 
         # Check to make sure there are data to process
         if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
-
             # Initialize variables
             data_orig = np.copy(data)
 
@@ -1990,7 +1995,6 @@ class WaterData(object):
 
         # Determine if smooth filter should be applied
         if self.smooth_filter == "Auto":
-
             # Boat velocity components
             w_vele = self.u_mps
             w_veln = self.v_mps
@@ -2057,10 +2061,8 @@ class WaterData(object):
         self.snr_filter = setting
 
         if setting == "Auto":
-
             # Determines if invalid data should use 3-beam computations
             if self.snr_3beam_comp and self.d_filter != 3:
-
                 cells_above_sl = np.copy(self.cells_above_sl.astype(float))
                 cells_above_sl[cells_above_sl < 0.5] = np.nan
                 snr_adjusted = self.rssi * cells_above_sl
@@ -2606,7 +2608,6 @@ class WaterData(object):
         bot_method = transect.extrap.bot_method
 
         for n in range(n_ens):
-
             # Identify first and last valid depth cell
             idx = np.where(valid[:, n])[0]
             if len(idx) > 0:
@@ -2682,7 +2683,6 @@ class WaterData(object):
         n_invalid = len(invalid_ens_idx)
         depth_cell_depth = transect.depths.bt_depths.depth_cell_depth_m
         for n in range(n_invalid):
-
             # Find nearest valid ensembles on either side of invalid ensemble
             idx1 = np.where(valid_data_sum[: invalid_ens_idx[n]] > 0)[0]
             if len(idx1) > 0:

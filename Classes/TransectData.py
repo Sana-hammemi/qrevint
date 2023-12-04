@@ -107,7 +107,6 @@ class TransectData(object):
 
         # If the pd0 file has water track data process all of the data
         if pd0_data.Wt is not None:
-
             # Ensemble times
             # Compute time for each ensemble in seconds
             ens_time_sec = (
@@ -297,7 +296,6 @@ class TransectData(object):
             if (np.nansum(np.nansum(np.abs(raw_gga_lat))) > 0) or (
                 np.nansum(np.nansum(np.abs(raw_vtg_speed))) > 0
             ):
-
                 # Process raw GPS data
                 self.gps = GPSData()
                 self.gps.populate_data(
@@ -1061,9 +1059,7 @@ class TransectData(object):
         # --------
         self.gps = GPSData()
         if np.nansum(rsdata.GPS.GPS_Quality) > 0:
-
             if len(rsdata.RawGPSData.GgaLatitude.shape) > 1:
-
                 self.gps.populate_data(
                     raw_gga_utc=rsdata.RawGPSData.GgaUTC,
                     raw_gga_lat=rsdata.RawGPSData.GgaLatitude,
@@ -1717,7 +1713,6 @@ class TransectData(object):
 
     @staticmethod
     def compute_cell_data(pd0):
-
         # Number of ensembles
         num_ens = np.array(pd0.Wt.vel_mps).shape[-1]
 
@@ -1745,7 +1740,6 @@ class TransectData(object):
         for i in range(num_ens):
             # Determine number of cells to be treated as regular cells
             if np.nanmax(no_surf_cells) > 0:
-
                 num_reg_cells = max_cells - no_surf_cells[i]
             else:
                 num_reg_cells = max_cells
@@ -1995,6 +1989,25 @@ class TransectData(object):
             coeff = value
         elif slc_type == "Angle":
             coeff = np.cos(np.deg2rad(value))
+
+        # # If the lag effect is not available estimate from nearest before and if not
+        # # available then look after
+        # idx_nan = np.where(np.isnan(sl_lag_effect))
+        # if len(idx_nan) > 0:
+        #     for idx_n in idx_nan[0]:
+        #         est_sl_lag = []
+        #         idx_before = idx_n
+        #         while idx_before > 0:
+        #             idx_before = idx_before - 1
+        #             if not np.isnan(sl_lag_effect[idx_before]):
+        #                 sl_lag_effect[idx_n] = sl_lag_effect[idx_before]
+        #                 break
+        #         else:
+        #             idx_after = idx_n
+        #             while idx_after < sl_lag_effect.size - 1:
+        #                 idx_after = idx_after + 1
+        #                 if not np.isnan(sl_lag_effect[idx_after]):
+        #                     sl_lag_effect[idx_n] = sl_lag_effect[idx_after]
 
         # Compute sidelobe cutoff to centerline
         cutoff = np.array(range_from_xducer * coeff - sl_lag_effect + draft)
@@ -2251,7 +2264,6 @@ class TransectData(object):
         """
 
         if parameter == "temperatureSrc":
-
             temperature_internal = getattr(self.sensors.temperature_deg_c, "internal")
             if selected == "user":
                 if self.sensors.temperature_deg_c.user is None:
@@ -2343,7 +2355,6 @@ class TransectData(object):
 
         # Determine new speed of sound
         if self.sensors.speed_of_sound_mps.selected == "internal":
-
             if self.sensors.speed_of_sound_mps.internal.source == "Calculated":
                 # Internal: Calculated
                 new_sos = self.sensors.speed_of_sound_mps.internal.data_orig

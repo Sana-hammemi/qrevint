@@ -146,7 +146,6 @@ class MovingBedTests(object):
         self.process_mb_test(source)
 
     def process_mb_test(self, source):
-
         # Convert to earth coordinates and set the navigation reference to BT
         # for both boat and water data
         self.transect.change_coord_sys(new_coord_sys="Earth")
@@ -625,7 +624,6 @@ class MovingBedTests(object):
 
         # If loop is valid then evaluate moving-bed condition
         if self.test_quality != "Errors":
-
             # Check minimum moving-bed velocity criteria
             if self.mb_spd_mps > vel_criteria:
                 # Check that closure error is in upstream direction
@@ -827,7 +825,6 @@ class MovingBedTests(object):
 
             # Check percentage of invalid BT data
             if np.nansum(ens_duration[valid_bt_vel_up_strm]) <= 120:
-
                 self.messages.append(
                     "ERROR - Total duration of valid BT data is insufficient "
                     "for a valid test."

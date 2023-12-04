@@ -222,8 +222,7 @@ class WTContour(object):
                     max_limit = np.percentile(
                         speed_plt[speed_plt > -900] * units["V"], 99
                     )
-                    min_limit = np.min(
-                        speed_plt[speed_plt > -900] * units["V"])
+                    min_limit = np.min(speed_plt[speed_plt > -900] * units["V"])
                     if 0 < min_limit < 0.1:
                         min_limit = 0
                 else:

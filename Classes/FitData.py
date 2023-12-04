@@ -237,7 +237,6 @@ class FitData(object):
                         self.exponent = 0.05
 
                 if len(zfit[ok_]) > 2:
-
                     n = len(zfit)  # number of data points
 
                     t_val = t.ppf(0.975, n - 2)

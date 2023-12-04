@@ -137,6 +137,7 @@ class DepthData(object):
         self.depth_cell_size_orig_m = cell_size_in
         self.depth_cell_size_m = cell_size_in
         self.depth_cell_depth_m = cell_depth_in
+        # self.interpolate_depth_cells()
 
         # Remove all filters to initialize data
         self.apply_filter("dummy", filter_type="Off")
@@ -490,7 +491,6 @@ class DepthData(object):
 
         # If the smoothed depth has not been computed
         if self.smooth_depth is None or len(self.smooth_depth) == 0:
-
             # Set filter characteristics
             self.filter_type = "Smooth"
 
@@ -714,7 +714,6 @@ class DepthData(object):
 
         # If the smoothed depth has not been computed
         if self.smooth_depth is None:
-
             # Set filter characteristics
             self.filter_type = "SavGol"
             cycles = 3
@@ -748,7 +747,6 @@ class DepthData(object):
 
             # Loop for each beam, smooth is applied to each beam
             for j in range(n_beams):
-
                 # Compute residuals based on non-uniform Savitzky-Golay
                 try:
                     valid_depth_idx = np.logical_not(np.isnan(depth[j, :]))
@@ -763,7 +761,6 @@ class DepthData(object):
 
                 # Run the filter multiple times
                 for n in range(cycles - 1):
-
                     # Compute inner quartile range
 
                     fill_array = run_iqr(half_width, depth_res[j, :])
@@ -850,7 +847,6 @@ class DepthData(object):
 
         # Process data by ensemble
         for n in range(1, n_ensembles):
-
             # If current ensemble's depth is invalid assign depth from
             # previous example
             if not self.valid_data[n]:
@@ -864,7 +860,6 @@ class DepthData(object):
 
         # Process data by ensemble
         for n in np.arange(0, n_ens - 1)[::-1]:
-
             # If current ensemble's depth is invalid assign depth from
             # previous example
             if not self.valid_data[n]:
@@ -1090,7 +1085,6 @@ class DepthData(object):
 
         # Compute IQR for each point
         for n in range(npts):
-
             # Sample selection for 1st point
             if n == 0:
                 sample = data[1 : 1 + half_width]
@@ -1112,3 +1106,33 @@ class DepthData(object):
             iqr_array.append(iqr(sample))
 
         return np.array(iqr_array)
+
+    def interpolate_depth_cells(self):
+        ens_idx = np.where(np.all(np.isnan(self.depth_cell_size_m), axis=0))
+
+        if len(ens_idx) > 0:
+            for idx in ens_idx[0]:
+                idx_before = idx
+                while idx_before > 0:
+                    idx_before = idx_before - 1
+                    if not idx_before in ens_idx[0]:
+                        self.depth_cell_size_m[:, idx] = self.depth_cell_size_m[
+                            :, idx_before
+                        ]
+                        self.depth_cell_depth_m[:, idx] = self.depth_cell_depth_m[
+                            :, idx_before
+                        ]
+                        break
+
+                else:
+                    idx_after = idx
+                    while idx_after < self.depth_cell_size_m.size[1] - 1:
+                        idx_after = idx_after + 1
+                        if not idx_after in ens_idx[0]:
+                            self.depth_cell_size_m[:, idx] = self.depth_cell_size_m[
+                                :, idx_after
+                            ]
+                            self.depth_cell_depth_m[:, idx] = self.depth_cell_depth_m[
+                                :, idx_after
+                            ]
+                            break

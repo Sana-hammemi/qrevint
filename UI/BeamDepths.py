@@ -89,7 +89,6 @@ class BeamDepths(object):
         cb_ds=None,
         x_axis_type=None,
     ):
-
         """Create the axes and lines for the figure.
 
         Parameters

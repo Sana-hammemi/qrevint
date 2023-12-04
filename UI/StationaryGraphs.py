@@ -102,16 +102,28 @@ class StationaryGraphs(object):
                 # Length doesn't make sense for this plot so default to
                 # ensembles
                 x = np.arange(
-                    1, len(
-                        mb_test.transect.depths.bt_depths.depth_processed_m[in_transect_idx]) + 1
+                    1,
+                    len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[
+                            in_transect_idx
+                        ]
+                    )
+                    + 1,
                 )
             elif x_axis_type == "E":
                 x = np.arange(
-                    1, len(
-                        mb_test.transect.depths.bt_depths.depth_processed_m[in_transect_idx]) + 1
+                    1,
+                    len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[
+                            in_transect_idx
+                        ]
+                    )
+                    + 1,
                 )
             elif x_axis_type == "T":
-                x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec[in_transect_idx])
+                x = np.nancumsum(
+                    mb_test.transect.date_time.ens_duration_sec[in_transect_idx]
+                )
 
             self.mb = self.fig.axmb.plot(
                 x, mb_test.stationary_mb_vel * units["V"], "b-"

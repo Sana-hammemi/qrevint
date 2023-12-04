@@ -88,7 +88,6 @@ class Sensors(object):
 
     @staticmethod
     def unesco_speed_of_sound(t, s, p=10):
-
         p = p / 10
         sr = np.sqrt(np.abs(s))
 

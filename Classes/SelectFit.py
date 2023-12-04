@@ -286,7 +286,6 @@ class SelectFit(object):
                     or bidirectional_condition
                     or c_shape_condition
                 ):
-
                     # Set the bottom to no slip
                     self.bot_method_auto = "No Slip"
                     # If the no slip fit with an optimized exponent does not
@@ -314,13 +313,11 @@ class SelectFit(object):
                     self.top_method_auto = "Constant"
 
                 else:
-
                     # Leave fit power/power and set the best selected
                     # optimized exponent as the automatic fit exponent
                     self.exponent_auto = ppobj.exponent
 
             else:
-
                 # If the data are insufficient for a valid analysis use the
                 # power/power fit with the default 0.1667 exponent
                 self.top_method_auto = "Power"
@@ -342,7 +339,6 @@ class SelectFit(object):
             self.z = update_fd.z
 
         elif fit_method == "Manual":
-
             # Identify changes in fit settings
             if top is None:
                 top = self.top_method

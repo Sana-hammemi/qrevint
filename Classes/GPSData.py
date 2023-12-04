@@ -331,7 +331,6 @@ class GPSData(object):
 
         if hasattr(transect, "gps"):
             if hasattr(transect.gps, "diffQualEns"):
-
                 # Raw properties
                 self.raw_gga_lat_deg = transect.gps.rawGGALat_deg
                 self.raw_gga_lon_deg = transect.gps.rawGGALon_deg
@@ -537,7 +536,6 @@ class GPSData(object):
 
         # Use the last valid data in an ensemble
         elif v_setting == "End":
-
             for n in range(n_ensembles):
                 idx = np.where(np.logical_not(np.isnan(gga_lat_deg[n, :])))[0]
                 if len(idx) > 0:

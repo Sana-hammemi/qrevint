@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 
+
 class Maptrack(object):
     """Class to generate shiptrack plot from MAP profile.
 
@@ -70,10 +71,12 @@ class Maptrack(object):
         direction_section = np.arctan2(map_data.slope, 1)
 
         if map_data.streamwise_velocity is not None:
-            u = map_data.streamwise_velocity * np.sin(direction_section) + \
-                map_data.transverse_velocity * np.cos(direction_section)
-            v = map_data.transverse_velocity * np.sin(direction_section) - \
-                map_data.streamwise_velocity * np.cos(direction_section)
+            u = map_data.streamwise_velocity * np.sin(
+                direction_section
+            ) + map_data.transverse_velocity * np.cos(direction_section)
+            v = map_data.transverse_velocity * np.sin(
+                direction_section
+            ) - map_data.streamwise_velocity * np.cos(direction_section)
 
             u = u * -1 * map_data._unit
             v = v * -1 * map_data._unit
@@ -84,7 +87,7 @@ class Maptrack(object):
             x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
             y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
 
-            speed = np.sqrt(u_mean ** 2 + v_mean ** 2) * units["V"]
+            speed = np.sqrt(u_mean**2 + v_mean**2) * units["V"]
             if len(speed) > 0:
                 max_speed = np.nanmax(speed)
             else:

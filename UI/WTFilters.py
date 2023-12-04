@@ -597,7 +597,6 @@ class WTFilters(object):
         self.canvas.draw()
 
     def update_annot(self, ind, plt_ref):
-
         pos = plt_ref._xy[ind["ind"][0]]
         # Shift annotation box left or right depending on which half of the axis
         # the pos x is located and the direction of x increasing.
@@ -717,7 +716,6 @@ class WTFilters(object):
                     self.canvas.draw_idle()
 
     def set_hover_connection(self, setting):
-
         if setting and self.hover_connection is None:
             self.hover_connection = self.canvas.mpl_connect(
                 "button_press_event", self.hover

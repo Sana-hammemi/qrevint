@@ -260,7 +260,6 @@ class QComp(object):
         mb_type = None
         if data_in.boat_vel.selected == "bt_vel":
             if moving_bed_data is not None:
-
                 # Determine if a moving-bed test is to be used for correction
                 use_2_correct = []
                 for mb_idx, test in enumerate(moving_bed_data):
@@ -269,7 +268,6 @@ class QComp(object):
                         mb_type = test.type
 
                 if any(use_2_correct):
-
                     # Make sure composite tracks are turned off
                     if data_in.boat_vel.composite == "Off":
                         # Apply appropriate moving-bed test correction method
@@ -426,7 +424,6 @@ class QComp(object):
             idx = np.where(np.isnan(q_ensemble))[0]
 
             if len(idx) > 0:
-
                 # Compute the unit discharge by depth for each ensemble
                 depth_selected = getattr(
                     transect_data.depths, transect_data.depths.selected
@@ -543,10 +540,18 @@ class QComp(object):
 
         if transect is not None:
             # Prepare water track data
-            cells_above_sl = np.array(transect.w_vel.cells_above_sl[:, transect.in_transect_idx]).astype(float)
+            cells_above_sl = np.array(
+                transect.w_vel.cells_above_sl[:, transect.in_transect_idx]
+            ).astype(float)
             cells_above_sl[cells_above_sl < 0.5] = np.nan
-            w_vel_x = transect.w_vel.u_processed_mps[:, transect.in_transect_idx] * cells_above_sl
-            w_vel_y = transect.w_vel.v_processed_mps[:, transect.in_transect_idx] * cells_above_sl
+            w_vel_x = (
+                transect.w_vel.u_processed_mps[:, transect.in_transect_idx]
+                * cells_above_sl
+            )
+            w_vel_y = (
+                transect.w_vel.v_processed_mps[:, transect.in_transect_idx]
+                * cells_above_sl
+            )
 
             # Get navigation data from object properties
             trans_select = getattr(transect.boat_vel, transect.boat_vel.selected)
@@ -554,12 +559,8 @@ class QComp(object):
                 b_vel_x = trans_select.u_processed_mps[transect.in_transect_idx]
                 b_vel_y = trans_select.v_processed_mps[transect.in_transect_idx]
             else:
-                b_vel_x = np.tile(
-                    [np.nan], transect.in_transect_idx.shape
-                )
-                b_vel_y = np.tile(
-                    [np.nan], transect.in_transect_idx.shape
-                )
+                b_vel_x = np.tile([np.nan], transect.in_transect_idx.shape)
+                b_vel_y = np.tile([np.nan], transect.in_transect_idx.shape)
 
             start_edge = transect.start_edge
 
@@ -601,9 +602,7 @@ class QComp(object):
         cell_size = trans_select.depth_cell_size_m
 
         # Determine is xprod contains edge data and process appropriately
-        q_mid_cells = np.multiply(
-            xprod * cell_size[:, in_transect_idx], delta_t
-        )
+        q_mid_cells = np.multiply(xprod * cell_size[:, in_transect_idx], delta_t)
 
         return q_mid_cells
 
@@ -752,7 +751,6 @@ class QComp(object):
 
         # Check to make sure there is edge data
         if len(edge_idx) > 0:
-
             # Compute edge velocity using specified method
             # Used by TRDI
             if transect.edges.vel_method == "MeasMag":
@@ -1193,13 +1191,11 @@ class QComp(object):
 
         # Process each ensemble
         for n in range(n_ensembles):
-
             # Use ensembles that have valid data
             selected_ensemble = edge_idx[n]
             valid_ensemble = np.nansum(np.isnan(x_vel[:, n]))
 
             if valid_ensemble > 0:
-
                 # Setup variables
                 v_x = x_vel[:, n]
                 v_y = y_vel[:, n]
@@ -1248,7 +1244,6 @@ class QComp(object):
                 u[n], v[n] = pol2cart(ens_dir, vel_ensembles)
 
             else:
-
                 # No valid data in ensemble
                 vel_ensembles[n] = np.nan
                 u[n] = np.nan
@@ -1527,7 +1522,6 @@ class QComp(object):
                 )
 
         if n_sta_tests > 0:
-
             # Compute linear regression coefficient forcing through zero to
             # relate near-bed velocity to moving-bed velocity
             x = np.vstack(near_bed_speed)
@@ -2031,7 +2025,6 @@ class QComp(object):
         return bottom_component
 
     def compute_edge_speed(self, transect):
-
         # Left edge
 
         # Determine what ensembles to use for edge computation.
@@ -2250,7 +2243,6 @@ class QComp(object):
 
                 # Loop through depth cells in an ensemble
                 for row in range(component.shape[0]):
-
                     # Compute the numerator
                     numerator_temp = component[row, col] * cell_size[row, col]
                     if np.logical_not(np.isnan(numerator_temp)):
@@ -2302,7 +2294,6 @@ class QComp(object):
 
             # Loop through ensembles
             for j in range(n_ensembles):
-
                 # Set default to constant
                 if (n_bins[j] < 6) and (n_bins[j] > 0) and (idx_top[j] >= 0):
                     top_value[j] = delta_t[j] * component[idx_top[j], j] * top_rng[j]
@@ -2544,7 +2535,6 @@ class QComp(object):
 
                 # Loop through depth cells in an ensemble
                 for row in range(component.shape[0]):
-
                     # Compute the numerator
                     numerator_temp = component[row, col] * cell_size[row, col]
                     if np.logical_not(np.isnan(numerator_temp)):
@@ -2586,10 +2576,8 @@ class QComp(object):
 
                 # Verify there are valid depth cutoffs
                 if np.any(np.logical_not(np.isnan(cutoff_depth))):
-
                     # Loop through depth cells
                     for row in range(cell_depth.shape[0]):
-
                         # Identify last valid cell by end of loop
                         if np.logical_not(np.isnan(cell_depth[row, col])):
                             last_cell_depth = cell_depth[row, col]
@@ -2690,7 +2678,6 @@ class QComp(object):
 
         # Loop through each ensemble
         for n in range(n_ensembles):
-
             # Identifying bottom most valid cell
             idx_temp = np.where(np.logical_not(np.isnan(x_prod[:, n])))[0]
             if len(idx_temp) > 0:

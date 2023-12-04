@@ -506,7 +506,6 @@ class Shiptrack(object):
             min_y = min_y - (max_y - min_y) * 0.1
 
             if np.logical_not(np.any(np.isnan(np.array([max_x, min_x, max_y, min_y])))):
-
                 self.fig.ax.set_ylim(top=max_y * units["L"], bottom=min_y * units["L"])
                 self.fig.ax.set_xlim(left=min_x * units["L"], right=max_x * units["L"])
         else:

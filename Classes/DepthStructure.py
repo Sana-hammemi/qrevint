@@ -82,7 +82,6 @@ class DepthStructure(object):
            Matlab data structure obtained from sio.loadmat
         """
         if hasattr(transect, "depths"):
-
             self.bt_depths = DepthData()
             self.bt_depths.populate_from_qrev_mat(transect.depths.btDepths)
 
@@ -359,7 +358,6 @@ class DepthStructure(object):
 
     @staticmethod
     def interpolate_composite(transect, composite_depth):
-
         """Apply linear interpolation to composite depths
 
         Parameters

@@ -198,7 +198,6 @@ class HeadingData(object):
         idx_invalid = np.where(np.isnan(self.data))[0]
 
         if len(idx_invalid) > 0:
-
             first_valid_idx = np.where(np.isnan(self.data) == False)[0][0]
             last_valid_idx = np.where(np.isnan(self.data) == False)[0][-1]
 

@@ -22,7 +22,6 @@ class BoatStructure(object):
     """
 
     def __init__(self):
-
         self.selected = None
         self.bt_vel = None
         self.gga_vel = None

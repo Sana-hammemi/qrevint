@@ -75,7 +75,6 @@ class CrossSection(object):
         cb_final_cs=None,
         x_axis_type=None,
     ):
-
         """Create the axes and lines for the figure.
 
         Parameters

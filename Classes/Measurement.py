@@ -131,7 +131,7 @@ class Measurement(object):
         snr_3beam_comp=False,
         excluded=None,
         water_dir_diff_threshold=8.1,
-        date_format="%Y.%m.%d"
+        date_format="%Y.%m.%d",
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -171,7 +171,7 @@ class Measurement(object):
         excluded: dict
             Dictionary containting the excluded distances for the RioPro and M9
         date_format: str
-            Format string for date 
+            Format string for date
         """
 
         self.date_format = date_format
@@ -530,11 +530,12 @@ class Measurement(object):
         if "RG_Test" in mmt.qaqc:
             for n in range(len(mmt.qaqc["RG_Test"])):
                 p_m = PreMeasurement()
-                p_m.populate_data(mmt.qaqc["RG_Test_TimeStamp"][n],
-                    mmt.qaqc["RG_Test"][n], "TST")
+                p_m.populate_data(
+                    mmt.qaqc["RG_Test_TimeStamp"][n], mmt.qaqc["RG_Test"][n], "TST"
+                )
                 self.system_tst.append(p_m)
 
-    def trdi_add_compass_cal (self, mmt):
+    def trdi_add_compass_cal(self, mmt):
         """Process TRDI compass calibration
 
         Parameters
@@ -547,8 +548,11 @@ class Measurement(object):
         if "Compass_Calibration" in mmt.qaqc:
             for n in range(len(mmt.qaqc["Compass_Calibration"])):
                 cc = PreMeasurement()
-                cc.populate_data(mmt.qaqc["Compass_Calibration_TimeStamp"][n],
-                    mmt.qaqc["Compass_Calibration"][n], "TCC", )
+                cc.populate_data(
+                    mmt.qaqc["Compass_Calibration_TimeStamp"][n],
+                    mmt.qaqc["Compass_Calibration"][n],
+                    "TCC",
+                )
                 self.compass_cal.append(cc)
 
     def trdi_add_compass_eval(self, mmt):
@@ -563,8 +567,11 @@ class Measurement(object):
         if "Compass_Evaluation" in mmt.qaqc:
             for n in range(len(mmt.qaqc["Compass_Evaluation"])):
                 ce = PreMeasurement()
-                ce.populate_data(mmt.qaqc["Compass_Evaluation_TimeStamp"][n],
-                    mmt.qaqc["Compass_Evaluation"][n], "TCC", )
+                ce.populate_data(
+                    mmt.qaqc["Compass_Evaluation_TimeStamp"][n],
+                    mmt.qaqc["Compass_Evaluation"][n],
+                    "TCC",
+                )
                 self.compass_eval.append(ce)
 
     def trdi_add_moving_bed_tests(self, mmt):
@@ -586,14 +593,23 @@ class Measurement(object):
                 for n in range(len(transects)):
                     # Create moving-bed test object
                     mb_test = MovingBedTests()
-                    mb_test.populate_data(source="TRDI", file=transects[n],
-                        test_type=mmt.mbt_transects[n].moving_bed_type, )
+                    mb_test.populate_data(
+                        source="TRDI",
+                        file=transects[n],
+                        test_type=mmt.mbt_transects[n].moving_bed_type,
+                    )
 
                     # Save notes from mmt files in comments
                     notes = getattr(mmt.mbt_transects[n], "Notes")
                     for note in notes:
-                        note_text = (" File: " + note["NoteFileNo"] + " " + note[
-                            "NoteDate"] + ": " + note["NoteText"])
+                        note_text = (
+                            " File: "
+                            + note["NoteFileNo"]
+                            + " "
+                            + note["NoteDate"]
+                            + ": "
+                            + note["NoteText"]
+                        )
                         self.comments.append(note_text)
 
                     self.mb_tests.append(mb_test)
@@ -781,7 +797,9 @@ class Measurement(object):
             # Find moving-bed test files.
             if file.endswith(".mat"):
                 # Process Loop test
-                self.sontek_moving_bed_tests(pathname, file, snr_3beam_comp=snr_3beam_comp)
+                self.sontek_moving_bed_tests(
+                    pathname, file, snr_3beam_comp=snr_3beam_comp
+                )
 
     def sontek_add_systest(self, path, file):
         """Process SonTek system test.
@@ -800,8 +818,9 @@ class Measurement(object):
             test_data = test_data.replace("\x00", "")
             time_stamp = file[10:24]
             sys_test = PreMeasurement()
-            sys_test.populate_data(time_stamp=time_stamp, data_in=test_data,
-                data_type="SST")
+            sys_test.populate_data(
+                time_stamp=time_stamp, data_in=test_data, data_type="SST"
+            )
             self.system_tst.append(sys_test)
 
     def sontek_add_compass_cal(self, path, file):
@@ -3553,18 +3572,14 @@ class Measurement(object):
         temp = nav_data.gps_HDOP_filter
         if temp:
             if temp == "Manual":
-                temp = "{:.2f}".format(
-                    nav_data.gps_HDOP_filter_change
-                )
+                temp = "{:.2f}".format(nav_data.gps_HDOP_filter_change)
             ETree.SubElement(navigation, "HDOPChangeFilter", type="char").text = temp
 
         # (4) HDOPThresholdFilter
         temp = nav_data.gps_HDOP_filter
         if temp:
             if temp == "Manual":
-                temp = "{:.2f}".format(
-                    nav_data.gps_HDOP_filter_max
-                )
+                temp = "{:.2f}".format(nav_data.gps_HDOP_filter_max)
             ETree.SubElement(navigation, "HDOPThresholdFilter", type="char").text = temp
 
         # (4) InterpolationType Node

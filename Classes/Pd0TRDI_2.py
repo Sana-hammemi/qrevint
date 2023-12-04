@@ -174,7 +174,6 @@ class Pd0TRDI(object):
                 self.screen_and_convert(wr2)
 
     def screen_and_convert(self, wr2):
-
         # Screen for bad data, and do the unit conversions
         self.Wt.vel_mps[self.Wt.vel_mps == -32768] = np.nan
         self.Wt.vel_mps = self.Wt.vel_mps / 1000
@@ -200,10 +199,8 @@ class Pd0TRDI(object):
 
         # If requested compute WR2 compatible GPS-based boat velocities
         if wr2:
-
             # If vtg data are available compute north and east components
             if self.Gps2.vtg_header[0, 0] == "$":
-
                 # Find minimum of absolute value of delta time from raw data
                 vtg_delta_time = np.abs(self.Gps2.vtg_delta_time)
                 vtg_min = np.nanmin(vtg_delta_time, 1)
@@ -217,7 +214,6 @@ class Pd0TRDI(object):
                     )
 
             if self.Gps2.gga_header[0, 0] == "$":
-
                 # Initialize constants
                 e_radius = 6378137
                 coeff = e_radius * np.pi / 180
@@ -262,7 +258,6 @@ class Pd0TRDI(object):
                         self.Gps2.gga_velN_mps[i] = np.nan
 
     def decode_all(self, pd0_bytes, file_info):
-
         start_byte = 0
         n = 0
         ensemble_number = 0
@@ -331,7 +326,6 @@ class Pd0TRDI(object):
 
         # Loop through entire file
         while start_byte < file_info:
-
             data = self.decode_pd0_bytearray(data_decoders, pd0_bytes[start_byte:])
             # start_byte = start_byte + data['header']['number_of_bytes'] + 2
             if data["checksum"]:
@@ -360,7 +354,6 @@ class Pd0TRDI(object):
 
     @staticmethod
     def find_next(pd0_bytes, start_byte, file_info):
-
         try:
             start_byte = start_byte + 1
             skip_forward = pd0_bytes[start_byte:].index(b"\x7f\x7f")
@@ -536,7 +529,6 @@ class Pd0TRDI(object):
 
     @staticmethod
     def bin2str(bin_in):
-
         try:
             str_out = bin_in.decode("utf-8")
         except:
@@ -3028,7 +3020,6 @@ class Gps2(object):
         """
 
         if "gga" in data:
-
             # Check size and expand if needed
             if len(data["gga"]) > self.gga_delta_time.shape[1]:
                 self.gga_expand(len(data["gga"]))
@@ -3058,7 +3049,6 @@ class Gps2(object):
                     pass
 
         if "vtg" in data:
-
             # Check size and expand if needed
             if len(data["vtg"]) > self.vtg_delta_time.shape[1]:
                 self.vtg_expand(len(data["vtg"]))
@@ -3083,7 +3073,6 @@ class Gps2(object):
                     pass
 
         if "ds" in data:
-
             # Check size and expand if needed
             if len(data["ds"]) > self.dbt_delta_time.shape[1]:
                 self.dbt_expand(len(data["ds"]))
@@ -3105,7 +3094,6 @@ class Gps2(object):
                     pass
 
         if "ext_heading" in data:
-
             # Check size and expand if needed
             if len(data["ext_heading"]) > self.hdt_delta_time.shape[1]:
                 self.hdt_expand(len(data["ext_heading"]))

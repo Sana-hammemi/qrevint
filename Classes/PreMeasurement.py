@@ -380,7 +380,6 @@ class PreMeasurement(object):
 
             # Process each set of correlation tables
             for n, lag_match in enumerate(lag_matches):
-
                 # Count the Bm1 string to know how many tables to read
                 bm_count = len(re.findall("Bm1", lag_match))
 
@@ -394,7 +393,6 @@ class PreMeasurement(object):
 
                 # Only one pt3 test. Typical of Rio Grande and Streampro
                 if bm_count == 1:
-
                     # Assign matrix slices to corresponding variables
                     # corr_hlimit_hgain_wband = corr_data
                     pt3["hard_limit"]["high_wide"]["corr_table"] = corr_data
@@ -404,10 +402,8 @@ class PreMeasurement(object):
 
                 # 4 tests arranged in groups of 2. All data are hard limited.
                 elif bm_count == 2 and correl_count == 4:
-
                     # Hard limited wide bandwidth (n=0)
                     if n == 0:
-
                         pt3["hard_limit"]["high_wide"]["corr_table"] = corr_data[:, 0:4]
                         pt3["hard_limit"]["high_wide"]["sdc"] = sin_array[
                             n * 4 : (n + 1) * 4
@@ -432,7 +428,6 @@ class PreMeasurement(object):
 
                     # Hard limited narrow bandwidth (n=1)
                     elif n == 1:
-
                         pt3["hard_limit"]["high_narrow"]["corr_table"] = corr_data[
                             :, 0:4
                         ]
@@ -462,10 +457,8 @@ class PreMeasurement(object):
                 # 8 tests arranged in sets of 2. The linear is 1st followed
                 # by the hard limit.
                 elif bm_count == 2 and correl_count == 8:
-
                     # Hard limit bandwidth (n=0)
                     if n == 0:
-
                         pt3["hard_limit"]["high_wide"]["corr_table"] = corr_data[:, 0:4]
                         pt3["hard_limit"]["high_wide"]["sdc"] = sin_array[
                             n * 4 : (n + 1) * 4
@@ -490,7 +483,6 @@ class PreMeasurement(object):
 
                     # Hard limit narrow bandwidth (n=1)
                     elif n == 1:
-
                         pt3["hard_limit"]["high_narrow"]["corr_table"] = corr_data[
                             :, 0:4
                         ]
@@ -519,7 +511,6 @@ class PreMeasurement(object):
 
                     # Linear wide bandwidth (n=2)
                     elif n == 2:
-
                         pt3["linear"]["high_wide"]["corr_table"] = corr_data[:, 0:4]
                         pt3["linear"]["high_wide"]["noise_floor"] = rssi_array[
                             (n + 2) * 4 : (n + 3) * 4
@@ -532,7 +523,6 @@ class PreMeasurement(object):
 
                     # Linear narrow bandwidth (n=3)
                     elif n == 3:
-
                         pt3["linear"]["high_narrow"]["corr_table"] = corr_data[:, 0:4]
                         pt3["linear"]["high_narrow"]["noise_floor"] = rssi_array[
                             (n + 3) * 4 : (n + 4) * 4
@@ -546,10 +536,8 @@ class PreMeasurement(object):
                 # 8 tests in groups of 4. Hard limit is the first group then
                 # the linear.
                 elif bm_count == 4:
-
                     # Hard limit data (n=0)
                     if n == 0:
-
                         pt3["hard_limit"]["high_wide"]["corr_table"] = corr_data[:, 0:4]
                         pt3["hard_limit"]["high_wide"]["sdc"] = sin_array[
                             n * 4 : (n + 1) * 4

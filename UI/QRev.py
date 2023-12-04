@@ -32,7 +32,8 @@ from Classes.stickysettings import StickySettings as SSet
 from MiscLibs.common_functions import (
     convert_temperature,
     units_conversion,
-    sfrnd, dateformat
+    sfrnd,
+    dateformat,
 )
 from UI.AdvGraphs import AdvGraphs
 from UI.AxesScale import AxesScale
@@ -832,7 +833,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Left Right Flow Direction Difference
         if "LeftRightFlowDirDiff" not in self.agency_options.keys():
-            self.popup_message(self.tr("QRev.cfg: LeftRightFlowDirDiff parameter not found."))
+            self.popup_message(
+                self.tr("QRev.cfg: LeftRightFlowDirDiff parameter not found.")
+            )
             sys.exit()
         if "threshold" not in self.agency_options["LeftRightFlowDirDiff"].keys():
             self.popup_message(
@@ -846,20 +849,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             sys.exit()
         if "default" not in self.agency_options["DateFormat"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg DateFormat: default parameter not found."))
+                self.tr("QRevMS.cfg DateFormat: default parameter not found.")
+            )
             sys.exit()
         if "show" not in self.agency_options["DateFormat"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg DateFormat: show parameter not found."))
+                self.tr("QRevMS.cfg DateFormat: show parameter not found.")
+            )
             sys.exit()
         try:
             if self.agency_options["DateFormat"]["show"]:
                 ss = self.sticky_settings.get("DateFormat")
                 self.date_format = ss
             else:
-                self.date_format = dateformat(self.agency_options["DateFormat"]["default"])
+                self.date_format = dateformat(
+                    self.agency_options["DateFormat"]["default"]
+                )
         except KeyError:
-            self.sticky_settings.new("DateFormat", dateformat(self.agency_options["DateFormat"]["default"]))
+            self.sticky_settings.new(
+                "DateFormat", dateformat(self.agency_options["DateFormat"]["default"])
+            )
             self.date_format = dateformat(self.agency_options["DateFormat"]["default"])
 
         # PDF Summary
@@ -868,20 +877,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             sys.exit()
         if "default" not in self.agency_options["PDFSummary"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg PDFSummary: default parameter not found."))
+                self.tr("QRevMS.cfg PDFSummary: default parameter not found.")
+            )
             sys.exit()
         if "show" not in self.agency_options["PDFSummary"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg PDFSummary: show parameter not found."))
+                self.tr("QRevMS.cfg PDFSummary: show parameter not found.")
+            )
             sys.exit()
         try:
             if self.agency_options["PDFSummary"]["show"]:
                 ss = self.sticky_settings.get("PDFSummary")
                 self.pdf_setting = ss
             else:
-                self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
+                self.pdf_setting = dateformat(
+                    self.agency_options["PDFSummary"]["default"]
+                )
         except KeyError:
-            self.sticky_settings.new("PDFSummary", self.agency_options["PDFSummary"]["default"])
+            self.sticky_settings.new(
+                "PDFSummary", self.agency_options["PDFSummary"]["default"]
+            )
             self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
 
         self.manual_computational_settings = {
@@ -978,6 +993,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.actionON.setDisabled(True)
         self.actionOptions.setEnabled(True)
         self.actionGoogle_Earth.setDisabled(True)
+        self.actionHome.setDisabled(True)
+        self.actionZoom.setDisabled(True)
+        self.actionPan.setDisabled(True)
+        self.actionData_Cursor.setDisabled(True)
+        self.actionShow_Extrapolated.setDisabled(True)
 
         # Configure bold and normal fonts
         self.font_bold = QtGui.QFont()
@@ -1266,8 +1286,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         icon_path = ""
 
         path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', "docs",
-                         "source", "assets", "files", icon))
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "docs",
+                "source",
+                "assets",
+                "files",
+                icon,
+            )
+        )
 
         if os.path.exists(path):
             icon_path = path
@@ -1276,9 +1304,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Use production-specific settings
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
-            path = os.path.join(base_path,
-                                        'qrev_files',
-                                        icon)
+            path = os.path.join(base_path, "qrev_files", icon)
             if os.path.exists(path):
                 icon_path = path
 
@@ -1455,8 +1481,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             gps_quality_threshold=self.gps_quality_threshold,
                             snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                             excluded=self.agency_options["Excluded"],
-                            water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"]["threshold"],
-                            date_format=self.date_format
+                            water_dir_diff_threshold=self.agency_options[
+                                "LeftRightFlowDirDiff"
+                            ]["threshold"],
+                            date_format=self.date_format,
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1478,9 +1506,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         min_duration=self.agency_options["QA"]["MinDuration"],
                         export_xs=self.xs_export,
                         gps_quality_threshold=self.gps_quality_threshold,
-                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
-                            "threshold"],
-                        date_format=self.date_format
+                        water_dir_diff_threshold=self.agency_options[
+                            "LeftRightFlowDirDiff"
+                        ]["threshold"],
+                        date_format=self.date_format,
                     )
 
             # Load and process TRDI data
@@ -1502,9 +1531,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         export_xs=self.xs_export,
                         gps_quality_threshold=self.gps_quality_threshold,
                         excluded=self.agency_options["Excluded"],
-                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
-                            "threshold"],
-                        date_format=self.date_format
+                        water_dir_diff_threshold=self.agency_options[
+                            "LeftRightFlowDirDiff"
+                        ]["threshold"],
+                        date_format=self.date_format,
                     )
 
             # Load QRev data
@@ -1567,9 +1597,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             min_duration=self.agency_options["QA"]["MinDuration"],
                             export_xs=self.xs_export,
                             gps_quality_threshold=self.gps_quality_threshold,
-                            water_dir_diff_threshold=
-                            self.agency_options["LeftRightFlowDirDiff"]["threshold"],
-                            date_format=self.date_format
+                            water_dir_diff_threshold=self.agency_options[
+                                "LeftRightFlowDirDiff"
+                            ]["threshold"],
+                            date_format=self.date_format,
                         )
 
                 # Settings based on measurement settings
@@ -1676,7 +1707,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             save_file = SaveDialog(parent=self)
 
-            if len(save_file.full_Name) > 0:                
+            if len(save_file.full_Name) > 0:
                 # Add comment when saving file
                 time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 user_name = getpass.getuser()
@@ -1684,10 +1715,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 uncertainty = "N/A"
                 if self.run_oursin:
                     if not np.isnan(self.meas.oursin.u_measurement_user["total_95"][0]):
-                        uncertainty = "{:4.1f}".format(self.meas.oursin.u_measurement_user["total_95"][0])
+                        uncertainty = "{:4.1f}".format(
+                            self.meas.oursin.u_measurement_user["total_95"][0]
+                        )
                 else:
                     if not np.isnan(self.meas.uncertainty.total_95_user):
-                        uncertainty = "{:4.1f}".format(self.meas.uncertainty.total_95_user)
+                        uncertainty = "{:4.1f}".format(
+                            self.meas.uncertainty.total_95_user
+                        )
                 text = (
                     "["
                     + time_stamp
@@ -1710,10 +1745,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     create_pdf = True
 
                 if self.pdf_setting == "Prompt":
-                    reply = QtWidgets.QMessageBox.question(self, "PDF Summary",
+                    reply = QtWidgets.QMessageBox.question(
+                        self,
+                        "PDF Summary",
                         "Would you like to save a PDF Report Summary",
                         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                        QtWidgets.QMessageBox.No, )
+                        QtWidgets.QMessageBox.No,
+                    )
                     if reply == QtWidgets.QMessageBox.Yes:
                         create_pdf = True
 
@@ -2075,7 +2113,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             options.rb_pdf_prompt.setChecked(True)
         else:
             options.rb_pdf_always.setChecked(True)
-            
+
         if not self.agency_options["DateFormat"]["show"]:
             options.gb_dateformat.hide()
         else:
@@ -2312,15 +2350,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if options.cb_map.isChecked():
                     self.show_map = True
                     self.sticky_settings.set("MAP", True)
-                    if self.tab_all.indexOf(
-                self.tab_all.findChild(QtWidgets.QWidget, "tab_map")) < 0:
+                    if (
+                        self.tab_all.indexOf(
+                            self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
+                        )
+                        < 0
+                    ):
                         self.tab_all.addTab(self.tab_map, "MAP")
                 else:
                     self.show_map = False
                     self.sticky_settings.set("MAP", False)
                     tab_idx = self.tab_all.indexOf(
-                        self.tab_all.findChild(QtWidgets.QWidget, "tab_map"))
-                    if  tab_idx > 0:
+                        self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
+                    )
+                    if tab_idx > 0:
                         self.tab_all.removeTab(tab_idx)
 
                 if len(options.ed_dateformat.text()) > 0:
@@ -2366,12 +2409,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # will work when called by other projects using AC3.
         if __company__ == "USGS":
             landing_page = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', "docs", "_build", "html",
-                             "index.html"))
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "docs",
+                    "_build",
+                    "html",
+                    "index.html",
+                )
+            )
         else:
             landing_page = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', "docs_QRevInt",
-                             "_build", "html", "index.html"))
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "docs_QRevInt",
+                    "_build",
+                    "html",
+                    "index.html",
+                )
+            )
 
         if os.path.exists(landing_page):
             webbrowser.open("file://" + landing_page)
@@ -2380,9 +2437,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Use production-specific settings
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
-            landing_page = os.path.join(base_path,
-                                        'qrev_documentation',
-                                        "index.html")
+            landing_page = os.path.join(base_path, "qrev_documentation", "index.html")
             if os.path.exists(landing_page):
                 webbrowser.open("file://" + landing_page)
 
@@ -2402,8 +2457,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Use development-specific settings. Using __file__ path, so it
         # will work when called by other projects using QRev.
         path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', "docs",
-                         "source", "assets", "files", stylesheet))
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "docs",
+                "source",
+                "assets",
+                "files",
+                stylesheet,
+            )
+        )
 
         if os.path.exists(path):
             shutil.copy2(path, destination)
@@ -2412,9 +2475,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Use production-specific settings
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
-            path = os.path.join(base_path,
-                                'qrev_files',
-                                stylesheet)
+            path = os.path.join(base_path, "qrev_files", stylesheet)
             if os.path.exists(path):
                 shutil.copy2(path, destination)
 
@@ -3354,14 +3415,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             qa_type = getattr(qa, key)
             if qa_type["messages"]:
                 for message in qa_type["messages"]:
+                    if type(message) == np.ndarray:
+                        message = message.tolist()
                     if type(message) is str:
                         if message[:3].isupper():
                             messages.append([message, 1])
                         else:
                             messages.append([message, 2])
                     else:
-                        if type(message[1]) is str:
-                            message[1] = int(message[1])
+                        message[1] = int(message[1])
                         messages.append(message)
             self.set_icon(key, qa_type["status"])
 
@@ -3842,8 +3904,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Row label
             col = 0
 
-            meas_date = datetime.strftime(datetime.utcfromtimestamp(self.meas.transects[self.checked_transects_idx[0]
-            ].date_time.start_serial_time), self.date_format)
+            meas_date = datetime.strftime(
+                datetime.utcfromtimestamp(
+                    self.meas.transects[
+                        self.checked_transects_idx[0]
+                    ].date_time.start_serial_time
+                ),
+                self.date_format,
+            )
             item = self.tr("Measurement") + " (" + meas_date + ")"
             tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -4107,7 +4175,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # LR difference width
             if len(left_width) > 0 and len(right_width) > 0:
-                item = "{:10.2f}".format(np.abs(np.nanmean(left_width) - np.nanmean(right_width)) * self.units["L"])
+                item = "{:10.2f}".format(
+                    np.abs(np.nanmean(left_width) - np.nanmean(right_width))
+                    * self.units["L"]
+                )
             else:
                 item = ""
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
@@ -4122,13 +4193,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # LR difference area
             if len(left_area) > 0 and len(right_area) > 0:
                 item = "{:10.2f}".format(
-                    np.abs(np.nanmean(left_area) - np.nanmean(right_area)) * self.units[
-                        "L"])
+                    np.abs(np.nanmean(left_area) - np.nanmean(right_area))
+                    * self.units["L"]
+                )
             else:
                 item = ""
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
-
 
             # Average boat speed
             col += 1
@@ -4141,8 +4212,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # LR difference boat speed
             if len(left_boat_speed) > 0 and len(right_boat_speed) > 0:
                 item = "{:6.2f}".format(
-                    np.abs(np.nanmean(left_boat_speed) - np.nanmean(right_boat_speed)) * self.units[
-                        "L"])
+                    np.abs(np.nanmean(left_boat_speed) - np.nanmean(right_boat_speed))
+                    * self.units["L"]
+                )
             else:
                 item = ""
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
@@ -4154,7 +4226,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # LR difference boat course
             if len(left_boat_course) > 0 and len(right_boat_course) > 0:
                 diff_dir = np.abs(
-                    np.nanmean(left_boat_course) - np.nanmean(right_boat_course))
+                    np.nanmean(left_boat_course) - np.nanmean(right_boat_course)
+                )
                 if diff_dir > 180:
                     diff_dir = diff_dir - 360
                 item = "{:6.2f}".format(diff_dir)
@@ -4174,8 +4247,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # LR difference water_speed
             if len(left_water_speed) > 0 and len(right_water_speed) > 0:
                 item = "{:6.2f}".format(
-                    np.abs(np.nanmean(left_water_speed) - np.nanmean(right_water_speed)) * self.units[
-                        "L"])
+                    np.abs(np.nanmean(left_water_speed) - np.nanmean(right_water_speed))
+                    * self.units["L"]
+                )
             else:
                 item = ""
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
@@ -4189,7 +4263,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # LR difference water_direction
             if len(left_water_dir) > 0 and len(right_water_dir) > 0:
-                diff_dir = np.abs(np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
+                diff_dir = np.abs(
+                    np.nanmean(left_water_dir) - np.nanmean(right_water_dir)
+                )
                 if diff_dir > 180:
                     diff_dir = diff_dir - 360
                 item = "{:6.2f}".format(diff_dir)
@@ -5210,9 +5286,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             folder = self.default_folder()
 
             # Get the full names (path + file) of the selected files
-            add_file = \
-            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add System Test"), folder,
-                self.tr(file_type, ))[0]
+            add_file = QtWidgets.QFileDialog.getOpenFileNames(
+                self,
+                self.tr("Add System Test"),
+                folder,
+                self.tr(
+                    file_type,
+                ),
+            )[0]
 
             if len(add_file) > 0:
                 # Add TRDI system test(s)
@@ -5545,11 +5626,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
 
-                elif (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "internal"
-                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                elif (
+                    self.meas.transects[
+                        self.meas.checked_transect_idx[0]
+                    ].sensors.heading_deg.selected
+                    == "internal"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"
+                ):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row, col).setToolTip(self.tr(
-                        "Difference in left and right water direction threshold exeeded"))
+                    tbl.item(row, col).setToolTip(
+                        self.tr(
+                            "Difference in left and right water direction threshold exeeded"
+                        )
+                    )
 
                 # Magvar is zero
                 elif self.meas.qa.compass["magvar"] == 2:
@@ -5581,11 +5670,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     ),
                 )
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
-                if (self.meas.transects[self.meas.checked_transect_idx[0]].sensors.heading_deg.selected == "external"
-                    and self.meas.qa.compass["lr_water_dir"] == "caution"):
+                if (
+                    self.meas.transects[
+                        self.meas.checked_transect_idx[0]
+                    ].sensors.heading_deg.selected
+                    == "external"
+                    and self.meas.qa.compass["lr_water_dir"] == "caution"
+                ):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
-                    tbl.item(row, col).setToolTip(self.tr(
-                        "Difference in left and right water direction threshold exeeded"))
+                    tbl.item(row, col).setToolTip(
+                        self.tr(
+                            "Difference in left and right water direction threshold exeeded"
+                        )
+                    )
                 else:
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -6077,7 +6174,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Update
                 self.display_compass_result.clear()
                 self.display_compass_result.setPlainText(
-                    self.meas.compass_cal[row].data)
+                    self.meas.compass_cal[row].data
+                )
 
     def select_evaluation(self, row, column):
         """Displays selected compass evaluation.
@@ -6110,10 +6208,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     == "SonTek"
                 ):
                     self.display_compass_result.setPlainText(
-                        self.meas.compass_cal[row].data)
+                        self.meas.compass_cal[row].data
+                    )
                 else:
                     self.display_compass_result.setPlainText(
-                        self.meas.compass_eval[row].data)
+                        self.meas.compass_eval[row].data
+                    )
 
     def compass_plot(self):
         """Generates the graph of heading and magnetic change."""
@@ -6194,7 +6294,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def add_compass_cal_eval(self):
         """Allows user to associate a compass calibration and/or evalution
-         with this measurement that was collected as part of another measurement.
+        with this measurement that was collected as part of another measurement.
         """
 
         add_file = []
@@ -6214,9 +6314,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             folder = self.default_folder()
 
             # Get the full names (path + file) of the selected files
-            add_file = \
-            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Compass Cal/Eval"), folder,
-                self.tr(file_type, ))[0]
+            add_file = QtWidgets.QFileDialog.getOpenFileNames(
+                self,
+                self.tr("Add Compass Cal/Eval"),
+                folder,
+                self.tr(
+                    file_type,
+                ),
+            )[0]
 
             if len(add_file) > 0:
                 # Add TRDI system test(s)
@@ -7606,7 +7711,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def mb_add_test(self):
         """Allows user to associate a moving-bed test
-         with this measurement that was collected as part of another measurement.
+        with this measurement that was collected as part of another measurement.
         """
 
         add_file = []
@@ -7627,9 +7732,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             folder = self.default_folder()
 
             # Get the full names (path + file) of the selected files
-            add_file = \
-            QtWidgets.QFileDialog.getOpenFileNames(self, self.tr("Add Moving-Bed Test"), folder,
-                self.tr(file_type, ))[0]
+            add_file = QtWidgets.QFileDialog.getOpenFileNames(
+                self,
+                self.tr("Add Moving-Bed Test"),
+                folder,
+                self.tr(
+                    file_type,
+                ),
+            )[0]
 
             if len(add_file) > 0:
                 # Add TRDI system test(s)
@@ -7642,11 +7752,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Add multiple SonTek system tests
                     for file in add_file:
                         path, filename = os.path.split(file)
-                        self.meas.sontek_moving_bed_tests(path, filename, self.agency_options["SNR"]["Use3Beam"])
+                        self.meas.sontek_moving_bed_tests(
+                            path, filename, self.agency_options["SNR"]["Use3Beam"]
+                        )
 
                 # Add message to qa
                 self.meas.qa.moving_bed_test_added(self.meas)
-
 
                 # Process moving-bed tests and update measurement processing
                 settings = self.meas.current_settings()
@@ -15689,7 +15800,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "rb_map_contour": True,
                 "rb_map_bathymetry": False,
                 "rb_map_temp": False,
-                "rb_map_stickship": False, }
+                "rb_map_stickship": False,
+            }
 
             # Initialize tab
             self.map_tab_initialize()
@@ -15698,10 +15810,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_map_edges.setChecked(True)
             self.cb_map_bed_profiles.setChecked(True)
             min_width = self.meas.map.auto_node_horz
-            self.ed_map_cell_width.setText("{:3.2f}".format(min_width * self.units["L"]))
+            self.ed_map_cell_width.setText(
+                "{:3.2f}".format(min_width * self.units["L"])
+            )
             min_height = self.meas.map.auto_node_vert
             self.ed_map_cell_height.setText(
-                "{:3.2f}".format(min_height * self.units["L"]))
+                "{:3.2f}".format(min_height * self.units["L"])
+            )
             self.ed_map_secondary_velocity.setText("")
             self.combo_map_data.setCurrentIndex(0)
 
@@ -15719,12 +15834,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.combo_map_data.setCurrentIndex(0)
             self.map_current_settings = {
                 "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
-                "ed_map_cell_width": self.check_numeric_input(
-                    self.ed_map_cell_width
-                ),
-                "ed_map_cell_height": self.check_numeric_input(
-                    self.ed_map_cell_height
-                ),
+                "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
+                "ed_map_cell_height": self.check_numeric_input(self.ed_map_cell_height),
                 "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
                 "cb_map_edges": self.cb_map_edges.isChecked(),
                 "ed_map_secondary_velocity": self.check_numeric_input(
@@ -15747,7 +15858,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Save MAP parameters as dict
         secondary_velocity_scale = self.check_numeric_input(
-                self.ed_map_secondary_velocity)
+            self.ed_map_secondary_velocity
+        )
         self.map_settings = {
             "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
             "ed_map_cell_width": self.check_numeric_input(self.ed_map_cell_width),
@@ -15776,33 +15888,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ui_parents = [i.parent() for i in self.canvases]
         self.figs_menu_connection()
 
-
     def map_tab_initialize(self):
+        # Todo add signals for any change to the map properties
+        # Configure dictionary of plot options
+        self.map_current_settings = self.map_settings
 
-            # Todo add signals for any change to the map properties
-            # Configure dictionary of plot options
-            self.map_current_settings = self.map_settings
+        # radio button signals for plot type
+        self.rb_map_contour.clicked.connect(self.update_map)
+        self.rb_map_bathymetry.clicked.connect(self.update_map)
+        self.rb_map_temp.clicked.connect(self.update_map)
+        self.rb_map_stickship.clicked.connect(self.update_map)
 
-            # radio button signals for plot type
-            self.rb_map_contour.clicked.connect(self.update_map)
-            self.rb_map_bathymetry.clicked.connect(self.update_map)
-            self.rb_map_temp.clicked.connect(self.update_map)
-            self.rb_map_stickship.clicked.connect(self.update_map)
+        # signals for contour options
+        self.combo_map_data.currentTextChanged.connect(self.update_map)
+        self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
+        self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
+        self.ed_map_cell_width.editingFinished.connect(self.update_map)
+        self.ed_map_cell_height.editingFinished.connect(self.update_map)
+        self.cb_map_top_bottom.clicked.connect(self.update_map)
+        self.cb_map_edges.clicked.connect(self.update_map)
+        self.cb_map_interpolation.clicked.connect(self.update_map)
+        self.cb_map_bed_profiles.clicked.connect(self.update_map)
 
-            # signals for contour options
-            self.combo_map_data.currentTextChanged.connect(self.update_map)
-            self.ed_map_secondary_velocity.editingFinished.connect(self.update_map)
-            self.cb_map_cell_size_auto.clicked.connect(self.map_cell_auto)
-            self.ed_map_cell_width.editingFinished.connect(self.update_map)
-            self.ed_map_cell_height.editingFinished.connect(self.update_map)
-            self.cb_map_top_bottom.clicked.connect(self.update_map)
-            self.cb_map_edges.clicked.connect(self.update_map)
-            self.cb_map_interpolation.clicked.connect(self.update_map)
-            self.cb_map_bed_profiles.clicked.connect(self.update_map)
-
-            self.pb_map_save.clicked.connect(self.map_save_data)
-            self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
-            # self.map_initialized = True
+        self.pb_map_save.clicked.connect(self.map_save_data)
+        self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
+        # self.map_initialized = True
 
     def update_map(self):
         """Updates MAP with user's parameters."""
@@ -15823,11 +15933,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 if cell_width < min_width:
                     cell_width = min_width
-                    self.ed_map_cell_width.setText("{:3.2f}".format(
-                        cell_width * self.units["L"]))
+                    self.ed_map_cell_width.setText(
+                        "{:3.2f}".format(cell_width * self.units["L"])
+                    )
             else:
-                self.ed_map_cell_width.setText("{:3.2f}".format(
-                    min_width * self.units["L"]))
+                self.ed_map_cell_width.setText(
+                    "{:3.2f}".format(min_width * self.units["L"])
+                )
 
             cell_height = self.check_numeric_input(self.ed_map_cell_height)
             min_height = self.meas.map.auto_node_vert
@@ -15835,11 +15947,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 cell_height = cell_height * 1 / self.units["L"]
                 if cell_height < min_height:
                     cell_height = min_height
-                    self.ed_map_cell_height.setText("{:3.2f}".format(
-                        min_height * self.units["L"]))
+                    self.ed_map_cell_height.setText(
+                        "{:3.2f}".format(min_height * self.units["L"])
+                    )
             else:
-                self.ed_map_cell_height.setText("{:3.2f}".format(
-                    min_height * self.units["L"]))
+                self.ed_map_cell_height.setText(
+                    "{:3.2f}".format(min_height * self.units["L"])
+                )
 
             self.map_settings = {
                 "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
@@ -16064,8 +16178,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(
                     row,
                     col,
-                    QtWidgets.QTableWidgetItem("{:8}".format(self.q_digits(
-                        map_width * self.units["L"]))),
+                    QtWidgets.QTableWidgetItem(
+                        "{:8}".format(self.q_digits(map_width * self.units["L"]))
+                    ),
                 )
             # Meas. width
             col += 1
@@ -16555,29 +16670,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_plots()
 
     def show_extrapolated(self):
-        if not self.plot_extrapolated:
-            self.plot_extrapolated = True
-            self.actionShow_Extrapolated.setChecked(True)
+        if self.meas is not None:
+            if not self.plot_extrapolated:
+                self.plot_extrapolated = True
+                self.actionShow_Extrapolated.setChecked(True)
+            else:
+                self.plot_extrapolated = False
+                self.actionShow_Extrapolated.setChecked(False)
+
+            with self.wait_cursor():
+                # Clear zoom, pan, home, data_cursor
+                self.clear_zphd()
+
+                # Determine the selected tab
+                tab_idx = self.current_tab
+
+                # Main tab
+                if tab_idx == "Main":
+                    self.main_wt_contour(
+                        transect_id=self.checked_transects_idx[self.transect_row]
+                    )
+                elif tab_idx == "WT":
+                    self.wt_plots()
+                elif tab_idx == "Adv. Graph":
+                    self.adv_graph_tab()
         else:
-            self.plot_extrapolated = False
             self.actionShow_Extrapolated.setChecked(False)
-
-        with self.wait_cursor():
-            # Clear zoom, pan, home, data_cursor
-            self.clear_zphd()
-
-            # Determine the selected tab
-            tab_idx = self.current_tab
-
-            # Main tab
-            if tab_idx == "Main":
-                self.main_wt_contour(
-                    transect_id=self.checked_transects_idx[self.transect_row]
-                )
-            elif tab_idx == "WT":
-                self.wt_plots()
-            elif tab_idx == "Adv. Graph":
-                self.adv_graph_tab()
 
     # Split functions
     # ==============
@@ -17242,6 +17360,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_all.setEnabled(True)
         self.actionSave.setEnabled(True)
         self.actionComment.setEnabled(True)
+        self.actionHome.setEnabled(True)
+        self.actionZoom.setEnabled(True)
+        self.actionPan.setEnabled(True)
+        self.actionData_Cursor.setEnabled(True)
+        self.actionShow_Extrapolated.setEnabled(True)
+
         if self.groupings is not None:
             self.actionCheck.setEnabled(False)
         else:
@@ -17338,7 +17462,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.sticky_settings.new("Folder", os.getcwd())
             folder = self.sticky_settings.get("Folder")
         return folder
-
 
     def closeEvent(self, event):
         """Warns user when closing QRev.

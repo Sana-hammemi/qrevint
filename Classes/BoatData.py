@@ -236,7 +236,6 @@ class BoatData(object):
             self.rssi = rssi_in
 
         if nav_ref_in == "BT":
-
             # Boat velocities are referenced to ADCP not the streambed and
             # thus must be reversed
             self.u_mps = np.copy(-1 * vel_in[0, :])
@@ -253,7 +252,6 @@ class BoatData(object):
             self.interpolate = "None"
 
         else:
-
             # GPS referenced boat velocity
             self.u_mps = np.copy(vel_in[0, :])
             self.v_mps = np.copy(vel_in[1, :])
@@ -550,7 +548,6 @@ class BoatData(object):
             # Check to ensure the new coordinate system is a higher order
             # than the original system
             if new_sys - orig_sys > 0:
-
                 # Compute trig function for heading, pitch and roll
                 ch = cosd(h)
                 sh = sind(h)
@@ -563,7 +560,6 @@ class BoatData(object):
                 n_ens = self.raw_vel_mps.shape[1]
 
                 for ii in range(n_ens):
-
                     # Compute matrix for heading, pitch, and roll
                     hpr_matrix = [
                         [
@@ -581,7 +577,6 @@ class BoatData(object):
 
                     # Transform beam coordinates
                     if o_coord_sys == "Beam":
-
                         # Determine frequency index for transformation matrix
                         if len(t_matrix.shape) > 2:
                             idx_freq = np.where(t_matrix_freq == self.frequency_khz[ii])
@@ -597,10 +592,8 @@ class BoatData(object):
 
                         # 3-beam solution
                         if len(idx_3_beam[0]) == 1:
-
                             # Special processing for RiverRay
                             if adcp.model == "RiverRay":
-
                                 # Set beam pairing
                                 beam_pair_1a = 0
                                 beam_pair_1b = 1
@@ -626,7 +619,6 @@ class BoatData(object):
 
                                 # Beam 1 invalid
                                 if idx_3_beam[0][0] == beam_pair_1a:
-
                                     # Double valid beam in invalid pair
                                     t_mult[0:2, beam_pair_1b] *= 2
 
@@ -661,7 +653,6 @@ class BoatData(object):
 
                                 # Beam 2 invalid
                                 if idx_3_beam[0][0] == beam_pair_1b:
-
                                     # Double valid beam in invalid pair
                                     t_mult[0:2, beam_pair_1a] = (
                                         t_mult[0:2, beam_pair_1a] * 2
@@ -698,7 +689,6 @@ class BoatData(object):
 
                                 # Beam 3 invalid
                                 if idx_3_beam[0][0] == beam_pair_2a:
-
                                     # Double valid beam in invalid pair
                                     t_mult[0:2, beam_pair_2b] = (
                                         t_mult[:2, beam_pair_2b] * 2
@@ -735,7 +725,6 @@ class BoatData(object):
 
                                 # Beam 4 invalid
                                 if idx_3_beam[0][0] == beam_pair_2b:
-
                                     # Double valid beam in invalid pair
                                     t_mult[:2, beam_pair_2a] *= 2
 
@@ -769,7 +758,6 @@ class BoatData(object):
                                     temp_t[1] = temp_t[1] + temp_t[2] * sos_correction
 
                             else:
-
                                 # 3 Beam solution for non-RiverRay
                                 vel_3_beam_zero = vel
                                 vel_3_beam_zero[np.isnan(vel)] = 0
@@ -784,7 +772,6 @@ class BoatData(object):
                             temp_thpr = np.hstack([temp_thpr, np.nan])
 
                         else:
-
                             # Apply transformation matrix for 4 beam solutions
                             temp_t = t_mult.dot(np.squeeze(self.raw_vel_mps[:, ii]))
 
@@ -793,7 +780,6 @@ class BoatData(object):
                             temp_thpr = np.hstack([temp_thpr, temp_t[3]])
 
                     else:
-
                         # Get velocity data
                         vel = np.copy(np.squeeze(self.raw_vel_mps[:, ii]))
 
@@ -1045,7 +1031,6 @@ class BoatData(object):
 
         # Check for valid data
         if sum(valid) > 1 and sum(self.valid_data[0, :]) > 1:
-
             # Compute ens_time
             ens_time = np.nancumsum(transect.date_time.ens_duration_sec)
 
@@ -1083,7 +1068,6 @@ class BoatData(object):
 
         # Check for valid data
         if np.sum(valid) > 1:
-
             # Compute ensTime
             ens_time = np.nancumsum(transect.date_time.ens_duration_sec)
 
@@ -1152,7 +1136,6 @@ class BoatData(object):
             )
             > 1
         ):
-
             # Filter based on number of valid beams
             if beam is not None:
                 self.filter_beam(setting=beam)
@@ -1219,7 +1202,6 @@ class BoatData(object):
         # beam solutions
         # 3 beam solutions if selected
         if self.beam_filter > 0:
-
             # Find invalid raw data
             valid_vel = np.ones(self.raw_vel_mps.shape)
             valid_vel[np.isnan(self.raw_vel_mps)] = 0
@@ -1235,7 +1217,6 @@ class BoatData(object):
             self.valid_data[5, :] = valid
 
         else:
-
             # Apply automatic filter
             # ----------------------
             # Find all 3 beam solutions
@@ -1250,17 +1231,14 @@ class BoatData(object):
 
             # If 3 beam solutions exist evaluate there validity
             if len(idx) > 0:
-
                 # Identify 3 beam solutions that appear to be invalid
                 n3_beam_ens = len(idx)
 
                 # Check each three beam solution for validity
                 for m in range(n3_beam_ens):
-
                     # Use before and after values to check 3-beam solution
                     # but make sure the ensemble is not the first or last.
                     if (idx[m] > 1) and (idx[m] < n_ens):
-
                         # Find nearest 4 beam solutions before and after
                         # 3 beam solution
                         ref_idx_before = np.where(self.valid_data[5, : idx[m]])[0]
@@ -1638,7 +1616,6 @@ class BoatData(object):
             self.smooth_speed = speed_smooth
 
         else:
-
             # No filter applied all data assumed valid
             self.valid_data[4, :] = True
             self.smooth_upper_limit = np.nan
@@ -1647,9 +1624,7 @@ class BoatData(object):
 
         # Combine all filter data to composite valid data
         self.valid_data[0, :] = np.all(
-            self.valid_data[
-                1:,
-            ],
+            self.valid_data[1:,],
             0,
         )
         self.num_invalid = np.sum(np.logical_not(self.valid_data[0, :]), 0)
@@ -1891,7 +1866,6 @@ class BoatData(object):
 
             # Apply filter for manual or auto
             if not self.gps_HDOP_filter == "Off":
-
                 # Initialize variables
                 num_valid_old = np.sum(self.valid_data[5, :])
                 k = 0
@@ -1904,7 +1878,6 @@ class BoatData(object):
 
                 # Loop until the number of valid ensembles does not change
                 while k < 100 and change > 0.1:
-
                     # Compute mean HDOP for all valid ensembles
                     if self.valid_data.shape[1] == 1:
                         if self.valid_data[5, 0]:
@@ -2018,7 +1991,6 @@ class BoatData(object):
         filter_array = []
         # Compute standard deviation for each point
         for n in range(n_pts):
-
             # Sample selection for 1st point
             if n == 0:
                 sample = my_data[1 : 1 + half_width]

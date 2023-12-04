@@ -295,7 +295,6 @@ class AdvGraphs(object):
 
         # Make sure a selection was made
         if len(selected_types) > 0:
-
             with self.wait_cursor():
                 # Initialize data sources
                 self.flow_direction = flow_direction
@@ -401,7 +400,6 @@ class AdvGraphs(object):
     def create_main_contour(
         self, transect, units, x_axis_type="E", color_map="viridis", discharge=None
     ):
-
         # Initialize data sources
         self.transect = transect
         self.discharge = discharge
@@ -503,7 +501,6 @@ class AdvGraphs(object):
             the x-axis
         """
         with self.wait_cursor():
-
             # Initialize data sources
             self.transect = transect
 
@@ -715,7 +712,6 @@ class AdvGraphs(object):
             for the x-axis
         """
         with self.wait_cursor():
-
             # Initialize data sources
             self.transect = transect
 
@@ -840,7 +836,6 @@ class AdvGraphs(object):
             Object of QComp
         """
         with self.wait_cursor():
-
             # Initialize data sources
             self.transect = transect
             self.discharge = discharge
@@ -890,20 +885,22 @@ class AdvGraphs(object):
             elif speed:
                 self.wt_avg_speed_ts()
                 self.bt_speed_ts()
-                y_all = np.hstack((self.data_plotted[0]["y"], self.data_plotted[1]["y"]))
+                y_all = np.hstack(
+                    (self.data_plotted[0]["y"], self.data_plotted[1]["y"])
+                )
                 max_y = np.nanmax(y_all) + np.abs(np.nanmax(y_all)) * 0.02
                 min_y = np.nanmin(y_all) - np.abs(np.nanmin(y_all)) * 0.02
                 if min_y == 0:
                     min_y = max_y * -0.02
                 self.ax[-1].set_ylim(top=max_y, bottom=min_y)
 
-                self.ax[-1].set_ylabel(self.canvas.tr("Speed " + units[
-                    "label_V"]))
+                self.ax[-1].set_ylabel(self.canvas.tr("Speed " + units["label_V"]))
 
                 # Create legend
                 legend_txt = ["Water", "Boat"]
-                self.ax[-1].legend(legend_txt, loc="upper left",
-                                   bbox_to_anchor=(1, 1), frameon=False)
+                self.ax[-1].legend(
+                    legend_txt, loc="upper left", bbox_to_anchor=(1, 1), frameon=False
+                )
 
             self.fig_no += 2
             # Create additional subplots as specified, sharing x axis for all
@@ -954,7 +951,6 @@ class AdvGraphs(object):
         """
 
         with self.wait_cursor():
-
             # Initialize data sources
             self.transect = transect
 
@@ -1196,8 +1192,9 @@ class AdvGraphs(object):
 
         # Plot data
         data_units = (self.units["V"], "Water speed " + self.units["label_V"])
-        self.plt_timeseries(data=avg_speed, fmt=fmt, data_units=data_units,
-                            ax=self.ax[-1])
+        self.plt_timeseries(
+            data=avg_speed, fmt=fmt, data_units=data_units, ax=self.ax[-1]
+        )
 
     def wt_corr_beam_contour(self):
         """Create contour plots of the correlation in each beam."""
@@ -1843,9 +1840,7 @@ class AdvGraphs(object):
         hold_x = np.copy(self.x)
         self.x = np.tile(self.x, (self.transect.w_vel.valid_data[0, :, :].shape[0], 1))
         self.x = self.x[self.transect.w_vel.cells_above_sl]
-        y_data = (
-            self.transect.w_vel.w_mps[self.transect.w_vel.cells_above_sl]
-        )
+        y_data = self.transect.w_vel.w_mps[self.transect.w_vel.cells_above_sl]
 
         data_units = (self.units["V"], "WT Vert. Vel " + self.units["label_V"])
 
@@ -2111,7 +2106,6 @@ class AdvGraphs(object):
         data_mask = []
         fmt = []
         for freq in freq_used:
-
             data_mask.append(freq_ensembles == freq)
             fmt.append(
                 {
@@ -2486,7 +2480,9 @@ class AdvGraphs(object):
         temp_hold = np.copy(self.x)
         if isinstance(temp_hold[0], datetime):
             dummy_time = temp_hold[0] - timedelta(days=1)
-            self.x = np.array([dummy_time, dummy_time, dummy_time, dummy_time, dummy_time])
+            self.x = np.array(
+                [dummy_time, dummy_time, dummy_time, dummy_time, dummy_time]
+            )
         else:
             self.x = np.array([-10, -10, -10, -10, -10])
         data = ["INV", "INT", "BT", "GGA", "VTG"]
@@ -2512,7 +2508,6 @@ class AdvGraphs(object):
             and self.transect.boat_vel.gga_vel.u_mps is not None
             and np.any(np.logical_not(np.isnan(self.transect.gps.diff_qual_ens)))
         ):
-
             # Get data
             data = self.transect.gps.diff_qual_ens
 
@@ -2553,7 +2548,6 @@ class AdvGraphs(object):
             and self.transect.boat_vel.gga_vel.u_mps is not None
             and np.any(np.logical_not(np.isnan(self.transect.gps.hdop_ens)))
         ):
-
             # Get data
             data = self.transect.gps.hdop_ens
 
@@ -2623,7 +2617,6 @@ class AdvGraphs(object):
             and self.transect.boat_vel.gga_vel.u_mps is not None
             and np.any(np.logical_not(np.isnan(self.transect.gps.num_sats_ens)))
         ):
-
             # Get data
             data = self.transect.gps.num_sats_ens
 
@@ -3148,7 +3141,9 @@ class AdvGraphs(object):
                     self.x = self.x + self.transect.edges.right.distance_m
             else:
                 self.x_axis_type = "E"
-                x = np.arange(1, len(self.transect.depths.bt_depths.depth_processed_m) + 1)
+                x = np.arange(
+                    1, len(self.transect.depths.bt_depths.depth_processed_m) + 1
+                )
                 self.x = x[self.transect.in_transect_idx]
 
         # x axis is ensembles
@@ -3252,7 +3247,6 @@ class AdvGraphs(object):
                 x_data = x_1d[:n_ensembles]
 
             else:
-
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
                 if cell_depth is None:
@@ -3464,7 +3458,9 @@ class AdvGraphs(object):
         if self.x_axis_type == "L":
             # Add edge bathymetry
             self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
-            ax.plot(self.expanded_x * self.units["L"], depth * self.units["L"], color="k")
+            ax.plot(
+                self.expanded_x * self.units["L"], depth * self.units["L"], color="k"
+            )
         else:
             self.expanded_x = x
             ax.plot(x, depth * self.units["L"], color="k")
@@ -3477,23 +3473,25 @@ class AdvGraphs(object):
             last_depth_cell_size = depth_obj.depth_cell_size_m[
                 last_valid_cell, np.arange(depth_obj.depth_cell_size_m.shape[1])
             ]
-            y_plt_sl = (
-                self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
-            )
+            y_plt_sl = self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
             if edge is not None:
                 if self.transect.start_edge == edge:
                     y_plt_sl = y_plt_sl[: int(n_ensembles)]
                 else:
                     y_plt_sl = y_plt_sl[-int(n_ensembles) :]
             if self.x_axis_type == "L":
-                ax.plot(x * self.units["L"], y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+                ax.plot(
+                    x * self.units["L"],
+                    y_plt_sl * self.units["L"],
+                    color="r",
+                    linewidth=0.5,
+                )
             else:
                 ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
 
         # Upper bound of measured depth cells
-        y_plt_top = (
-            depth_obj.depth_cell_depth_m[0, :]
-            - (depth_obj.depth_cell_size_m[0, :] * 0.5)
+        y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
+            depth_obj.depth_cell_size_m[0, :] * 0.5
         )
         if edge is not None:
             if self.transect.start_edge == edge:
@@ -3501,7 +3499,12 @@ class AdvGraphs(object):
             else:
                 y_plt_top = y_plt_top[-int(n_ensembles) :]
         if self.x_axis_type == "L":
-            ax.plot(x * self.units["L"], y_plt_top * self.units["L"], color="r", linewidth=0.5)
+            ax.plot(
+                x * self.units["L"],
+                y_plt_top * self.units["L"],
+                color="r",
+                linewidth=0.5,
+            )
         else:
             ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
@@ -3793,12 +3796,14 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                y_left = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                y_left = np.array(
+                    [depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]
+                )
 
         left_coords = np.vstack([x_left, y_left]).T
         v_left = self.discharge.left_edge_speed
         # Determine color for left edge based on colormap and edge velocity
-        left_c = cmap((v_left * self.units['V'] - min_limit) / (max_limit - min_limit))
+        left_c = cmap((v_left * self.units["V"] - min_limit) / (max_limit - min_limit))
 
         # Right edge
         if self.transect.start_edge == "Right":
@@ -3847,17 +3852,27 @@ class AdvGraphs(object):
                         self.expanded_x[-1],
                     ]
                 )
-                y_right = np.array([depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]])
+                y_right = np.array(
+                    [depth[-1], depth[-2], depth[-3], depth[-1], depth[-1]]
+                )
 
         right_coords = np.vstack([x_right, y_right]).T
         v_right = self.discharge.right_edge_speed
         # Determine color for right edge based on colormap and edge velocity
-        right_c = cmap((v_right * self.units['V'] - min_limit) / (max_limit - min_limit))
+        right_c = cmap(
+            (v_right * self.units["V"] - min_limit) / (max_limit - min_limit)
+        )
 
         # Plot patches
-        ax.add_patch(Polygon(left_coords * self.units["L"], edgecolor=left_c, facecolor=left_c))
+        ax.add_patch(
+            Polygon(left_coords * self.units["L"], edgecolor=left_c, facecolor=left_c)
+        )
 
-        ax.add_patch(Polygon(right_coords * self.units["L"], edgecolor=right_c, facecolor=right_c))
+        ax.add_patch(
+            Polygon(
+                right_coords * self.units["L"], edgecolor=right_c, facecolor=right_c
+            )
+        )
 
         # Create data plotted for annotation use
         self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right]) * self.units["L"]
@@ -3873,7 +3888,7 @@ class AdvGraphs(object):
         data_mask=None,
         fmt=None,
         set_annot=True,
-            x_override=[],
+        x_override=[],
     ):
         """Create timeseries plot.
 
@@ -3960,11 +3975,15 @@ class AdvGraphs(object):
                     kwargs = fmt[n]
 
                 ax.plot(
-                    x_coords[data_mask[n]], data_2[data_mask[n]] * data_units[0], **kwargs
+                    x_coords[data_mask[n]],
+                    data_2[data_mask[n]] * data_units[0],
+                    **kwargs
                 )
 
         # Create dictionary of data for use by annotation
-        self.data_plotted.append({"type": "ts", "x": x_coords, "y": all_data * data_units[0]})
+        self.data_plotted.append(
+            {"type": "ts", "x": x_coords, "y": all_data * data_units[0]}
+        )
 
         # Set axis limits
         try:
@@ -3999,15 +4018,13 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def plot_map(self, map_class, units, bath=False,
-                 temp=False, plot_transects=False):
-
+    def plot_map(self, map_class, units, bath=False, temp=False, plot_transects=False):
         with self.wait_cursor():
             # Initialize data sources
             self.xs = map_class
 
             # Set x axis type and units
-            self.x_axis_type = 'L'
+            self.x_axis_type = "L"
             self.units = units
 
             self.x = map_class.distance_cells_center[0]
@@ -4028,51 +4045,53 @@ class AdvGraphs(object):
             # Note: the second column of the grid is for the color bar.
             # It is blank but present even for time series
             # plots to allow the sharing of the x-axis between all plots
-            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50,
-                                                                          1])
+            self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
             # Create first subplot
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
 
             if bath:
-
-                data_units = (self.units["L"], self.canvas.tr("Depth") + " " +
-                              self.units["label_L"])
+                data_units = (
+                    self.units["L"],
+                    self.canvas.tr("Depth") + " " + self.units["label_L"],
+                )
 
                 fmt = [{"color": "red", "linewidth": 2}]
-                self.plt_timeseries(data=map_class.depths,
-                                    data_units=data_units,
-                                    fmt=fmt)
+                self.plt_timeseries(
+                    data=map_class.depths, data_units=data_units, fmt=fmt
+                )
 
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
 
                     for tran in range(len(map_class.depth_by_transect)):
-                        self.plt_timeseries(data=map_class.depth_by_transect[tran],
-                                            data_units=data_units,
-                                            x_override=map_class.acs_distance[tran],
-                                            fmt=fmt)
+                        self.plt_timeseries(
+                            data=map_class.depth_by_transect[tran],
+                            data_units=data_units,
+                            x_override=map_class.acs_distance[tran],
+                            fmt=fmt,
+                        )
 
                 self.ax[-1].invert_yaxis()
 
             if temp:
-
                 y_data = map_class.temperature
 
-                data_units = (1, 'Mean Temp (C)')
+                data_units = (1, "Mean Temp (C)")
                 fmt = [{"color": "red", "linewidth": 2}]
-                self.plt_timeseries(data=y_data,
-                                    data_units=data_units,
-                                    ax=self.ax[-1],
-                                    fmt=fmt)
+                self.plt_timeseries(
+                    data=y_data, data_units=data_units, ax=self.ax[-1], fmt=fmt
+                )
 
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
                     for tran in range(len(map_class.temperature_by_transect)):
-                        self.plt_timeseries(data=map_class.temperature_by_transect[tran],
-                                            data_units=data_units,
-                                            x_override=map_class.acs_distance[tran],
-                                            fmt=fmt)
+                        self.plt_timeseries(
+                            data=map_class.temperature_by_transect[tran],
+                            data_units=data_units,
+                            x_override=map_class.acs_distance[tran],
+                            fmt=fmt,
+                        )
 
             self.ax[-1].xaxis.label.set_fontsize(12)
             self.ax[-1].set_xlabel(label)
@@ -4100,7 +4119,6 @@ class AdvGraphs(object):
         z_plt = np.nan
         for n, item in enumerate(self.fig.axes):
             if event.inaxes == item:
-
                 # Verify that location is associated with plotted data
 
                 if item is not None:

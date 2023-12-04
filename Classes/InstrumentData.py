@@ -100,7 +100,7 @@ class InstrumentData(object):
                     idx = test.find("Serial Number:")
                     if idx > 0:
                         idx_end = test[idx::].find("\n")
-                        self.serial_num = test[idx + 15: idx + idx_end].strip()
+                        self.serial_num = test[idx + 15 : idx + idx_end].strip()
                         break
 
         # Determine TRDI model
@@ -204,7 +204,6 @@ class InstrumentData(object):
         else:
             if isinstance(mmt.qaqc, dict) and len(mmt.qaqc) > 0:
                 if "RG_Test" in mmt.qaqc.keys():
-
                     self.t_matrix = TransformationMatrix()
                     self.t_matrix.populate_data(
                         manufacturer="TRDI",
@@ -213,7 +212,6 @@ class InstrumentData(object):
                     )
 
                 elif "Compass_Calibration" in mmt.qaqc.keys():
-
                     self.t_matrix = TransformationMatrix()
                     self.t_matrix.populate_data(
                         manufacturer="TRDI",
@@ -222,7 +220,6 @@ class InstrumentData(object):
                     )
 
                 elif "Compass_Eval_Timestamp" in mmt.qaqc.keys():
-
                     self.t_matrix = TransformationMatrix()
                     self.t_matrix.populate_data(
                         manufacturer="TRDI",
@@ -318,13 +315,16 @@ class InstrumentData(object):
                         if idx > 0:
                             idx_end = test.data[idx::].find("\n")
                             self.serial_num = test.data[
-                                              idx + 15: idx + idx_end].strip()
+                                idx + 15 : idx + idx_end
+                            ].strip()
                             break
                 else:
                     idx = meas_struct.sysTest.data.find("Serial Number:")
                     if idx > 0:
                         idx_end = meas_struct.sysTest.data[idx::].find("\n")
-                        self.serial_num = meas_struct.sysTest.data[idx + 15: idx + idx_end].strip()
+                        self.serial_num = meas_struct.sysTest.data[
+                            idx + 15 : idx + idx_end
+                        ].strip()
 
         self.manufacturer = transect.adcp.manufacturer
         self.model = transect.adcp.model

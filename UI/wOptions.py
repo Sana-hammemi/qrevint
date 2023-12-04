@@ -364,13 +364,15 @@ class Ui_Options(object):
         font.setPointSize(12)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 1)
 
         self.retranslateUi(Options)
-        self.buttonBox.accepted.connect(Options.accept) # type: ignore
-        self.buttonBox.rejected.connect(Options.reject) # type: ignore
+        self.buttonBox.accepted.connect(Options.accept)  # type: ignore
+        self.buttonBox.rejected.connect(Options.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Options)
 
     def retranslateUi(self, Options):
@@ -405,15 +407,23 @@ class Ui_Options(object):
         self.rb_qrev_u.setText(_translate("Options", "QRev Original"))
         self.rb_oursin_u.setText(_translate("Options", "Oursin"))
         self.gb_dateformat.setTitle(_translate("Options", "Date Format"))
-        self.label.setText(_translate("Options", "Enter data format (y: year, m: month, d: day). Examples: y.m.d or d/m/y or m/d/y"))
+        self.label.setText(
+            _translate(
+                "Options",
+                "Enter data format (y: year, m: month, d: day). Examples: y.m.d or d/m/y or m/d/y",
+            )
+        )
         self.gb_moving_bed_option.setTitle(_translate("Options", "Moving Bed"))
-        self.cb_allow_manual_no_mb.setText(_translate("Options", "Allow observed no moving-bed"))
+        self.cb_allow_manual_no_mb.setText(
+            _translate("Options", "Allow observed no moving-bed")
+        )
         self.gb_map.setTitle(_translate("Options", "MAP Tab"))
         self.cb_map.setText(_translate("Options", "Show"))
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Options = QtWidgets.QDialog()
     ui = Ui_Options()

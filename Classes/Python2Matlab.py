@@ -118,7 +118,6 @@ class Python2Matlab(object):
 
         # Verify that list_in exists
         if list_in:
-
             # Create data type for each variable in object
             keys = list(vars(list_in[0]).keys())
             data_type = []
@@ -137,7 +136,6 @@ class Python2Matlab(object):
 
             # Populate the structure with data from the objects
             for n, item in enumerate(list_in):
-
                 if type(item) is list:
                     # If item is a list apply recursion
                     struct = Python2Matlab.listobj2struct(item, new_key_dict)
@@ -217,7 +215,6 @@ class Python2Matlab(object):
         obj_dict = vars(obj)
         new_dict = dict()
         for key in obj_dict:
-
             # If variable is another object convert to dictionary recursively
             if str(type(obj_dict[key]))[8:13] == "Class":
                 obj_dict[key] = Python2Matlab.obj2dict(obj_dict[key], new_key_dict)

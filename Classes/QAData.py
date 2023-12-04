@@ -654,7 +654,6 @@ class QAData(object):
         right_invalid_exceeded = False
         for transect in meas.transects:
             if transect.checked:
-
                 # Determine number of missing ensembles
                 if transect.adcp.manufacturer == "SonTek":
                     # Determine number of missing ensembles for SonTek data
@@ -881,16 +880,13 @@ class QAData(object):
             self.system_tst["status"] = "warning"
             self.system_tst["messages"].append(["SYSTEM TEST: No system test;", 1, 3])
         else:
-
             pt3_fail = False
             num_tests_with_failure = 0
 
             for test in meas.system_tst:
                 if hasattr(test, "result"):
-
                     # Check for presence of pt3 test
                     if "pt3" in test.result and test.result["pt3"] is not None:
-
                         # Check hard_limit, high gain, wide bandwidth
                         if "hard_limit" in test.result["pt3"]:
                             if "high_wide" in test.result["pt3"]["hard_limit"]:
@@ -1067,9 +1063,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["pitch_mean"]) > 8)[0]
             if len(temp) > 0:
-                self.compass["pitch_mean_warning_idx"] = np.array(meas.checked_transect_idx)[
-                    temp
-                ]
+                self.compass["pitch_mean_warning_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["pitch_mean_warning_idx"] = []
 
@@ -1081,9 +1077,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["pitch_mean"]) > 4)[0]
             if len(temp) > 0:
-                self.compass["pitch_mean_caution_idx"] = np.array(meas.checked_transect_idx)[
-                    temp
-                ]
+                self.compass["pitch_mean_caution_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["pitch_mean_caution_idx"] = []
 
@@ -1095,7 +1091,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["roll_mean"]) > 8)[0]
             if len(temp) > 0:
-                self.compass["roll_mean_warning_idx"] = np.array(meas.checked_transect_idx)[temp]
+                self.compass["roll_mean_warning_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["roll_mean_warning_idx"] = []
 
@@ -1107,7 +1105,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["roll_mean"]) > 4)[0]
             if len(temp) > 0:
-                self.compass["roll_mean_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+                self.compass["roll_mean_caution_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["roll_mean_caution_idx"] = []
 
@@ -1120,7 +1120,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["pitch_std"]) > 5)[0]
             if len(temp) > 0:
-                self.compass["pitch_std_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+                self.compass["pitch_std_caution_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["pitch_std_caution_idx"] = []
 
@@ -1133,7 +1135,9 @@ class QAData(object):
             )
             temp = np.where(np.abs(hpr["roll_std"]) > 5)[0]
             if len(temp) > 0:
-                self.compass["roll_std_caution_idx"] = np.array(meas.checked_transect_idx)[temp]
+                self.compass["roll_std_caution_idx"] = np.array(
+                    meas.checked_transect_idx
+                )[temp]
             else:
                 self.compass["roll_std_caution_idx"] = []
 
@@ -1142,8 +1146,12 @@ class QAData(object):
             error = cosd(hpr["water_dir_diff"])
             self.compass["lr_water_dir"] = "caution"
             self.compass["messages"].append(
-                ["Compass: The difference in the left and right water directions could "
-                 "cause an error in average Q of {:3.1f}% ;".format(error), 2, 4, ]
+                [
+                    "Compass: The difference in the left and right water directions could "
+                    "cause an error in average Q of {:3.1f}% ;".format(error),
+                    2,
+                    4,
+                ]
             )
 
         # Additional checks for SonTek G3 compass
@@ -1190,10 +1198,7 @@ class QAData(object):
                 )
 
         # Determine status of compass tab
-        if (
-            self.compass["status1"] == "warning"
-            or self.compass["status2"] == "warning"
-        ):
+        if self.compass["status1"] == "warning" or self.compass["status2"] == "warning":
             self.compass["status"] = "warning"
         elif (
             self.compass["status1"] == "caution"
@@ -1219,7 +1224,10 @@ class QAData(object):
 
         if len(meas.checked_transect_idx) > 0:
             heading = np.unique(
-                meas.transects[meas.checked_transect_idx[0]].sensors.heading_deg.internal.data)
+                meas.transects[
+                    meas.checked_transect_idx[0]
+                ].sensors.heading_deg.internal.data
+            )
             if len(heading) > 1:
                 return True
 
@@ -1251,22 +1259,27 @@ class QAData(object):
         # Check for GPS data
         gps = False
         for idx in meas.checked_transect_idx:
-            if (meas.transects[idx].boat_vel.gga_vel is not None or
-                    meas.transects[idx].boat_vel.vtg_vel is not None):
+            if (
+                meas.transects[idx].boat_vel.gga_vel is not None
+                or meas.transects[idx].boat_vel.vtg_vel is not None
+            ):
                 gps = True
                 break
 
         if gps or loop:
-
             # Calibration required
-            if meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "SonTek":
+            if (
+                meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer
+                == "SonTek"
+            ):
                 self.compass_qa_sontek_cal(meas)
 
-            elif meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "TRDI":
+            elif (
+                meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "TRDI"
+            ):
                 self.compass_qa_trdi_caleval(meas)
 
         else:
-
             # Compass not required
             if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
                 # No compass calibration or evaluation
@@ -1301,7 +1314,8 @@ class QAData(object):
             else:
                 self.compass["status1"] = "caution"
                 self.compass["messages"].append(
-                    ["Compass: Calibration result > 0.2 deg;", 2, 4])
+                    ["Compass: Calibration result > 0.2 deg;", 2, 4]
+                )
 
     def compass_qa_trdi_caleval(self, meas):
         """Evaluate compass calibration and/or evaluation for TRDI ADCPs.
@@ -1318,32 +1332,38 @@ class QAData(object):
             if len(meas.compass_eval) == 0:
                 # No calibration or evaluation
                 self.compass["status1"] = "warning"
-                self.compass["messages"].append(["COMPASS: No "
-                                                 "compass "
-                                                 "calibration "
-                                                 "or "
-                                                 "evaluation;", 1, 4, ])
+                self.compass["messages"].append(
+                    [
+                        "COMPASS: No " "compass " "calibration " "or " "evaluation;",
+                        1,
+                        4,
+                    ]
+                )
 
             else:
                 # No calibration but an evaluation was completed
                 self.compass["status1"] = "caution"
                 self.compass["messages"].append(
-                    ["Compass: No compass calibration;", 2, 4])
+                    ["Compass: No compass calibration;", 2, 4]
+                )
         else:
             # Compass was calibrated
             if len(meas.compass_eval) == 0:
                 # No compass evaluation
                 self.compass["status1"] = "caution"
-                self.compass["messages"].append(["Compass: No compass evaluation;", 2, 4])
+                self.compass["messages"].append(
+                    ["Compass: No compass evaluation;", 2, 4]
+                )
             else:
                 # Check results of evaluation
                 try:
-                    if (float(meas.compass_eval[-1].result["compass"]["error"]) <= 1):
+                    if float(meas.compass_eval[-1].result["compass"]["error"]) <= 1:
                         self.compass["status1"] = "good"
                     else:
                         self.compass["status1"] = "caution"
                         self.compass["messages"].append(
-                            ["Compass: Evaluation result > 1 deg;", 2, 4])
+                            ["Compass: Evaluation result > 1 deg;", 2, 4]
+                        )
                 except ValueError:
                     self.compass["status1"] = "good"
 
@@ -1382,17 +1402,20 @@ class QAData(object):
         for n, idx in enumerate(meas.checked_transect_idx):
             transect = meas.transects[idx]
 
-            heading_source_selected = getattr(transect.sensors.heading_deg,
-                transect.sensors.heading_deg.selected, )
-            pitch_source_selected = getattr(transect.sensors.pitch_deg,
-                transect.sensors.pitch_deg.selected)
-            roll_source_selected = getattr(transect.sensors.roll_deg,
-                transect.sensors.roll_deg.selected)
+            heading_source_selected = getattr(
+                transect.sensors.heading_deg,
+                transect.sensors.heading_deg.selected,
+            )
+            pitch_source_selected = getattr(
+                transect.sensors.pitch_deg, transect.sensors.pitch_deg.selected
+            )
+            roll_source_selected = getattr(
+                transect.sensors.roll_deg, transect.sensors.roll_deg.selected
+            )
 
             magvar.append(transect.sensors.heading_deg.internal.mag_var_deg)
             if transect.sensors.heading_deg.external is not None:
-                align.append(
-                    transect.sensors.heading_deg.external.align_correction_deg)
+                align.append(transect.sensors.heading_deg.external.align_correction_deg)
 
             pitch_mean.append(np.nanmean(pitch_source_selected.data))
             pitch_std.append(np.nanstd(pitch_source_selected.data, ddof=1))
@@ -1414,10 +1437,12 @@ class QAData(object):
                         pitch_data = pitch_source_selected.data
                     else:
                         pitch_data = pitch_source_selected.data[:, 0]
-                    idx_max = \
-                    np.where(pitch_data > heading_source_selected.pitch_limit[0])[0]
-                    idx_min = \
-                    np.where(pitch_data < heading_source_selected.pitch_limit[1])[0]
+                    idx_max = np.where(
+                        pitch_data > heading_source_selected.pitch_limit[0]
+                    )[0]
+                    idx_min = np.where(
+                        pitch_data < heading_source_selected.pitch_limit[1]
+                    )[0]
                     if len(idx_max) > 0 or len(idx_min) > 0:
                         pitch_exceeded.append(True)
                     else:
@@ -1428,10 +1453,12 @@ class QAData(object):
                         roll_data = roll_source_selected.data
                     else:
                         roll_data = roll_source_selected.data[:, 0]
-                    idx_max = \
-                    np.where(roll_data > heading_source_selected.pitch_limit[0])[0]
-                    idx_min = \
-                    np.where(roll_data < heading_source_selected.pitch_limit[1])[0]
+                    idx_max = np.where(
+                        roll_data > heading_source_selected.pitch_limit[0]
+                    )[0]
+                    idx_min = np.where(
+                        roll_data < heading_source_selected.pitch_limit[1]
+                    )[0]
                     if len(idx_max) > 0 or len(idx_min) > 0:
                         roll_exceeded.append(True)
                     else:
@@ -1445,8 +1472,7 @@ class QAData(object):
         # LR difference water_direction
         diff_dir = np.nan
         if len(left_water_dir) > 0 and len(right_water_dir) > 0:
-            diff_dir = np.abs(
-                np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
+            diff_dir = np.abs(np.nanmean(left_water_dir) - np.nanmean(right_water_dir))
             if diff_dir > 180:
                 diff_dir = diff_dir - 360
 
@@ -1460,8 +1486,8 @@ class QAData(object):
             "roll_mean": roll_mean,
             "roll_std": roll_std,
             "roll_exceeded": roll_exceeded,
-            "water_dir_diff": diff_dir
-               }
+            "water_dir_diff": diff_dir,
+        }
 
         return hpr
 
@@ -1681,7 +1707,6 @@ class QAData(object):
 
                     # Check if there is a moving-bed
                     if "Yes" in mb:
-
                         # Moving-bed present
                         self.movingbed["messages"].append(
                             ["Moving-Bed Test: A moving-bed is present.", 2, 6]
@@ -1879,17 +1904,21 @@ class QAData(object):
 
             if len(loop) > 0:
                 if "Loop" in mb_test_type:
-                    if self.compass['status'] == 'inactive':
+                    if self.compass["status"] == "inactive":
                         self.movingbed["messages"].append(
-                            "MOVING-BED TEST: Loop test is not valid. ADCP has no compass.")
+                            "MOVING-BED TEST: Loop test is not valid. ADCP has no compass."
+                        )
                         self.movingbed["code"] = 3
                         self.movingbed["status"] = "caution"
 
                     if self.compass["status1"] != "good":
                         self.movingbed["messages"].append(
-                            ["Moving-Bed Test: Loop test used but compass calibration is "
-                            + self.compass["status1"], 2,
-                            6,]
+                            [
+                                "Moving-Bed Test: Loop test used but compass calibration is "
+                                + self.compass["status1"],
+                                2,
+                                6,
+                            ]
                         )
                         if self.movingbed["code"] < 3:
                             self.movingbed["code"] = 2
@@ -2008,7 +2037,6 @@ class QAData(object):
                     self.depths["q_max_run_caution"][n] = True
 
         if checked:
-
             # Create array of all unique draft values
             draft_check = np.unique(np.round(drafts, 2))
 
@@ -2173,10 +2201,8 @@ class QAData(object):
 
                 # Quality check each transect
                 for n, transect in enumerate(meas.transects):
-
                     # Evaluate on transects used in the discharge computation
                     if transect.checked:
-
                         in_transect_idx = transect.in_transect_idx
 
                         # Check to see if data are available for the data_type
@@ -3241,7 +3267,6 @@ class QAData(object):
 
         # If gga or vtg data exist check settings
         if gps:
-
             s = meas.current_settings()
             d = meas.qrev_default_settings()
 
@@ -3475,7 +3500,6 @@ class QAData(object):
             auto = MovingBedTests.auto_use_2_correct(auto)
 
             for n in range(len(mbt)):
-
                 if mbt[n].user_valid:
                     mb_user_valid.append(False)
                 else:
@@ -3593,7 +3617,11 @@ class QAData(object):
 
         self.system_tst_qa(meas)
         self.system_tst["messages"].append(
-            ["System Test: A system test has been manually added to the measurement.", 2, 3]
+            [
+                "System Test: A system test has been manually added to the measurement.",
+                2,
+                3,
+            ]
         )
 
         self.settings_dict["tab_systest"] = "Custom"
@@ -3610,8 +3638,12 @@ class QAData(object):
 
         self.compass_qa(meas)
         self.compass["messages"].append(
-            ["Compass: A compass cal/eval has been manually added to the measurement.", 2,
-             3])
+            [
+                "Compass: A compass cal/eval has been manually added to the measurement.",
+                2,
+                3,
+            ]
+        )
 
         self.settings_dict["tab_compass"] = "Custom"
 
@@ -3627,7 +3659,11 @@ class QAData(object):
 
         self.moving_bed_qa(meas)
         self.movingbed["messages"].append(
-            ["Moving-Bed Test: A moving-bed test has been manually added to the measurement.", 2,
-             3])
+            [
+                "Moving-Bed Test: A moving-bed test has been manually added to the measurement.",
+                2,
+                3,
+            ]
+        )
 
         self.settings_dict["tab_mbt"] = "Custom"

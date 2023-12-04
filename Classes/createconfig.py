@@ -33,7 +33,7 @@ class Config:
             "QA": {"MinTransects": 2, "MinDuration": 720},
             "LeftRightFlowDirDiff": {"threshold": 8.1},
             "PDFSummary": {"show": True, "default": "Prompt"},
-            "DateFormat": {"show": True, "default": "y.m.d"}
+            "DateFormat": {"show": True, "default": "y.m.d"},
         }
 
     def export_config(self, output_path=None):
@@ -71,7 +71,7 @@ class Config:
             "QA": {"MinTransects": 2, "MinDuration": 720},
             "LeftRightFlowDirDiff": {"threshold": 8.1},
             "PDFSummary": {"show": True, "default": "Prompt"},
-            "DateFormat": {"show": True, "default": "y.m.d"}
+            "DateFormat": {"show": True, "default": "y.m.d"},
         }
         path = os.path.join(os.getcwd(), "QRev.cfg")
 

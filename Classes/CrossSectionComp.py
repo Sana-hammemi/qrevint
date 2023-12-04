@@ -72,9 +72,7 @@ class CrossSectionComp(object):
 
         # Process each transect
         for n, transect in enumerate(transects):
-
             if transect.checked:
-
                 # self.checked_idx = np.append(checked_idx, n)
                 self.checked_idx.append(n)
 
@@ -82,7 +80,6 @@ class CrossSectionComp(object):
                 boat_track = BoatStructure.compute_boat_track(transect)
 
                 if np.logical_not(np.all(np.isnan(boat_track["track_x_m"]))):
-
                     # get x/y boat track data
                     unit_x = boat_track["track_x_m"]
                     unit_y = boat_track["track_y_m"]
@@ -177,7 +174,6 @@ class CrossSectionComp(object):
         x_list, y_list = self.adjust_xy_distances(x_list, y_list, xy_slope, start_edge)
 
         for xs in range(len(x_list)):
-
             station = np.sqrt(x_list[xs] ** 2 + y_list[xs] ** 2)
             station_list.append(station)
 
@@ -203,7 +199,6 @@ class CrossSectionComp(object):
 
     @staticmethod
     def create_empty_gps(unit_x):
-
         array_size = unit_x.shape
         lon = np.empty(array_size)
         lon[:] = np.nan
@@ -271,7 +266,6 @@ class CrossSectionComp(object):
         projected_x_list = []
         projected_y_list = []
         for transect in range(len(x_list)):
-
             projected_x = (
                 x_list[transect] - (slope * intercept) + (slope * y_list[transect])
             ) / (slope**2 + 1)
@@ -311,7 +305,6 @@ class CrossSectionComp(object):
         projected_x_list = []
         projected_y_list = []
         for transect in range(len(x_list)):
-
             # adjust the x/y lists using the left edge distance
             if start_edge[transect][0] == "Left":
                 dist_x = start_edge[transect][1] * (math.cos(theta))
@@ -438,7 +431,6 @@ class CrossSectionComp(object):
             lat_array = np.linspace(lat_start, lat_end, num_pnts)
 
         for transect in cross_section:
-
             # sort and separate individual arrays and set d-type.
             sort_array = transect[transect[:, 4].argsort()].copy()
 
@@ -525,7 +517,6 @@ class CrossSectionComp(object):
         """
         # Todo add comment lines at the top of the file for metadata.
         for n in range(len(self.cross_section)):
-
             if n == (len(self.cross_section) - 1):
                 f_name = "cross_section_mean"
             else:

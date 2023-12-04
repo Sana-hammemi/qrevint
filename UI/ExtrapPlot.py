@@ -99,7 +99,6 @@ class ExtrapPlot(object):
 
         # If valid data exist create graph
         if np.any(np.logical_not(np.isnan(extrap_fit.norm_data[-1].unit_normalized))):
-
             # Show all normalized data
             if cb_data:
                 self.extrap_plot_data(extrap_fit.norm_data[idx])
@@ -219,10 +218,8 @@ class ExtrapPlot(object):
 
         # If norm_data is a list is contains data from multiple transects
         if type(norm_data) is list:
-
             # Plot all transects
             for idx in self.checked:
-
                 # All median values in red
                 self.fig.ax.plot(
                     norm_data[idx].unit_normalized_med,
@@ -278,7 +275,6 @@ class ExtrapPlot(object):
 
         # Data for only 1 transect of the composite measurement
         else:
-
             # If composite measurement the color is black otherwise use start bank
             if idx == -1:
                 line_color = "k"

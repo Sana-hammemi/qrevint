@@ -24,7 +24,6 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
     """
 
     def __init__(self, parent=None):
-
         super(OpenMeasurementDialog, self).__init__(parent)
 
         # Create settings object which contains the default folder
@@ -111,7 +110,6 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
 
             # SonTek, Nortek, or QRev file
             else:
-
                 if os.path.getsize(self.fullName[0]) > 0:
                     mat_data = sio.loadmat(
                         self.fullName[0], struct_as_record=False, squeeze_me=True
