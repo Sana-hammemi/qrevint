@@ -365,7 +365,7 @@ class Report:
             [self.tr("Top Extrap") + ":", top_extrap],
             [self.tr("Bottom Extrap") + ":", bottom_extrap],
             [self.tr("Extrap Exponent") + ":", exponent],
-            [self.tr("Discharg COV") + " (%): ", q_cov],
+            [self.tr("Discharge COV") + " (%): ", q_cov],
             [self.tr("Top Q") + " (%): ", top_q],
             ["Measured Q (%): ", measured_q],
             [self.tr("Left Q") + " (%): ", left_q],
