@@ -66,16 +66,17 @@ class Report:
             Object of SimpleDocTemplate, required
         """
 
+        qrev_icon = self.parent.get_icon()
         # Configure for QRev and QRevInt
         if "Int" in self.parent.version:
-            logo = Image("QRevInt.ico", width=30, height=30)
+            logo = Image(qrev_icon, width=30, height=30)
             title = (
                 "<font size=14><b>"
                 + self.tr("QRevInt Discharge Measurement Report")
                 + "</b></font>"
             )
         else:
-            logo = Image("QRev.ico", width=30, height=30)
+            logo = Image(qrev_icon, width=30, height=30)
             title = (
                 "<font size=14><b>"
                 + self.tr("QRev Discharge Measurement Report")
@@ -264,7 +265,7 @@ class Report:
             stage_mean = "{:.2f}".format(meas.stage_meas_m * self.parent.units["L"])
 
         if meas.uncertainty is None or np.isnan(meas.uncertainty.cov):
-            q_cov = selr.tr("N/A")
+            q_cov = self.tr("N/A")
         else:
             q_cov = "{:5.2f}".format(meas.uncertainty.cov)
 
