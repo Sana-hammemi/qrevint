@@ -67,20 +67,20 @@ class Report:
         """
 
         # Configure for QRev and QRevInt
-        icon = self.parent.get_icon()
-        logo = Image(icon, width=30, height=30)
-        title = (
-            "<font size=14><b>"
-            + self.tr("QRevInt Discharge Measurement Report")
-            + "</b></font>"
-        )
-        # else:
-        #     logo = Image("QRev.ico", width=30, height=30)
-        #     title = (
-        #         "<font size=14><b>"
-        #         + self.tr("QRev Discharge Measurement Report")
-        #         + "</b></font>"
-        #     )
+        if "Int" in self.parent.version:
+            logo = Image("QRevInt.ico", width=30, height=30)
+            title = (
+                "<font size=14><b>"
+                + self.tr("QRevInt Discharge Measurement Report")
+                + "</b></font>"
+            )
+        else:
+            logo = Image("QRev.ico", width=30, height=30)
+            title = (
+                "<font size=14><b>"
+                + self.tr("QRev Discharge Measurement Report")
+                + "</b></font>"
+            )
 
         # Logo
         logo.wrapOn(page, self.width, self.height)
@@ -365,7 +365,7 @@ class Report:
             [self.tr("Top Extrap") + ":", top_extrap],
             [self.tr("Bottom Extrap") + ":", bottom_extrap],
             [self.tr("Extrap Exponent") + ":", exponent],
-            [self.tr("Discharge COV") + " (%): ", q_cov],
+            [self.tr("Discharg COV") + " (%): ", q_cov],
             [self.tr("Top Q") + " (%): ", top_q],
             ["Measured Q (%): ", measured_q],
             [self.tr("Left Q") + " (%): ", left_q],

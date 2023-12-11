@@ -254,6 +254,12 @@ This option when checked will show a checkbox in the MovBedTst tab that allows t
 #### 2.3.3.12 MAP Tab
 This option indicates whether or not the MAP tab is displayed and accessable to the user.
 
+#### 2.3.3.13 Save PDF Summary Report
+If PDFSummary.show is set to True in the QRev.cfg file, the Options Dialog will have a group box for Save PDF Summary Report with three options: No, Prompt on Save, and Always. Selecting No will result in no summary report being created when the measurement is saved in QRev. Selecting Prompt on Save will cause a dialog box to appear when saving a measurement giving the user the option to save or not save a PDF Summary Report. Selecting Always will save a PDF Summary Report everytime the measurement is saved. 
+
+#### 2.3.3.14 Date Format
+If DateFormat.show is set to True in teh QRev.cfg file, the Options Dialog will have a group box for Date Format. The currently set format will be displayed in the edit box. The user can change the format by using "y" for year, "m" for month, and "d" for day. Examples include y.m.d, d/m/y, m/d/y or other user defined formats.
+
 ### 2.3.4 Comment
 
 ![](./assets/user_guide/notes_icon.png)
@@ -2043,6 +2049,16 @@ QRev.cfg is a json format file, having the following format and definitions:
 - **digits:** number of significant figures or fixed decimal places (any 
   integer, **3**)
 
+*SNR*
+- **Use3Beam:** specifies if 3-beam solutions should be attempted for ensembles marked invalid due ot the SNR filter for SonTek data (true or **false**).
+
+*ExtrapolatedSpeed*
+- **ShowIcon:** indicates if the extrapolated speed icon should be shown in the toolbar (**true** or false).
+
+*Excluded*
+- **RioPro:** sets the minimum distance from the transducer for the top of the first valid depth cell for RioPro ADCPs in m (**0.25**).
+- **M9:** sets the minimum distance from the transducer for the top of the first valid depth cell for M9 ADCPs in m (**0.16**).
+
 *QA*
 - **MinTransects:** Minimum number of transects required to prevent 
   triggering a caution message from the automated data quality assessment 
@@ -2050,3 +2066,14 @@ QRev.cfg is a json format file, having the following format and definitions:
 - **MinDuration:** Minimum duration in seconds of the combined duration of all 
   selected transects to prevent triggering a caution message from the 
   automated data quality assessment code (any number of seconds, **720**)
+
+*LeftRightFlowDirDiff*
+- **threshold:** the maximum allowable difference in flow direction between left and right transects that will result in a QA message when using GPS as the boat reference, in degrees (**8.1**).
+
+*PDFSummary*
+- **show:** indicates if the Save PDF Summary Report options should be displayed in the options dialog (**true** or false).
+- **default:** default setting for the saving the PDF Summary Report (No, Prompt, Always).
+
+*DateFormat*
+- **show:** indicates if the Date Format option should be displayed in the options dialog (**true** or false).
+- **default:** the default setting for the date format (**y.m.d**). "y" for year, "m" for month, and "d" for day.
