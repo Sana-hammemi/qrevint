@@ -1,6 +1,6 @@
 # QRev Change Log
 
-## [**Version 4.35**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.35)
+## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
 
 **Status**: *Recommended*
 
@@ -28,6 +28,9 @@
   Left and Right transects.
 - Added boat speed to speed plot on WT tab.
 - Fix unit conversion on X-axis of BT Other plot with English is selected.
+- Oursin simulation changed to use current draft rather than original draft.
+- Added ability for agency or user to change the date format.
+- Added PDF Summary Report
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
