@@ -2,7 +2,7 @@ import os
 
 __author__ = "David S Mueller"
 __company__ = "Genesis HydroTech LLC"
-__version__ = "1.26"
+__version__ = "1.27"
 __app__ = "QRevInt"
 __qrev_version__ = __app__ + " " + __version__
 

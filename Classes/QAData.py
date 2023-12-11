@@ -178,7 +178,7 @@ class QAData(object):
             # If QA check not available, get check from new QA
             if hasattr(meas_struct.qa.compass, "magvar"):
                 self.compass["magvar"] = meas_struct.qa.compass.magvar
-            elif hasattr(new_qa.compass, "magvar"):
+            elif "magvar" in new_qa.compass:
                 self.compass["magvar"] = new_qa.compass["magvar"]
                 self.compass["status"] = new_qa.compass["status"]
 
@@ -187,8 +187,15 @@ class QAData(object):
                 self.compass["magvar_idx"] = self.make_array(
                     meas_struct.qa.compass.magvarIdx
                 )
-            elif hasattr(new_qa.compass, "magvar_idx"):
+            elif "magvar_idx" in new_qa.compass:
                 self.compass["magvar_idx"] = new_qa.compass["magvar_idx"]
+                self.compass["status"] = new_qa.compass["status"]
+
+            # If QA check not available, get check from new QA
+            if hasattr(meas_struct.qa.compass, "mag_error_idx"):
+                self.compass["mag_error_idx"] = meas_struct.qa.compass.mag_error_idx
+            elif "mag_error_idx" in new_qa.compass:
+                self.compass["mag_error_idx"] = new_qa.compass["mag_error_idx"]
                 self.compass["status"] = new_qa.compass["status"]
 
             # If QA check not available, get check from new QA
@@ -196,7 +203,7 @@ class QAData(object):
                 self.compass["pitch_mean_warning_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchMeanWarningIdx
                 )
-            elif hasattr(new_qa.compass, "pitch_mean_warning_idx"):
+            elif "pitch_mean_warning_idx" in new_qa.compass:
                 self.compass["pitch_mean_warning_idx"] = new_qa.compass[
                     "pitch_mean_warning_idx"
                 ]
@@ -207,7 +214,7 @@ class QAData(object):
                 self.compass["roll_mean_warning_idx"] = self.make_array(
                     meas_struct.qa.compass.rollMeanWarningIdx
                 )
-            elif hasattr(new_qa.compass, "roll_mean_warning_idx"):
+            elif "roll_mean_warning_idx" in new_qa.compass:
                 self.compass["roll_mean_warning_idx"] = new_qa.compass[
                     "roll_mean_warning_idx"
                 ]
@@ -218,7 +225,7 @@ class QAData(object):
                 self.compass["pitch_mean_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchMeanCautionIdx
                 )
-            elif hasattr(new_qa.compass, "pitch_mean_caution_idx"):
+            elif "pitch_mean_caution_idx" in new_qa.compass:
                 self.compass["pitch_mean_caution_idx"] = new_qa.compass[
                     "pitch_mean_caution_idx"
                 ]
@@ -229,7 +236,7 @@ class QAData(object):
                 self.compass["roll_mean_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.rollMeanCautionIdx
                 )
-            elif hasattr(new_qa.compass, "roll_mean_caution_idx"):
+            elif "roll_mean_caution_idx" in new_qa.compass:
                 self.compass["roll_mean_caution_idx"] = new_qa.compass[
                     "roll_mean_caution_idx"
                 ]
@@ -240,7 +247,7 @@ class QAData(object):
                 self.compass["pitch_std_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.pitchStdCautionIdx
                 )
-            elif hasattr(new_qa.compass, "pitch_std_caution_idx"):
+            elif "pitch_std_caution_idx" in new_qa.compass:
                 self.compass["pitch_std_caution_idx"] = new_qa.compass[
                     "pitch_std_caution_idx"
                 ]
@@ -251,10 +258,17 @@ class QAData(object):
                 self.compass["roll_std_caution_idx"] = self.make_array(
                     meas_struct.qa.compass.rollStdCautionIdx
                 )
-            elif hasattr(new_qa.compass, "roll_std_caution_idx"):
+            elif "roll_std_caution_idx" in new_qa.compass:
                 self.compass["roll_std_caution_idx"] = new_qa.compass[
                     "roll_std_caution_idx"
                 ]
+                self.compass["status"] = new_qa.compass["status"]
+
+            # If QA check not available, get check from new QA
+            if hasattr(meas_struct.qa.compass, "lr_water_dir"):
+                self.compass["lr_water_dir"] = meas_struct.qa.compass.lr_water_dir
+            elif "lr_water_dir" in new_qa.compass:
+                self.compass["lr_water_dir"] = new_qa.compass["lr_water_dir"]
                 self.compass["status"] = new_qa.compass["status"]
 
             self.temperature = dict()
