@@ -66,21 +66,17 @@ class Report:
             Object of SimpleDocTemplate, required
         """
 
+        qrev_icon = self.parent.get_icon()
         # Configure for QRev and QRevInt
+        self.tr("QRevInt Discharge Measurement Report")
+
         if "Int" in self.parent.version:
-            logo = Image("QRevInt.ico", width=30, height=30)
-            title = (
-                "<font size=14><b>"
-                + self.tr("QRevInt Discharge Measurement Report")
-                + "</b></font>"
-            )
+            title_str = self.tr("QRevInt Discharge Measurement Report")
         else:
-            logo = Image("QRev.ico", width=30, height=30)
-            title = (
-                "<font size=14><b>"
-                + self.tr("QRev Discharge Measurement Report")
-                + "</b></font>"
-            )
+            title_str = self.tr("QRev Discharge Measurement Report")
+
+        logo = Image(qrev_icon, width=30, height=30)
+        title = "<font size=14><b>" + title_str + "</b></font>"
 
         # Logo
         logo.wrapOn(page, self.width, self.height)
