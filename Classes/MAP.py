@@ -219,12 +219,12 @@ class MAP(object):
 
         # Compute transect median velocity on each mesh (North, East and
         # vertical velocities) and depth on each vertical
-        tr_nodes_data = self.compute_nodes_velocity(
+        data_bin_transects = self.compute_nodes_velocity(
             checked_transect_idx, data_transects
         )
 
         # Compute mesh mean value of selected transects
-        self.compute_mean(tr_nodes_data, n_burn)
+        self.compute_mean(data_bin_transects, n_burn)
 
         if self.east_velocity is not None:
             # Compute primary and secondary velocity according Rozovskii projection
@@ -277,7 +277,7 @@ class MAP(object):
 
         # Create empty lists to iterate
         depth_data = []
-        temperature_data = []
+        temperature = []
         w_vel_x = []
         w_vel_y = []
         w_vel_z = []
@@ -423,7 +423,7 @@ class MAP(object):
             self.y_raw_coordinates.append(y_transect)
             depth_data.append(depth_transect[valid])
             cell_depth.append(cells_depth[:, valid])
-            temperature_data.append(temp_transect[valid])
+            temperature.append(temp_transect[valid])
             w_vel_x.append(x_velocity)
             w_vel_y.append(y_velocity)
             w_vel_z.append(z_velocity)
@@ -465,10 +465,10 @@ class MAP(object):
             "invalid_data": invalid_data,
             "cell_depth": cell_depth,
             "rssi": rssi,
-            "temperature_data": temperature_data,
+            "temperature": temperature,
         }
         self.depth_by_transect = depth_data
-        self.temperature_by_transect = temperature_data
+        self.temperature_by_transect = temperature
 
         return data_transects
 
@@ -754,121 +754,99 @@ class MAP(object):
             Dictionary of data by transects
         """
 
-        w_vel_x = data_transects["w_vel_x"]
-        w_vel_y = data_transects["w_vel_y"]
-        w_vel_z = data_transects["w_vel_z"]
-        rssi_data = data_transects["rssi"]
-        cell_depth = data_transects["cell_depth"]
-        depth_data = data_transects["depth_data"]
-        temperature_data = data_transects["temperature_data"]
-        acs_distance = self.acs_distance
+        # Data to bin
+        param_cells = {"x_velocity": 'w_vel_x',
+                       "y_velocity": 'w_vel_y',
+                       "vertical_velocity": 'w_vel_z',
+                       "rssi": 'rssi'}
 
-        node_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
-        # Create list to save transects interpolated on mesh grid
-        transects_nodes = list()
-        transects_node_x_velocity = np.tile(
-            np.nan,
-            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)),
-        )
-        transects_node_y_velocity = np.tile(
-            np.nan,
-            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)),
-        )
-        transects_node_vertical_velocity = np.tile(
-            np.nan,
-            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)),
-        )
-        transects_node_rssi = np.tile(
-            np.nan,
-            (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(node_mid)),
-        )
-        transects_node_depth = np.tile(
-            np.nan, (len(checked_transect_idx), len(node_mid))
-        )
+        param_ens = {"depth": 'depth_data', "temperature": 'temperature_data'}
+        len_param_cells = len(param_cells)
 
-        transects_node_temperature = np.tile(
-            np.nan, (len(checked_transect_idx), len(node_mid))
-        )
+        # Create dict to save binned data
+        data_bin_transects = {}
+        for key in param_cells.keys():
+            data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.main_depth_layers) - 1,
+                                                len(self.borders_ens) - 1), dtype=object)
+            for i in np.ndindex(data_bin_transects[key].shape):
+                data_bin_transects[key][i] = []
+        for key in param_ens.keys():
+            data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.borders_ens) - 1), dtype=object)
+            for i in np.ndindex(data_bin_transects[key].shape):
+                data_bin_transects[key][i] = []
 
+        data_bin_transects['count'] = np.zeros((len(checked_transect_idx), len(self.main_depth_layers) - 1,
+                                            len(self.borders_ens) - 1), dtype=object)
+
+        # Compute bins
+        bins_depths = np.array(copy.deepcopy(self.main_depth_layers))
+        bins_distance = np.array(copy.deepcopy(self.borders_ens))
+        bins_distance[0] = bins_distance[0] - 0.1
+
+        # Browse through transects
         for id_transect in checked_transect_idx:
             index_transect = checked_transect_idx.index(id_transect)
-            w_vel_x_tr = w_vel_x[index_transect]
-            w_vel_y_tr = w_vel_y[index_transect]
-            w_vel_z_tr = w_vel_z[index_transect]
-            cell_depth_tr = cell_depth[index_transect]
-            depth_ens_tr = depth_data[index_transect]
-            rssi_tr = rssi_data[index_transect]
-            temperature_ens_tr = temperature_data[index_transect]
 
-            # Find the representative mesh of each transect's vertical
-            lag_distance = self.borders_ens[1] - self.borders_ens[0]
-            data = {
-                "Index_ensemble": np.arange(len(acs_distance[index_transect])),
-                "Index_Node": [
-                    int(i) for i in acs_distance[index_transect] / lag_distance
-                ],
-                "Distance_ensemble": acs_distance[index_transect],
-            }
-            df = pd.DataFrame(data)
+            # Get current transect's cells depth and distance
+            depth_cells_transect = data_transects["cell_depth"][index_transect]
+            distance_cells_transect = np.tile(self.acs_distance[index_transect], [len(depth_cells_transect), 1])
 
-            # Transect's nodes
-            id_proj = list(np.unique(df["Index_Node"]))
-            transects_nodes.append(id_proj)
+            # Get data which need to be binned
+            data_cells = [data_transects[value][index_transect] for value in param_cells.values()]
+            data_ens = [data_transects[value][index_transect] for value in param_ens.values()]
 
-            # Run through nodes to determine each parameters
-            for node in id_proj:
-                index_node = np.array(df[df["Index_Node"] == node]["Index_ensemble"])
-                w_vel_x_node = w_vel_x_tr[:, index_node]
-                w_vel_y_node = w_vel_y_tr[:, index_node]
-                w_vel_z_node = w_vel_z_tr[:, index_node]
-                rssi_node = rssi_tr[:, index_node]
-                mid_cell_node = cell_depth_tr[:, index_node]
-                depth_node = depth_ens_tr[index_node]
-                temperature_node = temperature_ens_tr[index_node]
+            # Flatten data
+            list_param = [depth_cells_transect.flatten(), distance_cells_transect.flatten()]
+            list_cells = [x.flatten() for x in data_cells]
+            list_ens = [np.tile(x, [len(depth_cells_transect), 1]).flatten() for x in data_ens]
+            list_river = list_param + list_cells + list_ens
 
-                transects_node_depth[index_transect, node] = np.nanmedian(depth_node)
-                transects_node_temperature[index_transect, node] = np.nanmedian(
-                    temperature_node
-                )
-                # Determine every transect's cells in the mesh
-                for id_vert in range(len(self.main_depth_layers) - 1):
-                    (id_x, id_y) = np.where(
-                        np.logical_and(
-                            mid_cell_node >= self.main_depth_layers[id_vert],
-                            mid_cell_node < self.main_depth_layers[id_vert + 1],
-                        )
-                    )
-                    w_vel_x_loc = w_vel_x_node[id_x, id_y]
-                    w_vel_y_loc = w_vel_y_node[id_x, id_y]
-                    w_vel_z_loc = w_vel_z_node[id_x, id_y]
-                    rssi_loc = rssi_node[id_x, id_y]
+            # Create 2D array and remove empty cells
+            data_river = np.array(pd.DataFrame(np.column_stack(list_river)).dropna(subset=[2, 3, 4, 5], thresh=1))
 
-                    transects_node_x_velocity[
-                        index_transect, id_vert, node
-                    ] = np.nanmedian(w_vel_x_loc)
-                    transects_node_y_velocity[
-                        index_transect, id_vert, node
-                    ] = np.nanmedian(w_vel_y_loc)
-                    transects_node_vertical_velocity[
-                        index_transect, id_vert, node
-                    ] = np.nanmedian(w_vel_z_loc)
-                    transects_node_rssi[index_transect, id_vert, node] = np.nanmedian(
-                        rssi_loc
-                    )
+            # 2D binning
+            bin_idx_depths = np.digitize(data_river[:, 0], bins_depths)
+            bin_idx_distance = np.digitize(data_river[:, 1], bins_distance)
 
-        tr_nodes_data = {
-            "x_velocity": transects_node_x_velocity,
-            "y_velocity": transects_node_y_velocity,
-            "vertical_velocity": transects_node_vertical_velocity,
-            "depth": transects_node_depth,
-            "rssi": transects_node_rssi,
-            "nodes": transects_nodes,
-            "temperature": transects_node_temperature,
-        }
+            bin_ens_set = set()
+            for i in range(len(data_river)):
+                add_ens = False
+                # Get bin index
+                depths_idx = bin_idx_depths[i] - 1
+                distance_idx = bin_idx_distance[i] - 1
+                if distance_idx not in bin_ens_set:
+                    bin_ens_set.add(distance_idx)
+                    add_ens = True
 
-        return tr_nodes_data
+                # Add items to corresponding array
+                j = -1
+                for key, value in param_cells.items():
+                    j += 1
+                    data = data_river[i, j+2]
+                    data_bin_transects[key][index_transect, depths_idx, distance_idx].append(data)
 
-    def compute_mean(self, tr_nodes_data, n_burn):
+                # Add 1 to counted cells
+                data_bin_transects['count'][index_transect, depths_idx, distance_idx] += 1
+
+                # Add items with binning on verticals only
+                if add_ens:
+                    k = -1
+                    for key, value in param_ens.items():
+                        k += 1
+                        data = data_river[i, k + len_param_cells + 2]
+                        data_bin_transects[key][index_transect, distance_idx].append(data)
+
+            # Define vectorized function to compute median
+            median_func = np.vectorize(np.median, otypes=[float])
+            # Compute median of each sub list
+            for key in param_cells.keys():
+                data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
+            for key in param_ens.keys():
+                data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
+
+        return data_bin_transects
+
+    def compute_mean(self, data_bin_transects, n_burn):
         """Compute mesh mean value of selected transects
 
         Parameters

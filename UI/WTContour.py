@@ -241,6 +241,7 @@ class WTContour(object):
                 cmap=cmap,
                 vmin=min_limit,
                 vmax=max_limit,
+                zorder=0,
             )
 
             # Add color bar and axis labels
@@ -254,7 +255,7 @@ class WTContour(object):
             self.fig.ax.invert_yaxis()
 
             # Plot depth
-            self.fig.ax.plot(x, depth * units["L"], color="k")
+            self.fig.ax.plot(x, depth * units["L"], color="k", zorder=2)
 
             # Plot quiver if available
             if data_quiver is not None:
@@ -275,13 +276,14 @@ class WTContour(object):
                         Y=-0.046,
                         U=data_quiver["scale"],
                         label=data_quiver["label"]
-                        + "\n"
-                        + str(data_quiver["scale"])
-                        + " "
-                        + units["label_V"],
+                              + "\n"
+                              + str(data_quiver["scale"])
+                              + " "
+                              + units["label_V"],
                         labelpos="E",
                         coordinates="axes",
                         fontproperties={"size": 12},
+                        zorder=3
                     )
                 self.data_quiver = data_quiver
                 x_fill = np.insert(x, 0, (self.x_plt[0, 0] - self.x_plt[0, 1]) * 0.5)
@@ -299,6 +301,7 @@ class WTContour(object):
                     1.15 * np.ceil(np.nanmax(self.cell_plt)),
                     depth_fill * units["L"],
                     color="w",
+                    zorder=0,
                 )
                 # TODO fix pcolormesh (bug?) which make higher/lower cells too wide
                 self.fig.ax.fill_between(
@@ -306,6 +309,7 @@ class WTContour(object):
                     np.tile(-self.cell_plt[1, 0] * 0.5, len(x_fill)),
                     np.tile(self.cell_plt[0, 0], len(x_fill)),
                     color="w",
+                    zorder=0,
                 )
 
             # Plot side lobe cutoff if available
@@ -341,6 +345,7 @@ class WTContour(object):
                         bed_profiles["depth"][i] * units["L"],
                         color="grey",
                         linewidth=1,
+                        zorder=1,
                     )
 
             # Label and limits for y axis

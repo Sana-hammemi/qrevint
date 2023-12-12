@@ -15804,6 +15804,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             }
 
             # Initialize tab
+            # TODO avoid multiple button connexion
             self.map_tab_initialize()
             self.cb_map_interpolation.setChecked(True)
             self.cb_map_top_bottom.setChecked(True)
