@@ -1437,21 +1437,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if len(select.type) > 0:
             self.tab_all.setEnabled(False)
             # Tab initialization tracking setup
-            self.main_initialized = False
-            self.systest_initialized = False
-            self.compass_pr_initialized = False
-            self.tempsal_initialized = False
-            self.mb_initialized = False
-            self.bt_initialized = False
-            self.gps_initialized = False
-            self.depth_initialized = False
-            self.wt_initialized = False
-            self.extrap_initialized = False
-            self.edges_initialized = False
-            self.edi_initialized = False
-            self.gps_bt_initialized = False
-            self.adv_graph_initialized = False
-            self.map_initialized = False
+            # self.main_initialized = False
+            # self.systest_initialized = False
+            # self.compass_pr_initialized = False
+            # self.tempsal_initialized = False
+            # self.mb_initialized = False
+            # self.bt_initialized = False
+            # self.gps_initialized = False
+            # self.depth_initialized = False
+            # self.wt_initialized = False
+            # self.extrap_initialized = False
+            # self.edges_initialized = False
+            # self.edi_initialized = False
+            # self.gps_bt_initialized = False
+            # self.adv_graph_initialized = False
+            # self.map_initialized = False
 
             # Reset computational settings
             self.run_oursin = self.manual_computational_settings["run_oursin"]
@@ -15804,8 +15804,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             }
 
             # Initialize tab
-            # TODO avoid multiple button connexion
-            self.map_tab_initialize()
+            if not self.map_initialized:
+                self.map_tab_initialize()
             self.cb_map_interpolation.setChecked(True)
             self.cb_map_top_bottom.setChecked(True)
             self.cb_map_edges.setChecked(True)
@@ -15913,7 +15913,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.pb_map_save.clicked.connect(self.map_save_data)
         self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
-        # self.map_initialized = True
+        self.map_initialized = True
 
     def update_map(self):
         """Updates MAP with user's parameters."""
