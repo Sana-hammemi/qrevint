@@ -134,7 +134,7 @@ class MAP(object):
             None  # Borders of each MAP depth layer (distance from surface)
         )
         self.depth_cells_center = None  # Depth of each MAP cell center
-        self.depth_cells_border = None  # Depth layers
+        self.depth_cells_layers = None  # Depth layers
         self.distance_cells_center = None  # Distance of each MAP cell center
         self.cells_area = np.nan  # Area of each MAP cell
         self.left_geometry = None  # Distance and shape coefficient of left bank
@@ -162,14 +162,14 @@ class MAP(object):
         }
 
     def populate_data(
-        self,
-        meas,
-        node_horizontal_user=None,
-        node_vertical_user=None,
-        extrap_option=True,
-        edges_option=True,
-        interp_option=False,
-        n_burn=None,
+            self,
+            meas,
+            node_horizontal_user=None,
+            node_vertical_user=None,
+            extrap_option=True,
+            edges_option=True,
+            interp_option=False,
+            n_burn=None,
     ):
         """Attributes
         ----------
@@ -206,7 +206,7 @@ class MAP(object):
         if settings["NavRef"] == "gga_vel":
             self.acs_distance = acs_distance_raw
         else:
-            self.translated_transects(acs_distance_raw, data_transects["depth_data"])
+            self.translated_transects(acs_distance_raw, data_transects["depths"])
 
         # Define horizontal and vertical mesh
         self.compute_node_size(
@@ -217,14 +217,22 @@ class MAP(object):
             extrap_option,
         )
 
+        param = {"x_velocity": "cell",
+                 "y_velocity": "cell",
+                 "vertical_velocity": "cell",
+                 "rssi": "cell",
+                 "depths": "ens",
+                 "temperature": "ens",
+                 "count": None
+                 }
         # Compute transect median velocity on each mesh (North, East and
         # vertical velocities) and depth on each vertical
         data_bin_transects = self.compute_nodes_velocity(
-            checked_transect_idx, data_transects
+            checked_transect_idx, data_transects, param
         )
 
         # Compute mesh mean value of selected transects
-        self.compute_mean(data_bin_transects, n_burn)
+        self.compute_mean(data_bin_transects, n_burn, param)
 
         if self.east_velocity is not None:
             # Compute primary and secondary velocity according Rozovskii projection
@@ -457,10 +465,10 @@ class MAP(object):
             orig_start_edge.append(transect.orig_start_edge)
 
         data_transects = {
-            "w_vel_x": w_vel_x,
-            "w_vel_y": w_vel_y,
-            "w_vel_z": w_vel_z,
-            "depth_data": depth_data,
+            "x_velocity": w_vel_x,
+            "y_velocity": w_vel_y,
+            "vertical_velocity": w_vel_z,
+            "depths": depth_data,
             "orig_start_edge": orig_start_edge,
             "invalid_data": invalid_data,
             "cell_depth": cell_depth,
@@ -484,7 +492,7 @@ class MAP(object):
         y_med_left = np.nanmedian(y_left)
 
         self.slope = (np.nanmedian(y_right) - y_med_left) / (
-            np.nanmedian(x_right) - x_med_left
+                np.nanmedian(x_right) - x_med_left
         )
         self.intercept = y_med_left - self.slope * x_med_left
 
@@ -513,19 +521,19 @@ class MAP(object):
             # Project x and y coordinates on the cross-section
             self.x_projected.append(
                 (
-                    self.x_raw_coordinates[i]
-                    - self.slope * self.intercept
-                    + self.slope * self.y_raw_coordinates[i]
+                        self.x_raw_coordinates[i]
+                        - self.slope * self.intercept
+                        + self.slope * self.y_raw_coordinates[i]
                 )
-                / (self.slope**2 + 1)
+                / (self.slope ** 2 + 1)
             )
             self.y_projected.append(
                 (
-                    self.intercept
-                    + self.slope * self.x_raw_coordinates[i]
-                    + self.slope**2 * self.y_raw_coordinates[i]
+                        self.intercept
+                        + self.slope * self.x_raw_coordinates[i]
+                        + self.slope ** 2 * self.y_raw_coordinates[i]
                 )
-                / (self.slope**2 + 1)
+                / (self.slope ** 2 + 1)
             )
 
         left_x = np.nanmedian([item[0] for item in self.x_projected])
@@ -574,8 +582,8 @@ class MAP(object):
             min([min(l) for l in acs_distance_raw]),
             max([max(l) for l in acs_distance_raw]),
             (
-                max([max(l) for l in acs_distance_raw])
-                - min([min(l) for l in acs_distance_raw])
+                    max([max(l) for l in acs_distance_raw])
+                    - min([min(l) for l in acs_distance_raw])
             )
             / 100,
         )
@@ -595,7 +603,7 @@ class MAP(object):
                 first_valid_acs = int(np.argwhere(~np.isnan(acs_depth))[0])
                 last_valid_acs = int(np.argwhere(~np.isnan(acs_depth))[-1])
                 valid_acs_depth = last_valid_acs - first_valid_acs + 1
-                acs_depth_valid = acs_depth[first_valid_acs : last_valid_acs + 1]
+                acs_depth_valid = acs_depth[first_valid_acs: last_valid_acs + 1]
 
                 # Find the best position to minimize median of sum square
                 default_acs_ssd = np.nanmean(
@@ -604,18 +612,18 @@ class MAP(object):
                 lag_acs_idx = 0
                 for j in range(1, len(acs_depth_ref) - valid_acs_depth + 1):
                     acs_ssd = np.nanmean(
-                        (acs_depth_ref[j : j + valid_acs_depth] - acs_depth_valid) ** 2
+                        (acs_depth_ref[j: j + valid_acs_depth] - acs_depth_valid) ** 2
                     )
                     if (
-                        acs_ssd < default_acs_ssd or np.isnan(default_acs_ssd)
+                            acs_ssd < default_acs_ssd or np.isnan(default_acs_ssd)
                     ) and np.count_nonzero(
-                        np.isnan(acs_depth_ref[j : j + valid_acs_depth])
+                        np.isnan(acs_depth_ref[j: j + valid_acs_depth])
                     ) < 0.5 * valid_acs_depth:
                         default_acs_ssd = acs_ssd
                         lag_acs_idx = j
                 # Correct average cross-section distance by translation
                 acs_corrected = acs_distance_raw[i] - (
-                    grid_acs[first_valid_acs] - grid_acs[lag_acs_idx]
+                        grid_acs[first_valid_acs] - grid_acs[lag_acs_idx]
                 )
                 acs_translated.append(acs_corrected)
             else:
@@ -628,7 +636,7 @@ class MAP(object):
 
         self.acs_distance = acs_translated
 
-    def compute_auto_node_size(self, data_transects):
+    def compute_auto_node_size(self, data_transects, transect):
         """Computes auto node sizes.
 
         Parameters:
@@ -651,24 +659,16 @@ class MAP(object):
         )
 
         # compute vertical
-        self.auto_node_vert = np.nanmax(
-            [
-                0.1,
-                2
-                * (
-                    data_transects["cell_depth"][0][1, 0]
-                    - data_transects["cell_depth"][0][0, 0]
-                ),
-            ]
-        )
+        self.auto_node_vert = 2 * np.nanmedian(transect.depths.bt_depths.depth_cell_size_m)
+
 
     def compute_node_size(
-        self,
-        meas,
-        data_transects,
-        node_horizontal_user,
-        node_vertical_user,
-        extrap_option,
+            self,
+            meas,
+            data_transects,
+            node_horizontal_user,
+            node_vertical_user,
+            extrap_option,
     ):
         """Define horizontal and vertical mesh
 
@@ -691,9 +691,10 @@ class MAP(object):
         acs_total = max([max(l) for l in acs_distance]) - min(
             [min(l) for l in acs_distance]
         )
+        transect = meas.transects[meas.checked_transect_idx[0]]
         if node_horizontal_user is None:
             if self.auto_node_horz is None:
-                self.compute_auto_node_size(data_transects)
+                self.compute_auto_node_size(data_transects, transect)
             node_horz = self.auto_node_horz
         else:
             node_horz = node_horizontal_user
@@ -701,10 +702,9 @@ class MAP(object):
         # Divise total length in same size meshs
         # TODO see logspace and normalized depth layer
         if not extrap_option:
-            transect = meas.transects[meas.checked_transect_idx[0]]
             top_cell = (
-                np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :])
-                - np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
+                    np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :])
+                    - np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
             )
         else:
             top_cell = 0
@@ -712,12 +712,12 @@ class MAP(object):
         nb_horz = int(acs_total / node_horz)
         self.borders_ens = np.linspace(
             min([min(l) for l in acs_distance]),
-            max([max(l) for l in acs_distance]) + 10**-5,
+            max([max(l) for l in acs_distance]) + 10 ** -5,
             nb_horz,
         )
 
         # Meshes height
-        depth_data = data_transects["depth_data"]
+        depth_data = data_transects["depths"]
         all_depth = np.array([item for subarray in depth_data for item in subarray])
         if node_vertical_user:
             self.main_depth_layers = np.round(
@@ -730,13 +730,13 @@ class MAP(object):
             )
         else:
             if self.auto_node_vert is None:
-                self.compute_auto_node_size(data_transects)
+                self.compute_auto_node_size(data_transects, transect)
             lag = self.auto_node_vert
             self.main_depth_layers = np.arange(
                 top_cell, np.nanmax(all_depth) + lag, lag
             )
 
-    def compute_nodes_velocity(self, checked_transect_idx, data_transects):
+    def compute_nodes_velocity(self, checked_transect_idx, data_transects, param):
         """Compute transect median velocity on each mesh (North, East and
         vertical velocities)
         and depth on each vertical
@@ -755,28 +755,25 @@ class MAP(object):
         """
 
         # Data to bin
-        param_cells = {"x_velocity": 'w_vel_x',
-                       "y_velocity": 'w_vel_y',
-                       "vertical_velocity": 'w_vel_z',
-                       "rssi": 'rssi'}
-
-        param_ens = {"depth": 'depth_data', "temperature": 'temperature_data'}
-        len_param_cells = len(param_cells)
+        key_cell = [key for key, value in param.items() if value == "cell"]
+        key_ens = [key for key, value in param.items() if value == "ens"]
+        len_key_cells = len(key_cell)
 
         # Create dict to save binned data
         data_bin_transects = {}
-        for key in param_cells.keys():
+        for key in key_cell:
+            # data_bin_transects[key] = np.tile(
+            #     np.nan,
+            #     (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(self.borders_ens) - 1),
+            # )
             data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.main_depth_layers) - 1,
                                                 len(self.borders_ens) - 1), dtype=object)
             for i in np.ndindex(data_bin_transects[key].shape):
                 data_bin_transects[key][i] = []
-        for key in param_ens.keys():
+        for key in key_ens:
             data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.borders_ens) - 1), dtype=object)
             for i in np.ndindex(data_bin_transects[key].shape):
                 data_bin_transects[key][i] = []
-
-        data_bin_transects['count'] = np.zeros((len(checked_transect_idx), len(self.main_depth_layers) - 1,
-                                            len(self.borders_ens) - 1), dtype=object)
 
         # Compute bins
         bins_depths = np.array(copy.deepcopy(self.main_depth_layers))
@@ -792,8 +789,8 @@ class MAP(object):
             distance_cells_transect = np.tile(self.acs_distance[index_transect], [len(depth_cells_transect), 1])
 
             # Get data which need to be binned
-            data_cells = [data_transects[value][index_transect] for value in param_cells.values()]
-            data_ens = [data_transects[value][index_transect] for value in param_ens.values()]
+            data_cells = [data_transects[value][index_transect] for value in key_cell]
+            data_ens = [data_transects[value][index_transect] for value in key_ens]
 
             # Flatten data
             list_param = [depth_cells_transect.flatten(), distance_cells_transect.flatten()]
@@ -820,33 +817,32 @@ class MAP(object):
 
                 # Add items to corresponding array
                 j = -1
-                for key, value in param_cells.items():
+                for key in key_cell:
                     j += 1
-                    data = data_river[i, j+2]
+                    data = data_river[i, j + 2]
                     data_bin_transects[key][index_transect, depths_idx, distance_idx].append(data)
-
-                # Add 1 to counted cells
-                data_bin_transects['count'][index_transect, depths_idx, distance_idx] += 1
 
                 # Add items with binning on verticals only
                 if add_ens:
                     k = -1
-                    for key, value in param_ens.items():
+                    for key in key_ens:
                         k += 1
-                        data = data_river[i, k + len_param_cells + 2]
+                        data = data_river[i, k + len_key_cells + 2]
                         data_bin_transects[key][index_transect, distance_idx].append(data)
 
             # Define vectorized function to compute median
-            median_func = np.vectorize(np.median, otypes=[float])
-            # Compute median of each sub list
-            for key in param_cells.keys():
+            median_func = np.vectorize(np.nanmedian, otypes=[float])
+            # Compute median of each sub list and convert as np.float
+            for key in key_cell:
                 data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
-            for key in param_ens.keys():
+                data_bin_transects[key] = np.asarray(data_bin_transects[key], dtype=np.float64)
+            for key in key_ens:
                 data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
+                data_bin_transects[key] = np.asarray(data_bin_transects[key], dtype=np.float64)
 
         return data_bin_transects
 
-    def compute_mean(self, data_bin_transects, n_burn):
+    def compute_mean(self, data_bin_transects, n_burn, param):
         """Compute mesh mean value of selected transects
 
         Parameters
@@ -857,127 +853,83 @@ class MAP(object):
             Number of transects which need to detect an information to make it valid
         """
 
-        transects_nodes = tr_nodes_data["nodes"]
-        transects_node_x_velocity = tr_nodes_data["x_velocity"]
-        transects_node_y_velocity = tr_nodes_data["y_velocity"]
-        transects_node_vertical_velocity = tr_nodes_data["vertical_velocity"]
-        transects_node_rssi = tr_nodes_data["rssi"]
-        transects_node_depth = tr_nodes_data["depth"]
-        transects_node_temperature = tr_nodes_data["temperature"]
-
-        # Define meshs detected by enough transects
-        unique_node = list(np.unique([x for l in transects_nodes for x in l]))
-        node_selected = copy.deepcopy(unique_node)
+        # Data must be detected by at least a third of transects to be valid
         if n_burn is None:
-            n_burn = int(len(transects_nodes) / 3)
-        valid_cell = max(n_burn, 1)
+            n_burn = int(len(data_bin_transects['depth']) / 3)
+        n_burn = max(n_burn, 1)
 
-        for node in unique_node:
-            if (
-                sum(x.count(node) for x in transects_nodes) < valid_cell
-                or np.isnan(transects_node_depth[:, node]).all()
-            ):
-                node_selected.remove(node)
+        # Data to bin
+        key_data = [key for key, value in param.items() if value in ["cell", "ens"]]
+        key_cell = [key for key, value in param.items() if value == "cell"]
+        key_ens = [key for key, value in param.items() if value == "ens"]
 
-        if len(node_selected) > 0:
-            node_min = np.nanmin(node_selected)
-            node_max = np.nanmax(node_selected)
-            node_range = list(range(node_min, node_max + 1))
-            node_range_border = list(range(node_min, node_max + 2))
+        # Compute mean value on each cell
+        data_bin_map = {key: np.mean(data_bin_transects[key], axis=0) for key in key_data}
 
-            borders_ens = self.borders_ens[node_range_border]
-            dist_start = min(borders_ens)
-            borders_ens -= dist_start
-            self.acs_distance -= dist_start
+        # Get index of streambed layer
+        idx_streambed = np.digitize(data_bin_map['depths'], self.main_depth_layers)
 
-            map_depth_cells_border = np.tile(
-                np.nan, (len(self.main_depth_layers), len(node_range))
-            )
-            for i in range(len(node_range)):
-                map_depth_cells_border[:, i] = self.main_depth_layers
+        # Remove value below streambed
+        for key in key_cell:
+            for i in range(idx_streambed.shape[0]):
+                data_bin_map[key][idx_streambed[i]:, i] = np.nan
 
-            # Initialize MAP data
-            self.east_velocity = np.tile(
-                np.nan, (len(self.main_depth_layers) - 1, len(node_range))
-            )
-            self.north_velocity = np.tile(
-                np.nan, (len(self.main_depth_layers) - 1, len(node_range))
-            )
-            map_vertical_velocity = np.tile(
-                np.nan, (len(self.main_depth_layers) - 1, len(node_range))
-            )
-            map_rssi = np.tile(
-                np.nan, (len(self.main_depth_layers) - 1, len(node_range))
-            )
-            map_count = np.tile(
-                np.nan, (len(self.main_depth_layers) - 1, len(node_range))
-            )
-            map_depth = np.tile(np.nan, len(node_range))
-            map_temperature = np.tile(np.nan, len(node_range))
+        # Count cells averaged
+        data_bin_map["count"] = np.sum(~np.isnan(data_bin_transects['x_velocity'] +
+                                                 data_bin_transects['y_velocity']), axis=0)
+        invalid_data = data_bin_map["count"] < n_burn
+        for key in key_cell:
+            data_bin_map[key][invalid_data] = np.nan
+        key_cell.append("count")
 
-            # Previous version
-            for node in node_selected:
-                index_node = node_range.index(node)
-                row = np.array(
-                    [j for (j, sub) in enumerate(transects_nodes) if node in sub]
-                )
+        # Layers depth of each cell
+        data_bin_map["cells_depth_layers"] = np.tile(
+            np.nan, (len(self.main_depth_layers), data_bin_map["count"].shape[1])
+        )
+        idx_max = len(self.main_depth_layers)
+        for i in range(data_bin_map["count"].shape[1]):
+            data_bin_map["cells_depth_layers"][:, i] = self.main_depth_layers
+            if idx_streambed[i] < idx_max:
+                data_bin_map["cells_depth_layers"][idx_streambed[i]:, i] = np.nan
+                data_bin_map["cells_depth_layers"][idx_streambed[i], i] = data_bin_map['depths'][i]
+        key_cell.append("cells_depth_layers")
 
-                x_map_cell = transects_node_x_velocity[row, :, node]
-                y_map_cell = transects_node_y_velocity[row, :, node]
-                vertical_map_cell = transects_node_vertical_velocity[row, :, node]
-                rssi_map_cell = transects_node_rssi[row, :, node]
-                depth_map_cell = transects_node_depth[row, node]
-                temp_map_cell = transects_node_temperature[row, node]
+        # Check for nan value and remove corresponding columns
+        cell_is_nan = np.isnan(data_bin_transects['x_velocity'])
+        index_non_nan = np.where(~np.all(cell_is_nan, axis=1))[1]
+        first_column_idx = index_non_nan[0]
+        last_column_idx = index_non_nan[-1]
 
-                map_depth[index_node] = np.nanmean(depth_map_cell)
-                map_temperature[index_node] = np.nanmean(temp_map_cell)
+        for key in key_cell:
+            data_bin_map[key] = data_bin_map[key][:, first_column_idx:last_column_idx + 1]
+        for key in key_ens:
+            data_bin_map[key] = data_bin_map[key][first_column_idx:last_column_idx + 1]
 
-                # Cut values under streambed
-                if np.isnan(map_depth[index_node]):
-                    depth_limit = 0
-                else:
-                    depth_limit = next(
-                        x[0]
-                        for x in enumerate(self.main_depth_layers)
-                        if x[1] > map_depth[index_node]
-                    )
+        self.east_velocity = data_bin_map["x_velocity"]
+        self.north_velocity = data_bin_map["y_velocity"]
+        self.vertical_velocity = data_bin_map["vertical_velocity"]
+        self.rssi = data_bin_map["rssi"]
+        self.temperature = data_bin_map["temperature"]
+        self.depths = data_bin_map["depths"]
+        self.depth_cells_layers = data_bin_map["cells_depth_layers"]
+        self.count_valid = data_bin_map["count"]
 
-                x_map_cell[:, depth_limit:] = np.nan
-                y_map_cell[:, depth_limit:] = np.nan
-                vertical_map_cell[:, depth_limit:] = np.nan
-                rssi_map_cell[:, depth_limit:] = np.nan
+        temp_borders_ens = self.borders_ens[first_column_idx:last_column_idx + 2]
+        distance_start = min(temp_borders_ens)
+        temp_borders_ens -= distance_start
+        self.acs_distance -= distance_start
+        self.borders_ens = temp_borders_ens
 
-                self.east_velocity[:, index_node] = np.nanmean(x_map_cell, axis=0)
-                self.north_velocity[:, index_node] = np.nanmean(y_map_cell, axis=0)
-                map_vertical_velocity[:, index_node] = np.nanmean(
-                    vertical_map_cell, axis=0
-                )
-                map_rssi[:, index_node] = np.nanmean(rssi_map_cell, axis=0)
-                map_count[:, index_node] = np.count_nonzero(
-                    ~np.isnan(x_map_cell), axis=0
-                )
-                map_depth_cells_border[depth_limit, index_node] = map_depth[index_node]
-                map_depth_cells_border[depth_limit + 1 :, index_node] = np.nan
+        self.depth_cells_center = (data_bin_map["cells_depth_layers"][1:, :] +
+                                   data_bin_map["cells_depth_layers"][:-1, :]) / 2
+        self.distance_cells_center = np.tile(
+            [(self.borders_ens[1:] + self.borders_ens[:-1]) / 2],
+            (self.depth_cells_center.shape[0], 1),
+        )
 
-            self.vertical_velocity = map_vertical_velocity
-            self.rssi = map_rssi
-            self.temperature = map_temperature
-            self.count_valid = map_count
-            self.depths = map_depth
-            self.depth_cells_border = map_depth_cells_border
-            self.depth_cells_center = (
-                map_depth_cells_border[1:] + map_depth_cells_border[:-1]
-            ) / 2
-            self.borders_ens = borders_ens
-            self.distance_cells_center = np.tile(
-                [(borders_ens[1:] + borders_ens[:-1]) / 2],
-                (self.depth_cells_center.shape[0], 1),
-            )
-
-            distance = self.borders_ens[1:] - self.borders_ens[:-1]
-            depth = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
-
-            self.cells_area = distance * depth
+        distance = self.borders_ens[1:] - self.borders_ens[:-1]
+        depth = self.depth_cells_layers[1:, :] - self.depth_cells_layers[:-1, :]
+        self.cells_area = distance * depth
 
     def compute_rozovskii(self, x_velocity, y_velocity):
         """Compute primary and secondary velocity according Rozovskii projection
@@ -990,8 +942,8 @@ class MAP(object):
             North velocity on each cell of the MAP section
         """
         # Compute mean velocity components in each ensemble
-        w_vel_mean_1 = np.nanmean(x_velocity, 0)
-        w_vel_mean_2 = np.nanmean(y_velocity, 0)
+        w_vel_mean_1 = np.nanmean(x_velocity, axis=0)
+        w_vel_mean_2 = np.nanmean(y_velocity, axis=0)
 
         # Compute a unit vector
         direction, _ = cart2pol(w_vel_mean_1, w_vel_mean_2)
@@ -1007,7 +959,7 @@ class MAP(object):
                 np.vstack([x_velocity[i, :], y_velocity[i, :]]) * unit_vec, 0
             )
             w_vel_sec[i, :] = (
-                unit_vec_2 * x_velocity[i, :] - unit_vec_1 * y_velocity[i, :]
+                    unit_vec_2 * x_velocity[i, :] - unit_vec_1 * y_velocity[i, :]
             )
 
         self.primary_velocity = w_vel_prim
@@ -1030,7 +982,7 @@ class MAP(object):
             Index to the top most valid depth cell in each ensemble
         """
         depths = self.depths
-        depth_cells_border = self.depth_cells_border
+        depth_cells_border = self.depth_cells_layers
         depth_cells_center = self.depth_cells_center
         mid_bed_cells = depths - depth_cells_center
         w_vel_prim_extrap = np.copy(self.primary_velocity)
@@ -1040,10 +992,9 @@ class MAP(object):
         map_depth_cells_border = np.tile(np.nan, depth_cells_border.shape)
         for i in range(depth_cells_border.shape[1]):
             map_depth_cells_border[:, i] = self.main_depth_layers
-
         map_depth_cells_center = (
-            map_depth_cells_border[1:, :] + map_depth_cells_border[:-1, :]
-        ) / 2
+                                         map_depth_cells_border[1:, :] + map_depth_cells_border[:-1, :]
+                                 ) / 2
 
         # Blanking on the bottom
         blanking_depth = depths * 0.9
@@ -1115,33 +1066,33 @@ class MAP(object):
         for n in range(len(idx_bed)):
             if idx_bed[n] > -1:
                 while (
-                    idx_bed[n] < len(depth_cells_center[:, n])
-                    and depth_cells_border[idx_bed[n] + 1, n] <= depths[n]
+                        idx_bed[n] < len(depth_cells_center[:, n])
+                        and depth_cells_border[idx_bed[n] + 1, n] <= depths[n]
                 ):
                     idx_bed[n] += 1
                 # Shape of bottom cells
-                bot_depth = mid_bed_cells[idx_bot[n] + 1 : (idx_bed[n]), n]
+                bot_depth = mid_bed_cells[idx_bot[n] + 1: (idx_bed[n]), n]
 
                 # Extrapolation for Primary velocity
                 bot_prim_value = (
-                    coef_primary_bot[n]
-                    * ((1 + 1 / exponent) / (1 / exponent))
-                    * ((bot_depth / depths[n]) ** exponent)
+                        coef_primary_bot[n]
+                        * ((1 + 1 / exponent) / (1 / exponent))
+                        * ((bot_depth / depths[n]) ** exponent)
                 )
-                w_vel_prim_extrap[(idx_bot[n] + 1) : (idx_bed[n]), n] = bot_prim_value
+                w_vel_prim_extrap[(idx_bot[n] + 1): (idx_bed[n]), n] = bot_prim_value
 
                 # Constant extrapolation for Secondary velocity
-                w_vel_sec_extrap[(idx_bot[n] + 1) : (idx_bed[n]), n] = w_vel_sec_extrap[
+                w_vel_sec_extrap[(idx_bot[n] + 1): (idx_bed[n]), n] = w_vel_sec_extrap[
                     idx_bot[n], n
                 ]
                 # Linear extrapolation to 0 at streambed for Vertical velocity
                 try:
                     w_vel_z_extrap[
-                        (idx_bot[n] + 1) : (idx_bed[n]), n
+                    (idx_bot[n] + 1): (idx_bed[n]), n
                     ] = sc.interpolate.griddata(
                         np.append(mid_bed_cells[idx_bot[n], n], 0),
                         np.append(self.vertical_velocity[idx_bot[n], n], 0),
-                        mid_bed_cells[(idx_bot[n] + 1) : (idx_bed[n]), n],
+                        mid_bed_cells[(idx_bot[n] + 1): (idx_bed[n]), n],
                     )
                 except Exception:
                     pass
@@ -1152,9 +1103,9 @@ class MAP(object):
             for n in range(len(idx_top)):
                 top_depth = mid_bed_cells[: idx_top[n], n]
                 top_prim_value = (
-                    coef_primary_top[n]
-                    * ((1 + 1 / exponent) / (1 / exponent))
-                    * ((top_depth / depths[n]) ** exponent)
+                        coef_primary_top[n]
+                        * ((1 + 1 / exponent) / (1 / exponent))
+                        * ((top_depth / depths[n]) ** exponent)
                 )
                 w_vel_prim_extrap[: idx_top[n], n] = top_prim_value
 
@@ -1188,7 +1139,7 @@ class MAP(object):
                     WLS = LinearRegression()
                     WLS.fit(top_3_depth.reshape(-1, 1), top_3_vel.reshape(-1, 1))
                     w_vel_prim_extrap[: idx_top[n], n] = (
-                        WLS.coef_ * top_depth + WLS.intercept_
+                            WLS.coef_ * top_depth + WLS.intercept_
                     )
 
         # Extrap top for second and vertical velocities
@@ -1263,7 +1214,7 @@ class MAP(object):
                 idx_top[n] = idx_temp[0]
                 idx_bot[n] = idx_temp[-1]
                 cells_above_sl[: idx_top[n], n] = False
-                cells_above_sl[idx_bot[n] + 1 :, n] = False
+                cells_above_sl[idx_bot[n] + 1:, n] = False
             else:
                 idx_top[n] = 0
                 invalid_ens.append(n)
@@ -1277,7 +1228,7 @@ class MAP(object):
 
                 for ens in range(x[0], x[1] + 1):
                     cells_above_sl[:top, ens] = False
-                    cells_above_sl[bot + 1 :, ens] = False
+                    cells_above_sl[bot + 1:, ens] = False
 
         # Use bottom of cells as depth
         last_cell = []
@@ -1295,11 +1246,11 @@ class MAP(object):
         i = -1
         for x in last_cell:
             i += 1
-            self.depth_cells_border[x[0], i] = self.depths[i]
-            self.depth_cells_border[x[0] + 1 :, i] = np.nan
+            self.depth_cells_layers[x[0], i] = self.depths[i]
+            self.depth_cells_layers[x[0] + 1:, i] = np.nan
 
-        y_cell_size = self.depth_cells_border[1:, :] - self.depth_cells_border[:-1, :]
-        y_centers = self.depth_cells_border[:-1, :] + 0.5 * y_cell_size
+        y_cell_size = self.depth_cells_layers[1:, :] - self.depth_cells_layers[:-1, :]
+        y_centers = self.depth_cells_layers[:-1, :] + 0.5 * y_cell_size
         x_shiptrack = self.distance_cells_center[0, :]
         search_loc = ["above", "below", "before", "after"]
         normalize = False
@@ -1371,9 +1322,9 @@ class MAP(object):
 
         funcs = {
             "linear": lambda x, a, b: a * x + b,
-            "power": lambda x, a, b: a * x**b,
-            "power_rectangular": lambda x, a: a * x**0.1,
-            "power_triangular": lambda x, a: a * x**0.41,
+            "power": lambda x, a, b: a * x ** b,
+            "power_rectangular": lambda x, a: a * x ** 0.1,
+            "power_triangular": lambda x, a: a * x ** 0.41,
         }
         valid = ~(np.isnan(data2) | np.isinf(data2))
         if np.isnan(data2[valid]).all():
@@ -1415,11 +1366,11 @@ class MAP(object):
         nb_nodes = len(nodes) - 1
 
         nodes_mid = (nodes[1:] + nodes[:-1]) / 2
-        edge_size_raw = self.depth_cells_border[:, id_edge]
+        edge_size_raw = self.depth_cells_layers[:, id_edge]
 
         if edge_coef == 0.3535 and edge_distance > 0:
             depth_edge = self.depths[id_edge] * (
-                edge_distance / (edge_distance + node_size / 2)
+                    edge_distance / (edge_distance + node_size / 2)
             )
             # depth_edge = self.depths[id_edge]
             # Depth arrays
@@ -1438,13 +1389,13 @@ class MAP(object):
                     if x[1] >= int(1000 * border_depths[i + 1]) / 1000
                 )
                 cells_borders_depths_1[sub_index, i] = border_depths[i + 1]
-                cells_borders_depths_1[sub_index + 1 :, i] = np.nan
+                cells_borders_depths_1[sub_index + 1:, i] = np.nan
                 cells_borders_depths_2[sub_index - 1, i + 1] = border_depths[i + 1]
                 cells_borders_depths_2[sub_index:, i] = np.nan
 
             # Distance arrays
             cut_x = (
-                edge_distance * edge_size_raw[edge_size_raw <= depth_edge] / depth_edge
+                    edge_distance * edge_size_raw[edge_size_raw <= depth_edge] / depth_edge
             )
             x_left = np.tile(nodes, (cells_borders_depths_1.shape[0], 1))
 
@@ -1452,19 +1403,19 @@ class MAP(object):
                 col, _ = next(x for x in enumerate(nodes) if x[1] > cut_x[j])
                 row = np.where(edge_size_raw == edge_size_raw[j])[0][0]
                 x_left[row, col - 1] = cut_x[j]
-                x_left[row + 1 :, col - 1] = nodes[col]
+                x_left[row + 1:, col - 1] = nodes[col]
 
             # Cells separate in 2 rectangles and 1 triangle
             area_rec2 = (x_left[:-1, 1:] - x_left[1:, :-1]) * (
-                cells_borders_depths_1[1:, :] - cells_borders_depths_1[:-1, :]
+                    cells_borders_depths_1[1:, :] - cells_borders_depths_1[:-1, :]
             )
             area_rec1 = (x_left[1:, :-1] - x_left[:-1, :-1]) * (
-                cells_borders_depths_2[:-1, :-1] - cells_borders_depths_1[:-1, :]
+                    cells_borders_depths_2[:-1, :-1] - cells_borders_depths_1[:-1, :]
             )
             area_tri1 = (
-                (x_left[1:, :-1] - x_left[:-1, :-1])
-                * (cells_borders_depths_1[1:, :] - cells_borders_depths_2[:-1, :-1])
-                / 2
+                    (x_left[1:, :-1] - x_left[:-1, :-1])
+                    * (cells_borders_depths_1[1:, :] - cells_borders_depths_2[:-1, :-1])
+                    / 2
             )
             area_tra1 = area_rec1 + area_tri1
             area = area_tra1 + area_rec2
@@ -1472,18 +1423,18 @@ class MAP(object):
             # Compute mid of every shape
             mid_rec2_x = (x_left[:-1, 1:] + x_left[1:, :-1]) / 2
             mid_rec2_y = (
-                cells_borders_depths_1[:-1, :] + cells_borders_depths_1[1:, :]
-            ) / 2
+                                 cells_borders_depths_1[:-1, :] + cells_borders_depths_1[1:, :]
+                         ) / 2
 
             mid_rec1_x = (x_left[:-1, :-1] + x_left[1:, :-1]) / 2
             mid_rec1_y = (
-                cells_borders_depths_1[:-1, :] + cells_borders_depths_2[:-1, :-1]
-            ) / 2
+                                 cells_borders_depths_1[:-1, :] + cells_borders_depths_2[:-1, :-1]
+                         ) / 2
 
             mid_tri1_x = (x_left[:-1, :-1] + 2 * x_left[1:, :-1]) / 3
             mid_tri1_y = (
-                2 * cells_borders_depths_2[:-1, :-1] + cells_borders_depths_1[1:, :]
-            ) / 3
+                                 2 * cells_borders_depths_2[:-1, :-1] + cells_borders_depths_1[1:, :]
+                         ) / 3
 
             mid_tra1_x = (area_rec1 * mid_rec1_x + area_tri1 * mid_tri1_x) / (area_tra1)
             mid_tra1_y = (area_rec1 * mid_rec1_y + area_tri1 * mid_tri1_y) / (area_tra1)
@@ -1545,13 +1496,13 @@ class MAP(object):
 
             # Compute mean velocity according power law at middle_distance position
             vp_mean = primary_mean_valid * (mid_cells_x / edge_distance) ** (
-                1 / edge_exp
+                    1 / edge_exp
             )
             # Compute velocity according power law on the chosen vertical
             edge_primary_velocity = (
-                vp_mean
-                * (((1 / exponent) + 1) / (1 / exponent))
-                * ((vertical_depth - mid_cells_y) / vertical_depth) ** exponent
+                    vp_mean
+                    * (((1 / exponent) + 1) / (1 / exponent))
+                    * ((vertical_depth - mid_cells_y) / vertical_depth) ** exponent
             )
 
             # Vertical velocity : linear extrapolation from first ensemble vertical distribution
@@ -1586,7 +1537,7 @@ class MAP(object):
 
             for j in range(edge_primary_velocity.shape[1]):
                 for i in range(
-                    np.count_nonzero(~np.isnan(edge_secondary_vel_interp[:, j]))
+                        np.count_nonzero(~np.isnan(edge_secondary_vel_interp[:, j]))
                 ):
                     edge_secondary_velocity[i, j] = MAP.interpolation(
                         np.array([bed_distance[i, j], edge_distance]),
@@ -1776,7 +1727,7 @@ class MAP(object):
             + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
             "Distance cells center "
             + units["label_L"]: self.distance_cells_center.ravel(order="F")
-            * units["L"],
+                                * units["L"],
             "Depth cells center "
             + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
             "Temperature": np.repeat(self.temperature, row),

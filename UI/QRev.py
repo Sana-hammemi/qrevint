@@ -15932,11 +15932,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if cell_width is not None:
                 cell_width = cell_width * 1 / self.units["L"]
 
-                if cell_width < min_width:
-                    cell_width = min_width
-                    self.ed_map_cell_width.setText(
-                        "{:3.2f}".format(cell_width * self.units["L"])
-                    )
+                # if cell_width < min_width:
+                #     cell_width = min_width
+                #     self.ed_map_cell_width.setText(
+                #         "{:3.2f}".format(cell_width * self.units["L"])
+                #     )
             else:
                 self.ed_map_cell_width.setText(
                     "{:3.2f}".format(min_width * self.units["L"])
@@ -15946,11 +15946,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             min_height = self.meas.map.auto_node_vert
             if cell_height is not None:
                 cell_height = cell_height * 1 / self.units["L"]
-                if cell_height < min_height:
-                    cell_height = min_height
-                    self.ed_map_cell_height.setText(
-                        "{:3.2f}".format(min_height * self.units["L"])
-                    )
+                # if cell_height < min_height:
+                #     cell_height = min_height
+                #     self.ed_map_cell_height.setText(
+                #         "{:3.2f}".format(min_height * self.units["L"])
+                #     )
             else:
                 self.ed_map_cell_height.setText(
                     "{:3.2f}".format(min_height * self.units["L"])
