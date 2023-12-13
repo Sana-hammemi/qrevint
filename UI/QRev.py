@@ -16035,9 +16035,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setVerticalHeaderLabels(map_rows)
             tbl.verticalHeader().setFont(self.font_bold)
 
-            header = tbl.horizontalHeader()
-            col_header = tbl.verticalHeader()
-
+        header = tbl.horizontalHeader()
+        col_header = tbl.verticalHeader()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         if (
             len(self.checked_transects_idx) > 0
             and self.meas.map.total_discharge is not None
@@ -16214,8 +16215,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(2, 0).setFont(self.font_bold)
             tbl.item(3, 0).setFont(self.font_bold)
 
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
 
     def update_map_plot(self):
         """Method to update map plot based on selected radio buttons."""

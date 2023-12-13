@@ -661,7 +661,6 @@ class MAP(object):
         # compute vertical
         self.auto_node_vert = 2 * np.nanmedian(transect.depths.bt_depths.depth_cell_size_m)
 
-
     def compute_node_size(
             self,
             meas,
@@ -759,19 +758,20 @@ class MAP(object):
         key_ens = [key for key, value in param.items() if value == "ens"]
         len_key_cells = len(key_cell)
 
-        # Create dict to save binned data
+        # Create dict to create and save binned data
         data_bin_transects = {}
+        data_bin_transects_save = {}
         for key in key_cell:
-            # data_bin_transects[key] = np.tile(
-            #     np.nan,
-            #     (len(checked_transect_idx), len(self.main_depth_layers) - 1, len(self.borders_ens) - 1),
-            # )
             data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.main_depth_layers) - 1,
                                                 len(self.borders_ens) - 1), dtype=object)
+            data_bin_transects_save[key] = np.tile(np.nan, (
+                len(checked_transect_idx), len(self.main_depth_layers) - 1, len(self.borders_ens) - 1))
             for i in np.ndindex(data_bin_transects[key].shape):
                 data_bin_transects[key][i] = []
         for key in key_ens:
             data_bin_transects[key] = np.empty((len(checked_transect_idx), len(self.borders_ens) - 1), dtype=object)
+            data_bin_transects_save[key] = np.tile(np.nan, (
+                len(checked_transect_idx), len(self.borders_ens) - 1))
             for i in np.ndindex(data_bin_transects[key].shape):
                 data_bin_transects[key][i] = []
 
@@ -835,12 +835,14 @@ class MAP(object):
             # Compute median of each sub list and convert as np.float
             for key in key_cell:
                 data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
-                data_bin_transects[key] = np.asarray(data_bin_transects[key], dtype=np.float64)
+                data_bin_transects_save[key][index_transect] = np.asarray(data_bin_transects[key][index_transect],
+                                                                          dtype=np.float64)
             for key in key_ens:
                 data_bin_transects[key][index_transect] = median_func(data_bin_transects[key][index_transect])
-                data_bin_transects[key] = np.asarray(data_bin_transects[key], dtype=np.float64)
+                data_bin_transects_save[key][index_transect] = np.asarray(data_bin_transects[key][index_transect],
+                                                                          dtype=np.float64)
 
-        return data_bin_transects
+        return data_bin_transects_save
 
     def compute_mean(self, data_bin_transects, n_burn, param):
         """Compute mesh mean value of selected transects
@@ -864,7 +866,7 @@ class MAP(object):
         key_ens = [key for key, value in param.items() if value == "ens"]
 
         # Compute mean value on each cell
-        data_bin_map = {key: np.mean(data_bin_transects[key], axis=0) for key in key_data}
+        data_bin_map = {key: np.nanmean(data_bin_transects[key], axis=0) for key in key_data}
 
         # Get index of streambed layer
         idx_streambed = np.digitize(data_bin_map['depths'], self.main_depth_layers)
