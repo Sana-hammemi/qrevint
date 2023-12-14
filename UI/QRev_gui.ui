@@ -154,15 +154,6 @@
        </color>
       </brush>
      </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="128">
-        <red>0</red>
-        <green>0</green>
-        <blue>0</blue>
-       </color>
-      </brush>
-     </colorrole>
     </active>
     <inactive>
      <colorrole role="WindowText">
@@ -294,15 +285,6 @@
      <colorrole role="ToolTipText">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>0</red>
-        <green>0</green>
-        <blue>0</blue>
-       </color>
-      </brush>
-     </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="128">
         <red>0</red>
         <green>0</green>
         <blue>0</blue>
@@ -446,15 +428,6 @@
        </color>
       </brush>
      </colorrole>
-     <colorrole role="PlaceholderText">
-      <brush brushstyle="SolidPattern">
-       <color alpha="128">
-        <red>0</red>
-        <green>0</green>
-        <blue>0</blue>
-       </color>
-      </brush>
-     </colorrole>
     </disabled>
    </palette>
   </property>
@@ -463,7 +436,7 @@
   </property>
   <property name="windowIcon">
    <iconset theme="QRevInt.ico">
-    <normaloff>../../../../../.designer/backup</normaloff>../../../../../.designer/backup</iconset>
+    <normaloff>../../../../../../../.designer/backup</normaloff>../../../../../../../.designer/backup</iconset>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
@@ -668,15 +641,6 @@
            </color>
           </brush>
          </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="128">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
         </active>
         <inactive>
          <colorrole role="WindowText">
@@ -814,15 +778,6 @@
            </color>
           </brush>
          </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="128">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
         </inactive>
         <disabled>
          <colorrole role="WindowText">
@@ -954,15 +909,6 @@
          <colorrole role="ToolTipText">
           <brush brushstyle="SolidPattern">
            <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="PlaceholderText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="128">
             <red>0</red>
             <green>0</green>
             <blue>0</blue>
@@ -1706,15 +1652,6 @@
                          </color>
                         </brush>
                        </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -1729,15 +1666,6 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
                           <red>0</red>
                           <green>0</green>
                           <blue>255</blue>
@@ -1761,15 +1689,6 @@
                           <red>120</red>
                           <green>120</green>
                           <blue>120</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>0</red>
-                          <green>0</green>
-                          <blue>255</blue>
                          </color>
                         </brush>
                        </colorrole>
@@ -2559,15 +2478,6 @@
                               </color>
                              </brush>
                             </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="NoBrush">
-                              <color alpha="128">
-                               <red>255</red>
-                               <green>0</green>
-                               <blue>0</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
                            </active>
                            <inactive>
                             <colorrole role="WindowText">
@@ -2582,15 +2492,6 @@
                             <colorrole role="Text">
                              <brush brushstyle="SolidPattern">
                               <color alpha="255">
-                               <red>255</red>
-                               <green>0</green>
-                               <blue>0</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="NoBrush">
-                              <color alpha="128">
                                <red>255</red>
                                <green>0</green>
                                <blue>0</blue>
@@ -2614,15 +2515,6 @@
                                <red>120</red>
                                <green>120</green>
                                <blue>120</blue>
-                              </color>
-                             </brush>
-                            </colorrole>
-                            <colorrole role="PlaceholderText">
-                             <brush brushstyle="NoBrush">
-                              <color alpha="128">
-                               <red>255</red>
-                               <green>0</green>
-                               <blue>0</blue>
                               </color>
                              </brush>
                             </colorrole>
@@ -2988,15 +2880,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -3011,15 +2894,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -3043,15 +2917,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -3673,15 +3538,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -3696,15 +3552,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -3728,15 +3575,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -4182,15 +4020,6 @@
                          </color>
                         </brush>
                        </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>255</red>
-                          <green>0</green>
-                          <blue>0</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
                       </active>
                       <inactive>
                        <colorrole role="WindowText">
@@ -4205,15 +4034,6 @@
                        <colorrole role="Text">
                         <brush brushstyle="SolidPattern">
                          <color alpha="255">
-                          <red>255</red>
-                          <green>0</green>
-                          <blue>0</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
                           <red>255</red>
                           <green>0</green>
                           <blue>0</blue>
@@ -4237,15 +4057,6 @@
                           <red>120</red>
                           <green>120</green>
                           <blue>120</blue>
-                         </color>
-                        </brush>
-                       </colorrole>
-                       <colorrole role="PlaceholderText">
-                        <brush brushstyle="NoBrush">
-                         <color alpha="128">
-                          <red>255</red>
-                          <green>0</green>
-                          <blue>0</blue>
                          </color>
                         </brush>
                        </colorrole>
@@ -5369,15 +5180,6 @@
                            </color>
                           </brush>
                          </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
                         </active>
                         <inactive>
                          <colorrole role="WindowText">
@@ -5392,15 +5194,6 @@
                          <colorrole role="Text">
                           <brush brushstyle="SolidPattern">
                            <color alpha="255">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
                             <red>255</red>
                             <green>0</green>
                             <blue>0</blue>
@@ -5424,15 +5217,6 @@
                             <red>120</red>
                             <green>120</green>
                             <blue>120</blue>
-                           </color>
-                          </brush>
-                         </colorrole>
-                         <colorrole role="PlaceholderText">
-                          <brush brushstyle="NoBrush">
-                           <color alpha="128">
-                            <red>255</red>
-                            <green>0</green>
-                            <blue>0</blue>
                            </color>
                           </brush>
                          </colorrole>
@@ -8620,6 +8404,16 @@
                   <string>Streamwise velocity</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>RSSI or SNR</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Nb. of cells</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
@@ -8952,7 +8746,7 @@
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset resource="dsm.qrc">
+    <iconset>
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">

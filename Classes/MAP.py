@@ -1371,11 +1371,11 @@ class MAP(object):
         edge_size_raw = self.depth_cells_layers[:, id_edge]
 
         if edge_coef == 0.3535 and edge_distance > 0:
+            # Get depth at the border of the last edge ensemble
             depth_edge = self.depths[id_edge] * (
                     edge_distance / (edge_distance + node_size / 2)
             )
-            # depth_edge = self.depths[id_edge]
-            # Depth arrays
+            # Get depth at the border of each ensemble
             border_depths = np.multiply(nodes, depth_edge / edge_distance)
             cells_borders_depths_1 = np.transpose(
                 [edge_size_raw] * (len(border_depths) - 1)
@@ -1383,7 +1383,6 @@ class MAP(object):
             cells_borders_depths_2 = np.transpose(
                 [edge_size_raw] * (len(border_depths))
             )
-
             for i in range(len(border_depths) - 1):
                 sub_index = next(
                     x[0]
@@ -1400,57 +1399,57 @@ class MAP(object):
                     edge_distance * edge_size_raw[edge_size_raw <= depth_edge] / depth_edge
             )
             x_left = np.tile(nodes, (cells_borders_depths_1.shape[0], 1))
-
             for j in range(np.count_nonzero(~np.isnan(cut_x))):
                 col, _ = next(x for x in enumerate(nodes) if x[1] > cut_x[j])
                 row = np.where(edge_size_raw == edge_size_raw[j])[0][0]
                 x_left[row, col - 1] = cut_x[j]
-                x_left[row + 1:, col - 1] = nodes[col]
+                x_left[row + 1, col - 1] = nodes[col]
 
-            # Cells separate in 2 rectangles and 1 triangle
-            area_rec2 = (x_left[:-1, 1:] - x_left[1:, :-1]) * (
-                    cells_borders_depths_1[1:, :] - cells_borders_depths_1[:-1, :]
+            invalid_data = np.isnan(cells_borders_depths_2)
+            x_left[invalid_data] = np.nan
+
+            a_coordinates_x = copy.deepcopy(x_left[:-1, :-1])
+            a_coordinates_y = copy.deepcopy(cells_borders_depths_1[:-1, :])
+            b_coordinates_x = copy.deepcopy(x_left[:-1, 1:])
+            b_coordinates_y = copy.deepcopy(cells_borders_depths_1[:-1, :])
+            c_coordinates_x = copy.deepcopy(x_left[:-1, 1:])
+            c_coordinates_y = copy.deepcopy(cells_borders_depths_1[1:, :])
+            d_coordinates_x = copy.deepcopy(x_left[1:, :-1])
+            d_coordinates_y = copy.deepcopy(cells_borders_depths_1[1:, :])
+            e_coordinates_x = copy.deepcopy(x_left[:-1, :-1])
+            e_coordinates_y = copy.deepcopy(cells_borders_depths_2[:-1, :-1])
+
+            invalid_d = np.logical_or(np.logical_and(
+                d_coordinates_x == c_coordinates_x, c_coordinates_y == d_coordinates_y),
+                np.isnan(d_coordinates_x+d_coordinates_y))
+            d_coordinates_x[invalid_d] = np.nan
+            d_coordinates_y[invalid_d] = np.nan
+
+            invalid_e = np.logical_or(np.logical_and(
+                e_coordinates_x == a_coordinates_x, e_coordinates_y == a_coordinates_y),
+                np.isnan(e_coordinates_x + e_coordinates_y))
+            e_coordinates_x[invalid_e] = np.nan
+            e_coordinates_y[invalid_e] = np.nan
+
+            mid_cells_x = np.nanmean([a_coordinates_x, b_coordinates_x, c_coordinates_x,
+                                      d_coordinates_x, e_coordinates_x], axis=0)
+            mid_cells_y = np.nanmean([a_coordinates_y, b_coordinates_y, c_coordinates_y,
+                                      d_coordinates_y, e_coordinates_y], axis=0)
+            mid_cells_x[invalid_data[:-1, :-1]] = np.nan
+            mid_cells_y[invalid_data[:-1, :-1]] = np.nan
+
+            area = 0.5 * np.abs(
+                a_coordinates_x * b_coordinates_y - b_coordinates_x * a_coordinates_y + \
+                b_coordinates_x * c_coordinates_y - c_coordinates_x * b_coordinates_y + \
+                c_coordinates_x * d_coordinates_y - d_coordinates_x * c_coordinates_y + \
+                d_coordinates_x * e_coordinates_y - e_coordinates_x * d_coordinates_y + \
+                e_coordinates_x * a_coordinates_y - a_coordinates_x * e_coordinates_y
             )
-            area_rec1 = (x_left[1:, :-1] - x_left[:-1, :-1]) * (
-                    cells_borders_depths_2[:-1, :-1] - cells_borders_depths_1[:-1, :]
-            )
-            area_tri1 = (
-                    (x_left[1:, :-1] - x_left[:-1, :-1])
-                    * (cells_borders_depths_1[1:, :] - cells_borders_depths_2[:-1, :-1])
-                    / 2
-            )
-            area_tra1 = area_rec1 + area_tri1
-            area = area_tra1 + area_rec2
+            area[invalid_data[:-1, :-1]] = np.nan
 
-            # Compute mid of every shape
-            mid_rec2_x = (x_left[:-1, 1:] + x_left[1:, :-1]) / 2
-            mid_rec2_y = (
-                                 cells_borders_depths_1[:-1, :] + cells_borders_depths_1[1:, :]
-                         ) / 2
-
-            mid_rec1_x = (x_left[:-1, :-1] + x_left[1:, :-1]) / 2
-            mid_rec1_y = (
-                                 cells_borders_depths_1[:-1, :] + cells_borders_depths_2[:-1, :-1]
-                         ) / 2
-
-            mid_tri1_x = (x_left[:-1, :-1] + 2 * x_left[1:, :-1]) / 3
-            mid_tri1_y = (
-                                 2 * cells_borders_depths_2[:-1, :-1] + cells_borders_depths_1[1:, :]
-                         ) / 3
-
-            mid_tra1_x = (area_rec1 * mid_rec1_x + area_tri1 * mid_tri1_x) / (area_tra1)
-            mid_tra1_y = (area_rec1 * mid_rec1_y + area_tri1 * mid_tri1_y) / (area_tra1)
-            mid_tra1_x[area_tra1 == 0] = 0
-            mid_tra1_y[area_tra1 == 0] = 0
-
-            # Compute cell's mid
-            mid_cells_x = (area_rec2 * mid_rec2_x + area_tra1 * mid_tra1_x) / area
-            mid_cells_y = (area_rec2 * mid_rec2_y + area_tra1 * mid_tra1_y) / area
             edge_exp = 2.41
-
             bed_distance = mid_cells_y * edge_distance / depth_edge
             vertical_depth = mid_cells_x * depth_edge / edge_distance
-
             is_edge = True
 
         elif edge_coef == 0.91 and edge_distance > 0:
@@ -1561,6 +1560,7 @@ class MAP(object):
                 self.vertical_velocity, edge_vertical_velocity[:, ::-1]
             ]
             self.rssi = np.c_[self.rssi, np.tile(np.nan, edge_primary_velocity.shape)]
+            self.count_valid = np.c_[self.count_valid, np.tile(np.nan, edge_primary_velocity.shape)]
             self.direction_ens = np.append(
                 self.direction_ens,
                 np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]),
@@ -1598,6 +1598,11 @@ class MAP(object):
             self.rssi = np.c_[
                 np.tile(np.nan, edge_primary_velocity.shape),
                 self.rssi,
+            ]
+
+            self.count_valid = np.c_[
+                np.tile(np.nan, edge_primary_velocity.shape),
+                self.count_valid,
             ]
 
             self.direction_ens = np.insert(

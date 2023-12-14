@@ -16284,23 +16284,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates water track profile on MAP data."""
 
         # Initialize the boat speed figure and assign to the canvas
-        self.map_fig = WTContour(canvas=self.map_canvas)
+        # self.map_fig = WTContour(canvas=self.map_canvas)
+        self.map_fig = AdvGraphs(canvas=self.map_canvas)
 
         # Quiver parameters
-        if self.map_settings["combo_map_data"] == "Primary velocity":
-            vy = self.meas.map.secondary_velocity
-            quiver_label = "Secondary velocity"
-        else:
-            vy = self.meas.map.transverse_velocity
-            quiver_label = "Transverse velocity"
-        data_quiver = {
-            "x": self.meas.map.distance_cells_center,
-            "z": self.meas.map.depth_cells_center,
-            "vy": vy,
-            "vz": self.meas.map.vertical_velocity,
-            "scale": self.map_settings["ed_map_secondary_velocity"],
-            "label": quiver_label,
-        }
+        data_quiver = None
+        if self.map_settings["ed_map_secondary_velocity"]:
+            if self.map_settings["combo_map_data"] == "Primary velocity":
+                vy = self.meas.map.secondary_velocity
+                quiver_label = "Secondary velocity"
+            elif self.map_settings["combo_map_data"] == "Streamwise velocity":
+                vy = self.meas.map.transverse_velocity
+                quiver_label = "Transverse velocity"
+            data_quiver = {
+                "x": self.meas.map.distance_cells_center,
+                "z": self.meas.map.depth_cells_center,
+                "vy": vy,
+                "vz": self.meas.map.vertical_velocity,
+                "scale": self.map_settings["ed_map_secondary_velocity"],
+                "label": quiver_label,
+            }
 
         # Bed profiles of transects
         if self.map_settings["cb_map_bed_profiles"]:
@@ -16311,17 +16314,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             bed_profiles = None
 
-        self.map_fig.create(
-            transect=self.meas.map,
-            units=self.units,
-            data_type=self.map_settings["combo_map_data"],
-            data_quiver=data_quiver,
-            bed_profiles=bed_profiles,
-            color_map=self.color_map,
-            x_axis_type="MAP",
+        map_data = self.meas.map
+        data_type = self.map_settings["combo_map_data"]
+        manufacturer = self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer
+        x_plt, cell_plt, data_plt, depths, x_data, data_units = self.map_fig.contour_map_prep(
+            map_data, data_type, self.units, manufacturer=manufacturer)
+
+        # Plot MAP profile
+        self.map_fig.plt_contour(
+            x_plt_in=x_plt,
+            cell_plt_in=cell_plt,
+            data_plt_in=data_plt,
+            x=x_data,
+            depth=depths,
+            data_units=data_units,
+            data_quiver=data_quiver
         )
+
         self.map_fig.fig.subplots_adjust(
-            left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0
+            left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0
         )
         # Draw canvas
         self.map_canvas.draw()

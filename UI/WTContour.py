@@ -247,7 +247,18 @@ class WTContour(object):
             # Add color bar and axis labels
             cb = self.fig.colorbar(c, pad=0.02)
             if x_axis_type == "MAP":
-                cb.ax.set_ylabel(data_type + " " + units["label_V"])
+                if data_type == "RSSI or SNR":
+                    if transect.adcp.manufacturer == "TRDI":
+                        data_label = self.canvas.tr("Intensity (counts)")
+                    elif transect.adcp.manufacturer == "SonTek":
+                        data_label = self.canvas.tr("SNR (dB)")
+                    else:
+                        data_label = self.canvas.tr("Intensity")
+                    cb.ax.set_ylabel(data_label)
+                elif data_type == "Nb. of cells":
+                    cb.ax.set_ylabel(self.canvas.tr("Number of cells"))
+                else:
+                    cb.ax.set_ylabel(data_type + " " + units["label_V"])
             else:
                 cb.ax.set_ylabel(self.canvas.tr("Water Speed ") + units["label_V"])
             cb.ax.yaxis.label.set_fontsize(12)
@@ -473,7 +484,7 @@ class WTContour(object):
         depth: np.array
             Depth data used to plot the cross section bottom
         """
-        if data_type in ["Primary velocity", "Streamwise velocity"]:
+        if data_type in ["Primary velocity", "Streamwise velocity", "RSSI or SNR", "Nb. of cells"]:
             if transect.total_discharge is not None:
                 in_transect_idx = np.arange(transect.primary_velocity.shape[1])
             else:
@@ -495,11 +506,16 @@ class WTContour(object):
                 water_speed = transect.primary_velocity
             elif data_type == "Streamwise velocity":
                 water_speed = transect.streamwise_velocity
+            elif data_type == "RSSI or SNR":
+                water_speed = transect.rssi
+            elif data_type == "Nb. of cells":
+                water_speed = transect.count_valid
+
             else:
                 water_u = transect.w_vel.u_mps[:, in_transect_idx]
                 water_v = transect.w_vel.v_mps[:, in_transect_idx]
 
-            if data_type in ["Primary velocity", "Streamwise velocity"]:
+            if data_type in ["Primary velocity", "Streamwise velocity",  "RSSI or SNR", "Nb. of cells"]:
                 depth = transect.depths
                 # cell_depth = transect.depth_cells_center
                 cell_depth = np.tile(np.nan, transect.depth_cells_center.shape)
@@ -578,7 +594,7 @@ class WTContour(object):
 
         # Center ensembles in grid
         for n in range(n_ensembles):
-            if data_type in ["Primary velocity", "Streamwise velocity"]:
+            if data_type in ["Primary velocity", "Streamwise velocity",  "RSSI or SNR", "Nb. of cells"]:
                 half_back = 0.5 * (
                     transect.borders_ens[n + 1] - transect.borders_ens[n]
                 )
