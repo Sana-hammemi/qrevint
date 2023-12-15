@@ -186,7 +186,7 @@ class MAP(object):
         interp_option: bool
             Indicates if velocities interpolation should be applied
         """
-
+        print('============================================= MAP IS RUNNING =============================================')
         # Get meas current parameters
         settings = meas.current_settings()
         checked_transect_idx = meas.checked_transect_idx
@@ -1408,6 +1408,7 @@ class MAP(object):
             invalid_data = np.isnan(cells_borders_depths_2)
             x_left[invalid_data] = np.nan
 
+            # Define the 5 points of the pentagone
             a_coordinates_x = copy.deepcopy(x_left[:-1, :-1])
             a_coordinates_y = copy.deepcopy(cells_borders_depths_1[:-1, :])
             b_coordinates_x = copy.deepcopy(x_left[:-1, 1:])
@@ -1419,6 +1420,7 @@ class MAP(object):
             e_coordinates_x = copy.deepcopy(x_left[:-1, :-1])
             e_coordinates_y = copy.deepcopy(cells_borders_depths_2[:-1, :-1])
 
+            # Remove invalid points
             invalid_d = np.logical_or(np.logical_and(
                 d_coordinates_x == c_coordinates_x, c_coordinates_y == d_coordinates_y),
                 np.isnan(d_coordinates_x+d_coordinates_y))
@@ -1431,6 +1433,7 @@ class MAP(object):
             e_coordinates_x[invalid_e] = np.nan
             e_coordinates_y[invalid_e] = np.nan
 
+            # Compute the center of the cell as the mean coordinates
             mid_cells_x = np.nanmean([a_coordinates_x, b_coordinates_x, c_coordinates_x,
                                       d_coordinates_x, e_coordinates_x], axis=0)
             mid_cells_y = np.nanmean([a_coordinates_y, b_coordinates_y, c_coordinates_y,
@@ -1438,6 +1441,7 @@ class MAP(object):
             mid_cells_x[invalid_data[:-1, :-1]] = np.nan
             mid_cells_y[invalid_data[:-1, :-1]] = np.nan
 
+            # Compute cell area
             area = 0.5 * np.abs(
                 a_coordinates_x * b_coordinates_y - b_coordinates_x * a_coordinates_y + \
                 b_coordinates_x * c_coordinates_y - c_coordinates_x * b_coordinates_y + \

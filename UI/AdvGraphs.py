@@ -3332,6 +3332,10 @@ class AdvGraphs(object):
             Object of TransectData containing data to be plotted
         data: np.ndarray()
             Contour data
+        data_quiver: dict
+            Dictionary with quiver data (secondary/transverse velocity)
+        bed_profiles: dict
+            Dictionary with transects' bed profile
 
         Returns
         -------
@@ -3406,7 +3410,8 @@ class AdvGraphs(object):
         n_ensembles=None,
         edge=None,
         show_edge_speed=False,
-        data_quiver=None
+        data_quiver=None,
+        bed_profiles=None
     ):
         """Create contour plot.
 
@@ -3635,6 +3640,16 @@ class AdvGraphs(object):
             )
             ax.set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
             ax.xaxis.label.set_fontsize(12)
+
+        if bed_profiles is not None:
+            for i in range(len(bed_profiles["x"])):
+                self.fig.ax.plot(
+                    bed_profiles["x"][i] * units["L"],
+                    bed_profiles["depth"][i] * units["L"],
+                    color="grey",
+                    linewidth=1,
+                    zorder=1,
+                )
 
         if data_quiver:
             if data_quiver["scale"] is not None:

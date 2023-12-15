@@ -61,8 +61,6 @@ class WTContour(object):
         color_map="viridis",
         x_axis_type=None,
         data_type="Processed",
-        data_quiver=None,
-        bed_profiles=None,
     ):
         """Create the axes and lines for the figure.
 
@@ -90,11 +88,7 @@ class WTContour(object):
         x_axis_type: str
             Identifies x-axis type (L-lenght, E-ensemble, T-time, MAP)
         data_type: str
-            Specifies data type to be be plotted  (Processed, Filtered, Primary velocity or Streamwise velocity)
-        data_quiver: dict
-            Dictionary with quiver data (secondary/transverse velocity)
-        bed_profiles: dict
-            Dictionary with transects' bed profile
+            Specifies data type to be be plotted  (Processed or Filtered)
         """
 
         # Set default axis
@@ -131,8 +125,6 @@ class WTContour(object):
                 + transect.date_time.start_serial_time
             )
             x = np.copy(timestamp)
-        elif x_axis_type == "MAP":
-            x = (transect.borders_ens[1:] + transect.borders_ens[:-1]) / 2 * units["L"]
 
         if n_ensembles is None or n_ensembles > 0:
             if edge_start is None:
@@ -180,35 +172,6 @@ class WTContour(object):
 
             # Use only specified ensembles, required for edges
             x = x[ensembles]
-            if x_axis_type == "MAP":
-                if transect.left_geometry is not None:
-                    if transect.left_geometry[1] == 0.3535:
-                        depth = np.insert(depth, 0, 0)
-                        x = np.insert(x, 0, transect.borders_ens[0] * self.units["L"])
-                    elif transect.left_geometry[1] == 0.91:
-                        depth = np.insert(depth, 0, [0, transect.depths[0]])
-                        x = np.insert(
-                            x,
-                            0,
-                            [
-                                transect.borders_ens[0] * self.units["L"],
-                                transect.borders_ens[0] * self.units["L"],
-                            ],
-                        )
-                if transect.right_geometry is not None:
-                    if transect.right_geometry[1] == 0.3535:
-                        depth = np.append(depth, 0)
-                        x = np.append(x, transect.borders_ens[-1] * self.units["L"])
-                    elif transect.left_geometry[1] == 0.91:
-                        depth = np.append(depth, [transect.depths[-1], 0])
-                        x = np.append(
-                            x,
-                            [
-                                transect.borders_ens[-1] * self.units["L"],
-                                transect.borders_ens[-1] * self.units["L"],
-                            ],
-                        )
-
             if cell_plt is None:
                 return 0
 
@@ -246,21 +209,7 @@ class WTContour(object):
 
             # Add color bar and axis labels
             cb = self.fig.colorbar(c, pad=0.02)
-            if x_axis_type == "MAP":
-                if data_type == "RSSI or SNR":
-                    if transect.adcp.manufacturer == "TRDI":
-                        data_label = self.canvas.tr("Intensity (counts)")
-                    elif transect.adcp.manufacturer == "SonTek":
-                        data_label = self.canvas.tr("SNR (dB)")
-                    else:
-                        data_label = self.canvas.tr("Intensity")
-                    cb.ax.set_ylabel(data_label)
-                elif data_type == "Nb. of cells":
-                    cb.ax.set_ylabel(self.canvas.tr("Number of cells"))
-                else:
-                    cb.ax.set_ylabel(data_type + " " + units["label_V"])
-            else:
-                cb.ax.set_ylabel(self.canvas.tr("Water Speed ") + units["label_V"])
+            cb.ax.set_ylabel(self.canvas.tr("Water Speed ") + units["label_V"])
             cb.ax.yaxis.label.set_fontsize(12)
             cb.ax.tick_params(labelsize=12)
             self.fig.ax.invert_yaxis()
@@ -269,62 +218,7 @@ class WTContour(object):
             self.fig.ax.plot(x, depth * units["L"], color="k", zorder=2)
 
             # Plot quiver if available
-            if data_quiver is not None:
-                if data_quiver["scale"] is not None:
-                    q = self.fig.ax.quiver(
-                        data_quiver["x"] * units["L"],
-                        data_quiver["z"] * units["L"],
-                        data_quiver["vy"] * units["V"],
-                        data_quiver["vz"] * units["V"],
-                        units="inches",
-                        scale=data_quiver["scale"],
-                        pivot="tail",
-                    )
-
-                    self.fig.ax.quiverkey(
-                        q,
-                        X=0.95,
-                        Y=-0.046,
-                        U=data_quiver["scale"],
-                        label=data_quiver["label"]
-                              + "\n"
-                              + str(data_quiver["scale"])
-                              + " "
-                              + units["label_V"],
-                        labelpos="E",
-                        coordinates="axes",
-                        fontproperties={"size": 12},
-                        zorder=3
-                    )
-                self.data_quiver = data_quiver
-                x_fill = np.insert(x, 0, (self.x_plt[0, 0] - self.x_plt[0, 1]) * 0.5)
-                x_fill = np.append(
-                    x_fill,
-                    self.x_plt[0, -1] + (self.x_plt[0, -1] - self.x_plt[0, -2]) * 0.5,
-                )
-                # axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
-                # x_fill = np.insert(x, 0, x[0] - axis_buffer * 0.02)
-                # x_fill = np.append(x_fill, x[-1] + axis_buffer * 0.02)
-                depth_fill = np.insert(depth, 0, depth[0])
-                depth_fill = np.append(depth_fill, depth[-1])
-                self.fig.ax.fill_between(
-                    x_fill,
-                    1.15 * np.ceil(np.nanmax(self.cell_plt)),
-                    depth_fill * units["L"],
-                    color="w",
-                    zorder=0,
-                )
-                # TODO fix pcolormesh (bug?) which make higher/lower cells too wide
-                self.fig.ax.fill_between(
-                    x_fill,
-                    np.tile(-self.cell_plt[1, 0] * 0.5, len(x_fill)),
-                    np.tile(self.cell_plt[0, 0], len(x_fill)),
-                    color="w",
-                    zorder=0,
-                )
-
-            # Plot side lobe cutoff if available
-            elif transect.w_vel.sl_cutoff_m is not None:
+            if transect.w_vel.sl_cutoff_m is not None:
                 depth_obj = getattr(transect.depths, transect.depths.selected)
                 last_valid_cell = np.nansum(transect.w_vel.cells_above_sl, axis=0) - 1
                 last_depth_cell_size = depth_obj.depth_cell_size_m[
@@ -348,16 +242,6 @@ class WTContour(object):
                 self.fig.ax.plot(x, y_plt_sl, color="r", linewidth=0.5)
                 # Plot upper bound of measured depth cells
                 self.fig.ax.plot(x, y_plt_top, color="r", linewidth=0.5)
-
-            if bed_profiles is not None:
-                for i in range(len(bed_profiles["x"])):
-                    self.fig.ax.plot(
-                        bed_profiles["x"][i] * units["L"],
-                        bed_profiles["depth"][i] * units["L"],
-                        color="grey",
-                        linewidth=1,
-                        zorder=1,
-                    )
 
             # Label and limits for y axis
             self.fig.ax.set_ylabel(self.canvas.tr("Depth ") + units["label_L"])
@@ -418,13 +302,6 @@ class WTContour(object):
                     left=0.08, bottom=0.3, right=1, top=0.97, wspace=0.1, hspace=0
                 )
                 self.fig.ax.set_xlabel(self.canvas.tr("Time"))
-            elif x_axis_type == "MAP":
-                axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
-                self.fig.ax.set_xlim(
-                    left=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
-                    right=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02,
-                )
-                self.fig.ax.set_xlabel(self.canvas.tr("Length " + units["label_L"]))
 
             # Initialize annotation for data cursor
             self.annot = self.fig.ax.annotate(
