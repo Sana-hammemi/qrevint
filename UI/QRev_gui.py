@@ -5040,7 +5040,7 @@ class Ui_MainWindow(object):
         self.combo_map_data.setItemText(0, _translate("MainWindow", "Primary velocity"))
         self.combo_map_data.setItemText(1, _translate("MainWindow", "Streamwise velocity"))
         self.combo_map_data.setItemText(2, _translate("MainWindow", "RSSI or SNR"))
-        self.combo_map_data.setItemText(3, _translate("MainWindow", "Nb. of cells"))
+        self.combo_map_data.setItemText(3, _translate("MainWindow", "Nb. of transects"))
         self.cb_map_top_bottom.setText(_translate("MainWindow", "Top/Bottom Extrap"))
         self.cb_map_edges.setText(_translate("MainWindow", "Edges Extrap"))
         self.cb_map_interpolation.setText(_translate("MainWindow", "Interpolation"))

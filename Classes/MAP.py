@@ -186,7 +186,6 @@ class MAP(object):
         interp_option: bool
             Indicates if velocities interpolation should be applied
         """
-        print('============================================= MAP IS RUNNING =============================================')
         # Get meas current parameters
         settings = meas.current_settings()
         checked_transect_idx = meas.checked_transect_idx
@@ -799,36 +798,39 @@ class MAP(object):
             list_river = list_param + list_cells + list_ens
 
             # Create 2D array and remove empty cells
-            data_river = np.array(pd.DataFrame(np.column_stack(list_river)).dropna(subset=[2, 3, 4, 5], thresh=1))
+            data_river = np.array(pd.DataFrame(np.column_stack(list_river)).dropna(subset=[2, 3, 4, 5, 6], thresh=1))
 
             # 2D binning
             bin_idx_depths = np.digitize(data_river[:, 0], bins_depths)
             bin_idx_distance = np.digitize(data_river[:, 1], bins_distance)
 
+            # Save ensemble which has been done
             bin_ens_set = set()
+            # Run on ensembles
             for i in range(len(data_river)):
                 add_ens = False
                 # Get bin index
                 depths_idx = bin_idx_depths[i] - 1
                 distance_idx = bin_idx_distance[i] - 1
-                if distance_idx not in bin_ens_set:
-                    bin_ens_set.add(distance_idx)
-                    add_ens = True
+                if depths_idx < len(bins_depths) - 1:
+                    if distance_idx not in bin_ens_set:
+                        bin_ens_set.add(distance_idx)
+                        add_ens = True
 
-                # Add items to corresponding array
-                j = -1
-                for key in key_cell:
-                    j += 1
-                    data = data_river[i, j + 2]
-                    data_bin_transects[key][index_transect, depths_idx, distance_idx].append(data)
+                    # Add items to corresponding array
+                    j = -1
+                    for key in key_cell:
+                        j += 1
+                        data = data_river[i, j + 2]
+                        data_bin_transects[key][index_transect, depths_idx, distance_idx].append(data)
 
-                # Add items with binning on verticals only
-                if add_ens:
-                    k = -1
-                    for key in key_ens:
-                        k += 1
-                        data = data_river[i, k + len_key_cells + 2]
-                        data_bin_transects[key][index_transect, distance_idx].append(data)
+                    # Add items with binning on verticals only
+                    if add_ens:
+                        k = -1
+                        for key in key_ens:
+                            k += 1
+                            data = data_river[i, k + len_key_cells + 2]
+                            data_bin_transects[key][index_transect, distance_idx].append(data)
 
             # Define vectorized function to compute median
             median_func = np.vectorize(np.nanmedian, otypes=[float])
@@ -898,7 +900,11 @@ class MAP(object):
 
         # Check for nan value and remove corresponding columns
         cell_is_nan = np.isnan(data_bin_transects['x_velocity'])
-        index_non_nan = np.where(~np.all(cell_is_nan, axis=1))[1]
+        all_cell_isnan = np.all(cell_is_nan, axis=1)
+        ens_is_nan = np.isnan(data_bin_transects['depths'])
+        all_isnan = all_cell_isnan & ens_is_nan
+
+        index_non_nan = np.where(~all_isnan)[1]
         first_column_idx = index_non_nan[0]
         last_column_idx = index_non_nan[-1]
 
@@ -1175,21 +1181,26 @@ class MAP(object):
         yield first, last
 
     def compute_interpolation(self):
-        # Todo Add doc string
-
+        """Compute interpolation for missing data according QRevInt ABBA method
+        """
         # Interpolate depth
-        not_nan = np.logical_not(np.isnan(self.depths))
-        indices = np.arange(len(self.depths))
-        self.depths = np.interp(indices, indices[not_nan], self.depths[not_nan])
+        not_nan_depths = np.logical_not(np.isnan(self.depths))
+        indices_depths = np.arange(len(self.depths))
+        self.depths = np.interp(
+            indices_depths, indices_depths[not_nan_depths], self.depths[not_nan_depths])
+
+        # Interpolate direction
+        not_nan_direction = np.logical_not(np.isnan(self.direction_ens))
+        indices_direction = np.arange(len(self.direction_ens))
         self.direction_ens = np.interp(
-            indices, indices[not_nan], self.direction_ens[not_nan]
+            indices_direction, indices_direction[not_nan_direction], self.direction_ens[not_nan_direction]
         )
 
         # Interpolate Temperatures
-        not_nan = np.logical_not(np.isnan(self.temperature))
-        indices = np.arange(len(self.temperature))
+        not_nan_temperature = np.logical_not(np.isnan(self.temperature))
+        indices_temperature = np.arange(len(self.temperature))
         self.temperature = np.interp(
-            indices, indices[not_nan], self.temperature[not_nan]
+            indices_temperature, indices_temperature[not_nan_temperature], self.temperature[not_nan_temperature]
         )
 
         data_list = [
@@ -1225,12 +1236,16 @@ class MAP(object):
         if len(invalid_ens) > 0:
             grouped_invalid = list(self.group(invalid_ens))
             for x in grouped_invalid:
-                top = min(idx_top[x[0] - 1], idx_top[x[1] + 1])
-                bot = max(idx_bot[x[0] - 1], idx_bot[x[1] + 1])
+                if x[0] == 0 or x[-1] == n_ensembles-1:
+                    for ens in range(x[0], x[1] + 1):
+                        cells_above_sl[:, ens] = False
+                else:
+                    top = min(idx_top[x[0] - 1], idx_top[x[1] + 1])
+                    bot = max(idx_bot[x[0] - 1], idx_bot[x[1] + 1])
 
-                for ens in range(x[0], x[1] + 1):
-                    cells_above_sl[:top, ens] = False
-                    cells_above_sl[bot + 1:, ens] = False
+                    for ens in range(x[0], x[1] + 1):
+                        cells_above_sl[:top, ens] = False
+                        cells_above_sl[bot + 1:, ens] = False
 
         # Use bottom of cells as depth
         last_cell = []

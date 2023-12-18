@@ -3375,7 +3375,7 @@ class AdvGraphs(object):
             else:
                 data_label = "Intensity"
             data_units = (1, data_label)
-        elif data_type == "Nb. of cells":
+        elif data_type == "Nb. of transect":
             data = map_data.count_valid
             data_units = (1, data_type)
 
@@ -3643,12 +3643,12 @@ class AdvGraphs(object):
 
         if bed_profiles is not None:
             for i in range(len(bed_profiles["x"])):
-                self.fig.ax.plot(
-                    bed_profiles["x"][i] * units["L"],
-                    bed_profiles["depth"][i] * units["L"],
+                ax.plot(
+                    bed_profiles["x"][i] * self.units["L"],
+                    bed_profiles["depth"][i] * self.units["L"],
                     color="grey",
                     linewidth=1,
-                    zorder=1,
+                    zorder=3,
                 )
 
         if data_quiver:
@@ -3673,6 +3673,7 @@ class AdvGraphs(object):
             units="inches",
             scale=data_quiver["scale"],
             pivot="tail",
+            zorder=2
         )
 
         ax.quiverkey(

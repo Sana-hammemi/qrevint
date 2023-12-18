@@ -1171,6 +1171,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.gps_bt_initialized = False
         self.adv_graph_initialized = False
         self.map_initialized = False
+        self.map_init_parameters = False
 
         self.setMouseTracking(True)
 
@@ -15786,7 +15787,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ==============
     def map_tab(self):
         """Initializes and configures MAP tab."""
-        map_initialize = False
+        self.map_init_parameters = False
         if self.meas.map is None:
             self.meas.compute_map()
             self.map_settings = {
@@ -15807,6 +15808,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Initialize tab
             if not self.map_initialized:
                 self.map_tab_initialize()
+            self.cb_map_cell_size_auto.setChecked(True)
+            self.ed_map_cell_width.blockSignals(True)
+            self.ed_map_cell_width.setEnabled(False)
+            self.ed_map_cell_width.clear()
+
+            self.ed_map_cell_height.blockSignals(True)
+            self.ed_map_cell_height.setEnabled(False)
+            self.ed_map_cell_height.clear()
+
             self.cb_map_interpolation.setChecked(True)
             self.cb_map_top_bottom.setChecked(True)
             self.cb_map_edges.setChecked(True)
@@ -15823,7 +15833,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.combo_map_data.setCurrentIndex(0)
 
             self.map_change = False
-            map_initialize = True
+            self.map_init_parameters = True
 
         if self.map_change:
             # Reset settings if change
@@ -15882,7 +15892,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_table()
 
         # Check for change
-        self.update_map(map_initialize)
+        self.update_map()
 
         # MAP figures
         self.canvases = [self.map_canvas]
@@ -15925,7 +15935,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.ed_map_secondary_velocity.setEnabled(False)
 
-    def update_map(self, map_initialize=True):
+    def update_map(self):
         """Updates MAP with user's parameters."""
 
         # Load MAP parameters and check if there is any change
@@ -15941,12 +15951,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             min_width = self.meas.map.auto_node_horz
             if cell_width is not None:
                 cell_width = cell_width * 1 / self.units["L"]
-
-                # if cell_width < min_width:
-                #     cell_width = min_width
-                #     self.ed_map_cell_width.setText(
-                #         "{:3.2f}".format(cell_width * self.units["L"])
-                #     )
             else:
                 self.ed_map_cell_width.setText(
                     "{:3.2f}".format(min_width * self.units["L"])
@@ -15956,11 +15960,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             min_height = self.meas.map.auto_node_vert
             if cell_height is not None:
                 cell_height = cell_height * 1 / self.units["L"]
-                # if cell_height < min_height:
-                #     cell_height = min_height
-                #     self.ed_map_cell_height.setText(
-                #         "{:3.2f}".format(min_height * self.units["L"])
-                #     )
             else:
                 self.ed_map_cell_height.setText(
                     "{:3.2f}".format(min_height * self.units["L"])
@@ -16006,7 +16005,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_current_settings = self.map_settings
 
             # Avoid compute MAP twice
-            if map_initialize:
+            if self.map_init_parameters:
                 change_data = False
 
             # Apply changes
@@ -16023,6 +16022,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.update_map_plot()
 
             self.map_change = False
+            self.map_init_parameters = False
 
     def map_table(self, update=False):
         """Create and populate MAP results table."""
@@ -16320,13 +16320,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             }
 
         # Bed profiles of transects
+        bed_profiles = None
         if self.map_settings["cb_map_bed_profiles"]:
             bed_profiles = {
                 "x": self.meas.map.acs_distance,
                 "depth": self.meas.map.depth_by_transect,
             }
-        else:
-            bed_profiles = None
 
         map_data = self.meas.map
         data_type = self.map_settings["combo_map_data"]
@@ -16342,7 +16341,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             x=x_data,
             depth=depths,
             data_units=data_units,
-            data_quiver=data_quiver
+            data_quiver=data_quiver,
+            bed_profiles=bed_profiles
+        )
+
+        # Fill with blank
+        x_fill = np.insert(x_data, 0, 2 * x_data[0] - x_data[1])
+        depths_fill = np.insert(depths, 0, depths[0])
+        x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
+        depths_fill = np.append(depths_fill, depths[-1])
+        self.map_fig.ax[0].fill_between(
+            x_fill,
+            1.15 * np.ceil(np.nanmax(cell_plt)),
+            depths_fill * self.units["L"],
+            color="w",
+            zorder=1
         )
 
         self.map_fig.fig.subplots_adjust(

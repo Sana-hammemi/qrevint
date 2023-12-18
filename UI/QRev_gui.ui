@@ -8411,7 +8411,7 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>Nb. of cells</string>
+                  <string>Nb. of transects</string>
                  </property>
                 </item>
                </widget>
