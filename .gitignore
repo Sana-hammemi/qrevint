@@ -3,6 +3,7 @@
 build/
 *.pyo
 *.pyc
+*.pyd
 .spec
 qrevpy.egg-info/
 .idea/
@@ -54,3 +55,4 @@ lib64
 .Trashes
 ehthumbs.db
 Thumbs.db
+/Classes/__pycache__

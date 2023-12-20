@@ -101,88 +101,80 @@ class GPSData(object):
     """
 
     def __init__(self):
-        """Initialize instance variables.
-        """
+        """Initialize instance variables."""
 
         # Raw properties
-        self.raw_gga_lat_deg = None  # self.raw_ latitude, in degress [
-        # ensemble,n]
-        self.raw_gga_lon_deg = None  # self.raw_ longitude, in degrees [
-        # ensemble,n]
-        self.raw_gga_altitude_m = None  # self.raw_ altitude in meters,
-        # [ensemble,n]
-        self.raw_gga_differential = None  # Differential correction
-        # indicator [ensemble,n]
-        self.raw_gga_hdop = None  # Horizontal dilution of precision [
-        # ensemble,n]
-        self.raw_gga_utc = None  # UTC time, in hhmmss.ss [ensemble,n]
-        self.raw_gga_serial_time = None  # UTC time of gga data, in seconds
-        # past midnight [ensemble,n]
-        self.raw_gga_num_sats = None  # Number of satellites reported in gga
-        # sentence [ensemble,n]
-        self.raw_vtg_course_deg = None  # Course, in degress [ensemble,n]
-        self.raw_vtg_speed_mps = None  # Speed, in m/s [ensemble,n]
-        self.raw_vtg_delta_time = None  # vtg delta time, in sec [ensemble,n]
-        self.raw_vtg_mode_indicator = None  # vtg mode indicator [ensemble,n]
-        self.raw_gga_delta_time = None  # gga delta time, in sec [ensemble,n]
+        self.raw_gga_lat_deg = None
+        self.raw_gga_lon_deg = None
+        self.raw_gga_altitude_m = None
+        self.raw_gga_differential = None
+        self.raw_gga_hdop = None
+        self.raw_gga_utc = None
+        self.raw_gga_serial_time = None
+        self.raw_gga_num_sats = None
+        self.raw_vtg_course_deg = None
+        self.raw_vtg_speed_mps = None
+        self.raw_vtg_delta_time = None
+        self.raw_vtg_mode_indicator = None
+        self.raw_gga_delta_time = None
 
         # Manufacturer assigned ensemble values
-        self.ext_gga_lat_deg = None  # Raw latitude, in degrees [1,ensemble]
-        self.ext_gga_lon_deg = None  # Raw longitude, in degrees [1,ensemble]
-        self.ext_gga_altitude_m = None  # Raw altitude, in meters [1,ensemble]
-        self.ext_gga_differential = None  # Differential correction
-        # indicator [1,ensemble]
-        self.ext_gga_hdop = None  # Horizontal dilution of precision [1,
-        # ensemble]
-        self.ext_gga_utc = None  # UTC time, in hhmmss.ss [1, ensemble]
-        self.ext_gga_serial_time = None  # UTC time of gga data, in seconds
-        # past midnight [1,ensemble]
-        self.ext_gga_num_sats = None  # Number of satellites reported by
-        # software [1,ensemble]
-        self.ext_vtg_course_deg = None  # Course, in degress [1, ensemble]
-        self.ext_vtg_speed_mps = None  # Speed, in m/s [1, ensemble]
+        self.ext_gga_lat_deg = None
+        self.ext_gga_lon_deg = None
+        self.ext_gga_altitude_m = None
+        self.ext_gga_differential = None
+        self.ext_gga_hdop = None
+        self.ext_gga_utc = None
+        self.ext_gga_serial_time = None
+        self.ext_gga_num_sats = None
+        self.ext_vtg_course_deg = None
+        self.ext_vtg_speed_mps = None
 
         # User specification
-        self.gga_position_method = None  # Method used to process gga data
-        # for position ('End', 'Average' 'External')
-        self.gga_velocity_method = None  # Method used to process gga data
-        # for velocity ('End','Average' 'External')
-        self.vtg_velocity_method = None  # Method used to process vtg data
-        # for velocity ('Average' 'External)
+        self.gga_position_method = None
+        self.gga_velocity_method = None
+        self.vtg_velocity_method = None
 
         # Computed properties for ensembles
-        self.gga_lat_ens_deg = None  # Processed latitude in degrees,
-        # [ensemble]
-        self.gga_lon_ens_deg = None  # Processed longitude in degrees,
-        # [ensemble]
-        self.utm_ens_m = None  # UTM position from processed gga data, [2,
-        # ensemble]
-        self.gga_velocity_ens_mps = None  # Boat velocity computed from gga
-        # data [2,ensemble]
-        self.gga_serial_time_ens = None  # UTC time of gga data in seconds
-        # past midnight, [ensemble]
-        self.vtg_velocity_ens_mps = None  # Boat velocity computed from vtg
-        # data [2,ensemble]
-        self.per_good_ens = None  # Percentage of available data used to
-        # compute ensemble value [ensemble]
-        self.hdop_ens = None  # HDOP for each ensemble using velocity method
-        # [ensemble]
-        self.num_sats_ens = None  # Number of satellites for each ensemble,
-        # using velocity method [ensemble]
-        self.altitude_ens_m = None  # Altitude for each ensemble,
-        # using velocity method [ensemble]
-        self.diff_qual_ens = None  # Differential quality for each ensemble,
-        # using velocity method [ensemble]
+        self.gga_lat_ens_deg = None
+        self.gga_lon_ens_deg = None
+        self.utm_ens_m = None
+        self.gga_velocity_ens_mps = None
+        self.gga_serial_time_ens = None
+        self.vtg_velocity_ens_mps = None
+        self.per_good_ens = None
+        self.hdop_ens = None
+        self.num_sats_ens = None
+        self.altitude_ens_m = None
+        self.diff_qual_ens = None
 
-    def populate_data(self, raw_gga_utc, raw_gga_lat, raw_gga_lon, raw_gga_alt,
-                      raw_gga_diff,
-                      raw_gga_hdop, raw_gga_num_sats, raw_gga_delta_time,
-                      raw_vtg_course, raw_vtg_speed,
-                      raw_vtg_delta_time, raw_vtg_mode_indicator, ext_gga_utc,
-                      ext_gga_lat, ext_gga_lon, ext_gga_alt,
-                      ext_gga_diff, ext_gga_hdop, ext_gga_num_sats,
-                      ext_vtg_course, ext_vtg_speed,
-                      gga_p_method, gga_v_method, vtg_method):
+    def populate_data(
+        self,
+        raw_gga_utc,
+        raw_gga_lat,
+        raw_gga_lon,
+        raw_gga_alt,
+        raw_gga_diff,
+        raw_gga_hdop,
+        raw_gga_num_sats,
+        raw_gga_delta_time,
+        raw_vtg_course,
+        raw_vtg_speed,
+        raw_vtg_delta_time,
+        raw_vtg_mode_indicator,
+        ext_gga_utc,
+        ext_gga_lat,
+        ext_gga_lon,
+        ext_gga_alt,
+        ext_gga_diff,
+        ext_gga_hdop,
+        ext_gga_num_sats,
+        ext_vtg_course,
+        ext_vtg_speed,
+        gga_p_method,
+        gga_v_method,
+        vtg_method,
+    ):
         """Store and process provided data in GPSData class.
 
         Parameters
@@ -245,28 +237,31 @@ class GPSData(object):
             self.raw_gga_serial_time = np.tile([np.nan], raw_gga_lat.shape)
         else:
             self.raw_gga_utc = raw_gga_utc
-            self.raw_gga_serial_time = np.floor(raw_gga_utc / 10000) * 3600 \
-                                       + np.floor(
-                np.mod(raw_gga_utc, 10000, where=~np.isnan(raw_gga_utc)) /
-                100) \
-                                       * 60 + np.mod(raw_gga_utc, 100,
-                                                     where=~np.isnan(
-                                                         raw_gga_utc))
+            self.raw_gga_serial_time = (
+                np.floor(raw_gga_utc / 10000) * 3600
+                + np.floor(
+                    np.mod(raw_gga_utc, 10000, where=~np.isnan(raw_gga_utc)) / 100
+                )
+                * 60
+                + np.mod(raw_gga_utc, 100, where=~np.isnan(raw_gga_utc))
+            )
 
         self.raw_gga_lat_deg = raw_gga_lat
         self.raw_gga_lon_deg = raw_gga_lon
         self.raw_gga_lat_deg[
-            np.where(np.logical_and((self.raw_gga_lat_deg == 0),
-                                    (self.raw_gga_lon_deg == 0)))] = np.nan
+            np.where(
+                np.logical_and((self.raw_gga_lat_deg == 0), (self.raw_gga_lon_deg == 0))
+            )
+        ] = np.nan
         self.raw_gga_lat_deg[nan_less(raw_gga_diff, 1)] = np.nan
         self.raw_gga_lon_deg[np.isnan(self.raw_gga_lat_deg)] = np.nan
         self.raw_gga_altitude_m = raw_gga_alt
         self.raw_gga_altitude_m[np.isnan(self.raw_gga_lat_deg)] = np.nan
-        self.raw_gga_differential = raw_gga_diff.astype('float')
+        self.raw_gga_differential = raw_gga_diff.astype("float")
         self.raw_gga_differential[np.isnan(self.raw_gga_lat_deg)] = np.nan
-        self.raw_gga_hdop = raw_gga_hdop.astype('float')
+        self.raw_gga_hdop = raw_gga_hdop.astype("float")
         self.raw_gga_hdop[np.isnan(self.raw_gga_lat_deg)] = np.nan
-        self.raw_gga_num_sats = raw_gga_num_sats.astype('float')
+        self.raw_gga_num_sats = raw_gga_num_sats.astype("float")
         self.raw_gga_num_sats[np.isnan(self.raw_gga_lat_deg)] = np.nan
         self.raw_gga_serial_time[np.isnan(self.raw_gga_lat_deg)] = np.nan
 
@@ -279,8 +274,12 @@ class GPSData(object):
         self.raw_vtg_course_deg = raw_vtg_course
         self.raw_vtg_speed_mps = raw_vtg_speed
         self.raw_vtg_course_deg[
-            np.where(np.logical_and((self.raw_vtg_course_deg == 0),
-                                    (self.raw_vtg_speed_mps == 0)))] = np.nan
+            np.where(
+                np.logical_and(
+                    (self.raw_vtg_course_deg == 0), (self.raw_vtg_speed_mps == 0)
+                )
+            )
+        ] = np.nan
         self.raw_vtg_speed_mps[np.isnan(self.raw_vtg_course_deg)] = np.nan
 
         # Delta time is a TRDI only variable
@@ -299,11 +298,11 @@ class GPSData(object):
         self.ext_gga_differential = ext_gga_diff
         self.ext_gga_hdop = ext_gga_hdop
         self.ext_gga_num_sats = ext_gga_num_sats
-        self.ext_gga_serial_time = np.floor(
-            np.array(ext_gga_utc) / 10000) * 3600 + \
-                                   np.floor(np.mod(ext_gga_utc,
-                                                   10000) / 100) * 60 + np.mod(
-            ext_gga_utc, 100)
+        self.ext_gga_serial_time = (
+            np.floor(np.array(ext_gga_utc) / 10000) * 3600
+            + np.floor(np.mod(ext_gga_utc, 10000) / 100) * 60
+            + np.mod(ext_gga_utc, 100)
+        )
         self.ext_vtg_course_deg = ext_vtg_course
         self.ext_vtg_speed_mps = ext_vtg_speed
 
@@ -313,11 +312,11 @@ class GPSData(object):
         self.vtg_velocity_method = vtg_method
 
         # If gga data exist compute position and velocity
-        if np.sum(np.sum(np.isnan(raw_gga_lat) == False)) > 0:
+        if np.sum(np.sum(np.logical_not(np.isnan(raw_gga_lat)))) > 0:
             self.process_gga()
 
         # If vtg data exist compute velocity
-        if np.sum(np.sum(np.isnan(raw_vtg_speed) == False)) > 0:
+        if np.sum(np.sum(np.logical_not(np.isnan(raw_vtg_speed)))) > 0:
             self.process_vtg()
 
     def populate_from_qrev_mat(self, transect):
@@ -330,9 +329,8 @@ class GPSData(object):
            Matlab data structure obtained from sio.loadmat
         """
 
-        if hasattr(transect, 'gps'):
-            if hasattr(transect.gps, 'diffQualEns'):
-
+        if hasattr(transect, "gps"):
+            if hasattr(transect.gps, "diffQualEns"):
                 # Raw properties
                 self.raw_gga_lat_deg = transect.gps.rawGGALat_deg
                 self.raw_gga_lon_deg = transect.gps.rawGGALon_deg
@@ -349,30 +347,30 @@ class GPSData(object):
                 # Older versions of QRev Matlab files represented the VTG
                 # mode differently.
                 try:
-                    if transect.gps.rawVTGModeIndicator.ndim == 2 and \
-                            type(transect.gps.rawVTGModeIndicator[0][
-                                     0]) is np.float64:
+                    if (
+                        transect.gps.rawVTGModeIndicator.ndim == 2
+                        and type(transect.gps.rawVTGModeIndicator[0][0]) is np.float64
+                    ):
                         indicator = []
-                        for row in transect.gps.rawVTGModeIndicator.astype(
-                                int):
+                        for row in transect.gps.rawVTGModeIndicator.astype(int):
                             row_indicator = []
                             for value in row:
                                 if 127 > value > 0:
                                     row_indicator.append(chr(value))
                                 else:
-                                    row_indicator.append('')
+                                    row_indicator.append("")
                             indicator.append(row_indicator)
                         self.raw_vtg_mode_indicator = np.array(indicator)
                     else:
-                        raw_vtg_mode_indicator = \
+                        raw_vtg_mode_indicator = (
                             transect.gps.rawVTGModeIndicator.tolist()
+                        )
                         new_list = []
                         for row in raw_vtg_mode_indicator:
                             new_list.append(list(row))
                         self.raw_vtg_mode_indicator = np.array(new_list)
                 except AttributeError:
-                    self.raw_vtg_mode_indicator = \
-                        transect.gps.rawVTGModeIndicator
+                    self.raw_vtg_mode_indicator = transect.gps.rawVTGModeIndicator
 
                 self.raw_gga_delta_time = transect.gps.rawGGADeltaTime
 
@@ -437,32 +435,32 @@ class GPSData(object):
         valid[np.isnan(valid)] = 0
         # valid[valid > 0] = 1
         gga_lat_deg = np.copy(self.raw_gga_lat_deg)
-        gga_lat_deg[valid == False] = np.nan
+        gga_lat_deg[np.logical_not(valid)] = np.nan
         gga_lon_deg = np.copy(self.raw_gga_lon_deg)
-        gga_lon_deg[valid == False] = np.nan
+        gga_lon_deg[np.logical_not(valid)] = np.nan
         gga_serial_time = np.copy(self.raw_gga_serial_time)
-        gga_serial_time[valid == False] = np.nan
+        gga_serial_time[np.logical_not(valid)] = np.nan
         gga_delta_time = np.copy(self.raw_gga_delta_time)
-        gga_delta_time[valid == False] = np.nan
+        gga_delta_time[np.logical_not(valid)] = np.nan
         gga_hdop = np.copy(self.raw_gga_hdop)
-        gga_hdop[valid == False] = np.nan
+        gga_hdop[np.logical_not(valid)] = np.nan
         gga_num_sats = np.copy(self.raw_gga_num_sats)
-        gga_num_sats[valid == False] = np.nan
+        gga_num_sats[np.logical_not(valid)] = np.nan
         gga_altitude_m = np.copy(self.raw_gga_altitude_m)
-        gga_altitude_m[valid == False] = np.nan
+        gga_altitude_m[np.logical_not(valid)] = np.nan
         gga_differential = np.copy(self.raw_gga_differential)
-        gga_differential[valid == False] = np.nan
+        gga_differential[np.logical_not(valid)] = np.nan
         n_ensembles = gga_lat_deg.shape[0]
 
         # Apply method for computing position of ensemble
 
         # Use ensemble data from other software
-        if p_setting == 'External':
+        if p_setting == "External":
             self.gga_lat_ens_deg = self.ext_gga_lat_deg
             self.gga_lon_ens_deg = self.ext_gga_lon_deg
 
         # Uses last valid data for each ensemble
-        elif p_setting == 'End':
+        elif p_setting == "End":
             self.gga_lat_ens_deg = np.tile(np.nan, gga_lat_deg.shape[0])
             self.gga_lon_ens_deg = np.tile(np.nan, gga_lon_deg.shape[0])
             for n in range(n_ensembles):
@@ -475,7 +473,7 @@ class GPSData(object):
                 self.gga_lon_ens_deg[n] = gga_lon_deg[n, idx]
 
         # Use first valid data for each ensemble
-        elif p_setting == 'First':
+        elif p_setting == "First":
             self.gga_lat_ens_deg = np.tile(np.nan, gga_lat_deg.shape[0])
             self.gga_lon_ens_deg = np.tile(np.nan, gga_lon_deg.shape[0])
             for n in range(n_ensembles):
@@ -484,7 +482,7 @@ class GPSData(object):
                 self.gga_lon_ens_deg[n] = gga_lon_deg[n, idx]
 
         # Use minimum delta time
-        elif p_setting == 'Mindt':
+        elif p_setting == "Mindt":
             self.gga_lat_ens_deg = np.tile(np.nan, gga_lat_deg.shape[0])
             self.gga_lon_ens_deg = np.tile(np.nan, gga_lon_deg.shape[0])
             d_time = np.abs(gga_delta_time)
@@ -498,14 +496,13 @@ class GPSData(object):
             self.gga_lat_ens_deg = np.tile([np.nan], (len(d_time_min)))
             self.gga_lon_ens_deg = np.tile([np.nan], (len(d_time_min)))
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     self.gga_lat_ens_deg[n] = gga_lat_deg[n, idx]
                     self.gga_lon_ens_deg[n] = gga_lon_deg[n, idx]
 
-        y_utm, x_utm = self.compute_utm(self.gga_lat_ens_deg,
-                                        self.gga_lon_ens_deg)
+        y_utm, x_utm = self.compute_utm(self.gga_lat_ens_deg, self.gga_lon_ens_deg)
         self.utm_ens_m = (x_utm, y_utm)
 
         # Prepare variables for velocity computations
@@ -518,7 +515,7 @@ class GPSData(object):
         self.num_sats_ens = np.tile([np.nan], n_ensembles)
 
         # Apply method for computing velocity of ensemble
-        if v_setting == 'External':
+        if v_setting == "External":
             lat = self.ext_gga_lat_deg
             lon = self.ext_gga_lon_deg
             self.gga_serial_time_ens = self.ext_gga_serial_time
@@ -528,21 +525,19 @@ class GPSData(object):
             self.diff_qual_ens = self.ext_gga_differential
 
         # Average all position during an ensemble
-        elif v_setting == 'Average':
+        elif v_setting == "Average":
             lat = np.nanmean(gga_lat_deg, 1)
             lon = np.nanmean(gga_lon_deg, 1)
             self.gga_serial_time_ens = np.nanmean(gga_serial_time, 1)
             self.hdop_ens = np.nanmean(gga_hdop, 1)
             self.num_sats_ens = np.floor(np.nanmean(gga_num_sats, 1))
             self.altitude_ens_m = np.nanmean(self.raw_gga_altitude_m, 1)
-            self.diff_qual_ens = np.floor(
-                np.nanmean(self.raw_gga_differential, 1))
+            self.diff_qual_ens = np.floor(np.nanmean(self.raw_gga_differential, 1))
 
         # Use the last valid data in an ensemble
-        elif v_setting == 'End':
-
+        elif v_setting == "End":
             for n in range(n_ensembles):
-                idx = np.where(np.isnan(gga_lat_deg[n, :]) == False)[0]
+                idx = np.where(np.logical_not(np.isnan(gga_lat_deg[n, :])))[0]
                 if len(idx) > 0:
                     idx = idx[-1]
                     lat[n] = gga_lat_deg[n, idx]
@@ -558,7 +553,7 @@ class GPSData(object):
                     self.num_sats_ens[n] = gga_num_sats[n, idx]
 
         # Use the first valid data in an ensemble
-        elif v_setting == 'First':
+        elif v_setting == "First":
             for n in range(n_ensembles):
                 idx = 0
                 lat[n] = gga_lat_deg[n, idx]
@@ -574,7 +569,7 @@ class GPSData(object):
                     self.num_sats_ens[n] = gga_num_sats[n, idx]
 
         # Use the minimum delta time to assign data to an ensemble
-        elif v_setting == 'Mindt':
+        elif v_setting == "Mindt":
             d_time = np.abs(gga_delta_time)
             d_time_min = np.nanmin(d_time, 1)
             use = []
@@ -582,7 +577,7 @@ class GPSData(object):
                 use.append(np.abs(d_time[n, :]) == d_time_min[n])
             use = np.array(use)
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     lat[n] = gga_lat_deg[n, idx]
@@ -598,10 +593,9 @@ class GPSData(object):
                     self.num_sats_ens[n] = gga_num_sats[n, idx]
 
         # Identify valid values
-        idx_values = np.where(np.isnan(x_utm) == False)[0]
+        idx_values = np.where(np.logical_not(np.isnan(x_utm)))[0]
         if len(idx_values) > 1:
-            u, v = self.gga2_vel_trdi(lat, lon, self.gga_serial_time_ens,
-                                      idx_values)
+            u, v = self.gga2_vel_trdi(lat, lon, self.gga_serial_time_ens, idx_values)
             self.gga_velocity_ens_mps = np.tile([np.nan], (2, len(lat)))
             self.gga_velocity_ens_mps[0, idx_values[1:]] = u[idx_values[1:]]
             self.gga_velocity_ens_mps[1, idx_values[1:]] = v[idx_values[1:]]
@@ -628,13 +622,13 @@ class GPSData(object):
         vtg_delta_time = np.copy(self.raw_vtg_delta_time)
 
         # Use mode indicator to identify invalid original data
-        idx = np.where(self.raw_vtg_mode_indicator == 'N')
+        idx = np.where(self.raw_vtg_mode_indicator == "N")
         vtg_speed_mps[idx] = np.nan
         vtg_course_deg[idx] = np.nan
         vtg_delta_time[idx] = np.nan
 
         # Use average velocity for ensemble velocity
-        if v_setting == 'Average':
+        if v_setting == "Average":
             # Compute vtg velocity in x y coordinates from speed and course
             direction = azdeg2rad(vtg_course_deg)
             vx, vy = pol2cart(direction, vtg_speed_mps)
@@ -645,7 +639,7 @@ class GPSData(object):
             self.vtg_velocity_ens_mps = np.vstack([vx_mean.T, vy_mean.T])
 
         # Use last velocity for ensemble velocity
-        elif v_setting == 'End':
+        elif v_setting == "End":
             n_ensembles = vtg_speed_mps.shape[0]
             vtg_vel = nans(n_ensembles)
             vtg_dir = nans(n_ensembles)
@@ -666,7 +660,7 @@ class GPSData(object):
             self.vtg_velocity_ens_mps = np.vstack([vx, vy])
 
         # Use first velocity for ensemble velocity
-        elif v_setting == 'First':
+        elif v_setting == "First":
             n_ensembles = vtg_speed_mps.shape[0]
             vtg_vel = nans(n_ensembles)
             vtg_dir = nans(n_ensembles)
@@ -683,7 +677,7 @@ class GPSData(object):
 
         # Use the velocity with the minimum delta time for the ensemble
         # velocity
-        elif v_setting == 'Mindt':
+        elif v_setting == "Mindt":
             d_time = np.abs(vtg_delta_time)
             # d_time[d_time==0] = np.nan
             d_time_min = np.nanmin(d_time.T, 0).T
@@ -697,7 +691,7 @@ class GPSData(object):
 
             use = np.array(use)
             for n in range(len(d_time_min)):
-                idx = np.where(use[n, :] == True)[0]
+                idx = np.where(use[n, :])[0]
                 if len(idx) > 0:
                     idx = idx[0]
                     vtg_speed.append(vtg_speed_mps[n, idx])
@@ -711,7 +705,7 @@ class GPSData(object):
                 self.vtg_velocity_ens_mps = np.vstack([vx, vy])
 
         # Use velocity selected by external algorithm for ensemble velocity
-        elif v_setting == 'External':
+        elif v_setting == "External":
             direction = azdeg2rad(self.ext_vtg_course_deg)
             vx, vy = pol2cart(direction, self.ext_vtg_speed_mps)
             self.vtg_velocity_ens_mps = np.vstack([vx.T, vy.T])
@@ -737,8 +731,11 @@ class GPSData(object):
 
         y = np.tile([np.nan], lat_in.shape)
         x = np.tile([np.nan], lon_in.shape)
-        idx = np.where(np.logical_and((np.isnan(lat2) == False),
-                                      (np.isnan(lon2) == False)))
+        idx = np.where(
+            np.logical_and(
+                (np.logical_not(np.isnan(lat2))), (np.logical_not(np.isnan(lon2)))
+            )
+        )
         for ind in idx[0]:
             y[ind], x[ind], _, _ = utm.from_latlon(lat2[ind], lon2[ind])
         x_utm = x.reshape(lon_in.shape)
@@ -781,10 +778,10 @@ class GPSData(object):
             sin_lat_avg_rad = np.sin(lat_avg_rad)
             coefficient = 6378137 * np.pi / 180
             ellipticity = 1 / 298.257223563
-            re = coefficient * (1 + ellipticity * sin_lat_avg_rad ** 2)
+            re = coefficient * (1 + ellipticity * sin_lat_avg_rad**2)
             rn = coefficient * (
-                        1 - 2 * ellipticity + 3 * ellipticity *
-                        sin_lat_avg_rad ** 2)
+                1 - 2 * ellipticity + 3 * ellipticity * sin_lat_avg_rad**2
+            )
             delta_x = re * (lon2 - lon1) * np.cos(lat_avg_rad)
             delta_y = rn * (lat2 - lat1)
             delta_time = t2 - t1

@@ -38,14 +38,18 @@ class Ui_Transects2Use(object):
         self.pb_uncheck_all.setFont(font)
         self.pb_uncheck_all.setObjectName("pb_uncheck_all")
         self.horizontalLayout.addWidget(self.pb_uncheck_all)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem)
         self.buttonBox = QtWidgets.QDialogButtonBox(Transects2Use)
         font = QtGui.QFont()
         font.setPointSize(10)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.horizontalLayout.addWidget(self.buttonBox)
         self.verticalLayout.addLayout(self.horizontalLayout)
@@ -65,6 +69,7 @@ class Ui_Transects2Use(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Transects2Use = QtWidgets.QDialog()
     ui = Ui_Transects2Use()

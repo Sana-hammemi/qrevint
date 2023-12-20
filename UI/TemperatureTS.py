@@ -53,9 +53,10 @@ class TemperatureTS(object):
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.1, bottom=0.15, right=0.98,
-                                 top=0.98, wspace=0.1, hspace=0)
-        temp, serial_time = meas.compute_time_series(meas, 'Temperature')
+        self.fig.subplots_adjust(
+            left=0.1, bottom=0.15, right=0.98, top=0.98, wspace=0.1, hspace=0
+        )
+        temp, serial_time = meas.compute_time_series(meas, "Temperature")
 
         # Create list from time stamps
         time_stamp = []
@@ -63,32 +64,36 @@ class TemperatureTS(object):
             time_stamp.append(datetime.utcfromtimestamp(t))
 
         # Set label to display correct units
-        y_label = self.canvas.tr('Degrees C')
+        y_label = self.canvas.tr("Degrees C")
         if rb_f.isChecked():
-            temp = convert_temperature(temp_in=temp, units_in='C',
-                                       units_out='F')
-            y_label = self.canvas.tr('Degrees F')
+            temp = convert_temperature(temp_in=temp, units_in="C", units_out="F")
+            y_label = self.canvas.tr("Degrees F")
 
         # Plot data
-        self.tp = self.fig.ax.plot(time_stamp, temp, 'b.')
+        self.tp = self.fig.ax.plot(time_stamp, temp, "b.")
 
         # Customize axis
-        time_fmt = mdates.DateFormatter('%H:%M:%S')
+        time_fmt = mdates.DateFormatter("%H:%M:%S")
         self.fig.ax.xaxis.set_major_formatter(time_fmt)
-        self.fig.ax.set_xlabel(self.canvas.tr('Time '))
+        self.fig.ax.set_xlabel(self.canvas.tr("Time "))
         self.fig.ax.set_ylabel(y_label)
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True,
-                                top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
         self.fig.ax.set_ylim([np.nanmin(temp) - 2, np.nanmax(temp) + 2])
         self.fig.ax.grid()
 
         # Initialize annotation for data cursor
-        self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20),
-                                          textcoords="offset points",
-                                          bbox=dict(boxstyle="round", fc="w"),
-                                          arrowprops=dict(arrowstyle="->"))
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
 
         self.annot.set_visible(False)
 
@@ -110,51 +115,70 @@ class TemperatureTS(object):
         pos = plt_ref._xy[ind["ind"][0]]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
-        if plt_ref.axes.viewLim.intervalx[0] < \
-                plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
-                         plt_ref.axes.viewLim.intervalx[1]) / 2:
+        # axis the pos x is located and the direction of x increasing.
+        if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
-                         plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
-        if plt_ref.axes.viewLim.intervaly[0] < \
-                plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
-                         plt_ref.axes.viewLim.intervaly[1]) / 2:
+        # the pos y is located and the direction of y increasing.
+        if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
-                         plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
         self.annot.xy = pos
 
         # Format and display text
-        text = 'x: {}, y: {:.2f}'.\
-            format(plt_ref._xorig[ind["ind"][0]].strftime("%H:%M:%S"), pos[1])
+        text = "x: {}, y: {:.2f}".format(
+            plt_ref._xorig[ind["ind"][0]].strftime("%H:%M:%S"), pos[1]
+        )
         self.annot.set_text(text)
 
     def hover(self, event):
         """Determines if the user has selected a location with temperature
-        data and makes
-        annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        data and makes annotation visible and calls method to update the text of the
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------
@@ -195,9 +219,9 @@ class TemperatureTS(object):
         """
 
         if setting and self.hover_connection is None:
-            # self.hover_connection = self.canvas.mpl_connect("motion_notify_event", self.hover)
             self.hover_connection = self.canvas.mpl_connect(
-                'button_press_event', self.hover)
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

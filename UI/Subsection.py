@@ -3,7 +3,7 @@ from UI import wSubsection
 
 
 class Subsection(QtWidgets.QDialog, wSubsection.Ui_subsection):
-    """Dialog to allow users to change heading offset.
+    """Dialog to allow users to subsection extrap.
 
     Parameters
     ----------
@@ -12,7 +12,6 @@ class Subsection(QtWidgets.QDialog, wSubsection.Ui_subsection):
     """
 
     def __init__(self, parent=None):
-        """Initialize dialog
-        """
+        """Initialize dialog"""
         super(Subsection, self).__init__(parent)
         self.setupUi(self)

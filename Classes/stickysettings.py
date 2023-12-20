@@ -7,14 +7,13 @@ class StickySettings(object):
     disk.
 
     This class is intended to be used to store simple settings that need to be
-     retained between session of the subject
-    application, such as, last folder opened, or units setting. Any setting
-    that the application needs to know
+    retained between session of the subject application, such as, last folder
+    opened, or units setting. Any setting that the application needs to know
     when it is run again can be stored using the methods in this class.
 
     Data are stored a dictionary which is then written to a json file having
-    the filename provided by the user and
-    stored in the folder defined by the APPDATA environment variable.
+    the filename provided by the user and stored in the folder defined by the
+    APPDATA environment variable.
 
     Note
     ----
@@ -33,28 +32,27 @@ class StickySettings(object):
         """Constructor method which establishes the json file.
 
         If the filename (arg) provided by the user cannont be found a new file
-         is created. If the filename (arg)
-        provided by the user is found the file is opened and all keys and
-        values are read and stored in settings for
-        quick modification by the calling application.
+        is created. If the filename (arg)  provided by the user is found
+        the file is opened and all keys and values are read and stored
+        in settings for  quick modification by the calling application.
 
         Parameters
         ----------
         arg : str
             User supplied filename excluding the suffix. Example 'myFile' but
-             not 'myFile.json'
+            not 'myFile.json'
 
         """
         # Construct filename from user input.
-        self.settings_file = os.path.join(os.getenv('APPDATA'), arg + '.json')
+        self.settings_file = os.path.join(os.getenv("APPDATA"), arg + ".json")
         if os.path.isfile(self.settings_file):
             # Read json into dictionary
-            with open(self.settings_file, 'r') as f:
+            with open(self.settings_file, "r") as f:
                 self.settings = json.load(f)
         else:
             # Create json file with default dictionary
             self.settings = {}
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
 
     def new(self, key, value):
@@ -77,10 +75,10 @@ class StickySettings(object):
         """
 
         if key in self.settings:
-            raise KeyError('Key already exists in settings')
+            raise KeyError("Key already exists in settings")
         else:
             self.settings[key] = value
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
 
     def set(self, key, value):
@@ -104,10 +102,10 @@ class StickySettings(object):
         """
         if key in self.settings:
             self.settings[key] = value
-            with open(self.settings_file, 'w') as f:
+            with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
         else:
-            raise KeyError('Key does not exist in settings')
+            raise KeyError("Key does not exist in settings")
 
     def get(self, item):
         """Get value of item for settings.
@@ -126,7 +124,7 @@ class StickySettings(object):
 
         """
 
-        with open(self.settings_file, 'r') as f:
+        with open(self.settings_file, "r") as f:
             self.settings = json.load(f)
 
         return self.settings[item]

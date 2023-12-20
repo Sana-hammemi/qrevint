@@ -15,14 +15,15 @@ import numpy as np
 from numba.pycc import CC
 from numba import njit
 
-cc = CC('robust_loess_compiled')
+cc = CC("robust_loess_compiled")
 
 # Set constants
-eps = np.finfo('float').eps
+eps = np.finfo("float").eps
 seps = np.sqrt(eps)
 
+
 @njit
-@cc.export('nearest_neighbors', 'i8[:](i4, i4, f8[:], b1[:])')
+@cc.export("nearest_neighbors", "i8[:](i4, i4, f8[:], b1[:])")
 def nearest_neighbors(num_neighbors, idx, x, valid_x):
     """Find the nearest k neighbors to x[i] that are not nan.
 
@@ -53,18 +54,22 @@ def nearest_neighbors(num_neighbors, idx, x, valid_x):
         distance_sorted = np.sort(distance[valid_x])
         distance_neighbors = distance_sorted[num_neighbors - 1]
 
-        # Find all points that are as close as or closer than the num_neighbors closest points
+        # Find all points that are as close as or closer than the num_neighbors
+        # closest points
         close = np.less_equal(distance, distance_neighbors)
 
         # Find the indices of x that are both close and valid
-        neighbors_idx = np.where(np.equal(np.logical_and(close, valid_x), np.repeat(True, len(valid_x))))[0]
+        neighbors_idx = np.where(
+            np.equal(np.logical_and(close, valid_x), np.repeat(True, len(valid_x)))
+        )[0]
 
     return neighbors_idx
 
+
 @njit
-@cc.export('tricube_weights', 'f8[:](f8[:])')
+@cc.export("tricube_weights", "f8[:](f8[:])")
 def tricube_weights(distance):
-    """ Convert distances into weights using tri-cubic weight function.
+    """Convert distances into weights using tri-cubic weight function.
     Note for Matlab: This function returns the square-root of the weights.
 
     Parameters
@@ -81,13 +86,15 @@ def tricube_weights(distance):
     max_distance = np.max(distance)
     if max_distance > 0:
         distance = distance / max_distance
-    weights = (1 - distance ** 3) ** 1.5
+    weights = (1 - distance**3) ** 1.5
     return weights
 
+
 @njit
-@cc.export('bisquare', 'f8[:](f8[:])')
+@cc.export("bisquare", "f8[:](f8[:])")
 def bisquare(data):
-    """Bisqure weight function which for values greater than are equal to 1 are set to zero.
+    """Bisqure weight function which for values greater than are equal
+    to 1 are set to zero.
 
     Parameters
     ----------
@@ -104,14 +111,15 @@ def bisquare(data):
 
     # Code to compute less than with nan's and no runtime warnings
     d3 = 1 - np.abs(data)
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     idx = d3 > 0
 
     weights[idx] = np.abs(1 - data[idx] ** 2)
     return weights
 
+
 @njit
-@cc.export('robust_weights', 'f8[:](f8[:], f8)')
+@cc.export("robust_weights", "f8[:](f8[:], f8)")
 def robust_weights(residuals, max_eps):
     """Compute robust weights using residuals.
 
@@ -137,8 +145,9 @@ def robust_weights(residuals, max_eps):
 
     return weights
 
+
 @njit
-@cc.export('compute_loess', 'f8(f8[:], f8[:], i8[:], i4, optional(f8[:]))')
+@cc.export("compute_loess", "f8(f8[:], f8[:], i8[:], i4, optional(f8[:]))")
 def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
     """Computes the loess smooth for the specified point x[i]. If robust weights are specified the computed weights
     are adjusted by the robust weights.
@@ -178,24 +187,24 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
             weights = weights * r_weights[neighbors_idx]
 
         weighted_x_matrix = np.vstack((np.ones(distances.shape), distances))
-        weighted_x_matrix = np.vstack((weighted_x_matrix, np.expand_dims(distances * distances, axis=0)))
-        weighted_x_matrix = weights.repeat(weighted_x_matrix.shape[0]).reshape(-1, 3).T * weighted_x_matrix
+        weighted_x_matrix = np.vstack(
+            (weighted_x_matrix, np.expand_dims(distances * distances, axis=0))
+        )
+        weighted_x_matrix = (
+            weights.repeat(weighted_x_matrix.shape[0]).reshape(-1, 3).T
+            * weighted_x_matrix
+        )
         neighbors_y = weights * neighbors_y
 
         # Solve using least squares
-        # try:
-        #     mask = ~np.isnan(weighted_x_matrix.T) & ~np.isnan(neighbors_y.T)
-        #     smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T[mask],
-        #                                                neighbors_y.T[mask], rcond=None)
-        # except (IndexError, ValueError):
-        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T,
-                                                   neighbors_y.T)
+        smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T, neighbors_y.T)
         smoothed_value = smoothed_values[0]
     else:
         smoothed_value = np.nan
     return smoothed_value
 
-@cc.export('rloess', 'f8[:](f8[::1], f8[::1], i4)')
+
+@cc.export("rloess", "f8[:](f8[::1], f8[::1], i4)")
 def rloess(x, y, span):
     """This function computes a robust loess smooth using a quadratic model as defined by
     W.S.Cleveland, (1979) "Robust Locally Weighted Regression and Smoothing Scatterplots",
@@ -237,9 +246,9 @@ def rloess(x, y, span):
             # if x[i] and x[i-1] are equal just use previous fit
             if the_diffs[n] == 0:
 
-                smoothed_values[n] = smoothed_values[n-1]
-                lower_bound[n] = int(lower_bound[n-1])
-                upper_bound[n] = int(upper_bound[n-1])
+                smoothed_values[n] = smoothed_values[n - 1]
+                lower_bound[n] = int(lower_bound[n - 1])
+                upper_bound[n] = int(upper_bound[n - 1])
 
             else:
 
@@ -265,21 +274,29 @@ def rloess(x, y, span):
 
             # Find new value for each point
             for n in range(n_points):
-                if n > 0 and x[n] == x[n-1]:
-                    smoothed_values[n] = smoothed_values[n-1]
+                if n > 0 and x[n] == x[n - 1]:
+                    smoothed_values[n] = smoothed_values[n - 1]
                 else:
                     if not np.isnan(smoothed_values[n]):
-                        neighbors_idx = np.array(list(range(lower_bound[n], upper_bound[n] + 1)))
+                        neighbors_idx = np.array(
+                            list(range(lower_bound[n], upper_bound[n] + 1))
+                        )
 
                         if any_nans:
-                            neighbors_idx = neighbors_idx[np.logical_not(y_nan[neighbors_idx])]
+                            neighbors_idx = neighbors_idx[
+                                np.logical_not(y_nan[neighbors_idx])
+                            ]
 
                         if np.any(r_weights[neighbors_idx] <= 0):
-                            neighbors_idx = nearest_neighbors(span, n, x, (r_weights > 0))
+                            neighbors_idx = nearest_neighbors(
+                                span, n, x, (r_weights > 0)
+                            )
 
-                        smoothed_values[n] = compute_loess(x, y, neighbors_idx, n, r_weights)
+                        smoothed_values[n] = compute_loess(
+                            x, y, neighbors_idx, n, r_weights
+                        )
     return smoothed_values
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cc.compile()

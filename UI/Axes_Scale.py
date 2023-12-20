@@ -1,0 +1,114 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'Axes_Scale.ui'
+#
+# Created by: PyQt5 UI code generator 5.13.1
+#
+# WARNING! All changes made in this file will be lost!
+
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
+class Ui_Axes_Scale(object):
+    def setupUi(self, Axes_Scale):
+        Axes_Scale.setObjectName("Axes_Scale")
+        Axes_Scale.resize(347, 283)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Axes_Scale)
+        self.buttonBox.setGeometry(QtCore.QRect(120, 240, 211, 32))
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
+        self.buttonBox.setObjectName("buttonBox")
+        self.line = QtWidgets.QFrame(Axes_Scale)
+        self.line.setGeometry(QtCore.QRect(107, 181, 221, 16))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.line.setFont(font)
+        self.line.setLineWidth(1)
+        self.line.setMidLineWidth(3)
+        self.line.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line.setObjectName("line")
+        self.line_2 = QtWidgets.QFrame(Axes_Scale)
+        self.line_2.setGeometry(QtCore.QRect(99, 38, 20, 150))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        font.setBold(False)
+        font.setWeight(50)
+        self.line_2.setFont(font)
+        self.line_2.setLineWidth(1)
+        self.line_2.setMidLineWidth(3)
+        self.line_2.setFrameShape(QtWidgets.QFrame.VLine)
+        self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_2.setObjectName("line_2")
+        self.ed_y_top = QtWidgets.QLineEdit(Axes_Scale)
+        self.ed_y_top.setGeometry(QtCore.QRect(40, 40, 60, 22))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.ed_y_top.setFont(font)
+        self.ed_y_top.setObjectName("ed_y_top")
+        self.ed_y_bottom = QtWidgets.QLineEdit(Axes_Scale)
+        self.ed_y_bottom.setGeometry(QtCore.QRect(40, 170, 60, 22))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.ed_y_bottom.setFont(font)
+        self.ed_y_bottom.setObjectName("ed_y_bottom")
+        self.ed_x_left = QtWidgets.QLineEdit(Axes_Scale)
+        self.ed_x_left.setGeometry(QtCore.QRect(110, 200, 60, 22))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.ed_x_left.setFont(font)
+        self.ed_x_left.setObjectName("ed_x_left")
+        self.ed_x_right = QtWidgets.QLineEdit(Axes_Scale)
+        self.ed_x_right.setGeometry(QtCore.QRect(270, 200, 60, 22))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.ed_x_right.setFont(font)
+        self.ed_x_right.setObjectName("ed_x_right")
+        self.cb_axes_auto = QtWidgets.QCheckBox(Axes_Scale)
+        self.cb_axes_auto.setGeometry(QtCore.QRect(170, 100, 151, 20))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.cb_axes_auto.setFont(font)
+        self.cb_axes_auto.setObjectName("cb_axes_auto")
+        self.label = QtWidgets.QLabel(Axes_Scale)
+        self.label.setGeometry(QtCore.QRect(50, 110, 55, 16))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.label_2 = QtWidgets.QLabel(Axes_Scale)
+        self.label_2.setGeometry(QtCore.QRect(200, 200, 55, 16))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_2.setFont(font)
+        self.label_2.setObjectName("label_2")
+
+        self.retranslateUi(Axes_Scale)
+        self.buttonBox.accepted.connect(Axes_Scale.accept)
+        self.buttonBox.rejected.connect(Axes_Scale.reject)
+        QtCore.QMetaObject.connectSlotsByName(Axes_Scale)
+
+    def retranslateUi(self, Axes_Scale):
+        _translate = QtCore.QCoreApplication.translate
+        Axes_Scale.setWindowTitle(_translate("Axes_Scale", "Axes Scaling"))
+        self.cb_axes_auto.setText(_translate("Axes_Scale", "Automatic"))
+        self.label.setText(_translate("Axes_Scale", "Y-Axis"))
+        self.label_2.setText(_translate("Axes_Scale", "X-Axis"))
+
+
+if __name__ == "__main__":
+    import sys
+
+    app = QtWidgets.QApplication(sys.argv)
+    Axes_Scale = QtWidgets.QDialog()
+    ui = Ui_Axes_Scale()
+    ui.setupUi(Axes_Scale)
+    Axes_Scale.show()
+    sys.exit(app.exec_())

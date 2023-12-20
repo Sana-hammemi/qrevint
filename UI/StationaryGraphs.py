@@ -4,8 +4,8 @@ import matplotlib.gridspec as gridspec
 
 class StationaryGraphs(object):
     """Class to generate two time series plots (moving-bed velocity and
-    shiptrack based on upstream/downstream
-    movement) used to evaluate stationary moving-bed tests.
+    shiptrack based on upstream/downstream movement) used to evaluate
+    stationary moving-bed tests.
 
     Attributes
     ----------
@@ -43,11 +43,11 @@ class StationaryGraphs(object):
         self.annot_stud = None
         self.mb = None
         self.stud = None
+        self.x_axis_type = "E"
 
     def create(self, mb_test, units, x_axis_type=None):
         """Generates a moving-bed time series and upstream/downstream bottom
-        track plot from stationary moving-bed
-        test data.
+        track plot from stationary moving-bed test data.
 
         Parameters
         ----------
@@ -59,9 +59,12 @@ class StationaryGraphs(object):
             Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
 
+        # get index for x values
+        in_transect_idx = mb_test.transect.in_transect_idx
+
         # Set default axis
         if x_axis_type is None:
-            x_axis_type = 'E'
+            x_axis_type = "E"
         self.x_axis_type = x_axis_type
 
         # Clear the plot
@@ -71,90 +74,133 @@ class StationaryGraphs(object):
         gs = gridspec.GridSpec(1, 2)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.1, bottom=0.1, right=0.98, top=0.85,
-                                 wspace=0.2, hspace=0)
+        self.fig.subplots_adjust(
+            left=0.1, bottom=0.1, right=0.98, top=0.85, wspace=0.2, hspace=0
+        )
 
         # Configure moving-bed time series graph
         self.fig.axmb = self.fig.add_subplot(gs[0, 0])
-        self.fig.axmb.set_ylabel(self.canvas.tr('BT Moving-bed speed' +
-                                                units['label_V']))
+        self.fig.axmb.set_ylabel(
+            self.canvas.tr("BT Moving-bed speed" + units["label_V"])
+        )
         self.fig.axmb.grid()
         self.fig.axmb.xaxis.label.set_fontsize(12)
         self.fig.axmb.yaxis.label.set_fontsize(12)
-        self.fig.axmb.tick_params(axis='both', direction='in', bottom=True,
-                                  top=True, left=True, right=True)
+        self.fig.axmb.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
 
         # Mark invalid data
-        valid_data = \
-            mb_test.transect.boat_vel.bt_vel.valid_data[
-                0, mb_test.transect.in_transect_idx]
+        valid_data = mb_test.transect.boat_vel.bt_vel.valid_data[
+            0, mb_test.transect.in_transect_idx
+        ]
         if np.any(valid_data):
             invalid_data = np.logical_not(valid_data)
             # Compute x axis data
             x = None
-            if x_axis_type == 'L':
+            if x_axis_type == "L":
                 # Length doesn't make sense for this plot so default to
                 # ensembles
-                x = np.arange(1, len(
-                    mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
-            elif x_axis_type == 'E':
-                x = np.arange(1, len(
-                    mb_test.transect.depths.bt_depths.depth_processed_m) + 1)
-            elif x_axis_type == 'T':
-                x = np.nancumsum(mb_test.transect.date_time.ens_duration_sec)
+                x = np.arange(
+                    1,
+                    len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[
+                            in_transect_idx
+                        ]
+                    )
+                    + 1,
+                )
+            elif x_axis_type == "E":
+                x = np.arange(
+                    1,
+                    len(
+                        mb_test.transect.depths.bt_depths.depth_processed_m[
+                            in_transect_idx
+                        ]
+                    )
+                    + 1,
+                )
+            elif x_axis_type == "T":
+                x = np.nancumsum(
+                    mb_test.transect.date_time.ens_duration_sec[in_transect_idx]
+                )
 
-            self.mb = self.fig.axmb.plot(x, mb_test.stationary_mb_vel *
-                                         units['V'], 'b-')
-            self.mb.append(self.fig.axmb.plot(x[invalid_data],
-                                              mb_test.stationary_mb_vel[
-                                                  invalid_data] * units['V'],
-                                              'ro')[0])
+            self.mb = self.fig.axmb.plot(
+                x, mb_test.stationary_mb_vel * units["V"], "b-"
+            )
+            self.mb.append(
+                self.fig.axmb.plot(
+                    x[invalid_data],
+                    mb_test.stationary_mb_vel[invalid_data] * units["V"],
+                    "ro",
+                )[0]
+            )
 
             # Label axis
-            if x_axis_type == 'L':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
-                                       right=np.nanmax(x) * 1.02)
-                self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
-            elif x_axis_type == 'E':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
-                                       right=np.nanmax(x) * 1.02)
-                self.fig.axmb.set_xlabel(self.canvas.tr('Ensembles'))
-            elif x_axis_type == 'T':
-                self.fig.axmb.set_xlim(left=-1 * np.nanmax(x) * 0.02,
-                                       right=np.nanmax(x) * 1.02)
-                self.fig.axmb.set_xlabel(self.canvas.tr('Duration (seconds)'))
+            if x_axis_type == "L":
+                self.fig.axmb.set_xlim(
+                    left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02
+                )
+                self.fig.axmb.set_xlabel(self.canvas.tr("Ensembles"))
+            elif x_axis_type == "E":
+                self.fig.axmb.set_xlim(
+                    left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02
+                )
+                self.fig.axmb.set_xlabel(self.canvas.tr("Ensembles"))
+            elif x_axis_type == "T":
+                self.fig.axmb.set_xlim(
+                    left=-1 * np.nanmax(x) * 0.02, right=np.nanmax(x) * 1.02
+                )
+                self.fig.axmb.set_xlabel(self.canvas.tr("Duration (seconds)"))
 
             # Generate upstream/cross stream shiptrack
             self.fig.axstud = self.fig.add_subplot(gs[0, 1])
-            self.fig.axstud.set_xlabel(self.canvas.tr(
-                'Distance cross stream' + units['label_L']))
-            self.fig.axstud.set_ylabel(self.canvas.tr('Distance upstream' +
-                                                      units['label_L']))
+            self.fig.axstud.set_xlabel(
+                self.canvas.tr("Distance cross stream" + units["label_L"])
+            )
+            self.fig.axstud.set_ylabel(
+                self.canvas.tr("Distance upstream" + units["label_L"])
+            )
             self.fig.axstud.grid()
             self.fig.axstud.xaxis.label.set_fontsize(12)
             self.fig.axstud.yaxis.label.set_fontsize(12)
-            self.fig.axstud.axis('equal')
-            self.fig.axstud.tick_params(axis='both', direction='in',
-                                        bottom=True, top=True, left=True,
-                                        right=True)
+            self.fig.axstud.axis("equal")
+            self.fig.axstud.tick_params(
+                axis="both",
+                direction="in",
+                bottom=True,
+                top=True,
+                left=True,
+                right=True,
+            )
 
             self.stud = self.fig.axstud.plot(
-                mb_test.stationary_cs_track * units['L'],
-                mb_test.stationary_us_track * units['L'], 'r-')
+                mb_test.stationary_cs_track * units["L"],
+                mb_test.stationary_us_track * units["L"],
+                "r-",
+            )
 
             # Initialize annotation for data cursor
             self.annot_mb = self.fig.axmb.annotate(
-                "", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                "",
+                xy=(0, 0),
+                xytext=(-20, 20),
+                textcoords="offset points",
                 bbox=dict(boxstyle="round", fc="w"),
-                arrowprops=dict(arrowstyle="->"))
+                arrowprops=dict(arrowstyle="->"),
+            )
 
             self.annot_mb.set_visible(False)
 
             # Initialize annotation for data cursor
             self.annot_stud = self.fig.axstud.annotate(
-                "", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+                "",
+                xy=(0, 0),
+                xytext=(-20, 20),
+                textcoords="offset points",
                 bbox=dict(boxstyle="round", fc="w"),
-                arrowprops=dict(arrowstyle="->"))
+                arrowprops=dict(arrowstyle="->"),
+            )
 
             self.annot_stud.set_visible(False)
 
@@ -162,9 +208,9 @@ class StationaryGraphs(object):
 
     def change(self):
         """Function to all call to change, but there is nothing to change for
-        this class. Mirrors BoatSpeed class
-        to allow interchangable use.
+        this class. Mirrors BoatSpeed class to allow interchangable use.
         """
+
         pass
 
     @staticmethod
@@ -185,48 +231,68 @@ class StationaryGraphs(object):
         pos = plt_ref._xy[ind["ind"][0]]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
-        if plt_ref.axes.viewLim.intervalx[0] < \
-                plt_ref.axes.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
-                         plt_ref.axes.viewLim.intervalx[1]) / 2:
+        # axis the pos x is located and the direction of x increasing.
+        if plt_ref.axes.viewLim.intervalx[0] < plt_ref.axes.viewLim.intervalx[1]:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 annot._x = -20
             else:
                 annot._x = -80
         else:
-            if pos[0] < (plt_ref.axes.viewLim.intervalx[0] +
-                         plt_ref.axes.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    plt_ref.axes.viewLim.intervalx[0]
+                    + plt_ref.axes.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 annot._x = -80
             else:
                 annot._x = -20
 
         # Shift annotation box up or down depending on which half of the axis
-        # the pos y is located and the
-        # direction of y increasing.
+        # the pos y is located and the direction of y increasing.
         if plt_ref.axes.viewLim.intervaly[0] < plt_ref.axes.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
-                         plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 annot._y = -40
             else:
                 annot._y = 20
         else:
-            if pos[1] > (plt_ref.axes.viewLim.intervaly[0] +
-                         plt_ref.axes.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (
+                    plt_ref.axes.viewLim.intervaly[0]
+                    + plt_ref.axes.viewLim.intervaly[1]
+                )
+                / 2
+            ):
                 annot._y = 20
             else:
                 annot._y = -40
 
         # Format and display text
         annot.xy = pos
-        text = 'x: {:.2f}, y: {:.2f}'.format(pos[0], pos[1])
+        text = "x: {:.2f}, y: {:.2f}".format(pos[0], pos[1])
         annot.set_text(text)
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------
@@ -281,7 +347,8 @@ class StationaryGraphs(object):
 
         if setting and self.hover_connection is None:
             self.hover_connection = self.canvas.mpl_connect(
-                'button_press_event', self.hover)
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

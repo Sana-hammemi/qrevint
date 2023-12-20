@@ -1,4 +1,8 @@
-from setuptools import setup, find_packages
+# -*- coding: utf-8 -*-
+
+# Learn more: https://github.com/kennethreitz/setup.py
+
+from setuptools import setup
 
 with open('README.md') as f:
     readme = f.read()
@@ -13,11 +17,13 @@ setup(
     long_description=readme,
     author='David S. Mueller',
     author_email='dmueller@usgs.gov',
-    url='https://hydroacoustics.usgs.gov/movingboat/QRev.shtml',
+    url="https://code.usgs.gov/QRev/QRevPy",
     license=license,
     REQUIRES_PYTHON='>=3.8.10',
     packages=['Classes', 'MiscLibs', 'UI'],
-    install_requires=['PyInstaller',
+    install_requires=['PyInstaller==6.1.0',
+                      'pyinstaller-hooks-contrib==2023.10',
+                      'pyinstaller-versionfile==2.1.1',
                       'PyQt5',
                       'PyQt5-sip',
                       'PyQt5-stubs',
@@ -45,12 +51,20 @@ setup(
                       'python-dotenv==0.10.3',
                       'pytz',
                       'pywin32-ctypes==0.2.0',
+                      'reportlab',
                       'scipy==1.7.3',
+                      'scikit-learn==1.3.2',
                       'setuptools==41.2.0',
+                      'sigfig==1.3.3',
                       'simplekml',
                       'sip',
                       'six==1.12.0',
                       'utm',
                       'wcwidth==0.1.7',
                       'xmltodict==0.12.0',
-                      'zipp==0.6.0'], )
+                      'zipp==0.6.0',
+                      'sphinx-markdown-builder',
+                      'sphinx',
+                      'myst-parser',
+                      'sphinx_book_theme'
+                      ], )

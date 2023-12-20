@@ -14,14 +14,14 @@ class SensorData(object):
     source: str
         Source of data, examples Int. Sensor, Ext. Sensor, User
     """
-    
+
     def __init__(self):
         """Initializes class and variables."""
 
         self.data = None
         self.data_orig = None
         self.source = None
-        
+
     def populate_data(self, data_in, source_in):
         """Store data in class.
 
@@ -62,7 +62,7 @@ class SensorData(object):
             else:
                 self.data_orig = np.array([float(mat_data.dataOrig)])
         self.source = mat_data.source
-        
+
     def change_data(self, data_in):
         """Change data to be applied in computations.
 
@@ -72,7 +72,7 @@ class SensorData(object):
         """
 
         self.data = data_in
-        
+
     def set_source(self, source_in):
         """Change source of data.
 

@@ -12,7 +12,7 @@ tracking ADCPs. QRev improves the consistency and efficiency of processing strea
 * An estimated uncertainty to help guide the user in rating the measurement
 
 
-A history of changes with links to various releases can be found **[here](/changelog.md)**.
+A history of changes with links to various releases can be found **[here](./docs/source/changelog.md)**.
 
 **IMPORTANT NOTES ON DISCHARGE COMPUTATION:**
 
@@ -27,7 +27,7 @@ Changes for details.
 
 [Office of Surface Water Technical Memorandum 2016.03](https://hydroacoustics.usgs.gov/memos/OSW2016-03.pdf) 
  *(Internal Link)* recommends and authorizes the use of QRev for processing 
-discharge measurments made with an ADCP from a moving-boat.
+discharge measurements made with an ADCP from a moving-boat.
 
 [Office of Surface Water Technical Memorandum 2017.02](https://hydroacoustics.usgs.gov/memos/OSW2017-02.pdf) 
 *(Internal Link)* mandates the use of QRev for processing moving-boat streamflow measurements mad with acoustic Doppler Current 
