@@ -35,23 +35,27 @@ class HeadingData(object):
     def __init__(self):
         """Initialize class and set variables to None."""
 
-        self.data = None  # Corrected self.data data
-        self.original_data = None  # original uncorrected self.data data
-        self.source = None  # Source of self.data data (internal, external)
-        self.mag_var_deg = None  # Magnetic variation for these self.data data
-        self.mag_var_orig_deg = None  # Original magnetic variation
-        self.align_correction_deg = None  # Alignment correction to align
-        # compass with instrument
+        self.data = None
+        self.original_data = None
+        self.source = None
+        self.mag_var_deg = None
+        self.mag_var_orig_deg = None
+        self.align_correction_deg = None
         self.align_correction_orig_deg = None
-        self.mag_error = None  # Percent change in mean magnetic field from
-        # calibration`
-        self.pitch_limit = None  # Pitch limit of compass calibration (
-        # SonTek only), in degrees.
-        self.roll_limit = None  # Roll limit of compass calibration (SonTek
-        # only), in degrees.
+        self.mag_error = None
+        self.pitch_limit = None
+        self.roll_limit = None
 
-    def populate_data(self, data_in, source_in, magvar=0, align=0,
-                      mag_error=None, pitch_limit=None, roll_limit=None):
+    def populate_data(
+        self,
+        data_in,
+        source_in,
+        magvar=0,
+        align=0,
+        mag_error=None,
+        pitch_limit=None,
+        roll_limit=None,
+    ):
         """Assigns values to instance variables.
 
         Parameters
@@ -91,7 +95,7 @@ class HeadingData(object):
             self.roll_limit = roll_limit
 
         # Correct the original data for the magvar and alignment
-        if source_in == 'internal':
+        if source_in == "internal":
             self.data = self.original_data + self.mag_var_deg
         else:
             self.data = self.original_data + self.align_correction_deg
@@ -114,7 +118,7 @@ class HeadingData(object):
         self.mag_var_deg = float(mat_data.magVar_deg)
         self.mag_var_orig_deg = float(mat_data.magVarOrig_deg)
         self.align_correction_deg = mat_data.alignCorrection_deg
-        if hasattr(mat_data, 'align_correction_orig_deg'):
+        if hasattr(mat_data, "align_correction_orig_deg"):
             self.align_correction_orig_deg = mat_data.align_correction_orig_deg
         else:
             self.align_correction_orig_deg = mat_data.alignCorrection_deg
@@ -154,7 +158,7 @@ class HeadingData(object):
         """
 
         self.mag_var_deg = mag_var
-        if h_source == 'internal':
+        if h_source == "internal":
             self.data = self.original_data + self.mag_var_deg
             self.fix_upper_limit()
 
@@ -170,7 +174,7 @@ class HeadingData(object):
         """
 
         self.align_correction_deg = align_correction
-        if h_source == 'external':
+        if h_source == "external":
             self.data = self.original_data + self.align_correction_deg
             self.fix_upper_limit()
 
@@ -186,27 +190,23 @@ class HeadingData(object):
     def interp_heading(self):
         """Interpolate invalid headings. Use linear interpolation if there are
         valid values on either side of the invalid heading. If the invalid
-        heading
-        occurs at the beginning of the time series, back fill using the 1st
-        valid.
-        If the invalid heading occurs at the end of the time series, forward
-        fill
-        with the last valid self.data.
+        heading occurs at the beginning of the time series, back fill using the 1st
+        valid. If the invalid heading occurs at the end of the time series, forward
+        fill with the last valid self.data.
         """
 
         idx_invalid = np.where(np.isnan(self.data))[0]
 
         if len(idx_invalid) > 0:
-
             first_valid_idx = np.where(np.isnan(self.data) == False)[0][0]
             last_valid_idx = np.where(np.isnan(self.data) == False)[0][-1]
 
             # Process each invalid self.data
             for n in range(len(idx_invalid)):
-                before_idx = \
-                np.where(np.isnan(self.data[0:idx_invalid[n] + 1]) == False)[0]
-                after_idx = \
-                np.where(np.isnan(self.data[idx_invalid[n]:]) == False)[0]
+                before_idx = np.where(
+                    np.isnan(self.data[0 : idx_invalid[n] + 1]) == False
+                )[0]
+                after_idx = np.where(np.isnan(self.data[idx_invalid[n] :]) == False)[0]
 
                 # If invalid self.data is beginning back fill
                 if len(before_idx) < 1:
@@ -230,15 +230,14 @@ class HeadingData(object):
                         c = 360
                     elif test2:
                         c = -360
-                    self.data[idx_invalid[n]] = (((self.data[after_idx] -
-                                                   self.data[before_idx] + c) /
-                                                  (before_idx - after_idx)) *
-                                                 (before_idx - idx_invalid[
-                                                     n])) + self.data[
-                                                    before_idx]
+                    self.data[idx_invalid[n]] = (
+                        (
+                            (self.data[after_idx] - self.data[before_idx] + c)
+                            / (before_idx - after_idx)
+                        )
+                        * (before_idx - idx_invalid[n])
+                    ) + self.data[before_idx]
                     if self.data[idx_invalid[n]] > 360:
-                        self.data[idx_invalid[n]] = self.data[
-                                                        idx_invalid[n]] - 360
+                        self.data[idx_invalid[n]] = self.data[idx_invalid[n]] - 360
                     elif self.data[idx_invalid[n]] < 0:
-                        self.data[idx_invalid[n]] = self.data[
-                                                        idx_invalid[n]] + 360
+                        self.data[idx_invalid[n]] = self.data[idx_invalid[n]] + 360

@@ -323,5 +323,6 @@
     <file>images/94.png</file>
     <file>images/95.png</file>
     <file>images/96.png</file>
+    <file>images/extrap_contour.png</file>
   </qresource>
 </RCC>

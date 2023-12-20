@@ -37,9 +37,9 @@ class CompassCal(object):
         self.data = data_in
 
         splits = re.split(
-            '(Total error:|Double Cycle Errors:|Error from calibration:)',
-            data_in)
+            "(Total error:|Double Cycle Errors:|Error from calibration:)", data_in
+        )
         if len(splits) > 1:
-            self.error = re.search('\d+\.*\d*', splits[2])[0]
+            self.error = re.search("\d+\.*\d*", splits[2])[0]
         else:
-            self.error = 'N/A'
+            self.error = "N/A"

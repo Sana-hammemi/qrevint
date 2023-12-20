@@ -29,27 +29,27 @@ class EdgeData(object):
     """
 
     def __init__(self):
-        """Initialize EdgeData.
-        """
+        """Initialize EdgeData."""
 
-        self.type = None  # Shape of edge: 'Triangular', 'Rectangular',
-        # 'Custom, 'User Q'
-        self.distance_m = None  # Distance to shore
-        self.cust_coef = None  # Custom coefficient provided by user
-        self.number_ensembles = None  # Number of ensembles to average for
-        # depth and velocities
-        self.user_discharge_cms = None  # User supplied edge discharge.
+        self.type = None
+        self.distance_m = None
+        self.cust_coef = None
+        self.number_ensembles = None
+        self.user_discharge_cms = None
+        self.orig_type = None
+        self.orig_distance_m = None
+        self.orig_cust_coef = None
+        self.orig_number_ensembles = None
+        self.orig_user_discharge_cms = None
 
-        self.orig_type = None  # Shape of edge: 'Triangular', 'Rectangular',
-        # 'Custom, 'User Q'
-        self.orig_distance_m = None  # Distance to shore
-        self.orig_cust_coef = None  # Custom coefficient provided by user
-        self.orig_number_ensembles = None  # Number of ensembles to average
-        # for depth and velocities
-        self.orig_user_discharge_cms = None  # User supplied edge discharge.
-
-    def populate_data(self, edge_type, distance=None, number_ensembles=10,
-                      coefficient=None, user_discharge=None):
+    def populate_data(
+        self,
+        edge_type,
+        distance=None,
+        number_ensembles=10,
+        coefficient=None,
+        user_discharge=None,
+    ):
         """Construct left or right edge object from provided inputs
 
         Parameters
@@ -98,14 +98,13 @@ class EdgeData(object):
                 self.user_discharge_cms = mat_data.userQ_cms
         if type(mat_data.custCoef) is float:
             self.cust_coef = mat_data.custCoef
-        if hasattr(mat_data, 'orig_type'):
+        if hasattr(mat_data, "orig_type"):
             self.orig_type = mat_data.orig_type
             self.orig_distance_m = mat_data.orig_distance_m
             self.orig_number_ensembles = mat_data.orig_number_ensembles
             if type(mat_data.orig_user_discharge_cms) is float:
                 if not np.isnan(mat_data.orig_user_discharge_cms):
-                    self.orig_user_discharge_cms = \
-                        mat_data.orig_user_discharge_cms
+                    self.orig_user_discharge_cms = mat_data.orig_user_discharge_cms
             if type(mat_data.custCoef) is float:
                 self.orig_cust_coef = mat_data.orig_cust_coef
         else:

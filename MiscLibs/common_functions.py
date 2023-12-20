@@ -1,5 +1,7 @@
 import numpy as np
 import scipy.stats as sp
+# from decimal import Decimal
+from sigfig import round as sigfig_round
 
 
 def cosd(angle):
@@ -17,11 +19,11 @@ def cosd(angle):
 def sind(angle):
     """Compute sine of angle in degrees.
 
-        Parameters
-        ----------
-        angle: float
-            Angle in degrees
-        """
+    Parameters
+    ----------
+    angle: float
+        Angle in degrees
+    """
 
     return np.sin(np.pi * angle / 180)
 
@@ -29,11 +31,11 @@ def sind(angle):
 def tand(angle):
     """Compute tangent of angle in degrees.
 
-        Parameters
-        ----------
-        angle: float
-            Angle in degrees
-        """
+    Parameters
+    ----------
+    angle: float
+        Angle in degrees
+    """
 
     return np.tan(np.pi * angle / 180)
 
@@ -41,11 +43,11 @@ def tand(angle):
 def arctand(angle):
     """Compute arctangent of angle in degrees.
 
-        Parameters
-        ----------
-        angle: float
-            Angle in degrees
-        """
+    Parameters
+    ----------
+    angle: float
+        Angle in degrees
+    """
 
     return np.arctan(angle) * 180 / np.pi
 
@@ -62,13 +64,13 @@ def cart2pol(x, y):
 
     Returns
     -------
-    phi: float
+    phi: np.array(float)
         Angle in radians
-    rho: float
+    rho: np.array(float)
         Magnitude
     """
 
-    rho = np.sqrt(x ** 2 + y ** 2)
+    rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x)
 
     return phi, rho
@@ -77,21 +79,21 @@ def cart2pol(x, y):
 def pol2cart(phi, rho):
     """Convert polar coordinates to cartesian coordinates.
 
-        Parameters
-        ----------
-        phi: np.array(float)
-            Angle in radians
-        rho: np.array(float)
-            Magnitude
+    Parameters
+    ----------
+    phi: np.array(float)
+        Angle in radians
+    rho: np.array(float)
+        Magnitude
 
-        Returns
-        -------
-        x: float
-            x coordinate
-        y: float
-            y coordinate
+    Returns
+    -------
+    x: float
+        x coordinate
+    y: float
+        y coordinate
 
-        """
+    """
 
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
@@ -157,7 +159,7 @@ def iqr_2d(data):
     return sp_iqr
 
 
-def azdeg2rad(angle) -> float:
+def azdeg2rad(angle):
     """Converts an azimuth angle in degrees to radians.
 
     Parameters
@@ -184,7 +186,7 @@ def azdeg2rad(angle) -> float:
     return direction
 
 
-def rad2azdeg(angle) -> float:
+def rad2azdeg(angle):
     """Converts an angle in radians to an azimuth in degrees.
 
     Parameters
@@ -308,7 +310,7 @@ def checked_idx(transects):
     return checked
 
 
-def units_conversion(units_id='SI'):
+def units_conversion(units_id="SI"):
     """Computes the units conversion from SI units used internally to the
     desired display units.
 
@@ -323,27 +325,31 @@ def units_conversion(units_id='SI'):
         dictionary of unit conversion and labels
     """
 
-    if units_id == 'SI':
-        units = {'L': 1,
-                 'Q': 1,
-                 'A': 1,
-                 'V': 1,
-                 'label_L': '(m)',
-                 'label_Q': '(m3/s)',
-                 'label_A': '(m2)',
-                 'label_V': '(m/s)',
-                 'ID': 'SI'}
+    if units_id == "SI":
+        units = {
+            "L": 1,
+            "Q": 1,
+            "A": 1,
+            "V": 1,
+            "label_L": "(m)",
+            "label_Q": "(m3/s)",
+            "label_A": "(m2)",
+            "label_V": "(m/s)",
+            "ID": "SI",
+        }
 
     else:
-        units = {'L': 1.0 / 0.3048,
-                 'Q': (1.0 / 0.3048) ** 3,
-                 'A': (1.0 / 0.3048) ** 2,
-                 'V': 1.0 / 0.3048,
-                 'label_L': '(ft)',
-                 'label_Q': '(ft3/s)',
-                 'label_A': '(ft2)',
-                 'label_V': '(ft/s)',
-                 'ID': 'English'}
+        units = {
+            "L": 1.0 / 0.3048,
+            "Q": (1.0 / 0.3048) ** 3,
+            "A": (1.0 / 0.3048) ** 2,
+            "V": 1.0 / 0.3048,
+            "label_L": "(ft)",
+            "label_Q": "(ft3/s)",
+            "label_A": "(ft2)",
+            "label_V": "(ft/s)",
+            "ID": "English",
+        }
 
     return units
 
@@ -367,17 +373,17 @@ def convert_temperature(temp_in, units_in, units_out) -> float:
     """
 
     temp_out = None
-    if units_in == 'F':
-        if units_out == 'C':
-            temp_out = (temp_in - 32) * (5. / 9.)
+    if units_in == "F":
+        if units_out == "C":
+            temp_out = (temp_in - 32) * (5.0 / 9.0)
         else:
             temp_out = temp_in
 
-    elif units_in == 'C':
-        if units_out == 'C':
+    elif units_in == "C":
+        if units_out == "C":
             temp_out = temp_in
         else:
-            temp_out = (temp_in * (9. / 5.)) + 32
+            temp_out = (temp_in * (9.0 / 5.0)) + 32
 
     return temp_out
 
@@ -399,7 +405,7 @@ def nan_less_equal(data1, data2) -> bool:
     """
 
     d3 = data2 - data1
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     return d3 >= 0
 
 
@@ -415,12 +421,12 @@ def nan_less(data1, data2) -> bool:
 
     Returns
     -------
-    :bool
+    :np.array(bool)
         Result of comparison.
     """
 
     d3 = data2 - data1
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     return d3 > 0
 
 
@@ -436,12 +442,12 @@ def nan_greater_equal(data1, data2) -> bool:
 
     Returns
     -------
-    :bool
+    :np.array(bool)
         Result of comparison.
     """
 
     d3 = data1 - data2
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     return d3 >= 0
 
 
@@ -462,7 +468,7 @@ def nan_greater(data1, data2) -> bool:
     """
 
     d3 = data1 - data2
-    d3[np.isnan(d3)] = -999.
+    d3[np.isnan(d3)] = -999.0
     return d3 > 0
 
 
@@ -485,3 +491,50 @@ def ari2geodeg(ari_ang):
     geo_ang = (360 - ari_ang + 90) % 360
 
     return geo_ang
+
+
+def sfrnd(n, sig: int = 3):
+    # """Return scientific notation
+    #
+    #     Parameters
+    #     ----------
+    #     n: float or int
+    #         Value to convert in scientific notation
+    #     sig: int
+    #         Number of significant digits
+    #     """
+    # n_str = str(n)
+    # b = '%.'+str(sig-1)+'E'
+    # a = b % Decimal(n_str)
+    # [val, exp] = a.split('E')
+    # exp = int(exp)
+    # # if exp < 0:
+    # #     n_sn = a
+    # # elif exp == 0:
+    # #     if float(val) == 0:
+    # #         n_sn = '0.'+'0'*(sig-1)
+    # #     else:
+    # #         n_sn = val
+    # # else:
+    # n_sn_temp = np.round(float(val) * 10**exp, 3)
+    # if abs(n_sn_temp) > 10**(sig-1):
+    #     n_sn = str(n_sn_temp).split('.')[0]
+    # else:
+    #     n_sn = str(n_sn_temp)
+    return sigfig_round(n, sig)
+
+
+def rotate_coordinates(x, y, angle_d):
+    xr = x * cosd(angle_d) + y * sind(angle_d)
+    yr = -x * sind(angle_d) + y * cosd(angle_d)
+    return xr, yr
+
+def dateformat (input_str):
+    datedict = {"m": "%m", "d": "%d", "y": "%Y"}
+    date_format = ""
+    for chr in input_str:
+        if chr in datedict:
+            date_format = date_format + datedict[chr]
+        else:
+            date_format = date_format + chr
+    return date_format

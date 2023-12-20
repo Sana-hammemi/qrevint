@@ -1,6 +1,5 @@
 from PyQt5 import QtWidgets
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as \
-    FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
@@ -35,7 +34,7 @@ class MplCanvas(FigureCanvas):
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
 
-        FigureCanvas.setSizePolicy(self,
-                                   QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.setSizePolicy(
+            self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         FigureCanvas.updateGeometry(self)

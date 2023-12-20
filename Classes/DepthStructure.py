@@ -23,17 +23,15 @@ class DepthStructure(object):
     def __init__(self):
         """Creates object and initializes variables to None"""
 
-        self.selected = None  # name of object DepthData that contains the
-        # depth data for q computation
-        self.bt_depths = None  # object of DepthData for by depth data
-        self.vb_depths = None  # object of DepthData for vertical beam depth
-        # data
-        self.ds_depths = None  # object of DepthData for depth sounder depth
-        # data
-        self.composite = "On"  # Turn composite depths "on" or "off"
+        self.selected = None
+        self.bt_depths = None
+        self.vb_depths = None
+        self.ds_depths = None
+        self.composite = "On"
 
-    def add_depth_object(self, depth_in, source_in, freq_in, draft_in,
-                         cell_depth_in, cell_size_in):
+    def add_depth_object(
+        self, depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
+    ):
         """Adds a DepthData object to the depth structure for the specified
         type of depths.
 
@@ -50,26 +48,29 @@ class DepthStructure(object):
             Draft of transducer (in meters) used to measure depths.
         cell_depth_in
             Depth of each cell in the profile. If the referenced depth does
-            not have depth cells the depth cell
-            values from the bottom track (BT) depths should be used.
+            not have depth cells the depth cell values from the bottom track
+            (BT) depths should be used.
         cell_size_in
             Size of each depth cell. If the referenced depth does not have
-            depth cells the cell size from
-            the bottom track (BT) depths should be used.
+            depth cells the cell size from the bottom track (BT)
+            depths should be used.
         """
 
-        if source_in == 'BT':
+        if source_in == "BT":
             self.bt_depths = DepthData()
-            self.bt_depths.populate_data(depth_in, source_in, freq_in,
-                                         draft_in, cell_depth_in, cell_size_in)
-        elif source_in == 'VB':
+            self.bt_depths.populate_data(
+                depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
+            )
+        elif source_in == "VB":
             self.vb_depths = DepthData()
-            self.vb_depths.populate_data(depth_in, source_in, freq_in,
-                                         draft_in, cell_depth_in, cell_size_in)
-        elif source_in == 'DS':
+            self.vb_depths.populate_data(
+                depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
+            )
+        elif source_in == "DS":
             self.ds_depths = DepthData()
-            self.ds_depths.populate_data(depth_in, source_in, freq_in,
-                                         draft_in, cell_depth_in, cell_size_in)
+            self.ds_depths.populate_data(
+                depth_in, source_in, freq_in, draft_in, cell_depth_in, cell_size_in
+            )
 
     def populate_from_qrev_mat(self, transect):
         """Populates the object using data from previously saved QRev Matlab
@@ -80,8 +81,7 @@ class DepthStructure(object):
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
         """
-        if hasattr(transect, 'depths'):
-
+        if hasattr(transect, "depths"):
             self.bt_depths = DepthData()
             self.bt_depths.populate_from_qrev_mat(transect.depths.btDepths)
 
@@ -97,41 +97,40 @@ class DepthStructure(object):
             except AttributeError:
                 self.ds_depths = None
 
-            if transect.depths.selected == 'btDepths' or \
-                    transect.depths.selected == 'bt_depths':
-                self.selected = 'bt_depths'
-            elif transect.depths.selected == 'vbDepths' or \
-                    transect.depths.selected == 'vb_depths':
-                self.selected = 'vb_depths'
-            elif transect.depths.selected == 'dsDepths' or \
-                    transect.depths.selected == 'ds_depths':
-                self.selected = 'ds_depths'
+            if (
+                transect.depths.selected == "btDepths"
+                or transect.depths.selected == "bt_depths"
+            ):
+                self.selected = "bt_depths"
+            elif (
+                transect.depths.selected == "vbDepths"
+                or transect.depths.selected == "vb_depths"
+            ):
+                self.selected = "vb_depths"
+            elif (
+                transect.depths.selected == "dsDepths"
+                or transect.depths.selected == "ds_depths"
+            ):
+                self.selected = "ds_depths"
             else:
-                self.selected = 'bt_depths'
+                self.selected = "bt_depths"
             self.composite = transect.depths.composite
             if self.vb_depths is None and self.ds_depths is None:
-                self.composite = 'Off'
+                self.composite = "Off"
 
     def composite_depths(self, transect, setting="Off"):
         """Depth composite is based on the following assumptions
 
         1. If a depth sounder is available the user must have assumed the
-        ADCP beams
-        (BT or vertical) might have problems and it will be the second
-        alternative if
-        not selected as the preferred source
+        ADCP beams (BT or vertical) might have problems
+        and it will be the second alternative if not selected as the preferred source
 
         2. For 4-beam BT depths, if 3 beams are valid the average is
-        considered valid.
-        It may be based on interpolation of the invalid beam.  However,
-        if only 2 beams
-        are valid even though the other two beams may be interpolated and
-        included in the average the
-        average will be replaced by an alternative if available.  If no
-        alternative is
-        available the multi-beam average based on available beams and
-        interpolation will
-        be used.
+        considered valid. It may be based on interpolation of the invalid beam.
+        However, if only 2 beams are valid even though the other two beams may be
+        interpolated and included in the average the average will be replaced by an
+        alternative if available.  If no alternative is available the multi-beam average
+        based on available beams and interpolation will be used.
 
         Parameters
         ----------
@@ -150,7 +149,7 @@ class DepthStructure(object):
         ref = self.selected
         comp_depth = np.array([])
 
-        if setting == 'On':
+        if setting == "On":
             # Prepare vector of valid BT averages, which are defined as
             # having at least 2 valid beams
             bt_valid = self.bt_depths.valid_data
@@ -162,8 +161,9 @@ class DepthStructure(object):
             # interpolation
             if self.vb_depths is not None:
                 vb_filtered = np.copy(self.vb_depths.depth_processed_m)
-                vb_filtered[np.squeeze(
-                    np.equal(self.vb_depths.valid_data, False))] = np.nan
+                vb_filtered[
+                    np.squeeze(np.equal(self.vb_depths.valid_data, False))
+                ] = np.nan
             else:
                 vb_filtered = np.tile(np.nan, n_ensembles)
 
@@ -171,70 +171,97 @@ class DepthStructure(object):
             # interpolation
             if self.ds_depths is not None:
                 ds_filtered = np.copy(self.ds_depths.depth_processed_m)
-                ds_filtered[np.squeeze(
-                    np.equal(self.ds_depths.valid_data, False))] = np.nan
+                ds_filtered[
+                    np.squeeze(np.equal(self.ds_depths.valid_data, False))
+                ] = np.nan
             else:
                 ds_filtered = np.tile(np.nan, n_ensembles)
 
             comp_source = np.tile(np.nan, bt_filtered.shape)
 
             # Apply composite depths
-            if ref == 'bt_depths':
+            if ref == "bt_depths":
                 comp_depth = np.copy(bt_filtered)
                 comp_source[np.isnan(comp_depth) == False] = 1
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                    ds_filtered[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 3
-                comp_depth[np.isnan(comp_depth)] = vb_filtered[
-                    np.isnan(comp_depth)]
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 2
-                comp_depth = self.interpolate_composite(transect=transect,
-                                                        composite_depth=
-                                                        comp_depth)
-                # comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                # self.bt_depths.depth_processed_m[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 4
+                    ds_filtered[np.isnan(comp_depth)]
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 3
+                comp_depth[np.isnan(comp_depth)] = vb_filtered[np.isnan(comp_depth)]
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 2
+                comp_depth = self.interpolate_composite(
+                    transect=transect, composite_depth=comp_depth
+                )
 
-            elif ref == 'vb_depths':
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 4
+
+            elif ref == "vb_depths":
                 comp_depth = np.copy(vb_filtered)
                 comp_source[np.isnan(comp_depth) == False] = 2
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                    ds_filtered[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 3
+                    ds_filtered[np.isnan(comp_depth)]
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 3
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                    bt_filtered[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 1
-                comp_depth = self.interpolate_composite(transect=transect,
-                                                        composite_depth=
-                                                        comp_depth)
-                # comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                # self.vb_depths.depth_processed_m[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 4
+                    bt_filtered[np.isnan(comp_depth)]
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 1
+                comp_depth = self.interpolate_composite(
+                    transect=transect, composite_depth=comp_depth
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 4
 
-            elif ref == 'ds_depths':
+            elif ref == "ds_depths":
                 comp_depth = np.copy(ds_filtered)
                 comp_source[np.isnan(comp_depth) == False] = 3
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                    vb_filtered[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 2
+                    vb_filtered[np.isnan(comp_depth)]
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 2
                 comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                    bt_filtered[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 1
-                comp_depth = self.interpolate_composite(transect=transect,
-                                                        composite_depth=
-                                                        comp_depth)
-                # comp_depth[np.isnan(comp_depth)] = np.squeeze(
-                # self.ds_depths.depth_processed_m[np.isnan(comp_depth)])
-                comp_source[np.logical_and((np.isnan(comp_depth) == False), (
-                            np.isnan(comp_source) == True))] = 4
+                    bt_filtered[np.isnan(comp_depth)]
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 1
+                comp_depth = self.interpolate_composite(
+                    transect=transect, composite_depth=comp_depth
+                )
+                comp_source[
+                    np.logical_and(
+                        (np.isnan(comp_depth) == False), (np.isnan(comp_source) == True)
+                    )
+                ] = 4
 
             # Save composite depth to depth_processed of selected primary
             # reference
@@ -245,13 +272,12 @@ class DepthStructure(object):
             selected_data = getattr(self, ref)
             comp_source = np.zeros(selected_data.depth_processed_m.shape)
 
-            if ref == 'bt_depths':
-                selected_data.valid_data[
-                    np.isnan(selected_data.valid_data)] = False
+            if ref == "bt_depths":
+                selected_data.valid_data[np.isnan(selected_data.valid_data)] = False
                 comp_source[np.squeeze(selected_data.valid_data)] = 1
-            elif ref == 'vb_depths':
+            elif ref == "vb_depths":
                 comp_source[np.squeeze(selected_data.valid_data)] = 2
-            elif ref == 'ds_depths':
+            elif ref == "ds_depths":
                 comp_source[np.squeeze(selected_data.valid_data)] = 3
 
             selected_data.apply_interpolation(transect)
@@ -269,7 +295,7 @@ class DepthStructure(object):
             New draft.
         """
 
-        if target == 'ADCP':
+        if target == "ADCP":
             self.bt_depths.change_draft(draft)
             self.vb_depths.change_draft(draft)
         else:
@@ -304,7 +330,7 @@ class DepthStructure(object):
             Object of TransectData
         method: str
             Interpolation method (None, HoldLast, Smooth, Linear)
-            """
+        """
 
         if self.bt_depths is not None:
             self.bt_depths.apply_interpolation(transect, method)
@@ -332,7 +358,6 @@ class DepthStructure(object):
 
     @staticmethod
     def interpolate_composite(transect, composite_depth):
-
         """Apply linear interpolation to composite depths
 
         Parameters
@@ -356,7 +381,7 @@ class DepthStructure(object):
             track_x = boat_vel_x * transect.date_time.ens_duration_sec
             track_y = boat_vel_y * transect.date_time.ens_duration_sec
         else:
-            select = getattr(transect.boat_vel, 'bt_vel')
+            select = getattr(transect.boat_vel, "bt_vel")
             track_x = np.tile(np.nan, select.u_processed_mps.shape)
             track_y = np.tile(np.nan, select.v_processed_mps.shape)
 
@@ -365,7 +390,7 @@ class DepthStructure(object):
         # If the navigation reference has no gaps use it for interpolation,
         # if not use time
         if len(idx[0]) < 1:
-            x = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
+            x = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
         else:
             # Compute accumulated time
             x = np.nancumsum(transect.date_time.ens_duration_sec)
@@ -373,19 +398,13 @@ class DepthStructure(object):
         depth_mono = np.copy(composite_depth)
         depth_new = np.copy(composite_depth)
 
-        #       Create strict monotonic arrays for depth and track by
-        #       identifying duplicate
-        #       track values.  The first track value is used and the
-        #       remaining duplicates
-        #       are set to nan.  The depth assigned to that first track
-        #       value is the average
-        #       of all duplicates.  The depths for the duplicates are then
-        #       set to nan.  Only
-        #       valid strictly monotonic track and depth data are used for
-        #       the input in to linear
-        #       interpolation.   Only the interpolated data for invalid
-        #       depths are added
-        #       to the valid depth data to create depth_new
+        # Create strict monotonic arrays for depth and track by identifying duplicate
+        # track values.  The first track value is used and the remaining duplicates
+        # are set to nan.  The depth assigned to that first track value is the average
+        # of all duplicates.  The depths for the duplicates are then set to nan.  Only
+        # valid strictly monotonic track and depth data are used for the input in to
+        # linear interpolation.   Only the interpolated data for invalid
+        # depths are added to the valid depth data to create depth_new
 
         x_mono = x
 
@@ -421,10 +440,12 @@ class DepthStructure(object):
 
         if np.sum(valid) > 1:
             # Compute interpolation function from all valid data
-            depth_int = np.interp(x_mono, x_mono[valid], depth_mono[valid],
-                                  left=np.nan, right=np.nan)
+            depth_int = np.interp(
+                x_mono, x_mono[valid], depth_mono[valid], left=np.nan, right=np.nan
+            )
             # Fill in invalid data with interpolated data
             depth_new[np.logical_not(valid_depth_mono)] = depth_int[
-                np.logical_not(valid_depth_mono)]
+                np.logical_not(valid_depth_mono)
+            ]
 
         return depth_new

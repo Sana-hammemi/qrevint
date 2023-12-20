@@ -3,8 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from Classes.BoatData import BoatData
-from MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, \
-    nan_less
+from MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
 from MiscLibs.robust_loess import rloess
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -17,8 +16,7 @@ class WaterData(object):
     Original data provided to the class:
         raw_vel_mps: np.array(float)
             Contains the raw unfiltered velocity in m/s.  1st index 1-4 are
-             beams 1,2,3,4 if beam or
-            u,v,w,d if otherwise.
+            beams 1,2,3,4 if beam or u,v,w,d if otherwise.
         frequency: np.array(float)
             Defines ADCP frequency used for velocity measurement, in kHz.
         orig_coord_sys: str
@@ -49,21 +47,21 @@ class WaterData(object):
     Data computed in this class:
         u_earth_no_ref_mps: np.array(float)
             Horizontal velocity in x-direction with no boat reference applied,
-             in m/s.
+            in m/s.
         v_earth_no_ref_mps: np.array(float)
             Horizontal velocity in y-direction with no boat reference applied,
-             in m/s.
+            in m/s.
         u_mps: np.array(float)
             Horizontal velocity in x-direction, earth coord, nav referenced,
             in m/s.
         v_mps: np.array(float)
             Horizontal velocity in y-direction, earth coord, nav referenced,
-             in m/s.
+            in m/s.
         u_processed_mps: np.array(float)
             Horizontal velocity in x-direction, earth coord, nav ref,
-             filtered, and interpolated.
+            filtered, and interpolated.
         v_processed_mps: np.array(float)
-            Horizontal veloctiy in y-direction, earth coord, nav ref,
+            Horizontal velocity in y-direction, earth coord, nav ref,
             filtered, and interpolated.
         w_mps: np.array(float)
             Vertical velocity (+ up), in m/s.
@@ -74,7 +72,7 @@ class WaterData(object):
             Index of ensembles with no valid raw velocity data.
         num_invalid: float
             Estimated number of depth cells in ensembles with no valid raw
-             velocity data.
+            velocity data.
         valid_data: np.array(float)
             3-D logical array of valid data
                 Dim1 0 - composite
@@ -100,10 +98,10 @@ class WaterData(object):
             Threshold(s) for vertical velocity filter.
         excluded_dist_m: float
             Distance below transucer for which data are excluded or marked
-             invalid, in m.
+            invalid, in m.
         orig_excluded_dist_m: float
             Original distance below transucer for which data are excluded or
-             marked invalid, in m.
+            marked invalid, in m.
         smooth_filter: str
             Set filter based on smoothing function "On", "Off".
         smooth_speed: np.array(float)
@@ -116,6 +114,8 @@ class WaterData(object):
             Set SNR filter for SonTek data "On", "Off".
         snr_rng: np.array(float)
             Range of beam averaged SNR
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         wt_depth_filter: np.array(bool)
             WT in ensembles with invalid depths are marked invalid.
         interpolate_ens: str
@@ -136,10 +136,10 @@ class WaterData(object):
             Type of cutoff method "Percent" or "Number".
         ping_type: np.array(int)
             Indicates type of ping for each cell: 0-incoherent, 1-coherent,
-             2-surface
+            2-surface
         d_meas_thresholds: list
             Dictionary of difference velocity thresholds computed using the
-             whole measurement by ping type
+            whole measurement by ping type
         w_meas_thresholds: list
             Dictionary of vertical velocity thresholds computed using the
             whole measurement by ping type
@@ -149,8 +149,7 @@ class WaterData(object):
     """
 
     def __init__(self):
-        """Initialize instance variables.
-        """
+        """Initialize instance variables."""
 
         # Data input to this class
         self.raw_vel_mps = None
@@ -191,8 +190,10 @@ class WaterData(object):
         self.smooth_speed = None
         self.smooth_upper_limit = None
         self.smooth_lower_limit = None
-        self.snr_filter = 'Off'
+        self.snr_filter = "Off"
         self.snr_rng = []
+        self.snr_beam_velocities = None
+        self.snr_3beam_comp = False
         self.wt_depth_filter = True
         self.interpolate_ens = None
         self.interpolate_cells = None
@@ -210,17 +211,32 @@ class WaterData(object):
 
         self.use_measurement_thresholds = False
 
-    def populate_data(self, vel_in, freq_in, coord_sys_in, nav_ref_in, rssi_in,
-                      rssi_units_in,
-                      excluded_dist_in, cells_above_sl_in, sl_cutoff_per_in,
-                      sl_cutoff_num_in,
-                      sl_cutoff_type_in, sl_lag_effect_in, wm_in, blank_in,
-                      corr_in=None,
-                      surface_vel_in=None, surface_rssi_in=None,
-                      surface_corr_in=None, sl_cutoff_m=None,
-                      surface_num_cells_in=0, ping_type='U',
-                      use_measurement_thresholds=False):
-
+    def populate_data(
+        self,
+        vel_in,
+        freq_in,
+        coord_sys_in,
+        nav_ref_in,
+        rssi_in,
+        rssi_units_in,
+        cells_above_sl_in,
+        sl_cutoff_per_in,
+        sl_cutoff_num_in,
+        sl_cutoff_type_in,
+        sl_lag_effect_in,
+        wm_in,
+        blank_in,
+        corr_in=None,
+        surface_vel_in=None,
+        surface_rssi_in=None,
+        surface_corr_in=None,
+        sl_cutoff_m=None,
+        surface_num_cells_in=0,
+        ping_type="U",
+        use_measurement_thresholds=False,
+        snr_3beam_comp=True,
+        excluded_dist_in=0,
+    ):
         """Populates the variables with input, computed, or default values.
 
         Parameters
@@ -254,6 +270,8 @@ class WaterData(object):
             Method used to compute cutoff "Percent" or "Number".
         sl_lag_effect_in: np.array(float)
             Lag effect for each ensemble, in m.
+        snr_3beam_comp: bool
+            Indicates the use of 3-beam velocity computations when invalid SNR is found
         wm_in: str
             Watermode for TRDI or 'Variable' for SonTek.
         blank_in: float
@@ -264,10 +282,10 @@ class WaterData(object):
             Surface velocity data for RiverRay, RiverPro, RioPro. Optional.
         surface_rssi_in: np.array(float)
             Returned acoust signal strength for RiverRay, RiverPro, RioPro.
-             Optional.
+            Optional.
         surface_corr_in: np.array(float)
             Surface velocity correlations for RiverRay, RiverPro, RioPro.
-             Optional.
+            Optional.
         surface_num_cells_in: np.array(float)
             Number of surface cells in each ensemble for RiverRay, RiverPro,
             RioPro. Optional.
@@ -275,10 +293,16 @@ class WaterData(object):
             Depth in meters of side lobe cutoff to center of cells.
         ping_type: np.array(str)
             Indicates type of ping used for water tracking
+        use_measurement_thresholds: bool
+            Indicates if thresholds should be computed using entire measurement
         """
 
         # Set object properties from input data standard for all ADCPs
-        self.frequency = freq_in
+        if np.nanmean(freq_in) < 10:
+            self.frequency = freq_in * 1000
+        else:
+            self.frequency = freq_in
+
         self.orig_coord_sys = coord_sys_in
         self.coord_sys = coord_sys_in
         self.orig_nav_ref = nav_ref_in
@@ -289,6 +313,8 @@ class WaterData(object):
         max_cells = cells_above_sl_in.shape[0]
         self.ping_type = np.tile(np.array([ping_type]), (max_cells, 1))
         self.use_measurement_thresholds = use_measurement_thresholds
+        self.snr_beam_velocities = None
+        self.snr_3beam_comp = snr_3beam_comp
 
         # Set object properties that depend on the presence or absence of
         # surface cells
@@ -306,30 +332,36 @@ class WaterData(object):
             self.corr = np.tile([np.nan], [4, max_cells, num_ens])
 
             if max_surf_cells > 0:
-                self.raw_vel_mps[:, :max_surf_cells, :] = surface_vel_in[:,
-                                                          :max_surf_cells, :]
-                self.rssi[:, :max_surf_cells, :] = surface_rssi_in[:,
-                                                   :max_surf_cells, :]
-                self.corr[:, :max_surf_cells, :] = surface_corr_in[:,
-                                                   :max_surf_cells, :]
+                self.raw_vel_mps[:, :max_surf_cells, :] = surface_vel_in[
+                    :, :max_surf_cells, :
+                ]
+                self.rssi[:, :max_surf_cells, :] = surface_rssi_in[
+                    :, :max_surf_cells, :
+                ]
+                self.corr[:, :max_surf_cells, :] = surface_corr_in[
+                    :, :max_surf_cells, :
+                ]
 
             for i_ens in range(num_ens):
-                self.raw_vel_mps[:,
-                int(surface_num_cells_in[i_ens]):int(
-                    surface_num_cells_in[i_ens])
-                                                 + num_reg_cells,
-                i_ens] = vel_in[:, :num_reg_cells, i_ens]
-                self.rssi[:,
-                int(surface_num_cells_in[i_ens]):int(
-                    surface_num_cells_in[i_ens])
-                                                 + num_reg_cells,
-                i_ens] = rssi_in[:, :num_reg_cells, i_ens]
-                self.corr[:,
-                int(surface_num_cells_in[i_ens]):int(
-                    surface_num_cells_in[i_ens])
-                                                 + num_reg_cells,
-                i_ens] = corr_in[:, :num_reg_cells, i_ens]
-                self.ping_type[:int(surface_num_cells_in[i_ens]), i_ens] = 'S'
+                self.raw_vel_mps[
+                    :,
+                    int(surface_num_cells_in[i_ens]) : int(surface_num_cells_in[i_ens])
+                    + num_reg_cells,
+                    i_ens,
+                ] = vel_in[:, :num_reg_cells, i_ens]
+                self.rssi[
+                    :,
+                    int(surface_num_cells_in[i_ens]) : int(surface_num_cells_in[i_ens])
+                    + num_reg_cells,
+                    i_ens,
+                ] = rssi_in[:, :num_reg_cells, i_ens]
+                self.corr[
+                    :,
+                    int(surface_num_cells_in[i_ens]) : int(surface_num_cells_in[i_ens])
+                    + num_reg_cells,
+                    i_ens,
+                ] = corr_in[:, :num_reg_cells, i_ens]
+                self.ping_type[: int(surface_num_cells_in[i_ens]), i_ens] = "S"
         else:
             # No surface cells
             self.raw_vel_mps = vel_in
@@ -369,13 +401,13 @@ class WaterData(object):
 
         # Set filter defaults to no filtering and no interruption
         self.beam_filter = 3
-        self.d_filter = 'Off'
+        self.d_filter = "Off"
         self.d_filter_thresholds = {}
-        self.w_filter = 'Off'
+        self.w_filter = "Off"
         self.w_filter_thresholds = {}
         self.smooth_filter = False
-        self.interpolate_ens = 'None'
-        self.interpolate_cells = 'None'
+        self.interpolate_ens = "None"
+        self.interpolate_cells = "None"
 
         # Determine original valid
 
@@ -404,31 +436,32 @@ class WaterData(object):
         n_invalid = len(self.invalid_index)
         for n in range(n_invalid):
             # Find first valid ensemble
-            idx1 = np.where(valid_data_2_sum[:self.invalid_index[n]] > 0)[0]
+            idx1 = np.where(valid_data_2_sum[: self.invalid_index[n]] > 0)[0]
             if len(idx1) > 0:
                 idx1 = idx1[0]
             else:
                 idx1 = self.invalid_index[n]
 
             # Find next valid ensemble
-            idx2 = np.where(valid_data_2_sum[:self.invalid_index[n]] > 0)[0]
+            idx2 = np.where(valid_data_2_sum[: self.invalid_index[n]] > 0)[0]
             if len(idx2) > 0:
                 idx2 = idx2[-1]
             else:
                 idx2 = self.invalid_index[n]
 
             # Estimate number of cells in invalid ensemble
-            self.num_invalid.append(np.floor(
-                (valid_data_2_sum[idx1] + valid_data_2_sum[idx2]) / 2))
+            self.num_invalid.append(
+                np.floor((valid_data_2_sum[idx1] + valid_data_2_sum[idx2]) / 2)
+            )
 
         # Set processed data to non-interpolated valid data
         self.u_processed_mps = np.copy(self.u_mps)
         self.v_processed_mps = np.copy(self.v_mps)
-        self.u_processed_mps[self.valid_data[0] == False] = np.nan
-        self.v_processed_mps[self.valid_data[0] == False] = np.nan
+        self.u_processed_mps[np.logical_not(self.valid_data[0])] = np.nan
+        self.v_processed_mps[np.logical_not(self.valid_data[0])] = np.nan
 
         # Compute SNR range if SNR data is provided
-        if rssi_units_in == 'SNR':
+        if rssi_units_in == "SNR":
             self.compute_snr_rng()
 
     def populate_from_qrev_mat(self, transect):
@@ -447,135 +480,163 @@ class WaterData(object):
                 # Multiple ensembles with one cell
                 self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
                 self.raw_vel_mps = self.raw_vel_mps.reshape(
-                    self.raw_vel_mps.shape[0], 1, self.raw_vel_mps.shape[1])
+                    (self.raw_vel_mps.shape[0], 1, self.raw_vel_mps.shape[1])
+                )
                 self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
-                self.corr = self.corr.reshape(self.corr.shape[0], 1,
-                                              self.corr.shape[1])
+                self.corr = self.corr.reshape(
+                    (self.corr.shape[0], 1, self.corr.shape[1])
+                )
                 self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
-                self.rssi = self.rssi.reshape(self.rssi.shape[0], 1,
-                                              self.rssi.shape[1])
+                self.rssi = self.rssi.reshape(
+                    (self.rssi.shape[0], 1, self.rssi.shape[1])
+                )
                 self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
                 self.valid_data = self.valid_data.reshape(
-                    self.valid_data.shape[0], 1, self.valid_data.shape[1])
+                    (self.valid_data.shape[0], 1, self.valid_data.shape[1])
+                )
                 self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
                 self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(
-                    1, self.u_earth_no_ref_mps.shape[0])
+                    (1, self.u_earth_no_ref_mps.shape[0])
+                )
                 self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
                 self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(
-                    1, self.v_earth_no_ref_mps.shape[0])
+                    (1, self.v_earth_no_ref_mps.shape[0])
+                )
                 self.u_mps = transect.wVel.u_mps
-                self.u_mps = self.u_mps.reshape(1, self.u_mps.shape[0])
+                self.u_mps = self.u_mps.reshape((1, self.u_mps.shape[0]))
                 self.v_mps = transect.wVel.v_mps
-                self.v_mps = self.v_mps.reshape(1, self.v_mps.shape[0])
+                self.v_mps = self.v_mps.reshape((1, self.v_mps.shape[0]))
                 self.u_processed_mps = transect.wVel.uProcessed_mps
                 self.u_processed_mps = self.u_processed_mps.reshape(
-                    1, self.u_processed_mps.shape[0])
+                    (1, self.u_processed_mps.shape[0])
+                )
                 self.v_processed_mps = transect.wVel.vProcessed_mps
                 self.v_processed_mps = self.v_processed_mps.reshape(
-                    1, self.v_processed_mps.shape[0])
+                    1, self.v_processed_mps.shape[0]
+                )
                 self.w_mps = transect.wVel.w_mps
-                self.w_mps = self.w_mps.reshape(1, self.w_mps.shape[0])
+                self.w_mps = self.w_mps.reshape((1, self.w_mps.shape[0]))
                 self.d_mps = transect.wVel.d_mps
-                self.d_mps = self.d_mps.reshape(1, self.d_mps.shape[0])
-                self.snr_rng = transect.wVel.snrRng
-                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                self.d_mps = self.d_mps.reshape((1, self.d_mps.shape[0]))
+                # self.snr_rng = transect.wVel.snrRng
+                # self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
-                    1, self.cells_above_sl.shape[0])
-                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(
-                    bool)
+                    1, self.cells_above_sl.shape[0]
+                )
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
                 self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(
-                    1, self.cells_above_sl_bt.shape[0])
+                    1, self.cells_above_sl_bt.shape[0]
+                )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
                 # Ping type
-                if hasattr(transect.wVel, 'ping_type'):
+                if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
-                        self.ping_type = np.tile(transect.wVel.ping_type,
-                                                 self.d_mps.shape)
+                        self.ping_type = np.tile(
+                            transect.wVel.ping_type, self.d_mps.shape
+                        )
                     else:
                         self.ping_type = transect.wVel.ping_type[np.newaxis, :]
 
                     self.ping_type = np.char.strip(self.ping_type)
                 else:
-                    self.ping_type = np.tile('U', self.d_mps.shape)
+                    self.ping_type = np.tile("U", self.d_mps.shape)
             else:
                 # One ensemble with multiple cells
                 self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 1, 0)
                 self.raw_vel_mps = self.raw_vel_mps.reshape(
-                    self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
+                    (self.raw_vel_mps.shape[0], self.raw_vel_mps.shape[1], 1)
+                )
                 self.corr = np.moveaxis(transect.wVel.corr, 1, 0)
-                self.corr = self.corr.reshape(self.corr.shape[0],
-                                              self.corr.shape[1], 1)
+                self.corr = self.corr.reshape(
+                    (self.corr.shape[0], self.corr.shape[1], 1)
+                )
                 self.rssi = np.moveaxis(transect.wVel.rssi, 1, 0)
-                self.rssi = self.rssi.reshape(self.rssi.shape[0],
-                                              self.rssi.shape[1], 1)
+                self.rssi = self.rssi.reshape(
+                    (self.rssi.shape[0], self.rssi.shape[1], 1)
+                )
                 self.valid_data = np.moveaxis(transect.wVel.validData, 1, 0)
                 self.valid_data = self.valid_data.reshape(
-                    self.valid_data.shape[0], self.valid_data.shape[1], 1)
+                    (self.valid_data.shape[0], self.valid_data.shape[1], 1)
+                )
                 self.u_earth_no_ref_mps = transect.wVel.uEarthNoRef_mps
                 self.u_earth_no_ref_mps = self.u_earth_no_ref_mps.reshape(
-                    self.u_earth_no_ref_mps.shape[0], 1)
+                    self.u_earth_no_ref_mps.shape[0], 1
+                )
                 self.v_earth_no_ref_mps = transect.wVel.vEarthNoRef_mps
                 self.v_earth_no_ref_mps = self.v_earth_no_ref_mps.reshape(
-                    self.v_earth_no_ref_mps.shape[0], 1)
+                    self.v_earth_no_ref_mps.shape[0], 1
+                )
                 self.u_mps = transect.wVel.u_mps
                 self.u_mps = self.u_mps.reshape(self.u_mps.shape[0], 1)
                 self.v_mps = transect.wVel.v_mps
                 self.v_mps = self.v_mps.reshape(self.v_mps.shape[0], 1)
                 self.u_processed_mps = transect.wVel.uProcessed_mps
                 self.u_processed_mps = self.u_processed_mps.reshape(
-                    self.u_processed_mps.shape[0], 1)
+                    self.u_processed_mps.shape[0], 1
+                )
                 self.v_processed_mps = transect.wVel.vProcessed_mps
                 self.v_processed_mps = self.v_processed_mps.reshape(
-                    self.v_processed_mps.shape[0], 1)
+                    self.v_processed_mps.shape[0], 1
+                )
                 self.w_mps = transect.wVel.w_mps
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-                self.snr_rng = transect.wVel.snrRng
-                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                # self.snr_rng = transect.wVel.snrRng
+                # self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
-                    self.cells_above_sl.shape[0], 1)
-                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(
-                    bool)
+                    self.cells_above_sl.shape[0], 1
+                )
+                self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
                 self.cells_above_sl_bt = self.cells_above_sl_bt.reshape(
-                    self.cells_above_sl_bt.shape[0], 1)
+                    self.cells_above_sl_bt.shape[0], 1
+                )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
                 # Ping type
-                if hasattr(transect.wVel, 'ping_type'):
+                if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
-                        self.ping_type = np.tile(transect.wVel.ping_type,
-                                                 self.d_mps.shape)
+                        self.ping_type = np.tile(
+                            transect.wVel.ping_type, self.d_mps.shape
+                        )
                     else:
                         self.ping_type = transect.wVel.ping_type[:, np.newaxis]
                     self.ping_type = np.char.strip(self.ping_type)
                 else:
-                    self.ping_type = np.tile('U', self.d_mps.shape)
+                    self.ping_type = np.tile("U", self.d_mps.shape)
 
         else:
             n_ensembles = transect.wVel.u_mps.shape[1]
             n_cells = transect.wVel.u_mps.shape[0]
-            if transect.wVel.rawVel_mps.shape[2] != n_ensembles or \
-                    transect.wVel.rawVel_mps.shape[1] != n_cells:
+            if (
+                transect.wVel.rawVel_mps.shape[2] != n_ensembles
+                or transect.wVel.rawVel_mps.shape[1] != n_cells
+            ):
                 self.raw_vel_mps = np.moveaxis(transect.wVel.rawVel_mps, 2, 0)
             else:
                 self.raw_vel_mps = transect.wVel.rawVel_mps
 
-            if transect.wVel.corr.shape[2] != n_ensembles or \
-                    transect.wVel.corr.shape[1] != n_cells:
+            if (
+                transect.wVel.corr.shape[2] != n_ensembles
+                or transect.wVel.corr.shape[1] != n_cells
+            ):
                 self.corr = np.moveaxis(transect.wVel.corr, 2, 0)
             else:
                 self.corr = transect.wVel.corr
 
-            if transect.wVel.rssi.shape[2] != n_ensembles or \
-                    transect.wVel.rssi.shape[1] != n_cells:
+            if (
+                transect.wVel.rssi.shape[2] != n_ensembles
+                or transect.wVel.rssi.shape[1] != n_cells
+            ):
                 self.rssi = np.moveaxis(transect.wVel.rssi, 2, 0)
             else:
                 self.rssi = transect.wVel.rssi
 
-            if transect.wVel.validData.shape[2] != n_ensembles or \
-                    transect.wVel.validData.shape[1] != n_cells:
+            if (
+                transect.wVel.validData.shape[2] != n_ensembles
+                or transect.wVel.validData.shape[1] != n_cells
+            ):
                 self.valid_data = np.moveaxis(transect.wVel.validData, 2, 0)
             else:
                 self.valid_data = transect.wVel.validData
@@ -587,29 +648,21 @@ class WaterData(object):
             self.v_processed_mps = transect.wVel.vProcessed_mps
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
-            self.snr_rng = transect.wVel.snrRng
+            # self.snr_rng = transect.wVel.snrRng
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
             # Ping type
-            if hasattr(transect.wVel, 'ping_type'):
+            if hasattr(transect.wVel, "ping_type"):
                 if type(transect.wVel.ping_type) == str:
-                    self.ping_type = np.tile(transect.wVel.ping_type,
-                                             self.d_mps.shape)
+                    self.ping_type = np.tile(transect.wVel.ping_type, self.d_mps.shape)
                 else:
                     self.ping_type = transect.wVel.ping_type
                 self.ping_type = np.char.strip(self.ping_type)
             else:
-                self.ping_type = np.tile('U', self.d_mps.shape)
+                self.ping_type = np.tile("U", self.d_mps.shape)
 
         self.valid_data = self.valid_data.astype(bool)
-        # Fix for moving-bed transects that did not have 3D array indices
-        # adjusted properly when saved
-        # if self.valid_data.shape[0] == self.u_processed_mps.shape[1]:
-        #     self.valid_data = np.moveaxis(self.valid_data, 0, 2)
-        #     self.raw_vel_mps = np.moveaxis(self.raw_vel_mps, 0, 2)
-        #     self.corr = np.moveaxis(self.corr, 0, 2)
-        #     self.rssi = np.moveaxis(self.rssi, 0, 2)
         self.frequency = transect.wVel.frequency
         self.orig_coord_sys = transect.wVel.origCoordSys
         self.orig_nav_ref = transect.wVel.origNavRef
@@ -625,13 +678,11 @@ class WaterData(object):
         # Settings
         self.beam_filter = transect.wVel.beamFilter
         self.d_filter = transect.wVel.dFilter
-        self.d_filter_thresholds = self.struct_to_dict(
-            transect.wVel.dFilterThreshold)
+        self.d_filter_thresholds = self.struct_to_dict(transect.wVel.dFilterThreshold)
         self.w_filter = transect.wVel.wFilter
-        self.w_filter_thresholds = self.struct_to_dict(
-            transect.wVel.wFilterThreshold)
+        self.w_filter_thresholds = self.struct_to_dict(transect.wVel.wFilterThreshold)
         self.excluded_dist_m = transect.wVel.excludedDist
-        if hasattr(transect.wVel, 'orig_excludedDist'):
+        if hasattr(transect.wVel, "orig_excludedDist"):
             self.orig_excluded_dist_m = transect.wVel.orig_excludedDist
         else:
             self.orig_excluded_dist_m = transect.wVel.excludedDist
@@ -650,13 +701,16 @@ class WaterData(object):
         self.sl_cutoff_type = transect.wVel.slCutoffType
 
         # Use measurement for filter
-        if hasattr(transect.wVel, 'use_measurement_thresholds'):
+        if hasattr(transect.wVel, "use_measurement_thresholds"):
             self.use_measurement_thresholds = self.struct_to_dict(
-                transect.wVel.use_measurement_thresholds)
+                transect.wVel.use_measurement_thresholds
+            )
             self.d_meas_thresholds = self.struct_to_dict(
-                transect.wVel.d_meas_thresholds)
+                transect.wVel.d_meas_thresholds
+            )
             self.w_meas_thresholds = self.struct_to_dict(
-                transect.wVel.w_meas_thresholds)
+                transect.wVel.w_meas_thresholds
+            )
         else:
             self.use_measurement_thresholds = False
             self.d_meas_thresholds = {}
@@ -701,17 +755,22 @@ class WaterData(object):
         adcp: InstrumentData
             Object of instrument data
         """
-        if type(self.orig_coord_sys) is list or type(
-                self.orig_coord_sys) is np.ndarray:
+
+        if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
             o_coord_sys = self.orig_coord_sys[0].strip()
         else:
             o_coord_sys = self.orig_coord_sys.strip()
+
+        if self.snr_beam_velocities is None:
+            data = self.raw_vel_mps
+        else:
+            data = self.snr_beam_velocities
+            o_coord_sys = "Beam"
 
         orig_sys = None
         new_sys = None
 
         if o_coord_sys != new_coord_sys:
-
             # Assign the transformation matrix and retrieve the sensor data
             t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
             t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
@@ -724,32 +783,30 @@ class WaterData(object):
             # and roll values based on the original coordinate
             # system so that only the needed values ar used in
             # computing the new coordinate system.
-            if o_coord_sys.strip() == 'Beam':
+            if o_coord_sys.strip() == "Beam":
                 orig_sys = 1
-            elif o_coord_sys.strip() == 'Inst':
+            elif o_coord_sys.strip() == "Inst":
                 orig_sys = 2
-            elif o_coord_sys.strip() == 'Ship':
+            elif o_coord_sys.strip() == "Ship":
                 orig_sys = 3
                 p = np.zeros(h.shape)
                 r = np.zeros(h.shape)
-                t_matrix = np.eye(len(t_matrix))
-            elif o_coord_sys.strip() == 'Earth':
+            elif o_coord_sys.strip() == "Earth":
                 orig_sys = 4
 
             # Assign a value to the new coordinate system
-            if new_coord_sys.strip() == 'Beam':
+            if new_coord_sys.strip() == "Beam":
                 new_sys = 1
-            elif new_coord_sys.strip() == 'Inst':
+            elif new_coord_sys.strip() == "Inst":
                 new_sys = 2
-            elif new_coord_sys.strip() == 'Ship':
+            elif new_coord_sys.strip() == "Ship":
                 new_sys = 3
-            elif new_coord_sys.strip() == 'Earth':
+            elif new_coord_sys.strip() == "Earth":
                 new_sys = 4
 
             # Check to ensure the new coordinate system is a higher order than
             # the original system
             if new_sys - orig_sys > 0:
-
                 # Compute trig function for heaing, pitch and roll
                 ch = np.cos(np.deg2rad(h))
                 sh = np.sin(np.deg2rad(h))
@@ -761,32 +818,34 @@ class WaterData(object):
                 n_ens = self.raw_vel_mps.shape[2]
 
                 for ii in range(n_ens):
-
                     # Compute matrix for heading, pitch, and roll
                     hpr_matrix = np.array(
-                        [[((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                          (sh[ii] * cp[ii]),
-                          ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii])],
-                         [(-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                          ch[ii] * cp[ii],
-                          (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii])],
-                         [(-1. * cp[ii] * sr[ii]),
-                          sp[ii],
-                          cp[ii] * cr[ii]]])
+                        [
+                            [
+                                ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
+                                (sh[ii] * cp[ii]),
+                                ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
+                            ],
+                            [
+                                (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
+                                ch[ii] * cp[ii],
+                                (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
+                            ],
+                            [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
+                        ]
+                    )
 
                     # Transform beam coordinates
-                    if o_coord_sys == 'Beam':
-
+                    if o_coord_sys == "Beam":
                         # Determine frequency index for transformation
                         if len(t_matrix.shape) > 2:
-                            idx_freq = np.where(
-                                t_matrix_freq == self.frequency[ii])
-                            t_mult = np.copy(t_matrix[:, :, idx_freq])
+                            idx_freq = np.where(t_matrix_freq == self.frequency[ii])
+                            t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
                         else:
                             t_mult = np.copy(t_matrix)
 
                         # Get velocity data
-                        vel_beams = np.copy(self.raw_vel_mps[:, :, ii])
+                        vel_beams = np.copy(data[:, :, ii])
 
                         # Apply transformation matrix for 4 beam solutions
                         temp_t = t_mult.dot(vel_beams)
@@ -813,20 +872,19 @@ class WaterData(object):
                                 vel_3_beam_zero = vel_3_beam
                                 vel_3_beam_zero[np.isnan(vel_3_beam)] = 0
                                 vel_error = t_mult[3, :].dot(vel_3_beam_zero)
-                                vel_3_beam[idx_3_beam] = -1 * vel_error / \
-                                                         t_mult[3, idx_3_beam]
+                                vel_3_beam[idx_3_beam] = (
+                                    -1 * vel_error / t_mult[3, idx_3_beam]
+                                )
                                 temp_t = t_mult.dot(vel_3_beam)
 
                                 # Apply transformation matrix for 3
                                 # beam solutions
-                                temp_thpr[0:3, col_idx[i3]] = hpr_matrix.dot(
-                                    temp_t[:3])
+                                temp_thpr[0:3, col_idx[i3]] = hpr_matrix.dot(temp_t[:3])
                                 temp_thpr[3, col_idx[i3]] = np.nan
 
                     else:
                         # Get velocity data
-                        vel_raw = np.copy(
-                            np.squeeze(self.raw_vel_mps[:, :, ii]))
+                        vel_raw = np.copy(np.squeeze(self.raw_vel_mps[:, :, ii]))
                         temp_thpr = np.array(hpr_matrix).dot(vel_raw[:3, :])
                         temp_thpr = np.vstack([temp_thpr, vel_raw[3, :]])
 
@@ -838,12 +896,14 @@ class WaterData(object):
                     self.d_mps[:, ii] = temp_thpr[:, 3]
 
                 # Because of padded arrays with zeros and RR has a variable
-                # number of bins,
-                # the raw data may be padded with zeros.  The next 4
-                # statements changes
-                # those to nan
-                find_padded = np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(
-                    self.w_mps) + np.abs(self.d_mps)
+                # number of bins, the raw data may be padded with zeros.  The next 4
+                # statements changes those to nan
+                find_padded = (
+                    np.abs(self.u_mps)
+                    + np.abs(self.v_mps)
+                    + np.abs(self.w_mps)
+                    + np.abs(self.d_mps)
+                )
                 self.u_mps[find_padded == 0] = np.nan
                 self.v_mps[find_padded == 0] = np.nan
                 self.w_mps[find_padded == 0] = np.nan
@@ -858,16 +918,19 @@ class WaterData(object):
                 self.nav_ref = self.orig_nav_ref
 
             else:
-
                 # Reset velocity properties to raw values
                 self.u_mps = np.copy(self.raw_vel_mps[0])
                 self.v_mps = np.copy(self.raw_vel_mps[1])
                 self.w_mps = np.copy(self.raw_vel_mps[2])
                 self.d_mps = np.copy(self.raw_vel_mps[3])
 
-                if adcp.manufacturer == 'TRDI':
-                    find_padded = np.abs(self.u_mps) + np.abs(
-                        self.v_mps) + np.abs(self.w_mps) + np.abs(self.d_mps)
+                if adcp.manufacturer == "TRDI":
+                    find_padded = (
+                        np.abs(self.u_mps)
+                        + np.abs(self.v_mps)
+                        + np.abs(self.w_mps)
+                        + np.abs(self.d_mps)
+                    )
                     self.u_mps[find_padded == 0] = np.nan
                     self.v_mps[find_padded == 0] = np.nan
                     self.w_mps[find_padded == 0] = np.nan
@@ -878,16 +941,19 @@ class WaterData(object):
                 self.v_processed_mps = np.copy(self.v_mps)
 
         else:
-
             # Reset velocity properties to raw values
             self.u_mps = np.copy(self.raw_vel_mps[0])
             self.v_mps = np.copy(self.raw_vel_mps[1])
             self.w_mps = np.copy(self.raw_vel_mps[2])
             self.d_mps = np.copy(self.raw_vel_mps[3])
 
-            if adcp.manufacturer == 'TRDI':
-                find_padded = np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(
-                    self.w_mps) + np.abs(self.d_mps)
+            if adcp.manufacturer == "TRDI":
+                find_padded = (
+                    np.abs(self.u_mps)
+                    + np.abs(self.v_mps)
+                    + np.abs(self.w_mps)
+                    + np.abs(self.d_mps)
+                )
                 self.u_mps[find_padded == 0] = np.nan
                 self.v_mps[find_padded == 0] = np.nan
                 self.w_mps[find_padded == 0] = np.nan
@@ -897,9 +963,84 @@ class WaterData(object):
             self.u_processed_mps = np.copy(self.u_mps)
             self.v_processed_mps = np.copy(self.v_mps)
 
-        if new_coord_sys == 'Earth':
+        if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+
+    def earth_to_beam(self, sensors, adcp):
+        """Converts earth coordinates to beam coordinates.
+
+        Parameters
+        ----------
+        sensors: Sensors
+            Object of class Sensors
+        adcp: InstrumentData
+            Object of class InstrumentData
+        """
+
+        # Create matrix to store results
+        vel_beam = np.tile(np.nan, self.raw_vel_mps.shape)
+
+        # Assign the transformation matrix retrieve the sensor data
+        t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
+        t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
+
+        # Retrieve the sensor data
+        p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
+        r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
+        h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
+
+        # Compute trig function for heading, pitch and roll
+        ch = np.cos(np.deg2rad(h))
+        sh = np.sin(np.deg2rad(h))
+        cp = np.cos(np.deg2rad(p))
+        sp = np.sin(np.deg2rad(p))
+        cr = np.cos(np.deg2rad(r))
+        sr = np.sin(np.deg2rad(r))
+
+        # Process each ensemble
+        n_ens = self.raw_vel_mps.shape[2]
+        for ii in range(n_ens):
+            # Compute matrix for heading, pitch, and roll
+            hpr_matrix = np.array(
+                [
+                    [
+                        ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
+                        (sh[ii] * cp[ii]),
+                        ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
+                    ],
+                    [
+                        (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
+                        ch[ii] * cp[ii],
+                        (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
+                    ],
+                    [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
+                ]
+            )
+
+            # Determine frequency index for transformation
+            if len(t_matrix.shape) > 2:
+                idx_freq = np.where(t_matrix_freq == self.frequency[ii])
+                t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
+            else:
+                t_mult = np.copy(t_matrix)
+
+            # Construct earth velocity matrix for ensemble
+            vel_enu = np.vstack(
+                [
+                    self.u_earth_no_ref_mps[:, ii],
+                    self.v_earth_no_ref_mps[:, ii],
+                    self.w_mps[:, ii],
+                    self.d_mps[:, ii],
+                ]
+            )
+
+            # Compute beam velocities
+            vel_xyz = np.copy(vel_enu)
+            vel_xyz[0:3, :] = np.matmul(np.linalg.inv(hpr_matrix), vel_enu[:3])
+            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(t_mult), vel_xyz)
+
+        return vel_beam
 
     def set_nav_reference(self, boat_vel):
         """This function sets the navigation reference.
@@ -916,31 +1057,33 @@ class WaterData(object):
         # Apply selected navigation reference
         boat_select = getattr(boat_vel, boat_vel.selected)
         if boat_select is not None:
-            self.u_mps = np.add(self.u_earth_no_ref_mps,
-                                boat_select.u_processed_mps)
-            self.v_mps = np.add(self.v_earth_no_ref_mps,
-                                boat_select.v_processed_mps)
+            self.u_mps = np.add(self.u_earth_no_ref_mps, boat_select.u_processed_mps)
+            self.v_mps = np.add(self.v_earth_no_ref_mps, boat_select.v_processed_mps)
             self.nav_ref = boat_select.nav_ref
         else:
-            self.u_mps = repmat([np.nan],
-                                self.u_earth_no_ref_mps.shape[0],
-                                self.u_earth_no_ref_mps.shape[1])
-            self.v_mps = repmat([np.nan],
-                                self.v_earth_no_ref_mps.shape[0],
-                                self.v_earth_no_ref_mps.shape[1])
-            if boat_vel.selected == 'bt_vel':
-                self.nav_ref = 'BT'
-            elif boat_vel.selected == 'gga_vel':
-                self.nav_ref = 'GGA'
-            elif boat_vel.selected == 'vtg_vel':
-                self.nav_ref = 'VTG'
+            self.u_mps = repmat(
+                [np.nan],
+                self.u_earth_no_ref_mps.shape[0],
+                self.u_earth_no_ref_mps.shape[1],
+            )
+            self.v_mps = repmat(
+                [np.nan],
+                self.v_earth_no_ref_mps.shape[0],
+                self.v_earth_no_ref_mps.shape[1],
+            )
+            if boat_vel.selected == "bt_vel":
+                self.nav_ref = "BT"
+            elif boat_vel.selected == "gga_vel":
+                self.nav_ref = "GGA"
+            elif boat_vel.selected == "vtg_vel":
+                self.nav_ref = "VTG"
 
         valid_data2 = np.copy(self.cells_above_sl)
         valid_data2[np.isnan(self.u_mps)] = False
         self.valid_data[1] = valid_data2
 
         # Duplicate original to other filters that have yet to be applied
-        self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
+        # self.valid_data[2:] = np.tile(self.valid_data[1], [7, 1, 1])
 
         # Combine all filter data and update processed properties
         self.all_valid_data()
@@ -959,8 +1102,7 @@ class WaterData(object):
         u_nr = self.u_earth_no_ref_mps
         v_nr = self.v_earth_no_ref_mps
         direction, mag = cart2pol(u_nr, v_nr)
-        u_nr_rotated, v_nr_rotated = pol2cart(
-            direction - np.deg2rad(heading_chng), mag)
+        u_nr_rotated, v_nr_rotated = pol2cart(direction - np.deg2rad(heading_chng), mag)
         self.u_earth_no_ref_mps = u_nr_rotated
         self.v_earth_no_ref_mps = v_nr_rotated
 
@@ -984,15 +1126,15 @@ class WaterData(object):
         u_nr = self.u_earth_no_ref_mps
         v_nr = self.v_earth_no_ref_mps
         direction, mag = cart2pol(u_nr, v_nr)
-        u_nr_rotated, v_nr_rotated = \
-            pol2cart(direction - np.deg2rad(repmat(heading, len(mag), 1)), mag)
+        u_nr_rotated, v_nr_rotated = pol2cart(
+            direction - np.deg2rad(repmat(heading, len(mag), 1)), mag
+        )
         self.u_earth_no_ref_mps = u_nr_rotated
         self.v_earth_no_ref_mps = v_nr_rotated
 
         self.set_nav_reference(boat_vel)
 
-    def apply_interpolation(self, transect, ens_interp='None',
-                            cells_interp='None'):
+    def apply_interpolation(self, transect, ens_interp="None", cells_interp="None"):
         """Coordinates the application of water velocity interpolation.
 
         Parameters
@@ -1007,68 +1149,76 @@ class WaterData(object):
 
         self.u_processed_mps = np.tile([np.nan], self.u_mps.shape)
         self.v_processed_mps = np.tile([np.nan], self.v_mps.shape)
-        self.u_processed_mps[self.valid_data[0]] = self.u_mps[
-            self.valid_data[0]]
-        self.v_processed_mps[self.valid_data[0]] = self.v_mps[
-            self.valid_data[0]]
+        self.u_processed_mps[self.valid_data[0]] = self.u_mps[self.valid_data[0]]
+        self.v_processed_mps[self.valid_data[0]] = self.v_mps[self.valid_data[0]]
 
         # Determine interpolation methods to apply
-        if ens_interp == 'None':
+        if ens_interp == "None":
             ens_interp = self.interpolate_ens
         else:
             self.interpolate_ens = ens_interp
 
-        if cells_interp == 'None':
+        if cells_interp == "None":
             cells_interp = self.interpolate_cells
         else:
             self.interpolate_cells = cells_interp
 
-        if ens_interp == 'abba' or cells_interp == 'abba':
-            self.interpolate_ens = 'abba'
-            self.interpolate_cells = 'abba'
+        if ens_interp == "abba" or cells_interp == "abba":
+            self.interpolate_ens = "abba"
+            self.interpolate_cells = "abba"
             self.interpolate_abba(transect)
         else:
-            if ens_interp == 'None':
+            if ens_interp == "None":
                 # Sets invalid data to nan with no interpolation
                 self.interpolate_ens_none()
-            elif ens_interp == 'ExpandedT':
+            elif ens_interp == "ExpandedT":
                 # Sets interpolate to None as the interpolation is done in
                 # class QComp
                 self.interpolate_ens_next()
-            elif ens_interp == 'Hold9':
+            elif ens_interp == "Hold9":
                 # Interpolates using SonTek's method of holding last valid
                 # for up to 9 samples
                 self.interpolate_ens_hold_last_9()
-            elif ens_interp == 'Hold':
+            elif ens_interp == "Hold":
                 # Interpolates by holding last valid indefinitely
                 self.interpolate_ens_hold_last()
-            elif ens_interp == 'Linear':
+            elif ens_interp == "Linear":
                 # Interpolates using linear interpolation
                 self.interpolate_ens_linear(transect)
-            elif ens_interp == 'TRDI':
+            elif ens_interp == "TRDI":
                 # TRDI is applied in discharge
                 self.interpolate_ens_none()
                 self.interpolate_ens = ens_interp
 
             # Apply specified cell interpolation method
-            if cells_interp == 'None':
+            if cells_interp == "None":
                 # Sets invalid data to nan with no interpolation
                 self.interpolate_cells_none()
-            elif cells_interp == 'TRDI':
+            elif cells_interp == "TRDI":
                 # Use TRDI method to interpolate invalid interior cells
                 self.interpolate_cells_trdi(transect)
-            elif cells_interp == 'Linear':
+            elif cells_interp == "Linear":
                 # Uses linear interpolation to interpolate velocity for all
                 # invalid bins including those in invalid ensembles
                 # up to 9 samples
                 self.interpolate_cells_linear(transect)
 
-    def apply_filter(self, transect, beam=None, difference=None,
-                     difference_threshold=None, vertical=None,
-                     vertical_threshold=None, other=None, excluded=None,
-                     snr=None, wt_depth=None):
+    def apply_filter(
+        self,
+        transect,
+        beam=None,
+        difference=None,
+        difference_threshold=None,
+        vertical=None,
+        vertical_threshold=None,
+        other=None,
+        excluded=None,
+        snr=None,
+        wt_depth=None,
+    ):
         """Coordinates application of specified filters and subsequent
         interpolation.
+
         Parameters
         ----------
         transect: TransectData
@@ -1094,46 +1244,57 @@ class WaterData(object):
         """
 
         # Determine filters to apply
-        if len({beam, difference, difference_threshold, vertical,
-                vertical_threshold, other, excluded, snr,
-                wt_depth}) > 1:
-
+        if (
+            len(
+                {
+                    beam,
+                    difference,
+                    difference_threshold,
+                    vertical,
+                    vertical_threshold,
+                    other,
+                    excluded,
+                    snr,
+                    wt_depth,
+                }
+            )
+            > 1
+        ):
+            # Because the snr filter may apply 3-beam solutions the result
+            # could affect other filters, thus it should be run first
+            if snr is not None:
+                self.filter_snr(transect=transect, setting=snr)
             if difference is not None:
-                if difference == 'Manual':
-                    self.filter_diff_vel(setting=difference,
-                                         threshold=difference_threshold)
+                if difference == "Manual":
+                    self.filter_diff_vel(
+                        setting=difference, threshold=difference_threshold
+                    )
                 else:
                     self.filter_diff_vel(setting=difference)
             if vertical is not None:
-                if vertical == 'Manual':
-                    self.filter_vert_vel(setting=vertical,
-                                         threshold=vertical_threshold)
+                if vertical == "Manual":
+                    self.filter_vert_vel(setting=vertical, threshold=vertical_threshold)
                 else:
                     self.filter_vert_vel(setting=vertical)
             if other is not None:
                 self.filter_smooth(transect=transect, setting=other)
             if excluded is not None:
                 self.filter_excluded(transect=transect, setting=excluded)
-            if snr is not None:
-                self.filter_snr(setting=snr)
             if wt_depth is not None:
                 self.filter_wt_depth(transect=transect, setting=wt_depth)
             if beam is not None:
                 self.filter_beam(setting=beam, transect=transect)
         else:
-            self.filter_diff_vel(setting=self.d_filter,
-                                 threshold=self.d_filter_thresholds)
-            self.filter_vert_vel(setting=self.w_filter,
-                                 threshold=self.w_filter_thresholds)
+            self.filter_snr(transect=transect, setting=self.snr_filter)
+            self.filter_diff_vel(
+                setting=self.d_filter, threshold=self.d_filter_thresholds
+            )
+            self.filter_vert_vel(
+                setting=self.w_filter, threshold=self.w_filter_thresholds
+            )
             self.filter_smooth(transect=transect, setting=self.smooth_filter)
-            self.filter_excluded(transect=transect,
-                                 setting=self.excluded_dist_m)
-            self.filter_snr(setting=self.snr_filter)
+            self.filter_excluded(transect=transect, setting=self.excluded_dist_m)
             self.filter_beam(setting=self.beam_filter, transect=transect)
-
-        # After filters have been applied, interpolate to estimate values for
-        # invalid data.
-        # self.apply_interpolation(transect=transect)
 
     def sos_correction(self, ratio):
         """Corrects water velocities for a change in speed of sound.
@@ -1166,21 +1327,26 @@ class WaterData(object):
         cells_above_slbt = np.copy(self.cells_above_sl_bt)
 
         # Compute cutoff for vertical beam depths
-        if selected == 'vb_depths':
-            sl_cutoff_vb = (depth_selected.depth_processed_m -
-                            depth_selected.draft_use_m) \
-                           * np.cos(np.deg2rad(transect.adcp.beam_angle_deg)) \
-                           - self.sl_lag_effect_m + depth_selected.draft_use_m
-            cells_above_slvb = np.round(depth_selected.depth_cell_depth_m,
-                                        2) < np.round(sl_cutoff_vb, 2)
-            idx = np.where(transect.depths.bt_depths.valid_data == False)
+        if selected == "vb_depths":
+            sl_cutoff_vb = (
+                (depth_selected.depth_processed_m - depth_selected.draft_use_m)
+                * np.cos(np.deg2rad(transect.adcp.beam_angle_deg))
+                - self.sl_lag_effect_m
+                + depth_selected.draft_use_m
+            )
+            cells_above_slvb = np.round(
+                depth_selected.depth_cell_depth_m, 2
+            ) < np.round(sl_cutoff_vb, 2)
+            idx = np.where(np.logical_not(transect.depths.bt_depths.valid_data))
             cells_above_slbt[:, idx] = cells_above_slvb[:, idx]
             cells_above_sl = np.logical_and(cells_above_slbt, cells_above_slvb)
         else:
             cells_above_sl = cells_above_slbt
 
         # Compute cutoff from interpolated depths
-        n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
+        valid_beams = depth_selected.depth_beams_m > 0
+        n_valid_beams = np.nansum(valid_beams, 0)
+        # n_valid_beams = np.nansum(depth_selected.valid_beams, 0)
 
         # Find ensembles with no valid beam depths
         idx = np.where(n_valid_beams == 0)[0]
@@ -1192,18 +1358,18 @@ class WaterData(object):
             else:
                 sl_lag_effect_m = self.sl_lag_effect_m
 
-            sl_cutoff_int = (depth_selected.depth_processed_m[
-                                 idx] - depth_selected.draft_use_m) \
-                            * np.cos(
-                np.deg2rad(transect.adcp.beam_angle_deg)) - sl_lag_effect_m + \
-                            depth_selected.draft_use_m
+            sl_cutoff_int = (
+                (depth_selected.depth_processed_m[idx] - depth_selected.draft_use_m)
+                * np.cos(np.deg2rad(transect.adcp.beam_angle_deg))
+                - sl_lag_effect_m
+                + depth_selected.draft_use_m
+            )
             for i in range(len(idx)):
                 cells_above_sl[:, idx[i]] = np.less(
-                    depth_selected.depth_cell_depth_m[:, idx[i]],
-                    sl_cutoff_int[i])
+                    depth_selected.depth_cell_depth_m[:, idx[i]], sl_cutoff_int[i]
+                )
 
         # Find ensembles with at least 1 invalid beam depth
-
         idx = np.where(np.logical_and(n_valid_beams < 4, n_valid_beams > 0))[0]
         if len(idx) > 0:
             if len(self.sl_lag_effect_m) > 1:
@@ -1211,17 +1377,37 @@ class WaterData(object):
             else:
                 sl_lag_effect_m = self.sl_lag_effect_m
 
-            sl_cutoff_int = \
-                (depth_selected.depth_processed_m[idx] -
-                 depth_selected.draft_use_m) \
-                * np.cos(np.deg2rad(transect.adcp.beam_angle_deg)) \
-                - sl_lag_effect_m + depth_selected.draft_use_m
+            # # If the lag effect is not available estimate from nearest neighbors
+            # idx_nan = np.where(np.isnan(sl_lag_effect_m))
+            # if len(idx_nan) > 0:
+            #     for idx_n in idx_nan[0]:
+            #         est_sl_lag = []
+            #         idx_before = idx[idx_n]
+            #         while idx_before > 0:
+            #             idx_before = idx_before - 1
+            #             if not np.isnan(self.sl_lag_effect_m[idx_before]):
+            #                 self.sl_lag_effect_m[idx_n] = self.sl_lag_effect_m[idx_before]
+            #                 break
+            #         else:
+            #             idx_after = idx[idx_n]
+            #             while idx_after < self.sl_lag_effect_m.size - 1:
+            #                 idx_after = idx_after + 1
+            #                 if not np.isnan(self.sl_lag_effect_m[idx_after]):
+            #                     self.sl_lag_effect_m[idx_n] = self.sl_lag_effect_m[idx_after]
+            #                     break
+
+            sl_cutoff_int = (
+                (depth_selected.depth_processed_m[idx] - depth_selected.draft_use_m)
+                * np.cos(np.deg2rad(transect.adcp.beam_angle_deg))
+                - sl_lag_effect_m
+                + depth_selected.draft_use_m
+            )
             cells_above_sl_int = np.tile(True, cells_above_sl.shape)
 
             for i in range(len(idx)):
                 cells_above_sl_int[:, idx[i]] = np.less(
-                    depth_selected.depth_cell_depth_m[:, idx[i]],
-                    sl_cutoff_int[i])
+                    depth_selected.depth_cell_depth_m[:, idx[i]], sl_cutoff_int[i]
+                )
 
             cells_above_sl[cells_above_sl_int == 0] = 0
 
@@ -1231,14 +1417,20 @@ class WaterData(object):
         self.all_valid_data()
         self.compute_snr_rng()
         self.apply_filter(transect)
-        # self.apply_interpolation(transect)
 
     def all_valid_data(self):
         """Combines the results of all filters to determine a final set of
-        valid data """
+        valid data"""
 
         n_filters = len(self.valid_data[1:, 0, 0])
-        sum_filters = np.nansum(self.valid_data[1:, :, :], 0) / n_filters
+
+        # Since invalid SNR are replaced with 3-beam solutions
+        # set these values to true as they will not need interpolation
+        valid_data = np.copy(self.valid_data)
+        if self.snr_3beam_comp:
+            valid_data[7, :, :] = True
+
+        sum_filters = np.nansum(valid_data[1:, :, :], 0) / n_filters
         valid = np.tile([True], self.cells_above_sl.shape)
         valid[sum_filters < 1] = False
         self.valid_data[0] = valid
@@ -1272,19 +1464,21 @@ class WaterData(object):
         # In manual mode (3 or 4) determine number of raw invalid and number
         # of 2 beam solutions
         if self.beam_filter > 0:
-
             # Find invalid raw data
             valid_vel = np.array([self.cells_above_sl] * 4)
-            valid_vel[np.isnan(self.raw_vel_mps)] = 0
-
+            if self.snr_beam_velocities is None:
+                valid_vel[np.isnan(self.raw_vel_mps)] = 0
+            else:
+                valid_vel[np.isnan(self.snr_beam_velocities)] = 0
             # Determine how many beams or transformed coordinates are valid
             valid_vel_sum = np.sum(valid_vel, 0)
             valid = copy.deepcopy(self.cells_above_sl)
 
             # Compare number of valid beams or velocity coordinates to
             # filter value
-            valid[np.logical_and((valid_vel_sum < self.beam_filter),
-                                 (valid_vel_sum > 2))] = False
+            valid[
+                np.logical_and((valid_vel_sum < self.beam_filter), (valid_vel_sum > 2))
+            ] = False
 
             # Save logical of valid data to object
             self.valid_data[5, :, :] = valid
@@ -1293,7 +1487,6 @@ class WaterData(object):
             self.all_valid_data()
 
         else:
-
             # Apply automatic filter
             self.automatic_beam_filter_abba_interpolation(transect)
 
@@ -1311,13 +1504,14 @@ class WaterData(object):
         # and all cells below side lobe are nan
         temp = copy.deepcopy(self)
         temp.filter_beam(4)
-        valid_bool = temp.valid_data[5, :, :]
+        valid_bool = temp.valid_data[5, :, transect.in_transect_idx].T
         valid = valid_bool.astype(float)
-        valid[temp.cells_above_sl == False] = np.nan
+        valid[np.logical_not(temp.cells_above_sl[:, transect.in_transect_idx])] = 0
+        valid[np.logical_not(temp.valid_data[1, :, transect.in_transect_idx].T)] = 0
 
         # Initialize processed velocity data variables
-        temp.u_processed_mps = copy.deepcopy(temp.u_mps)
-        temp.v_processed_mps = copy.deepcopy(temp.v_mps)
+        temp.u_processed_mps = copy.deepcopy(temp.u_mps[:, transect.in_transect_idx])
+        temp.v_processed_mps = copy.deepcopy(temp.v_mps[:, transect.in_transect_idx])
 
         # Set invalid data to nan in processed velocity data variables
         temp.u_processed_mps[np.logical_not(valid)] = np.nan
@@ -1329,28 +1523,34 @@ class WaterData(object):
         # Check for presence of 3-beam solutions
         if len(rows_3b) > 0:
             # Initialize velocity data variables
-            u = copy.deepcopy(self.u_mps)
-            v = copy.deepcopy(self.v_mps)
+            u = copy.deepcopy(self.u_mps[:, transect.in_transect_idx])
+            v = copy.deepcopy(self.v_mps[:, transect.in_transect_idx])
 
-            u = u[:, transect.in_transect_idx]
-            v = v[:, transect.in_transect_idx]
-
-            u[np.logical_not(temp.valid_data[5, :, :])] = np.nan
-            v[np.logical_not(temp.valid_data[5, :, :])] = np.nan
+            u[
+                np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)
+            ] = np.nan
+            v[
+                np.logical_not(temp.valid_data[5, :, transect.in_transect_idx].T)
+            ] = np.nan
             interpolated_data = self.compute_abba_interpolation(
                 wt_data=temp,
                 data_list=[u, v],
-                valid=temp.valid_data[5, :, :],
-                transect=transect)
+                valid=valid,
+                transect=transect,
+            )
 
             if interpolated_data is not None:
                 # Compute interpolated to measured ratios and apply filter
                 # criteria
                 for n in range(len(interpolated_data[0])):
-                    u_ratio = (temp.u_mps[interpolated_data[0][n][0]] /
-                               interpolated_data[0][n][1]) - 1
-                    v_ratio = (temp.v_mps[interpolated_data[1][n][0]] /
-                               interpolated_data[1][n][1]) - 1
+                    u_ratio = (
+                        temp.u_mps[interpolated_data[0][n][0]]
+                        / interpolated_data[0][n][1]
+                    ) - 1
+                    v_ratio = (
+                        temp.v_mps[interpolated_data[1][n][0]]
+                        / interpolated_data[1][n][1]
+                    ) - 1
                     if np.abs(u_ratio) < 0.5 and np.abs(v_ratio) < 0.5:
                         valid_bool[interpolated_data[0][n][0]] = True
                     else:
@@ -1358,7 +1558,7 @@ class WaterData(object):
                     # n += 1
 
                 # Update object with filter results
-                self.valid_data[5, :, :] = valid_bool
+                self.valid_data[5, :, transect.in_transect_idx] = valid_bool.T
             else:
                 self.valid_data[5, :, :] = temp.valid_data[5, :, :]
         else:
@@ -1373,9 +1573,9 @@ class WaterData(object):
         Applies either manual or automatic filtering of the difference (error)
         velocity.  The automatic mode is based on the following:
         This filter is based on the assumption that the water error velocity
-         should follow a gaussian distribution.  Therefore, 5 standard
-         deviations should encompass all of the valid data.
-         The standard deviation and limits (multiplier*std dev) are computed
+        should follow a gaussian distribution.  Therefore, 5 standard
+        deviations should encompass all of the valid data.
+        The standard deviation and limits (multiplier*std dev) are computed
         in an iterative process until filtering out additional data does not
         change the computed standard deviation.
 
@@ -1383,7 +1583,7 @@ class WaterData(object):
         ----------
         setting: str
             Filter setting (Auto, Off, Manual)
-        threshold: float
+        threshold: float, dict
             Threshold value for Manual setting.
         """
 
@@ -1399,30 +1599,31 @@ class WaterData(object):
         # below the side lobe cutoff
         d_vel[np.logical_not(self.cells_above_sl)] = np.nan
 
-        d_vel_min_ref = None
-        d_vel_max_ref = None
-
         bad_idx_rows = np.array([]).astype(int)
         bad_idx_cols = np.array([]).astype(int)
 
         # Apply selected method
-        if self.d_filter == 'Manual':
+        if self.d_filter == "Manual":
             d_vel_max_ref = np.abs(self.d_filter_thresholds)
             d_vel_min_ref = -1 * d_vel_max_ref
             # Set valid data row 2 for difference velocity filter results
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(nan_greater(d_vel, d_vel_max_ref),
-                              nan_less(d_vel, d_vel_min_ref)))
-        elif self.d_filter == 'Off':
+                np.logical_or(
+                    nan_greater(d_vel, d_vel_max_ref), nan_less(d_vel, d_vel_min_ref)
+                )
+            )
+        elif self.d_filter == "Off":
             d_vel_max_ref = np.nanmax(np.nanmax(d_vel)) + 1
             d_vel_min_ref = np.nanmin(np.nanmin(d_vel)) - 1
             # Set valid data row 2 for difference velocity filter results
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(nan_greater(d_vel, d_vel_max_ref),
-                              nan_less(d_vel, d_vel_min_ref)))
+                np.logical_or(
+                    nan_greater(d_vel, d_vel_max_ref), nan_less(d_vel, d_vel_min_ref)
+                )
+            )
             self.d_filter_thresholds = d_vel_max_ref
 
-        elif self.d_filter == 'Auto':
+        elif self.d_filter == "Auto":
             # Apply threshold from entire measurement processing to each
             # transect
             if self.use_measurement_thresholds:
@@ -1433,21 +1634,20 @@ class WaterData(object):
                     data = np.copy(self.d_mps)
                     data[self.ping_type != p_type] = np.nan
                     idx_invalid_rows, idx_invalid_cols = np.where(
-                        np.logical_or(np.greater(data, data_max_ref),
-                                      np.less(data, data_min_ref)))
+                        np.logical_or(
+                            np.greater(data, data_max_ref), np.less(data, data_min_ref)
+                        )
+                    )
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
-                            bad_idx_rows = np.hstack(
-                                (bad_idx_rows, idx_invalid_rows))
-                            bad_idx_cols = np.hstack(
-                                (bad_idx_cols, idx_invalid_cols))
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
                         else:
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
 
             # Compute unique threshold for each transect using ping types
             elif self.ping_type.size > 1:
-
                 # Identify the ping types used in the transect
                 p_types = np.unique(self.ping_type)
 
@@ -1460,15 +1660,14 @@ class WaterData(object):
                     # Remove data not associated with the specified ping type
                     vel_2_filter[self.ping_type != p_type] = np.nan
                     # Apply filter to data of a single ping type
-                    idx_invalid_rows, idx_invalid_cols, threshold = \
-                        self.iqr_filter(vel_2_filter)
+                    idx_invalid_rows, idx_invalid_cols, threshold = self.iqr_filter(
+                        vel_2_filter
+                    )
                     # Combine indices of invalid data for all ping types
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
-                            bad_idx_rows = np.hstack(
-                                (bad_idx_rows, idx_invalid_rows))
-                            bad_idx_cols = np.hstack(
-                                (bad_idx_cols, idx_invalid_cols))
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
                         else:
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
@@ -1478,9 +1677,9 @@ class WaterData(object):
             # Compute unique threshold for each transect when no ping types
             # are available
             else:
-                self.ping_type = np.array(['U'])
+                self.ping_type = np.array(["U"])
                 bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(d_vel)
-                self.d_filter_thresholds = {'U': threshold}
+                self.d_filter_thresholds = {"U": threshold}
 
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
@@ -1521,7 +1720,6 @@ class WaterData(object):
 
         # Check to make sure there are data to process
         if data.size > 0 and np.any(np.logical_not(np.isnan(data))):
-
             # Initialize variables
             data_orig = np.copy(data)
 
@@ -1540,8 +1738,10 @@ class WaterData(object):
 
                 # Identify valid and invalid data
                 data_bad_rows, data_bad_cols = np.where(
-                    np.logical_or(nan_greater(data, data_max_ref),
-                                  nan_less(data, data_min_ref)))
+                    np.logical_or(
+                        nan_greater(data, data_max_ref), nan_less(data, data_min_ref)
+                    )
+                )
                 # Update filtered data array
                 data[data_bad_rows, data_bad_cols] = np.nan
 
@@ -1554,14 +1754,17 @@ class WaterData(object):
 
             # Determine row and column index of invalid cells with invalid data
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(nan_greater(data_orig, data_max_ref),
-                              nan_less(data_orig, data_min_ref)))
+                np.logical_or(
+                    nan_greater(data_orig, data_max_ref),
+                    nan_less(data_orig, data_min_ref),
+                )
+            )
         else:
             # All data are invalid
             # Determine row and column index of invalid cells with invalid data
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(np.greater(data, -1),
-                              np.less(data, 1)))
+                np.logical_or(np.greater(data, -1), np.less(data, 1))
+            )
 
         threshold = [data_max_ref, data_min_ref]
 
@@ -1605,8 +1808,10 @@ class WaterData(object):
 
                 # Identify valid and invalid data
                 bad_idx = np.where(
-                    np.logical_or(nan_greater(data, data_max_ref),
-                                  nan_less(data, data_min_ref)))
+                    np.logical_or(
+                        nan_greater(data, data_max_ref), nan_less(data, data_min_ref)
+                    )
+                )
                 # Update filtered data array
                 data[bad_idx] = np.nan
 
@@ -1625,23 +1830,21 @@ class WaterData(object):
         """Applies filter to vertical velocity.
 
         Applies either manual or automatic filter of the difference (error)
-        velocity.  The automatic
-        mode is based on the following: This filter is based on the assumption
-        that the water error
-        velocity should follow a gaussian distribution.  Therefore, 4 standard
-         deviations should
+        velocity.  The automatic mode is based on the following: This filter
+        is based on the assumption that the water error velocity should follow a
+        gaussian distribution.  Therefore, 4 standard deviations should
         encompass all of the valid data.  The standard deviation and limits
-        (multplier * standard deviation)
-        are computed in an iterative process until filtering out additional
-        data does not change
-        the computed standard deviation.
+        (multplier * standard deviation) are computed in an iterative process
+        until filtering out additional data does not change the
+        computed standard deviation.
 
         Parameters
         ---------
         setting: str
             Filter setting (Auto, Off, Manual)
-        threshold: float
-            Threshold value for Manual setting."""
+        threshold: float, dict
+            Threshold value for Manual setting.
+        """
 
         # Set vertical velocity filter properties
         self.w_filter = setting
@@ -1655,30 +1858,33 @@ class WaterData(object):
         # below the side lobe cutoff
         w_vel[np.logical_not(self.cells_above_sl)] = np.nan
 
-        w_vel_min_ref = None
         w_vel_max_ref = None
 
         bad_idx_rows = np.array([]).astype(int)
         bad_idx_cols = np.array([]).astype(int)
 
         # Apply selected method
-        if self.w_filter == 'Manual':
+        if self.w_filter == "Manual":
             w_vel_max_ref = np.abs(self.w_filter_thresholds)
             w_vel_min_ref = -1 * w_vel_max_ref
             # Identify valid and invalid data
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(nan_greater(w_vel, w_vel_max_ref),
-                              nan_less(w_vel, w_vel_min_ref)))
-        elif self.w_filter == 'Off':
+                np.logical_or(
+                    nan_greater(w_vel, w_vel_max_ref), nan_less(w_vel, w_vel_min_ref)
+                )
+            )
+        elif self.w_filter == "Off":
             w_vel_max_ref = np.nanmax(np.nanmax(w_vel)) + 1
             w_vel_min_ref = np.nanmin(np.nanmin(w_vel)) - 1
             # Identify valid and invalid data
             bad_idx_rows, bad_idx_cols = np.where(
-                np.logical_or(nan_greater(w_vel, w_vel_max_ref),
-                              nan_less(w_vel, w_vel_min_ref)))
+                np.logical_or(
+                    nan_greater(w_vel, w_vel_max_ref), nan_less(w_vel, w_vel_min_ref)
+                )
+            )
             self.w_filter_thresholds = w_vel_max_ref
 
-        elif self.w_filter == 'Auto':
+        elif self.w_filter == "Auto":
             # Apply threshold from entire measurement processing to each
             # transect
             if self.use_measurement_thresholds:
@@ -1689,14 +1895,14 @@ class WaterData(object):
                     data = np.copy(self.w_mps)
                     data[self.ping_type != p_type] = np.nan
                     idx_invalid_rows, idx_invalid_cols = np.where(
-                        np.logical_or(np.greater(data, data_max_ref),
-                                      np.less(data, data_min_ref)))
+                        np.logical_or(
+                            np.greater(data, data_max_ref), np.less(data, data_min_ref)
+                        )
+                    )
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
-                            bad_idx_rows = np.hstack(
-                                (bad_idx_rows, idx_invalid_rows))
-                            bad_idx_cols = np.hstack(
-                                (bad_idx_cols, idx_invalid_cols))
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
                         else:
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
@@ -1716,15 +1922,14 @@ class WaterData(object):
                     # Remove data not associated with the specified ping type
                     vel_2_filter[self.ping_type != p_type] = np.nan
                     # Apply filter to data of a single ping type
-                    idx_invalid_rows, idx_invalid_cols, threshold = \
-                        self.iqr_filter(vel_2_filter)
+                    idx_invalid_rows, idx_invalid_cols, threshold = self.iqr_filter(
+                        vel_2_filter
+                    )
                     # Combine indices of invalid data for all ping types
                     if len(idx_invalid_rows) > 0:
                         if len(bad_idx_rows) > 0:
-                            bad_idx_rows = np.hstack(
-                                (bad_idx_rows, idx_invalid_rows))
-                            bad_idx_cols = np.hstack(
-                                (bad_idx_cols, idx_invalid_cols))
+                            bad_idx_rows = np.hstack((bad_idx_rows, idx_invalid_rows))
+                            bad_idx_cols = np.hstack((bad_idx_cols, idx_invalid_cols))
                         else:
                             bad_idx_rows = idx_invalid_rows
                             bad_idx_cols = idx_invalid_cols
@@ -1733,9 +1938,9 @@ class WaterData(object):
             # Compute unique threshold for each transect when no ping types
             # are available
             else:
-                self.ping_type = np.array(['U'])
+                self.ping_type = np.array(["U"])
                 bad_idx_rows, bad_idx_cols, threshold = self.iqr_filter(w_vel)
-                self.w_filter_thresholds = {'U': threshold}
+                self.w_filter_thresholds = {"U": threshold}
 
         valid = copy.deepcopy(self.cells_above_sl)
         if len(bad_idx_rows) > 0:
@@ -1789,8 +1994,7 @@ class WaterData(object):
         ens_time = np.nancumsum(transect.date_time.ens_duration_sec)
 
         # Determine if smooth filter should be applied
-        if self.smooth_filter == 'Auto':
-
+        if self.smooth_filter == "Auto":
             # Boat velocity components
             w_vele = self.u_mps
             w_veln = self.v_mps
@@ -1819,8 +2023,7 @@ class WaterData(object):
                 lower_limit = speed_smooth - multiplier * fill_array
 
                 # Apply filter to residuals
-                wt_bad_idx = \
-                np.where((speed > upper_limit) or (speed < lower_limit))[0]
+                wt_bad_idx = np.where((speed > upper_limit) or (speed < lower_limit))[0]
                 speed_res[wt_bad_idx] = np.nan
 
             valid = np.copy(self.cells_above_sl)
@@ -1840,35 +2043,73 @@ class WaterData(object):
 
         self.all_valid_data()
 
-    def filter_snr(self, setting):
+    def filter_snr(self, transect, setting):
         """Filters SonTek data based on SNR.
 
         Computes the average SNR for all cells above the side lobe cutoff for
-        each beam in
-        each ensemble. If the range in average SNR in an ensemble is greater
-        than 12 dB the
-        water velocity in that ensemble is considered invalid.
+        each beam in each ensemble. If the range in average SNR in an ensemble is greater
+        than 12 dB the water velocity in that ensemble is considered invalid.
 
         Parameters
         ----------
+        transect: TransectData
+            Object of TransectData
         setting: str
             Setting for filter (Auto, Off)
         """
 
         self.snr_filter = setting
 
-        if setting == 'Auto':
-            if self.snr_rng is not None:
+        if setting == "Auto":
+            # Determines if invalid data should use 3-beam computations
+            if self.snr_3beam_comp and self.d_filter != 3:
+                cells_above_sl = np.copy(self.cells_above_sl.astype(float))
+                cells_above_sl[cells_above_sl < 0.5] = np.nan
+                snr_adjusted = self.rssi * cells_above_sl
+                snr_average = np.nanmean(snr_adjusted, 1)
+
+                # Find invalid beams
+                snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
+
+                ens_bad_snr = np.any(snr_beam_invalid, axis=0)
+                valid = np.copy(self.cells_above_sl)
+
+                bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
+                valid[bad_snr_array] = False
+                w_vel_copy = copy.deepcopy(self)
+                beam_velocities = w_vel_copy.earth_to_beam(
+                    sensors=transect.sensors, adcp=transect.adcp
+                )
+                invalid_beam_value = np.tile(np.nan, valid.shape[0])
+
+                invalid_snr_idx = np.where(snr_beam_invalid)
+
+                beam_velocities[
+                    invalid_snr_idx[0], :, invalid_snr_idx[1]
+                ] = invalid_beam_value
+                self.snr_beam_velocities = beam_velocities
+
+                # Recompute water velocities using snr adjusted beam velocities
+                self.snr_beam_velocities = beam_velocities
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
+
+            else:
                 bad_snr_idx = np.greater(self.snr_rng, 12)
                 valid = np.copy(self.cells_above_sl)
 
                 bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
                 valid[bad_snr_array] = False
-                self.valid_data[7, :, :] = valid
 
-                # Combine all filter data and update processed properties
-                self.all_valid_data()
-        else:
+            self.valid_data[7, :, :] = valid
+
+            # Combine all filter data and update processed properties
+            self.all_valid_data()
+        elif transect.adcp.manufacturer == "SonTek":
+            if self.snr_beam_velocities is not None:
+                self.snr_beam_velocities = None
+                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 
@@ -1924,20 +2165,23 @@ class WaterData(object):
 
         self.all_valid_data()
 
-    def interpolate_abba(self, transect,
-                         search_loc=['above', 'below', 'before', 'after']):
-        """" Interpolates all data marked invalid using the abba interpolation
+    def interpolate_abba(
+        self, transect, search_loc=("above", "below", "before", "after")
+    ):
+        """ " Interpolates all data marked invalid using the abba interpolation
         algorithm.
 
         Parameters
         ----------
         transect: TransectData
             Object of TransectData
+        search_loc: tuple
+            Locations to search for abba interpolation
         """
 
         # Set properties
-        self.interpolate_cells = 'abba'
-        self.interpolate_ens = 'abba'
+        self.interpolate_cells = "abba"
+        self.interpolate_ens = "abba"
 
         # Get valid data based on all filters applied
         valid = self.valid_data[0, :, :]
@@ -1954,12 +2198,13 @@ class WaterData(object):
         u[np.logical_not(valid)] = np.nan
         v[np.logical_not(valid)] = np.nan
 
-        interpolated_data = self.compute_abba_interpolation(wt_data=self,
-                                                            data_list=[u, v],
-                                                            valid=valid,
-                                                            transect=transect,
-                                                            search_loc=
-                                                            search_loc)
+        interpolated_data = self.compute_abba_interpolation(
+            wt_data=self,
+            data_list=[u, v],
+            valid=valid,
+            transect=transect,
+            search_loc=search_loc,
+        )
 
         if interpolated_data is not None:
             # Incorporate interpolated values
@@ -1968,17 +2213,20 @@ class WaterData(object):
                 v[interpolated_data[1][n][0]] = interpolated_data[1][n][1]
 
         # Save interpolated data, while retaining of the ensembles including
-        # those that are not
-        # in the in_transect_idx array
+        # those that are not in the in_transect_idx array
         self.u_processed_mps[:, :] = np.nan
         self.v_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
         self.v_processed_mps[:, transect.in_transect_idx] = v
 
     @staticmethod
-    def compute_abba_interpolation(wt_data, data_list, valid, transect,
-                                   search_loc=['above', 'below', 'before',
-                                               'after']):
+    def compute_abba_interpolation(
+        wt_data,
+        data_list,
+        valid,
+        transect,
+        search_loc=("above", "below", "before", "after"),
+    ):
         """Computes the interpolated values for invalid cells using the abba
         method.
 
@@ -1992,6 +2240,8 @@ class WaterData(object):
             Array indicating valid to be used for interpolation
         transect: TransectData
             Object of TransectData
+        search_loc: tuple
+            Locations to search for abba interpolation
 
         Returns
         -------
@@ -2008,21 +2258,20 @@ class WaterData(object):
 
         if not np.all(valid_cells) and np.nansum(boat_valid) > 1:
             # Compute distance along shiptrack to be used in interpolation
-            distance_along_shiptrack = \
-            transect.boat_vel.compute_boat_track(transect)['distance_m']
+            distance_along_shiptrack = transect.boat_vel.compute_boat_track(transect)[
+                "distance_m"
+            ]
 
             # Where there is invalid boat speed at beginning or end of
             # transect mark the distance nan to avoid
             # interpolating velocities that won't be used for discharge
             if type(distance_along_shiptrack) is np.ndarray:
-                distance_along_shiptrack[
-                0:np.argmax(boat_valid == True)] = np.nan
-                end_nan = np.argmax(np.flip(boat_valid) == True)
+                distance_along_shiptrack[0 : np.argmax(boat_valid)] = np.nan
+                end_nan = np.argmax(np.flip(boat_valid))
                 if end_nan > 0:
-                    distance_along_shiptrack[-1 * end_nan:] = np.nan
+                    distance_along_shiptrack[-1 * end_nan :] = np.nan
                 # if type(distance_along_shiptrack) is np.ndarray:
-                depth_selected = getattr(transect.depths,
-                                         transect.depths.selected)
+                depth_selected = getattr(transect.depths, transect.depths.selected)
                 cells_above_sl = wt_data.valid_data[6, :, :]
                 cells_above_sl = cells_above_sl[:, transect.in_transect_idx]
 
@@ -2032,20 +2281,17 @@ class WaterData(object):
                     data_list=data_list,
                     valid_data=valid,
                     cells_above_sl=cells_above_sl,
-                    y_centers=
-                    depth_selected.depth_cell_depth_m[
-                    :,
-                    transect.in_transect_idx],
-                    y_cell_size=
-                    depth_selected.depth_cell_size_m[
-                    :,
-                    transect.in_transect_idx],
-                    y_depth=
-                    depth_selected.depth_processed_m[
-                        transect.in_transect_idx],
+                    y_centers=depth_selected.depth_cell_depth_m[
+                        :, transect.in_transect_idx
+                    ],
+                    y_cell_size=depth_selected.depth_cell_size_m[
+                        :, transect.in_transect_idx
+                    ],
+                    y_depth=depth_selected.depth_processed_m[transect.in_transect_idx],
                     x_shiptrack=distance_along_shiptrack,
                     search_loc=search_loc,
-                    normalize=True)
+                    normalize=True,
+                )
                 return interpolated_data
             else:
                 return None
@@ -2058,14 +2304,14 @@ class WaterData(object):
         """
 
         # Set interpolation property for ensembles
-        self.interpolate_ens = 'ExpandedT'
+        self.interpolate_ens = "ExpandedT"
 
         # Set processed data to nan for all invalid data
         valid = self.valid_data[0]
         self.u_processed_mps = np.copy(self.u_mps)
         self.v_processed_mps = np.copy(self.v_mps)
-        self.u_processed_mps[valid == False] = np.nan
-        self.v_processed_mps[valid == False] = np.nan
+        self.u_processed_mps[np.logical_not(valid)] = np.nan
+        self.v_processed_mps[np.logical_not(valid)] = np.nan
 
         # Identifying ensembles with no valid data
         valid_ens = np.any(valid, axis=0)
@@ -2082,7 +2328,7 @@ class WaterData(object):
         the last valid data until new valid data is found
         """
 
-        self.interpolate_ens = 'HoldLast'
+        self.interpolate_ens = "HoldLast"
 
         valid = self.valid_data[0]
 
@@ -2091,8 +2337,8 @@ class WaterData(object):
         self.v_processed_mps = np.copy(self.v_mps)
 
         # Set invalid data to nan in processed velocity data variables
-        self.u_processed_mps[valid == False] = np.nan
-        self.v_processed_mps[valid == False] = np.nan
+        self.u_processed_mps[np.logical_not(valid)] = np.nan
+        self.v_processed_mps[np.logical_not(valid)] = np.nan
 
         # Determine ensembles with valid data
         valid_ens = np.any(valid, axis=0)
@@ -2116,7 +2362,7 @@ class WaterData(object):
         compatibility with SonTek RiverSurveyor Live.
         """
 
-        self.interpolate_ens = 'Hold9'
+        self.interpolate_ens = "Hold9"
 
         valid = self.valid_data[0]
 
@@ -2125,8 +2371,8 @@ class WaterData(object):
         self.v_processed_mps = np.copy(self.v_mps)
 
         # Set invalid data to nan in processed velocity data variables
-        self.u_processed_mps[valid == False] = np.nan
-        self.v_processed_mps[valid == False] = np.nan
+        self.u_processed_mps[np.logical_not(valid)] = np.nan
+        self.v_processed_mps[np.logical_not(valid)] = np.nan
 
         # Determine ensembles with valid data
         valid_ens = np.any(valid, axis=0)
@@ -2137,7 +2383,7 @@ class WaterData(object):
 
         for n in np.arange(1, n_ens):
             # If ensemble is invalid fill in with previous ensemble
-            if valid_ens[n] == False and n_invalid < 10:
+            if not valid_ens[n] and n_invalid < 10:
                 n_invalid += 1
                 self.u_processed_mps[:, n] = self.u_processed_mps[:, n - 1]
                 self.v_processed_mps[:, n] = self.v_processed_mps[:, n - 1]
@@ -2147,7 +2393,7 @@ class WaterData(object):
     def interpolate_ens_none(self):
         """Applies no interpolation for invalid ensembles."""
 
-        self.interpolate_ens = 'None'
+        self.interpolate_ens = "None"
 
         valid = self.valid_data[0]
 
@@ -2156,14 +2402,14 @@ class WaterData(object):
         self.v_processed_mps = np.copy(self.v_mps)
 
         # Set invalid data to nan in processed velocity data variables
-        self.u_processed_mps[valid == False] = np.nan
-        self.v_processed_mps[valid == False] = np.nan
+        self.u_processed_mps[np.logical_not(valid)] = np.nan
+        self.v_processed_mps[np.logical_not(valid)] = np.nan
 
     def interpolate_cells_none(self):
         """Applies no interpolation for invalid cells that are not part of
         an invalid ensemble."""
 
-        self.interpolate_cells = 'None'
+        self.interpolate_cells = "None"
 
         valid = self.valid_data[0]
 
@@ -2181,10 +2427,8 @@ class WaterData(object):
             # If ensemble is invalid fill in with previous ensemble
             if valid_ens[n]:
                 invalid_cells = np.logical_not(valid[:, n])
-                self.u_processed_mps[invalid_cells,
-                                     n] = np.nan
-                self.v_processed_mps[invalid_cells,
-                                     n] = np.nan
+                self.u_processed_mps[invalid_cells, n] = np.nan
+                self.v_processed_mps[invalid_cells, n] = np.nan
 
     def interpolate_ens_linear(self, transect):
         """Uses 2D linear interpolation to estimate values for invalid
@@ -2200,7 +2444,7 @@ class WaterData(object):
             Object of TransectData
         """
 
-        self.interpolate_ens = 'Linear'
+        self.interpolate_ens = "Linear"
 
         valid = self.valid_data[0, :, :]
 
@@ -2212,52 +2456,53 @@ class WaterData(object):
         valid_ens = np.any(valid, 0)
 
         if np.sum(valid_ens) > 1:
-            # Determine the number of ensembles
-            # n_ens = len(valid_ens)
-
             trans_select = getattr(transect.depths, transect.depths.selected)
             # Compute z
-            z = np.divide(np.subtract(trans_select.depth_processed_m,
-                                      trans_select.depth_cell_depth_m),
-                          trans_select.depth_processed_m)
+            z = np.divide(
+                np.subtract(
+                    trans_select.depth_processed_m, trans_select.depth_cell_depth_m
+                ),
+                trans_select.depth_processed_m,
+            )
 
             # Create position array
-            boat_select = getattr(transect.boat_vel,
-                                  transect.boat_vel.selected)
+            boat_select = getattr(transect.boat_vel, transect.boat_vel.selected)
             if boat_select is not None:
                 if np.nansum(boat_select.valid_data[0]) > 0:
                     boat_vel_x = boat_select.u_processed_mps
                     boat_vel_y = boat_select.v_processed_mps
                     track_x = boat_vel_x * transect.date_time.ens_duration_sec
                     track_y = boat_vel_y * transect.date_time.ens_duration_sec
-                    track = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
-                    track_array = np.tile(track,
-                                          (self.u_processed_mps.shape[0], 1))
+                    track = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
+                    track_array = np.tile(track, (self.u_processed_mps.shape[0], 1))
 
                     # Determine index of all valid data
-                    valid_z = np.isnan(z) == False
+                    valid_z = np.logical_not(np.isnan(z))
                     valid_combined = np.logical_and(valid, valid_z)
 
-                    u = interpolate.griddata(np.vstack(
-                        (z[valid_combined], track_array[valid_combined])).T,
-                                             self.u_processed_mps[
-                                                 valid_combined],
-                                             (z, track_array))
+                    u = interpolate.griddata(
+                        np.vstack((z[valid_combined], track_array[valid_combined])).T,
+                        self.u_processed_mps[valid_combined],
+                        (z, track_array),
+                    )
 
-                    v = interpolate.griddata(np.vstack(
-                        (z[valid_combined], track_array[valid_combined])).T,
-                                             self.v_processed_mps[
-                                                 valid_combined],
-                                             (z, track_array))
+                    v = interpolate.griddata(
+                        np.vstack((z[valid_combined], track_array[valid_combined])).T,
+                        self.v_processed_mps[valid_combined],
+                        (z, track_array),
+                    )
 
                     self.u_processed_mps = np.tile(np.nan, self.u_mps.shape)
                     self.u_processed_mps = np.tile(np.nan, self.u_mps.shape)
-                    processed_valid_cells = \
-                        self.estimate_processed_valid_cells(transect)
+                    processed_valid_cells = self.estimate_processed_valid_cells(
+                        transect
+                    )
                     self.u_processed_mps[processed_valid_cells] = u[
-                        processed_valid_cells]
+                        processed_valid_cells
+                    ]
                     self.v_processed_mps[processed_valid_cells] = v[
-                        processed_valid_cells]
+                        processed_valid_cells
+                    ]
 
     def interpolate_cells_linear(self, transect):
         """Uses 2D linear interpolation to estimate values for invalid cells.
@@ -2272,7 +2517,7 @@ class WaterData(object):
             Object of TransectData
         """
 
-        self.interpolate_ens = 'Linear'
+        self.interpolate_ens = "Linear"
 
         valid = self.valid_data[0, :, :]
 
@@ -2283,9 +2528,12 @@ class WaterData(object):
         trans_select = getattr(transect.depths, transect.depths.selected)
 
         # Compute z
-        z = np.divide(np.subtract(trans_select.depth_processed_m,
-                                  trans_select.depth_cell_depth_m),
-                      trans_select.depth_processed_m)
+        z = np.divide(
+            np.subtract(
+                trans_select.depth_processed_m, trans_select.depth_cell_depth_m
+            ),
+            trans_select.depth_processed_m,
+        )
 
         # Create position array
         boat_select = getattr(transect.boat_vel, transect.boat_vel.selected)
@@ -2295,38 +2543,34 @@ class WaterData(object):
                 boat_vel_y = boat_select.v_processed_mps
                 track_x = boat_vel_x * transect.date_time.ens_duration_sec
                 track_y = boat_vel_y * transect.date_time.ens_duration_sec
-                track = np.nancumsum(np.sqrt(track_x ** 2 + track_y ** 2))
-                track_array = np.tile(track,
-                                      (self.u_processed_mps.shape[0], 1))
+                track = np.nancumsum(np.sqrt(track_x**2 + track_y**2))
+                track_array = np.tile(track, (self.u_processed_mps.shape[0], 1))
 
                 # Determine index of all valid data
-                valid_z = np.isnan(z) == False
+                valid_z = np.logical_not(np.isnan(z))
                 valid_combined = np.logical_and(valid, valid_z)
 
                 u = interpolate.griddata(
-                    np.array([z[valid_combined].ravel(),
-                              track_array[
-                                  valid_combined].ravel()]).T,
-                    self.u_processed_mps[
-                        valid_combined].ravel(),
-                    (z, track_array))
+                    np.array(
+                        [z[valid_combined].ravel(), track_array[valid_combined].ravel()]
+                    ).T,
+                    self.u_processed_mps[valid_combined].ravel(),
+                    (z, track_array),
+                )
 
                 v = interpolate.griddata(
-                    np.array([z[valid_combined].ravel(),
-                              track_array[
-                                  valid_combined].ravel()]).T,
-                    self.v_processed_mps[
-                        valid_combined].ravel(),
-                    (z, track_array))
+                    np.array(
+                        [z[valid_combined].ravel(), track_array[valid_combined].ravel()]
+                    ).T,
+                    self.v_processed_mps[valid_combined].ravel(),
+                    (z, track_array),
+                )
 
                 self.u_processed_mps = np.tile(np.nan, self.u_mps.shape)
                 self.u_processed_mps = np.tile(np.nan, self.u_mps.shape)
-                processed_valid_cells = self.estimate_processed_valid_cells(
-                    transect)
-                self.u_processed_mps[processed_valid_cells] = u[
-                    processed_valid_cells]
-                self.v_processed_mps[processed_valid_cells] = v[
-                    processed_valid_cells]
+                processed_valid_cells = self.estimate_processed_valid_cells(transect)
+                self.u_processed_mps[processed_valid_cells] = u[processed_valid_cells]
+                self.v_processed_mps[processed_valid_cells] = v[processed_valid_cells]
 
     def interpolate_cells_trdi(self, transect):
         """Interpolates values for invalid cells using methods similar to
@@ -2348,7 +2592,7 @@ class WaterData(object):
         """
 
         # Set property
-        self.interpolate_cells = 'TRDI'
+        self.interpolate_cells = "TRDI"
 
         # Construct variables
         depths = getattr(transect.depths, transect.depths.selected)
@@ -2364,14 +2608,14 @@ class WaterData(object):
         bot_method = transect.extrap.bot_method
 
         for n in range(n_ens):
-
             # Identify first and last valid depth cell
-            idx = np.where(valid[:, n] == True)[0]
+            idx = np.where(valid[:, n])[0]
             if len(idx) > 0:
                 idx_first = idx[0]
                 idx_last = idx[-1]
-                idx_middle = \
-                    np.where(valid[idx_first:idx_last + 1, n] == False)[0]
+                idx_middle = np.where(
+                    np.logical_not(valid[idx_first : idx_last + 1, n])
+                )[0]
 
                 # For invalid middle depth cells perform interpolation based
                 # on bottom method
@@ -2380,40 +2624,44 @@ class WaterData(object):
                     z_adj[idx_middle, n] = z_all[idx_middle, n]
 
                     # Interpolate velocities using power fit
-                    if bot_method == 'Power':
+                    if bot_method == "Power":
                         # Compute interpolated u-velocities
                         z2 = z[:, n] - (0.5 * cell_size[:, n])
                         z2[nan_less(z2, 0)] = np.nan
-                        coef = ((exponent + 1) * np.nansum(
-                            self.u_processed_mps[:, n] *
-                            cell_size[:, n], 0)) / \
-                               np.nansum(((z[:, n] + 0.5 * cell_size[:,
-                                                           n]) ** (
-                                                      exponent + 1)) - (
-                                                     z2 ** (exponent + 1)), 0)
+                        coef = (
+                            (exponent + 1)
+                            * np.nansum(self.u_processed_mps[:, n] * cell_size[:, n], 0)
+                        ) / np.nansum(
+                            ((z[:, n] + 0.5 * cell_size[:, n]) ** (exponent + 1))
+                            - (z2 ** (exponent + 1)),
+                            0,
+                        )
 
                         temp = coef * z_adj[:, n] ** exponent
                         self.u_processed_mps[idx_middle, n] = temp[idx_middle]
                         # Compute interpolated v-Velocities
-                        coef = ((exponent + 1) * np.nansum(
-                            self.v_processed_mps[:, n] * cell_size[:, n])) / \
-                               np.nansum(((z[:, n] + 0.5 * cell_size[:,
-                                                           n]) ** (
-                                                      exponent + 1)) - (
-                                                     z2 ** (exponent + 1)))
+                        coef = (
+                            (exponent + 1)
+                            * np.nansum(self.v_processed_mps[:, n] * cell_size[:, n])
+                        ) / np.nansum(
+                            ((z[:, n] + 0.5 * cell_size[:, n]) ** (exponent + 1))
+                            - (z2 ** (exponent + 1))
+                        )
                         temp = coef * z_adj[:, n] ** exponent
                         self.v_processed_mps[idx_middle, n] = temp[idx_middle]
 
                     # Interpolate velocities using linear interpolation
-                    elif bot_method == 'No Slip':
+                    elif bot_method == "No Slip":
                         self.u_processed_mps[idx_middle, n] = np.interp(
                             x=cell_depth[idx_middle, n],
                             xp=cell_depth[valid[:, n], n],
-                            fp=self.u_processed_mps[valid[:, n], n])
+                            fp=self.u_processed_mps[valid[:, n], n],
+                        )
                         self.v_processed_mps[idx_middle, n] = np.interp(
                             x=cell_depth[idx_middle, n],
                             xp=cell_depth[valid[:, n], n],
-                            fp=self.v_processed_mps[valid[:, n], n])
+                            fp=self.v_processed_mps[valid[:, n], n],
+                        )
 
     def estimate_processed_valid_cells(self, transect):
         """Estimate the number of valid cells for invalid ensembles.
@@ -2435,26 +2683,23 @@ class WaterData(object):
         n_invalid = len(invalid_ens_idx)
         depth_cell_depth = transect.depths.bt_depths.depth_cell_depth_m
         for n in range(n_invalid):
-
             # Find nearest valid ensembles on either side of invalid ensemble
-            idx1 = np.where(valid_data_sum[:invalid_ens_idx[n]] > 0)[0]
+            idx1 = np.where(valid_data_sum[: invalid_ens_idx[n]] > 0)[0]
             if len(idx1) > 0:
                 idx1 = idx1[-1]
                 # Find the last cell in the neighboring valid ensembles
-                idx1_cell = \
-                np.where(processed_valid_cells[:, idx1] == True)[0][-1]
+                idx1_cell = np.where(processed_valid_cells[:, idx1])[0][-1]
                 # Determine valid cells for invalid ensemble
                 idx1_cell_depth = depth_cell_depth[idx1_cell, idx1]
             else:
                 idx1_cell_depth = 0
 
-            idx2 = np.where(valid_data_sum[invalid_ens_idx[n]:] > 0)[0]
+            idx2 = np.where(valid_data_sum[invalid_ens_idx[n] :] > 0)[0]
             if len(idx2) > 0:
                 idx2 = idx2[0]
                 idx2 = invalid_ens_idx[n] + idx2
                 # Find the last cell in the neighboring valid ensembles
-                idx2_cell = \
-                    np.where(processed_valid_cells[:, idx2] == True)[0][-1]
+                idx2_cell = np.where(processed_valid_cells[:, idx2])[0][-1]
                 # Determine valid cells for invalid ensemble
                 idx2_cell_depth = depth_cell_depth[idx2_cell, idx2]
             else:
@@ -2462,12 +2707,11 @@ class WaterData(object):
 
             cutoff = np.nanmax([idx1_cell_depth, idx2_cell_depth])
             processed_valid_cells[
-                depth_cell_depth[:, invalid_ens_idx[n]] < cutoff,
-                invalid_ens_idx[n]] = True
+                depth_cell_depth[:, invalid_ens_idx[n]] < cutoff, invalid_ens_idx[n]
+            ] = True
 
             # Apply excluded distance
-            processed_valid_cells = \
-                processed_valid_cells * self.valid_data[6, :, :]
+            processed_valid_cells = processed_valid_cells * self.valid_data[6, :, :]
 
         return processed_valid_cells
 
@@ -2475,17 +2719,15 @@ class WaterData(object):
         """Computes the range between the average snr for all beams.
         The average is computed using only data above the side lobe cutoff.
         """
-        if self.rssi_units == 'SNR':
+        if self.rssi_units == "SNR":
             cells_above_sl = np.copy(self.cells_above_sl.astype(float))
             cells_above_sl[cells_above_sl < 0.5] = np.nan
             snr_adjusted = self.rssi * cells_above_sl
             snr_average = np.nanmean(snr_adjusted, 1)
-            self.snr_rng = np.nanmax(snr_average, 0) - np.nanmin(snr_average,
-                                                                 0)
+            self.snr_rng = np.nanmax(snr_average, 0) - np.nanmin(snr_average, 0)
 
     def automated_beam_filter_old(self):
-        """Older version of automatic beam filter. Not currently used.
-        """
+        """Older version of automatic beam filter. Not currently used."""
 
         # Create array indicating which cells do not have 4-beam solutions
         # and all cells below side lobe are nan
@@ -2493,7 +2735,7 @@ class WaterData(object):
         temp.filter_beam(4)
         valid_bool = temp.valid_data[5, :, :]
         valid = valid_bool.astype(float)
-        valid[temp.cells_above_sl == False] = np.nan
+        valid[np.logical_not(temp.cells_above_sl)] = np.nan
 
         # Find cells with 3 beams solutions
         rows_3b, cols_3b = np.where(np.abs(valid) == 0)
@@ -2506,31 +2748,35 @@ class WaterData(object):
             # Use interpolate water velocity of cells with 3 beam solutions
 
             # The following code duplicates Matlab scatteredInterpolant which
-            # seems to only estimate along columns
-            # as long as there is data in the ensemble above and below the
-            # value being estimated.
+            # seems to only estimate along columns as long as there is data in
+            # the ensemble above and below the value being estimated.
             row_numbers = np.linspace(0, valid.shape[0] - 1, valid.shape[0])
             n = 0
             for col in cols_3b:
                 # If the cell has valid data above and below it linearly
                 # interpolate using data in that ensemble.
                 # If not, use other means of interpolation.
-                if np.any(valid_bool[rows_3b[n] + 1::, col]) and np.any(
-                        valid_bool[0:rows_3b[n], col]):
-                    est_u = np.interp(x=rows_3b[n],
-                                      xp=row_numbers[valid_bool[:, col]],
-                                      fp=temp.u_mps[valid_bool[:, col], col])
+                if np.any(valid_bool[rows_3b[n] + 1 : :, col]) and np.any(
+                    valid_bool[0 : rows_3b[n], col]
+                ):
+                    est_u = np.interp(
+                        x=rows_3b[n],
+                        xp=row_numbers[valid_bool[:, col]],
+                        fp=temp.u_mps[valid_bool[:, col], col],
+                    )
 
-                    est_v = np.interp(x=rows_3b[n],
-                                      xp=row_numbers[valid_bool[:, col]],
-                                      fp=temp.v_mps[valid_bool[:, col], col])
+                    est_v = np.interp(
+                        x=rows_3b[n],
+                        xp=row_numbers[valid_bool[:, col]],
+                        fp=temp.v_mps[valid_bool[:, col], col],
+                    )
                 else:
                     est_u = interpolate.griddata(
-                        np.array((valid_rows, valid_cols)).T, valid_u,
-                        (col, rows_3b[n]))
+                        np.array((valid_rows, valid_cols)).T, valid_u, (col, rows_3b[n])
+                    )
                     est_v = interpolate.griddata(
-                        np.array((valid_cols, valid_rows)).T, valid_v,
-                        (col, rows_3b[n]))
+                        np.array((valid_cols, valid_rows)).T, valid_v, (col, rows_3b[n])
+                    )
 
                 u_ratio = (temp.u_mps[rows_3b[n], col] / est_u) - 1
                 v_ratio = (temp.v_mps[rows_3b[n], col] / est_v) - 1
@@ -2546,174 +2792,3 @@ class WaterData(object):
         # Combine all filter data and update processed properties
 
         self.all_valid_data()
-
-    # Code from Aurelien
-    def interpolate_cells_above(self, transect):
-        """Interpolates values for invalid cells using below valid cell
-        Written by Aurelien Despax
-        Modified by dsm
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
-        """
-
-        # Set property
-        self.interpolate_cells = 'Above'
-
-        # Construct variables
-
-        valid = self.valid_data[0]
-        n_cells, n_ens = self.u_processed_mps.shape
-
-        for n in range(n_ens):
-
-            # Identify first and last valid depth cell
-            idx = np.where(valid[:, n] == True)[0]
-            if len(idx) > 0:
-                idx_first = idx[0]
-                idx_last = idx[-1]
-                idx_middle = \
-                np.where(valid[idx_first:idx_last + 1, n] == False)[0]
-
-                # For invalid middle depth cells assign value of shallower
-                # valid depth cell
-                # TODO this assigns the value of the shallowest depth cell
-                #  not the next valid depth cell
-                if len(idx_middle) > 0:
-                    idx_middle = idx_middle + idx_first
-                    self.u_processed_mps[idx_middle, n] = self.u_processed_mps[
-                        idx_first, n]
-                    self.v_processed_mps[idx_middle, n] = self.v_processed_mps[
-                        idx_first, n]
-
-    def interpolate_cells_below(self, transect):
-        """Interpolates values for invalid cells using above valid cell
-        Written by Aurelien Despax
-        Modified by dsm
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
-        """
-
-        # Set property
-        self.interpolate_cells = 'Below'
-
-        # Construct variables
-        valid = self.valid_data[0]
-        n_cells, n_ens = self.u_processed_mps.shape
-
-        for n in range(n_ens):
-
-            # Identify first and last valid depth cell
-            idx = np.where(valid[:, n] == True)[0]
-            if len(idx) > 0:
-                idx_first = idx[0]
-                idx_last = idx[-1]
-                idx_middle = \
-                np.where(valid[idx_first:idx_last + 1, n] == False)[0]
-
-                # For invalid middle depth cells assign the value of the next
-                # deeper valid depth cells
-                # TODO this assigns the value of the shallowest depth cell
-                #  not the next valid depth cell
-                if len(idx_middle) > 0:
-                    idx_middle = idx_middle + idx_first
-                    self.u_processed_mps[idx_middle, n] = self.u_processed_mps[
-                        idx_last, n]
-                    self.v_processed_mps[idx_middle, n] = self.v_processed_mps[
-                        idx_last, n]
-
-    def interpolate_cells_before(self, transect):
-        """Interpolates values for invalid cells using above valid cell
-        Written by Aurelien Despax
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
-        """
-
-        # Set property
-        self.interpolate_cells = 'Before'
-
-        # Construct variables
-        depths = getattr(transect.depths, transect.depths.selected)
-        valid = self.valid_data[0]
-        cell_depth = depths.depth_cell_depth_m
-        z_all = np.subtract(depths.depth_processed_m, cell_depth)
-        z = np.copy(z_all)
-        z[np.isnan(self.u_processed_mps)] = np.nan
-        z_adj = np.tile(np.nan, z.shape)
-        n_cells, n_ens = self.u_processed_mps.shape
-
-        for n in range(n_ens):
-
-            # Identify first and last valid depth cell
-            idx = np.where(valid[:, n] == True)[0]
-            if len(idx) > 0:
-                idx_first = idx[0]
-                idx_last = idx[-1]
-                idx_middle = \
-                np.where(valid[idx_first:idx_last + 1, n] == False)[0]
-
-                # For invalid middle depth cells perform interpolation based
-                # on bottom method
-                if len(idx_middle) > 0:
-                    idx_middle = idx_middle + idx_first
-                    z_adj[idx_middle, n] = z_all[idx_middle, n]
-
-                    # Interpolate velocities using linear interpolation
-                    self.u_processed_mps[idx_middle, n] = self.u_processed_mps[
-                        idx_middle, n - 1]
-                    self.v_processed_mps[idx_middle, n] = self.v_processed_mps[
-                        idx_middle, n - 1]
-
-    def interpolate_cells_after(self, transect):
-        """Interpolates values for invalid cells using above valid cell
-        Written by Aurelien Despax
-
-        Parameters
-        ----------
-        transect: TransectData
-            Object of TransectData
-        """
-
-        # Set property
-        self.interpolate_cells = 'After'
-
-        # Construct variables
-        depths = getattr(transect.depths, transect.depths.selected)
-        valid = self.valid_data[0]
-        cell_depth = depths.depth_cell_depth_m
-        z_all = np.subtract(depths.depth_processed_m, cell_depth)
-        z = np.copy(z_all)
-        z[np.isnan(self.u_processed_mps)] = np.nan
-        z_adj = np.tile(np.nan, z.shape)
-        n_cells, n_ens = self.u_processed_mps.shape
-
-        for n in list(reversed(list(range(n_ens)))):
-
-            # Identify first and last valid depth cell
-            idx = np.where(valid[:, n] == True)[0]
-            if len(idx) > 0:
-                idx_first = idx[0]
-                idx_last = idx[-1]
-                idx_middle = \
-                np.where(valid[idx_first:idx_last + 1, n] == False)[0]
-
-                # For invalid middle depth cells perform interpolation based
-                # on bottom method
-                if len(idx_middle) > 0:
-                    idx_middle = idx_middle + idx_first
-                    z_adj[idx_middle, n] = z_all[idx_middle, n]
-
-                    # Interpolate velocities using linear interpolation
-                    if n_ens > (n + 1):
-                        self.u_processed_mps[idx_middle, n] = \
-                            self.u_processed_mps[idx_middle, n + 1]
-                        self.v_processed_mps[idx_middle, n] = \
-                            self.v_processed_mps[idx_middle, n + 1]

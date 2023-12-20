@@ -28,23 +28,19 @@ class InstrumentData(object):
     """
 
     def __init__(self):
-        """Constructor initializes the variables to None.
-        """
+        """Constructor initializes the variables to None."""
 
-        self.serial_num = None  # Serial number of ADCP
-        self.manufacturer = None  # manufacturer of ADCP (SonTek, TRDI)
-        self.model = None  # model of ADCP (Rio Grande, StreamPro, RiverRay,
-        # M9, S5)
-        self.firmware = None  # firmware version
-        self.frequency_khz = None  # frquency of ADCP (could be "Multi")
-        self.beam_angle_deg = None  # angle of beam from vertical
-        self.beam_pattern = None  # pattern of beams
-        self.t_matrix = None  # object of TransformationMatrix
-        self.configuration_commands = np.array(
-            [])  # configuration commands sent to ADCP
+        self.serial_num = None
+        self.manufacturer = None
+        self.model = None
+        self.firmware = None
+        self.frequency_khz = None
+        self.beam_angle_deg = None
+        self.beam_pattern = None
+        self.t_matrix = None
+        self.configuration_commands = np.array([])
 
-    def populate_data(self, manufacturer, raw_data, mmt_transect=None,
-                      mmt=None):
+    def populate_data(self, manufacturer, raw_data, mmt_transect=None, mmt=None):
         """Manages method calls for different manufacturers.
 
         Parameters
@@ -60,13 +56,13 @@ class InstrumentData(object):
         """
 
         # Process based on manufacturer
-        if manufacturer == 'TRDI':
+        if manufacturer == "TRDI":
             self.manufacturer = manufacturer
             self.trdi(pd0=raw_data, mmt_transect=mmt_transect, mmt=mmt)
-        elif manufacturer == 'SonTek':
+        elif manufacturer == "SonTek":
             self.manufacturer = manufacturer
             self.sontek(rs=raw_data)
-        elif manufacturer == 'Nortek':
+        elif manufacturer == "Nortek":
             self.manufacturer = manufacturer
             self.nortek(rs=raw_data)
 
@@ -94,129 +90,153 @@ class InstrumentData(object):
         self.beam_pattern = pd0.Inst.pat[0]
 
         # Instrument characteristics
-        mmt_site = getattr(mmt, 'site_info')
-        mmt_config = getattr(mmt_transect, 'active_config')
+        mmt_site = getattr(mmt, "site_info")
+        mmt_config = getattr(mmt_transect, "active_config")
 
-        self.serial_num = mmt_site['ADCPSerialNmb']
+        self.serial_num = mmt_site["ADCPSerialNmb"]
+        if len(self.serial_num) == 0:
+            if "RG_Test" in mmt.qaqc:
+                for test in mmt.qaqc["RG_Test"]:
+                    idx = test.find("Serial Number:")
+                    if idx > 0:
+                        idx_end = test[idx::].find("\n")
+                        self.serial_num = test[idx + 15 : idx + idx_end].strip()
+                        break
 
         # Determine TRDI model
         num = float(self.firmware)
         model_switch = np.floor(num)
 
         if model_switch == 10:
-            self.model = 'Rio Grande'
-            if 'Fixed_Commands' in mmt_config.keys():
+            self.model = "Rio Grande"
+            if "Fixed_Commands" in mmt_config.keys():
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands, mmt_config['Fixed_Commands'])
+                    self.configuration_commands, mmt_config["Fixed_Commands"]
+                )
 
         elif model_switch == 31:
-            self.model = 'StreamPro'
+            self.model = "StreamPro"
             self.frequency_khz = 2000
-            if 'Fixed_Commands_StreamPro' in mmt_config.keys():
+            if "Fixed_Commands_StreamPro" in mmt_config.keys():
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands,
-                    mmt_config['Fixed_Commands_StreamPro'])
+                    self.configuration_commands, mmt_config["Fixed_Commands_StreamPro"]
+                )
 
         elif model_switch == 44:
-            self.model = 'RiverRay'
-            if 'Fixed_Commands_RiverRay' in mmt_config.keys():
+            self.model = "RiverRay"
+            if "Fixed_Commands_RiverRay" in mmt_config.keys():
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands,
-                    mmt_config['Fixed_Commands_RiverRay'])
+                    self.configuration_commands, mmt_config["Fixed_Commands_RiverRay"]
+                )
 
         elif model_switch == 56:
-            self.model = 'RiverPro'
+            self.model = "RiverPro"
             if pd0.Cfg.n_beams[0] < 5:
-                if 'RG_Test' in mmt.qaqc.keys():
-                    idx = mmt.qaqc['RG_Test'][0].find('RioPro')
+                if "RG_Test" in mmt.qaqc.keys():
+                    idx = mmt.qaqc["RG_Test"][0].find("RioPro")
                     if idx != -1:
-                        self.model = 'RioPro'
+                        self.model = "RioPro"
+                    else:
+                        self.model = "RiverPro"
+                else:
+                    # Assume RioPro based on number of beams
+                    self.model = "RioPro"
 
-            if 'Fixed_Commands_RiverPro' in mmt_config.keys():
+            if "Fixed_Commands_RiverPro" in mmt_config.keys():
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands,
-                    mmt_config['Fixed_Commands_RiverPro'])
+                    self.configuration_commands, mmt_config["Fixed_Commands_RiverPro"]
+                )
             else:
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands, ' ')
+                    self.configuration_commands, " "
+                )
 
         else:
-            self.model = 'Unknown'
-            if 'Fixed_Commands' in mmt_config.keys():
+            self.model = "Unknown"
+            if "Fixed_Commands" in mmt_config.keys():
                 self.configuration_commands = np.append(
-                    self.configuration_commands, 'Fixed')
+                    self.configuration_commands, "Fixed"
+                )
                 self.configuration_commands = np.append(
-                    self.configuration_commands, mmt_config['Fixed_Commands'])
+                    self.configuration_commands, mmt_config["Fixed_Commands"]
+                )
 
-        if 'Wizard_Commands' in mmt_config.keys():
+        if "Wizard_Commands" in mmt_config.keys():
             self.configuration_commands = np.append(
-                self.configuration_commands, ['Wizard'])
+                self.configuration_commands, ["Wizard"]
+            )
             self.configuration_commands = np.append(
-                self.configuration_commands,
-                mmt_config['Wizard_Commands'])
+                self.configuration_commands, mmt_config["Wizard_Commands"]
+            )
 
-        if 'User_Commands' in mmt_config.keys():
+        if "User_Commands" in mmt_config.keys():
             self.configuration_commands = np.append(
-                self.configuration_commands, ['User'])
+                self.configuration_commands, ["User"]
+            )
             self.configuration_commands = np.append(
-                self.configuration_commands,
-                mmt_config['User_Commands'])
+                self.configuration_commands, mmt_config["User_Commands"]
+            )
 
         # Obtain transformation matrix from one of the available sources
         if not np.isnan(pd0.Inst.t_matrix[0, 0]):
             self.t_matrix = TransformationMatrix()
-            self.t_matrix.populate_data(manufacturer='TRDI', model='pd0',
-                                        data_in=pd0)
-        elif self.model == 'RiverRay':
-            self.t_matrix = TransformationMatrix()
-            self.t_matrix.populate_data(manufacturer='TRDI', model=self.model,
-                                        data_in='Nominal')
+            self.t_matrix.populate_data(manufacturer="TRDI", model="pd0", data_in=pd0)
+        # elif self.model == "RiverRay":
+        #     self.t_matrix = TransformationMatrix()
+        #     self.t_matrix.populate_data(
+        #         manufacturer="TRDI", model=self.model, data_in="Nominal"
+        #     )
         else:
             if isinstance(mmt.qaqc, dict) and len(mmt.qaqc) > 0:
-                if 'RG_Test' in mmt.qaqc.keys():
-
+                if "RG_Test" in mmt.qaqc.keys():
                     self.t_matrix = TransformationMatrix()
-                    self.t_matrix.populate_data(manufacturer='TRDI',
-                                                model=self.model,
-                                                data_in=mmt.qaqc['RG_Test'][0])
+                    self.t_matrix.populate_data(
+                        manufacturer="TRDI",
+                        model=self.model,
+                        data_in=mmt.qaqc["RG_Test"][0],
+                    )
 
-                elif 'Compass_Calibration' in mmt.qaqc.keys():
-
+                elif "Compass_Calibration" in mmt.qaqc.keys():
                     self.t_matrix = TransformationMatrix()
-                    self.t_matrix.populate_data(manufacturer='TRDI',
-                                                model=self.model,
-                                                data_in=mmt.qaqc[
-                                                    'Compass_Calibration'][0])
+                    self.t_matrix.populate_data(
+                        manufacturer="TRDI",
+                        model=self.model,
+                        data_in=mmt.qaqc["Compass_Calibration"][0],
+                    )
 
-                elif 'Compass_Eval_Timestamp' in mmt.qaqc.keys():
-
+                elif "Compass_Eval_Timestamp" in mmt.qaqc.keys():
                     self.t_matrix = TransformationMatrix()
-                    self.t_matrix.populate_data(manufacturer='TRDI',
-                                                model=self.model,
-                                                data_in=
-                                                mmt.qaqc['Compass_Evaluation'][
-                                                    0])
+                    self.t_matrix.populate_data(
+                        manufacturer="TRDI",
+                        model=self.model,
+                        data_in=mmt.qaqc["Compass_Evaluation"][0],
+                    )
 
                 else:
                     self.t_matrix = TransformationMatrix()
-                    self.t_matrix.populate_data(manufacturer='TRDI',
-                                                model=self.model,
-                                                data_in='Nominal')
+                    self.t_matrix.populate_data(
+                        manufacturer="TRDI", model=self.model, data_in="Nominal"
+                    )
             else:
                 self.t_matrix = TransformationMatrix()
-                self.t_matrix.populate_data(manufacturer='TRDI',
-                                            model=self.model,
-                                            data_in='Nominal')
+                self.t_matrix.populate_data(
+                    manufacturer="TRDI", model=self.model, data_in="Nominal"
+                )
 
     def sontek(self, rs):
         """Populates the variables with data from SonTek ADCPs.
@@ -229,59 +249,83 @@ class InstrumentData(object):
         self.serial_num = rs.System.SerialNumber
         self.frequency_khz = rs.Transformation_Matrices.Frequency
         if self.frequency_khz[2] > 0:
-            self.model = 'M9'
-        elif hasattr(rs.WaterTrack, 'Vel_Expected_StdDev'):
-            self.model = 'RS5'
+            self.model = "M9"
+        elif hasattr(rs.WaterTrack, "Vel_Expected_StdDev"):
+            self.model = "RS5"
         else:
-            self.model = 'S5'
-        if hasattr(rs, 'SystemHW'):
+            self.model = "S5"
+        if hasattr(rs, "SystemHW"):
             revision = str(rs.SystemHW.FirmwareRevision)
             if len(revision) < 2:
-                revision = '0' + revision
-            self.firmware = str(rs.SystemHW.FirmwareVersion) + '.' + revision
-        elif self.model == 'RS5':
+                revision = "0" + revision
+            self.firmware = str(rs.SystemHW.FirmwareVersion) + "." + revision
+        elif self.model == "RS5":
             try:
                 self.firmware = str(rs.System.FirmwareVersion)
             except BaseException:
-                self.firmware = ''
+                self.firmware = ""
         else:
-            self.firmware = ''
+            self.firmware = ""
         self.beam_angle_deg = 25
-        self.beam_pattern = 'Convex'
+        self.beam_pattern = "Convex"
         self.t_matrix = TransformationMatrix()
-        self.t_matrix.populate_data('SonTek',
-                                    data_in=rs.Transformation_Matrices.Matrix)
+        self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
     def nortek(self, rs):
+        """Populates the variables with data from Nortek ADCPs.
+
+        Parameters
+        ----------
+        rs: MatSonTek
+        """
+
         self.serial_num = rs.System.SerialNumber
         self.frequency_khz = rs.Transformation_Matrices.Frequency
         self.model = rs.System.InstrumentModel
-        if hasattr(rs, 'SystemHW'):
+        if hasattr(rs, "SystemHW"):
             revision = str(rs.SystemHW.FirmwareRevision)
             if len(revision) < 2:
-                revision = '0' + revision
-            self.firmware = str(rs.SystemHW.FirmwareVersion) + '.' + revision
+                revision = "0" + revision
+            self.firmware = str(rs.SystemHW.FirmwareVersion) + "." + revision
         else:
-            self.firmware = ''
+            self.firmware = ""
         self.beam_angle_deg = 25
-        self.beam_pattern = 'Convex'
+        self.beam_pattern = "Convex"
         self.t_matrix = TransformationMatrix()
-        self.t_matrix.populate_data('SonTek',
-                                    data_in=rs.Transformation_Matrices.Matrix)
+        self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
-    def populate_from_qrev_mat(self, transect):
+    def populate_from_qrev_mat(self, transect, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
-        file.
+         file.
 
-        Parameters
-       ----------
-       transect: mat_struct
-           Matlab data structure obtained from sio.loadmat
-       """
-
+         Parameters
+        ----------
+        transect: mat_struct
+            Matlab data structure obtained from sio.loadmat
+        """
         self.serial_num = str(transect.adcp.serialNum)
+        if self.serial_num == "[]":
+            self.serial_num = ""
+            if hasattr(meas_struct, "sysTest"):
+                if type(meas_struct.sysTest) == np.ndarray:
+                    for test in meas_struct.sysTest:
+                        idx = test.data.find("Serial Number:")
+                        if idx > 0:
+                            idx_end = test.data[idx::].find("\n")
+                            self.serial_num = test.data[
+                                idx + 15 : idx + idx_end
+                            ].strip()
+                            break
+                else:
+                    idx = meas_struct.sysTest.data.find("Serial Number:")
+                    if idx > 0:
+                        idx_end = meas_struct.sysTest.data[idx::].find("\n")
+                        self.serial_num = meas_struct.sysTest.data[
+                            idx + 15 : idx + idx_end
+                        ].strip()
+
         self.manufacturer = transect.adcp.manufacturer
         self.model = transect.adcp.model
         self.firmware = transect.adcp.firmware

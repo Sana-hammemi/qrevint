@@ -27,8 +27,12 @@ class UMeasQ(object):
         self.fig = canvas.fig
         self.hover_connection = None
         self.annot = None
-        self.col_labels = {'water':'Water', 'boat':'Boat', 'depth':'Depth',
-                           'dzi':'Cell Size'}
+        self.col_labels = {
+            "water": "Water",
+            "boat": "Boat",
+            "depth": "Depth",
+            "dzi": "Cell Size",
+        }
         self.plot_df = None
         self.plot_df_cumsum = None
 
@@ -51,7 +55,7 @@ class UMeasQ(object):
         self.plot_df = oursin.u_contribution_meas * 100
 
         # Create dataframe for data cursor
-        self.plot_df_cumsum = self.plot_df.cumsum(axis='columns')
+        self.plot_df_cumsum = self.plot_df.cumsum(axis="columns")
 
         # Create x tick labels
         x_tick_labels = []
@@ -59,35 +63,41 @@ class UMeasQ(object):
             x_tick_labels.append(str(n))
 
         # Create legend labels
-        custom_labels = ['Boat', 'Water', 'Cell Size']
+        custom_labels = ["Boat", "Water", "Cell Size"]
 
-        self.plot_df.plot(kind='bar', stacked=True, ax=self.fig.ax,
-                          legend=False)
+        self.plot_df.plot(kind="bar", stacked=True, ax=self.fig.ax, legend=False)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.01, bottom=0.01, right=0.95, top=0.99,
-                                 wspace=0, hspace=0)
-        self.fig.ax.set_ylabel(self.canvas.tr(
-            'Percent of Measured Q Uncertainty'))
-        self.fig.ax.set_xlabel(self.canvas.tr('Transects'))
-        self.fig.ax.set_xticklabels(x_tick_labels, rotation='horizontal',
-                                    fontsize=12)
+        self.fig.subplots_adjust(
+            left=0.01, bottom=0.01, right=0.95, top=0.99, wspace=0, hspace=0
+        )
+        self.fig.ax.set_ylabel(self.canvas.tr("Percent of Measured Q Uncertainty"))
+        self.fig.ax.set_xlabel(self.canvas.tr("Transects"))
+        self.fig.ax.set_xticklabels(x_tick_labels, rotation="horizontal", fontsize=12)
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
-        self.fig.ax.tick_params(axis='both', direction='in', bottom=True,
-                                top=True, left=True, right=True)
+        self.fig.ax.tick_params(
+            axis="both", direction="in", bottom=True, top=True, left=True, right=True
+        )
 
         # Reverse legend to match stacked bars
         handles, labels = self.fig.ax.get_legend_handles_labels()
-        self.fig.ax.legend(reversed(handles), reversed(custom_labels),
-                           fontsize=12, loc='center left',
-                           bbox_to_anchor=(1, 0.5))
+        self.fig.ax.legend(
+            reversed(handles),
+            reversed(custom_labels),
+            fontsize=12,
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+        )
 
-        self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20),
-                                          textcoords="offset points",
-                                              bbox=dict(boxstyle="round",
-                                                        fc="w"),
-                                              arrowprops=dict(arrowstyle="->"))
+        self.annot = self.fig.ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(-20, 20),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="w"),
+            arrowprops=dict(arrowstyle="->"),
+        )
 
         self.annot.set_visible(False)
 
@@ -111,33 +121,46 @@ class UMeasQ(object):
         pos = [event.xdata, event.ydata]
 
         # Shift annotation box left or right depending on which half of the
-        # axis the pos x is located and the
-        # direction of x increasing.
+        # axis the pos x is located and the direction of x increasing.
         if self.fig.ax.viewLim.intervalx[0] < self.fig.ax.viewLim.intervalx[1]:
-            if pos[0] < (self.fig.ax.viewLim.intervalx[0] +
-                         self.fig.ax.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (self.fig.ax.viewLim.intervalx[0] + self.fig.ax.viewLim.intervalx[1])
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (self.fig.ax.axes.viewLim.intervalx[0] +
-                         self.fig.ax.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (
+                    self.fig.ax.axes.viewLim.intervalx[0]
+                    + self.fig.ax.viewLim.intervalx[1]
+                )
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
 
         # Shift annotation box up or down depending on which half of the
-        # axis the pos y is located and the
-        # direction of y increasing.
+        # axis the pos y is located and the direction of y increasing.
         if self.fig.ax.viewLim.intervaly[0] < self.fig.ax.viewLim.intervaly[1]:
-            if pos[1] > (self.fig.ax.viewLim.intervaly[0] +
-                         self.fig.ax.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (self.fig.ax.viewLim.intervaly[0] + self.fig.ax.viewLim.intervaly[1])
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (self.fig.ax.viewLim.intervaly[0] +
-                         self.fig.ax.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (self.fig.ax.viewLim.intervaly[0] + self.fig.ax.viewLim.intervaly[1])
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
@@ -145,14 +168,13 @@ class UMeasQ(object):
         self.annot.xy = pos
 
         # Format and display text
-        text = '{}: {:2.2f}'.format(self.col_labels[col_name], u_value)
+        text = "{}: {:2.2f}".format(self.col_labels[col_name], u_value)
         self.annot.set_text(text)
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
         annotation visible and calls method to update the text of the
-        annotation. If the
-        location is not valid the existing annotation is hidden.
+        annotation. If the location is not valid the existing annotation is hidden.
 
         Parameters
         ----------
@@ -194,7 +216,8 @@ class UMeasQ(object):
 
         if setting and self.hover_connection is None:
             self.hover_connection = self.canvas.mpl_connect(
-                'button_press_event', self.hover)
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None

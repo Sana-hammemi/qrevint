@@ -7,27 +7,27 @@ import utm
 
 from Classes.BoatStructure import BoatStructure
 
-#ToDo: Add stats to show variability between transects ie Area and
+# ToDo: Add stats to show variability between transects ie Area and
 # mean depth variance.
 
 
 class CrossSectionComp(object):
     """Creates average cross-section.
 
-        Attributes
-        ----------
-            cross_section: list
-                list of transect cross-sections stored as np.arrays.
-            checked_idx: np.array
-                Array of checked transect indices
-            gps: bool
-                True is GPS data available
-            rec_spacing: float
-                Recommended spacing for horizontal cross-section
-            unproj_xs: list of np.array
-                List of unprojected cross-sections
+    Attributes
+    ----------
+        cross_section: list
+            list of transect cross-sections stored as np.arrays.
+        checked_idx: np.array
+            Array of checked transect indices
+        gps: bool
+            True is GPS data available
+        rec_spacing: float
+            Recommended spacing for horizontal cross-section
+        unproj_xs: list of np.array
+            List of unprojected cross-sections
 
-            """
+    """
 
     def __init__(self, transects, path=None):
         """Initiate attributes"""
@@ -72,32 +72,25 @@ class CrossSectionComp(object):
 
         # Process each transect
         for n, transect in enumerate(transects):
-
             if transect.checked:
-
                 # self.checked_idx = np.append(checked_idx, n)
                 self.checked_idx.append(n)
 
                 # Compute boat track properties
                 boat_track = BoatStructure.compute_boat_track(transect)
 
-                if np.logical_not(np.all(np.isnan(boat_track['track_x_m']))):
-
+                if np.logical_not(np.all(np.isnan(boat_track["track_x_m"]))):
                     # get x/y boat track data
-                    unit_x = boat_track['track_x_m']
-                    unit_y = boat_track['track_y_m']
+                    unit_x = boat_track["track_x_m"]
+                    unit_y = boat_track["track_y_m"]
 
                     # if the start bank is right then flip the x/y coords.
-                    if transect.start_edge == 'Right':
-                        unit_x = (np.amax(unit_x) - unit_x -
-                                  (0-np.amin(unit_x))) * -1
-                        unit_y = (np.amax(unit_y) - unit_y -
-                                  (0-np.amin(unit_y))) * -1
-                        edge = [transect.start_edge,
-                                transect.edges.left.distance_m]
+                    if transect.start_edge == "Right":
+                        unit_x = (np.amax(unit_x) - unit_x - (0 - np.amin(unit_x))) * -1
+                        unit_y = (np.amax(unit_y) - unit_y - (0 - np.amin(unit_y))) * -1
+                        edge = [transect.start_edge, transect.edges.left.distance_m]
                     else:
-                        edge = [transect.start_edge,
-                                transect.edges.left.distance_m]
+                        edge = [transect.start_edge, transect.edges.left.distance_m]
 
                     start_edge.append(edge)
                     x_list.append(unit_x)
@@ -111,8 +104,8 @@ class CrossSectionComp(object):
                     depth_list.append(depth_a)
 
                     # pull GPS coords if available. If not fill with NANs
-                    if hasattr(transect.gps, 'gga_lon_ens_deg'):
-                        if transect.boat_vel.selected == 'vtg_vel' or 'gga_vel':
+                    if hasattr(transect.gps, "gga_lon_ens_deg"):
+                        if transect.boat_vel.selected == "vtg_vel" or "gga_vel":
                             try:
                                 lon = transect.gps.gga_lon_ens_deg
                                 lat = transect.gps.gga_lat_ens_deg
@@ -163,28 +156,37 @@ class CrossSectionComp(object):
                         lon_list.append(lon)
                         lat_list.append(lat)
 
-                    unprojected_xs = \
-                        np.array([lon, lat, unit_x, unit_y, depth_a]).T
+                    unprojected_xs = np.array([lon, lat, unit_x, unit_y, depth_a]).T
                     self.unproj_xs.append(unprojected_xs)
 
         if self.gps is True:
-            lon_list, lat_list, gps_slope, gps_intercept = \
-                self.create_projected_cross_section(lon_list, lat_list)
+            (
+                lon_list,
+                lat_list,
+                gps_slope,
+                gps_intercept,
+            ) = self.create_projected_cross_section(lon_list, lat_list)
 
-        x_list, y_list, xy_slope, xy_intercept = \
-            self.create_projected_cross_section(x_list, y_list)
+        x_list, y_list, xy_slope, xy_intercept = self.create_projected_cross_section(
+            x_list, y_list
+        )
 
-        x_list, y_list = self.adjust_xy_distances(x_list, y_list, xy_slope,
-                                                  start_edge)
+        x_list, y_list = self.adjust_xy_distances(x_list, y_list, xy_slope, start_edge)
 
         for xs in range(len(x_list)):
-
             station = np.sqrt(x_list[xs] ** 2 + y_list[xs] ** 2)
             station_list.append(station)
 
-            xs = np.array([lon_list[xs], lat_list[xs],
-                           x_list[xs], y_list[xs],
-                           station_list[xs], depth_list[xs]]).T
+            xs = np.array(
+                [
+                    lon_list[xs],
+                    lat_list[xs],
+                    x_list[xs],
+                    y_list[xs],
+                    station_list[xs],
+                    depth_list[xs],
+                ]
+            ).T
 
             self.cross_section.append(xs)
 
@@ -197,7 +199,6 @@ class CrossSectionComp(object):
 
     @staticmethod
     def create_empty_gps(unit_x):
-
         array_size = unit_x.shape
         lon = np.empty(array_size)
         lon[:] = np.nan
@@ -258,21 +259,20 @@ class CrossSectionComp(object):
             # predict_function = np.poly1d(model)
 
             # slope and intercept in terms of x
-            slope = 1/model[0]
-            intercept = -model[1]/model[0]
+            slope = 1 / model[0]
+            intercept = -model[1] / model[0]
 
         # map the ensembles to the mean cross-section line
         projected_x_list = []
         projected_y_list = []
         for transect in range(len(x_list)):
+            projected_x = (
+                x_list[transect] - (slope * intercept) + (slope * y_list[transect])
+            ) / (slope**2 + 1)
 
-            projected_x = \
-                ((x_list[transect] - (slope * intercept) + (slope *
-                  y_list[transect])) / (slope ** 2 + 1))
-
-            projected_y = \
-                ((intercept + (slope * x_list[transect]) + (slope**2 *
-                  y_list[transect])) / (slope ** 2 + 1))
+            projected_y = (
+                intercept + (slope * x_list[transect]) + (slope**2 * y_list[transect])
+            ) / (slope**2 + 1)
 
             projected_x_list.append(projected_x)
             projected_y_list.append(projected_y)
@@ -305,9 +305,8 @@ class CrossSectionComp(object):
         projected_x_list = []
         projected_y_list = []
         for transect in range(len(x_list)):
-
             # adjust the x/y lists using the left edge distance
-            if start_edge[transect][0] == 'Left':
+            if start_edge[transect][0] == "Left":
                 dist_x = start_edge[transect][1] * (math.cos(theta))
                 dist_y = start_edge[transect][1] * (math.sin(theta))
                 projected_x = x_list[transect] - dist_x
@@ -356,8 +355,7 @@ class CrossSectionComp(object):
 
         return x_array, y_array
 
-    def average_cross_section(self, cross_section,
-                              hor_spacing='Auto'):
+    def average_cross_section(self, cross_section, hor_spacing="Auto"):
         """Compute average cross-section.
 
         Parameters
@@ -384,13 +382,11 @@ class CrossSectionComp(object):
 
         # find max and min for the all transects to create mean xs
         for transect in cross_section:
-            trans_end = np.max(np.array(transect[:, 4], dtype='f'), axis=0)
-            trans_end_idx = np.argmax(np.array(transect[:, 4], dtype='f'),
-                                      axis=0)
+            trans_end = np.max(np.array(transect[:, 4], dtype="f"), axis=0)
+            trans_end_idx = np.argmax(np.array(transect[:, 4], dtype="f"), axis=0)
 
-            trans_start = np.min(np.array(transect[:, 4], dtype='f'), axis=0)
-            trans_start_idx = np.argmin(np.array(transect[:, 4], dtype='f'),
-                                        axis=0)
+            trans_start = np.min(np.array(transect[:, 4], dtype="f"), axis=0)
+            trans_start_idx = np.argmin(np.array(transect[:, 4], dtype="f"), axis=0)
 
             lat_start_lst.append(transect[:, 1][trans_start_idx])
             lon_start_lst.append(transect[:, 0][trans_start_idx])
@@ -413,7 +409,7 @@ class CrossSectionComp(object):
         lon_end = lon_end_lst[idx]
 
         # set horizontal spacing. Default to 0.1m for xs widths > 10m.
-        if hor_spacing == 'Auto':
+        if hor_spacing == "Auto":
             spacing = self.rec_spacing
         else:
             spacing = hor_spacing
@@ -435,15 +431,13 @@ class CrossSectionComp(object):
             lat_array = np.linspace(lat_start, lat_end, num_pnts)
 
         for transect in cross_section:
-
             # sort and separate individual arrays and set d-type.
-            sort_array = \
-                transect[transect[:, 4].argsort()].copy()
+            sort_array = transect[transect[:, 4].argsort()].copy()
 
-            station_array = np.array(sort_array[:, 4], dtype='f')
-            depth_array = np.array(sort_array[:, 5], dtype='f')
-            x_array = np.array(sort_array[:, 2], dtype='f')
-            y_array = np.array(sort_array[:, 3], dtype='f')
+            station_array = np.array(sort_array[:, 4], dtype="f")
+            depth_array = np.array(sort_array[:, 5], dtype="f")
+            x_array = np.array(sort_array[:, 2], dtype="f")
+            y_array = np.array(sort_array[:, 3], dtype="f")
 
             # get index for stations outside current transect
             station_max = station_array.max()
@@ -452,8 +446,7 @@ class CrossSectionComp(object):
             less = np.argwhere(station_line <= station_min)
 
             # Create stationing for transect
-            one_m_station = np.interp(station_line, station_array,
-                                      station_array)
+            one_m_station = np.interp(station_line, station_array, station_array)
 
             # create array of intervals and interpolate x/y and depth
             new_x = np.interp(one_m_station, station_array, x_array)
@@ -477,9 +470,9 @@ class CrossSectionComp(object):
             depth_list.append(new_depth)
 
         # create new arrays from list of arrays for each element
-        x_array = np.array(x_list, dtype='f')
-        y_array = np.array(y_list, dtype='f')
-        depth_array = np.array(depth_list, dtype='f')
+        x_array = np.array(x_list, dtype="f")
+        y_array = np.array(y_list, dtype="f")
+        depth_array = np.array(depth_list, dtype="f")
 
         # create mean array of each element
         depth_avg = np.nanmean(depth_array, axis=0)
@@ -487,8 +480,9 @@ class CrossSectionComp(object):
         y_avg = np.nanmean(y_array, axis=0)
 
         # create new array
-        average_cs = np.array([lon_array, lat_array, x_avg,
-                               y_avg, station_line, depth_avg]).T
+        average_cs = np.array(
+            [lon_array, lat_array, x_avg, y_avg, station_line, depth_avg]
+        ).T
 
         return average_cs
 
@@ -523,17 +517,15 @@ class CrossSectionComp(object):
         """
         # Todo add comment lines at the top of the file for metadata.
         for n in range(len(self.cross_section)):
-
             if n == (len(self.cross_section) - 1):
-                f_name = 'cross_section_mean'
+                f_name = "cross_section_mean"
             else:
-                f_name = 'transect_' + str(self.checked_idx[n])
+                f_name = "transect_" + str(self.checked_idx[n])
 
-            path = file_name[:-8] + f_name + '_QRev' + '.csv'
+            path = file_name[:-8] + f_name + "_QRev" + ".csv"
             path = os.path.join(os.getcwd(), path)
 
-            np.savetxt(path, self.cross_section[n], delimiter=',',
-                       fmt='%s')
+            np.savetxt(path, self.cross_section[n], delimiter=",", fmt="%s")
 
     def export_plots(self, file_name):
         """Exports PDF file of cross-section plots. This method is used for
@@ -555,18 +547,19 @@ class CrossSectionComp(object):
             for index, xs in enumerate(self.cross_section[:-1]):
                 survey = xs.T
 
-                ax_1.plot(survey[2], survey[3], '.', label=index)
+                ax_1.plot(survey[2], survey[3], ".", label=index)
 
-            ax_1.plot(mean_survey[2], mean_survey[3],
-                      '.', label='Projected Cross-Section')
+            ax_1.plot(
+                mean_survey[2], mean_survey[3], ".", label="Projected Cross-Section"
+            )
 
             # set axis labels and legend
-            ax_1.set_xlabel('X')
-            ax_1.set_ylabel('Y')
+            ax_1.set_xlabel("X")
+            ax_1.set_ylabel("Y")
             ax_1.legend()
 
             # save plot to PDF
-            path = file_name[:-8] + 'plots' + '_QRev' + '.pdf'
+            path = file_name[:-8] + "plots" + "_QRev" + ".pdf"
             path = os.path.join(os.getcwd(), path)
             fig.savefig(path)
 
@@ -581,17 +574,18 @@ class CrossSectionComp(object):
             for index, xs in enumerate(self.cross_section[:-1]):
                 survey = xs.T
 
-                ax_2.plot(survey[4], survey[5], '-', label=index)
+                ax_2.plot(survey[4], survey[5], "-", label=index)
 
-            ax_2.plot(mean_survey[4], mean_survey[5],
-                      '-', label='Average Cross-Section')
+            ax_2.plot(
+                mean_survey[4], mean_survey[5], "-", label="Average Cross-Section"
+            )
 
-            ax_2.set_xlabel('Station')
-            ax_2.set_ylabel('Depth')
+            ax_2.set_xlabel("Station")
+            ax_2.set_ylabel("Depth")
             ax_2.invert_yaxis()
             ax_2.legend()
 
-            path_2 = file_name[:-8] + 'plots_2' + '_QRev' + '.pdf'
+            path_2 = file_name[:-8] + "plots_2" + "_QRev" + ".pdf"
             path_2 = os.path.join(os.getcwd(), path_2)
             fig_2.savefig(path_2)
 
@@ -606,16 +600,17 @@ class CrossSectionComp(object):
             for index, xs in enumerate(self.cross_section[:-1]):
                 survey = xs.T
 
-                ax_3.plot(survey[0], survey[1], '.', label=index)
+                ax_3.plot(survey[0], survey[1], ".", label=index)
 
-            ax_3.plot(mean_survey[0], mean_survey[1],
-                      '.', label='Projected Cross-Section')
+            ax_3.plot(
+                mean_survey[0], mean_survey[1], ".", label="Projected Cross-Section"
+            )
 
-            ax_3.set_xlabel('Long UTM')
-            ax_3.set_ylabel('Lat UTM')
+            ax_3.set_xlabel("Long UTM")
+            ax_3.set_ylabel("Lat UTM")
             ax_3.legend()
 
-            path_3 = file_name[:-8] + 'plots_3' + '_QRev' + '.pdf'
+            path_3 = file_name[:-8] + "plots_3" + "_QRev" + ".pdf"
             path_3 = os.path.join(os.getcwd(), path_3)
             fig_3.savefig(path_3)
 
@@ -629,19 +624,20 @@ class CrossSectionComp(object):
             for index, xs in enumerate(self.unproj_xs):
                 survey = xs.T
 
-                ax_4.plot(survey[2], survey[3], '-', label=index)
+                ax_4.plot(survey[2], survey[3], "-", label=index)
 
-            ax_4.plot(mean_survey[2], mean_survey[3],
-                      '-', label='Projected Cross-Section')
+            ax_4.plot(
+                mean_survey[2], mean_survey[3], "-", label="Projected Cross-Section"
+            )
 
-            ax_4.set_xlabel('X')
-            ax_4.set_ylabel('Y')
+            ax_4.set_xlabel("X")
+            ax_4.set_ylabel("Y")
             ax_4.legend()
 
-            path_4 = file_name[:-8] + 'plots_4' + '_QRev' + '.pdf'
+            path_4 = file_name[:-8] + "plots_4" + "_QRev" + ".pdf"
             path_4 = os.path.join(os.getcwd(), path_4)
             fig_4.savefig(path_4)
-            
+
         except BaseException:
             pass
 
@@ -652,17 +648,17 @@ class CrossSectionComp(object):
             for index, xs in enumerate(self.unproj_xs):
                 survey = xs.T
 
-                ax_5.plot(survey[0], survey[1],
-                          '-', label=index)
+                ax_5.plot(survey[0], survey[1], "-", label=index)
 
-            ax_5.plot(mean_survey[0], mean_survey[1],
-                      '-', label='Projected Cross-Section')
+            ax_5.plot(
+                mean_survey[0], mean_survey[1], "-", label="Projected Cross-Section"
+            )
 
-            ax_5.set_xlabel('Long UTM')
-            ax_5.set_ylabel('Lat UTM')
+            ax_5.set_xlabel("Long UTM")
+            ax_5.set_ylabel("Lat UTM")
             ax_5.legend()
 
-            path_5 = file_name[:-8] + 'plots_5' + '_QRev' + '.pdf'
+            path_5 = file_name[:-8] + "plots_5" + "_QRev" + ".pdf"
             path_5 = os.path.join(os.getcwd(), path_5)
             fig_5.savefig(path_5)
 

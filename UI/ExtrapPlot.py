@@ -38,11 +38,22 @@ class ExtrapPlot(object):
         self.hover_connection = None
         self.annot = None
 
-    def create(self, meas, checked, idx=-1, data_type='Discharge',
-               cb_data=True, cb_surface=False,
-               cb_trans_medians=False, cb_trans_fit=False,
-               cb_meas_medians=True, cb_meas_fit=True, auto=False):
-        """Creates figure for extrapolation plot and calls associated methods to added data to the axes.
+    def create(
+        self,
+        meas,
+        checked,
+        idx=-1,
+        data_type="Discharge",
+        cb_data=True,
+        cb_surface=False,
+        cb_trans_medians=False,
+        cb_trans_fit=False,
+        cb_meas_medians=True,
+        cb_meas_fit=True,
+        auto=False,
+    ):
+        """Creates figure for extrapolation plot and calls associated methods to
+        added data to the axes.
 
         Parameters
         ----------
@@ -82,11 +93,12 @@ class ExtrapPlot(object):
         self.fig.ax = self.fig.add_subplot(111)
 
         # Set margins and padding for figure
-        self.fig.subplots_adjust(left=0.13, bottom=0.1, right=0.98, top=0.98, wspace=0.1, hspace=0)
+        self.fig.subplots_adjust(
+            left=0.13, bottom=0.1, right=0.98, top=0.98, wspace=0.1, hspace=0
+        )
 
         # If valid data exist create graph
         if np.any(np.logical_not(np.isnan(extrap_fit.norm_data[-1].unit_normalized))):
-
             # Show all normalized data
             if cb_data:
                 self.extrap_plot_data(extrap_fit.norm_data[idx])
@@ -118,22 +130,45 @@ class ExtrapPlot(object):
                 self.extrap_plot_fit(extrap_fit.sel_fit[-1], -1, auto)
 
             # Configure axes
-            if data_type == 'Discharge':
-                self.fig.ax.set_xlabel(self.canvas.tr('Normalized Unit Q '))
+            if data_type == "Discharge":
+                self.fig.ax.set_xlabel(self.canvas.tr("Normalized Unit Q "))
             else:
-                self.fig.ax.set_xlabel(self.canvas.tr('Normalized Velocity'))
-            self.fig.ax.set_ylabel(self.canvas.tr('Normalized Z '))
+                self.fig.ax.set_xlabel(self.canvas.tr("Normalized Velocity"))
+            self.fig.ax.set_ylabel(self.canvas.tr("Normalized Z "))
             self.fig.ax.xaxis.label.set_fontsize(10)
             self.fig.ax.yaxis.label.set_fontsize(10)
-            self.fig.ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+            self.fig.ax.tick_params(
+                axis="both",
+                direction="in",
+                bottom=True,
+                top=True,
+                left=True,
+                right=True,
+            )
             self.fig.ax.grid()
-            for label in (self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels()):
+            for label in self.fig.ax.get_xticklabels() + self.fig.ax.get_yticklabels():
                 label.set_fontsize(10)
 
+            # Display the use weighted setting on the figure
+            if meas.extrap_fit.norm_data[-1].use_weighted:
+                self.fig.ax.text(0.1, 0.95, "Q Weighted = True", fontweight="bold")
+            else:
+                self.fig.ax.text(0.1, 0.95, "Q Weighted = False", fontweight="bold")
+
             # Scale axes
-            if np.any(np.logical_not(np.isnan(extrap_fit.norm_data[idx].unit_normalized))):
-                min_avg = np.nanmin(extrap_fit.norm_data[idx].unit_normalized_25[extrap_fit.norm_data[idx].valid_data])
-                max_avg = np.nanmax(extrap_fit.norm_data[idx].unit_normalized_75[extrap_fit.norm_data[idx].valid_data])
+            if np.any(
+                np.logical_not(np.isnan(extrap_fit.norm_data[idx].unit_normalized))
+            ):
+                min_avg = np.nanmin(
+                    extrap_fit.norm_data[idx].unit_normalized_25[
+                        extrap_fit.norm_data[idx].valid_data
+                    ]
+                )
+                max_avg = np.nanmax(
+                    extrap_fit.norm_data[idx].unit_normalized_75[
+                        extrap_fit.norm_data[idx].valid_data
+                    ]
+                )
             else:
                 min_avg = np.nan
                 max_avg = np.nan
@@ -157,9 +192,14 @@ class ExtrapPlot(object):
             self.fig.ax.set_xlim(left=lower, right=upper)
 
             # Initialize annotation for data cursor
-            self.annot = self.fig.ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
-                                              bbox=dict(boxstyle="round", fc="w"),
-                                              arrowprops=dict(arrowstyle="->"))
+            self.annot = self.fig.ax.annotate(
+                "",
+                xy=(0, 0),
+                xytext=(-20, 20),
+                textcoords="offset points",
+                bbox=dict(boxstyle="round", fc="w"),
+                arrowprops=dict(arrowstyle="->"),
+            )
 
             self.annot.set_visible(False)
 
@@ -178,70 +218,111 @@ class ExtrapPlot(object):
 
         # If norm_data is a list is contains data from multiple transects
         if type(norm_data) is list:
-
             # Plot all transects
             for idx in self.checked:
-
                 # All median values in red
-                self.fig.ax.plot(norm_data[idx].unit_normalized_med, norm_data[idx].unit_normalized_z, 'rs',
-                                 markerfacecolor='red', linestyle='None')
+                self.fig.ax.plot(
+                    norm_data[idx].unit_normalized_med,
+                    norm_data[idx].unit_normalized_z,
+                    "rs",
+                    markerfacecolor="red",
+                    linestyle="None",
+                )
 
                 # All error bars in red
                 for n in range(len(norm_data[idx].unit_normalized_25)):
-                    self.fig.ax.plot([norm_data[idx].unit_normalized_25[n], norm_data[idx].unit_normalized_75[n]],
-                                     [norm_data[idx].unit_normalized_z[n], norm_data[idx].unit_normalized_z[n]],
-                                     '-r')
+                    self.fig.ax.plot(
+                        [
+                            norm_data[idx].unit_normalized_25[n],
+                            norm_data[idx].unit_normalized_75[n],
+                        ],
+                        [
+                            norm_data[idx].unit_normalized_z[n],
+                            norm_data[idx].unit_normalized_z[n],
+                        ],
+                        "-r",
+                    )
 
                 # Color valid transect data by start bank
-                if self.meas.transects[idx].start_edge == 'Left':
-                    line_color = '#ff00ff'
+                if self.meas.transects[idx].start_edge == "Left":
+                    line_color = "#ff00ff"
                 else:
-                    line_color = 'b'
+                    line_color = "b"
 
                 # Valid median values
-                self.fig.ax.plot(norm_data[idx].unit_normalized_med[norm_data[idx].valid_data],
-                                 norm_data[idx].unit_normalized_z[norm_data[idx].valid_data],
-                                 marker='s', color=line_color, markerfacecolor=line_color,
-                                 linestyle='None')
+                self.fig.ax.plot(
+                    norm_data[idx].unit_normalized_med[norm_data[idx].valid_data],
+                    norm_data[idx].unit_normalized_z[norm_data[idx].valid_data],
+                    marker="s",
+                    color=line_color,
+                    markerfacecolor=line_color,
+                    linestyle="None",
+                )
 
                 # Valid error bars
                 for n in norm_data[idx].valid_data:
-                    self.fig.ax.plot([norm_data[idx].unit_normalized_25[n], norm_data[idx].unit_normalized_75[n]],
-                                     [norm_data[idx].unit_normalized_z[n], norm_data[idx].unit_normalized_z[n]],
-                                     color=line_color)
+                    self.fig.ax.plot(
+                        [
+                            norm_data[idx].unit_normalized_25[n],
+                            norm_data[idx].unit_normalized_75[n],
+                        ],
+                        [
+                            norm_data[idx].unit_normalized_z[n],
+                            norm_data[idx].unit_normalized_z[n],
+                        ],
+                        color=line_color,
+                    )
 
         # Data for only 1 transect of the composite measurement
         else:
-
             # If composite measurement the color is black otherwise use start bank
             if idx == -1:
-                line_color = 'k'
-            elif self.meas.transects[idx].start_edge == 'Left':
-                line_color = '#ff00ff'
+                line_color = "k"
+            elif self.meas.transects[idx].start_edge == "Left":
+                line_color = "#ff00ff"
             else:
-                line_color = 'b'
+                line_color = "b"
 
             # All median values in red
-            self.fig.ax.plot(norm_data.unit_normalized_med, norm_data.unit_normalized_z, 'rs',
-                             markerfacecolor='red', linestyle='None')
+            self.fig.ax.plot(
+                norm_data.unit_normalized_med,
+                norm_data.unit_normalized_z,
+                "rs",
+                markerfacecolor="red",
+                linestyle="None",
+            )
 
             # All error bars in red
             for n in range(len(norm_data.unit_normalized_25)):
-                self.fig.ax.plot([norm_data.unit_normalized_25[n], norm_data.unit_normalized_75[n]],
-                                 [norm_data.unit_normalized_z[n], norm_data.unit_normalized_z[n]],
-                                 'r-')
+                self.fig.ax.plot(
+                    [norm_data.unit_normalized_25[n], norm_data.unit_normalized_75[n]],
+                    [norm_data.unit_normalized_z[n], norm_data.unit_normalized_z[n]],
+                    "r-",
+                )
 
             # Valid median values
-            self.fig.ax.plot(norm_data.unit_normalized_med[norm_data.valid_data],
-                             norm_data.unit_normalized_z[norm_data.valid_data],
-                             marker='s', color=line_color, markerfacecolor=line_color,
-                             linestyle='None')
+            self.fig.ax.plot(
+                norm_data.unit_normalized_med[norm_data.valid_data],
+                norm_data.unit_normalized_z[norm_data.valid_data],
+                marker="s",
+                color=line_color,
+                markerfacecolor=line_color,
+                linestyle="None",
+            )
 
             # Valid error bars
             for idx in norm_data.valid_data:
-                self.fig.ax.plot([norm_data.unit_normalized_25[idx], norm_data.unit_normalized_75[idx]],
-                                 [norm_data.unit_normalized_z[idx], norm_data.unit_normalized_z[idx]],
-                                 color=line_color)
+                self.fig.ax.plot(
+                    [
+                        norm_data.unit_normalized_25[idx],
+                        norm_data.unit_normalized_75[idx],
+                    ],
+                    [
+                        norm_data.unit_normalized_z[idx],
+                        norm_data.unit_normalized_z[idx],
+                    ],
+                    color=line_color,
+                )
 
     def extrap_plot_fit(self, sel_fit, idx=None, auto=False):
         """Plots the automatic and/or selected fit.
@@ -259,31 +340,34 @@ class ExtrapPlot(object):
         # If sel_fit is a list plot data from all checked transects
         if type(sel_fit) is list:
             for idx in self.checked:
-                if self.meas.transects[idx].start_edge == 'Left':
-                    line_color = '#ff00ff'
+                if self.meas.transects[idx].start_edge == "Left":
+                    line_color = "#ff00ff"
                 else:
-                    line_color = 'b'
+                    line_color = "b"
 
-                self.fig.ax.plot(sel_fit[idx].u, sel_fit[idx].z, color=line_color, linewidth=2)
+                self.fig.ax.plot(
+                    sel_fit[idx].u, sel_fit[idx].z, color=line_color, linewidth=2
+                )
 
         # If sel_fit is a single data set
         else:
-            # If the data set is a composite for the measurement plot in black otherwise use start bank
+            # If the data set is a composite for the measurement plot in black
+            # otherwise use start bank
             if idx == -1:
-                line_color = 'k'
-            elif self.meas.transects[idx].start_edge == 'Left':
-                line_color = '#ff00ff'
+                line_color = "k"
+            elif self.meas.transects[idx].start_edge == "Left":
+                line_color = "#ff00ff"
             else:
-                line_color = 'b'
+                line_color = "b"
 
             # Used by main tab to show both Auto and Selected.
             if auto:
-                self.fig.ax.plot(sel_fit.u_auto, sel_fit.z_auto, '-g', linewidth=3)
+                self.fig.ax.plot(sel_fit.u_auto, sel_fit.z_auto, "-g", linewidth=3)
             self.fig.ax.plot(sel_fit.u, sel_fit.z, color=line_color, linewidth=2)
 
     def extrap_plot_data(self, norm_data):
-        """Plot normalized data for each depth cell. These data will be either for a single transect or for the
-        composite for the whole measurement.
+        """Plot normalized data for each depth cell. These data will be either for a
+        single transect or for the composite for the whole measurement.
 
         Parameters
         ----------
@@ -293,19 +377,31 @@ class ExtrapPlot(object):
         """
 
         if norm_data.weights is not None and norm_data.weights.size > 0:
-            # self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
-            #                  color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
-            cmap = cm.get_cmap('Blues')
+            cmap = cm.get_cmap("Blues")
             idx = np.argsort(np.abs(np.nan_to_num(norm_data.weights)), axis=None)
-            self.fig.ax.scatter(norm_data.unit_normalized.flat[idx], 1 - norm_data.cell_depth_normalized.flat[idx],
-                                marker='o', s=10, c=norm_data.weights.flat[idx], cmap=cmap)
+            self.fig.ax.scatter(
+                norm_data.unit_normalized.flat[idx],
+                1 - norm_data.cell_depth_normalized.flat[idx],
+                marker="o",
+                s=10,
+                c=norm_data.weights.flat[idx],
+                cmap=cmap,
+            )
         else:
-            self.fig.ax.plot(norm_data.unit_normalized, 1 - norm_data.cell_depth_normalized, marker='o',
-                             color='#cecece', markerfacecolor='#cecece', linestyle='None', markersize=2)
+            self.fig.ax.plot(
+                norm_data.unit_normalized,
+                1 - norm_data.cell_depth_normalized,
+                marker="o",
+                color="#cecece",
+                markerfacecolor="#cecece",
+                linestyle="None",
+                markersize=2,
+            )
 
     def extrap_plot_surface(self, norm_data):
-        """Highlights the depth cell data representing the topmost depth cell. These data will be either for a
-        single transect or for the composite for the whole measurement.
+        """Highlights the depth cell data representing the topmost depth cell.
+        These data will be either for a single transect or for the composite
+        for the whole measurement.
 
         Parameters
         ----------
@@ -318,8 +414,13 @@ class ExtrapPlot(object):
         idx = (surface_idx, range(len(surface_idx)))
 
         # Plot data
-        self.fig.ax.scatter(norm_data.unit_normalized[idx], 1 - norm_data.cell_depth_normalized[idx], marker='o',s=10,
-                            c='#00ffff')
+        self.fig.ax.scatter(
+            norm_data.unit_normalized[idx],
+            1 - norm_data.cell_depth_normalized[idx],
+            marker="o",
+            s=10,
+            c="#00ffff",
+        )
 
     def extrap_plot_med_compare(self, norm_data):
         """Plots median values and associated error bars.
@@ -328,35 +429,20 @@ class ExtrapPlot(object):
         ----------
         norm_data: list or NormData
             List of or single object of class NormData
-        idx: int
-            Index to data to be plotted
         """
 
         # If composite measurement the color is black otherwise use start bank
-        # line_color = '#ffff00'
-        # line_color = '#ffcc00'
-        line_color = '#ff8000'
-        # # All median values in red
-        # self.fig.ax.plot(norm_data.unit_normalized_med, norm_data.unit_normalized_z, 'rs',
-        #                  markerfacecolor='#ff9999', linestyle='None')
-        #
-        # # All error bars in red
-        # for n in range(len(norm_data.unit_normalized_25)):
-        #     self.fig.ax.plot([norm_data.unit_normalized_25[n], norm_data.unit_normalized_75[n]],
-        #                      [norm_data.unit_normalized_z[n], norm_data.unit_normalized_z[n]],
-        #                      'r-')
+        line_color = "#ff8000"
 
         # Valid median values
-        self.fig.ax.plot(norm_data.unit_normalized_med[norm_data.valid_data],
-                         norm_data.unit_normalized_z[norm_data.valid_data],
-                         marker='s', color=line_color, markerfacecolor=line_color,
-                         linestyle='None')
-
-        # # Valid error bars
-        # for idx in norm_data.valid_data:
-        #     self.fig.ax.plot([norm_data.unit_normalized_25[idx], norm_data.unit_normalized_75[idx]],
-        #                      [norm_data.unit_normalized_z[idx], norm_data.unit_normalized_z[idx]],
-        #                      color=line_color)
+        self.fig.ax.plot(
+            norm_data.unit_normalized_med[norm_data.valid_data],
+            norm_data.unit_normalized_z[norm_data.valid_data],
+            marker="s",
+            color=line_color,
+            markerfacecolor=line_color,
+            linestyle="None",
+        )
 
     def hover(self, event):
         """Determines if the user has selected a location with data and makes
@@ -372,7 +458,8 @@ class ExtrapPlot(object):
         # Set annotation to visible
         vis = self.annot.get_visible()
 
-        # Determine if mouse location references a data point in the plot and update the annotation.
+        # Determine if mouse location references a data point in the plot and
+        # update the annotation.
         if event.inaxes == self.fig.ax:
             cont_fig = False
             if self.fig is not None:
@@ -393,11 +480,14 @@ class ExtrapPlot(object):
         Parameters
         ----------
         setting: bool
-            Boolean to specify whether the connection for the mouse event is active or not.
+            Boolean to specify whether the connection for the mouse event is
+            active or not.
         """
 
         if setting and self.hover_connection is None:
-            self.hover_connection = self.canvas.mpl_connect('button_press_event', self.hover)
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
         elif not setting:
             self.canvas.mpl_disconnect(self.hover_connection)
             self.hover_connection = None
@@ -405,7 +495,8 @@ class ExtrapPlot(object):
             self.canvas.draw_idle()
 
     def update_annot(self, x, y):
-        """Updates the location and text and makes visible the previously initialized and hidden annotation.
+        """Updates the location and text and makes visible the previously initialized
+        and hidden annotation.
 
         Parameters
         ----------
@@ -417,33 +508,49 @@ class ExtrapPlot(object):
 
         plt_ref = self.fig
         pos = [x, y]
-        # Shift annotation box left or right depending on which half of the axis the pos x is located and the
-        # direction of x increasing.
+        # Shift annotation box left or right depending on which half of the axis
+        # the pos x is located and the direction of x increasing.
         if plt_ref.ax.viewLim.intervalx[0] < plt_ref.ax.viewLim.intervalx[1]:
-            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1])
+                / 2
+            ):
                 self.annot._x = -20
             else:
                 self.annot._x = -80
         else:
-            if pos[0] < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1]) / 2:
+            if (
+                pos[0]
+                < (plt_ref.ax.viewLim.intervalx[0] + plt_ref.ax.viewLim.intervalx[1])
+                / 2
+            ):
                 self.annot._x = -80
             else:
                 self.annot._x = -20
 
-        # Shift annotation box up or down depending on which half of the axis the pos y is located and the
-        # direction of y increasing.
+        # Shift annotation box up or down depending on which half of the axis
+        # the pos y is located and the direction of y increasing.
         if plt_ref.ax.viewLim.intervaly[0] < plt_ref.ax.viewLim.intervaly[1]:
-            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1])
+                / 2
+            ):
                 self.annot._y = -40
             else:
                 self.annot._y = 20
         else:
-            if pos[1] > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1]) / 2:
+            if (
+                pos[1]
+                > (plt_ref.ax.viewLim.intervaly[0] + plt_ref.ax.viewLim.intervaly[1])
+                / 2
+            ):
                 self.annot._y = 20
             else:
                 self.annot._y = -40
         self.annot.xy = pos
 
-        text = 'x: {:.2f}, y: {:.2f}'.format(x, y)
+        text = "x: {:.2f}, y: {:.2f}".format(x, y)
 
         self.annot.set_text(text)

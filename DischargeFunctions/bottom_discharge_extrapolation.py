@@ -1,6 +1,6 @@
 """bottom_discharge_extrapolation
-Computes the extrapolated discharge in the bottom unmeasured portion of an ADCP transect. Methods are consistent with
-equations used by TRDI and SonTek.
+Computes the extrapolated discharge in the bottom unmeasured portion of an ADCP transect.
+Methods are consistent with equations used by TRDI and SonTek.
 
 Example
 -------
@@ -9,10 +9,15 @@ from DischargeFunctions.bottom_discharge_extrapolation import
 
     trans_select = getattr(data_in.depths, data_in.depths.selected)
     num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
-    self.top_ens =  extrapolate_top(x_prod, data_in.w_vel.valid_data[0, :, :],
+    self.top_ens =  extrapolate_top(x_prod,
+                                    data_in.w_vel.valid_data[0, :, :],
                                     num_top_method[data_in.extrap.top_method],
-                                    data_in.extrap.exponent, data_in.in_transect_idx, trans_select.depth_cell_size_m,
-                                    trans_select.depth_cell_depth_m, trans_select.depth_processed_m, delta_t,
+                                    data_in.extrap.exponent,
+                                    data_in.in_transect_idx,
+                                    trans_select.depth_cell_size_m,
+                                    trans_select.depth_cell_depth_m,
+                                    trans_select.depth_processed_m,
+                                    delta_t,
                                     num_top_method[top_method], exponent)
 """
 
@@ -20,24 +25,29 @@ import numpy as np
 from numba.pycc import CC
 from numba import njit
 
-cc = CC('bottom_discharge_extrapolation')
+cc = CC("bottom_discharge_extrapolation")
 
 
 # Bottom Discharge Extrapolation with Numba
 # =========================================
-@cc.export('extrapolate_bot', 'f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], '
-                              'optional(i8), optional(f8))')
-def extrapolate_bot(xprod,
-                    w_valid_data,
-                    transect_bot_method,
-                    transect_exponent,
-                    in_transect_idx,
-                    depth_cell_size_m,
-                    depth_cell_depth_m,
-                    depth_processed_m,
-                    delta_t,
-                    bot_method=-1,
-                    exponent=0.1667):
+@cc.export(
+    "extrapolate_bot",
+    "f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], "
+    "optional(i8), optional(f8))",
+)
+def extrapolate_bot(
+    xprod,
+    w_valid_data,
+    transect_bot_method,
+    transect_exponent,
+    in_transect_idx,
+    depth_cell_size_m,
+    depth_cell_depth_m,
+    depth_processed_m,
+    delta_t,
+    bot_method=-1,
+    exponent=0.1667,
+):
     """Computes the extrapolated bottom discharge
 
     Parameters
@@ -100,16 +110,37 @@ def extrapolate_bot(xprod,
                 cell_depth[row, col] = np.nan
 
     # Compute bottom discharge
-    q_bot = discharge_bot(bot_method, exponent, bot_rng, xprod,
-                          cell_size, cell_depth, depth_ens, delta_t, z)
+    q_bot = discharge_bot(
+        bot_method,
+        exponent,
+        bot_rng,
+        xprod,
+        cell_size,
+        cell_depth,
+        depth_ens,
+        delta_t,
+        z,
+    )
 
     return q_bot
 
 
 @njit
-@cc.export('discharge_top', 'f8[:](i8, f8, f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], f8[:], f8[:, :])')
-def discharge_bot(bot_method, exponent, bot_rng, component,
-                  cell_size, cell_depth, depth_ens, delta_t, z):
+@cc.export(
+    "discharge_top",
+    "f8[:](i8, f8, f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], f8[:], f8[:, :])",
+)
+def discharge_bot(
+    bot_method,
+    exponent,
+    bot_rng,
+    component,
+    cell_size,
+    cell_depth,
+    depth_ens,
+    delta_t,
+    z,
+):
     """Computes the bottom extrapolated value of the provided component.
 
     Parameters
@@ -136,7 +167,8 @@ def discharge_bot(bot_method, exponent, bot_rng, component,
     Returns
     -------
     bot_value: np.array(float)
-        Total for the specified component integrated over the bottom range for each ensemble
+        Total for the specified component integrated over the bottom range
+        for each ensemble
     """
 
     # Initialize
@@ -164,8 +196,9 @@ def discharge_bot(bot_method, exponent, bot_rng, component,
                     numerator = numerator + numerator_temp
 
                 # Compute the denominator
-                denominator_temp = ((z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)) \
-                                   - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
+                denominator_temp = (
+                    (z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)
+                ) - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
                 if np.logical_not(np.isnan(denominator_temp)) and denominator_temp != 0:
                     denominator_valid = True
                     denominator = denominator + denominator_temp
@@ -216,9 +249,17 @@ def discharge_bot(bot_method, exponent, bot_rng, component,
                                 numerator = numerator + numerator_temp
 
                                 # If numerator computed, compute denominator
-                                denominator_temp = ((z[row, col] + 0.5 * cell_size[row, col]) ** (exponent + 1)) \
-                                                   - ((z[row, col] - 0.5 * cell_size[row, col]) ** (exponent + 1))
-                                if np.logical_not(np.isnan(denominator_temp)) and denominator_temp != 0:
+                                denominator_temp = (
+                                    (z[row, col] + 0.5 * cell_size[row, col])
+                                    ** (exponent + 1)
+                                ) - (
+                                    (z[row, col] - 0.5 * cell_size[row, col])
+                                    ** (exponent + 1)
+                                )
+                                if (
+                                    np.logical_not(np.isnan(denominator_temp))
+                                    and denominator_temp != 0
+                                ):
                                     denominator_valid = True
                                     denominator = denominator + denominator_temp
 
@@ -232,9 +273,13 @@ def discharge_bot(bot_method, exponent, bot_rng, component,
                             numerator = numerator + numerator_temp
 
                             # If numerator computed, compute denominator
-                            denominator_temp = ((last_z + 0.5 * last_cell_size) ** (exponent + 1)) \
-                                               - ((last_z - 0.5 * last_cell_size) ** (exponent + 1))
-                            if np.logical_not(np.isnan(denominator_temp)) and denominator_temp != 0:
+                            denominator_temp = (
+                                (last_z + 0.5 * last_cell_size) ** (exponent + 1)
+                            ) - ((last_z - 0.5 * last_cell_size) ** (exponent + 1))
+                            if (
+                                np.logical_not(np.isnan(denominator_temp))
+                                and denominator_temp != 0
+                            ):
                                 denominator_valid = True
                                 denominator = denominator + denominator_temp
 
@@ -243,16 +288,16 @@ def discharge_bot(bot_method, exponent, bot_rng, component,
                     coef[col] = (numerator * (1 + exponent)) / denominator
 
     # Compute the bottom discharge of each profile
-    bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng**(exponent + 1))
+    bot_value = delta_t * (coef / (exponent + 1)) * (bot_rng ** (exponent + 1))
 
     return bot_value
 
 
 @njit
-@cc.export('top_variables', 'f8[:](f8[:, :], b1[:, :], f8[:, :], f8[:, :], f8[:])')
+@cc.export("top_variables", "f8[:](f8[:, :], b1[:, :], f8[:, :], f8[:, :], f8[:])")
 def bot_variables(x_prod, w_valid_data, cell_size, cell_depth, depth_ens):
-    """Computes the index to the bottom most valid cell in each ensemble and the range from
-    the bottom to the bottom of the bottom most cell.
+    """Computes the index to the bottom most valid cell in each ensemble
+    and the range from the bottom to the bottom of the bottom most cell.
 
     Parameters
     ----------
@@ -292,13 +337,15 @@ def bot_variables(x_prod, w_valid_data, cell_size, cell_depth, depth_ens):
         if len(idx_temp) > 0:
             idx_bot = idx_temp[-1]
             # Compute bottom range
-            bot_rng[n] = depth_ens[n] - cell_depth[idx_bot, n] - 0.5 * cell_size[idx_bot, n]
+            bot_rng[n] = (
+                depth_ens[n] - cell_depth[idx_bot, n] - 0.5 * cell_size[idx_bot, n]
+            )
         else:
             bot_rng[n] = 0
 
     return bot_rng
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Used to compile code
     cc.compile()
