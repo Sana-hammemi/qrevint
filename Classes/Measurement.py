@@ -4904,81 +4904,86 @@ class Measurement(object):
             # If map hasn't been computed, compute with default settings
             if self.map is None or self.run_map:
                 self.compute_map()
-            # get dataframe for xml output
-            cross_section_all = self.map.create_map_df(units=units_conversion())
 
-            # remove duplicates caused by contour data in df
-            cross_section = cross_section_all.drop_duplicates(
-                subset=["Distance (Left bank) (m)"]
-            )
+            # Check to see if Map ran successfully
+            if self.map is not None:
+                # get dataframe for xml output
+                cross_section_all = self.map.create_map_df(units=units_conversion())
 
-            # create copy of df without the data in the XML nodes to save on
-            # file size.
-            cross_section_all = cross_section_all.drop(
-                columns=[
-                    "Latitude",
-                    "Longitude",
-                    "Distance X " "(m)",
-                    "Distance Y " "(m)",
-                    "Temperature",
-                    "Depth (" "m)",
-                ]
-            )
-
-            # convert df to tab delimited str
-            xs_str = cross_section_all.to_string(index=False)
-
-            rows = cross_section.shape[0]
-            survey = ETree.SubElement(channel, "CrossSectionSurvey")
-
-            for row in range(rows):
-                meas_pts = ETree.SubElement(survey, "MeasurementPoint")
-                ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(row)
-
-                # latitude
-                ETree.SubElement(meas_pts, "Latitude", type="double").text = str(
-                    cross_section.iloc[row]["Latitude"]
+                # remove duplicates caused by contour data in df
+                cross_section = cross_section_all.drop_duplicates(
+                    subset=["Distance (Left bank) (m)"]
                 )
 
-                # Longitude
-                ETree.SubElement(meas_pts, "Longitude", type="double").text = str(
-                    cross_section.iloc[row]["Longitude"]
+                # create copy of df without the data in the XML nodes to save on
+                # file size.
+                cross_section_all = cross_section_all.drop(
+                    columns=[
+                        "Latitude",
+                        "Longitude",
+                        "Distance X " "(m)",
+                        "Distance Y " "(m)",
+                        "Temperature",
+                        "Depth (" "m)",
+                    ]
                 )
 
-                # station
-                value = "{:.3f}".format(
-                    cross_section.iloc[row]["Distance (Left bank) " "(m)"]
-                )
-                ETree.SubElement(
-                    meas_pts, "Distance", type="double", unitsCode="m"
-                ).text = value
+                # convert df to tab delimited str
+                xs_str = cross_section_all.to_string(index=False)
 
-                # distance x
-                value = "{:.3f}".format(cross_section.iloc[row]["Distance X (m)"])
-                ETree.SubElement(
-                    meas_pts, "DistanceX", type="double", unitsCode="m"
-                ).text = value
+                rows = cross_section.shape[0]
+                survey = ETree.SubElement(channel, "CrossSectionSurvey")
 
-                # distance y
-                value = "{:.3f}".format(cross_section.iloc[row]["Distance Y (m)"])
-                ETree.SubElement(
-                    meas_pts, "DistanceY", type="double", unitsCode="m"
-                ).text = value
+                for row in range(rows):
+                    meas_pts = ETree.SubElement(survey, "MeasurementPoint")
+                    ETree.SubElement(meas_pts, "TableRow", type="integer").text = str(
+                        row
+                    )
 
-                # depth
-                value = "{:.3f}".format(cross_section.iloc[row]["Depth (" "m)"])
-                ETree.SubElement(
-                    meas_pts, "Depth", type="double", unitsCode="m"
-                ).text = value
+                    # latitude
+                    ETree.SubElement(meas_pts, "Latitude", type="double").text = str(
+                        cross_section.iloc[row]["Latitude"]
+                    )
 
-                # Temperature
-                value = "{:.2f}".format(cross_section.iloc[row]["Temperature"])
-                ETree.SubElement(
-                    meas_pts, "Temperature", type="double", unitsCode="degC"
-                ).text = value
+                    # Longitude
+                    ETree.SubElement(meas_pts, "Longitude", type="double").text = str(
+                        cross_section.iloc[row]["Longitude"]
+                    )
 
-            # export contour table
-            ETree.SubElement(survey, "Contour", type="char").text = xs_str
+                    # station
+                    value = "{:.3f}".format(
+                        cross_section.iloc[row]["Distance (Left bank) " "(m)"]
+                    )
+                    ETree.SubElement(
+                        meas_pts, "Distance", type="double", unitsCode="m"
+                    ).text = value
+
+                    # distance x
+                    value = "{:.3f}".format(cross_section.iloc[row]["Distance X (m)"])
+                    ETree.SubElement(
+                        meas_pts, "DistanceX", type="double", unitsCode="m"
+                    ).text = value
+
+                    # distance y
+                    value = "{:.3f}".format(cross_section.iloc[row]["Distance Y (m)"])
+                    ETree.SubElement(
+                        meas_pts, "DistanceY", type="double", unitsCode="m"
+                    ).text = value
+
+                    # depth
+                    value = "{:.3f}".format(cross_section.iloc[row]["Depth (" "m)"])
+                    ETree.SubElement(
+                        meas_pts, "Depth", type="double", unitsCode="m"
+                    ).text = value
+
+                    # Temperature
+                    value = "{:.2f}".format(cross_section.iloc[row]["Temperature"])
+                    ETree.SubElement(
+                        meas_pts, "Temperature", type="double", unitsCode="degC"
+                    ).text = value
+
+                # export contour table
+                ETree.SubElement(survey, "Contour", type="char").text = xs_str
 
         # Create xml output file
         with open(file_name, "wb") as xml_file:

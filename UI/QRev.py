@@ -1650,7 +1650,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def save_measurement(self):
         """Save measurement in Matlab format."""
-
         if len(self.checked_transects_idx) > 0:
             if self.rating_prompt:
                 # Intialize dialog

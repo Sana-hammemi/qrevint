@@ -297,164 +297,172 @@ class MAP(object):
             transect = meas.transects[id_transect]
             index_transect = checked_transect_idx.index(id_transect)
             in_transect_idx = transect.in_transect_idx
-            ship_data = transect.boat_vel.compute_boat_track(transect, nav_ref)
 
-            if transect.orig_start_edge == "Right":
-                # Reverse transects in ordred to start at 0 on left edge
-                valid = transect.depths.bt_depths.valid_data[::-1]
-                if nav_ref == "gga_vel":
-                    nan_idx = np.argwhere(
-                        np.isnan(
-                            transect.gps.gga_lat_ens_deg[::-1]
-                            + transect.gps.gga_lon_ens_deg[::-1]
+            # Verify that the transect has heading data before computing
+            if not all(deg == 0 for deg in transect.sensors.heading_deg.internal.data):
+                ship_data = transect.boat_vel.compute_boat_track(transect, nav_ref)
+
+                if transect.orig_start_edge == "Right":
+                    # Reverse transects in ordred to start at 0 on left edge
+                    valid = transect.depths.bt_depths.valid_data[::-1]
+                    if nav_ref == "gga_vel":
+                        nan_idx = np.argwhere(
+                            np.isnan(
+                                transect.gps.gga_lat_ens_deg[::-1]
+                                + transect.gps.gga_lon_ens_deg[::-1]
+                            )
                         )
-                    )
-                    for i in nan_idx:
-                        valid[i[0]] = False
-                    lat = transect.gps.gga_lat_ens_deg[::-1][valid]
-                    lon = transect.gps.gga_lon_ens_deg[::-1][valid]
+                        for i in nan_idx:
+                            valid[i[0]] = False
+                        lat = transect.gps.gga_lat_ens_deg[::-1][valid]
+                        lon = transect.gps.gga_lon_ens_deg[::-1][valid]
 
-                    coords = utm.from_latlon(lat, lon)
-                    x_transect = coords[0]
-                    y_transect = coords[1]
-                    self.gps_zone_number = coords[2]
-                    self.gps_zone_letter = coords[3]
+                        coords = utm.from_latlon(lat, lon)
+                        x_transect = coords[0]
+                        y_transect = coords[1]
+                        self.gps_zone_number = coords[2]
+                        self.gps_zone_letter = coords[3]
+
+                    else:
+                        dmg_ind = np.where(
+                            abs(ship_data["dmg_m"]) == max(abs(ship_data["dmg_m"]))
+                        )[0][0]
+                        x_track = (
+                            ship_data["track_x_m"] - ship_data["track_x_m"][dmg_ind]
+                        )
+                        y_track = (
+                            ship_data["track_y_m"] - ship_data["track_y_m"][dmg_ind]
+                        )
+                        x_transect = x_track[::-1]
+                        y_transect = y_track[::-1]
+                        x_transect = x_transect[valid]
+                        y_transect = y_transect[valid]
+
+                    # Depth
+                    depth_selected = getattr(transect.depths, transect.depths.selected)
+                    depth_transect = depth_selected.depth_processed_m[::-1]
+                    cells_depth = depth_selected.depth_cell_depth_m[:, ::-1]
+
+                    # Temperature
+                    temp_selected = getattr(
+                        transect.sensors.temperature_deg_c,
+                        transect.sensors.temperature_deg_c.selected,
+                    )
+                    temp_transect = temp_selected.data[::-1]
+
+                    # Velocity data
+                    vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
+                    vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::-1])
+                    vel_z = np.copy(transect.w_vel.w_mps[:, ::-1])
+                    invalid = np.logical_not(
+                        transect.w_vel.valid_data[0, :, in_transect_idx]
+                    ).T[:, ::-1]
+
+                    vel_x[invalid] = np.nan
+                    vel_y[invalid] = np.nan
+                    vel_z[invalid] = np.nan
+                    x_velocity = vel_x[:, valid]
+                    y_velocity = vel_y[:, valid]
+                    z_velocity = vel_z[:, valid]
+
+                    # RSSI data
+                    rssi_temp = np.nanmean(transect.w_vel.rssi, axis=0)[:, ::-1]
+                    rssi_temp[invalid] = np.nan
+                    rssi_mean = rssi_temp[:, valid]
 
                 else:
-                    dmg_ind = np.where(
-                        abs(ship_data["dmg_m"]) == max(abs(ship_data["dmg_m"]))
-                    )[0][0]
-                    x_track = ship_data["track_x_m"] - ship_data["track_x_m"][dmg_ind]
-                    y_track = ship_data["track_y_m"] - ship_data["track_y_m"][dmg_ind]
-                    x_transect = x_track[::-1]
-                    y_transect = y_track[::-1]
-                    x_transect = x_transect[valid]
-                    y_transect = y_transect[valid]
-
-                # Depth
-                depth_selected = getattr(transect.depths, transect.depths.selected)
-                depth_transect = depth_selected.depth_processed_m[::-1]
-                cells_depth = depth_selected.depth_cell_depth_m[:, ::-1]
-
-                # Temperature
-                temp_selected = getattr(
-                    transect.sensors.temperature_deg_c,
-                    transect.sensors.temperature_deg_c.selected,
-                )
-                temp_transect = temp_selected.data[::-1]
-
-                # Velocity data
-                vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::-1])
-                vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::-1])
-                vel_z = np.copy(transect.w_vel.w_mps[:, ::-1])
-                invalid = np.logical_not(
-                    transect.w_vel.valid_data[0, :, in_transect_idx]
-                ).T[:, ::-1]
-
-                vel_x[invalid] = np.nan
-                vel_y[invalid] = np.nan
-                vel_z[invalid] = np.nan
-                x_velocity = vel_x[:, valid]
-                y_velocity = vel_y[:, valid]
-                z_velocity = vel_z[:, valid]
-
-                # RSSI data
-                rssi_temp = np.nanmean(transect.w_vel.rssi, axis=0)[:, ::-1]
-                rssi_temp[invalid] = np.nan
-                rssi_mean = rssi_temp[:, valid]
-
-            else:
-                valid = transect.depths.bt_depths.valid_data
-                if nav_ref == "gga_vel":
-                    nan_idx = np.argwhere(
-                        np.isnan(
-                            transect.gps.gga_lat_ens_deg + transect.gps.gga_lon_ens_deg
+                    valid = transect.depths.bt_depths.valid_data
+                    if nav_ref == "gga_vel":
+                        nan_idx = np.argwhere(
+                            np.isnan(
+                                transect.gps.gga_lat_ens_deg
+                                + transect.gps.gga_lon_ens_deg
+                            )
                         )
+                        for i in nan_idx:
+                            valid[i[0]] = False
+                        lat = transect.gps.gga_lat_ens_deg[valid]
+                        lon = transect.gps.gga_lon_ens_deg[valid]
+
+                        coords = utm.from_latlon(lat, lon)
+                        x_transect = coords[0]
+                        y_transect = coords[1]
+                        self.gps_zone_number = coords[2]
+                        self.gps_zone_letter = coords[3]
+                    else:
+                        x_transect = ship_data["track_x_m"]
+                        y_transect = ship_data["track_y_m"]
+                        x_transect = x_transect[valid]
+                        y_transect = y_transect[valid]
+
+                    # Depth
+                    depth_selected = getattr(transect.depths, transect.depths.selected)
+                    depth_transect = depth_selected.depth_processed_m
+                    cells_depth = depth_selected.depth_cell_depth_m
+
+                    # Velocity data
+                    vel_x = np.copy(transect.w_vel.u_processed_mps)
+                    vel_y = np.copy(transect.w_vel.v_processed_mps)
+                    vel_z = np.copy(transect.w_vel.w_mps)
+                    invalid = np.logical_not(
+                        transect.w_vel.valid_data[0, :, in_transect_idx]
+                    ).T
+
+                    vel_x[invalid] = np.nan
+                    vel_y[invalid] = np.nan
+                    vel_z[invalid] = np.nan
+                    x_velocity = vel_x[:, valid]
+                    y_velocity = vel_y[:, valid]
+                    z_velocity = vel_z[:, valid]
+
+                    # Temperature
+                    temp_selected = getattr(
+                        transect.sensors.temperature_deg_c,
+                        transect.sensors.temperature_deg_c.selected,
                     )
-                    for i in nan_idx:
-                        valid[i[0]] = False
-                    lat = transect.gps.gga_lat_ens_deg[valid]
-                    lon = transect.gps.gga_lon_ens_deg[valid]
+                    temp_transect = temp_selected.data
 
-                    coords = utm.from_latlon(lat, lon)
-                    x_transect = coords[0]
-                    y_transect = coords[1]
-                    self.gps_zone_number = coords[2]
-                    self.gps_zone_letter = coords[3]
-                else:
-                    x_transect = ship_data["track_x_m"]
-                    y_transect = ship_data["track_y_m"]
-                    x_transect = x_transect[valid]
-                    y_transect = y_transect[valid]
+                    # RSSI data
+                    rssi_temp = np.nanmean(transect.w_vel.rssi, axis=0)
+                    rssi_temp[invalid] = np.nan
+                    rssi_mean = rssi_temp[:, valid]
 
-                # Depth
-                depth_selected = getattr(transect.depths, transect.depths.selected)
-                depth_transect = depth_selected.depth_processed_m
-                cells_depth = depth_selected.depth_cell_depth_m
+                self.x_raw_coordinates.append(x_transect)
+                self.y_raw_coordinates.append(y_transect)
+                depth_data.append(depth_transect[valid])
+                cell_depth.append(cells_depth[:, valid])
+                temperature_data.append(temp_transect[valid])
+                w_vel_x.append(x_velocity)
+                w_vel_y.append(y_velocity)
+                w_vel_z.append(z_velocity)
+                invalid_data.append(invalid[:, valid])
+                rssi.append(rssi_mean)
 
-                # Velocity data
-                vel_x = np.copy(transect.w_vel.u_processed_mps)
-                vel_y = np.copy(transect.w_vel.v_processed_mps)
-                vel_z = np.copy(transect.w_vel.w_mps)
-                invalid = np.logical_not(
-                    transect.w_vel.valid_data[0, :, in_transect_idx]
-                ).T
+                # Edges parameters
+                left = [
+                    meas.transects[id_transect].edges.left.distance_m,
+                    meas.discharge[id_transect].edge_coef(
+                        "left", meas.transects[id_transect]
+                    ),
+                ]
+                if isinstance(left[1], list):
+                    left[1] = np.nan
+                left_param[index_transect, :] = left
 
-                vel_x[invalid] = np.nan
-                vel_y[invalid] = np.nan
-                vel_z[invalid] = np.nan
-                x_velocity = vel_x[:, valid]
-                y_velocity = vel_y[:, valid]
-                z_velocity = vel_z[:, valid]
+                right = [
+                    meas.transects[id_transect].edges.right.distance_m,
+                    meas.discharge[id_transect].edge_coef(
+                        "right", meas.transects[id_transect]
+                    ),
+                ]
+                if isinstance(right[1], list):
+                    right[1] = np.nan
+                right_param[index_transect, :] = right
 
-                # Temperature
-                temp_selected = getattr(
-                    transect.sensors.temperature_deg_c,
-                    transect.sensors.temperature_deg_c.selected,
-                )
-                temp_transect = temp_selected.data
+                self.left_geometry = np.nanmedian(left_param, axis=0)
+                self.right_geometry = np.nanmedian(right_param, axis=0)
 
-                # RSSI data
-                rssi_temp = np.nanmean(transect.w_vel.rssi, axis=0)
-                rssi_temp[invalid] = np.nan
-                rssi_mean = rssi_temp[:, valid]
-
-            self.x_raw_coordinates.append(x_transect)
-            self.y_raw_coordinates.append(y_transect)
-            depth_data.append(depth_transect[valid])
-            cell_depth.append(cells_depth[:, valid])
-            temperature_data.append(temp_transect[valid])
-            w_vel_x.append(x_velocity)
-            w_vel_y.append(y_velocity)
-            w_vel_z.append(z_velocity)
-            invalid_data.append(invalid[:, valid])
-            rssi.append(rssi_mean)
-
-            # Edges parameters
-            left = [
-                meas.transects[id_transect].edges.left.distance_m,
-                meas.discharge[id_transect].edge_coef(
-                    "left", meas.transects[id_transect]
-                ),
-            ]
-            if isinstance(left[1], list):
-                left[1] = np.nan
-            left_param[index_transect, :] = left
-
-            right = [
-                meas.transects[id_transect].edges.right.distance_m,
-                meas.discharge[id_transect].edge_coef(
-                    "right", meas.transects[id_transect]
-                ),
-            ]
-            if isinstance(right[1], list):
-                right[1] = np.nan
-            right_param[index_transect, :] = right
-
-            self.left_geometry = np.nanmedian(left_param, axis=0)
-            self.right_geometry = np.nanmedian(right_param, axis=0)
-
-            orig_start_edge.append(transect.orig_start_edge)
+                orig_start_edge.append(transect.orig_start_edge)
 
         data_transects = {
             "w_vel_x": w_vel_x,
