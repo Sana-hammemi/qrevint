@@ -3375,7 +3375,7 @@ class AdvGraphs(object):
             else:
                 data_label = "Intensity"
             data_units = (1, data_label)
-        elif data_type == "Nb. of transect":
+        elif data_type == "Nb. of transects":
             data = map_data.count_valid
             data_units = (1, data_type)
 

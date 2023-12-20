@@ -15808,6 +15808,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Initialize tab
             if not self.map_initialized:
                 self.map_tab_initialize()
+            self.rb_map_contour.setChecked(True)
+
             self.cb_map_cell_size_auto.setChecked(True)
             self.ed_map_cell_width.blockSignals(True)
             self.ed_map_cell_width.setEnabled(False)
@@ -15927,6 +15929,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.pb_map_save.clicked.connect(self.map_save_data)
         self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
+
+        # Limit edit to two decimals float
+        rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
+        validator = QtGui.QRegExpValidator(rx, self)
+        self.ed_map_cell_width.setValidator(validator)
+        self.ed_map_cell_height.setValidator(validator)
         self.map_initialized = True
 
     def edit_map_secondary_velocity(self):
@@ -15948,18 +15956,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 change_plot = False
 
             cell_width = self.check_numeric_input(self.ed_map_cell_width)
-            min_width = self.meas.map.auto_node_horz
+            min_width = self.meas.map.borders_ens[-1] / 1000
             if cell_width is not None:
                 cell_width = cell_width * 1 / self.units["L"]
+                if cell_width < min_width:
+                    cell_width = min_width
+                    self.ed_map_cell_width.setText(
+                        "{:3.2f}".format(cell_width * self.units["L"])
+                    )
             else:
                 self.ed_map_cell_width.setText(
                     "{:3.2f}".format(min_width * self.units["L"])
                 )
 
             cell_height = self.check_numeric_input(self.ed_map_cell_height)
-            min_height = self.meas.map.auto_node_vert
+            min_height = self.meas.map.main_depth_layers[-1] / 100
             if cell_height is not None:
                 cell_height = cell_height * 1 / self.units["L"]
+                if cell_height < min_height:
+                    cell_height = min_height
+                    self.ed_map_cell_height.setText(
+                        "{:3.2f}".format(cell_height * self.units["L"])
+                    )
             else:
                 self.ed_map_cell_height.setText(
                     "{:3.2f}".format(min_height * self.units["L"])
@@ -16299,6 +16317,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Initialize the boat speed figure and assign to the canvas
         # self.map_fig = WTContour(canvas=self.map_canvas)
         self.map_fig = AdvGraphs(canvas=self.map_canvas)
+        self.map_fig.color_map = self.color_map
 
         # Quiver parameters
         data_quiver = None
@@ -16401,10 +16420,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except KeyError:
                         self.sticky_settings.new("Delimiter", save_map.delimiter)
 
+                    manufacturer = self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer
                     self.meas.map.export_csv(
                         save_map.full_Name,
                         units=self.units,
                         delimiter=save_map.delimiter,
+                        manufacturer=manufacturer,
                     )
                 except Exception:
                     self.popup_message(self.tr("Failed to save MAP data."))

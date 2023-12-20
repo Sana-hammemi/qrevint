@@ -8378,7 +8378,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>Velocity Type:</string>
+                 <string>Data Type:</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

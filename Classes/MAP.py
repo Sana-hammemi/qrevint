@@ -635,27 +635,20 @@ class MAP(object):
 
         self.acs_distance = acs_translated
 
-    def compute_auto_node_size(self, data_transects, transect):
+    def compute_auto_node_size(self, transect):
         """Computes auto node sizes.
 
         Parameters:
-            data_transects: dict
-                Dictionary of transects data loaded from Measurement
+            transect: transectData
+                First checked transect of the measurement
 
         """
 
         # compute width widths
         acs_distance = self.acs_distance
-
-        flat_acs = np.sort(np.concatenate(acs_distance).ravel())
-        self.auto_node_horz = np.nanmax(
-            [
-                np.quantile(flat_acs[1:] - flat_acs[:-1], 0.95),
-                np.nanmedian(
-                    np.abs([np.quantile(l[1:] - l[:-1], 0.95) for l in acs_distance])
-                ),
-            ]
-        )
+        sorted_acs_distance = [np.sort(i) for i in acs_distance]
+        median_diff_acs = [np.nanmedian(np.abs(np.diff(i))) for i in sorted_acs_distance]
+        self.auto_node_horz = 2 * np.nanmax(median_diff_acs)
 
         # compute vertical
         self.auto_node_vert = 2 * np.nanmedian(transect.depths.bt_depths.depth_cell_size_m)
@@ -692,7 +685,7 @@ class MAP(object):
         transect = meas.transects[meas.checked_transect_idx[0]]
         if node_horizontal_user is None:
             if self.auto_node_horz is None:
-                self.compute_auto_node_size(data_transects, transect)
+                self.compute_auto_node_size(transect)
             node_horz = self.auto_node_horz
         else:
             node_horz = node_horizontal_user
@@ -707,12 +700,13 @@ class MAP(object):
         else:
             top_cell = 0
 
-        nb_horz = int(acs_total / node_horz)
-        self.borders_ens = np.linspace(
+        nb_horz = max(1, int(acs_total / node_horz))
+        borders_ens = np.linspace(
             min([min(l) for l in acs_distance]),
-            max([max(l) for l in acs_distance]) + 10 ** -5,
+            max([max(l) for l in acs_distance]),
             nb_horz,
         )
+        self.borders_ens = np.append(borders_ens, max([max(l) for l in acs_distance]) + 10**-5)
 
         # Meshes height
         depth_data = data_transects["depths"]
@@ -728,7 +722,7 @@ class MAP(object):
             )
         else:
             if self.auto_node_vert is None:
-                self.compute_auto_node_size(data_transects, transect)
+                self.compute_auto_node_size(transect)
             lag = self.auto_node_vert
             self.main_depth_layers = np.arange(
                 top_cell, np.nanmax(all_depth) + lag, lag
@@ -1713,7 +1707,7 @@ class MAP(object):
 
         return lat[1:], lon[1:]
 
-    def create_map_df(self, units):
+    def create_map_df(self, units, manufacturer=None):
         """Create a pandas dataframe of data computed by MAP.
 
         Parameters:
@@ -1726,6 +1720,13 @@ class MAP(object):
 
         distance_x, distance_y = self.utm_2_distance()
         lat, lon = self.utm_2_decimaldegrees()
+
+        if manufacturer == "TRDI":
+            intensity_label = "RSSI (counts)"
+        elif manufacturer == "SonTek":
+            intensity_label = "SNR (dB)"
+        else:
+            intensity_label = "Intensity"
 
         row, col = self.primary_velocity.shape
         ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
@@ -1757,6 +1758,8 @@ class MAP(object):
             "Depth cells center "
             + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
             "Temperature": np.repeat(self.temperature, row),
+            intensity_label: self.rssi.ravel(order="F"),
+            "Nb. of Transects averaged": self.count_valid.ravel(order="F")
         }
 
         df = pd.DataFrame(data)

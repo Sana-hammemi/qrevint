@@ -5036,7 +5036,7 @@ class Ui_MainWindow(object):
         self.groupBox_8.setTitle(_translate("MainWindow", "Options"))
         self.pb_map_save.setText(_translate("MainWindow", "Export CSV"))
         self.pb_map_open_earth.setText(_translate("MainWindow", "Export KML"))
-        self.txt_map_data.setText(_translate("MainWindow", "Velocity Type:"))
+        self.txt_map_data.setText(_translate("MainWindow", "Data Type:"))
         self.combo_map_data.setItemText(0, _translate("MainWindow", "Primary velocity"))
         self.combo_map_data.setItemText(1, _translate("MainWindow", "Streamwise velocity"))
         self.combo_map_data.setItemText(2, _translate("MainWindow", "RSSI or SNR"))

@@ -244,7 +244,7 @@ class SaveDialog(QtWidgets.QDialog):
         elif save_type == "fig":
             file_name = folder + "/" + folder.split("/")[-1]
             title = self.tr("Save figure")
-            filetype = f"PNG (*.png);;JPEG (*.jpeg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
+            filetype = f"PNG (*.png);;JPEG (*.jpg);;PDF (*.pdf);;SVG (*.svg);;{self.tr('All Files')} (*)"
 
         elif save_type == "MAP":
             file_name = folder + "/MAP_" + folder.split("/")[-1]
@@ -255,12 +255,12 @@ class SaveDialog(QtWidgets.QDialog):
                 f"{self.tr('space delimited')}(*.txt);;"
                 f"{self.tr('All Files')} (*)",
                 "colon delimited": f"{self.tr('colon delimited')}(*.csv);;"
-                f"{self.tr('comma delimited')}( *.csv);;"
+                f"{self.tr('comma delimited')}(*.csv);;"
                 f"{self.tr('space delimited')}(*.txt);;"
                 f"{self.tr('All Files')} (*)",
-                "space delimited": f"{self.tr('colon delimited')}(*.csv);;"
-                f"{self.tr('comma delimited')}( *.csv);;"
-                f"{self.tr('space delimited')}(*.txt);;"
+                "space delimited": f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('comma delimited')}(*.csv);;"
                 f"{self.tr('All Files')} (*)",
             }
             if delimiter in f_types:
