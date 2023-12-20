@@ -1143,9 +1143,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.adv_graph_fig = None
         self.adv_graph_toolbar = None
         self.adv_graph_types = []
-        self.map_canvas = None
         self.map_shiptrack_toolbar = None
-        self.map_fig = None
         self.map_canvas = None
         self.map_toolbar = None
         self.map_fig = None
@@ -1171,7 +1169,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.gps_bt_initialized = False
         self.adv_graph_initialized = False
         self.map_initialized = False
-        self.map_init_parameters = False
+        self.map_init_parameters = True
 
         self.setMouseTracking(True)
 
@@ -15787,7 +15785,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # ==============
     def map_tab(self):
         """Initializes and configures MAP tab."""
-        self.map_init_parameters = False
+        # self.map_init_parameters = False
         if self.meas.map is None:
             self.meas.compute_map()
             self.map_settings = {
@@ -15832,7 +15830,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "{:3.2f}".format(min_height * self.units["L"])
             )
             self.ed_map_secondary_velocity.setText("")
+            self.ed_map_secondary_velocity.setEnabled(True)
+
+            self.combo_map_data.blockSignals(True)
             self.combo_map_data.setCurrentIndex(0)
+            self.combo_map_data.blockSignals(False)
 
             self.map_change = False
             self.map_init_parameters = True
@@ -15966,7 +15968,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
             else:
                 self.ed_map_cell_width.setText(
-                    "{:3.2f}".format(min_width * self.units["L"])
+                    "{:3.2f}".format(self.meas.map.auto_node_horz * self.units["L"])
                 )
 
             cell_height = self.check_numeric_input(self.ed_map_cell_height)
@@ -15980,7 +15982,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
             else:
                 self.ed_map_cell_height.setText(
-                    "{:3.2f}".format(min_height * self.units["L"])
+                    "{:3.2f}".format(self.meas.map.auto_node_horz * self.units["L"])
                 )
 
             self.map_settings = {
@@ -16016,15 +16018,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         else:
                             change_plot = True
 
-            if self.map_canvas is None:
-                change_plot = True
-
             # Save current parameters
             self.map_current_settings = self.map_settings
 
             # Avoid compute MAP twice
+            # if self.map_init_measurement is None:
+            #     change_plot = True
+            #     change_data = False
             if self.map_init_parameters:
                 change_data = False
+                change_plot = True
 
             # Apply changes
             if change_data:
@@ -16365,17 +16368,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
 
         # Fill with blank
-        x_fill = np.insert(x_data, 0, 2 * x_data[0] - x_data[1])
-        depths_fill = np.insert(depths, 0, depths[0])
-        x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
-        depths_fill = np.append(depths_fill, depths[-1])
-        self.map_fig.ax[0].fill_between(
-            x_fill,
-            1.15 * np.ceil(np.nanmax(cell_plt)),
-            depths_fill * self.units["L"],
-            color="w",
-            zorder=1
-        )
+        # x_fill = np.insert(x_data, 0, 2 * x_data[0] - x_data[1])
+        # depths_fill = np.insert(depths, 0, depths[0])
+        # x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
+        # depths_fill = np.append(depths_fill, depths[-1])
+        # self.map_fig.ax[0].fill_between(
+        #     x_fill,
+        #     1.15 * np.ceil(np.nanmax(cell_plt)),
+        #     depths_fill * self.units["L"],
+        #     color="w",
+        #     zorder=1
+        # )
 
         self.map_fig.fig.subplots_adjust(
             left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0
