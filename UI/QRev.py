@@ -845,16 +845,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Date format
         if "DateFormat" not in self.agency_options.keys():
-            self.popup_message(self.tr("QRevMS.cfg: DateFormat parameter not found."))
+            self.popup_message(self.tr("QRev.cfg: DateFormat parameter not found."))
             sys.exit()
         if "default" not in self.agency_options["DateFormat"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg DateFormat: default parameter not found.")
+                self.tr("QRev.cfg DateFormat: default parameter not found.")
             )
             sys.exit()
         if "show" not in self.agency_options["DateFormat"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg DateFormat: show parameter not found.")
+                self.tr("QRev.cfg DateFormat: show parameter not found.")
             )
             sys.exit()
         try:
@@ -873,16 +873,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # PDF Summary
         if "PDFSummary" not in self.agency_options.keys():
-            self.popup_message(self.tr("QRevMS.cfg: PDFSummary parameter not found."))
+            self.popup_message(self.tr("QRev.cfg: PDFSummary parameter not found."))
             sys.exit()
         if "default" not in self.agency_options["PDFSummary"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg PDFSummary: default parameter not found.")
+                self.tr("QRev.cfg PDFSummary: default parameter not found.")
             )
             sys.exit()
         if "show" not in self.agency_options["PDFSummary"].keys():
             self.popup_message(
-                self.tr("QRevMS.cfg PDFSummary: show parameter not found.")
+                self.tr("QRev.cfg PDFSummary: show parameter not found.")
             )
             sys.exit()
         try:
