@@ -16823,8 +16823,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
 
                 # Save xml file
-                self.meas.xml_output(
-                    __qrev_version__, save_file.full_Name[:-4] + ".xml"
+                self.meas.xml_output(save_file.full_Name[:-4] + ".xml"
                 )
 
                 # Notify user when save complete
