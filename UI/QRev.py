@@ -15845,8 +15845,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_map_top_bottom.setChecked(True)
             self.cb_map_edges.setChecked(True)
             self.cb_map_bed_profiles.setChecked(True)
-            self.ed_map_cell_width.setText("")
-            self.ed_map_cell_height.setText("")
             self.ed_map_secondary_velocity.setText("")
             self.combo_map_data.setCurrentIndex(0)
             self.map_current_settings = {
@@ -15982,7 +15980,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
             else:
                 self.ed_map_cell_height.setText(
-                    "{:3.2f}".format(self.meas.map.auto_node_horz * self.units["L"])
+                    "{:3.2f}".format(self.meas.map.auto_node_vert * self.units["L"])
                 )
 
             self.map_settings = {
@@ -16368,17 +16366,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
 
         # Fill with blank
-        # x_fill = np.insert(x_data, 0, 2 * x_data[0] - x_data[1])
-        # depths_fill = np.insert(depths, 0, depths[0])
-        # x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
-        # depths_fill = np.append(depths_fill, depths[-1])
-        # self.map_fig.ax[0].fill_between(
-        #     x_fill,
-        #     1.15 * np.ceil(np.nanmax(cell_plt)),
-        #     depths_fill * self.units["L"],
-        #     color="w",
-        #     zorder=1
-        # )
+        x_fill = np.insert(x_data, 0, 2 * x_data[0] - x_data[1])
+        depths_fill = np.insert(depths, 0, depths[0])
+        x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
+        depths_fill = np.append(depths_fill, depths[-1])
+        self.map_fig.ax[0].fill_between(
+            x_fill,
+            1.15 * np.ceil(np.nanmax(cell_plt)),
+            depths_fill * self.units["L"],
+            color="w",
+            zorder=1
+        )
 
         self.map_fig.fig.subplots_adjust(
             left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0

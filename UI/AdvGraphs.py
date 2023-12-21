@@ -3538,7 +3538,7 @@ class AdvGraphs(object):
             )
         else:
             self.expanded_x = x
-            ax.plot(x, depth * self.units["L"], color="k")
+            ax.plot(x, depth * self.units["L"], color="k", zorder=3)
 
         # Side lobe cutoff if available
         if self.transect is not None:
@@ -3648,7 +3648,7 @@ class AdvGraphs(object):
                     bed_profiles["depth"][i] * self.units["L"],
                     color="grey",
                     linewidth=1,
-                    zorder=3,
+                    zorder=2,
                 )
 
         if data_quiver:
@@ -3673,7 +3673,7 @@ class AdvGraphs(object):
             units="inches",
             scale=data_quiver["scale"],
             pivot="tail",
-            zorder=2
+            zorder=4
         )
 
         ax.quiverkey(
