@@ -8594,7 +8594,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>Velocity Type:</string>
+                 <string>Data Type:</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -8618,6 +8618,16 @@
                 <item>
                  <property name="text">
                   <string>Streamwise velocity</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>RSSI or SNR</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string># Transects in Avg</string>
                  </property>
                 </item>
                </widget>
@@ -8774,7 +8784,7 @@
             <item row="1" column="0">
              <layout class="QHBoxLayout" name="horizontalLayout_89">
               <item>
-               <widget class="QLabel" name="label_6">
+               <widget class="QLabel" name="txt_map_v_scale">
                 <property name="font">
                  <font>
                   <pointsize>11</pointsize>

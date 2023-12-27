@@ -260,7 +260,7 @@ class Report:
             stage_mean = "{:.2f}".format(meas.stage_meas_m * self.parent.units["L"])
 
         if meas.uncertainty is None or np.isnan(meas.uncertainty.cov):
-            q_cov = selr.tr("N/A")
+            q_cov = self.tr("N/A")
         else:
             q_cov = "{:5.2f}".format(meas.uncertainty.cov)
 

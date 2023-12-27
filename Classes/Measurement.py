@@ -2465,7 +2465,9 @@ class Measurement(object):
         interp_option: bool
             Boolean indicating if interpolated data should be used
         """
+        from datetime import datetime
 
+        print("computing map " + datetime.now().strftime("%H:%M:%S"))
         # Check for heading data
         if all(
             deg == 0

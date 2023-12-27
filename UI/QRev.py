@@ -67,7 +67,8 @@ from UI.Transects2Use import Transects2Use
 from UI.ULollipopPlot import ULollipopPlot
 from UI.UMeasQ import UMeasQ
 from UI.UMeasurement import UMeasurement
-from UI.WTContour import WTContour
+
+# from UI.WTContour import WTContour
 from UI.selectFile import SaveDialog
 from UI.PDFSummaryReport import Report
 
@@ -197,7 +198,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Shiptrack figure for main tab
     main_wt_contour_canvas: MplCanvas
         Color contour canvas for main tab
-    main_wt_contour_fig: WTContour
+    main_wt_contour_fig: AdvGraphs
         Color contour figure for main tab
     main_wt_contour_toolbar: NavigationToolbar
         Color contour toolbar for main tab
@@ -307,13 +308,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Left edge color contour canvas
     left_edge_contour_toolbar: NavigationToolbar
         Left edge color contour toolbar
-    left_edge_contour_fig: WTContour
+    left_edge_contour_fig: AdvGraphs
         Left edge color contour figure
     right_edge_contour_canvas: MplCanvas
         Right edge color contour canvas
     right_edge_contour_toolbar: NavigationToolbar
         Right edge color contour toolbar
-    right_edge_contour_fig: WTContour
+    right_edge_contour_fig: AdvGraphs
         Right edge color contour figure
     left_edge_st_canvas: MplCanvas
         Left edge shiptrack canvas
@@ -1437,21 +1438,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if len(select.type) > 0:
             self.tab_all.setEnabled(False)
             # Tab initialization tracking setup
-            self.main_initialized = False
-            self.systest_initialized = False
-            self.compass_pr_initialized = False
-            self.tempsal_initialized = False
-            self.mb_initialized = False
-            self.bt_initialized = False
-            self.gps_initialized = False
-            self.depth_initialized = False
-            self.wt_initialized = False
-            self.extrap_initialized = False
-            self.edges_initialized = False
-            self.edi_initialized = False
-            self.gps_bt_initialized = False
-            self.adv_graph_initialized = False
-            self.map_initialized = False
+            # self.main_initialized = False
+            # self.systest_initialized = False
+            # self.compass_pr_initialized = False
+            # self.tempsal_initialized = False
+            # self.mb_initialized = False
+            # self.bt_initialized = False
+            # self.gps_initialized = False
+            # self.depth_initialized = False
+            # self.wt_initialized = False
+            # self.extrap_initialized = False
+            # self.edges_initialized = False
+            # self.edi_initialized = False
+            # self.gps_bt_initialized = False
+            # self.adv_graph_initialized = False
+            # self.map_initialized = False
 
             # Reset computational settings
             self.run_oursin = self.manual_computational_settings["run_oursin"]
@@ -2585,7 +2586,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Toggles changes indicating the main has been updated
                 self.change = False
                 self.tab_all.setFocus()
-                print("complete")
         else:
             # Notify user
             QtWidgets.QMessageBox.warning(
@@ -15803,7 +15803,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             }
 
             # Initialize tab
-            self.map_tab_initialize()
+            if not self.map_initialized:
+                self.map_tab_initialize()
+
+            self.rb_map_contour.setChecked(True)
+            self.cb_map_cell_size_auto.setChecked(True)
+            self.ed_map_cell_width.blockSignals(True)
+            self.ed_map_cell_width.setEnabled(False)
+            self.ed_map_cell_width.clear()
+
+            self.ed_map_cell_height.blockSignals(True)
+            self.ed_map_cell_height.setEnabled(False)
+            self.ed_map_cell_height.clear()
+
             self.cb_map_interpolation.setChecked(True)
             self.cb_map_top_bottom.setChecked(True)
             self.cb_map_edges.setChecked(True)
@@ -15817,7 +15829,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "{:3.2f}".format(min_height * self.units["L"])
             )
             self.ed_map_secondary_velocity.setText("")
+            self.ed_map_secondary_velocity.setEnabled(True)
+
+            self.combo_map_data.blockSignals(True)
             self.combo_map_data.setCurrentIndex(0)
+            self.combo_map_data.blockSignals(False)
 
             self.map_change = False
 
@@ -15827,8 +15843,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_map_top_bottom.setChecked(True)
             self.cb_map_edges.setChecked(True)
             self.cb_map_bed_profiles.setChecked(True)
-            self.ed_map_cell_width.setText("")
-            self.ed_map_cell_height.setText("")
+            # self.ed_map_cell_width.setText("")
+            # self.ed_map_cell_height.setText("")
             self.ed_map_secondary_velocity.setText("")
             self.combo_map_data.setCurrentIndex(0)
             self.map_current_settings = {
@@ -15911,7 +15927,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.pb_map_save.clicked.connect(self.map_save_data)
         self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
-        # self.map_initialized = True
+
+        # Limit edit to two decimals float
+        rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
+        validator = QtGui.QRegExpValidator(rx, self)
+        self.ed_map_cell_width.setValidator(validator)
+        self.ed_map_cell_height.setValidator(validator)
+
+        self.map_initialized = True
 
     def update_map(self):
         """Updates MAP with user's parameters."""
@@ -15925,8 +15948,18 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 change_data = False
                 change_plot = False
 
+            if self.combo_map_data.currentIndex() <= 1:
+                self.ed_map_secondary_velocity.setEnabled(True)
+                if self.combo_map_data.currentIndex() == 0:
+                    self.txt_map_v_scale.setText("Secondary Velocity Scale:")
+                else:
+                    self.txt_map_v_scale.setText("Transverse Velocity Scale:")
+            else:
+                self.ed_map_secondary_velocity.setEnabled(False)
+
+
             cell_width = self.check_numeric_input(self.ed_map_cell_width)
-            min_width = self.meas.map.auto_node_horz
+            min_width = self.meas.map.borders_ens[-1] / 1000
             if cell_width is not None:
                 cell_width = cell_width * 1 / self.units["L"]
 
@@ -15937,11 +15970,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
             else:
                 self.ed_map_cell_width.setText(
-                    "{:3.2f}".format(min_width * self.units["L"])
+                    "{:3.2f}".format(self.meas.map.auto_node_horz * self.units["L"])
                 )
 
             cell_height = self.check_numeric_input(self.ed_map_cell_height)
-            min_height = self.meas.map.auto_node_vert
+            min_height = self.meas.map.main_depth_layers[-1] / 100
             if cell_height is not None:
                 cell_height = cell_height * 1 / self.units["L"]
                 if cell_height < min_height:
@@ -15951,7 +15984,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
             else:
                 self.ed_map_cell_height.setText(
-                    "{:3.2f}".format(min_height * self.units["L"])
+                    "{:3.2f}".format(self.meas.map.auto_node_vert * self.units["L"])
                 )
 
             self.map_settings = {
@@ -15986,6 +16019,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             break
                         else:
                             change_plot = True
+                            change_data = False
 
             if self.map_canvas is None:
                 change_plot = True
@@ -16035,6 +16069,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             header = tbl.horizontalHeader()
             col_header = tbl.verticalHeader()
+            header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+            col_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
 
         if (
             len(self.checked_transects_idx) > 0
@@ -16212,9 +16248,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.item(2, 0).setFont(self.font_bold)
             tbl.item(3, 0).setFont(self.font_bold)
 
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
-
     def update_map_plot(self):
         """Method to update map plot based on selected radio buttons."""
 
@@ -16283,44 +16316,67 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates water track profile on MAP data."""
 
         # Initialize the boat speed figure and assign to the canvas
-        self.map_fig = WTContour(canvas=self.map_canvas)
+        self.map_fig = AdvGraphs(canvas=self.map_canvas)
+        self.map_fig.color_map = self.color_map
 
         # Quiver parameters
-        if self.map_settings["combo_map_data"] == "Primary velocity":
-            vy = self.meas.map.secondary_velocity
-            quiver_label = "Secondary velocity"
-        else:
-            vy = self.meas.map.transverse_velocity
-            quiver_label = "Transverse velocity"
-        data_quiver = {
-            "x": self.meas.map.distance_cells_center,
-            "z": self.meas.map.depth_cells_center,
-            "vy": vy,
-            "vz": self.meas.map.vertical_velocity,
-            "scale": self.map_settings["ed_map_secondary_velocity"],
-            "label": quiver_label,
-        }
+        data_quiver = None
+        if self.map_settings["ed_map_secondary_velocity"] and self.map_settings[
+            "combo_map_data"
+        ] in ["Primary velocity", "Streamwise velocity"]:
+            if self.map_settings["combo_map_data"] == "Primary velocity":
+                vy = self.meas.map.secondary_velocity
+                quiver_label = "Secondary velocity"
+            elif self.map_settings["combo_map_data"] == "Streamwise velocity":
+                vy = self.meas.map.transverse_velocity
+                quiver_label = "Transverse velocity"
+            data_quiver = {
+                "x": self.meas.map.distance_cells_center,
+                "z": self.meas.map.depth_cells_center,
+                "vy": vy,
+                "vz": self.meas.map.vertical_velocity,
+                "scale": self.map_settings["ed_map_secondary_velocity"],
+                "label": quiver_label,
+            }
 
         # Bed profiles of transects
+        bed_profiles = None
         if self.map_settings["cb_map_bed_profiles"]:
             bed_profiles = {
                 "x": self.meas.map.acs_distance,
                 "depth": self.meas.map.depth_by_transect,
             }
-        else:
-            bed_profiles = None
 
-        self.map_fig.create(
-            transect=self.meas.map,
-            units=self.units,
-            data_type=self.map_settings["combo_map_data"],
+        map_data = self.meas.map
+        data_type = self.map_settings["combo_map_data"]
+        manufacturer = self.meas.transects[
+            self.checked_transects_idx[0]
+        ].adcp.manufacturer
+        (
+            x_plt,
+            cell_plt,
+            data_plt,
+            depths,
+            x_data,
+            data_units,
+        ) = self.map_fig.contour_map_prep(
+            map_data, data_type, self.units, manufacturer=manufacturer
+        )
+
+        # Plot MAP profile
+        self.map_fig.plt_contour(
+            x_plt_in=x_plt,
+            cell_plt_in=cell_plt,
+            data_plt_in=data_plt,
+            x=x_data,
+            depth=depths,
+            data_units=data_units,
             data_quiver=data_quiver,
             bed_profiles=bed_profiles,
-            color_map=self.color_map,
-            x_axis_type="MAP",
         )
+
         self.map_fig.fig.subplots_adjust(
-            left=0.08, bottom=0.1, right=1.05, top=0.97, wspace=0.02, hspace=0
+            left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0
         )
         # Draw canvas
         self.map_canvas.draw()
@@ -16362,11 +16418,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except KeyError:
                         self.sticky_settings.new("Delimiter", save_map.delimiter)
 
-                    self.meas.map.export_csv(
-                        save_map.full_Name,
-                        units=self.units,
-                        delimiter=save_map.delimiter,
-                    )
+                    manufacturer = self.meas.transects[
+                        self.checked_transects_idx[0]].adcp.manufacturer
+                    self.meas.map.export_csv(save_map.full_Name, units=self.units,
+                        delimiter=save_map.delimiter, manufacturer=manufacturer, )
                 except Exception:
                     self.popup_message(self.tr("Failed to save MAP data."))
 

@@ -3322,6 +3322,74 @@ class AdvGraphs(object):
 
         return x_plt, cell_plt, data_plt, ensembles, depth, x_data
 
+    def contour_map_prep(self, map_data, data_type, units, manufacturer=None):
+        """Modifies the selected data from transect into arrays matching the
+        meshgrid format for creating contour or color plots.
+        Parameters
+        ----------
+        map_data: Map
+            Object of class Map
+        data_type: str
+            Indicates type of data to be contoured
+        units: dict
+            Dictionary of units conversions and labels
+        manufacturer: str
+            Identifies ADCP manufacturer
+
+        Returns
+        -------
+        x_plt: np.array
+            Data in meshgrid format used for the contour x variable
+        cell_plt: np.array
+            Data in meshgrid format used for the contour y variable
+        data_plt: np.array
+            Data in meshgrid format used to determine colors in plot
+        x_data: np.array
+           x variable to plot the cross section
+        data_units: tuple
+            Contains conversion and data_type
+        """
+        # Set up figure
+        self.fig.clear()
+        self.n_subplots = 1
+        self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+        # Create first subplot
+        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+        self.units = units
+        # Identify data to plot
+        if data_type == "Primary velocity":
+            data = map_data.primary_velocity
+            data_units = (self.units["V"], data_type)
+        elif data_type == "Streamwise velocity":
+            data = map_data.streamwise_velocity
+            data_units = (self.units["V"], data_type)
+        elif data_type == "RSSI or SNR":
+            data = map_data.rssi
+            if manufacturer == "TRDI":
+                data_label = "RSSI (counts)"
+            elif manufacturer == "SonTek":
+                data_label = "SNR (dB)"
+            else:
+                data_label = "Intensity"
+            data_units = (1, data_label)
+        elif data_type == "# Transects in Avg":
+            data = map_data.count_valid
+            data_units = (1, data_type)
+        array_shape = map_data.depth_cells_center.shape
+        # Data cells to plot
+        data_xpand = np.repeat(data, 2, axis=0)
+        data_plt = np.repeat(data_xpand, 2, axis=1)
+        # X cells coordinates
+        x_xpand = np.repeat(map_data.borders_ens, 2)[1:-1]
+        x_plt = np.tile(x_xpand, (2 * array_shape[0], 1))
+        # Depth cells coordinates
+        cell_depth_xpand = np.repeat(map_data.main_depth_layers, 2)[1:-1]
+        cell_plt = np.tile(cell_depth_xpand, (2 * array_shape[1], 1)).T
+        # Depths ens values
+        depths = map_data.depths
+        x_data = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) / 2
+        return x_plt, cell_plt, data_plt, depths, x_data, data_units
+
     def plt_contour(
         self,
         x_plt_in,
@@ -3337,6 +3405,8 @@ class AdvGraphs(object):
         n_ensembles=None,
         edge=None,
         show_edge_speed=False,
+        data_quiver=None,
+        bed_profiles=None,
     ):
         """Create contour plot.
 
@@ -3368,6 +3438,10 @@ class AdvGraphs(object):
             Specifies edge (Left or Right)
         show_edge_speed: bool
             Indicates if edge speed should be plotted
+        data_quiver: dict
+            Dictionary containing data and settings to plot quiver
+        bed_profiles: dict
+            Dictionary containing data to plot bed profiles
         """
 
         # Use last subplot
@@ -3414,7 +3488,7 @@ class AdvGraphs(object):
 
         # Generate color contour
         c = ax.pcolormesh(
-            x_plt, cell_plt, data_plt, cmap=cmap, vmin=min_limit, vmax=max_limit
+            x_plt, cell_plt, data_plt, cmap=cmap, vmin=min_limit, vmax=max_limit, zorder=0
         )
 
         # Create data plotted for annotation use
@@ -3459,104 +3533,149 @@ class AdvGraphs(object):
             # Add edge bathymetry
             self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
             ax.plot(
-                self.expanded_x * self.units["L"], depth * self.units["L"], color="k"
+                self.expanded_x * self.units["L"],
+                depth * self.units["L"],
+                color="k",
+                zorder=3,
             )
         else:
             self.expanded_x = x
             ax.plot(x, depth * self.units["L"], color="k")
 
-        depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
+        if self.transect is not None:
+            depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
-        # Side lobe cutoff if available
-        if self.transect.w_vel.sl_cutoff_m is not None:
-            last_valid_cell = np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
-            last_depth_cell_size = depth_obj.depth_cell_size_m[
-                last_valid_cell, np.arange(depth_obj.depth_cell_size_m.shape[1])
-            ]
-            y_plt_sl = self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
+            # Side lobe cutoff if available
+            if self.transect.w_vel.sl_cutoff_m is not None:
+                last_valid_cell = (
+                    np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
+                )
+                last_depth_cell_size = depth_obj.depth_cell_size_m[
+                    last_valid_cell, np.arange(depth_obj.depth_cell_size_m.shape[1])
+                ]
+                y_plt_sl = self.transect.w_vel.sl_cutoff_m + (
+                    last_depth_cell_size * 0.5
+                )
+                if edge is not None:
+                    if self.transect.start_edge == edge:
+                        y_plt_sl = y_plt_sl[: int(n_ensembles)]
+                    else:
+                        y_plt_sl = y_plt_sl[-int(n_ensembles) :]
+                if self.x_axis_type == "L":
+                    ax.plot(
+                        x * self.units["L"],
+                        y_plt_sl * self.units["L"],
+                        color="r",
+                        linewidth=0.5,
+                    )
+                else:
+                    ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+
+            # Upper bound of measured depth cells
+            y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
+                depth_obj.depth_cell_size_m[0, :] * 0.5
+            )
             if edge is not None:
                 if self.transect.start_edge == edge:
-                    y_plt_sl = y_plt_sl[: int(n_ensembles)]
+                    y_plt_top = y_plt_top[: int(n_ensembles)]
                 else:
-                    y_plt_sl = y_plt_sl[-int(n_ensembles) :]
+                    y_plt_top = y_plt_top[-int(n_ensembles) :]
             if self.x_axis_type == "L":
                 ax.plot(
                     x * self.units["L"],
-                    y_plt_sl * self.units["L"],
+                    y_plt_top * self.units["L"],
                     color="r",
                     linewidth=0.5,
                 )
             else:
-                ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+                ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
-        # Upper bound of measured depth cells
-        y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
-            depth_obj.depth_cell_size_m[0, :] * 0.5
-        )
-        if edge is not None:
-            if self.transect.start_edge == edge:
-                y_plt_top = y_plt_top[: int(n_ensembles)]
-            else:
-                y_plt_top = y_plt_top[-int(n_ensembles) :]
-        if self.x_axis_type == "L":
-            ax.plot(
-                x * self.units["L"],
-                y_plt_top * self.units["L"],
-                color="r",
-                linewidth=0.5,
-            )
+            # Extrapolated data plotting additions
+            if show_edge_speed and self.x_axis_type == "L":
+                top_valid = []
+                bottom_valid = []
+
+                for n in range(data_plt.shape[1]):
+                    idx = np.where(data_plt[2:-1, n] > -999)[0]
+                    if len(idx) > 0:
+                        top_valid.append(cell_plt[idx[0] + 2, n])
+                        bottom_valid.append(cell_plt[idx[-1] + 2, n])
+                    else:
+                        top_valid.append(np.nan)
+                        bottom_valid.append(np.nan)
+
+                top_valid.append(top_valid[-1])
+                bottom_valid.append(bottom_valid[-1])
+                top_valid = np.array(top_valid)
+                bottom_valid = np.array(bottom_valid)
+                # Plot extrapolated boundaries
+                ax.plot(
+                    x_plt[-2, :],
+                    bottom_valid,
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    x_plt[2, :],
+                    top_valid,
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    [x_plt[-2, 0], x_plt[2, 0]],
+                    [cell_plt[-2, 0], cell_plt[2, 0]],
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    [x_plt[-2, -1], x_plt[2, -1]],
+                    [cell_plt[-2, -1], cell_plt[2, -1]],
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                # Plot edge contours
+                self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+
         else:
-            ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
+            axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
+            ax.set_xlim(
+                left=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
+                right=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02,
+            )
+            ax.set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
+            ax.xaxis.label.set_fontsize(12)
 
-        # Extrapolated data plotting additions
-        if show_edge_speed and self.x_axis_type == "L":
-            top_valid = []
-            bottom_valid = []
+            # Fill below bottom profile
+            x_fill = np.insert(x, 0, (x_plt[0, 0] - x_plt[0, 1]) * 0.5)
+            x_fill = np.append(x_fill,
+                x_plt[0, -1] + (x_plt[0, -1] - x_plt[0, -2]) * 0.5, )
+            depth_fill = np.insert(depth, 0, depth[0])
+            depth_fill = np.append(depth_fill, depth[-1])
+            ax.fill_between(x_fill, 1.15 * np.ceil(np.nanmax(cell_plt)),
+                                             depth_fill * self.units["L"], color="w",
+                zorder=0, )
+            # # TODO fix pcolormesh (bug?) which make higher/lower cells too wide
+            # self.fig.ax.fill_between(x_fill,
+            #     np.tile(-self.cell_plt[1, 0] * 0.5, len(x_fill)),
+            #     np.tile(self.cell_plt[0, 0], len(x_fill)), color="w", zorder=0, )
 
-            for n in range(data_plt.shape[1]):
-                idx = np.where(data_plt[2:-1, n] > -999)[0]
-                if len(idx) > 0:
-                    top_valid.append(cell_plt[idx[0] + 2, n])
-                    bottom_valid.append(cell_plt[idx[-1] + 2, n])
-                else:
-                    top_valid.append(np.nan)
-                    bottom_valid.append(np.nan)
+        if bed_profiles is not None:
+            for i in range(len(bed_profiles["x"])):
+                ax.plot(
+                    bed_profiles["x"][i] * self.units["L"],
+                    bed_profiles["depth"][i] * self.units["L"],
+                    color="grey",
+                    linewidth=1,
+                    zorder=2,
+                )
 
-            top_valid.append(top_valid[-1])
-            bottom_valid.append(bottom_valid[-1])
-            top_valid = np.array(top_valid)
-            bottom_valid = np.array(bottom_valid)
-            # Plot extrapolated boundaries
-            ax.plot(
-                x_plt[-2, :],
-                bottom_valid,
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                x_plt[2, :],
-                top_valid,
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                [x_plt[-2, 0], x_plt[2, 0]],
-                [cell_plt[-2, 0], cell_plt[2, 0]],
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                [x_plt[-2, -1], x_plt[2, -1]],
-                [cell_plt[-2, -1], cell_plt[2, -1]],
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            # Plot edge contours
-            self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+        if data_quiver:
+            if data_quiver["scale"] is not None:
+                self.add_quiver(ax, data_quiver, self.units)
 
         # Label and limits for y axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
@@ -3565,6 +3684,35 @@ class AdvGraphs(object):
             axis="both", direction="in", bottom=True, top=True, left=True, right=True
         )
         ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
+
+    @staticmethod
+    def add_quiver(ax, data_quiver, units):
+        q = ax.quiver(
+            data_quiver["x"] * units["L"],
+            data_quiver["z"] * units["L"],
+            data_quiver["vy"] * units["V"],
+            data_quiver["vz"] * units["V"],
+            units="inches",
+            scale=data_quiver["scale"],
+            pivot="tail",
+            zorder=4,
+        )
+
+        ax.quiverkey(
+            q,
+            X=0.95,
+            Y=-0.046,
+            U=data_quiver["scale"],
+            label=data_quiver["label"]
+            + "\n"
+            + str(data_quiver["scale"])
+            + " "
+            + units["label_V"],
+            labelpos="E",
+            coordinates="axes",
+            fontproperties={"size": 12},
+            zorder=3,
+        )
 
     def add_edge_bathymetry(self, x, depth, edge=None):
         """Computes a new cross section profile including edge shapes.

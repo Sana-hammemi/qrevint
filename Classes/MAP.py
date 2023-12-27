@@ -1817,7 +1817,7 @@ class MAP(object):
 
         return df
 
-    def export_csv(self, path, units, delimiter="comma delimited"):
+    def export_csv(self, path, units, delimiter="comma delimited", manufacturer=None):
         """Exports map data to ascii file with specified delimiter.
 
         Parameters:
@@ -1831,7 +1831,7 @@ class MAP(object):
         with open(path, "w") as file:
             file.writelines(header)
 
-        df = self.create_map_df(units=units)
+        df = self.create_map_df(units=units, manufacturer=manufacturer)
 
         if "comma" in delimiter:
             sep = ","
