@@ -249,18 +249,20 @@ class SaveDialog(QtWidgets.QDialog):
         elif save_type == "MAP":
             file_name = folder + "/MAP_" + folder.split("/")[-1]
             title = self.tr("Save MAP")
-            f_types = {"comma delimited": f"{self.tr('comma delimited')}( *.csv);;"
-                                          f"{self.tr('colon delimited')}(*.csv);;"
-                                          f"{self.tr('space delimited')}(*.txt);;"
-                                          f"{self.tr('All Files')} (*)",
+            f_types = {
+                "comma delimited": f"{self.tr('comma delimited')}( *.csv);;"
+                f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('All Files')} (*)",
                 "colon delimited": f"{self.tr('colon delimited')}(*.csv);;"
-                                   f"{self.tr('comma delimited')}(*.csv);;"
-                                   f"{self.tr('space delimited')}(*.txt);;"
-                                   f"{self.tr('All Files')} (*)",
+                f"{self.tr('comma delimited')}(*.csv);;"
+                f"{self.tr('space delimited')}(*.txt);;"
+                f"{self.tr('All Files')} (*)",
                 "space delimited": f"{self.tr('space delimited')}(*.txt);;"
-                                   f"{self.tr('colon delimited')}(*.csv);;"
-                                   f"{self.tr('comma delimited')}(*.csv);;"
-                                   f"{self.tr('All Files')} (*)", }
+                f"{self.tr('colon delimited')}(*.csv);;"
+                f"{self.tr('comma delimited')}(*.csv);;"
+                f"{self.tr('All Files')} (*)",
+            }
             if delimiter in f_types:
                 filetype = f_types[delimiter]
             else:

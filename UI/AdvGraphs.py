@@ -3122,9 +3122,6 @@ class AdvGraphs(object):
     def compute_x_axis(self):
         """Compute x axis data."""
 
-        # Initialize x
-        x = None
-
         # x axis is length
         if self.x_axis_type == "L":
             boat_track = self.transect.boat_vel.compute_boat_track(
@@ -3353,14 +3350,15 @@ class AdvGraphs(object):
         self.fig.clear()
         self.n_subplots = 1
         self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
         # Create first subplot
         self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
         self.units = units
+
         # Identify data to plot
-        if data_type == "Primary velocity":
-            data = map_data.primary_velocity
-            data_units = (self.units["V"], data_type)
-        elif data_type == "Streamwise velocity":
+        data = map_data.primary_velocity
+        data_units = (self.units["V"], data_type)
+        if data_type == "Streamwise velocity":
             data = map_data.streamwise_velocity
             data_units = (self.units["V"], data_type)
         elif data_type == "RSSI or SNR":
@@ -3376,15 +3374,19 @@ class AdvGraphs(object):
             data = map_data.count_valid
             data_units = (1, data_type)
         array_shape = map_data.depth_cells_center.shape
+
         # Data cells to plot
         data_xpand = np.repeat(data, 2, axis=0)
         data_plt = np.repeat(data_xpand, 2, axis=1)
+
         # X cells coordinates
         x_xpand = np.repeat(map_data.borders_ens, 2)[1:-1]
         x_plt = np.tile(x_xpand, (2 * array_shape[0], 1))
+
         # Depth cells coordinates
         cell_depth_xpand = np.repeat(map_data.main_depth_layers, 2)[1:-1]
         cell_plt = np.tile(cell_depth_xpand, (2 * array_shape[1], 1)).T
+
         # Depths ens values
         depths = map_data.depths
         x_data = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) / 2
@@ -3488,7 +3490,13 @@ class AdvGraphs(object):
 
         # Generate color contour
         c = ax.pcolormesh(
-            x_plt, cell_plt, data_plt, cmap=cmap, vmin=min_limit, vmax=max_limit, zorder=0
+            x_plt,
+            cell_plt,
+            data_plt,
+            cmap=cmap,
+            vmin=min_limit,
+            vmax=max_limit,
+            zorder=0,
         )
 
         # Create data plotted for annotation use
@@ -3651,18 +3659,21 @@ class AdvGraphs(object):
 
             # Fill below bottom profile
             x_fill = np.insert(x, 0, (x_plt[0, 0] - x_plt[0, 1]) * 0.5)
-            x_fill = np.append(x_fill,
-                x_plt[0, -1] + (x_plt[0, -1] - x_plt[0, -2]) * 0.5, )
+            x_fill = np.append(
+                x_fill,
+                x_plt[0, -1] + (x_plt[0, -1] - x_plt[0, -2]) * 0.5,
+            )
             depth_fill = np.insert(depth, 0, depth[0])
             depth_fill = np.append(depth_fill, depth[-1])
-            ax.fill_between(x_fill, 1.15 * np.ceil(np.nanmax(cell_plt)),
-                                             depth_fill * self.units["L"], color="w",
-                zorder=0, )
-            # # TODO fix pcolormesh (bug?) which make higher/lower cells too wide
-            # self.fig.ax.fill_between(x_fill,
-            #     np.tile(-self.cell_plt[1, 0] * 0.5, len(x_fill)),
-            #     np.tile(self.cell_plt[0, 0], len(x_fill)), color="w", zorder=0, )
+            ax.fill_between(
+                x_fill,
+                1.15 * np.ceil(np.nanmax(cell_plt)),
+                depth_fill * self.units["L"],
+                color="w",
+                zorder=0,
+            )
 
+        # Bed profiles
         if bed_profiles is not None:
             for i in range(len(bed_profiles["x"])):
                 ax.plot(
@@ -3672,7 +3683,7 @@ class AdvGraphs(object):
                     linewidth=1,
                     zorder=2,
                 )
-
+        # Data quiver
         if data_quiver:
             if data_quiver["scale"] is not None:
                 self.add_quiver(ax, data_quiver, self.units)
@@ -3687,6 +3698,18 @@ class AdvGraphs(object):
 
     @staticmethod
     def add_quiver(ax, data_quiver, units):
+        """Adds quiver plot of secondary or transverse velocity to color contour plot.
+
+        Parameters
+        ----------
+        ax: AxesSubplot
+            Axis to which to plot
+        data_quiver: dict
+            Dictionary containing data and settings used to create quiver plot
+        units: dict
+            Dictionary of units conversions and labels
+
+        """
         q = ax.quiver(
             data_quiver["x"] * units["L"],
             data_quiver["z"] * units["L"],
@@ -4036,7 +4059,7 @@ class AdvGraphs(object):
         data_mask=None,
         fmt=None,
         set_annot=True,
-        x_override=[],
+        x_override=None,
     ):
         """Create timeseries plot.
 
@@ -4080,12 +4103,12 @@ class AdvGraphs(object):
 
         # Compute x coordinates in selected units
         if self.x_axis_type == "L":
-            if len(x_override) > 0:
+            if x_override is not None:
                 x_coords = x_override * self.units["L"]
             else:
                 x_coords = self.x * self.units["L"]
         else:
-            if len(x_override) > 0:
+            if x_override is not None:
                 x_coords = x_override
             else:
                 x_coords = self.x
@@ -4167,10 +4190,23 @@ class AdvGraphs(object):
         self.canvas.draw()
 
     def plot_map(self, map_class, units, bath=False, temp=False, plot_transects=False):
-        with self.wait_cursor():
-            # Initialize data sources
-            self.xs = map_class
+        """Plots MAP averaged bathymetry and temperature.
 
+        Parameters
+        ----------
+        map_class: MAP
+            Object of class MAP
+        units: dict
+            Dictionary of conversions and labels
+        bath: bool
+            Indicates if bathymetry should be plotted
+        temp: bool
+            Indicates if temperature should be plotted
+        plot_transects: bool
+            Indicates if data for individual transects should be plotted
+        """
+
+        with self.wait_cursor():
             # Set x axis type and units
             self.x_axis_type = "L"
             self.units = units
@@ -4198,6 +4234,7 @@ class AdvGraphs(object):
             # Create first subplot
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
 
+            # Plot bathymetry
             if bath:
                 data_units = (
                     self.units["L"],
@@ -4209,6 +4246,7 @@ class AdvGraphs(object):
                     data=map_class.depths, data_units=data_units, fmt=fmt
                 )
 
+                # Plot bathymetry from individual transects
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
 
@@ -4222,6 +4260,7 @@ class AdvGraphs(object):
 
                 self.ax[-1].invert_yaxis()
 
+            # Plot temperature
             if temp:
                 y_data = map_class.temperature
 
@@ -4231,6 +4270,7 @@ class AdvGraphs(object):
                     data=y_data, data_units=data_units, ax=self.ax[-1], fmt=fmt
                 )
 
+                # Plot temperature for individual transects
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
                     for tran in range(len(map_class.temperature_by_transect)):

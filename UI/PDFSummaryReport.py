@@ -20,7 +20,6 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Image,
-    PageBreak,
     Table,
     TableStyle,
 )
@@ -300,16 +299,6 @@ class Report:
         else:
             invalid_ens = "{:5.2f}".format(value)
 
-        if meas.run_oursin:
-            if np.isnan(meas.oursin.u_measurement_user["total_95"][0]):
-                uncertainty = self.tr("N/A")
-            else:
-                uncertainty = "%5.1f".format(
-                    meas.oursin.u_measurement_user["total_95"][0]
-                )
-        else:
-            uncertainty = "{:8.1f}".format(meas.uncertainty.total_95_user)
-
         transect_id = meas.checked_transect_idx[0]
         start_time = datetime.strftime(
             datetime.utcfromtimestamp(
@@ -451,17 +440,6 @@ class Report:
                 mb_test_type = meas.mb_tests[selected_idx[0]].type
             else:
                 mb_test_type = meas.mb_tests[-1].type
-            for n in range(n_tests):
-                test = meas.mb_tests[n]
-
-            # MB test result
-            mb_result = self.tr("Unknown")
-            for idx in selected_idx:
-                if meas.mb_tests[idx].moving_bed == "Yes":
-                    mb_result = self.tr("Yes")
-                    break
-                elif meas.mb_tests[idx].moving_bed == "No":
-                    mb_result = self.tr("No")
 
             # Max moving bed
             percent_mb = []
@@ -588,7 +566,7 @@ class Report:
             width_cov = "{:5.2f}".format(trans_prop["width_cov"][-1])
 
         if np.isnan(trans_prop["area_cov"][-1]):
-            area_cov = selt.tr("N/A")
+            area_cov = self.tr("N/A")
         else:
             area_cov = "{:5.2f}".format(trans_prop["area_cov"][-1])
 
@@ -713,7 +691,7 @@ class Report:
                 units=self.parent.units,
                 color_map=self.parent.color_map,
                 x_axis_type=self.parent.x_axis_type,
-                discharge=self.parent.meas.discharge[transect_id],
+                discharge=self.parent.meas.discharge[idx],
             )
         else:
             contour_fig.create_main_contour(
