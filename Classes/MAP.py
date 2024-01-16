@@ -1587,8 +1587,11 @@ class MAP(object):
             y: np.array
         """
 
-        x = self.x - self.x[0]
-        y = self.y - self.y[0]
+        x_raw = copy.deepcopy(self.x)
+        y_raw = copy.deepcopy(self.y)
+
+        x = x_raw - x_raw[0]
+        y = y_raw - y_raw[0]
 
         return x[1:], y[1:]
 
@@ -1600,13 +1603,15 @@ class MAP(object):
             lon: np.array
         """
 
+        x_raw = copy.deepcopy(self.x)
+        y_raw = copy.deepcopy(self.y)
         try:
-            lat, lon = utm.to_latlon(self.x, self.y, zone_number=self.gps_zone_number,
+            lat, lon = utm.to_latlon(x_raw, y_raw, zone_number=self.gps_zone_number,
                 zone_letter=self.gps_zone_letter, )
 
         except BaseException:
-            lat = np.tile(np.nan, len(self.y))
-            lon = np.tile(np.nan, len(self.x))
+            lat = np.tile(np.nan, len(y_raw))
+            lon = np.tile(np.nan, len(x_raw))
 
         return lat[1:], lon[1:]
 
