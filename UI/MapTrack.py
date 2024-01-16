@@ -68,21 +68,21 @@ class Maptrack(object):
         self.fig.ax.xaxis.label.set_fontsize(12)
         self.fig.ax.yaxis.label.set_fontsize(12)
 
-        direction_section = np.arctan2(map_data.slope, 1)
+        # direction_section = np.arctan2(map_data.slope, 1)
 
         if map_data.streamwise_velocity is not None:
-            u = map_data.streamwise_velocity * np.sin(
-                direction_section
-            ) + map_data.transverse_velocity * np.cos(direction_section)
-            v = map_data.transverse_velocity * np.sin(
-                direction_section
-            ) - map_data.streamwise_velocity * np.cos(direction_section)
+            # u = map_data.streamwise_velocity * np.sin(
+            #     direction_section
+            # ) + map_data.transverse_velocity * np.cos(direction_section)
+            # v = map_data.transverse_velocity * np.sin(
+            #     direction_section
+            # ) - map_data.streamwise_velocity * np.cos(direction_section)
+            #
+            # u = u * -1 * map_data._unit
+            # v = v * -1 * map_data._unit
 
-            u = u * -1 * map_data._unit
-            v = v * -1 * map_data._unit
-
-            u_mean = np.nanmean(u, axis=0)
-            v_mean = np.nanmean(v, axis=0)
+            u_mean = np.nanmean(map_data.north_velocity, axis=0)
+            v_mean = np.nanmean(map_data.east_velocity, axis=0)
 
             x_plt = (map_data.x[1:] + map_data.x[:-1]) / 2
             y_plt = (map_data.y[1:] + map_data.y[:-1]) / 2
