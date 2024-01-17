@@ -143,6 +143,7 @@ class MAP(object):
         self.left_geometry = None  # Distance and shape coefficient of left bank
         self.right_geometry = None  # Distance and shape coefficient of right bank
         self.mid_ensembles = None  # Ensembles from the mid section
+        self.transverse_mixing_coefficient  # Transverse mixing coefficient (see Jung, 2019)
 
         self.cells_discharge = None  # MAP discharge for each cell
         self.total_discharge = None  # MAP total discharge
@@ -1421,6 +1422,14 @@ class MAP(object):
             edge_secondary_velocity[is_nan] = np.nan
             edge_vertical_velocity[is_nan] = np.nan
 
+        # Get depth layers on the center of the ensemble
+        depth = (border_depths[1:] + border_depths[:-1]) / 2
+        edge_layers = np.tile(self.main_depth_layers[:, np.newaxis], depth.shape)
+        for i in range(edge_layers.shape[1]):
+            invalid_layer = edge_layers[:, i] > depth[i]
+            edge_layers[invalid_layer, i] = np.nan
+            edge_layers[np.argmax(invalid_layer), i] = depth[i]
+
         if edge == "right":
             self.primary_velocity = np.c_[self.primary_velocity, edge_primary_velocity[:, ::-1]]
             self.secondary_velocity = np.c_[self.secondary_velocity, edge_secondary_velocity[:, ::-1]]
@@ -1430,10 +1439,10 @@ class MAP(object):
             self.direction_ens = np.append(self.direction_ens,
                 np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]), )
 
-            depth = (border_depths[1:] + border_depths[:-1]) / 2
             self.depths = np.append(self.depths, depth[::-1])
             self.mid_ensembles = np.append(self.mid_ensembles, np.tile(False, depth[::-1].shape))
             self.depth_cells_center = np.c_[self.depth_cells_center, mid_cells_y[:, ::-1]]
+            self.depth_cells_layers = np.c_[self.depth_cells_layers, edge_layers[:, ::-1]]
 
             nan_array = np.tile(np.nan, len(depth))
             self.temperature = np.append(self.temperature, nan_array)
@@ -1457,10 +1466,10 @@ class MAP(object):
             self.direction_ens = np.insert(self.direction_ens, 0,
                 np.tile(self.direction_ens[id_edge], edge_primary_velocity.shape[1]), )
 
-            depth = (border_depths[1:] + border_depths[:-1]) / 2
             self.depths = np.insert(self.depths, 0, depth)
             self.mid_ensembles = np.insert(self.mid_ensembles, 0, np.tile(False, depth[::-1].shape))
             self.depth_cells_center = np.c_[mid_cells_y, self.depth_cells_center]
+            self.depth_cells_layers = np.c_[edge_layers, self.depth_cells_layers]
 
             nan_array = np.tile(np.nan, len(depth))
             self.temperature = np.insert(self.temperature, 0, nan_array)
@@ -1503,11 +1512,9 @@ class MAP(object):
             self.cells_discharge = np.tile(np.nan, self.primary_velocity.shape)
             self.total_discharge = np.nan
 
-    def compute_transverse_mixing_coef(self):
+    def compute_transverse_mixing_coef(self, karman=0.41, manning=0.026):
         # Constants
         g = 9.807
-        karman = 0.41
-        manning = 0.026
 
         # Average transverse velocity on ensembles
         tranverse_velocity_deviation = np.subtract(self.transverse_velocity,
@@ -1554,18 +1561,40 @@ class MAP(object):
 
         # Compute distance from streambed
         z = self.depths - self.depth_cells_center
-        z[z < 0] = 0
+        z[z < 0] = np.nan
 
         # Compute vertical mixing coefficient
         vertical_mixing_coefficient = karman * z * (1 - z/self.depths) * shear_velocity
 
         # Compute transverse mixing coefficient
         depths = np.where(self.depths == 0, np.nan, self.depths)
-        d_t = (-1 / self.depths)
-        # Somme des u'n sur la profondeur d
+        cells_height = self.depth_cells_layers[1:, :] - self.depth_cells_layers[:-1, :]
+        transverse_mixing_coefficient = np.tile(np.nan, self.depths.shape[0])
 
-        # Somme des 1/ev vertical mixing coefficient
+        # Compute among ensembles
+        for i in range(len(self.depths)):
+            heights = cells_height[:, i]
+            valid_cells = np.count_nonzero(~np.isnan(z[:, i]))
+            total_ens = 0
+            # Run among depth layers from current ensemble from the bottom
+            for j in range(valid_cells):
+                idx_j = valid_cells - j - 1
+                total_transverse = 0
+                total_mixing_coef = 0
 
+                # Run among depth layers until current depth layer from the bottom
+                for k in range(idx_j+1):
+                    idx_k = valid_cells - k - 1
+                    z_k = heights[idx_k]
+                    total_transverse += z_k * tranverse_velocity_deviation[idx_k, i]
+                    total_mixing_coef += z_k / vertical_mixing_coefficient[idx_k, i]
+
+                total_ens += heights[idx_j] * tranverse_velocity_deviation[idx_j, i] * \
+                             total_transverse * total_mixing_coef
+
+            transverse_mixing_coefficient[i] = (-1 / depths[i]) * total_ens
+
+        self.transverse_mixing_coefficient = copy.deepcopy(transverse_mixing_coefficient)
 
     @staticmethod
     def compute_perimeter(distance, depths):
@@ -1660,8 +1689,8 @@ class MAP(object):
             "Depth cells center " + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
             "Temperature": np.repeat(self.temperature, row), intensity_label: self.rssi.ravel(order="F"),
             "Nb. of Transects averaged": self.count_valid.ravel(order="F"),
-            "Diff. GGA - BT East " + units["label_L"]: np.repeat(self.boat_velocity_diff_x, row) * units["L"],
-            "Diff. GGA - BT North " + units["label_L"]: np.repeat(self.boat_velocity_diff_y, row) * units["L"]
+            "Diff. GGA - BT East " + units["label_V"]: np.repeat(self.boat_velocity_diff_x, row) * units["L"],
+            "Diff. GGA - BT North " + units["label_V"]: np.repeat(self.boat_velocity_diff_y, row) * units["L"]
             }
 
         df = pd.DataFrame(data)
@@ -1723,7 +1752,7 @@ class MAP(object):
         y = copy.deepcopy(self.y)
         lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
         lon_lat = tuple(zip(lon, lat))
-        lin = kml.newlinestring(name=line_name, coords=lon_lat)
+        lin = kml.newlinestring(name="MAP averaged cross-section", coords=lon_lat)
         lin.style.linestyle.color = "ff0000ff"
 
         # Get mid ensemble coordinates
@@ -1737,32 +1766,35 @@ class MAP(object):
 
         # Define length
         vel_norm = np.sqrt(u_mean**2 + v_mean**2)
-        max_speed = np.nanmax(vel_norm)
+        # max_speed = np.nanmax(vel_norm)
         # arrow_length = 10 * max_speed / max(self.borders_ens)
-        arrow_length = 0.001
+        arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0])**2 + (lon[-1] - lon[0])**2)
 
         # Find vector direction
-        direction_section = np.arctan2(self.slope, 1)
-        direction_ens, _ = cart2pol(u_mean, v_mean)
-        downstream_direction = np.logical_or(3.14 + direction_section < direction_ens,
-                                             direction_ens < direction_section)
-        is_downstream = np.where(downstream_direction, 1, -1)
-        oriented_norm = is_downstream * vel_norm * -self._unit
+        # direction_section = np.arctan2(self.slope, 1)
+        # direction_ens, _ = cart2pol(u_mean, v_mean)
+        # downstream_direction = np.logical_or(3.14 + direction_section < direction_ens,
+        #                                      direction_ens < direction_section)
+        # is_downstream = np.where(downstream_direction, 1, -1)
+        # oriented_norm = is_downstream * vel_norm * -self._unit
 
         # Folder to save water velocity arrows
         w_folder = kml.newfolder(name="Water velocity")
 
         # Get color
         cmap = plt.get_cmap(palette)
-        norm = mcolors.Normalize(vmin=np.nanmin(oriented_norm),
-                                 vmax=np.nanmax(oriented_norm))
-        colors = np.round(cmap(norm(oriented_norm)) * 255).astype(int)
+        # norm = mcolors.Normalize(vmin=np.nanmin(oriented_norm),
+        #                          vmax=np.nanmax(oriented_norm))
+        norm = mcolors.Normalize(vmin=0,
+                                 vmax=np.nanmax(vel_norm))
+        colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
 
         u_mean = np.where(np.isnan(u_mean), 0, u_mean)
         v_mean = np.where(np.isnan(v_mean), 0, v_mean)
+
         for i in range(len(u_mean)):
             r, g, b, a = colors[i]
-            self.plot_arrow(w_folder, (lon_vec[i], lat_vec[i]), u_mean[i], v_mean[i],
+            self.plot_arrow(w_folder, (lon_vec[i], lat_vec[i]), u_mean[i], v_mean[i], "Water Velocity " + str(i),
                             arrow_length, color=simplekml.Color.rgb(r, g, b, a))
 
         # Folder to save moving-bed velocity arrows
@@ -1770,10 +1802,8 @@ class MAP(object):
         mb_vel_norm = np.sqrt(self.boat_velocity_diff_x ** 2 + self.boat_velocity_diff_y ** 2)
 
         # Define length of moving-bed arrows
-        mb_max_speed = np.nanmax(mb_vel_norm)
         # arrow_mb_length = 10 * mb_max_speed / max(self.borders_ens)
-        arrow_mb_length = 0.001
-        # valid_mid_ensembles = np.where(self.mid_ensembles)[0]
+        # arrow_mb_length = 0.001
 
         # Get direction of moving-bed velocities
         u_mb = copy.deepcopy(self.boat_velocity_diff_x)
@@ -1781,25 +1811,28 @@ class MAP(object):
         u_mb = np.where(np.isnan(self.boat_velocity_diff_x), 0, u_mb)
         v_mb = np.where(np.isnan(self.boat_velocity_diff_y), 0, v_mb)
 
-        direction_mb, _ = cart2pol(self.boat_velocity_diff_x, self.boat_velocity_diff_y)
-        downstream_mb_direction = np.logical_or(3.14 + direction_section < direction_mb,
-                                                direction_mb < direction_section)
-        is_mb_downstream = np.where(downstream_mb_direction, 1, -1)
-        oriented_mb = is_mb_downstream * mb_vel_norm * -self._unit
+        # direction_mb, _ = cart2pol(self.boat_velocity_diff_x, self.boat_velocity_diff_y)
+        # downstream_mb_direction = np.logical_or(3.14 + direction_section < direction_mb,
+        #                                         direction_mb < direction_section)
+        # is_mb_downstream = np.where(downstream_mb_direction, 1, -1)
+        # oriented_mb = is_mb_downstream * mb_vel_norm * -self._unit
+        #
+        # # Get color for moving-bed arrows
+        # mb_norm = mcolors.Normalize(vmin=np.nanmin(oriented_mb),
+        #                             vmax=np.nanmax(oriented_mb))
+        # mb_colors = np.round(cmap(mb_norm(oriented_mb)) * 255).astype(int)
+        mb_norm = mcolors.Normalize(vmin=0,
+                                    vmax=np.nanmax(mb_vel_norm))
+        mb_colors = np.round(cmap(mb_norm(mb_vel_norm)) * 255).astype(int)
 
-        # Get color for moving-bed arrows
-        mb_norm = mcolors.Normalize(vmin=np.nanmin(oriented_mb),
-                                    vmax=np.nanmax(oriented_mb))
-        mb_colors = np.round(cmap(mb_norm(oriented_mb)) * 255).astype(int)
         for i in range(len(self.boat_velocity_diff_x)):
-            # ens_idx = valid_mid_ensembles[i]
             r, g, b, a = mb_colors[i]
-            self.plot_arrow(mb_folder, (lon_vec[i], lat_vec[i]), u_mb[i], v_mb[i],
-                            arrow_mb_length, color=simplekml.Color.rgb(r, g, b, a))
+            self.plot_arrow(mb_folder, (lon_vec[i], lat_vec[i]), u_mb[i], v_mb[i], "Moving-bed Velocity " + str(i),
+                            arrow_length, color=simplekml.Color.rgb(r, g, b, a))
 
         kml.save(path)
 
-    def plot_arrow(self, folder, coord_start, ve, vn, arrow_length=0.001, color=None):
+    def plot_arrow(self, folder, coord_start, ve, vn, name, arrow_length=0.001, color=None):
         """
         Draw an arrow based on the North and East speed components.
 
@@ -1808,21 +1841,22 @@ class MAP(object):
             coord_start: Tuple (longitude, latitude) of starting point
             ve: East velocity component (array)
             vn: North velocity component (array)
-            arrow_length: length of the arrow (float)
-            arrow_width: width of the arrow (float)
+            name: Name of the arrow (string)
+            arrow_length: Length of the arrow (float)
+            color: Kml Hex color of the arrow (string)
         """
         # Calculating the arrowhead coordinates
         arrow_x = coord_start[0] + ve * arrow_length
         arrow_y = coord_start[1] + vn * arrow_length
 
         # Creation of the LineString tag for the arrow line
-        line = folder.newlinestring(name="Arrow", coords=[coord_start, (arrow_x, arrow_y)])
+        line = folder.newlinestring(name=name, coords=[coord_start, (arrow_x, arrow_y)])
         line.style.linestyle.width = 2
 
         # Creating the triangle at the tip of the arrow
-        arrow_polygon = folder.newpolygon(name="Arrowhead")
-        arrow_coordinates_base = self.calculate_arrow_coordinates_base(coord_start[0], coord_start[1], ve, vn,
-                                                                       arrow_length)
+        arrow_polygon = folder.newpolygon(name=name)
+        arrow_coordinates_base = self.calculate_arrow_coordinates_base(coord_start[0], coord_start[1],
+                                                                       ve, vn, arrow_length)
         arrow_polygon.outerboundaryis = arrow_coordinates_base
         arrow_polygon.style.linestyle.width = 2
 
@@ -1831,7 +1865,7 @@ class MAP(object):
             arrow_polygon.style.linestyle.color = color
 
     @staticmethod
-    def calculate_arrow_coordinates_base(x, y, vx, vy, arrow_length=0.1):
+    def calculate_arrow_coordinates_base(x, y, vx, vy, arrow_length):
         """
         Calculates the coordinates of the points forming the angles of an arrow from the base.
 
