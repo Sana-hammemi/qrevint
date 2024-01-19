@@ -37,6 +37,7 @@ from MiscLibs.common_functions import (
 )
 from UI.AdvGraphs import AdvGraphs
 from UI.AxesScale import AxesScale
+from UI.ArrowsScale import ArrowsScale
 from UI.BoatSpeed import BoatSpeed
 from UI.Comment import Comment
 from UI.DischargeTS import DischargeTS
@@ -16440,17 +16441,77 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
         )
 
-        self.meas.map.export_kml(self.meas, fullname)
+        scale = ArrowsScale()
+        scale.cb_auto_arrow.setChecked(True)
+        scale.v_max_label.setText("V max " + self.units['label_V'])
+        scale.v_min_label.setText("V min " + self.units['label_V'])
+        scale.arrow_scale_label.setText("Scale " + self.units['label_L'] + ": 1" +
+                                        self.units['label_V'][1:-1] + " =")
 
-        try:
-            os.startfile(fullname)
-        except os.error:
-            self.popup_message(
-                text=self.tr(
-                    "Google Earth is not installed or is not associated with "
-                    "kml files."
+        _, _, _, arrow_scale, v_min, v_max = self.meas.map.auto_arrow(meas=self.meas)
+        scale.ed_v_max.setText("%.2f" % v_max * self.units['V'])
+        scale.ed_v_min.setText("%.2f" % v_min * self.units['V'])
+        scale.ed_arrow_scale.setText("%.2f" % arrow_scale * self.units['L'])
+        scale.combo_palette_color_bar.setEnabled(False)
+        scale.ed_v_max.setEnabled(False)
+        scale.ed_v_min.setEnabled(False)
+        scale.ed_arrow_scale.setEnabled(False)
+        scale.cb_auto_arrow.clicked.connect(
+            lambda: self.change_auto_scale_arrow(scale)
+        )
+        scale.combo_palette_color_bar.currentIndexChanged.connect(
+            lambda: self.change_cbar_palette(scale)
+        )
+
+        rsp = scale.exec_()
+
+        if rsp == QtWidgets.QDialog.Accepted:
+            try:
+                arrow_scale = float(scale.ed_arrow_scale.text()) / self.units['L']
+                v_min =float(scale.ed_v_min.text()) / self.units['V']
+                v_max = float(scale.ed_v_max.text()) / self.units['V']
+                self.meas.map.export_kml(self.meas, fullname,
+                                         arrow_scale=arrow_scale,
+                                         v_min=v_min,
+                                         v_max=v_max,
+                                         palette=scale.combo_palette_color_bar.currentText())
+            except ValueError:
+                self.popup_message(
+                    text=self.tr(
+                        "Invalid format, please enter numeric values."
+                    )
                 )
-            )
+                return
+
+            try:
+                os.startfile(fullname)
+            except os.error:
+                self.popup_message(
+                    text=self.tr(
+                        "Google Earth is not installed or is not associated with "
+                        "kml files."
+                    )
+                )
+
+    def change_cbar_palette(self, scale):
+        scale.plot_colorbar(palette=scale.combo_palette_color_bar.currentText())
+
+    def change_auto_scale_arrow(self, scale):
+        if scale.cb_auto_arrow.isChecked():
+            scale.combo_palette_color_bar.setEnabled(False)
+            scale.ed_v_max.setEnabled(False)
+            scale.ed_v_min.setEnabled(False)
+            scale.ed_arrow_scale.setEnabled(False)
+            _, _, _, arrow_length, v_min, v_max = self.meas.map.auto_arrow(meas=self.meas)
+            scale.ed_v_max.setText("%.2f" % v_max)
+            scale.ed_v_min.setText("%.2f" % v_min)
+            scale.ed_arrow_scale.setText("%.2f" % arrow_length)
+        else:
+            scale.combo_palette_color_bar.setEnabled(True)
+            scale.ed_v_max.setEnabled(True)
+            scale.ed_v_min.setEnabled(True)
+            scale.ed_arrow_scale.setEnabled(True)
+
 
     def map_cell_auto(self):
         """Enable or disable the width and Height line edits."""
