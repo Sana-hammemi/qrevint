@@ -3362,10 +3362,10 @@ class AdvGraphs(object):
         # Identify data to plot
         if data_type == "Primary velocity":
             data = map_data.primary_velocity
-            data_units = (self.units["V"], data_type)
+            data_units = (self.units["V"], data_type + " " + self.units["label_V"])
         elif data_type == "Streamwise velocity":
             data = map_data.streamwise_velocity
-            data_units = (self.units["V"], data_type)
+            data_units = (self.units["V"], data_type + " " + self.units["label_V"])
         elif data_type == "RSSI or SNR":
             data = map_data.rssi
             if manufacturer == "TRDI":

@@ -1845,7 +1845,7 @@ class MAP(object):
 
         return u_mean, v_mean, vel_norm, arrow_length_m, v_min, v_max
 
-    def plot_arrow(self, folder, coord_start, ve, vn, name, arrow_length=0.001, color=None):
+    def plot_arrow(self, folder, coord_start, ve, vn, name, arrow_scale, color=None):
         """
         Draw an arrow based on the North and East speed components.
 
@@ -1858,9 +1858,9 @@ class MAP(object):
             arrow_length: Length of the arrow (float)
             color: Kml Hex color of the arrow (string)
         """
-        distance = arrow_length * np.sqrt(ve**2 + vn**2)
+        distance = arrow_scale * np.sqrt(ve**2 + vn**2)
         coord_end = self.compute_new_coordinates(start_point=coord_start, distance=distance,
-                                                   bearing=math.atan2(ve, vn))
+                                                 bearing=math.atan2(ve, vn))
 
         # Creation of the LineString tag for the arrow line
         line = folder.newlinestring(name=name, coords=[coord_start, coord_end])
@@ -1868,8 +1868,7 @@ class MAP(object):
 
         # Creating the triangle at the tip of the arrow
         arrow_polygon = folder.newpolygon(name=name)
-        arrow_coordinates_base = self.compute_arrow_coordinates_base(coord_start, coord_end,
-                                                                       ve, vn, arrow_length)
+        arrow_coordinates_base = self.compute_arrow_coordinates_base(coord_start, coord_end, ve, vn)
         arrow_polygon.outerboundaryis = arrow_coordinates_base
         arrow_polygon.style.linestyle.width = 2
 

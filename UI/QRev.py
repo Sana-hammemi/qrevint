@@ -16317,7 +16317,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates water track profile on MAP data."""
 
         # Initialize the boat speed figure and assign to the canvas
-        # self.map_fig = WTContour(canvas=self.map_canvas)
         self.map_fig = AdvGraphs(canvas=self.map_canvas)
         self.map_fig.color_map = self.color_map
 
@@ -16356,10 +16355,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Plot MAP profile
         self.map_fig.plt_contour(
-            x_plt_in=x_plt,
+            x_plt_in=x_plt * self.units["L"],
             cell_plt_in=cell_plt,
             data_plt_in=data_plt,
-            x=x_data,
+            x=x_data * self.units["L"],
             depth=depths,
             data_units=data_units,
             data_quiver=data_quiver,
@@ -16372,8 +16371,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         x_fill = np.append(x_fill, 2 * x_data[-1] - x_data[-2])
         depths_fill = np.append(depths_fill, depths[-1])
         self.map_fig.ax[0].fill_between(
-            x_fill,
-            1.15 * np.ceil(np.nanmax(cell_plt)),
+            x_fill * self.units["L"],
+            1.15 * np.ceil(np.nanmax(cell_plt)) * self.units["L"],
             depths_fill * self.units["L"],
             color="w",
             zorder=1
@@ -16449,9 +16448,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                         self.units['label_V'][1:-1] + " =")
 
         _, _, _, arrow_scale, v_min, v_max = self.meas.map.auto_arrow(meas=self.meas)
-        scale.ed_v_max.setText("%.2f" % v_max * self.units['V'])
-        scale.ed_v_min.setText("%.2f" % v_min * self.units['V'])
-        scale.ed_arrow_scale.setText("%.2f" % arrow_scale * self.units['L'])
+
+        scale.ed_v_max.setText("%.2f" % (v_max * self.units['V']))
+        scale.ed_v_min.setText("%.2f" % (v_min * self.units['V']))
+        scale.ed_arrow_scale.setText("%.2f" % (arrow_scale * self.units['L']))
         scale.combo_palette_color_bar.setEnabled(False)
         scale.ed_v_max.setEnabled(False)
         scale.ed_v_min.setEnabled(False)
