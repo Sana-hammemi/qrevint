@@ -242,7 +242,7 @@ class MAP(object):
             self.compute_discharge()
 
             # Compute Transverse mixing coefficient
-            self.compute_transverse_mixing_coef()
+            # self.compute_transverse_mixing_coef()
 
         if 'b_vel_gga_x' in param.keys():
             self.boat_velocity_diff_x = self.b_vel_gga_x - self.b_vel_bt_x
@@ -1690,8 +1690,12 @@ class MAP(object):
             "Depth cells center " + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
             "Temperature": np.repeat(self.temperature, row), intensity_label: self.rssi.ravel(order="F"),
             "Nb. of Transects averaged": self.count_valid.ravel(order="F"),
-            "Diff. GGA - BT East " + units["label_V"]: np.repeat(self.boat_velocity_diff_x, row) * units["L"],
-            "Diff. GGA - BT North " + units["label_V"]: np.repeat(self.boat_velocity_diff_y, row) * units["L"]
+            }
+
+        if self.boat_velocity_diff_x is not None:
+            data |= {
+                "Diff. GGA - BT East " + units["label_V"]: np.repeat(self.boat_velocity_diff_x, row) * units["L"],
+                "Diff. GGA - BT North " + units["label_V"]: np.repeat(self.boat_velocity_diff_y, row) * units["L"]
             }
 
         df = pd.DataFrame(data)
@@ -1727,9 +1731,20 @@ class MAP(object):
     def export_kml(self, meas, path, palette='jet', arrow_scale=None, v_min=None, v_max=None):
         """Create KML file for MAP.
 
-        Parameters:
-            meas: Measurement
-            path: str
+        Parameters
+        ----------
+        meas: Measurement
+            Object of Measurement class
+        path: str
+            Path to save kml file
+        palette: str
+            Cmap palette to use for arrows color bar
+        arrow_scale: float
+            Equivalent scale (in meter) for 1m/s velocity
+        v_min: float
+            Min velocity of the gradient cbar
+        v_max: float
+            Max velocity of the gradient cbar
         """
 
         kml = simplekml.Kml(open=1)
@@ -1807,6 +1822,33 @@ class MAP(object):
         kml.save(path)
 
     def auto_arrow(self, lat=None, lon=None, meas=None):
+        """Create KML file for MAP.
+
+        Parameters
+        ----------
+        lat: Measurement
+            'left' or 'right'
+        lon: str
+            Path to save kml file
+        meas: Measurement
+            Objet of Measurement class
+
+        Returns
+        ----------
+        u_mean: array
+            Mean North velocity on each vertical
+        v_mean: array
+            Mean East velocity on each vertical
+        vel_norm: array
+            Norm of mean velocity on each vertical
+        arrow_length_m: float
+            Automatic arrow size for 1m/s velocity
+        v_min: float
+            Automatic vmin value for arrows cbar
+        v_max: float
+            Automatic vmax value for arrows cbar
+
+        """
         # Get mean velocity of each ensemble
         u_mean = np.nanmean(self.north_velocity, axis=0)
         v_mean = np.nanmean(self.east_velocity, axis=0)
@@ -1849,14 +1891,20 @@ class MAP(object):
         """
         Draw an arrow based on the North and East speed components.
 
-        Parameters:
-            folder: simplekml object
-            coord_start: Tuple (longitude, latitude) of starting point
-            ve: East velocity component (array)
-            vn: North velocity component (array)
-            name: Name of the arrow (string)
-            arrow_length: Length of the arrow (float)
-            color: Kml Hex color of the arrow (string)
+        Parameters
+        ----------
+        folder: simplekml object
+            kml folder to fold arrow (water velocity or moving-bed velocity)
+        coord_start: tuple
+            Arrow starting point coordinates (longitude, latitude)
+        ve: float
+            East velocity component
+        vn: float
+            North velocity component
+        name: string
+            Name of the arrow
+        color: string
+            Kml Hex color of the arrow
         """
         distance = arrow_scale * np.sqrt(ve**2 + vn**2)
         coord_end = self.compute_new_coordinates(start_point=coord_start, distance=distance,
@@ -1879,25 +1927,33 @@ class MAP(object):
     @staticmethod
     def compute_arrow_coordinates_base(coord_start, coord_end, vx, vy):
         """
-        Calculates the coordinates of the points forming the angles of an arrow from the base.
+        Computes the coordinates of the points forming the angles of an arrow from the base.
 
-        Parameters:
-            coord_start: Coordinates of the base of the arrow
-            coord_end: Coordinates of the head of the arrow
-            vx, vy: Speed components
+        Parameters
+        ----------
+        coord_start: tuple
+            Coordinates of the base of the arrow
+        coord_end: tuple
+            Coordinates of the head of the arrow
+        vx: float
+            East velocity component
+        vy: float
+            North velocity component
 
-        Returns:
-        A list of tuples representing the coordinates of the points forming the arrow
+        Returns
+        ----------
+        arrow_coordinates: list(tuple)
+            A list of tuples representing the coordinates of the points
+            forming the head of the arrow
         """
         # Calculating the angle in radians from the speed components
         arrow_angle = math.atan2(vy, vx)
 
         # Coordinates of the arrowhead
-        arrow_distance = np.sqrt((coord_end[0] - coord_start[0])**2 + (coord_end[1] - coord_start[1])**2)
         x_base, y_base = (0.2 * coord_start[0] + 0.8 * coord_end[0], 0.2 * coord_start[1] + 0.8 * coord_end[1])
 
         head_distance = np.sqrt((coord_end[0] - x_base)**2 + (coord_end[1] - y_base)**2)
-        head_size = head_distance * math.cos(math.radians(30))
+        head_size = head_distance * math.cos(math.radians(80))
         base_point2 = (
             x_base - head_size * math.sin(arrow_angle),
             y_base + head_size * math.cos(arrow_angle)
@@ -1914,6 +1970,23 @@ class MAP(object):
 
     @staticmethod
     def compute_new_coordinates(start_point, distance, bearing):
+        """
+        Calculates the coordinates of the points forming the angles of an arrow from the base.
+
+        Parameters
+        ----------
+        start_point: tuple
+            Coordinates of the tail of the arrow
+        distance: float
+            Distance (in meters) to extend the arrow
+        bearing: float
+            Orientation of the arrow
+
+        Returns
+        ----------
+        coord_end: tuple
+            Coordinates of the head of the arrow
+        """
         earth_radius = 6371000
         lat1, lon1 = math.radians(start_point[1]), math.radians(start_point[0])
         d_over_earth_radius = distance / earth_radius
