@@ -15894,7 +15894,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_table()
 
         # MAP figures
-        self.update_map()
+        self.update_map_plot()
 
         self.canvases = [self.map_canvas]
         self.figs = [self.map_fig]
