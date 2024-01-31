@@ -5397,7 +5397,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Configure external heading
         self.cb_ext_compass.blockSignals(True)
         self.cb_ext_compass.setEnabled(False)
-        self.cb_ext_compass.setChecked(False)
         for transect_idx in self.checked_transects_idx:
             if (
                 self.meas.transects[transect_idx].sensors.heading_deg.external
@@ -5405,6 +5404,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             ):
                 self.cb_ext_compass.setEnabled(True)
                 break
+            else:
+                self.cb_ext_compass.setChecked(False)
         self.cb_ext_compass.blockSignals(False)
 
         # Update table, graphs, messages, and comments
@@ -15957,7 +15958,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             else:
                 self.ed_map_secondary_velocity.setEnabled(False)
 
-
             cell_width = self.check_numeric_input(self.ed_map_cell_width)
             min_width = self.meas.map.borders_ens[-1] / 1000
             if cell_width is not None:
@@ -16419,9 +16419,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.sticky_settings.new("Delimiter", save_map.delimiter)
 
                     manufacturer = self.meas.transects[
-                        self.checked_transects_idx[0]].adcp.manufacturer
-                    self.meas.map.export_csv(save_map.full_Name, units=self.units,
-                        delimiter=save_map.delimiter, manufacturer=manufacturer, )
+                        self.checked_transects_idx[0]
+                    ].adcp.manufacturer
+                    self.meas.map.export_csv(
+                        save_map.full_Name,
+                        units=self.units,
+                        delimiter=save_map.delimiter,
+                        manufacturer=manufacturer,
+                    )
                 except Exception:
                     self.popup_message(self.tr("Failed to save MAP data."))
 

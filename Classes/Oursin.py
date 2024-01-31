@@ -2152,6 +2152,7 @@ class Oursin(object):
             self.d_left_error_min.append(min_left_dist)
             meas_temp.transects[trans_id].edges.left.distance_m = min_left_dist
             meas_temp.transects[trans_id].edges.right.distance_m = min_right_dist
+
             meas_temp.transects[trans_id].edges.left.type = "Triangular"
             meas_temp.transects[trans_id].edges.right.type = "Triangular"
             meas_temp.discharge[trans_id].populate_data(
