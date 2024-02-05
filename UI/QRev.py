@@ -1756,9 +1756,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 with self.wait_cursor():
                     if create_pdf:
-                        pdf_fullName = save_file.full_Name[:-4] + ".pdf"
-                        pdf = Report(pdf_fullName, self)
-                        pdf.create()
+                        try:
+                            pdf_fullName = save_file.full_Name[:-4] + ".pdf"
+                            pdf = Report(pdf_fullName, self)
+                            pdf.create()
+                        except:
+                            self.popup_message(self.tr("Error saving PDF file."))
 
                     # Save data in Matlab format
                     if self.save_all:
