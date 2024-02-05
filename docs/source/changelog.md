@@ -1,8 +1,22 @@
 # QRev Change Log
 
-## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
+## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
 
 **Status**: *Recommended*
+
+**Added:**
+- N/A
+
+**Changed:**
+- N/A
+
+**Fixed:**
+- Crash when opening a measurement with a single transect.
+
+
+## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
+
+**Status**: *Allowed*
 
 **Changes:**
 - Updated Export Mean Cross-Option signal
