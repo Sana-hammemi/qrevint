@@ -1632,7 +1632,7 @@ class TransectData(object):
                         transects.append(trans)
             except TypeError:
                 trans = TransectData()
-                trans.populate_from_qrev_mat(meas_struct.transects)
+                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct)
                 transects.append(trans)
 
         return transects
