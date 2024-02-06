@@ -2,7 +2,7 @@
 
 ## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
 
-**Status**: *Recommended*
+**Status**: *Testing*
 
 **Added:**
 - N/A
@@ -12,6 +12,7 @@
 
 **Fixed:**
 - Crash when opening a measurement with a single transect.
+- Duplicating signals as new measurements files are loaded without closing UI.
 
 
 ## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
