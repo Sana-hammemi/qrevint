@@ -1437,22 +1437,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # If a selection is made begin loading
         if len(select.type) > 0:
             self.tab_all.setEnabled(False)
-            # Tab initialization tracking setup
-            # self.main_initialized = False
-            # self.systest_initialized = False
-            # self.compass_pr_initialized = False
-            # self.tempsal_initialized = False
-            # self.mb_initialized = False
-            # self.bt_initialized = False
-            # self.gps_initialized = False
-            # self.depth_initialized = False
-            # self.wt_initialized = False
-            # self.extrap_initialized = False
-            # self.edges_initialized = False
-            # self.edi_initialized = False
-            # self.gps_bt_initialized = False
-            # self.adv_graph_initialized = False
-            # self.map_initialized = False
 
             # Reset computational settings
             self.run_oursin = self.manual_computational_settings["run_oursin"]
@@ -1757,9 +1741,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 with self.wait_cursor():
                     if create_pdf:
-                        pdf_fullName = save_file.full_Name[:-4] + ".pdf"
-                        pdf = Report(pdf_fullName, self)
-                        pdf.create()
+                        try:
+                            pdf_fullName = save_file.full_Name[:-4] + ".pdf"
+                            pdf = Report(pdf_fullName, self)
+                            pdf.create()
+                        except:
+                            self.popup_message(self.tr("Error saving PDF file."))
 
                     # Save data in Matlab format
                     if self.save_all:

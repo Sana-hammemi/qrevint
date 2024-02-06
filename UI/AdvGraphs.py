@@ -2037,6 +2037,7 @@ class AdvGraphs(object):
             data_2=data_invalid,
             data_mask=invalid,
             fmt=fmt,
+            min_y=0,
         )
 
     def bt_3beam_ts(self):
@@ -2678,6 +2679,7 @@ class AdvGraphs(object):
                 data_2=data_invalid,
                 data_mask=invalid,
                 fmt=fmt,
+                min_y=0,
             )
 
     def vtg_speed_ts(self, lbl="VTG Speed"):
@@ -2703,6 +2705,8 @@ class AdvGraphs(object):
                 + self.transect.boat_vel.vtg_vel.v_mps**2
             )
 
+            data_invalid[np.isnan(data_invalid)] = 0
+
             # Format for data and invalid identification
             fmt = [
                 {"color": "g", "linestyle": "-"},
@@ -2720,6 +2724,7 @@ class AdvGraphs(object):
                 data_2=data_invalid,
                 data_mask=data_mask,
                 fmt=fmt,
+                min_y=0,
             )
 
     def heading_adcp_ts(self):
@@ -3025,7 +3030,7 @@ class AdvGraphs(object):
 
         beam_depths = np.array([])
         data_units = (self.units["L"], "Depth " + self.units["label_L"])
-
+        # old_x = np.copy(self.x)
         # Selected cross section
         if final:
             # Get selected depth
@@ -3033,31 +3038,26 @@ class AdvGraphs(object):
                 self.transect.depths, self.transect.depths.selected
             )
             beam_depths = depth_selected.depth_processed_m
-            old_x = np.copy(self.x)
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
@@ -3066,11 +3066,9 @@ class AdvGraphs(object):
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
@@ -3079,7 +3077,6 @@ class AdvGraphs(object):
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # Format y axis
         self.ax[-1].invert_yaxis()
@@ -3757,65 +3754,73 @@ class AdvGraphs(object):
         d: np.array(float)
             Array of depths along transect with edge shapes in m
         """
-
+        valid_idx = np.where(np.logical_not(np.isnan(depth)))[0]
         # Left edge
         if self.transect.start_edge == "Left":
             if self.transect.edges.left.type == "Rectangular":
                 start_x = np.array([0, 0])
-                start_d = np.array([0, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]]])
             elif self.transect.edges.left.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.left)
                 start_x = np.array([0, 0, self.transect.edges.left.distance_m])
-                start_d = np.array([0, depth[0] * cd, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]] * cd, depth[valid_idx[0]]])
             if self.transect.edges.right.type == "Rectangular":
-                end_x = np.array(2 * [x[-1] + self.transect.edges.right.distance_m])
-                end_d = np.array([depth[-1], 0])
+                end_x = np.array(
+                    2 * [x[valid_idx[-1]] + self.transect.edges.right.distance_m]
+                )
+                end_d = np.array([depth[valid_idx[-1]], 0])
             elif self.transect.edges.right.type == "Triangular":
-                end_x = np.array([x[-1] + self.transect.edges.right.distance_m])
+                end_x = np.array(
+                    [x[valid_idx[-1]] + self.transect.edges.right.distance_m]
+                )
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.right)
                 end_x = np.array(
                     [
-                        x[-1],
-                        x[-1] + self.transect.edges.right.distance_m,
-                        x[-1] + self.transect.edges.right.distance_m,
+                        x[valid_idx[-1]],
+                        x[valid_idx[-1]] + self.transect.edges.right.distance_m,
+                        x[valid_idx[-1]] + self.transect.edges.right.distance_m,
                     ]
                 )
-                end_d = np.array([depth[-1], depth[-1] * cd, 0])
+                end_d = np.array([depth[valid_idx[-1]], depth[valid_idx[-1]] * cd, 0])
 
         # Right edge
         else:
             if self.transect.edges.right.type == "Rectangular":
                 start_x = np.array([0, 0])
-                start_d = np.array([0, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]]])
             elif self.transect.edges.right.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.right)
                 start_x = np.array([0, 0, self.transect.edges.right.distance_m])
-                start_d = np.array([0, depth[0] * cd, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]] * cd, depth[valid_idx[0]]])
 
             if self.transect.edges.left.type == "Rectangular":
-                end_x = np.array(2 * [x[-1] + self.transect.edges.left.distance_m])
-                end_d = np.array([depth[-1], 0])
+                end_x = np.array(
+                    2 * [x[valid_idx[-1]] + self.transect.edges.left.distance_m]
+                )
+                end_d = np.array([depth[valid_idx[-1]], 0])
             elif self.transect.edges.left.type == "Triangular":
-                end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
+                end_x = np.array(
+                    [x[valid_idx[-1]] + self.transect.edges.left.distance_m]
+                )
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.left)
                 end_x = np.array(
                     [
-                        x[-1],
-                        x[-1] + self.transect.edges.left.distance_m,
-                        x[-1] + self.transect.edges.left.distance_m,
+                        x[valid_idx[-1]],
+                        x[valid_idx[-1]] + self.transect.edges.left.distance_m,
+                        x[valid_idx[-1]] + self.transect.edges.left.distance_m,
                     ]
                 )
-                end_d = np.array([depth[-1], depth[-1] * cd, 0])
+                end_d = np.array([depth[valid_idx[-1]], depth[valid_idx[-1]] * cd, 0])
 
         # Combine edges with transect data
         if edge is None:
@@ -4060,6 +4065,7 @@ class AdvGraphs(object):
         fmt=None,
         set_annot=True,
         x_override=None,
+        min_y=None,
     ):
         """Create timeseries plot.
 
@@ -4161,15 +4167,19 @@ class AdvGraphs(object):
             max_y = (
                 np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.02)
             ) * data_units[0]
-            min_y = (
-                np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
-            ) * data_units[0]
-            if min_y == 0:
+            if min_y is not None:
+                min_y = min_y - max_y * 0.02
+            elif min_y < 0.1:
                 min_y = max_y * -0.02
+            else:
+                min_y = (
+                    np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
+                ) * data_units[0]
             ax.set_ylim(top=max_y, bottom=min_y)
         except (TypeError, ValueError):
             pass
 
+        ax.margins(0.1)
         # Initialize annotation for data cursor. Annotation should only be
         # associated with one call to plt_timeseries if figure makes multiple
         # calls to create multiple lines on the same graph.

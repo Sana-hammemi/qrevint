@@ -371,11 +371,11 @@ class BoatSpeed(object):
             if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()
                 self.fig.ax.set_xlim(
-                    right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02 * units["L"]
+                    right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02
                 )
             else:
                 self.fig.ax.set_xlim(
-                    left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02 * units["L"]
+                    left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02
                 )
             self.fig.ax.set_xlabel(self.canvas.tr("Length" + units["label_L"]))
         elif x_axis_type == "E":

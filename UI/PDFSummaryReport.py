@@ -449,7 +449,11 @@ class Report:
                 percent_mb.append(meas.mb_tests[idx].percent_mb)
                 mb_duration = mb_duration + meas.mb_tests[idx].duration_sec
                 quality.append(meas.mb_tests[idx].test_quality)
-            max_mb_per = "{:.2f}".format(np.nanmax(np.array(percent_mb)))
+            if len(selected_idx) >= 1:
+                max_mb_per = "{:.2f}".format(np.nanmax(np.array(percent_mb)))
+            else:
+                quality = [meas.mb_tests[-1].test_quality]
+                max_mb_per = ""
             quality = list(set(quality))
             if len(quality) > 1:
                 quality = self.tr("Varied")
