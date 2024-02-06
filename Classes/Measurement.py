@@ -4903,7 +4903,10 @@ class Measurement(object):
         if self.export_xs:
             # If map hasn't been computed, compute with default settings
             if self.map is None or self.run_map:
-                self.compute_map()
+                try:
+                    self.compute_map()
+                except BaseException:
+                     self.map = None
 
             # Check to see if Map ran successfully
             if self.map is not None:
