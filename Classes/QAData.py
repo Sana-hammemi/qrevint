@@ -1467,10 +1467,10 @@ class QAData(object):
                     else:
                         roll_data = roll_source_selected.data[:, 0]
                     idx_max = np.where(
-                        roll_data > heading_source_selected.pitch_limit[0]
+                        roll_data > heading_source_selected.roll_limit[0]
                     )[0]
                     idx_min = np.where(
-                        roll_data < heading_source_selected.pitch_limit[1]
+                        roll_data < heading_source_selected.roll_limit[1]
                     )[0]
                     if len(idx_max) > 0 or len(idx_min) > 0:
                         roll_exceeded.append(True)

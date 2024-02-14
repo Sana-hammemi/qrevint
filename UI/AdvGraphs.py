@@ -1,12 +1,15 @@
-import numpy as np
 import copy
-from matplotlib import gridspec
-import matplotlib.cm as cm
-from matplotlib.dates import DateFormatter, num2date
-from matplotlib.patches import Polygon
-from PyQt5 import QtWidgets, QtCore
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+import warnings
+
+import matplotlib.cm as cm
+import numpy as np
+from PyQt5 import QtWidgets, QtCore
+from matplotlib import gridspec
+from matplotlib.dates import DateFormatter, num2date
+from matplotlib.patches import Polygon
+
 from MiscLibs.common_functions import sind, cosd
 from MiscLibs.compute_edge_cd import compute_edge_cd
 
@@ -890,6 +893,10 @@ class AdvGraphs(object):
                 )
                 max_y = np.nanmax(y_all) + np.abs(np.nanmax(y_all)) * 0.02
                 min_y = np.nanmin(y_all) - np.abs(np.nanmin(y_all)) * 0.02
+
+                if np.isnan(max_y) or np.isnan(min_y):
+                    return
+
                 if min_y == 0:
                     min_y = max_y * -0.02
                 self.ax[-1].set_ylim(top=max_y, bottom=min_y)
@@ -1033,10 +1040,13 @@ class AdvGraphs(object):
             )
 
             # Apply the x-axis label to the bottom x-axis
-            idx = -2
-            self.ax[idx].xaxis.label.set_fontsize(12)
+            try:
+                idx = -2
+                self.ax[idx].xaxis.label.set_fontsize(12)
 
-            self.set_x_axis(idx)
+                self.set_x_axis(idx)
+            except IndexError:
+                warnings.warn("Bottom x-axis not available.")
 
             self.canvas.draw()
 
@@ -3405,7 +3415,6 @@ class AdvGraphs(object):
         edge=None,
         show_edge_speed=False,
         data_quiver=None,
-        bed_profiles=None,
     ):
         """Create contour plot.
 
@@ -3439,8 +3448,6 @@ class AdvGraphs(object):
             Indicates if edge speed should be plotted
         data_quiver: dict
             Dictionary containing data and settings to plot quiver
-        bed_profiles: dict
-            Dictionary containing data to plot bed profiles
         """
 
         # Use last subplot
@@ -3485,16 +3492,20 @@ class AdvGraphs(object):
 
         cmap.set_under("white")
 
-        # Generate color contour
-        c = ax.pcolormesh(
-            x_plt,
-            cell_plt,
-            data_plt,
-            cmap=cmap,
-            vmin=min_limit,
-            vmax=max_limit,
-            zorder=0,
-        )
+        try:
+            # Generate color contour
+            c = ax.pcolormesh(
+                x_plt,
+                cell_plt,
+                data_plt,
+                cmap=cmap,
+                vmin=min_limit,
+                vmax=max_limit,
+                zorder=0,
+            )
+        except ValueError:
+            c = None
+            warnings.warn("Zero sized array. Contour not created.")
 
         # Create data plotted for annotation use
         self.data_plotted.append(
@@ -3516,22 +3527,25 @@ class AdvGraphs(object):
         self.annot[-1].set_visible(False)
 
         # Add color bar and axis labels in separate subplot
-        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
-        self.data_plotted.append({"type": "colorbar"})
-        self.annot.append("")
-        cb = self.fig.colorbar(c, self.ax[-1])
-        cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
-        cb.ax.yaxis.label.set_fontsize(12)
-        cb.ax.tick_params(labelsize=12)
-        cb.ax.set_ylim([min_limit, max_limit])
-        ax.invert_yaxis()
-        if ping_name is not None:
-            tick_list = list(range(n_names))
-            label_list = []
-            for tick in tick_list:
-                label_list.append(ping_name[tick])
-            cb.set_ticks(tick_list)
-            cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment="center")
+        if c is not None:
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
+            self.data_plotted.append({"type": "colorbar"})
+            self.annot.append("")
+            cb = self.fig.colorbar(c, self.ax[-1])
+            cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
+            cb.ax.yaxis.label.set_fontsize(12)
+            cb.ax.tick_params(labelsize=12)
+            cb.ax.set_ylim([min_limit, max_limit])
+            ax.invert_yaxis()
+            if ping_name is not None:
+                tick_list = list(range(n_names))
+                label_list = []
+                for tick in tick_list:
+                    label_list.append(ping_name[tick])
+                cb.set_ticks(tick_list)
+                cb.ax.set_yticklabels(
+                    label_list, rotation=90, verticalalignment="center"
+                )
 
         # Plot depth
         if self.x_axis_type == "L":
@@ -3670,16 +3684,6 @@ class AdvGraphs(object):
                 zorder=0,
             )
 
-        # Bed profiles
-        if bed_profiles is not None:
-            for i in range(len(bed_profiles["x"])):
-                ax.plot(
-                    bed_profiles["x"][i] * self.units["L"],
-                    bed_profiles["depth"][i] * self.units["L"],
-                    color="grey",
-                    linewidth=1,
-                    zorder=2,
-                )
         # Data quiver
         if data_quiver:
             if data_quiver["scale"] is not None:
@@ -3691,7 +3695,8 @@ class AdvGraphs(object):
         ax.tick_params(
             axis="both", direction="in", bottom=True, top=True, left=True, right=True
         )
-        ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
+        if len(depth) > 0:
+            ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
 
     @staticmethod
     def add_quiver(ax, data_quiver, units):
@@ -4199,6 +4204,71 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
+    def plot_map_contour(
+        self,
+        map_data,
+        data_type,
+        units,
+        data_quiver,
+        bed_profiles,
+        color_map,
+        manufacturer=None,
+    ):
+        """Create contour plot for map.
+
+        Parameters:
+            map_data: Map
+            data_type: str
+                Indicates type of data to be contoured
+            units: dict
+                Dictionary of units conversions and labels
+            data_quiver:
+                Dictionary containing data and settings to plot quiver
+            bed_profiles: bool
+            color_map: str
+                Indicates colormap to use (viridis or jet)
+            manufacturer: str
+                Identifies ADCP manufacturer
+
+        """
+
+        self.units = units
+        self.color_map = color_map
+
+        (
+            x_plt,
+            cell_plt,
+            data_plt,
+            depths,
+            x_data,
+            data_units,
+        ) = self.contour_map_prep(map_data, data_type, units, manufacturer=manufacturer)
+
+        self.fig.subplots_adjust(
+            left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0
+        )
+
+        # populate the figure with MAP contour data
+        self.plt_contour(
+            x_plt_in=x_plt * self.units["L"],
+            cell_plt_in=cell_plt,
+            data_plt_in=data_plt,
+            x=x_data * self.units["L"],
+            depth=depths,
+            data_units=data_units,
+            data_quiver=data_quiver,
+        )
+
+        if bed_profiles:
+            for transect in map_data.data_transects:
+                self.ax[0].plot(
+                    transect["acs_distance"] * self.units["L"],
+                    transect["depths"] * self.units["L"],
+                    color="grey",
+                    linewidth=1,
+                    zorder=2,
+                )
+
     def plot_map(self, map_class, units, bath=False, temp=False, plot_transects=False):
         """Plots MAP averaged bathymetry and temperature.
 
@@ -4260,11 +4330,11 @@ class AdvGraphs(object):
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
 
-                    for tran in range(len(map_class.depth_by_transect)):
+                    for transect in map_class.data_transects:
                         self.plt_timeseries(
-                            data=map_class.depth_by_transect[tran],
+                            data=transect["depths"],
                             data_units=data_units,
-                            x_override=map_class.acs_distance[tran],
+                            x_override=transect["acs_distance"],
                             fmt=fmt,
                         )
 
@@ -4283,11 +4353,11 @@ class AdvGraphs(object):
                 # Plot temperature for individual transects
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
-                    for tran in range(len(map_class.temperature_by_transect)):
+                    for transect in map_class.data_transects:
                         self.plt_timeseries(
-                            data=map_class.temperature_by_transect[tran],
+                            data=transect["temperature"],
                             data_units=data_units,
-                            x_override=map_class.acs_distance[tran],
+                            x_override=transect["acs_distance"],
                             fmt=fmt,
                         )
 

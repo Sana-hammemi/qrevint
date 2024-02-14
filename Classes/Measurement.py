@@ -2454,16 +2454,21 @@ class Measurement(object):
         ):
             self.map = None
         else:
-            if self.map is None:
+            # if self.map is None:
+            try:
                 self.map = MAP()
-            self.map.populate_data(
-                self,
-                node_horizontal_user,
-                node_vertical_user,
-                extrap_option,
-                edges_option,
-                interp_option,
-            )
+                self.map.populate_data(
+                    self,
+                    node_horizontal_user,
+                    node_vertical_user,
+                    extrap_option,
+                    edges_option,
+                    interp_option,
+                )
+            except BaseException:
+                #     # Temporary fix to keep UI from crashing if MAP crashes
+                self.map = None
+
         self.run_map = False
 
     @staticmethod
@@ -4880,9 +4885,13 @@ class Measurement(object):
 
         # Average cross-section
         if self.export_xs:
-            # If map hasn't been computed, compute with default settings
+            # If map hasn't been computed, try to compute with default settings
             if self.map is None or self.run_map:
-                self.compute_map()
+                try:
+                    self.compute_map()
+                except BaseException:
+                    # If MAP crashes keep UI and XML creation from crashing.
+                    self.map = None
 
             # Check to see if Map ran successfully
             if self.map is not None:
@@ -4896,6 +4905,7 @@ class Measurement(object):
 
                 # create copy of df without the data in the XML nodes to save on
                 # file size.
+                # Todo add depth average velocity here
                 cross_section_all = cross_section_all.drop(
                     columns=[
                         "Latitude",

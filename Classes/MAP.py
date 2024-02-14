@@ -1,13 +1,15 @@
-from profilehooks import profile
+# from profilehooks import profile
 import copy
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
-from scipy.interpolate import griddata
-from scipy.optimize.minpack import curve_fit
 import simplekml
 import utm
+from scipy.interpolate import griddata
+from scipy.optimize.minpack import curve_fit
 from sklearn.linear_model import LinearRegression
+
 from Classes import __qrev_version__
 from MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 from MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
@@ -36,7 +38,6 @@ class MAP(object):
         North distance after projection on average cross-section
     acs_distance: np.list(np.array(float))
         Distance from the left bank on average cross-section
-
     primary_velocity: np.array(float)
         Primary velocity of each MAP cell
     secondary_velocity: np.array(float)
@@ -53,9 +54,6 @@ class MAP(object):
         Transverse velocity of each MAP cell
     depths: np.array(float) 1D
         Depths for each MAP vertical
-    depth_by_transect: np.list(np.array(float))
-        Depth for each transect
-
     direction_ens: np.array(float) 1D
         Main direction of each MAP ensemble
     borders_ens: np.array(float) 1D
@@ -112,7 +110,6 @@ class MAP(object):
             None
             # North distance after projection on average cross-section
         )
-        self.acs_distance = []  # Distance from the left bank on average cross-section
 
         self.primary_velocity = None  # Primary velocity (ROZ) of each MAP cell
         self.secondary_velocity = None  # Secondary velocity (ROZ) of each MAP cell
@@ -122,9 +119,7 @@ class MAP(object):
         self.east_velocity = None  # Velocity component in East direction
         self.north_velocity = None  # Velocity component in North direction
         self.depths = None  # Depths for each MAP vertical
-        self.depth_by_transect = []  # Depth for each transect
         self.temperature = None  # Temperature for each vertical
-        self.temperature_by_transect = []  # Temperature for each transect
 
         self.rssi = None  # RSSI of each MAP cell
         self.count_valid = None  # Count used values to compute each cell
@@ -169,7 +164,7 @@ class MAP(object):
             "rb_map_stickship": False,
         }
 
-    @profile
+    # @profile
     def populate_data(
         self,
         meas,
@@ -177,7 +172,7 @@ class MAP(object):
         node_vertical_user=None,
         extrap_option=True,
         edges_option=True,
-        interp_option=False,
+        interp_option=True,
         n_burn=None,
     ):
         """
@@ -250,8 +245,10 @@ class MAP(object):
             self.compute_rozovskii(self.east_velocity, self.north_velocity)
 
             # Interpolate empty values
-            if interp_option:
-                self.compute_interpolation()
+            # removed as there should be no need to interpolate if using
+            # QRev processed data.
+            # if interp_option:
+            #     self.compute_interpolation()
 
             # Compute top/bottom extrapolation according QRevInt method/exponent
             if extrap_option:
@@ -278,162 +275,7 @@ class MAP(object):
         self.x = self._x_left + x
         self.y = self._y_left + y
 
-        # For compatibility with currently implemented graphics
-        for transect in self.data_transects:
-            self.acs_distance.append(transect["acs_distance"])
-            self.temperature_by_transect.append(transect["temperature"])
-            self.depth_by_transect.append(transect["depths"])
-
     def collect_data(self, meas, nav_ref="bt_vel"):
-        """Collect data of valid position and depth for each selected transect
-
-        Parameters
-        ----------
-        meas: Measurement
-            Object of Measurement class
-        nav_ref: str
-            Current navigation reference from settings
-        """
-
-        self.data_transects = []
-        self.n_transects = 0
-        data_dict = {}
-        x_transect = np.nan
-        y_transect = np.nan
-        left_param = np.tile([np.nan], (len(meas.checked_transect_idx), 2))
-        right_param = np.tile([np.nan], (len(meas.checked_transect_idx), 2))
-
-        for id_transect in meas.checked_transect_idx:
-            transect = meas.transects[id_transect]
-
-            # Verify that the transect has heading data before computing
-            if not all(deg == 0 for deg in transect.sensors.heading_deg.internal.data):
-                self.n_transects += 1
-
-                ship_data = transect.boat_vel.compute_boat_track(transect, nav_ref)
-
-                # Using flip variable for left and right start edge reduces near
-                # duplicate code
-                flip = 1
-                if transect.start_edge == "Right":
-                    flip = -1
-
-                # TODO This definition of valid does not allow for interpolated depths or
-                # use of vertical beam
-                valid = transect.depths.bt_depths.valid_data[::flip]
-
-                if nav_ref == "gga_vel":
-                    nan_idx = np.argwhere(
-                        np.isnan(
-                            transect.gps.gga_lat_ens_deg[::flip]
-                            + transect.gps.gga_lon_ens_deg[::flip]
-                        )
-                    )
-                    for i in nan_idx:
-                        valid[i[0]] = False
-                    lat = transect.gps.gga_lat_ens_deg[::flip][valid]
-                    lon = transect.gps.gga_lon_ens_deg[::flip][valid]
-
-                    coords = utm.from_latlon(lat, lon)
-                    x_transect = coords[0]
-                    y_transect = coords[1]
-                    self.gps_zone_number = coords[2]
-                    self.gps_zone_letter = coords[3]
-                else:
-                    if flip == -1:
-                        dmg_ind = np.where(
-                            abs(ship_data["dmg_m"]) == max(abs(ship_data["dmg_m"]))
-                        )[0][0]
-                        x_track = (
-                            ship_data["track_x_m"] - ship_data["track_x_m"][dmg_ind]
-                        )
-                        y_track = (
-                            ship_data["track_y_m"] - ship_data["track_y_m"][dmg_ind]
-                        )
-                        x_transect = x_track[::flip]
-                        y_transect = y_track[::flip]
-                        x_transect = x_transect[valid]
-                        y_transect = y_transect[valid]
-                    elif flip == 1:
-                        x_transect = ship_data["track_x_m"]
-                        y_transect = ship_data["track_y_m"]
-                        x_transect = x_transect[valid]
-                        y_transect = y_transect[valid]
-
-                # Depth
-                depth_selected = getattr(transect.depths, transect.depths.selected)
-                depth_transect = depth_selected.depth_processed_m[::flip]
-                cells_depth = depth_selected.depth_cell_depth_m[:, ::flip]
-
-                # Temperature
-                temp_selected = getattr(
-                    transect.sensors.temperature_deg_c,
-                    transect.sensors.temperature_deg_c.selected,
-                )
-                temp_transect = temp_selected.data[::flip]
-
-                # Velocity data
-                vel_x = np.copy(transect.w_vel.u_processed_mps[:, ::flip])
-                vel_y = np.copy(transect.w_vel.v_processed_mps[:, ::flip])
-                vel_z = np.copy(transect.w_vel.w_mps[:, ::flip])
-                invalid = np.logical_not(
-                    transect.w_vel.valid_data[0, :, transect.in_transect_idx]
-                ).T[:, ::flip]
-
-                vel_x[invalid] = np.nan
-                vel_y[invalid] = np.nan
-                vel_z[invalid] = np.nan
-                x_velocity = vel_x[:, valid]
-                y_velocity = vel_y[:, valid]
-                z_velocity = vel_z[:, valid]
-
-                # RSSI data
-                rssi_temp = np.nanmean(transect.w_vel.rssi, axis=0)[:, ::flip]
-                rssi_temp[invalid] = np.nan
-                rssi_mean = rssi_temp[:, valid]
-
-                # Edges parameters
-                left = [
-                    meas.transects[id_transect].edges.left.distance_m,
-                    meas.discharge[id_transect].edge_coef(
-                        "left", meas.transects[id_transect]
-                    ),
-                ]
-                if isinstance(left[1], list):
-                    left[1] = np.nan
-                left_param[meas.checked_transect_idx.index(id_transect), :] = left
-
-                right = [
-                    self.n_transects - 1,
-                    meas.discharge[id_transect].edge_coef(
-                        "right", meas.transects[id_transect]
-                    ),
-                ]
-                if isinstance(right[1], list):
-                    right[1] = np.nan
-                right_param[meas.checked_transect_idx.index(id_transect), :] = right
-
-                data_dict = {
-                    "x_raw_coordinates": x_transect,
-                    "y_raw_coordinates": y_transect,
-                    "x_velocity": x_velocity,
-                    "y_velocity": y_velocity,
-                    "vertical_velocity": z_velocity,
-                    "depths": depth_transect[valid],
-                    "start_edge": transect.start_edge,
-                    "invalid_data": invalid[:, valid],
-                    "cell_depth": cells_depth[:, valid],
-                    "rssi": rssi_mean,
-                    "temperature": temp_transect[valid],
-                }
-
-            self.data_transects.append(data_dict)
-
-        # Compute mean edge settings
-        self.left_geometry = np.nanmedian(left_param, axis=0)
-        self.right_geometry = np.nanmedian(right_param, axis=0)
-
-    def collect_data_qrev(self, meas, nav_ref="bt_vel"):
         """Collect data of valid position and depth for each selected transect
 
         Parameters
@@ -450,7 +292,7 @@ class MAP(object):
         """
 
         self.data_transects = []
-        self.n_transects = 0
+        self.n_transects = len(meas.checked_transect_idx)
         data_dict = {}
         x_transect = np.nan
         y_transect = np.nan
@@ -476,11 +318,13 @@ class MAP(object):
                         transect.gps.gga_lat_ens_deg, transect.gps.gga_lon_ens_deg
                     )
                     # Adjust ship_data track for utm coordinates
-                    ship_data["track_x_m"] = ship_data["track_x_m"] + coords[0][0]
-                    ship_data["track_y_m"] = ship_data["track_y_m"] + coords[1][0]
+                    x_track = ship_data["track_x_m"] + coords[0][0]
+                    y_track = ship_data["track_y_m"] + coords[1][0]
                     # Save zone information for cvs output
                     self.gps_zone_number = coords[2]
                     self.gps_zone_letter = coords[3]
+                    x_transect = x_track[::flip]
+                    y_transect = y_track[::flip]
                 elif flip == -1:
                     dmg_ind = np.where(
                         abs(ship_data["dmg_m"]) == max(abs(ship_data["dmg_m"]))
@@ -493,8 +337,6 @@ class MAP(object):
                 elif flip == 1:
                     x_transect = ship_data["track_x_m"]
                     y_transect = ship_data["track_y_m"]
-                    x_transect = x_transect
-                    y_transect = y_transect
 
                 # Depth
                 depth_selected = getattr(transect.depths, transect.depths.selected)
@@ -524,7 +366,11 @@ class MAP(object):
                     ),
                 ]
 
-                left_param[meas.checked_transect_idx.index(id_transect), :] = left
+                index_transect = meas.checked_transect_idx.index(id_transect)
+
+                if isinstance(left[1], list):
+                    left[1] = np.nan
+                left_param[index_transect, :] = left
 
                 right = [
                     meas.transects[id_transect].edges.right.distance_m,
@@ -532,8 +378,9 @@ class MAP(object):
                         "right", meas.transects[id_transect]
                     ),
                 ]
-
-                right_param[meas.checked_transect_idx.index(id_transect), :] = right
+                if isinstance(right[1], list):
+                    right[1] = np.nan
+                right_param[index_transect, :] = right
 
                 data_dict = {
                     "x_raw_coordinates": x_transect,
@@ -622,11 +469,12 @@ class MAP(object):
         x_boundaries = [np.nanmin(x_min), np.nanmax(x_max)]
         y_boundaries = [np.nanmin(y_min), np.nanmax(y_max)]
 
+        x_offset = min(x_boundaries, key=lambda x: abs(x - left_x))
+        y_offset = min(y_boundaries, key=lambda x: abs(x - left_y))
+
         # Compute the distance on the average cross-section
         for transect in self.data_transects:
-            x_offset = np.nanmin([x_boundaries[0], np.abs(x_boundaries[0] - left_x)])
             x_distance = transect["x_projected"] - x_offset
-            y_offset = np.nanmin([y_boundaries[1], np.abs(y_boundaries[0] - left_y)])
             y_distance = transect["y_projected"] - y_offset
             transect["acs_distance"] = np.sqrt(x_distance**2 + y_distance**2)
 
@@ -1200,7 +1048,7 @@ class MAP(object):
 
             coef_primary_bot = np.nanmean(component_ns, 0)
 
-        # Extrapolation Bot velocity
+        # Extrapolation Bottom velocity
         for n in range(len(idx_bed)):
             if idx_bed[n] > -1:
                 while (

@@ -1,8 +1,33 @@
 # QRev Change Log
 
+## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
+
+**Status**: *Testing*
+
+**Added:**
+- MAP: Added radio buttons to plot SNR/RSSI and Number of transects used.
+
+**Changed:**
+- Now using QRev interpolated data for MAP computation.
+- Moved MAP datatype combobox plot options for contour plots to radio 
+  buttons to follow look and workflow of other tabs. 
+
+**Fixed:**
+- Crash when opening a measurement with a single transect.
+- Duplicating signals as new measurements files are loaded without closing UI.
+- Crash when click the Moving Bed Tab when there is no valid bottom track 
+  data in a test.
+- Crash when clicking the edge tab when there is no valid bottom track data 
+  for an edge.
+- Auto application of Moving Bed corrections when a moving bed is detected.
+- Updating of MAP plot and table when MAP not able to run, ie no data to 
+  display. 
+- UI crash when MAP crashes due to no data to process.
+
+
 ## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
 
-**Status**: *Recommended*
+**Status**: *Allowed*
 
 **Changes:**
 - Updated Export Mean Cross-Option signal

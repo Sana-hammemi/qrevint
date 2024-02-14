@@ -196,11 +196,11 @@ class InstrumentData(object):
         if not np.isnan(pd0.Inst.t_matrix[0, 0]):
             self.t_matrix = TransformationMatrix()
             self.t_matrix.populate_data(manufacturer="TRDI", model="pd0", data_in=pd0)
-        # elif self.model == "RiverRay":
-        #     self.t_matrix = TransformationMatrix()
-        #     self.t_matrix.populate_data(
-        #         manufacturer="TRDI", model=self.model, data_in="Nominal"
-        #     )
+        elif self.model == "RiverRay":
+            self.t_matrix = TransformationMatrix()
+            self.t_matrix.populate_data(
+                manufacturer="TRDI", model=self.model, data_in="Nominal"
+            )
         else:
             if isinstance(mmt.qaqc, dict) and len(mmt.qaqc) > 0:
                 if "RG_Test" in mmt.qaqc.keys():
