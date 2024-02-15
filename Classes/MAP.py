@@ -212,8 +212,8 @@ class MAP(object):
             self.translated_transects()
 
         # Define horizontal and vertical mesh
+        self.compute_auto_node_size()
         self.compute_node_size(
-            meas,
             node_horizontal_user,
             node_vertical_user,
             extrap_option,
@@ -316,18 +316,25 @@ class MAP(object):
                 if nav_ref == "gga_vel":
                     # utm conversion does not support nan values so only valid data
                     # can be converted
-                    gps_valid_idx = \
-                    np.where(np.logical_not(np.isnan(transect.gps.gga_lat_ens_deg)))[0]
+                    gps_valid_idx = np.where(
+                        np.logical_not(np.isnan(transect.gps.gga_lat_ens_deg))
+                    )[0]
                     coords = utm.from_latlon(
-                        transect.gps.gga_lat_ens_deg[gps_valid_idx], transect.gps.gga_lon_ens_deg[gps_valid_idx]
+                        transect.gps.gga_lat_ens_deg[gps_valid_idx],
+                        transect.gps.gga_lon_ens_deg[gps_valid_idx],
                     )
 
                     # Compute the x and y coordinate adjustment based on the first valid gps data
                     # This accounts for potential valid BT data prior to the firt valid
                     # gps data.
-                    x_coord = coords[0][gps_valid_idx[0]] - ship_data["track_x_m"][gps_valid_idx[0]]
-                    y_coord = coords[1][gps_valid_idx[0]] - ship_data["track_y_m"][
-                        gps_valid_idx[0]]
+                    x_coord = (
+                        coords[0][gps_valid_idx[0]]
+                        - ship_data["track_x_m"][gps_valid_idx[0]]
+                    )
+                    y_coord = (
+                        coords[1][gps_valid_idx[0]]
+                        - ship_data["track_y_m"][gps_valid_idx[0]]
+                    )
 
                     # Adjust ship_data track for utm coordinates
                     x_track = ship_data["track_x_m"] + x_coord
@@ -567,7 +574,7 @@ class MAP(object):
         for transect in self.data_transects:
             transect["acs_distance"] -= min_dist
 
-    def compute_auto_node_size(self, transect):
+    def compute_auto_node_size(self):
         """Computes auto node sizes.
 
         Parameters:
@@ -576,24 +583,18 @@ class MAP(object):
 
         """
 
-        # compute width widths
-        median_diff_acs = []
-        for data_transect in self.data_transects:
-            diff_acs = np.diff(np.sort(data_transect["acs_distance"]))
-            median_diff_acs.append(np.nanmedian(np.abs(diff_acs)))
-
-        # VMT Matlab uses the median + stdev
-        self.auto_node_horz = 2 * np.nanmax(median_diff_acs)
-
-        # compute vertical
-        # VMT Matlab uses 0.4 or the bin size. 2 * median seems rather large(DSM)
-        self.auto_node_vert = 2 * np.nanmedian(
-            transect.depths.bt_depths.depth_cell_size_m
-        )
+        max_transect_horz = []
+        max_transect_vert = []
+        for transect in self.data_transects:
+            max_transect_vert = np.nanmax(
+                np.abs(np.diff(transect["cell_depth"], axis=0))
+            )
+            max_transect_horz = np.nanmax(np.abs(np.diff(transect["acs_distance"])))
+        self.auto_node_vert = max_transect_vert * 1.10
+        self.auto_node_horz = max_transect_horz * 1.10
 
     def compute_node_size(
         self,
-        meas,
         node_horizontal_user,
         node_vertical_user,
         extrap_option,
@@ -601,8 +602,6 @@ class MAP(object):
         """Define horizontal and vertical mesh
 
         Parameters:
-        meas: Measurement
-            Object of Measurement class
         node_horizontal_user: float
             Horizontal size of the mesh define by the user
         node_vertical_user: float
@@ -611,7 +610,7 @@ class MAP(object):
             Indicates if top/bottom extrapolation should be applied
         """
 
-        # Meshs widths
+        # Mesh width
         max_dist = []
         min_dist = []
         for transect in self.data_transects:
@@ -622,23 +621,23 @@ class MAP(object):
         acs_total = max_acs_distance - min_acs_distance
 
         # Horizontal node
-        transect = meas.transects[meas.checked_transect_idx[0]]
+        node_horz = self.auto_node_horz
         if node_horizontal_user is None:
             if self.auto_node_horz is None:
-                self.compute_auto_node_size(transect)
+                self.compute_auto_node_size()
             node_horz = self.auto_node_horz
-        else:
+        elif node_horizontal_user >= self.auto_node_horz:
             node_horz = node_horizontal_user
 
-        # Divise total length in same size meshs
-        # TODO see logspace and normalized depth layer
-        if not extrap_option:
-            top_cell = (
-                np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :])
-                - np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
-            )
-        else:
-            top_cell = 0
+        # # Divise total length in same size meshs
+        # # TODO see logspace and normalized depth layer
+        # if not extrap_option:
+        #     top_cell = (
+        #         np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :])
+        #         - np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
+        #     )
+        # else:
+        #     top_cell = 0
 
         self.borders_ens = np.linspace(
             min_acs_distance,
@@ -646,29 +645,27 @@ class MAP(object):
             max(2, int(acs_total / node_horz) + 1),
         )
 
-        # Meshes height
+        # Mesh height
         all_depth = np.array([])
         for transect in self.data_transects:
             all_depth = np.hstack((all_depth, transect["depths"]))
-        # depth_data = self.data_transects["depths"]
-        # all_depth = np.array([item for subarray in depth_data for item in subarray])
-        if node_vertical_user is not None:
-            self.main_depth_layers = np.round(
-                np.arange(
-                    top_cell,
-                    np.nanmax(all_depth) + node_vertical_user,
-                    node_vertical_user,
-                ).tolist(),
-                3,
-            )
-        else:
+
+        # Vertical node
+        node_vert = self.auto_node_vert
+        if node_vertical_user is None:
             if self.auto_node_vert is None:
-                self.compute_auto_node_size(transect)
-            self.main_depth_layers = np.arange(
-                top_cell,
-                np.nanmax(all_depth) + self.auto_node_vert,
-                self.auto_node_vert,
-            )
+                self.compute_auto_node_size()
+        elif node_vertical_user >= self.auto_node_vert:
+            node_vert = node_vertical_user
+
+        self.main_depth_layers = np.round(
+            np.arange(
+                0,
+                np.nanmax(all_depth) + node_vert,
+                node_vert,
+            ).tolist(),
+            3,
+        )
 
     def compute_nodes_velocity(self, param):
         """Compute transect median velocity on each mesh (North, East and

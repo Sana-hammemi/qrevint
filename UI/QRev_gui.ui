@@ -1664,7 +1664,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_compass_2_data">
            <attribute name="title">
@@ -8465,9 +8465,9 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="rb_map_secondary">
+               <widget class="QRadioButton" name="rb_map_streamwise">
                 <property name="text">
-                 <string>Secondary Velocity</string>
+                 <string>Streamwise Velocity</string>
                 </property>
                 <attribute name="buttonGroup">
                  <string notr="true">buttonGroup</string>
@@ -8923,7 +8923,7 @@
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">

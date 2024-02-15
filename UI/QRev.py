@@ -15787,7 +15787,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     "ed_map_secondary_velocity": None,
                     "cb_map_bed_profiles": True,
                     "rb_map_primary": True,
-                    "rb_map_secondary": False,
+                    "rb_map_streamwise": False,
                     "rb_map_rssi": False,
                     "rb_map_trans_used": False,
                     "rb_map_bathymetry": False,
@@ -15851,7 +15851,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "rb_map_primary": self.rb_map_primary.isChecked(),
-                "rb_map_secondary": self.rb_map_secondary.isChecked(),
+                "rb_map_streamwise": self.rb_map_streamwise.isChecked(),
                 "rb_map_rssi": self.rb_map_rssi.isChecked(),
                 "rb_map_trans_used": self.rb_map_trans_used.isChecked(),
                 "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
@@ -15879,7 +15879,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "ed_map_secondary_velocity": secondary_velocity_scale,
             "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
             "rb_map_primary": self.rb_map_primary.isChecked(),
-            "rb_map_secondary": self.rb_map_secondary.isChecked(),
+            "rb_map_streamwise": self.rb_map_streamwise.isChecked(),
             "rb_map_rssi": self.rb_map_rssi.isChecked(),
             "rb_map_trans_used": self.rb_map_trans_used.isChecked(),
             "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
@@ -15907,7 +15907,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # radio button signals for plot type
         self.rb_map_primary.clicked.connect(self.update_map)
-        self.rb_map_secondary.clicked.connect(self.update_map)
+        self.rb_map_streamwise.clicked.connect(self.update_map)
         self.rb_map_rssi.clicked.connect(self.update_map)
         self.rb_map_trans_used.clicked.connect(self.update_map)
         self.rb_map_bathymetry.clicked.connect(self.update_map)
@@ -15950,50 +15950,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if self.rb_map_primary.isChecked():
                 self.ed_map_secondary_velocity.setEnabled(True)
                 self.txt_map_v_scale.setText("Secondary Velocity Scale:")
-            elif self.rb_map_secondary.isChecked():
+            elif self.rb_map_streamwise.isChecked():
                 self.ed_map_secondary_velocity.setEnabled(True)
                 self.txt_map_v_scale.setText("Transverse Velocity Scale:")
             else:
                 self.ed_map_secondary_velocity.setEnabled(False)
 
-            cell_width = self.check_numeric_input(self.ed_map_cell_width)
-            if self.meas.map is not None:
-                min_width = self.meas.map.borders_ens[-1] / 1000
-            else:
-                min_width = 0.0
-            if cell_width is not None:
-                cell_width = cell_width * 1 / self.units["L"]
+            # Update width
+            cell_width = self.meas.map.auto_node_horz
+            user_width = self.check_numeric_input(self.ed_map_cell_width)
+            if user_width is not None:
+                user_width = user_width / self.units["L"]
+                if user_width >= cell_width:
+                    cell_width = user_width
+            self.ed_map_cell_width.setText(
+                "{:3.2f}".format(cell_width * self.units["L"])
+            )
 
-                if cell_width < min_width:
-                    cell_width = min_width
-                    self.ed_map_cell_width.setText(
-                        "{:3.2f}".format(cell_width * self.units["L"])
-                    )
-            else:
-                if self.meas.map is None:
-                    value = 0.0
-                else:
-                    value = self.meas.map.auto_node_horz * self.units["L"]
-                self.ed_map_cell_width.setText("{:3.2f}".format(value))
-
-            cell_height = self.check_numeric_input(self.ed_map_cell_height)
-            if self.meas.map is None:
-                min_height = 0.0
-            else:
-                min_height = self.meas.map.main_depth_layers[-1] / 100
-            if cell_height is not None:
-                cell_height = cell_height * 1 / self.units["L"]
-                if cell_height < min_height:
-                    cell_height = min_height
-                    self.ed_map_cell_height.setText(
-                        "{:3.2f}".format(min_height * self.units["L"])
-                    )
-            else:
-                if self.meas.map is None:
-                    value = 0.0
-                else:
-                    value = self.meas.map.auto_node_vert * self.units["L"]
-                self.ed_map_cell_height.setText("{:3.2f}".format(value))
+            # Update height
+            cell_height = self.meas.map.auto_node_vert
+            user_height = self.check_numeric_input(self.ed_map_cell_height)
+            if user_height is not None:
+                user_height = user_height / self.units["L"]
+                if user_height >= cell_height:
+                    cell_height = user_height * self.units["L"]
+            self.ed_map_cell_height.setText(
+                "{:3.2f}".format(min_height * self.units["L"])
+            )
 
             self.map_settings = {
                 # "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
@@ -16006,7 +15989,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
                 "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
                 "rb_map_primary": self.rb_map_primary.isChecked(),
-                "rb_map_secondary": self.rb_map_secondary.isChecked(),
+                "rb_map_streamwise": self.rb_map_streamwise.isChecked(),
                 "rb_map_rssi": self.rb_map_rssi.isChecked(),
                 "rb_map_trans_used": self.rb_map_trans_used.isChecked(),
                 "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
@@ -16289,7 +16272,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_toolbar = NavigationToolbar(self.map_canvas, self)
             self.map_toolbar.hide()
 
-        if self.rb_map_primary.isChecked() or self.rb_map_secondary.isChecked():
+        if self.rb_map_primary.isChecked() or self.rb_map_streamwise.isChecked():
             self.ed_map_secondary_velocity.blockSignals(False)
             self.cb_map_top_bottom.blockSignals(False)
             self.map_wt_contour()
@@ -16360,7 +16343,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         elif (
             self.map_settings["ed_map_secondary_velocity"]
-            and self.rb_map_secondary.isChecked()
+            and self.rb_map_streamwise.isChecked()
         ):
             data_quiver = {
                 "x": self.meas.map.distance_cells_center,
@@ -16374,7 +16357,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         data_type = None
         if self.rb_map_primary.isChecked():
             data_type = "Primary velocity"
-        elif self.rb_map_secondary.isChecked():
+        elif self.rb_map_streamwise.isChecked():
             data_type = "Streamwise velocity"
         elif self.rb_map_rssi.isChecked():
             data_type = "RSSI or SNR"
@@ -16902,8 +16885,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
 
                 # Save xml file
-                self.meas.xml_output(save_file.full_Name[:-4] + ".xml"
-                )
+                self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
 
                 # Notify user when save complete
                 QtWidgets.QMessageBox.about(
