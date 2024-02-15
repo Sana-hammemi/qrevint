@@ -248,7 +248,7 @@ class MAP(object):
             # removed as there should be no need to interpolate if using
             # QRev processed data.
             # if interp_option:
-            #     self.compute_interpolation()
+            # self.compute_interpolation()
 
             # Compute top/bottom extrapolation according QRevInt method/exponent
             if extrap_option:
@@ -314,12 +314,25 @@ class MAP(object):
 
                 # Check for using gga data
                 if nav_ref == "gga_vel":
+                    # utm conversion does not support nan values so only valid data
+                    # can be converted
+                    gps_valid_idx = \
+                    np.where(np.logical_not(np.isnan(transect.gps.gga_lat_ens_deg)))[0]
                     coords = utm.from_latlon(
-                        transect.gps.gga_lat_ens_deg, transect.gps.gga_lon_ens_deg
+                        transect.gps.gga_lat_ens_deg[gps_valid_idx], transect.gps.gga_lon_ens_deg[gps_valid_idx]
                     )
+
+                    # Compute the x and y coordinate adjustment based on the first valid gps data
+                    # This accounts for potential valid BT data prior to the firt valid
+                    # gps data.
+                    x_coord = coords[0][gps_valid_idx[0]] - ship_data["track_x_m"][gps_valid_idx[0]]
+                    y_coord = coords[1][gps_valid_idx[0]] - ship_data["track_y_m"][
+                        gps_valid_idx[0]]
+
                     # Adjust ship_data track for utm coordinates
-                    x_track = ship_data["track_x_m"] + coords[0][0]
-                    y_track = ship_data["track_y_m"] + coords[1][0]
+                    x_track = ship_data["track_x_m"] + x_coord
+                    y_track = ship_data["track_y_m"] + y_coord
+
                     # Save zone information for cvs output
                     self.gps_zone_number = coords[2]
                     self.gps_zone_letter = coords[3]
@@ -353,7 +366,7 @@ class MAP(object):
                 # Velocity data
                 x_velocity = np.copy(transect.w_vel.u_processed_mps[:, ::flip])
                 y_velocity = np.copy(transect.w_vel.v_processed_mps[:, ::flip])
-                z_velocity = np.copy(transect.w_vel.w_mps[:, ::flip])
+                z_velocity = np.copy(transect.w_vel.w_processed_mps[:, ::flip])
 
                 # RSSI data
                 rssi_mean = np.nanmean(transect.w_vel.rssi, axis=0)[:, ::flip]
