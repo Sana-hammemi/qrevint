@@ -1541,7 +1541,7 @@ class TransectData(object):
                 pt.append(ping)
 
         pt = np.array(pt)
-        pt[pt == "1"] = "U"
+        pt[np.logical_or(pt == "1", pt == "NoVelocity")] = "U"
 
         return pt
 

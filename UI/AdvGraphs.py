@@ -158,7 +158,7 @@ class AdvGraphs(object):
             "PC": "+",
             "PC/BB": "x",
             "PCBB": "x",
-            "U": ".",
+            "U": " ",
             "1": ".",
             "Other": ".",
         }
