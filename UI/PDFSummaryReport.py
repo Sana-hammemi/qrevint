@@ -2,14 +2,10 @@ from datetime import datetime
 import numpy as np
 import getpass
 import io
-from matplotlib.figure import Figure
-from UI.ULollipopPlot import ULollipopPlot
-from UI.DischargeTS import DischargeTS
-from UI.ExtrapPlot import ExtrapPlot
-from UI.MplCanvas import MplCanvas
-from UI.AdvGraphs import AdvGraphs
+from datetime import datetime
 
-# from UI.Graphics import Graphics
+import numpy as np
+from matplotlib.figure import Figure
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -23,6 +19,12 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+from UI.AdvGraphs import AdvGraphs
+from UI.DischargeTS import DischargeTS
+from UI.ExtrapPlot import ExtrapPlot
+from UI.MplCanvas import MplCanvas
+from UI.ULollipopPlot import ULollipopPlot
 
 
 class Report:
