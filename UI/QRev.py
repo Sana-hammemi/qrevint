@@ -15962,7 +15962,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_map_cell_width.blockSignals(True)
             if user_width is not None:
                 user_width = user_width / self.units["L"]
-                if np.round(user_width, 2) >= np.round(cell_width, 2):
+                if np.round(user_width, 3) - np.round(cell_width, 3) >= -0.01:
                     cell_width = user_width
                 else:
                     self.popup_message(
@@ -15981,7 +15981,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_map_cell_height.blockSignals(True)
             if user_height is not None:
                 user_height = user_height / self.units["L"]
-                if np.round(user_height, 2) >= np.round(cell_height, 2):
+                if np.round(user_height, 3) - np.round(cell_height, 3) >= -0.01:
                     cell_height = user_height
                 else:
                     self.popup_message(

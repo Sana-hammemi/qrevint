@@ -1878,22 +1878,8 @@ class MAP(object):
 
         # Get utm zone
         _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-        # Define average ship track
-        left_x = np.nanmedian([item[0] for item in meas.map.x_raw_coordinates])
-        x_boundaries = [
-            min([min(x) for x in meas.map.x_projected]),
-            max([max(x) for x in meas.map.x_projected]),
-        ]
-
-        x_utm = np.array(
-            [
-                min(x_boundaries, key=lambda x: abs(x - left_x)),
-                max(x_boundaries, key=lambda x: abs(x - left_x)),
-            ]
-        )
-        y_utm = np.array([i * self.slope + self.intercept for i in x_utm])
-
-        lat, lon = utm.to_latlon(x_utm, y_utm, zone_number, zone_letter)
+        # Average ship track
+        lat, lon = utm.to_latlon(self.x, self.y, zone_number, zone_letter)
         line_name = "MAP average ship track"
         lon_lat = tuple(zip(lon, lat))
         lin = kml.newlinestring(name=line_name, coords=lon_lat)
