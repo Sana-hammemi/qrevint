@@ -1071,7 +1071,9 @@ class Report:
             start_edge = transect.start_edge
 
             left_type = transect.edges.left.type
-            left_dist = "{:.2f}".format(transect.edges.left.distance_m)
+            left_dist = "{:.2f}".format(
+                transect.edges.left.distance_m * self.parent.units["L"]
+            )
             left_ens = "{:.0f}".format(q.left_idx.size)
             if transect.edges.left.type == "Triangular":
                 left_coef = "0.3535"
@@ -1084,7 +1086,9 @@ class Report:
             left_coef = left_coef
 
             right_type = transect.edges.right.type
-            right_dist = "{:.2f}".format(transect.edges.right.distance_m)
+            right_dist = "{:.2f}".format(
+                transect.edges.right.distance_m * self.parent.units["L"]
+            )
             right_ens = "{:.0f}".format(q.right_idx.size)
             if transect.edges.right.type == "Triangular":
                 right_coef = "0.3535"

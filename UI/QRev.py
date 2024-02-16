@@ -15959,24 +15959,40 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Update width
             cell_width = self.meas.map.auto_node_horz
             user_width = self.check_numeric_input(self.ed_map_cell_width)
+            self.ed_map_cell_width.blockSignals(True)
             if user_width is not None:
                 user_width = user_width / self.units["L"]
-                if user_width >= cell_width:
+                if np.round(user_width, 2) >= np.round(cell_width, 2):
                     cell_width = user_width
+                else:
+                    self.popup_message(
+                        "Width cannot be less than {:.2f}.".format(
+                            cell_width * self.units["L"]
+                        )
+                    )
             self.ed_map_cell_width.setText(
                 "{:3.2f}".format(cell_width * self.units["L"])
             )
+            self.ed_map_cell_width.blockSignals(False)
 
             # Update height
             cell_height = self.meas.map.auto_node_vert
             user_height = self.check_numeric_input(self.ed_map_cell_height)
+            self.ed_map_cell_height.blockSignals(True)
             if user_height is not None:
                 user_height = user_height / self.units["L"]
-                if user_height >= cell_height:
-                    cell_height = user_height * self.units["L"]
+                if np.round(user_height, 2) >= np.round(cell_height, 2):
+                    cell_height = user_height
+                else:
+                    self.popup_message(
+                        "Height cannot be less than {:.2f}.".format(
+                            cell_height * self.units["L"]
+                        )
+                    )
             self.ed_map_cell_height.setText(
-                "{:3.2f}".format(min_height * self.units["L"])
+                "{:3.2f}".format(cell_height * self.units["L"])
             )
+            self.ed_map_cell_height.blockSignals(False)
 
             self.map_settings = {
                 # "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
@@ -17215,6 +17231,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tab_idx = self.tab_all.tabText(tab_idx)
 
         self.current_tab = tab_idx
+
+        if self.change:
+            self.meas.map = None
 
         # Main tab
         if tab_idx == "Main":

@@ -586,12 +586,14 @@ class MAP(object):
         max_transect_horz = []
         max_transect_vert = []
         for transect in self.data_transects:
-            max_transect_vert = np.nanmax(
-                np.abs(np.diff(transect["cell_depth"], axis=0))
+            max_transect_vert.append(
+                np.nanmax(np.abs(np.diff(transect["cell_depth"], axis=0)))
             )
-            max_transect_horz = np.nanmax(np.abs(np.diff(transect["acs_distance"])))
-        self.auto_node_vert = max_transect_vert * 1.10
-        self.auto_node_horz = max_transect_horz * 1.10
+            max_transect_horz.append(
+                np.nanmax(np.abs(np.diff(transect["acs_distance"])))
+            )
+        self.auto_node_vert = np.nanmax(max_transect_vert) * 1.10
+        self.auto_node_horz = np.nanmax(max_transect_horz) * 1.10
 
     def compute_node_size(
         self,
