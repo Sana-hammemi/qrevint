@@ -457,8 +457,10 @@ class WaterData(object):
         # Set processed data to non-interpolated valid data
         self.u_processed_mps = np.copy(self.u_mps)
         self.v_processed_mps = np.copy(self.v_mps)
+        self.w_processed_mps = np.copy(self.w_mps)
         self.u_processed_mps[np.logical_not(self.valid_data[0])] = np.nan
         self.v_processed_mps[np.logical_not(self.valid_data[0])] = np.nan
+        self.w_processed_mps[np.logical_not(self.valid_data[0])] = np.nan
 
         # Compute SNR range if SNR data is provided
         if rssi_units_in == "SNR":
@@ -1149,8 +1151,10 @@ class WaterData(object):
 
         self.u_processed_mps = np.tile([np.nan], self.u_mps.shape)
         self.v_processed_mps = np.tile([np.nan], self.v_mps.shape)
+        self.w_processed_mps = np.tile([np.nan], self.w_mps.shape)
         self.u_processed_mps[self.valid_data[0]] = self.u_mps[self.valid_data[0]]
         self.v_processed_mps[self.valid_data[0]] = self.v_mps[self.valid_data[0]]
+        self.w_processed_mps[self.valid_data[0]] = self.w_mps[self.valid_data[0]]
 
         # Determine interpolation methods to apply
         if ens_interp == "None":
@@ -2190,17 +2194,20 @@ class WaterData(object):
         # Initialize velocity data variables
         u = copy.deepcopy(self.u_mps)
         v = copy.deepcopy(self.v_mps)
+        w = copy.deepcopy(self.w_mps)
 
         u = u[:, transect.in_transect_idx]
         v = v[:, transect.in_transect_idx]
+        w = w[:, transect.in_transect_idx]
 
         # Set invalid data to nan in processed velocity data variables
         u[np.logical_not(valid)] = np.nan
         v[np.logical_not(valid)] = np.nan
+        w[np.logical_not(valid)] = np.nan
 
         interpolated_data = self.compute_abba_interpolation(
             wt_data=self,
-            data_list=[u, v],
+            data_list=[u, v, w],
             valid=valid,
             transect=transect,
             search_loc=search_loc,
@@ -2211,13 +2218,16 @@ class WaterData(object):
             for n in range(len(interpolated_data[0])):
                 u[interpolated_data[0][n][0]] = interpolated_data[0][n][1]
                 v[interpolated_data[1][n][0]] = interpolated_data[1][n][1]
+                w[interpolated_data[2][n][0]] = interpolated_data[2][n][1]
 
         # Save interpolated data, while retaining of the ensembles including
         # those that are not in the in_transect_idx array
         self.u_processed_mps[:, :] = np.nan
         self.v_processed_mps[:, :] = np.nan
+        self.w_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
         self.v_processed_mps[:, transect.in_transect_idx] = v
+        self.w_processed_mps[:, transect.in_transect_idx] = w
 
     @staticmethod
     def compute_abba_interpolation(

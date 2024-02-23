@@ -1,12 +1,15 @@
-import numpy as np
 import copy
-from matplotlib import gridspec
-import matplotlib.cm as cm
-from matplotlib.dates import DateFormatter, num2date
-from matplotlib.patches import Polygon
-from PyQt5 import QtWidgets, QtCore
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+import warnings
+
+import matplotlib.cm as cm
+import numpy as np
+from PyQt5 import QtWidgets, QtCore
+from matplotlib import gridspec
+from matplotlib.dates import DateFormatter, num2date
+from matplotlib.patches import Polygon
+
 from MiscLibs.common_functions import sind, cosd
 from MiscLibs.compute_edge_cd import compute_edge_cd
 
@@ -155,7 +158,7 @@ class AdvGraphs(object):
             "PC": "+",
             "PC/BB": "x",
             "PCBB": "x",
-            "U": ".",
+            "U": " ",
             "1": ".",
             "Other": ".",
         }
@@ -890,6 +893,10 @@ class AdvGraphs(object):
                 )
                 max_y = np.nanmax(y_all) + np.abs(np.nanmax(y_all)) * 0.02
                 min_y = np.nanmin(y_all) - np.abs(np.nanmin(y_all)) * 0.02
+
+                if np.isnan(max_y) or np.isnan(min_y):
+                    return
+
                 if min_y == 0:
                     min_y = max_y * -0.02
                 self.ax[-1].set_ylim(top=max_y, bottom=min_y)
@@ -1033,10 +1040,13 @@ class AdvGraphs(object):
             )
 
             # Apply the x-axis label to the bottom x-axis
-            idx = -2
-            self.ax[idx].xaxis.label.set_fontsize(12)
+            try:
+                idx = -2
+                self.ax[idx].xaxis.label.set_fontsize(12)
 
-            self.set_x_axis(idx)
+                self.set_x_axis(idx)
+            except IndexError:
+                warnings.warn("Bottom x-axis not available.")
 
             self.canvas.draw()
 
@@ -2037,6 +2047,7 @@ class AdvGraphs(object):
             data_2=data_invalid,
             data_mask=invalid,
             fmt=fmt,
+            min_y=0,
         )
 
     def bt_3beam_ts(self):
@@ -2678,6 +2689,7 @@ class AdvGraphs(object):
                 data_2=data_invalid,
                 data_mask=invalid,
                 fmt=fmt,
+                min_y=0,
             )
 
     def vtg_speed_ts(self, lbl="VTG Speed"):
@@ -2703,6 +2715,8 @@ class AdvGraphs(object):
                 + self.transect.boat_vel.vtg_vel.v_mps**2
             )
 
+            data_invalid[np.isnan(data_invalid)] = 0
+
             # Format for data and invalid identification
             fmt = [
                 {"color": "g", "linestyle": "-"},
@@ -2720,6 +2734,7 @@ class AdvGraphs(object):
                 data_2=data_invalid,
                 data_mask=data_mask,
                 fmt=fmt,
+                min_y=0,
             )
 
     def heading_adcp_ts(self):
@@ -3025,7 +3040,7 @@ class AdvGraphs(object):
 
         beam_depths = np.array([])
         data_units = (self.units["L"], "Depth " + self.units["label_L"])
-
+        # old_x = np.copy(self.x)
         # Selected cross section
         if final:
             # Get selected depth
@@ -3033,31 +3048,26 @@ class AdvGraphs(object):
                 self.transect.depths, self.transect.depths.selected
             )
             beam_depths = depth_selected.depth_processed_m
-            old_x = np.copy(self.x)
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
@@ -3066,11 +3076,9 @@ class AdvGraphs(object):
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
-            old_x = np.copy(self.x)
             # Include edge bathymetry
             self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
             fmt = [
@@ -3079,7 +3087,6 @@ class AdvGraphs(object):
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
             )
-            self.x = old_x
 
         # Format y axis
         self.ax[-1].invert_yaxis()
@@ -3121,9 +3128,6 @@ class AdvGraphs(object):
 
     def compute_x_axis(self):
         """Compute x axis data."""
-
-        # Initialize x
-        x = None
 
         # x axis is length
         if self.x_axis_type == "L":
@@ -3322,6 +3326,79 @@ class AdvGraphs(object):
 
         return x_plt, cell_plt, data_plt, ensembles, depth, x_data
 
+    def contour_map_prep(self, map_data, data_type, units, manufacturer=None):
+        """Modifies the selected data from transect into arrays matching the
+        meshgrid format for creating contour or color plots.
+        Parameters
+        ----------
+        map_data: Map
+            Object of class Map
+        data_type: str
+            Indicates type of data to be contoured
+        units: dict
+            Dictionary of units conversions and labels
+        manufacturer: str
+            Identifies ADCP manufacturer
+
+        Returns
+        -------
+        x_plt: np.array
+            Data in meshgrid format used for the contour x variable
+        cell_plt: np.array
+            Data in meshgrid format used for the contour y variable
+        data_plt: np.array
+            Data in meshgrid format used to determine colors in plot
+        x_data: np.array
+           x variable to plot the cross section
+        data_units: tuple
+            Contains conversion and data_type
+        """
+        # Set up figure
+        self.fig.clear()
+        self.n_subplots = 1
+        self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
+
+        # Create first subplot
+        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+        self.units = units
+
+        # Identify data to plot
+        data = map_data.primary_velocity
+        data_units = (self.units["V"], data_type)
+        if data_type == "Streamwise velocity":
+            data = map_data.streamwise_velocity
+            data_units = (self.units["V"], data_type)
+        elif data_type == "RSSI or SNR":
+            data = map_data.rssi
+            if manufacturer == "TRDI":
+                data_label = "RSSI (counts)"
+            elif manufacturer == "SonTek":
+                data_label = "SNR (dB)"
+            else:
+                data_label = "Intensity"
+            data_units = (1, data_label)
+        elif data_type == "# Transects in Avg":
+            data = map_data.count_valid
+            data_units = (1, data_type)
+        array_shape = map_data.depth_cells_center.shape
+
+        # Data cells to plot
+        data_xpand = np.repeat(data, 2, axis=0)
+        data_plt = np.repeat(data_xpand, 2, axis=1)
+
+        # X cells coordinates
+        x_xpand = np.repeat(map_data.borders_ens, 2)[1:-1]
+        x_plt = np.tile(x_xpand, (2 * array_shape[0], 1))
+
+        # Depth cells coordinates
+        cell_depth_xpand = np.repeat(map_data.main_depth_layers, 2)[1:-1]
+        cell_plt = np.tile(cell_depth_xpand, (2 * array_shape[1], 1)).T
+
+        # Depths ens values
+        depths = map_data.depths
+        x_data = (map_data.borders_ens[1:] + map_data.borders_ens[:-1]) / 2
+        return x_plt, cell_plt, data_plt, depths, x_data, data_units
+
     def plt_contour(
         self,
         x_plt_in,
@@ -3337,6 +3414,7 @@ class AdvGraphs(object):
         n_ensembles=None,
         edge=None,
         show_edge_speed=False,
+        data_quiver=None,
     ):
         """Create contour plot.
 
@@ -3368,6 +3446,8 @@ class AdvGraphs(object):
             Specifies edge (Left or Right)
         show_edge_speed: bool
             Indicates if edge speed should be plotted
+        data_quiver: dict
+            Dictionary containing data and settings to plot quiver
         """
 
         # Use last subplot
@@ -3412,10 +3492,20 @@ class AdvGraphs(object):
 
         cmap.set_under("white")
 
-        # Generate color contour
-        c = ax.pcolormesh(
-            x_plt, cell_plt, data_plt, cmap=cmap, vmin=min_limit, vmax=max_limit
-        )
+        try:
+            # Generate color contour
+            c = ax.pcolormesh(
+                x_plt,
+                cell_plt,
+                data_plt,
+                cmap=cmap,
+                vmin=min_limit,
+                vmax=max_limit,
+                zorder=0,
+            )
+        except ValueError:
+            c = None
+            warnings.warn("Zero sized array. Contour not created.")
 
         # Create data plotted for annotation use
         self.data_plotted.append(
@@ -3437,126 +3527,167 @@ class AdvGraphs(object):
         self.annot[-1].set_visible(False)
 
         # Add color bar and axis labels in separate subplot
-        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
-        self.data_plotted.append({"type": "colorbar"})
-        self.annot.append("")
-        cb = self.fig.colorbar(c, self.ax[-1])
-        cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
-        cb.ax.yaxis.label.set_fontsize(12)
-        cb.ax.tick_params(labelsize=12)
-        cb.ax.set_ylim([min_limit, max_limit])
-        ax.invert_yaxis()
-        if ping_name is not None:
-            tick_list = list(range(n_names))
-            label_list = []
-            for tick in tick_list:
-                label_list.append(ping_name[tick])
-            cb.set_ticks(tick_list)
-            cb.ax.set_yticklabels(label_list, rotation=90, verticalalignment="center")
+        if c is not None:
+            self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
+            self.data_plotted.append({"type": "colorbar"})
+            self.annot.append("")
+            cb = self.fig.colorbar(c, self.ax[-1])
+            cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
+            cb.ax.yaxis.label.set_fontsize(12)
+            cb.ax.tick_params(labelsize=12)
+            cb.ax.set_ylim([min_limit, max_limit])
+            ax.invert_yaxis()
+            if ping_name is not None:
+                tick_list = list(range(n_names))
+                label_list = []
+                for tick in tick_list:
+                    label_list.append(ping_name[tick])
+                cb.set_ticks(tick_list)
+                cb.ax.set_yticklabels(
+                    label_list, rotation=90, verticalalignment="center"
+                )
 
         # Plot depth
         if self.x_axis_type == "L":
             # Add edge bathymetry
             self.expanded_x, depth = self.add_edge_bathymetry(x, depth, edge)
             ax.plot(
-                self.expanded_x * self.units["L"], depth * self.units["L"], color="k"
+                self.expanded_x * self.units["L"],
+                depth * self.units["L"],
+                color="k",
+                zorder=3,
             )
         else:
             self.expanded_x = x
             ax.plot(x, depth * self.units["L"], color="k")
 
-        depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
+        if self.transect is not None:
+            depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
-        # Side lobe cutoff if available
-        if self.transect.w_vel.sl_cutoff_m is not None:
-            last_valid_cell = np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
-            last_depth_cell_size = depth_obj.depth_cell_size_m[
-                last_valid_cell, np.arange(depth_obj.depth_cell_size_m.shape[1])
-            ]
-            y_plt_sl = self.transect.w_vel.sl_cutoff_m + (last_depth_cell_size * 0.5)
+            # Side lobe cutoff if available
+            if self.transect.w_vel.sl_cutoff_m is not None:
+                last_valid_cell = (
+                    np.nansum(self.transect.w_vel.cells_above_sl, axis=0) - 1
+                )
+                last_depth_cell_size = depth_obj.depth_cell_size_m[
+                    last_valid_cell, np.arange(depth_obj.depth_cell_size_m.shape[1])
+                ]
+                y_plt_sl = self.transect.w_vel.sl_cutoff_m + (
+                    last_depth_cell_size * 0.5
+                )
+                if edge is not None:
+                    if self.transect.start_edge == edge:
+                        y_plt_sl = y_plt_sl[: int(n_ensembles)]
+                    else:
+                        y_plt_sl = y_plt_sl[-int(n_ensembles) :]
+                if self.x_axis_type == "L":
+                    ax.plot(
+                        x * self.units["L"],
+                        y_plt_sl * self.units["L"],
+                        color="r",
+                        linewidth=0.5,
+                    )
+                else:
+                    ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+
+            # Upper bound of measured depth cells
+            y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
+                depth_obj.depth_cell_size_m[0, :] * 0.5
+            )
             if edge is not None:
                 if self.transect.start_edge == edge:
-                    y_plt_sl = y_plt_sl[: int(n_ensembles)]
+                    y_plt_top = y_plt_top[: int(n_ensembles)]
                 else:
-                    y_plt_sl = y_plt_sl[-int(n_ensembles) :]
+                    y_plt_top = y_plt_top[-int(n_ensembles) :]
             if self.x_axis_type == "L":
                 ax.plot(
                     x * self.units["L"],
-                    y_plt_sl * self.units["L"],
+                    y_plt_top * self.units["L"],
                     color="r",
                     linewidth=0.5,
                 )
             else:
-                ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+                ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
-        # Upper bound of measured depth cells
-        y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
-            depth_obj.depth_cell_size_m[0, :] * 0.5
-        )
-        if edge is not None:
-            if self.transect.start_edge == edge:
-                y_plt_top = y_plt_top[: int(n_ensembles)]
-            else:
-                y_plt_top = y_plt_top[-int(n_ensembles) :]
-        if self.x_axis_type == "L":
-            ax.plot(
-                x * self.units["L"],
-                y_plt_top * self.units["L"],
-                color="r",
-                linewidth=0.5,
-            )
+            # Extrapolated data plotting additions
+            if show_edge_speed and self.x_axis_type == "L":
+                top_valid = []
+                bottom_valid = []
+
+                for n in range(data_plt.shape[1]):
+                    idx = np.where(data_plt[2:-1, n] > -999)[0]
+                    if len(idx) > 0:
+                        top_valid.append(cell_plt[idx[0] + 2, n])
+                        bottom_valid.append(cell_plt[idx[-1] + 2, n])
+                    else:
+                        top_valid.append(np.nan)
+                        bottom_valid.append(np.nan)
+
+                top_valid.append(top_valid[-1])
+                bottom_valid.append(bottom_valid[-1])
+                top_valid = np.array(top_valid)
+                bottom_valid = np.array(bottom_valid)
+                # Plot extrapolated boundaries
+                ax.plot(
+                    x_plt[-2, :],
+                    bottom_valid,
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    x_plt[2, :],
+                    top_valid,
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    [x_plt[-2, 0], x_plt[2, 0]],
+                    [cell_plt[-2, 0], cell_plt[2, 0]],
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                ax.plot(
+                    [x_plt[-2, -1], x_plt[2, -1]],
+                    [cell_plt[-2, -1], cell_plt[2, -1]],
+                    linewidth=3,
+                    color="w",
+                    linestyle="dotted",
+                )
+                # Plot edge contours
+                self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+
         else:
-            ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
+            axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
+            ax.set_xlim(
+                left=np.nanmin(x_plt[0, :]) - axis_buffer * 0.02,
+                right=np.nanmax(x_plt[0, :]) + axis_buffer * 0.02,
+            )
+            ax.set_xlabel(self.canvas.tr("Length " + self.units["label_L"]))
+            ax.xaxis.label.set_fontsize(12)
 
-        # Extrapolated data plotting additions
-        if show_edge_speed and self.x_axis_type == "L":
-            top_valid = []
-            bottom_valid = []
+            # Fill below bottom profile
+            x_fill = np.insert(x, 0, (x_plt[0, 0] - x_plt[0, 1]) * 0.5)
+            x_fill = np.append(
+                x_fill,
+                x_plt[0, -1] + (x_plt[0, -1] - x_plt[0, -2]) * 0.5,
+            )
+            depth_fill = np.insert(depth, 0, depth[0])
+            depth_fill = np.append(depth_fill, depth[-1])
+            ax.fill_between(
+                x_fill,
+                1.15 * np.ceil(np.nanmax(cell_plt)),
+                depth_fill * self.units["L"],
+                color="w",
+                zorder=0,
+            )
 
-            for n in range(data_plt.shape[1]):
-                idx = np.where(data_plt[2:-1, n] > -999)[0]
-                if len(idx) > 0:
-                    top_valid.append(cell_plt[idx[0] + 2, n])
-                    bottom_valid.append(cell_plt[idx[-1] + 2, n])
-                else:
-                    top_valid.append(np.nan)
-                    bottom_valid.append(np.nan)
-
-            top_valid.append(top_valid[-1])
-            bottom_valid.append(bottom_valid[-1])
-            top_valid = np.array(top_valid)
-            bottom_valid = np.array(bottom_valid)
-            # Plot extrapolated boundaries
-            ax.plot(
-                x_plt[-2, :],
-                bottom_valid,
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                x_plt[2, :],
-                top_valid,
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                [x_plt[-2, 0], x_plt[2, 0]],
-                [cell_plt[-2, 0], cell_plt[2, 0]],
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            ax.plot(
-                [x_plt[-2, -1], x_plt[2, -1]],
-                [cell_plt[-2, -1], cell_plt[2, -1]],
-                linewidth=3,
-                color="w",
-                linestyle="dotted",
-            )
-            # Plot edge contours
-            self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+        # Data quiver
+        if data_quiver:
+            if data_quiver["scale"] is not None:
+                self.add_quiver(ax, data_quiver, self.units)
 
         # Label and limits for y axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
@@ -3564,7 +3695,49 @@ class AdvGraphs(object):
         ax.tick_params(
             axis="both", direction="in", bottom=True, top=True, left=True, right=True
         )
-        ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
+        if len(depth) > 0:
+            ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
+
+    @staticmethod
+    def add_quiver(ax, data_quiver, units):
+        """Adds quiver plot of secondary or transverse velocity to color contour plot.
+
+        Parameters
+        ----------
+        ax: AxesSubplot
+            Axis to which to plot
+        data_quiver: dict
+            Dictionary containing data and settings used to create quiver plot
+        units: dict
+            Dictionary of units conversions and labels
+
+        """
+        q = ax.quiver(
+            data_quiver["x"] * units["L"],
+            data_quiver["z"] * units["L"],
+            data_quiver["vy"] * units["V"],
+            data_quiver["vz"] * units["V"],
+            units="inches",
+            scale=data_quiver["scale"],
+            pivot="tail",
+            zorder=4,
+        )
+
+        ax.quiverkey(
+            q,
+            X=0.95,
+            Y=-0.046,
+            U=data_quiver["scale"],
+            label=data_quiver["label"]
+            + "\n"
+            + str(data_quiver["scale"])
+            + " "
+            + units["label_V"],
+            labelpos="E",
+            coordinates="axes",
+            fontproperties={"size": 12},
+            zorder=3,
+        )
 
     def add_edge_bathymetry(self, x, depth, edge=None):
         """Computes a new cross section profile including edge shapes.
@@ -3586,65 +3759,73 @@ class AdvGraphs(object):
         d: np.array(float)
             Array of depths along transect with edge shapes in m
         """
-
+        valid_idx = np.where(np.logical_not(np.isnan(depth)))[0]
         # Left edge
         if self.transect.start_edge == "Left":
             if self.transect.edges.left.type == "Rectangular":
                 start_x = np.array([0, 0])
-                start_d = np.array([0, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]]])
             elif self.transect.edges.left.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.left)
                 start_x = np.array([0, 0, self.transect.edges.left.distance_m])
-                start_d = np.array([0, depth[0] * cd, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]] * cd, depth[valid_idx[0]]])
             if self.transect.edges.right.type == "Rectangular":
-                end_x = np.array(2 * [x[-1] + self.transect.edges.right.distance_m])
-                end_d = np.array([depth[-1], 0])
+                end_x = np.array(
+                    2 * [x[valid_idx[-1]] + self.transect.edges.right.distance_m]
+                )
+                end_d = np.array([depth[valid_idx[-1]], 0])
             elif self.transect.edges.right.type == "Triangular":
-                end_x = np.array([x[-1] + self.transect.edges.right.distance_m])
+                end_x = np.array(
+                    [x[valid_idx[-1]] + self.transect.edges.right.distance_m]
+                )
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.right)
                 end_x = np.array(
                     [
-                        x[-1],
-                        x[-1] + self.transect.edges.right.distance_m,
-                        x[-1] + self.transect.edges.right.distance_m,
+                        x[valid_idx[-1]],
+                        x[valid_idx[-1]] + self.transect.edges.right.distance_m,
+                        x[valid_idx[-1]] + self.transect.edges.right.distance_m,
                     ]
                 )
-                end_d = np.array([depth[-1], depth[-1] * cd, 0])
+                end_d = np.array([depth[valid_idx[-1]], depth[valid_idx[-1]] * cd, 0])
 
         # Right edge
         else:
             if self.transect.edges.right.type == "Rectangular":
                 start_x = np.array([0, 0])
-                start_d = np.array([0, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]]])
             elif self.transect.edges.right.type == "Triangular":
                 start_x = np.array([0])
                 start_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.right)
                 start_x = np.array([0, 0, self.transect.edges.right.distance_m])
-                start_d = np.array([0, depth[0] * cd, depth[0]])
+                start_d = np.array([0, depth[valid_idx[0]] * cd, depth[valid_idx[0]]])
 
             if self.transect.edges.left.type == "Rectangular":
-                end_x = np.array(2 * [x[-1] + self.transect.edges.left.distance_m])
-                end_d = np.array([depth[-1], 0])
+                end_x = np.array(
+                    2 * [x[valid_idx[-1]] + self.transect.edges.left.distance_m]
+                )
+                end_d = np.array([depth[valid_idx[-1]], 0])
             elif self.transect.edges.left.type == "Triangular":
-                end_x = np.array([x[-1] + self.transect.edges.left.distance_m])
+                end_x = np.array(
+                    [x[valid_idx[-1]] + self.transect.edges.left.distance_m]
+                )
                 end_d = np.array([0])
             else:
                 cd = compute_edge_cd(self.transect.edges.left)
                 end_x = np.array(
                     [
-                        x[-1],
-                        x[-1] + self.transect.edges.left.distance_m,
-                        x[-1] + self.transect.edges.left.distance_m,
+                        x[valid_idx[-1]],
+                        x[valid_idx[-1]] + self.transect.edges.left.distance_m,
+                        x[valid_idx[-1]] + self.transect.edges.left.distance_m,
                     ]
                 )
-                end_d = np.array([depth[-1], depth[-1] * cd, 0])
+                end_d = np.array([depth[valid_idx[-1]], depth[valid_idx[-1]] * cd, 0])
 
         # Combine edges with transect data
         if edge is None:
@@ -3888,7 +4069,8 @@ class AdvGraphs(object):
         data_mask=None,
         fmt=None,
         set_annot=True,
-        x_override=[],
+        x_override=None,
+        min_y=None,
     ):
         """Create timeseries plot.
 
@@ -3932,12 +4114,12 @@ class AdvGraphs(object):
 
         # Compute x coordinates in selected units
         if self.x_axis_type == "L":
-            if len(x_override) > 0:
+            if x_override is not None:
                 x_coords = x_override * self.units["L"]
             else:
                 x_coords = self.x * self.units["L"]
         else:
-            if len(x_override) > 0:
+            if x_override is not None:
                 x_coords = x_override
             else:
                 x_coords = self.x
@@ -3990,15 +4172,19 @@ class AdvGraphs(object):
             max_y = (
                 np.nanmax(all_data) + np.abs(np.nanmax(all_data) * 0.02)
             ) * data_units[0]
-            min_y = (
-                np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
-            ) * data_units[0]
-            if min_y == 0:
+            if min_y is not None:
+                min_y = min_y - max_y * 0.02
+            elif min_y < 0.1:
                 min_y = max_y * -0.02
+            else:
+                min_y = (
+                    np.nanmin(all_data) - np.abs(np.nanmin(all_data)) * 0.02
+                ) * data_units[0]
             ax.set_ylim(top=max_y, bottom=min_y)
         except (TypeError, ValueError):
             pass
 
+        ax.margins(0.1)
         # Initialize annotation for data cursor. Annotation should only be
         # associated with one call to plt_timeseries if figure makes multiple
         # calls to create multiple lines on the same graph.
@@ -4018,11 +4204,89 @@ class AdvGraphs(object):
 
         self.canvas.draw()
 
-    def plot_map(self, map_class, units, bath=False, temp=False, plot_transects=False):
-        with self.wait_cursor():
-            # Initialize data sources
-            self.xs = map_class
+    def plot_map_contour(
+        self,
+        map_data,
+        data_type,
+        units,
+        data_quiver,
+        bed_profiles,
+        color_map,
+        manufacturer=None,
+    ):
+        """Create contour plot for map.
 
+        Parameters:
+            map_data: Map
+            data_type: str
+                Indicates type of data to be contoured
+            units: dict
+                Dictionary of units conversions and labels
+            data_quiver:
+                Dictionary containing data and settings to plot quiver
+            bed_profiles: bool
+            color_map: str
+                Indicates colormap to use (viridis or jet)
+            manufacturer: str
+                Identifies ADCP manufacturer
+
+        """
+
+        self.units = units
+        self.color_map = color_map
+
+        (
+            x_plt,
+            cell_plt,
+            data_plt,
+            depths,
+            x_data,
+            data_units,
+        ) = self.contour_map_prep(map_data, data_type, units, manufacturer=manufacturer)
+
+        self.fig.subplots_adjust(
+            left=0.08, bottom=0.1, right=0.95, top=0.97, wspace=0.02, hspace=0
+        )
+
+        # populate the figure with MAP contour data
+        self.plt_contour(
+            x_plt_in=x_plt * self.units["L"],
+            cell_plt_in=cell_plt,
+            data_plt_in=data_plt,
+            x=x_data * self.units["L"],
+            depth=depths,
+            data_units=data_units,
+            data_quiver=data_quiver,
+        )
+
+        if bed_profiles:
+            for transect in map_data.data_transects:
+                self.ax[0].plot(
+                    transect["acs_distance"] * self.units["L"],
+                    transect["depths"] * self.units["L"],
+                    color="grey",
+                    linewidth=1,
+                    zorder=2,
+                )
+
+    def plot_map(self, map_class, units, bath=False, temp=False, plot_transects=False):
+        """Plots MAP averaged bathymetry and temperature.
+
+        Parameters
+        ----------
+        map_class: MAP
+            Object of class MAP
+        units: dict
+            Dictionary of conversions and labels
+        bath: bool
+            Indicates if bathymetry should be plotted
+        temp: bool
+            Indicates if temperature should be plotted
+        plot_transects: bool
+            Indicates if data for individual transects should be plotted
+        """
+
+        with self.wait_cursor():
             # Set x axis type and units
             self.x_axis_type = "L"
             self.units = units
@@ -4050,6 +4314,7 @@ class AdvGraphs(object):
             # Create first subplot
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
 
+            # Plot bathymetry
             if bath:
                 data_units = (
                     self.units["L"],
@@ -4061,19 +4326,21 @@ class AdvGraphs(object):
                     data=map_class.depths, data_units=data_units, fmt=fmt
                 )
 
+                # Plot bathymetry from individual transects
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
 
-                    for tran in range(len(map_class.depth_by_transect)):
+                    for transect in map_class.data_transects:
                         self.plt_timeseries(
-                            data=map_class.depth_by_transect[tran],
+                            data=transect["depths"],
                             data_units=data_units,
-                            x_override=map_class.acs_distance[tran],
+                            x_override=transect["acs_distance"],
                             fmt=fmt,
                         )
 
                 self.ax[-1].invert_yaxis()
 
+            # Plot temperature
             if temp:
                 y_data = map_class.temperature
 
@@ -4083,13 +4350,14 @@ class AdvGraphs(object):
                     data=y_data, data_units=data_units, ax=self.ax[-1], fmt=fmt
                 )
 
+                # Plot temperature for individual transects
                 if plot_transects:
                     fmt = [{"color": "grey", "linewidth": 1}]
-                    for tran in range(len(map_class.temperature_by_transect)):
+                    for transect in map_class.data_transects:
                         self.plt_timeseries(
-                            data=map_class.temperature_by_transect[tran],
+                            data=transect["temperature"],
                             data_units=data_units,
-                            x_override=map_class.acs_distance[tran],
+                            x_override=transect["acs_distance"],
                             fmt=fmt,
                         )
 

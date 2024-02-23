@@ -2,14 +2,10 @@ from datetime import datetime
 import numpy as np
 import getpass
 import io
-from matplotlib.figure import Figure
-from UI.ULollipopPlot import ULollipopPlot
-from UI.DischargeTS import DischargeTS
-from UI.ExtrapPlot import ExtrapPlot
-from UI.MplCanvas import MplCanvas
-from UI.AdvGraphs import AdvGraphs
+from datetime import datetime
 
-# from UI.Graphics import Graphics
+import numpy as np
+from matplotlib.figure import Figure
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -20,10 +16,15 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Image,
-    PageBreak,
     Table,
     TableStyle,
 )
+
+from UI.AdvGraphs import AdvGraphs
+from UI.DischargeTS import DischargeTS
+from UI.ExtrapPlot import ExtrapPlot
+from UI.MplCanvas import MplCanvas
+from UI.ULollipopPlot import ULollipopPlot
 
 
 class Report:
@@ -300,16 +301,6 @@ class Report:
         else:
             invalid_ens = "{:5.2f}".format(value)
 
-        if meas.run_oursin:
-            if np.isnan(meas.oursin.u_measurement_user["total_95"][0]):
-                uncertainty = self.tr("N/A")
-            else:
-                uncertainty = "%5.1f".format(
-                    meas.oursin.u_measurement_user["total_95"][0]
-                )
-        else:
-            uncertainty = "{:8.1f}".format(meas.uncertainty.total_95_user)
-
         transect_id = meas.checked_transect_idx[0]
         start_time = datetime.strftime(
             datetime.utcfromtimestamp(
@@ -451,17 +442,6 @@ class Report:
                 mb_test_type = meas.mb_tests[selected_idx[0]].type
             else:
                 mb_test_type = meas.mb_tests[-1].type
-            for n in range(n_tests):
-                test = meas.mb_tests[n]
-
-            # MB test result
-            mb_result = self.tr("Unknown")
-            for idx in selected_idx:
-                if meas.mb_tests[idx].moving_bed == "Yes":
-                    mb_result = self.tr("Yes")
-                    break
-                elif meas.mb_tests[idx].moving_bed == "No":
-                    mb_result = self.tr("No")
 
             # Max moving bed
             percent_mb = []
@@ -474,7 +454,7 @@ class Report:
             if len(selected_idx) >= 1:
                 max_mb_per = "{:.2f}".format(np.nanmax(np.array(percent_mb)))
             else:
-                quality = [test.test_quality]
+                quality = [meas.mb_tests[-1].test_quality]
                 max_mb_per = ""
             quality = list(set(quality))
             if len(quality) > 1:
@@ -717,7 +697,7 @@ class Report:
                 units=self.parent.units,
                 color_map=self.parent.color_map,
                 x_axis_type=self.parent.x_axis_type,
-                discharge=self.parent.meas.discharge[transect_id],
+                discharge=self.parent.meas.discharge[idx],
             )
         else:
             contour_fig.create_main_contour(
@@ -1093,7 +1073,9 @@ class Report:
             start_edge = transect.start_edge
 
             left_type = transect.edges.left.type
-            left_dist = "{:.2f}".format(transect.edges.left.distance_m)
+            left_dist = "{:.2f}".format(
+                transect.edges.left.distance_m * self.parent.units["L"]
+            )
             left_ens = "{:.0f}".format(q.left_idx.size)
             if transect.edges.left.type == "Triangular":
                 left_coef = "0.3535"
@@ -1106,7 +1088,9 @@ class Report:
             left_coef = left_coef
 
             right_type = transect.edges.right.type
-            right_dist = "{:.2f}".format(transect.edges.right.distance_m)
+            right_dist = "{:.2f}".format(
+                transect.edges.right.distance_m * self.parent.units["L"]
+            )
             right_ens = "{:.0f}".format(q.right_idx.size)
             if transect.edges.right.type == "Triangular":
                 right_coef = "0.3535"

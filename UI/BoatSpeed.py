@@ -158,249 +158,267 @@ class BoatSpeed(object):
                 x.append(datetime.utcfromtimestamp(stamp))
             x = np.array(x)
 
-        # Plot bottom track boat speed
-        speed = np.sqrt(
-            transect.boat_vel.bt_vel.u_processed_mps[transect.in_transect_idx] ** 2
-            + transect.boat_vel.bt_vel.v_processed_mps[transect.in_transect_idx] ** 2
-        )
-        self.bt = self.fig.ax.plot(x, speed * units["V"], "r-")
-
-        # Plot invalid data points using a symbol to represent what caused the
-        # data to be invalid
-        invalid_bt = np.logical_not(
-            transect.boat_vel.bt_vel.valid_data[:, transect.in_transect_idx]
-        )
-        if invalid_bt is not None:
+        if x is not None:
+            # Plot bottom track boat speed
             speed = np.sqrt(
-                transect.boat_vel.bt_vel.u_mps[transect.in_transect_idx] ** 2
-                + transect.boat_vel.bt_vel.v_mps[transect.in_transect_idx] ** 2
-            )
-            speed[np.isnan(speed)] = 0
-            self.bt.append(
-                self.fig.ax.plot(
-                    x[invalid_bt[1]],
-                    speed[invalid_bt[1]] * units["V"],
-                    "k",
-                    linestyle="",
-                    marker="$O$",
-                )[0]
-            )
-            self.bt.append(
-                self.fig.ax.plot(
-                    x[invalid_bt[2]],
-                    speed[invalid_bt[2]] * units["V"],
-                    "k",
-                    linestyle="",
-                    marker="$E$",
-                )[0]
-            )
-            self.bt.append(
-                self.fig.ax.plot(
-                    x[invalid_bt[3]],
-                    speed[invalid_bt[3]] * units["V"],
-                    "k",
-                    linestyle="",
-                    marker="$V$",
-                )[0]
-            )
-            self.bt.append(
-                self.fig.ax.plot(
-                    x[invalid_bt[4]],
-                    speed[invalid_bt[4]] * units["V"],
-                    "k",
-                    linestyle="",
-                    marker="$S$",
-                )[0]
-            )
-            self.bt.append(
-                self.fig.ax.plot(
-                    x[invalid_bt[5]],
-                    speed[invalid_bt[5]] * units["V"],
-                    "k",
-                    linestyle="",
-                    marker="$B$",
-                )[0]
-            )
-
-        max_bt = np.nanmax(speed)
-
-        # Based on checkbox control make bt visible or not
-        if control["bt"]:
-            for item in self.bt:
-                item.set_visible(True)
-        else:
-            for item in self.bt:
-                item.set_visible(False)
-
-        # Plot VTG boat speed
-        if transect.boat_vel.vtg_vel is not None:
-            speed = np.sqrt(
-                transect.boat_vel.vtg_vel.u_processed_mps[transect.in_transect_idx] ** 2
-                + transect.boat_vel.vtg_vel.v_processed_mps[transect.in_transect_idx]
+                transect.boat_vel.bt_vel.u_processed_mps[transect.in_transect_idx] ** 2
+                + transect.boat_vel.bt_vel.v_processed_mps[transect.in_transect_idx]
                 ** 2
             )
-            self.vtg = self.fig.ax.plot(x, speed * units["V"], "g-")
+            self.bt = self.fig.ax.plot(x, speed * units["V"], "r-")
 
-            # Plot invalid data points using a symbol to represent what
-            # caused the data to be invalid
-            invalid_gps = np.logical_not(
-                transect.boat_vel.vtg_vel.valid_data[:, transect.in_transect_idx]
+            # Plot invalid data points using a symbol to represent what caused the
+            # data to be invalid
+            invalid_bt = np.logical_not(
+                transect.boat_vel.bt_vel.valid_data[:, transect.in_transect_idx]
             )
-
-            if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
+            if invalid_bt is not None:
                 speed = np.sqrt(
-                    transect.boat_vel.vtg_vel.u_mps[transect.in_transect_idx] ** 2
-                    + transect.boat_vel.vtg_vel.v_mps[transect.in_transect_idx] ** 2
+                    transect.boat_vel.bt_vel.u_mps[transect.in_transect_idx] ** 2
+                    + transect.boat_vel.bt_vel.v_mps[transect.in_transect_idx] ** 2
                 )
                 speed[np.isnan(speed)] = 0
-                self.vtg.append(
+                self.bt.append(
                     self.fig.ax.plot(
-                        x[invalid_gps[1]],
-                        speed[invalid_gps[1]] * units["V"],
+                        x[invalid_bt[1]],
+                        speed[invalid_bt[1]] * units["V"],
                         "k",
                         linestyle="",
                         marker="$O$",
                     )[0]
                 )
-                self.vtg.append(
+                self.bt.append(
                     self.fig.ax.plot(
-                        x[invalid_gps[5]],
-                        speed[invalid_gps[5]] * units["V"],
+                        x[invalid_bt[2]],
+                        speed[invalid_bt[2]] * units["V"],
                         "k",
                         linestyle="",
-                        marker="$H$",
+                        marker="$E$",
                     )[0]
                 )
-                self.vtg.append(
+                self.bt.append(
                     self.fig.ax.plot(
-                        x[invalid_gps[4]],
-                        speed[invalid_gps[4]] * units["V"],
+                        x[invalid_bt[3]],
+                        speed[invalid_bt[3]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$V$",
+                    )[0]
+                )
+                self.bt.append(
+                    self.fig.ax.plot(
+                        x[invalid_bt[4]],
+                        speed[invalid_bt[4]] * units["V"],
                         "k",
                         linestyle="",
                         marker="$S$",
                     )[0]
                 )
+                self.bt.append(
+                    self.fig.ax.plot(
+                        x[invalid_bt[5]],
+                        speed[invalid_bt[5]] * units["V"],
+                        "k",
+                        linestyle="",
+                        marker="$B$",
+                    )[0]
+                )
 
-            max_vtg = np.nanmax(speed)
-            if control["vtg"]:
-                for item in self.vtg:
+            max_bt = np.nanmax(speed)
+
+            # Based on checkbox control make bt visible or not
+            if control["bt"]:
+                for item in self.bt:
                     item.set_visible(True)
             else:
-                for item in self.vtg:
+                for item in self.bt:
                     item.set_visible(False)
 
-        # Plot GGA boat speed
-        if transect.boat_vel.gga_vel is not None:
-            speed = np.sqrt(
-                transect.boat_vel.gga_vel.u_processed_mps[transect.in_transect_idx] ** 2
-                + transect.boat_vel.gga_vel.v_processed_mps[transect.in_transect_idx]
-                ** 2
-            )
-            self.gga = self.fig.ax.plot(x, speed * units["V"], "b-")
-
-            # Plot invalid data points using a symbol to represent what caused
-            # the data to be invalid
-            invalid_gps = np.logical_not(
-                transect.boat_vel.gga_vel.valid_data[:, transect.in_transect_idx]
-            )
-            if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
+            # Plot VTG boat speed
+            if transect.boat_vel.vtg_vel is not None:
                 speed = np.sqrt(
-                    transect.boat_vel.gga_vel.u_mps[transect.in_transect_idx] ** 2
-                    + transect.boat_vel.gga_vel.v_mps[transect.in_transect_idx] ** 2
+                    transect.boat_vel.vtg_vel.u_processed_mps[transect.in_transect_idx]
+                    ** 2
+                    + transect.boat_vel.vtg_vel.v_processed_mps[
+                        transect.in_transect_idx
+                    ]
+                    ** 2
                 )
-                speed[np.isnan(speed)] = 0
-                self.gga.append(
-                    self.fig.ax.plot(
-                        x[invalid_gps[1]],
-                        speed[invalid_gps[1]] * units["V"],
-                        "k",
-                        linestyle="",
-                        marker="$O$",
-                    )[0]
-                )
-                self.gga.append(
-                    self.fig.ax.plot(
-                        x[invalid_gps[2]],
-                        speed[invalid_gps[2]] * units["V"],
-                        "k",
-                        linestyle="",
-                        marker="$Q$",
-                    )[0]
-                )
-                self.gga.append(
-                    self.fig.ax.plot(
-                        x[invalid_gps[3]],
-                        speed[invalid_gps[3]] * units["V"],
-                        "k",
-                        linestyle="",
-                        marker="$A$",
-                    )[0]
-                )
-                self.gga.append(
-                    self.fig.ax.plot(
-                        x[invalid_gps[5]],
-                        speed[invalid_gps[5]] * units["V"],
-                        "k",
-                        linestyle="",
-                        marker="$H$",
-                    )[0]
-                )
-                self.gga.append(
-                    self.fig.ax.plot(
-                        x[invalid_gps[4]],
-                        speed[invalid_gps[4]] * units["V"],
-                        "k",
-                        linestyle="",
-                        marker="$S$",
-                    )[0]
+                self.vtg = self.fig.ax.plot(x, speed * units["V"], "g-")
+
+                # Plot invalid data points using a symbol to represent what
+                # caused the data to be invalid
+                invalid_gps = np.logical_not(
+                    transect.boat_vel.vtg_vel.valid_data[:, transect.in_transect_idx]
                 )
 
-            max_gga = np.nanmax(speed)
-            if control["gga"]:
-                for item in self.gga:
-                    item.set_visible(True)
-            else:
-                for item in self.gga:
-                    item.set_visible(False)
+                if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
+                    speed = np.sqrt(
+                        transect.boat_vel.vtg_vel.u_mps[transect.in_transect_idx] ** 2
+                        + transect.boat_vel.vtg_vel.v_mps[transect.in_transect_idx] ** 2
+                    )
+                    speed[np.isnan(speed)] = 0
+                    self.vtg.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[1]],
+                            speed[invalid_gps[1]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$O$",
+                        )[0]
+                    )
+                    self.vtg.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[5]],
+                            speed[invalid_gps[5]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$H$",
+                        )[0]
+                    )
+                    self.vtg.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[4]],
+                            speed[invalid_gps[4]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$S$",
+                        )[0]
+                    )
 
-        # Set axis limits
-        max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
-        self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
-        x = x[transect.in_transect_idx - transect.in_transect_idx[0]]
-        if x_axis_type == "L":
-            if transect.start_edge == "Right":
-                self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(
-                    right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02 * units["L"]
+                max_vtg = np.nanmax(speed)
+                if control["vtg"]:
+                    for item in self.vtg:
+                        item.set_visible(True)
+                else:
+                    for item in self.vtg:
+                        item.set_visible(False)
+
+            # Plot GGA boat speed
+            if transect.boat_vel.gga_vel is not None:
+                speed = np.sqrt(
+                    transect.boat_vel.gga_vel.u_processed_mps[transect.in_transect_idx]
+                    ** 2
+                    + transect.boat_vel.gga_vel.v_processed_mps[
+                        transect.in_transect_idx
+                    ]
+                    ** 2
                 )
-            else:
-                self.fig.ax.set_xlim(
-                    left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02 * units["L"]
+                self.gga = self.fig.ax.plot(x, speed * units["V"], "b-")
+
+                # Plot invalid data points using a symbol to represent what caused
+                # the data to be invalid
+                invalid_gps = np.logical_not(
+                    transect.boat_vel.gga_vel.valid_data[:, transect.in_transect_idx]
                 )
-            self.fig.ax.set_xlabel(self.canvas.tr("Length" + units["label_L"]))
-        elif x_axis_type == "E":
-            if transect.start_edge == "Right":
-                self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
-            else:
-                self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
-            self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
-        elif x_axis_type == "T":
-            axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
-            if transect.start_edge == "Right":
-                self.fig.ax.invert_xaxis()
-                self.fig.ax.set_xlim(
-                    right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                    left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
-                )
-            else:
-                self.fig.ax.set_xlim(
-                    left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                    right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
-                )
-            date_form = DateFormatter("%H:%M:%S")
-            self.fig.ax.xaxis.set_major_formatter(date_form)
-            self.fig.ax.set_xlabel(self.canvas.tr("Time"))
+                if 0 < np.sum(invalid_gps[0, :]) < invalid_gps.shape[1]:
+                    speed = np.sqrt(
+                        transect.boat_vel.gga_vel.u_mps[transect.in_transect_idx] ** 2
+                        + transect.boat_vel.gga_vel.v_mps[transect.in_transect_idx] ** 2
+                    )
+                    speed[np.isnan(speed)] = 0
+                    self.gga.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[1]],
+                            speed[invalid_gps[1]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$O$",
+                        )[0]
+                    )
+                    self.gga.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[2]],
+                            speed[invalid_gps[2]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$Q$",
+                        )[0]
+                    )
+                    self.gga.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[3]],
+                            speed[invalid_gps[3]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$A$",
+                        )[0]
+                    )
+                    self.gga.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[5]],
+                            speed[invalid_gps[5]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$H$",
+                        )[0]
+                    )
+                    self.gga.append(
+                        self.fig.ax.plot(
+                            x[invalid_gps[4]],
+                            speed[invalid_gps[4]] * units["V"],
+                            "k",
+                            linestyle="",
+                            marker="$S$",
+                        )[0]
+                    )
+
+                max_gga = np.nanmax(speed)
+                if control["gga"]:
+                    for item in self.gga:
+                        item.set_visible(True)
+                else:
+                    for item in self.gga:
+                        item.set_visible(False)
+
+                    # Set axis limits
+                    max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
+                    self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
+                    x = x[transect.in_transect_idx - transect.in_transect_idx[0]]
+                    if x_axis_type == "L":
+                        if transect.start_edge == "Right":
+                            self.fig.ax.invert_xaxis()
+                            self.fig.ax.set_xlim(
+                                right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02
+                            )
+                        else:
+                            self.fig.ax.set_xlim(
+                                left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02
+                            )
+                        self.fig.ax.set_xlabel(
+                            self.canvas.tr("Length" + units["label_L"])
+                        )
+                    elif x_axis_type == "E":
+                        if transect.start_edge == "Right":
+                            self.fig.ax.invert_xaxis()
+                            self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
+                        else:
+                            self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
+                        self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
+                    elif x_axis_type == "T":
+                        axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
+                        if transect.start_edge == "Right":
+                            self.fig.ax.invert_xaxis()
+                            self.fig.ax.set_xlim(
+                                right=datetime.utcfromtimestamp(
+                                    timestamp[0] - axis_buffer
+                                ),
+                                left=datetime.utcfromtimestamp(
+                                    timestamp[-1] + axis_buffer
+                                ),
+                            )
+                        else:
+                            self.fig.ax.set_xlim(
+                                left=datetime.utcfromtimestamp(
+                                    timestamp[0] - axis_buffer
+                                ),
+                                right=datetime.utcfromtimestamp(
+                                    timestamp[-1] + axis_buffer
+                                ),
+                            )
+                        date_form = DateFormatter("%H:%M:%S")
+                        self.fig.ax.xaxis.set_major_formatter(date_form)
+                        self.fig.ax.set_xlabel(self.canvas.tr("Time"))
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate(

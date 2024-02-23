@@ -89,6 +89,18 @@ class HeadingTS(object):
 
         # Clear the plot
         self.fig.clear()
+        # No data selected for graphing
+        if np.all(
+            np.logical_not(
+                [
+                    cb_merror.isChecked(),
+                    cb_internal.isChecked(),
+                    cb_external.isChecked(),
+                ]
+            )
+        ):
+            return
+
         self.row_index = []
 
         # Configure axis

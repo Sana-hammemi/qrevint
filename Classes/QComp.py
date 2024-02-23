@@ -1358,7 +1358,7 @@ class QComp(object):
             coef = edge_select.cust_coef
 
         else:
-            coef = []
+            coef = np.nan
 
         return coef
 

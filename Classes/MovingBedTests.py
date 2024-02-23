@@ -1171,6 +1171,8 @@ class MovingBedTests(object):
             # moving-bed and a moving-bed condition.
             if boat_ref is None:
                 ref = "BT"
+            elif boat_ref == "bt_vel":
+                ref = "BT"
             else:
                 ref = boat_ref
 

@@ -854,7 +854,7 @@ is based on the best available data.</p>
 <p>The tabs have both icons and colors to identify the data quality status
 based on the automated data quality assessment (ADQA). If a tab or icon is
 blue, yellow, or red, an associated message will be in the Messages subtab
-at the bottom of the Main tab. Tabs, buttons, check boxes, radio buttons,
+at the bottom of the Main tab. Tabs, buttons, checkboxes, radio buttons,
 and pop-up menus are used in lieu of menus in an attempt to make QRev easy
 to use on a touch screen tablet. Each tab provides tables, text, options,
 and graphics needed to assess and process that aspect of the data in more
@@ -868,9 +868,9 @@ processing, the cursor will return to the default shape.</p>
 <h3>2.1 TAB ICONS AND COLORS<a class="headerlink" href="#tab-icons-and-colors" title="Permalink to this heading">#</a></h3>
 <p>Each tab will have a color and optionally an icon to identify the status of the data presented in that tab.</p>
 <p><img alt="" src="../_images/greentab.png" /> Green text with a green check mark indicates that the data presented in this tab has passed all the internal quality checks.</p>
-<p><img alt="" src="../_images/yellowtab.png" /> Yellow or orange text and a triangle with an exclamation mark indicates that the data presented in this tab has failed some of the internal quality checks and the user should evaluate that data.</p>
+<p><img alt="" src="../_images/yellowtab.png" /> Yellow or orange text and a triangle with an exclamation mark indicates that the data presented in this tab has failed some internal quality checks and the user should evaluate that data.</p>
 <p><img alt="" src="../_images/redtab.png" /> Red text with a red square and exclamation mark
-indicates that the data presented in this tab has failed some of the internal quality checks and the failure may have a substantial effect of the resulting discharge. The user needs to address these issues.</p>
+indicates that the data presented in this tab has failed some internal quality checks and the failure may have a substantial effect of the resulting discharge. The user needs to address these issues.</p>
 <p><img alt="" src="../_images/bluetab.png" /> Blue text with any of the other icons indicates that the user has made a change from original settings. If a change is made a message will be added and the user should add a corresponding comment to document the reason for the change. Changing the text to blue provides a reviewer a quick way to see if any changes have been made to the original values.</p>
 <p><img alt="" src="../_images/greytab.png" /> Gray text indicates that the tab is inactive because there are no data to display.</p>
 <p><img alt="" src="../_images/blacktab.png" /> Black text with no icon indicates a feature that has no automated quality assurance checks.</p>
@@ -909,7 +909,7 @@ Clicking on the open icon in the toolbar opens a measurement selection dialog.</
 </section>
 <section id="load-qrev-data">
 <h4>2.3.1.3 Load QRev Data<a class="headerlink" href="#load-qrev-data" title="Permalink to this heading">#</a></h4>
-<p>The QRev data type is for a measurement that has already been processed and saved by QRev. The file should be a “*_QRev.mat” file. This file contains all the data and settings used in QRev. A dialog is presented to the user asking if they would like to view the measurement as save or reprocess the measurement using the latest QRev algorithms. If the measurement is simply viewed but a change is made to the measurement the data will be reprocessed using the features of the current version, including the setting for “Use weighted” in the Extrapolation box of the Options dialog (section 2.5).</p>
+<p>The QRev data type is for a measurement that has already been processed and saved by QRev. The file should be a “*_QRev.mat” file. This file contains all the data and settings used in QRev. A dialog is presented to the user asking if they would like to view the measurement as saved or reprocess the measurement using the latest QRev algorithms. If the measurement is simply viewed but a change is made to the measurement the data will be reprocessed using the features of the current version, including the setting for “Use weighted” in the Extrapolation box of the Options dialog (section 2.5).</p>
 <p><img alt="" src="../_images/view_reprocess.png" /></p>
 </section>
 </section>
@@ -938,7 +938,7 @@ Clicking on the open icon in the toolbar opens a measurement selection dialog.</
 <p>The default color map is viridis. Viridis provides a continuous blue to yellow scale that renders detail much more clearly than other palettes. The viridis palette is visible to those with color.
 The jet color map is provided for those that prefer consistency with the manufacturer’s software.
 “Jet is very pleasing because it is flashy, colorful, and it does not require you to think about your color scale: even if you have just a few outliers, you still get “all the features” in your plot. You said it yourself: jet almost never lacks contrast.
-However, this comes at a very high price: jet literally shows things that do not exist. It creates contrast out of nowhere: just change your color scale a little bit in jet and you should see that the picture is change dramatically. Do the same thing in viridis, and you would merely have the impression that you are putting more or less light on the exact same thing.” (https://stats.stackexchange.com/questions/223315/why-use-colormap-viridis-over-jet)</p>
+However, this comes at a very high price: jet literally shows things that do not exist. It creates contrast out of nowhere: just change your color scale a little in jet and you should see that the picture is change dramatically. Do the same thing in viridis, and you would merely have the impression that you are putting more or less light on the exact same thing.” (https://stats.stackexchange.com/questions/223315/why-use-colormap-viridis-over-jet)</p>
 <p>This option is retained between session, so the user only has to make the choice one time.</p>
 </section>
 <section id="save-options">
@@ -959,11 +959,11 @@ However, this comes at a very high price: jet literally shows things that do not
 </section>
 <section id="style-sheet">
 <h4>2.3.3.6 Style Sheet<a class="headerlink" href="#style-sheet" title="Permalink to this heading">#</a></h4>
-<p>Checking the “Save style sheet with data” option will save a stylesheet called QRevStylesheet.xsl in the folder with the *_QRev.xml file so that the xml file can be viewed using the style sheet. Simply double click the *_QRev.xml file. The QRevStylesheet is only an example. Users are encouraged to modify the style sheet to meet their needs, but the modified style sheet must be stored in the QRev folder and be named QRevStylesheet.xsl. This setting is persistent and will be retained when QRev is closed and reopened.</p>
+<p>Checking the “Save style sheet with data” option will save a stylesheet called QRevStylesheet.xsl in the folder with the *_QRev.xml file so that the xml file can be viewed using the style sheet. Simply double-click the *_QRev.xml file. The QRevStylesheet is only an example. Users are encouraged to modify the style sheet to meet their needs, but the modified style sheet must be stored in the QRev folder and be named QRevStylesheet.xsl. This setting is persistent and will be retained when QRev is closed and reopened.</p>
 </section>
 <section id="export-mean-cross-section">
 <h4>2.3.3.7 Export Mean Cross-Section<a class="headerlink" href="#export-mean-cross-section" title="Permalink to this heading">#</a></h4>
-<p>If checked a mean cross section based on the transects used to compute discharge is computed and the coordinates saved in the xml file.</p>
+<p>If checked, a mean cross section based on the transects used to compute discharge is computed and the coordinates saved in the xml file.</p>
 </section>
 <section id="extrapolation">
 <h4>2.3.3.8 Extrapolation<a class="headerlink" href="#extrapolation" title="Permalink to this heading">#</a></h4>
@@ -971,11 +971,11 @@ However, this comes at a very high price: jet literally shows things that do not
 </section>
 <section id="wt-bt-filters">
 <h4>2.3.3.9 WT, BT Filters<a class="headerlink" href="#wt-bt-filters" title="Permalink to this heading">#</a></h4>
-<p>The automatically computed error and vertical velocity filters for water track (WT) and bottom track (BT) have previously been computed in QRev using data for each individual transect. The result is potentially a different threshold for each transect. Conversely if a manual setting were applied that setting was applied to all transects uniformly. This option provides the ability to have QRev automatically compute the error and vertical velocity thresholds for WT and BT using all the data in the measurement, resulting in a single set of thresholds that are applied to all the transects.</p>
+<p>The automatically computed error and vertical velocity filters for water track (WT) and bottom track (BT) have previously been computed in QRev using data for each individual transect. The result is potentially a different threshold for each transect. Conversely, if a manual setting were applied that setting was applied to all transects uniformly. This option provides the ability to have QRev automatically compute the error and vertical velocity thresholds for WT and BT using all the data in the measurement, resulting in a single set of thresholds that are applied to all the transects.</p>
 </section>
 <section id="uncertainty">
 <h4>2.3.3.10 Uncertainty<a class="headerlink" href="#uncertainty" title="Permalink to this heading">#</a></h4>
-<p>QRev has two options for estimating the measurement uncertainty. QRev Original is a simplified approach that was introduced with the first version of QRev and is based on experienced user estimates of typical uncertainties. Oursin is a more comprehensive uncertainty model based on principles presented in the Guide to the expression of Uncertainty in Measurement (GUM, JCGM 2008). Details of the Oursin model are documented in Despax et al (2021). If the QRev option is chosen, the uncertainty will be displayed in a table.</p>
+<p>QRev has two options for estimating the measurement uncertainty. QRev Original is a simplified approach that was introduced with the first version of QRev and is based on experienced user estimates of typical uncertainties. Oursin is a more comprehensive uncertainty model based on principles presented in the Guide to the expression of Uncertainty in Measurement (GUM, JCGM 2008). Details of the Oursin model are documented in Despax et al. (2021). If the QRev option is chosen, the uncertainty will be displayed in a table.</p>
 <p><img alt="" src="../_images/original_unc.png" /></p>
 <p>If the Oursin option is chosen, the uncertainty is displayed in a lollipop plot and the details and user overrides are done in a separate uncertainty tab.</p>
 <p><img alt="" src="../_images/oursin_unc.png" /></p>
@@ -988,7 +988,7 @@ However, this comes at a very high price: jet literally shows things that do not
 </section>
 <section id="map-tab">
 <h4>2.3.3.12 MAP Tab<a class="headerlink" href="#map-tab" title="Permalink to this heading">#</a></h4>
-<p>This option indicates whether or not the MAP tab is displayed and accessable to the user.</p>
+<p>This option indicates whether the MAP tab is displayed and accessable to the user.</p>
 </section>
 <section id="save-pdf-summary-report">
 <h4>2.3.3.13 Save PDF Summary Report<a class="headerlink" href="#save-pdf-summary-report" title="Permalink to this heading">#</a></h4>
@@ -1002,7 +1002,7 @@ However, this comes at a very high price: jet literally shows things that do not
 <section id="comment">
 <h3>2.3.4 Comment<a class="headerlink" href="#comment" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/notes_icon.png" /></p>
-<p>Clicking on this button will open the comment dialog. The user comment is automatically tagged with the tab that they are viewing, the date, time, and user name of the person making the comment. The user should enter comments explaining any observations associated with the data or field conditions or any changes in QRev settings. All comments can be viewed by clicking the Comments tab at the bottom of the Main tab or by clicking on the Messages tab in any of the other tabs. Comments cannot be edited or deleted after they are entered.</p>
+<p>Clicking on this button will open the comment dialog. The user comment is automatically tagged with the tab that they are viewing, the date, time, and username of the person making the comment. The user should enter comments explaining any observations associated with the data or field conditions or any changes in QRev settings. All comments can be viewed by clicking the Comments tab at the bottom of the Main tab or by clicking on the Messages tab in any of the other tabs. Comments cannot be edited or deleted after they are entered.</p>
 <p><img alt="" src="../_images/comment_dialog.png" /></p>
 </section>
 <section id="transect-selection">
@@ -1038,7 +1038,7 @@ allows the user to change the reference by clicking on the desired setting. If a
 <section id="zoom-window">
 <h4>2.3.8.2 Zoom Window<a class="headerlink" href="#zoom-window" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/zoomicon.png" /></p>
-<p>Left-clicking on a graph allows the user to zoom in on a graph using a windowing technique. Right clicking on a graph allows the user to zoom out on a graph using a windowing technique.</p>
+<p>Left-clicking on a graph allows the user to zoom in on a graph using a windowing technique. Right-clicking on a graph allows the user to zoom out on a graph using a windowing technique.</p>
 </section>
 <section id="pan">
 <h4>2.3.8.3 Pan<a class="headerlink" href="#pan" title="Permalink to this heading">#</a></h4>
@@ -1171,7 +1171,7 @@ Transect: File name of the transect.</p>
 <li><p><strong>Measurement Number:</strong> Number assigned to the measurement by user or agency</p></li>
 <li><p><strong>Stage start:</strong> Stage at start of measurement in selected units</p></li>
 <li><p><strong>Stage end:</strong> Stage at end of measurement in selected units</p></li>
-<li><p><strong>Stage meas:</strong> Stage assigned to the measurement in selected units. QRev automatically averages stage start and end to populate stage meas. The user can edit stage meas to a value different that that automatically generated by QRev.</p></li>
+<li><p><strong>Stage meas:</strong> Stage assigned to the measurement in selected units. QRev automatically averages stage start and end to populate stage meas. The user can edit stage meas to a value different from that automatically generated by QRev.</p></li>
 <li><p><strong>ADCP Test:</strong> Was an ADCP system test was performed?</p></li>
 <li><p><strong>ADCP Test Fails:</strong> How many tests within the system test suite failed.</p></li>
 <li><p><strong>Compass Calibration:</strong> Was a compass calibration completed?</p></li>
@@ -1216,7 +1216,7 @@ Transect: File name of the transect.</p>
 <li><p><strong>Model:</strong> Model name of ADCP determined from firmware version and system test results.</p></li>
 <li><p><strong>Firmware:</strong> Firmware version used during data collection.</p></li>
 <li><p><strong>Frequency (kHz):</strong> Approximate frequency of the ADCP. For multi-frequency instruments this will be “Variable”.</p></li>
-<li><p><strong>Depth Cell Size (cm):</strong> The size or or range in depth cell size(s) in user specified units.</p></li>
+<li><p><strong>Depth Cell Size (cm):</strong> The size or range in depth cell size(s) in user specified units.</p></li>
 <li><p><strong>Water Mode:</strong> The water mode used to collect the data. For auto-adaptive instruments that automatically switch water modes this will be “Variable”.</p></li>
 <li><p><strong>Bottom Mode:</strong> The water mode used for bottom tracking. For auto-adaptive instruments that automatically switch bottom modes this will be “Variable”.</p></li>
 </ul>
@@ -1285,7 +1285,7 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <li><p><strong>Estimated 95% Uncertainty—</strong> The estimated 95 percent uncertainty uses the values for uncertainty from the discussed categories and combines them as the square root of the sum of the squares. The final value is only a guide because the algorithms for the various sources of uncertainty are only approximations and simple assumptions.</p></li>
 <li><p><strong>User Rating—</strong> The user rating cannot be edited but is assigned when the user saves the measurement and the “Prompt for user rating on save” is checked in the Options dialog (see section 2.5 Options). This rating should reflect the uncertainty of the discharge and stage associated with the measurement.</p></li>
 </ul>
-<p>If Oursin is selected as the uncertainty model, the total uncertainty is displayed in the title of a lollipop plot that shows the relative contributions of the various sources of uncertainty as a percentage of the total uncertainty, sorted in order of greatest source of uncertainty at the top. For a more detailed discussion of the sources of uncertainty and how they are estimated using the Oursin approach, see the Uncertainty Tab section.</p>
+<p>If Oursin is selected as the uncertainty model, the total uncertainty is displayed in the title of a lollipop plot that shows the relative contributions of the various sources of uncertainty as a percentage of the total uncertainty, sorted in order with the greatest source of uncertainty at the top. For a more detailed discussion of the sources of uncertainty and how they are estimated using the Oursin approach, see the Uncertainty Tab section.</p>
 </section>
 </section>
 <section id="systest-tab">
@@ -1320,9 +1320,9 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <p><img alt="" src="../_images/heading_src.png" /></p>
 <p>Applying the magnetic variation, heading offset, or heading source to all transect also applies the setting to the moving-bed test transects.</p>
 <p><img alt="" src="../_images/compass_window.png" /></p>
-<p>The heading time series graph displays the compass heading from either the internal compass or an external compass or both. For RiverSurveyors the change in magnetic field strength compared to the magnetic field strength during calibration can also be shown and will have its scale along the right axis. Data are always displayed by ensemble from left to right. The table at the top serves as the control for what transect is graphed. Clicking on a row in the Plot / Transect column will graph the data from that transect. To overlay data from multiple transects, the user can right click to add or remove additional transects from the graphs. Check marks next to the transect file names indicate the transect(s) graphed.</p>
+<p>The heading time series graph displays the compass heading from either the internal compass or an external compass or both. For RiverSurveyors the change in magnetic field strength compared to the magnetic field strength during calibration can also be shown and will have its scale along the right axis. Data are always displayed by ensemble from left to right. The table at the top serves as the control for what transect is graphed. Clicking on a row in the Plot / Transect column will graph the data from that transect. To overlay data from multiple transects, the user can right-click to add or remove additional transects from the graphs. Check marks next to the transect file names indicate the transect(s) graphed.</p>
 <p><img alt="" src="../_images/heading_ts.png" /></p>
-<p>The user can check or uncheck the data types available to change which data types are displayed. The Ext. Compass (external compass) and Mag. Field (magnetic field percent difference) check boxes are only active if associated data are present in the measurement.</p>
+<p>The user can check or uncheck the data types available to change which data types are displayed. The Ext. Compass (external compass) and Mag. Field (magnetic field percent difference) checkboxes are only active if associated data are present in the measurement.</p>
 <p><img alt="" src="../_images/pitch_roll_ts.png" /></p>
 <p>The pitch / roll time series displays the pitch (red) and roll (blue) from the internal sensors. Data are always displayed by ensemble from left to right.</p>
 </section>
@@ -1343,8 +1343,8 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <p>The Temp/Sal tab has two sub-tabs Data and Messages. The Data tab displays the temperature, salinity, and speed of sound settings and the time series of the ADCP temperature readings.</p>
 <section id="id3">
 <h3>6.1 DATA<a class="headerlink" href="#id3" title="Permalink to this heading">#</a></h3>
-<p>The Water Temperature panel displays a time series of the temperature readings for all of the transects in the measurement. This is useful to determine if the ADCP has reached equilibrium water temperature prior to the start of the measurement and to identify any substantial temperature changes in the cross section. USGS policy requires an independent temperature reading be made, recorded, and compared to a simultaneous temperature reading from the ADCP. These temperature reading can be entered in the edit boxes for Independent and ADCP and the appropriate units selected from the radio buttons. If the ADCP temperature is not provided the ADCP average temperature will be compared to the Independent temperature. If no Independent temperature is provided, the ADAQ will flag this violation of policy. If the labels are colored orange or red by the automated data quality assessment, placing the cursor on that label will display a tooltip indicating the quality issue.</p>
-<p>The table at the top of the Data tab displays the speed of sound, the parameters that affect the speed of sound, and allows the user to make changes directly to the speed of sound or to the parameters. The Temperature Source can be changed by clicking in a row under the Temperature Source column. This will open a dialog that allows the user to manually set a water temperature or to use the ADCP internal sensor to determine the water temperature for the purpose of computing the speed of sound.</p>
+<p>The Water Temperature panel displays a time series of the temperature readings for all the transects in the measurement. This is useful to determine if the ADCP has reached equilibrium water temperature prior to the start of the measurement and to identify any substantial temperature changes in the cross section. USGS policy requires an independent temperature reading be made, recorded, and compared to a simultaneous temperature reading from the ADCP. These temperature readings can be entered in the edit boxes for Independent and ADCP and the appropriate units selected from the radio buttons. If the ADCP temperature is not provided the ADCP average temperature will be compared to the Independent temperature. If no Independent temperature is provided, the ADAQ will flag this violation of policy. If the labels are colored orange or red by the automated data quality assessment, placing the cursor on that label will display a tooltip indicating the quality issue.
+The table at the top of the Data tab displays the speed of sound, the parameters that affect the speed of sound, and allows the user to make changes directly to the speed of sound or to the parameters. The Temperature Source can be changed by clicking in a row under the Temperature Source column. This will open a dialog that allows the user to manually set a water temperature or to use the ADCP internal sensor to determine the water temperature for the purpose of computing the speed of sound.</p>
 <p><img alt="" src="../_images/temp_src.png" /></p>
 <p>The salinity can be changed by clicking in a row in the Salinity column of the table.</p>
 <p><img alt="" src="../_images/speed_sound.png" /></p>
@@ -1367,13 +1367,13 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <p>When the Data tab is first displayed, the first file is automatically displayed in the graphs at the bottom of the window. To display a different file, click in the table on the filename to be displayed or use the up or down cursor keys to change the displayed test. The filename of the moving-bed test displayed is shown immediately above the graphs. The graphs at the bottom change depending on whether the displayed test is a loop test or a stationary test.</p>
 <p>Three graphs are shown for the stationary test. The graph at the left is a cumulative average of the moving-bed speed. Red dots indicate ensembles where the bottom track was invalid. For a good test the blue line should reach equilibrium (nearly horizontal) by the end of the test. The middle graph is the shiptrack produced by plotting the upstream or cross stream movement based on bottom track relative to the direction of flow for each ensemble. The graph on the right is a ship track plot of all available references.</p>
 <p><img alt="" src="../_images/MOVBEDTST_plt_tab.png" /></p>
-<p>Two graphs are shown for a loop test. The graph on the left is the boat speed during the loop. The boat speed should be as uniform as practical. The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. A black square identifies the beginning of the loop. What navigation references shown in the graph are controlled by the check boxes at the top of the graph.</p>
+<p>Two graphs are shown for a loop test. The graph on the left is the boat speed during the loop. The boat speed should be as uniform as practical. The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. A black square identifies the beginning of the loop. What navigation references shown in the graph are controlled by the checkboxes at the top of the graph.</p>
 <p>Definition of Table Columns</p>
 <ul class="simple">
 <li><p><strong>User Valid:</strong> The User Valid column lets the user identify tests that the
 user considers valid moving-bed tests. QRev assumes that all loaded tests are valid tests; for example, tests that were completed using proper technique. QRev automatically selects the moving-bed test used to determine if there is a moving-bed and to correct for a moving-bed if necessary. The algorithm used by QRev will use the last valid loop test or in the absence of a valid loop test, all valid stationary tests. If a test is not valid because of an aborted test or because of something that happened during the test that indicates the test should not be used, the user should uncheck that test. Unchecking the User Valid column tells QRev that this test should not be used to determine if a moving-bed condition exists or to correct the discharge. Marking a test invalid automatically opens the comment dialog so the user can document the reason this test was not valid.</p></li>
 <li><p><strong>Used for Correction:</strong> The Use for Correction column identifies if the
-test or test(s) will be used to correct the discharge for a moving-bed condition. If bottom track is the navigation reference and a moving bed exists, QRev will automatically select the moving-bed test to use to correct the final discharge; however, the user can override the selection by unchecking the Used for Correction. If the user overrides the Used for Correction by unchecking it, a comment dialog will open so they can document the reason for not using the correction.</p></li>
+test or test(s) will be used to correct the discharge for a moving-bed condition. If bottom track is the navigation reference and a moving bed exists, QRev will automatically select the moving-bed test to use to correct the final discharge; however, the user can override the selection by unchecking the Used for Correction. If the user overrides the Used for Correction by unchecking it, a comment dialog will open, so they can document the reason for not using the correction.</p></li>
 </ul>
 <p><img alt="" src="../_images/use_for_cor.png" /></p>
 <p>If the user selects to use a moving-bed test that has Errors, the QRev will warn the user but allow the user to override the errors.</p>
@@ -1449,12 +1449,12 @@ Based on criteria documented in Mueller (2016), the quality of the measurement i
 <section id="lower-graph">
 <h4>8.1.3 Lower Graph<a class="headerlink" href="#lower-graph" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/bt_lower_plt.png" /></p>
-<p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the check boxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the check boxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, B for beam filter, E for error velocity filter, V for vertical velocity filter, and S for other filter.</p>
+<p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the checkboxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the checkboxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, B for beam filter, E for error velocity filter, V for vertical velocity filter, and S for other filter.</p>
 </section>
 <section id="id8">
 <h4>8.1.4 Ship Track Graph<a class="headerlink" href="#id8" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/bt_shiptrack_plt.png" /></p>
-<p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the check boxes at the top of the graph.</p>
+<p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the checkboxes at the top of the graph.</p>
 </section>
 <section id="beam-filter">
 <h4>8.1.5 Beam Filter<a class="headerlink" href="#beam-filter" title="Permalink to this heading">#</a></h4>
@@ -1559,12 +1559,12 @@ than 4):</strong></p>
 <section id="id13">
 <h4>9.1.3 Lower Graph<a class="headerlink" href="#id13" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/gps_speed_plt.png" /></p>
-<p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the check boxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the check boxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, Q for quality filter (GGA only), A for altitude filter (GGA only), H for HDOP filter, S for other filter</p>
+<p>The lower graph displays the boat speed vs ensembles. The boat speeds shown are controlled by the checkboxes associated with the ship track graph. The color of the line identifies the boat speed source which is defined by the color of the checkboxes associated with the ship track graph. In addition, the location and cause of invalid data are indicated by black letters at the appropriate ensembles. O for invalid original data, Q for quality filter (GGA only), A for altitude filter (GGA only), H for HDOP filter, S for other filter</p>
 </section>
 <section id="id14">
 <h4>9.1.4 Ship Track Graph<a class="headerlink" href="#id14" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/gps_shiptrack_plt.png" /></p>
-<p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the check boxes at the top of the graph.</p>
+<p>The graph on the right is a ship track graph that shows the ship track of all available navigation references (Red = BT, Blue = GGA, Green = VTG). The black lines are sticks showing the magnitude and direction of the mean water velocity for each ensemble. What navigation references shown in the graph are controlled by the checkboxes at the top of the graph.</p>
 </section>
 <section id="minimum-quality-gga-filter">
 <h4>9.1.5 Minimum Quality (GGA) Filter<a class="headerlink" href="#minimum-quality-gga-filter" title="Permalink to this heading">#</a></h4>
@@ -2098,7 +2098,7 @@ changed by manually typing a value in the edit.</p></li>
 <section id="discharge-sensitivity">
 <h4>12.1.6 Discharge Sensitivity<a class="headerlink" href="#discharge-sensitivity" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/extrap_q_sense.png" /></p>
-<p>The sensitivity of the extrapolation method for the top and bottom extrapolation is evaluated by computing the discharge for each combination of top and bottom extrapolation methods with a default and with least squares fit exponents and reporting the percent difference from the selected fit (from the Fit panel). If a manual fit is used for the composite measurement, then an additional line will be added to the table that represents the manual fit. This table can be used to help determine the effect of extrapolation choices on the final discharge. The user can also click in the table to quickly evaluate other fits. Clicking a row in the table to set and display those fit parameters.</p>
+<p>The sensitivity of the extrapolation method for the top and bottom extrapolation is evaluated by computing the discharge for each combination of top and bottom extrapolation methods with default and least squares fit exponents and reporting the percent difference from the selected fit (from the Fit panel). If a manual fit is used for the composite measurement, then an additional line will be added to the table that represents the manual fit. This table can be used to help determine the effect of extrapolation choices on the final discharge. The user can also click in the table to quickly evaluate other fits. Clicking a row in the table to set and display those fit parameters.</p>
 </section>
 </section>
 <section id="id32">
@@ -2147,7 +2147,7 @@ the discharge in the right edge by entering the discharge in the Right Discharge
 <li><p><strong>Right Coef:</strong> Coefficient, C, in the equation () for computing the right edge discharge.</p></li>
 <li><p><strong>Right Dist.:</strong> The user measured distance (L) from the end of the transect to the water’s edge on the right bank.</p></li>
 <li><p><strong>Right # Ens:</strong> The number of ensembles specified to determine the water velocity (V) and depth (D) for the edge discharge equation.</p></li>
-<li><p><strong>Right # Valid:</strong> The number of right edge ensembles that contain valid data that is actually used to determine the water velocity (V) and depth (D) for the edge discharge equation..</p></li>
+<li><p><strong>Right # Valid:</strong> The number of right edge ensembles that contain valid data that is actually used to determine the water velocity (V) and depth (D) for the edge discharge equation.</p></li>
 <li><p><strong>Right Discharge:</strong> The discharge computed or entered (User Q) for the right unmeasured edge.</p></li>
 <li><p><strong>Right % Q:</strong> Percent of total discharge in the right edge.</p></li>
 </ul>
@@ -2201,7 +2201,7 @@ the discharge in the right edge by entering the discharge in the Right Discharge
 </section>
 <section id="create-topoquad-file">
 <h3>14.3 CREATE TOPOQUAD FILE<a class="headerlink" href="#create-topoquad-file" title="Permalink to this heading">#</a></h3>
-<p>If you collected GPS data along with the ADCP data and you use DeLorme
+<p>If you collected GPS data along with the ADCP data, and you use DeLorme
 TopoQuads to assist in navigating to the sample locations, clicking the Create TopoQuads check box will create a TopoQuad compatible file that when loaded into TopoQuads will mark each computed sample location. You will be prompted to name this file after you click on Compute Stations. The file will be located in the same directory as the input file you processed.</p>
 </section>
 <section id="edi-table">
@@ -2262,8 +2262,8 @@ on WT Tab.</p></li>
 <li><p><strong>Direction:</strong> Direction relative to north (including any magnetic variation or offsets provided by the user) of the velocity in each cell.</p></li>
 <li><p><strong>Average Correlation:</strong> The average correlation for each cell. SonTek does not provide correlation data for all ping types.</p></li>
 <li><p><strong>Correlation by Beam:</strong> The correlation for each beam. NOTE: this option results in 4 plots. SonTek M9 data that has two frequencies and thus, 8 beams, is still shown on 4 plots with beam 1 referring to the first beam for each frequency.</p></li>
-<li><p><strong>Average RSSI or SNR:</strong> The average return signal strength indicator in counts for TRDI ADCPs and the signal to noise ratio for SonTek ADCPs.</p></li>
-<li><p><strong>RSSI or SNR by Beam:</strong> The return signal strength indicator in counts for TRDI ADCPs and the signal to noise ratio for SonTek ADCPs for each beam. NOTE: this option results in 4 plots. SonTek data that has two frequencies and thus, 8 beams, is still shown on 4 plots with beam 1 referring to the first beam for each frequency.</p></li>
+<li><p><strong>Average RSSI or SNR:</strong> The average return signal strength indicator in counts for TRDI ADCPs and the signal-to-noise ratio for SonTek ADCPs.</p></li>
+<li><p><strong>RSSI or SNR by Beam:</strong> The return signal strength indicator in counts for TRDI ADCPs and the signal-to-noise ratio for SonTek ADCPs for each beam. NOTE: this option results in 4 plots. SonTek data that has two frequencies and thus, 8 beams, is still shown on 4 plots with beam 1 referring to the first beam for each frequency.</p></li>
 <li><p><strong>Ping Type:</strong> A contour plot showing the ping type used for each cell.</p>
 <p><em>TRDI ADCPs:</em> Incoherent, Coherent, and Surface.</p>
 <p><em>SonTek ADCPs:</em> 1 MHz Inc, 1 MHz Coh, 3 MHz Inc, 3 MHz Coh, BB, PC, and
@@ -2359,7 +2359,7 @@ discharge as a percentage of the total transect discharge for the selected trans
 <h4>16.1.1 Table<a class="headerlink" href="#id39" title="Permalink to this heading">#</a></h4>
 <p>The table at the top of the tab displays the uncertainty standard deviation as a percentage of the total discharge for each uncertainty source considered in the Oursin model. The uncertainties are computed for each transect automatically using the assumptions and algorithms of the Oursin model. The user has two ways to modify the automatically computed uncertainties:</p>
 <ol class="arabic simple">
-<li><p>the user can override some of the assumptions in the model using the Advanced Setting tab and then let the model recompute uncertainties based on the new assumptions or</p></li>
+<li><p>the user can override some assumptions in the model using the Advanced Setting tab and then let the model recompute uncertainties based on the new assumptions or</p></li>
 <li><p>the user can enter an uncertainty standard deviation directly into the User Specified row of the table.</p></li>
 </ol>
 <p>The Meas. Q and Bayesian Coefficient of Variation are considered random sources of uncertainty. All other sources are considered as biases.</p>
@@ -2504,7 +2504,7 @@ of the field or pressing the return key will trigger the computation to run
 with the new values.</p>
 <p><img alt="" src="../_images/map_cellsize.png" /></p>
 <p>The checkboxes at the bottom of the options section enable or disable
-different processing settings with the exception of the Individual
+different processing settings except the Individual
 Bathymetry setting which is only used to show or hide the transect data.
 The Top/Bottom Extrap and Edges Extrap buttons enable the display and use of
 the estimated zones of the cross-section. The Interpolation check box
@@ -2514,10 +2514,10 @@ enables the interpolation of missing data.</p>
 <section id="references">
 <h2>18. REFERENCES<a class="headerlink" href="#references" title="Permalink to this heading">#</a></h2>
 <p>Despax, A., Le Coz, J., Hauet, A., Mueller, D. S., Engel, F.
-L., Blanquart, B., … Oberg, K. A., 2019, Decomposition of uncertainty sources in acoustic Doppler current profiler streamflow measurements using repeated measures experiments. Water Resources Research.</p>
+L., Blanquart, B., Oberg, K. A., 2019, Decomposition of uncertainty sources in acoustic Doppler current profiler streamflow measurements using repeated measures experiments. Water Resources Research.</p>
 <p>Despax, A., Le Coz, J., Mueller, D.S., Naudet, G., Pierrefeu, G., Delamarre, K., Moore, S.A., and Jamieson, E.C., 2021, DRAFT, Empirical vs analytical methods for modeling the uncertainty of ADCP discharge measurements.</p>
 <p>Huang, H., 2018, Estimating uncertainty of streamflow measurements with moving boat acoustic Doppler current profilers. Hydrological Sciences Journal , 63 ,353-368.</p>
-<p>ISO. (2009). ISO 748:2009 - Hydrometry .. measurement of liquid ow in open channels using current-meters or floats. (58 p.)</p>
+<p>ISO. (2009). ISO 748:2009 - Hydrometry - measurement of liquid ow in open channels using current-meters or floats. (58 p.)</p>
 <p>JCGM, 2008, Evaluation of measurement data - Guide to the expression of uncertainty in measurement. Guide 100, BIPM.</p>
 <p>Le Coz, J., Camenen, B., Peyrard, X., and Dramais, G., 2012, Uncertainty in open-channel discharges measured with the velocity-area method. Flow Measurement and Instrumentation, 26 , 18-29.</p>
 <p>Le Coz, J., Blanquart, B., Pobanz, K., Dramais, G., Pierrefeu, G., Hauet, A., and Despax, A. (2016). Estimating the Uncertainty of Streamgauging Techniques Using In Situ Collaborative Interlaboratory Experiments. Journal of Hydraulic Engineering, 7 (142), 04016011.</p>
@@ -2536,19 +2536,27 @@ trained with and perhaps shouldn’t use based on agency policy, QRev uses a
 configuration file (QRev.cfg) to allow customization of the options menu,
 as well as, set the minimum number of transects and duration for a measurement.</p>
 <p>QRev.cfg is a json format file, having the following format and definitions:</p>
-<p>{“Units”: {“show”: true, “default”: “SI”},
-“ColorMap”: {“show”: true, “default”: “viridis”},
-“RatingPrompt”: {“show”: true, “default”: false},
-“SaveStyleSheet”: {“show”: true, “default”: false},
-“ExtrapWeighting”: {“show”: true, “default”: true},
-“FilterUsingMeasurement”: {“show”: true, “default”: false},
-“Uncertainty”: {“show”: false, “default”: “QRev”},
-“MovingBedObservation”: {“show”: false, “default”: false},
-“ExportCrossSection”: {“show”: true, “default”: true},
-“MAP”: {“show”: true},
-“AutonomousGPS”: {“allow”: false},
-“QDigits”: {“method”: “sigfig”, “digits”: 3},
-“QA”: {“MinTransects”: 2, “MinDuration”: 720}}</p>
+<p>{<br />
+“Units”: {“show”: True, “default”: “SI”},<br />
+“ColorMap”: {“show”: True, “default”: “viridis”},<br />
+“RatingPrompt”: {“show”: True, “default”: False},<br />
+“SaveStyleSheet”: {“show”: True, “default”: True},<br />
+“ExtrapWeighting”: {“show”: True, “default”: True},<br />
+“FilterUsingMeasurement”: {“show”: True, “default”: False},<br />
+“Uncertainty”: {“show”: True, “default”: “Oursin”},<br />
+“MovingBedObservation”: {“show”: False, “default”: False},<br />
+“ExportCrossSection”: {“show”: True, “default”: True},<br />
+“MAP”: {“show”: True},<br />
+“AutonomousGPS”: {“allow”: False},<br />
+“QDigits”: {“method”: “sigfig”, “digits”: 3},<br />
+“SNR”: {“Use3Beam”: False},<br />
+“ExtrapolatedSpeed”: {“ShowIcon”: True},<br />
+“Excluded”: {“RioPro”: 0.25, “M9”: 0.16},<br />
+“QA”: {“MinTransects”: 2, “MinDuration”: 720},<br />
+“LeftRightFlowDirDiff”: {“threshold”: 8.1},<br />
+“PDFSummary”: {“show”: True, “default”: “Prompt”},<br />
+“DateFormat”: {“show”: True, “default”: “y.m.d”},<br />
+}</p>
 <p><em>(Default settings for QRev.cfg are in bold.)</em></p>
 <p><em>Units</em></p>
 <ul class="simple">
