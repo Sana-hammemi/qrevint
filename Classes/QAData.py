@@ -115,7 +115,6 @@ class QAData(object):
             self.check_edge_settings(meas)
             self.check_extrap_settings(meas)
             self.check_tempsal_settings(meas)
-            self.check_mbt_settings(meas)
             self.check_compass_settings(meas)
             if meas.oursin is not None:
                 self.check_oursin(meas)
@@ -721,21 +720,21 @@ class QAData(object):
                 valid_all = np.vstack([valid_bt, valid_wt, valid_depth])
                 valid = np.all(valid_all, axis=0)
 
-                threshold = np.floor(0.05 * valid.shape[0])
-                if transect.start_edge == "Left":
-                    idx = np.where(np.logical_not(valid))
-                    if idx[0].size > threshold:
-                        left_invalid_exceeded = True
-                    idx = np.where(np.logical_not(np.flip(valid)))
-                    if idx[0].size > threshold:
-                        right_invalid_exceeded = True
-                else:
-                    idx = np.where(np.logical_not(valid))
-                    if idx[0].size > threshold:
-                        right_invalid_exceeded = True
-                    idx = np.where(np.logical_not(np.flip(valid)))
-                    if idx[0].size > threshold:
-                        left_invalid_exceeded = True
+                # threshold = np.floor(0.05 * valid.shape[0])
+                # if transect.start_edge == "Left":
+                #     idx = np.where(np.logical_not(valid))
+                #     if idx[0].size > threshold:
+                #         left_invalid_exceeded = True
+                #     idx = np.where(np.logical_not(np.flip(valid)))
+                #     if idx[0].size > threshold:
+                #         right_invalid_exceeded = True
+                # else:
+                #     idx = np.where(np.logical_not(valid))
+                #     if idx[0].size > threshold:
+                #         right_invalid_exceeded = True
+                #     idx = np.where(np.logical_not(np.flip(valid)))
+                #     if idx[0].size > threshold:
+                #         left_invalid_exceeded = True
 
                 if transect.sensors is not None:
                     if hasattr(transect.sensors, "battery_voltage"):
@@ -754,28 +753,28 @@ class QAData(object):
                                 )
 
         # Message for invalid ensembles at left or right
-        if left_invalid_exceeded:
-            self.transects["messages"].append(
-                [
-                    "Transects: "
-                    + " The number of invalid ensembles at the left"
-                    + " edge exceeds 5 percent;",
-                    2,
-                    0,
-                ]
-            )
-            self.transects["status"] = "caution"
-        if right_invalid_exceeded:
-            self.transects["messages"].append(
-                [
-                    "Transects: "
-                    + " The number of invalid ensembles at the right"
-                    + " edge exceeds 5 percent;",
-                    2,
-                    0,
-                ]
-            )
-            self.transects["status"] = "caution"
+        # if left_invalid_exceeded:
+        #     self.transects["messages"].append(
+        #         [
+        #             "Transects: "
+        #             + " The number of invalid ensembles at the left"
+        #             + " edge exceeds 5 percent;",
+        #             2,
+        #             0,
+        #         ]
+        #     )
+        #     self.transects["status"] = "caution"
+        # if right_invalid_exceeded:
+        #     self.transects["messages"].append(
+        #         [
+        #             "Transects: "
+        #             + " The number of invalid ensembles at the right"
+        #             + " edge exceeds 5 percent;",
+        #             2,
+        #             0,
+        #         ]
+        #     )
+        #     self.transects["status"] = "caution"
 
         # Message for low battery
         if len(self.transects["batt_voltage"]) > 0:

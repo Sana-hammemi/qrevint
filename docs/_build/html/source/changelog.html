@@ -123,6 +123,7 @@
 <li class="toctree-l1"><a class="reference internal" href="user.html">User Manual</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical.html">Technical Manual</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">QRev Change Log</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-34"><strong>Version 4.34</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-33"><strong>Version 4.33</strong></a></li>
@@ -309,6 +310,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-34"><strong>Version 4.34</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-33"><strong>Version 4.33</strong></a></li>
@@ -341,9 +343,36 @@ document.write(`
                   
   <section id="qrev-change-log">
 <h1>QRev Change Log<a class="headerlink" href="#qrev-change-log" title="Permalink to this heading">#</a></h1>
+<section id="version-4-37">
+<h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37"><strong>Version 4.37</strong></a><a class="headerlink" href="#version-4-37" title="Permalink to this heading">#</a></h2>
+<p><strong>Status</strong>: <em>Testing</em></p>
+<p><strong>Added:</strong></p>
+<ul class="simple">
+<li><p>MAP: Added radio buttons to plot SNR/RSSI and Number of transects used.</p></li>
+</ul>
+<p><strong>Changed:</strong></p>
+<ul class="simple">
+<li><p>Now using QRev interpolated data for MAP computation.</p></li>
+<li><p>Moved MAP datatype combobox plot options for contour plots to radio
+buttons to follow look and workflow of other tabs.</p></li>
+</ul>
+<p><strong>Fixed:</strong></p>
+<ul class="simple">
+<li><p>Crash when opening a measurement with a single transect.</p></li>
+<li><p>Duplicating signals as new measurements files are loaded without closing UI.</p></li>
+<li><p>Crash when click the Moving Bed Tab when there is no valid bottom track
+data in a test.</p></li>
+<li><p>Crash when clicking the edge tab when there is no valid bottom track data
+for an edge.</p></li>
+<li><p>Auto application of Moving Bed corrections when a moving bed is detected.</p></li>
+<li><p>Updating of MAP plot and table when MAP not able to run, ie no data to
+display.</p></li>
+<li><p>UI crash when MAP crashes due to no data to process.</p></li>
+</ul>
+</section>
 <section id="version-4-36">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36"><strong>Version 4.36</strong></a><a class="headerlink" href="#version-4-36" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Recommended</em></p>
+<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Updated Export Mean Cross-Option signal</p></li>
@@ -756,6 +785,7 @@ testing efforts are placed on the newer version.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-34"><strong>Version 4.34</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-33"><strong>Version 4.33</strong></a></li>

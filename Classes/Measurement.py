@@ -285,26 +285,6 @@ class Measurement(object):
 
                         self.discharge.append(q)
 
-                # Process moving-bed tests
-                if len(self.mb_tests) > 0:
-                    # Get navigation reference
-                    select = self.initial_settings["NavRef"]
-                    ref = None
-
-                    if select == "bt_vel":
-                        ref = "BT"
-
-                    elif select == "gga_vel":
-                        ref = "GGA"
-
-                    elif select == "vtg_vel":
-                        ref = "VTG"
-                    self.mb_tests = MovingBedTests.auto_use_2_correct(
-                        moving_bed_tests=self.mb_tests, boat_ref=ref
-                    )
-
-                self.uncertainty = Uncertainty()
-                self.uncertainty.compute_uncertainty(self)
                 self.qa = QAData(self)
 
         if run_map:
@@ -1589,6 +1569,9 @@ class Measurement(object):
         # Apply settings to moving-bed tests:
         if len(self.mb_tests) > 0:
             self.apply_settings_to_movingbed(settings, force_abba=True)
+            self.mb_tests = MovingBedTests.auto_use_2_correct(
+                moving_bed_tests=self.mb_tests, boat_ref=settings["NavRef"]
+            )
 
         # Apply settings to discharge transects
         for transect in self.transects:
@@ -1608,10 +1591,6 @@ class Measurement(object):
                 transect.change_nav_reference(
                     update=False, new_nav_ref=settings["NavRef"]
                 )
-                if len(self.mb_tests) > 0:
-                    self.mb_tests = MovingBedTests.auto_use_2_correct(
-                        moving_bed_tests=self.mb_tests, boat_ref=settings["NavRef"]
-                    )
 
             # Changing the nav reference applies the current setting for
             # Composite tracks, check to see if a change is needed
@@ -2475,16 +2454,21 @@ class Measurement(object):
         ):
             self.map = None
         else:
-            if self.map is None:
+            # if self.map is None:
+            try:
                 self.map = MAP()
-            self.map.populate_data(
-                self,
-                node_horizontal_user,
-                node_vertical_user,
-                extrap_option,
-                edges_option,
-                interp_option,
-            )
+                self.map.populate_data(
+                    self,
+                    node_horizontal_user,
+                    node_vertical_user,
+                    extrap_option,
+                    edges_option,
+                    interp_option,
+                )
+            except BaseException:
+                #     # Temporary fix to keep UI from crashing if MAP crashes
+                self.map = None
+
         self.run_map = False
 
     @staticmethod
@@ -4901,12 +4885,13 @@ class Measurement(object):
 
         # Average cross-section
         if self.export_xs:
-            # If map hasn't been computed, compute with default settings
+            # If map hasn't been computed, try to compute with default settings
             if self.map is None or self.run_map:
                 try:
                     self.compute_map()
                 except BaseException:
-                     self.map = None
+                    # If MAP crashes keep UI and XML creation from crashing.
+                    self.map = None
 
             # Check to see if Map ran successfully
             if self.map is not None:
@@ -4920,6 +4905,7 @@ class Measurement(object):
 
                 # create copy of df without the data in the XML nodes to save on
                 # file size.
+                # Todo add depth average velocity here
                 cross_section_all = cross_section_all.drop(
                     columns=[
                         "Latitude",

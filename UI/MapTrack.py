@@ -113,14 +113,17 @@ class Maptrack(object):
                 zorder=1,
             )
         if plot_transects:
-            for i in range(len(map_data.x_raw_coordinates)):
-                self.fig.ax.plot(
-                    map_data.x_raw_coordinates[i],
-                    map_data.y_raw_coordinates[i],
-                    color="grey",
-                    linewidth=1,
-                    zorder=0,
-                )
+            for transect in map_data.data_transects:
+                self.fig.ax.plot(transect["x_raw_coordinates"],
+                    transect["y_raw_coordinates"], color="grey", linewidth=1, zorder=0, )
+            # for i in range(len(map_data.x_raw_coordinates)):
+            #     self.fig.ax.plot(
+            #         map_data.x_raw_coordinates[i],
+            #         map_data.y_raw_coordinates[i],
+            #         color="grey",
+            #         linewidth=1,
+            #         zorder=0,
+            #     )
 
         # Customize axes
         if nav_ref == "gga_vel":
