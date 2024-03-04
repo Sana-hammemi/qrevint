@@ -341,7 +341,7 @@ class MovingBedTests(object):
         self.transect = TransectData()
         self.transect.sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
 
-    def loop_test(self, ens_duration=None, ref="BT"):
+    def loop_test(self, ens_duration=None, ref=None):
         """Process loop moving bed test.
 
         Parameters
@@ -357,6 +357,11 @@ class MovingBedTests(object):
         # method='Linear')
         # self.transect.boat_interpolations(update=False, target='GPS',
         # method='Linear')
+        if ref is None:
+            if self.ref is None:
+                self.ref = "BT"
+            else:
+                ref = self.ref
         trans_data = copy.deepcopy(self.transect)
         in_transect_idx = trans_data.in_transect_idx
         n_ensembles = len(in_transect_idx)
@@ -680,8 +685,14 @@ class MovingBedTests(object):
             )
             self.moving_bed = "Unknown"
 
-    def stationary_test(self, ref="BT"):
+    def stationary_test(self, ref=None):
         """Processed the stationary moving-bed tests."""
+
+        if ref is None:
+            if self.ref is None:
+                self.ref = "BT"
+            else:
+                ref = self.ref
 
         # Assign data from transect to local variables
         trans_data = copy.deepcopy(self.transect)

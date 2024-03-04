@@ -448,8 +448,11 @@ class AdvGraphs(object):
 
             # Apply the x-axis label to the bottom x-axis
             idx = -2
-            self.ax[idx].xaxis.label.set_fontsize(12)
-            self.set_x_axis(idx)
+            try:
+                self.ax[idx].xaxis.label.set_fontsize(12)
+                self.set_x_axis(idx)
+            except IndexError:
+                pass
 
             self.canvas.draw()
 
@@ -1571,59 +1574,61 @@ class AdvGraphs(object):
         water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
         water_speed = np.sqrt(water_u**2 + water_v**2)
 
-        # Set the 1-dimensional x-axis data based on selected x-axis type.
-        # Timestamp must be used for time
-        if self.x_axis_type == "T":
-            x_1d = np.copy(self.x_timestamp)
-        else:
-            x_1d = np.copy(self.x)
+        idx = np.where(np.logical_not(np.isnan(water_speed)))
+        if len(idx[0]) > 0:
+            # Set the 1-dimensional x-axis data based on selected x-axis type.
+            # Timestamp must be used for time
+            if self.x_axis_type == "T":
+                x_1d = np.copy(self.x_timestamp)
+            else:
+                x_1d = np.copy(self.x)
 
-        # If discharge data are provided, expanded data with extrapolated values
-        if self.show_unmeasured and self.x_axis_type == "L":
-            (
-                expanded_cell_size,
-                expanded_cell_depth,
-                expanded_water_speed,
-            ) = self.add_extrapolated_topbot(water_speed)
-            # Compute data for contour plot
-            (
-                x_plt,
-                cell_plt,
-                data_plt,
-                ensembles,
-                depth,
-                self.x,
-            ) = self.contour_data_prep(
-                self.transect,
-                expanded_water_speed,
-                x_1d=x_1d,
-                cell_depth=expanded_cell_depth,
-                cell_size=expanded_cell_size,
+            # If discharge data are provided, expanded data with extrapolated values
+            if self.show_unmeasured and self.x_axis_type == "L":
+                (
+                    expanded_cell_size,
+                    expanded_cell_depth,
+                    expanded_water_speed,
+                ) = self.add_extrapolated_topbot(water_speed)
+                # Compute data for contour plot
+                (
+                    x_plt,
+                    cell_plt,
+                    data_plt,
+                    ensembles,
+                    depth,
+                    self.x,
+                ) = self.contour_data_prep(
+                    self.transect,
+                    expanded_water_speed,
+                    x_1d=x_1d,
+                    cell_depth=expanded_cell_depth,
+                    cell_size=expanded_cell_size,
+                )
+            else:
+                # Compute data for contour plot
+                (
+                    x_plt,
+                    cell_plt,
+                    data_plt,
+                    ensembles,
+                    depth,
+                    self.x,
+                ) = self.contour_data_prep(self.transect, water_speed, x_1d=x_1d)
+
+            # Plot data
+            self.plt_contour(
+                x_plt_in=x_plt,
+                cell_plt_in=cell_plt,
+                data_plt_in=data_plt,
+                x=self.x,
+                depth=depth,
+                data_units=(
+                    self.units["V"],
+                    "Interpolated \n Speed " + self.units["label_V"],
+                ),
+                show_edge_speed=self.show_unmeasured,
             )
-        else:
-            # Compute data for contour plot
-            (
-                x_plt,
-                cell_plt,
-                data_plt,
-                ensembles,
-                depth,
-                self.x,
-            ) = self.contour_data_prep(self.transect, water_speed, x_1d=x_1d)
-
-        # Plot data
-        self.plt_contour(
-            x_plt_in=x_plt,
-            cell_plt_in=cell_plt,
-            data_plt_in=data_plt,
-            x=self.x,
-            depth=depth,
-            data_units=(
-                self.units["V"],
-                "Interpolated \n Speed " + self.units["label_V"],
-            ),
-            show_edge_speed=self.show_unmeasured,
-        )
 
     def wt_vertical_contour(self):
         """Create contour plot of vertical velocities."""
@@ -3016,10 +3021,13 @@ class AdvGraphs(object):
             self.ax[-1].legend()
 
         # Configure y axis
-        self.ax[-1].invert_yaxis()
-        self.ax[-1].set_ylim(
-            bottom=np.ceil(np.nanmax(max_depth) * 1.02 * self.units["L"]), top=0
-        )
+        try:
+            self.ax[-1].invert_yaxis()
+            self.ax[-1].set_ylim(
+                bottom=np.ceil(np.nanmax(max_depth) * 1.02 * self.units["L"]), top=0
+            )
+        except ValueError:
+            pass
 
     def depths_final_ts(
         self, avg4_final=False, vb_final=False, ds_final=False, final=True
@@ -3037,7 +3045,7 @@ class AdvGraphs(object):
         final: bool
             Indicates if the selected cross section should be plotted
         """
-
+        x = np.copy(self.x)
         beam_depths = np.array([])
         data_units = (self.units["L"], "Depth " + self.units["label_L"])
         # old_x = np.copy(self.x)
@@ -3048,7 +3056,9 @@ class AdvGraphs(object):
                 self.transect.depths, self.transect.depths.selected
             )
             beam_depths = depth_selected.depth_processed_m
-            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
@@ -3059,7 +3069,7 @@ class AdvGraphs(object):
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
             # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
+            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
@@ -3069,7 +3079,7 @@ class AdvGraphs(object):
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
             # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
+            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#aa00ff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
@@ -3080,7 +3090,7 @@ class AdvGraphs(object):
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
             # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(self.x, beam_depths)
+            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#00aaff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
@@ -3449,6 +3459,9 @@ class AdvGraphs(object):
         data_quiver: dict
             Dictionary containing data and settings to plot quiver
         """
+
+        if np.alltrue(data_plt_in == -999):
+            return
 
         # Use last subplot
         ax = self.ax[-1]

@@ -684,6 +684,8 @@ class Shiptrack(object):
         # If checkboxes are available, enable the checkboxes if transect
         # contains that type of data
         if self.cb:
+            self.cb_bt.setEnabled(True)
+            self.cb_vectors.setEnabled(True)
             # Enable check boxes as data is available
             if transect.boat_vel.gga_vel is not None:
                 self.cb_gga.setEnabled(True)

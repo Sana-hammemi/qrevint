@@ -318,7 +318,7 @@ class InstrumentData(object):
                                 idx + 15 : idx + idx_end
                             ].strip()
                             break
-                else:
+                elif len(meas_struct.sysTest.data) > 0:
                     idx = meas_struct.sysTest.data.find("Serial Number:")
                     if idx > 0:
                         idx_end = meas_struct.sysTest.data[idx::].find("\n")

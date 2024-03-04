@@ -78,7 +78,7 @@ class DischargeTS(object):
             self.fig.ax.plot(np.array(x), np.array(y), color="black")
             save_y.append(y)
             save_x.append(x)
-
+        # save_x, save_y = zip(*sorted(zip(save_x, save_y)))
         avg_y = []
         for n in range(len(save_y)):
             if n < len(save_y):

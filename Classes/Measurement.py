@@ -5087,13 +5087,14 @@ class Measurement(object):
         kml = simplekml.Kml(open=1)
         # Create a shiptrack for each checked transect
         for transect_idx in self.checked_transect_idx:
-            lon = self.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = self.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = self.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
+            if self.transects[transect_idx].gps is not None:
+                lon = self.transects[transect_idx].gps.gga_lon_ens_deg
+                lon = lon[np.logical_not(np.isnan(lon))]
+                lat = self.transects[transect_idx].gps.gga_lat_ens_deg
+                lat = lat[np.logical_not(np.isnan(lat))]
+                line_name = self.transects[transect_idx].file_name[:-4]
+                lon_lat = tuple(zip(lon, lat))
+                _ = kml.newlinestring(name=line_name, coords=lon_lat)
 
         kml.save(path)
 
