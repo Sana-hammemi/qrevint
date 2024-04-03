@@ -36,6 +36,7 @@ from MiscLibs.common_functions import (
     dateformat,
 )
 from UI.AdvGraphs import AdvGraphs
+from UI.ArrowsScale import ArrowsScale
 from UI.AxesScale import AxesScale
 from UI.BoatSpeed import BoatSpeed
 from UI.Comment import Comment
@@ -673,6 +674,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
                 )
             )
+        self.kml_map = None
 
         # Autonomous GPS
         if "AutonomousGPS" not in self.agency_options.keys():
@@ -15938,118 +15940,119 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_map(self):
         """Updates MAP with user's parameters."""
 
-        # Load MAP parameters and check if there is any change
-        with self.wait_cursor():
-            if self.map_change:
-                change_data = True
-                change_plot = True
-            else:
-                change_data = False
-                change_plot = False
-
-            if self.rb_map_primary.isChecked():
-                self.ed_map_secondary_velocity.setEnabled(True)
-                self.txt_map_v_scale.setText("Secondary Velocity Scale:")
-            elif self.rb_map_streamwise.isChecked():
-                self.ed_map_secondary_velocity.setEnabled(True)
-                self.txt_map_v_scale.setText("Transverse Velocity Scale:")
-            else:
-                self.ed_map_secondary_velocity.setEnabled(False)
-
-            # Update width
-            cell_width = self.meas.map.auto_node_horz
-            user_width = self.check_numeric_input(self.ed_map_cell_width)
-            self.ed_map_cell_width.blockSignals(True)
-            if user_width is not None:
-                user_width = user_width / self.units["L"]
-                if np.round(user_width, 3) - np.round(cell_width, 3) >= -0.01:
-                    cell_width = user_width
+        if self.meas.map is not None:
+            # Load MAP parameters and check if there is any change
+            with self.wait_cursor():
+                if self.map_change:
+                    change_data = True
+                    change_plot = True
                 else:
-                    self.popup_message(
-                        "Width cannot be less than {:.2f}.".format(
-                            cell_width * self.units["L"]
-                        )
-                    )
-            self.ed_map_cell_width.setText(
-                "{:3.2f}".format(cell_width * self.units["L"])
-            )
-            self.ed_map_cell_width.blockSignals(False)
+                    change_data = False
+                    change_plot = False
 
-            # Update height
-            cell_height = self.meas.map.auto_node_vert
-            user_height = self.check_numeric_input(self.ed_map_cell_height)
-            self.ed_map_cell_height.blockSignals(True)
-            if user_height is not None:
-                user_height = user_height / self.units["L"]
-                if np.round(user_height, 3) - np.round(cell_height, 3) >= -0.01:
-                    cell_height = user_height
+                if self.rb_map_primary.isChecked():
+                    self.ed_map_secondary_velocity.setEnabled(True)
+                    self.txt_map_v_scale.setText("Secondary Velocity Scale:")
+                elif self.rb_map_streamwise.isChecked():
+                    self.ed_map_secondary_velocity.setEnabled(True)
+                    self.txt_map_v_scale.setText("Transverse Velocity Scale:")
                 else:
-                    self.popup_message(
-                        "Height cannot be less than {:.2f}.".format(
-                            cell_height * self.units["L"]
+                    self.ed_map_secondary_velocity.setEnabled(False)
+
+                # Update width
+                cell_width = self.meas.map.auto_node_horz
+                user_width = self.check_numeric_input(self.ed_map_cell_width)
+                self.ed_map_cell_width.blockSignals(True)
+                if user_width is not None:
+                    user_width = user_width / self.units["L"]
+                    if np.round(user_width, 3) - np.round(cell_width, 3) >= -0.01:
+                        cell_width = user_width
+                    else:
+                        self.popup_message(
+                            "Width cannot be less than {:.2f}.".format(
+                                cell_width * self.units["L"]
+                            )
                         )
-                    )
-            self.ed_map_cell_height.setText(
-                "{:3.2f}".format(cell_height * self.units["L"])
-            )
-            self.ed_map_cell_height.blockSignals(False)
-
-            self.map_settings = {
-                # "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
-                "ed_map_cell_width": cell_width,
-                "ed_map_cell_height": cell_height,
-                "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
-                "cb_map_edges": self.cb_map_edges.isChecked(),
-                "ed_map_secondary_velocity": self.check_numeric_input(
-                    self.ed_map_secondary_velocity
-                ),
-                "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
-                "rb_map_primary": self.rb_map_primary.isChecked(),
-                "rb_map_streamwise": self.rb_map_streamwise.isChecked(),
-                "rb_map_rssi": self.rb_map_rssi.isChecked(),
-                "rb_map_trans_used": self.rb_map_trans_used.isChecked(),
-                "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
-                "rb_map_temp": self.rb_map_temp.isChecked(),
-                "rb_map_stickship": self.rb_map_stickship.isChecked(),
-            }
-
-            if self.map_change is False and self.meas.map is not None:
-                for key in self.map_current_settings:
-                    if self.map_settings[key] != self.map_current_settings[key]:
-                        if key in [
-                            # "cb_map_interpolation",
-                            "ed_map_cell_width",
-                            "ed_map_cell_height",
-                            "cb_map_top_bottom",
-                            "cb_map_edges",
-                        ]:
-                            change_data = True
-                            change_plot = True
-                            break
-                        else:
-                            change_plot = True
-                            change_data = False
-
-            if self.map_canvas is None:
-                change_plot = True
-
-            # Save current parameters
-            self.map_current_settings = self.map_settings
-
-            # Apply changes
-            if change_data:
-                self.meas.compute_map(
-                    node_horizontal_user=self.map_settings["ed_map_cell_width"],
-                    node_vertical_user=self.map_settings["ed_map_cell_height"],
-                    extrap_option=self.map_settings["cb_map_top_bottom"],
-                    edges_option=self.map_settings["cb_map_edges"],
-                    # interp_option=self.map_settings["cb_map_interpolation"],
+                self.ed_map_cell_width.setText(
+                    "{:3.2f}".format(cell_width * self.units["L"])
                 )
-                self.map_table(update=True)
-            if change_plot:
-                self.update_map_plot()
+                self.ed_map_cell_width.blockSignals(False)
 
-            self.map_change = False
+                # Update height
+                cell_height = self.meas.map.auto_node_vert
+                user_height = self.check_numeric_input(self.ed_map_cell_height)
+                self.ed_map_cell_height.blockSignals(True)
+                if user_height is not None:
+                    user_height = user_height / self.units["L"]
+                    if np.round(user_height, 3) - np.round(cell_height, 3) >= -0.01:
+                        cell_height = user_height
+                    else:
+                        self.popup_message(
+                            "Height cannot be less than {:.2f}.".format(
+                                cell_height * self.units["L"]
+                            )
+                        )
+                self.ed_map_cell_height.setText(
+                    "{:3.2f}".format(cell_height * self.units["L"])
+                )
+                self.ed_map_cell_height.blockSignals(False)
+
+                self.map_settings = {
+                    # "cb_map_interpolation": self.cb_map_interpolation.isChecked(),
+                    "ed_map_cell_width": cell_width,
+                    "ed_map_cell_height": cell_height,
+                    "cb_map_top_bottom": self.cb_map_top_bottom.isChecked(),
+                    "cb_map_edges": self.cb_map_edges.isChecked(),
+                    "ed_map_secondary_velocity": self.check_numeric_input(
+                        self.ed_map_secondary_velocity
+                    ),
+                    "cb_map_bed_profiles": self.cb_map_bed_profiles.isChecked(),
+                    "rb_map_primary": self.rb_map_primary.isChecked(),
+                    "rb_map_streamwise": self.rb_map_streamwise.isChecked(),
+                    "rb_map_rssi": self.rb_map_rssi.isChecked(),
+                    "rb_map_trans_used": self.rb_map_trans_used.isChecked(),
+                    "rb_map_bathymetry": self.rb_map_bathymetry.isChecked(),
+                    "rb_map_temp": self.rb_map_temp.isChecked(),
+                    "rb_map_stickship": self.rb_map_stickship.isChecked(),
+                }
+
+                if self.map_change is False and self.meas.map is not None:
+                    for key in self.map_current_settings:
+                        if self.map_settings[key] != self.map_current_settings[key]:
+                            if key in [
+                                # "cb_map_interpolation",
+                                "ed_map_cell_width",
+                                "ed_map_cell_height",
+                                "cb_map_top_bottom",
+                                "cb_map_edges",
+                            ]:
+                                change_data = True
+                                change_plot = True
+                                break
+                            else:
+                                change_plot = True
+                                change_data = False
+
+                if self.map_canvas is None:
+                    change_plot = True
+
+                # Save current parameters
+                self.map_current_settings = self.map_settings
+
+                # Apply changes
+                if change_data:
+                    self.meas.compute_map(
+                        node_horizontal_user=self.map_settings["ed_map_cell_width"],
+                        node_vertical_user=self.map_settings["ed_map_cell_height"],
+                        extrap_option=self.map_settings["cb_map_top_bottom"],
+                        edges_option=self.map_settings["cb_map_edges"],
+                        # interp_option=self.map_settings["cb_map_interpolation"],
+                    )
+                    self.map_table(update=True)
+                if change_plot:
+                    self.update_map_plot()
+
+                self.map_change = False
 
     def map_table(self, update=False):
         """Create and populate MAP results table."""
@@ -16452,22 +16455,61 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Creates line plots of transects in Google Earth using GGA
         coordinates and MAP average ship track."""
 
-        fullname = os.path.join(
-            self.sticky_settings.get("Folder"),
-            datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
-        )
-
-        self.meas.map.export_kml(self.meas, fullname)
-
-        try:
-            os.startfile(fullname)
-        except os.error:
-            self.popup_message(
-                text=self.tr(
-                    "Google Earth is not installed or is not associated with "
-                    "kml files."
-                )
+        if self.meas.map is not None:
+            fullname = os.path.join(
+                self.sticky_settings.get("Folder"),
+                datetime.today().strftime("MAP_%Y%m%d_%H%M%S_QRev.kml"),
             )
+
+            scale = ArrowsScale(self)
+            scale.v_max_label.setText("V max " + self.units['label_V'])
+            scale.v_min_label.setText("V min " + self.units['label_V'])
+            scale.arrow_scale_label.setText("Scale " + self.units['label_L'] + ": 1" +
+                                            self.units['label_V'][1:-1] + " =")
+
+            # Define vectors scale
+            if self.kml_map is None:
+                _, _, _, arrow_scale, v_max, v_min = self.meas.map.auto_arrow(meas=self.meas)
+                self.kml_map = {'arrow_scale': arrow_scale,
+                                'v_max': v_max,
+                                'v_min': v_min}
+            else:
+                arrow_scale = self.kml_map['arrow_scale']
+                v_max = self.kml_map['v_max']
+                v_min = self.kml_map['v_min']
+
+            scale.ed_v_max.setText("%.2f" % (v_max * self.units['V']))
+            scale.ed_v_min.setText("%.2f" % (v_min * self.units['V']))
+            scale.ed_arrow_scale.setText("%.2f" % (arrow_scale * self.units['L']))
+            rsp = scale.exec_()
+
+            if rsp == QtWidgets.QDialog.Accepted:
+                try:
+                    arrow_scale = float(scale.ed_arrow_scale.text()) / self.units['L']
+                    v_min = float(scale.ed_v_min.text()) / self.units['V']
+                    v_max = float(scale.ed_v_max.text()) / self.units['V']
+                    self.meas.map.export_kml(self.meas, fullname,
+                                             arrow_scale=arrow_scale,
+                                             v_min=v_min,
+                                             v_max=v_max,
+                                             palette=self.color_map)
+                except ValueError:
+                    self.popup_message(
+                        text=self.tr(
+                            "Invalid format, please enter numeric values."
+                        )
+                    )
+                    return
+
+                try:
+                    os.startfile(fullname)
+                except os.error:
+                    self.popup_message(
+                        text=self.tr(
+                            "Google Earth is not installed or is not associated with "
+                            "kml files."
+                        )
+                    )
 
     def map_cell_auto(self):
         """Enable or disable the width and Height line edits."""
