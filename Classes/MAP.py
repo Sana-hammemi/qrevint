@@ -1030,8 +1030,11 @@ class MAP(object):
         valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
         valid_cell_centers = depth_cells_center * valid_data
         valid_cell_centers[valid_cell_centers == 0] = np.nan
-        idx_top = np.nanargmin(valid_cell_centers, axis=0)
-        idx_bot = np.nanargmax(valid_cell_centers, axis=0)
+        # idx_top = np.nanargmin(valid_cell_centers, axis=0)
+        # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
+
+        idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float('inf')), axis=0)
+        idx_bot = np.argmax(np.nan_to_num(valid_cell_centers, nan=float('-inf')), axis=0)
 
         # Preallocate variables
         n_ensembles = valid_data.shape[1]

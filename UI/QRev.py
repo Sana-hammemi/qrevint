@@ -16470,9 +16470,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Define vectors scale
             if self.kml_map is None:
                 _, _, _, arrow_scale, v_max, v_min = self.meas.map.auto_arrow(meas=self.meas)
-                self.kml_map = {'arrow_scale': arrow_scale,
-                                'v_max': v_max,
-                                'v_min': v_min}
             else:
                 arrow_scale = self.kml_map['arrow_scale']
                 v_max = self.kml_map['v_max']
@@ -16493,6 +16490,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                              v_min=v_min,
                                              v_max=v_max,
                                              palette=self.color_map)
+                    self.kml_map = {'arrow_scale': arrow_scale,
+                                    'v_max': v_max,
+                                    'v_min': v_min}
                 except ValueError:
                     self.popup_message(
                         text=self.tr(
