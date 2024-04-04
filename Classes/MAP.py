@@ -1963,8 +1963,19 @@ class MAP(object):
 
         """
         # Get mean velocity of each ensemble
-        u_mean = np.nanmean(self.north_velocity, axis=0)
-        v_mean = np.nanmean(self.east_velocity, axis=0)
+        direction_section = np.arctan2(self.slope, 1)
+        u = self.streamwise_velocity * np.sin(
+            direction_section
+        ) + self.transverse_velocity * np.cos(direction_section)
+        v = self.transverse_velocity * np.sin(
+            direction_section
+        ) - self.streamwise_velocity * np.cos(direction_section)
+
+        u = u * -1 * self._unit
+        v = v * -1 * self._unit
+        u_mean = np.nanmean(u, axis=0)
+        v_mean = np.nanmean(v, axis=0)
+
         # Define length
         vel_norm = np.sqrt(u_mean ** 2 + v_mean ** 2)
 
