@@ -172,6 +172,7 @@ class WaterData(object):
         self.v_mps = None
         self.u_processed_mps = None
         self.v_processed_mps = None
+        self.w_processed_mps = None
         self.w_mps = None
         self.d_mps = None
         self.invalid_index = None

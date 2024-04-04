@@ -1793,6 +1793,7 @@ class MAP(object):
         row, col = self.primary_velocity.shape
         ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
         data = {
+            "Vertical": np.repeat(np.arange(col), row),
             "Distance (Left bank) "
             + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
             "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
