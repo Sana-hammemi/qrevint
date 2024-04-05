@@ -6,12 +6,12 @@ py_files = []
 root_dir = Path(os.getcwd()).parents[0]
 ui = os.listdir(os.path.join(root_dir, "UI"))
 
-# get python files from UI package
+# get python files from qrev.UI package
 for file in ui:
     if file.endswith(".py"):
         py_files.append(os.path.join(root_dir, "UI", file))
 
-# get python files from Classes package
+# get python files from qrev.Classes package
 classes = os.listdir(os.path.join(root_dir, "Classes"))
 
 for file in classes:
