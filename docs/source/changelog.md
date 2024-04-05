@@ -1,8 +1,21 @@
 # QRev Change Log
 
-## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
+## [**Version 4.38**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.38)
 
 **Status**: *Testing*
+
+**Added:**
+- EDI PDF Export
+
+**Changed:**
+- Package structure updated to better fit use by other applications.
+
+**Fixed:**
+- Corrected end time in PDF Summary
+
+## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
+
+**Status**: *Recommended*
 
 **Added:**
 - MAP: Added radio buttons to plot SNR/RSSI and Number of transects used.
