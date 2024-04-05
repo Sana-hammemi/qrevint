@@ -2854,9 +2854,9 @@ class QAData(object):
                         )
                         if max_invalid_percent > 25:
                             self.edges["status"] = "caution"
-                            if np.any(invalid_left):
+                            if np.any(left_invalid_percent > 25):
                                 self.edges["invalid_transect_left_idx"].append(n)
-                            if np.any(invalid_right):
+                            if np.any(right_invalid_percent > 25):
                                 self.edges["invalid_transect_right_idx"].append(n)
 
             if (

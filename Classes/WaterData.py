@@ -531,6 +531,7 @@ class WaterData(object):
                     1, self.cells_above_sl_bt.shape[0]
                 )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                self.sl_cutoff_m = transect.wVel.slCutoff_m
                 # Ping type
                 if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
@@ -596,6 +597,7 @@ class WaterData(object):
                     self.cells_above_sl_bt.shape[0], 1
                 )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
+                self.sl_cutoff_m = transect.wVel.slCutoff_m
                 # Ping type
                 if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
@@ -654,6 +656,7 @@ class WaterData(object):
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
+            self.sl_cutoff_m = transect.wVel.slCutoff_m
             # Ping type
             if hasattr(transect.wVel, "ping_type"):
                 if type(transect.wVel.ping_type) == str:
@@ -701,6 +704,7 @@ class WaterData(object):
         self.sl_cutoff_percent = transect.wVel.slCutoffPer
         self.sl_cutoff_number = transect.wVel.slCutoffNum
         self.sl_cutoff_type = transect.wVel.slCutoffType
+        self.sl_cutoff_m = transect.wVel.slCutoff_m
 
         # Use measurement for filter
         if hasattr(transect.wVel, "use_measurement_thresholds"):
