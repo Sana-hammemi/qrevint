@@ -122,7 +122,6 @@ class Python2Matlab(object):
             keys = list(vars(list_in[0]).keys())
             data_type = []
             for key in keys:
-
                 if new_key_dict is not None and key in new_key_dict:
                     if new_key_dict[key] is None:
                         data_type.append((np.nan, list))
@@ -216,9 +215,6 @@ class Python2Matlab(object):
         obj_dict = vars(obj)
         new_dict = dict()
         for key in obj_dict:
-            print(key)
-            print(str(type(obj_dict[key]))[8:13])
-            print(str(type(obj_dict[key])))
             # If variable is another object convert to dictionary recursively
             if "qrev.Classes" in str(type(obj_dict[key])):
                 obj_dict[key] = Python2Matlab.obj2dict(obj_dict[key], new_key_dict)
