@@ -4031,6 +4031,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tr("Transect"),
             self.tr("Width" + "\n " + self.units["label_L"]),
             self.tr("Area" + "\n " + self.units["label_A"]),
+            self.tr("Wetted \n Perimeter " + self.units["label_L"]),
+            self.tr("Hydraulic \n Radius " + self.units["label_L"]),
             self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
             self.tr("Course Made \n Good" + " (deg)"),
             self.tr("Q/A" + " " + self.units["label_V"]),
@@ -4049,12 +4051,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             trans_prop = Measurement.compute_measurement_properties(self.meas)
             left_width = []
             left_area = []
+            left_wetted_perimeter = []
+            left_hydraulic_radius = []
             left_boat_speed = []
             left_boat_course = []
             left_water_speed = []
             left_water_dir = []
             right_width = []
             right_area = []
+            right_wetted_perimeter = []
+            right_hydraulic_radius = []
             right_boat_speed = []
             right_boat_course = []
             right_water_speed = []
@@ -4067,6 +4073,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if trans_prop["start_bank"][transect_id] == "Left":
                     left_width.append(trans_prop["width"][transect_id])
                     left_area.append(trans_prop["area"][transect_id])
+                    left_wetted_perimeter.append(
+                        trans_prop["wetted_perimeter"][transect_id]
+                    )
+                    left_hydraulic_radius.append(
+                        trans_prop["hydraulic_radius"][transect_id]
+                    )
                     left_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
                     left_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     left_water_speed.append(trans_prop["avg_water_speed"][transect_id])
@@ -4074,6 +4086,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     right_width.append(trans_prop["width"][transect_id])
                     right_area.append(trans_prop["area"][transect_id])
+                    right_wetted_perimeter.append(
+                        trans_prop["wetted_perimeter"][transect_id]
+                    )
+                    right_hydraulic_radius.append(
+                        trans_prop["hydraulic_radius"][transect_id]
+                    )
                     right_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
                     right_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     right_water_speed.append(trans_prop["avg_water_speed"][transect_id])
@@ -4105,6 +4123,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if not np.isnan(trans_prop["area"][transect_id]):
                     item = "{:10.2f}".format(
                         trans_prop["area"][transect_id] * self.units["A"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Transect wetted perimeter
+                col += 1
+                item = ""
+                if not np.isnan(trans_prop["wetted_perimeter"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["wetted_perimeter"][transect_id] * self.units["L"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Transect hydraulic radius
+                col += 1
+                item = ""
+                if not np.isnan(trans_prop["hydraulic_radius"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["hydraulic_radius"][transect_id] * self.units["L"]
                     )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -4190,6 +4228,50 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Average wetted perimeter
+            col += 1
+            item = "{:10.2f}".format(
+                trans_prop["wetted_perimeter"][n_transects] * self.units["L"]
+            )
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference wetted perimeter
+            if len(left_wetted_perimeter) > 0 and len(right_wetted_perimeter) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(
+                        np.nanmean(left_wetted_perimeter)
+                        - np.nanmean(right_wetted_perimeter)
+                    )
+                    * self.units["L"]
+                )
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Average hydraulic radius
+            col += 1
+            item = "{:10.2f}".format(
+                trans_prop["hydraulic_radius"][n_transects] * self.units["L"]
+            )
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference hydraulic radius
+            if len(left_hydraulic_radius) > 0 and len(right_hydraulic_radius) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(
+                        np.nanmean(left_hydraulic_radius)
+                        - np.nanmean(right_hydraulic_radius)
+                    )
+                    * self.units["L"]
+                )
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average boat speed
             col += 1
             item = "{:6.2f}".format(
@@ -4265,7 +4347,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Set average row font to bold
             for col in range(ncols):
-                if col != 4:
+                if col != 6:
                     tbl.item(0, col).setFont(self.font_bold)
                 tbl.item(1, col).setFont(self.font_bold)
 
