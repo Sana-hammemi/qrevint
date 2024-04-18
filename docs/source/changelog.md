@@ -5,10 +5,12 @@
 **Status**: *Testing*
 
 **Added:**
-- EDI PDF Export
+- EDI PDF Export.
+- Added Ctrl+M shortcut to maximize Select Transect dialog.
 
 **Changed:**
 - Package structure updated to better fit use by other applications.
+- Increased default size of Select Transects dialog.
 
 **Fixed:**
 - Corrected end time in PDF Summary
