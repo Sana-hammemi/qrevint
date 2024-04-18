@@ -1130,6 +1130,116 @@ class Report:
         )
         return table_2
 
+    def summary_table_3(self):
+        """Create 3rd summary table containing details.
+
+        Returns
+        -------
+        table_1: Table
+            Object of Table
+        """
+
+        # Column labels
+        data = [
+            [
+                self.label(self.tr("Transect") + "<br/>" + self.tr("ID"), bold=True),
+                self.label(
+                    self.tr("Width") + "<br/>{}".format(self.parent.units["label_L"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Area") + "<br/>{}".format(self.parent.units["label_A"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Wetted")
+                    + "<br/>"
+                    + self.tr("Perimeter")
+                    + "<br/>{}".format(self.parent.units["label_L"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Hydraulic")
+                    + "<br/>"
+                    + self.tr("Radius")
+                    + "<br/>{}".format(self.parent.units["label_L"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Avg. Boat")
+                    + "<br/>"
+                    + self.tr("Speed")
+                    + "<br/>{}".format(self.parent.units["label_V"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Course Made") + "<br/>" + self.tr("Good (deg)"),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Q/A") + "<br/>{}".format(self.parent.units["label_V"]),
+                    bold=True,
+                ),
+                self.label(
+                    self.tr("Avg. Water") + "<br/>" + self.tr("Direction (deg)"),
+                    bold=True,
+                ),
+            ]
+        ]
+
+        meas = self.parent.meas
+        trans_prop = meas.compute_measurement_properties(meas)
+
+        for idx in meas.checked_transect_idx:
+            filename = idx
+
+            width = "{:.2f}".format(trans_prop["width"][idx] * self.parent.units["L"])
+            area = "{:.2f}".format(trans_prop["area"][idx] * self.parent.units["A"])
+            wetted_perimeter = "{:.2f}".format(
+                trans_prop["wetted_perimeter"][idx] * self.parent.units["L"]
+            )
+            hydraulic_radius = "{:.2f}".format(
+                trans_prop["hydraulic_radius"][idx] * self.parent.units["L"]
+            )
+            avg_boat_speed = "{:.2f}".format(
+                trans_prop["avg_boat_speed"][idx] * self.parent.units["V"]
+            )
+            avg_boat_course = "{:.2f}".format(trans_prop["avg_boat_course"][idx])
+            avg_water_speed = "{:.2f}".format(
+                trans_prop["avg_water_speed"][idx] * self.parent.units["V"]
+            )
+            avg_water_dir = "{:.2f}".format(trans_prop["avg_water_dir"][idx])
+
+            row = [
+                filename,
+                width,
+                area,
+                wetted_perimeter,
+                hydraulic_radius,
+                avg_boat_speed,
+                avg_boat_course,
+                avg_water_speed,
+                avg_water_dir,
+            ]
+            data.append(row)
+
+        # Create style list
+        style_list = [
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONT", (0, 0), (-1, -1), "Helvetica", 9),
+            ("LINEABOVE", (0, 0), (-1, 0), 1, colors.black),
+            ("LINEBELOW", (0, 0), (-1, 0), 1, colors.black),
+            ("LINEBELOW", (0, -1), (-1, -1), 1, colors.black),
+            ("NOSPLIT", (0, 0), (-1, -1)),
+        ]
+
+        # Create and style table
+        table_1 = Table(data, colWidths=None, rowHeights=None, repeatRows=1)
+        table_style = TableStyle(style_list)
+        table_1.setStyle(table_style)
+
+        return table_1
+
     def label(self, txt, size=9, bold=False, center=True):
         """Use HTML to format labels
 
@@ -1212,6 +1322,7 @@ class Report:
         self.elements.append(Spacer(1, 14))
         self.elements.append(self.summary_table_1())
         self.elements.append(self.summary_table_2())
+        self.elements.append(self.summary_table_3())
         self.elements.append(Spacer(1, 14))
         self.elements.append(self.discharge_plot())
         self.elements.append(Spacer(1, 14))
