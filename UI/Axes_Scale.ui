@@ -142,10 +142,10 @@
   <widget class="QCheckBox" name="cb_axes_auto">
    <property name="geometry">
     <rect>
-     <x>170</x>
-     <y>100</y>
+     <x>160</x>
+     <y>70</y>
      <width>151</width>
-     <height>20</height>
+     <height>61</height>
     </rect>
    </property>
    <property name="font">
@@ -154,7 +154,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Automatic</string>
+    <string>Automatic  </string>
    </property>
   </widget>
   <widget class="QLabel" name="label">
@@ -195,6 +195,29 @@
    </property>
    <property name="text">
     <string>X-Axis</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>110</y>
+     <width>151</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+     <italic>false</italic>
+    </font>
+   </property>
+   <property name="inputMethodHints">
+    <set>Qt::ImhMultiLine</set>
+   </property>
+   <property name="text">
+    <string>(Resets all 
+graphs on tab)</string>
    </property>
   </widget>
  </widget>

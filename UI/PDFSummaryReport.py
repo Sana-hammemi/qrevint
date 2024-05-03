@@ -312,7 +312,7 @@ class Report:
         transect_id = meas.checked_transect_idx[-1]
         end_time = datetime.strftime(
             datetime.utcfromtimestamp(
-                meas.transects[transect_id].date_time.start_serial_time
+                meas.transects[transect_id].date_time.end_serial_time
             ),
             "%H:%M:%S",
         )

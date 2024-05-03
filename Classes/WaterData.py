@@ -2121,6 +2121,9 @@ class WaterData(object):
                 self.set_nav_reference(transect.boat_vel)
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
+        elif transect.adcp.manufacturer != "SonTek":
+            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
+            self.all_valid_data()
 
     def filter_wt_depth(self, transect, setting):
         """Marks water velocity data invalid if there is no valid or

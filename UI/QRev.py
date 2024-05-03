@@ -16462,42 +16462,52 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
 
             scale = ArrowsScale(self)
-            scale.v_max_label.setText("V max " + self.units['label_V'])
-            scale.v_min_label.setText("V min " + self.units['label_V'])
-            scale.arrow_scale_label.setText("Scale " + self.units['label_L'] + ": 1" +
-                                            self.units['label_V'][1:-1] + " =")
+            scale.v_max_label.setText("V max " + self.units["label_V"])
+            scale.v_min_label.setText("V min " + self.units["label_V"])
+            scale.arrow_scale_label.setText(
+                "Scale "
+                + self.units["label_L"]
+                + ": 1"
+                + self.units["label_V"][1:-1]
+                + " ="
+            )
 
             # Define vectors scale
             if self.kml_map is None:
-                _, _, _, arrow_scale, v_max, v_min = self.meas.map.auto_arrow(meas=self.meas)
+                _, _, _, arrow_scale, v_max, v_min = self.meas.map.auto_arrow(
+                    meas=self.meas
+                )
             else:
-                arrow_scale = self.kml_map['arrow_scale']
-                v_max = self.kml_map['v_max']
-                v_min = self.kml_map['v_min']
+                arrow_scale = self.kml_map["arrow_scale"]
+                v_max = self.kml_map["v_max"]
+                v_min = self.kml_map["v_min"]
 
-            scale.ed_v_max.setText("%.2f" % (v_max * self.units['V']))
-            scale.ed_v_min.setText("%.2f" % (v_min * self.units['V']))
-            scale.ed_arrow_scale.setText("%.2f" % (arrow_scale * self.units['L']))
+            scale.ed_v_max.setText("%.2f" % (v_max * self.units["V"]))
+            scale.ed_v_min.setText("%.2f" % (v_min * self.units["V"]))
+            scale.ed_arrow_scale.setText("%.2f" % (arrow_scale * self.units["L"]))
             rsp = scale.exec_()
 
             if rsp == QtWidgets.QDialog.Accepted:
                 try:
-                    arrow_scale = float(scale.ed_arrow_scale.text()) / self.units['L']
-                    v_min = float(scale.ed_v_min.text()) / self.units['V']
-                    v_max = float(scale.ed_v_max.text()) / self.units['V']
-                    self.meas.map.export_kml(self.meas, fullname,
-                                             arrow_scale=arrow_scale,
-                                             v_min=v_min,
-                                             v_max=v_max,
-                                             palette=self.color_map)
-                    self.kml_map = {'arrow_scale': arrow_scale,
-                                    'v_max': v_max,
-                                    'v_min': v_min}
+                    arrow_scale = float(scale.ed_arrow_scale.text()) / self.units["L"]
+                    v_min = float(scale.ed_v_min.text()) / self.units["V"]
+                    v_max = float(scale.ed_v_max.text()) / self.units["V"]
+                    self.meas.map.export_kml(
+                        self.meas,
+                        fullname,
+                        arrow_scale=arrow_scale,
+                        v_min=v_min,
+                        v_max=v_max,
+                        palette=self.color_map,
+                    )
+                    self.kml_map = {
+                        "arrow_scale": arrow_scale,
+                        "v_max": v_max,
+                        "v_min": v_min,
+                    }
                 except ValueError:
                     self.popup_message(
-                        text=self.tr(
-                            "Invalid format, please enter numeric values."
-                        )
+                        text=self.tr("Invalid format, please enter numeric values.")
                     )
                     return
 
@@ -16711,36 +16721,39 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # rescaled using the data available from the plot axes. The
                     # reason the original plot method has priority is that for some
                     # graphs the tick scaling is customized.
-                    try:
-                        self.fig_calls[self.figs.index(self.current_fig)]()
-                    except:
-                        # Rescale the plot using data from the plot
-                        ydata = np.array([])
-                        xdata = np.array([])
-                        for line in self.current_axis.lines:
-                            ydata = np.hstack((ydata, line.get_ydata()))
-                            xdata = np.hstack((xdata, line.get_xdata()))
-                        ydata_max = np.nanmax(ydata) * 1.02
-                        ydata_min = 0 - np.nanmax(ydata) * 0.02
-                        xdata_max = np.nanmax(xdata) * 1.02
-                        xdata_min = 0 - np.nanmax(xdata) * 0.02
-
-                        if np.isnan(ydata_max):
-                            ydata_max = 1
-                            ydata_min = 0
-                        if np.isnan(xdata_max):
-                            xdata_max = 1
-                            xdata_min = 0
-
-                        if x_limits[0] < x_limits[1]:
-                            new_x_limits = [xdata_min, xdata_max]
-                        else:
-                            new_x_limits = [xdata_max, xdata_min]
-
-                        if y_limits[0] < y_limits[1]:
-                            new_y_limits = [ydata_min, ydata_max]
-                        else:
-                            new_y_limits = [ydata_max, ydata_min]
+                    # try:
+                    # self.fig_calls[self.figs.index(self.current_fig)]()
+                    self.change = True
+                    self.tab_manager()
+                    return
+                    # except:
+                    #     # Rescale the plot using data from the plot
+                    #     ydata = np.array([])
+                    #     xdata = np.array([])
+                    #     for line in self.current_axis.lines:
+                    #         ydata = np.hstack((ydata, line.get_ydata()))
+                    #         xdata = np.hstack((xdata, line.get_xdata()))
+                    #     ydata_max = np.nanmax(ydata) * 1.02
+                    #     ydata_min = 0 - np.nanmax(ydata) * 0.02
+                    #     xdata_max = np.nanmax(xdata) * 1.02
+                    #     xdata_min = 0 - np.nanmax(xdata) * 0.02
+                    #
+                    #     if np.isnan(ydata_max):
+                    #         ydata_max = 1
+                    #         ydata_min = 0
+                    #     if np.isnan(xdata_max):
+                    #         xdata_max = 1
+                    #         xdata_min = 0
+                    #
+                    #     if x_limits[0] < x_limits[1]:
+                    #         new_x_limits = [xdata_min, xdata_max]
+                    #     else:
+                    #         new_x_limits = [xdata_max, xdata_min]
+                    #
+                    #     if y_limits[0] < y_limits[1]:
+                    #         new_y_limits = [ydata_min, ydata_max]
+                    #     else:
+                    #         new_y_limits = [ydata_max, ydata_min]
                 else:
                     x_left = self.check_numeric_input(scale.ed_x_left, block=False)
                     x_right = self.check_numeric_input(scale.ed_x_right, block=False)
