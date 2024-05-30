@@ -521,8 +521,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape((1, self.w_mps.shape[0]))
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape((1, self.d_mps.shape[0]))
-                # self.snr_rng = transect.wVel.snrRng
-                # self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     1, self.cells_above_sl.shape[0]
@@ -533,6 +533,8 @@ class WaterData(object):
                 )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
                 self.sl_cutoff_m = transect.wVel.slCutoff_m
+                if len(self.sl_cutoff_m) == 0:
+                    self.sl_cutoff_m = None
                 # Ping type
                 if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
@@ -587,8 +589,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-                # self.snr_rng = transect.wVel.snrRng
-                # self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     self.cells_above_sl.shape[0], 1
@@ -598,7 +600,12 @@ class WaterData(object):
                     self.cells_above_sl_bt.shape[0], 1
                 )
                 self.sl_lag_effect_m = np.array([transect.wVel.slLagEffect_m])
-                self.sl_cutoff_m = transect.wVel.slCutoff_m
+                try:
+                    self.sl_cutoff_m = transect.wVel.slCutoff_m
+                    if len(self.sl_cutoff_m) == 0:
+                        self.sl_cutoff_m = None
+                except AttributeError:
+                    self.sl_cutoff_m = None
                 # Ping type
                 if hasattr(transect.wVel, "ping_type"):
                     if type(transect.wVel.ping_type) == str:
@@ -653,11 +660,16 @@ class WaterData(object):
             self.v_processed_mps = transect.wVel.vProcessed_mps
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
-            # self.snr_rng = transect.wVel.snrRng
+            self.snr_rng = transect.wVel.snrRng
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
-            self.sl_cutoff_m = transect.wVel.slCutoff_m
+            try:
+                self.sl_cutoff_m = transect.wVel.slCutoff_m
+                if len(self.sl_cutoff_m) == 0:
+                    self.sl_cutoff_m = None
+            except AttributeError:
+                self.sl_cutoff_m = None
             # Ping type
             if hasattr(transect.wVel, "ping_type"):
                 if type(transect.wVel.ping_type) == str:
@@ -705,7 +717,12 @@ class WaterData(object):
         self.sl_cutoff_percent = transect.wVel.slCutoffPer
         self.sl_cutoff_number = transect.wVel.slCutoffNum
         self.sl_cutoff_type = transect.wVel.slCutoffType
-        self.sl_cutoff_m = transect.wVel.slCutoff_m
+        try:
+            self.sl_cutoff_m = transect.wVel.slCutoff_m
+            if len(self.sl_cutoff_m) == 0:
+                self.sl_cutoff_m = None
+        except AttributeError:
+            self.sl_cutoff_m = None
 
         # Use measurement for filter
         if hasattr(transect.wVel, "use_measurement_thresholds"):
