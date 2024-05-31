@@ -520,8 +520,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape((1, self.w_mps.shape[0]))
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape((1, self.d_mps.shape[0]))
-                # self.snr_rng = transect.wVel.snrRng
-                # self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(1, self.snr_rng.shape[0])
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     1, self.cells_above_sl.shape[0]
@@ -585,8 +585,8 @@ class WaterData(object):
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
                 self.d_mps = self.d_mps.reshape(self.d_mps.shape[0], 1)
-                # self.snr_rng = transect.wVel.snrRng
-                # self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
+                self.snr_rng = transect.wVel.snrRng
+                self.snr_rng = self.snr_rng.reshape(self.snr_rng.shape[0], 1)
                 self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
                 self.cells_above_sl = self.cells_above_sl.reshape(
                     self.cells_above_sl.shape[0], 1
@@ -650,7 +650,7 @@ class WaterData(object):
             self.v_processed_mps = transect.wVel.vProcessed_mps
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
-            # self.snr_rng = transect.wVel.snrRng
+            self.snr_rng = transect.wVel.snrRng
             self.cells_above_sl = transect.wVel.cellsAboveSL.astype(bool)
             self.cells_above_sl_bt = transect.wVel.cellsAboveSLbt.astype(bool)
             self.sl_lag_effect_m = transect.wVel.slLagEffect_m
@@ -2114,6 +2114,9 @@ class WaterData(object):
                 self.snr_beam_velocities = None
                 self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
                 self.set_nav_reference(transect.boat_vel)
+            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
+            self.all_valid_data()
+        elif transect.adcp.manufacturer != "SonTek":
             self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
             self.all_valid_data()
 

@@ -508,7 +508,8 @@ class Report:
             [self.tr("Compass Cal/Eval") + ":", compass],
             [
                 self.tr("Magnetic Variaton") + ":",
-                meas.transects[first_id].sensors.heading_deg.internal.mag_var_deg,
+                "{:.2f}".format(meas.transects[
+                                    first_id].sensors.heading_deg.internal.mag_var_deg),
             ],
             [self.tr("MovBed Test Type") + ":", mb_test_type],
             [self.tr("MovBed Test Quality") + ":", quality],

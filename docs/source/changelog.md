@@ -7,6 +7,7 @@
 **Added:**
 - EDI PDF Export.
 - Added Ctrl+M shortcut to maximize Select Transect dialog.
+- Added Wetted perimeter and hydraulic radius computations.
 
 **Changed:**
 - Package structure updated to better fit use by other applications.
@@ -14,6 +15,10 @@
 
 **Fixed:**
 - Corrected end time in PDF Summary
+- Fixed change in discharge when opening a saved QRev .mat and reprocessing 
+  due to missing SNR range.
+- Display of edge units in exported PDF now honor unit system setting.
+- Added rounding to the magnetic variation in the PDF summary.
 
 ## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
 
