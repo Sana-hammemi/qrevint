@@ -2,8 +2,8 @@ import unittest
 import os
 import numpy as np
 
-from Classes.Measurement import Measurement
-from Classes.CrossSectionComp import CrossSectionComp
+from qrev.Classes.Measurement import Measurement
+from qrev.Classes.CrossSectionComp import CrossSectionComp
 
 test_dir = os.path.join(os.getcwd(), 'data')
 
