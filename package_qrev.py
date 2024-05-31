@@ -5,7 +5,7 @@ import pyinstaller_versionfile
 import PyInstaller.__main__
 import shutil
 
-from qrev.Classes import __version__, __app__, __company__
+from qrev import __version__, __app__, __company__
 
 # before running, if updates the docs have occurred, user should through a
 # terminal activate the QRev env, navigate to the docs folder, type ./make html

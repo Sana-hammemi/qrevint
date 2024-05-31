@@ -17,14 +17,14 @@ from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
-from qrev import UI as QRev_gui
-from qrev.Classes import __qrev_version__, __company__, myappid
-from qrev.Classes import CoordError
+import qrev.UI.QRev_gui as QRev_gui
+from qrev import __qrev_version__, __company__, myappid
+from qrev.Classes.CoordError import CoordError
 from qrev.Classes.MMT_TRDI import MMTtrdi
 from qrev.Classes.Measurement import Measurement
 from qrev.Classes.MovingBedTests import MovingBedTests
 from qrev.Classes.Oursin import Oursin
-from qrev.Classes import Python2Matlab
+from qrev.Classes.Python2Matlab import Python2Matlab
 from qrev.Classes.Sensors import Sensors
 from qrev.Classes.TransectData import TransectData
 from qrev.Classes.createconfig import Config
@@ -56,6 +56,7 @@ from qrev.UI.MplCanvas import MplCanvas
 from qrev.UI.OpenMeasurementDialog import OpenMeasurementDialog
 from qrev.UI.Options import Options
 from qrev.UI.PDFSummaryReport import Report
+from qrev.UI.PDFEdiReport import PDFEdiReport
 from qrev.UI.PRTS import PRTS
 from qrev.UI.Rating import Rating
 from qrev.UI.SOSSource import SOSSource
@@ -70,7 +71,7 @@ from qrev.UI.ULollipopPlot import ULollipopPlot
 from qrev.UI.UMeasQ import UMeasQ
 from qrev.UI.UMeasurement import UMeasurement
 
-# from UI.WTContour import WTContour
+# from qrev.UI.WTContour import WTContour
 from qrev.UI.selectFile import SaveDialog
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -15397,6 +15398,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Create topoquad file is requested
                 if self.cb_edi_topoquad.checkState() == QtCore.Qt.Checked:
                     self.create_topoquad_file()
+                # Create PDF file if requested
+                if self.cb_edi_pdf.checkState() == QtCore.Qt.Checked:
+                    self.create_edi_pdf()
             else:
                 # Display message to user
                 self.popup_message(self.tr("The selected transect has no discharge"))
@@ -15432,6 +15436,36 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             error_dialog = QtWidgets.QErrorMessage()
             error_dialog.showMessage(
                 self.tr("Invalid output filename. TopoQuad file not created.")
+            )
+
+    def create_edi_pdf(self):
+        """Create a PDF file with transect information and EDI results."""
+
+        # Get user defined filename
+        text, ok_pressed = QtWidgets.QInputDialog.getText(
+            self,
+            self.tr("EDI PDF Results File"),
+            self.tr("Enter " "filename (no " "suffix)for " "PDF " "file:"),
+            QtWidgets.QLineEdit.Normal,
+            "edi_export",
+        )
+        # Create and save file to folder containing measurement data
+        if ok_pressed and text != "":
+            filename = text + ".pdf"
+            fullname = os.path.join(self.sticky_settings.get("Folder"),
+                                    filename)
+
+            try:
+                edi_pdf = PDFEdiReport(fullname, self)
+                edi_pdf.create()
+            except:
+                # Report error to user
+                self.popup_message(self.tr("Error saving PDF."))
+
+        else:
+            # Report error to user
+            self.popup_message(
+                self.tr("Invalid output filename. PDF file not created.")
             )
 
     # Adv. Graph tab

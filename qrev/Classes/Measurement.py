@@ -7,7 +7,7 @@ from xml.dom.minidom import parseString
 import numpy as np
 import simplekml
 
-from qrev.Classes import __qrev_version__, myappid
+from qrev import __qrev_version__, myappid
 from qrev.Classes.BoatData import BoatData
 from qrev.Classes.BoatStructure import BoatStructure
 from qrev.Classes.ComputeExtrap import ComputeExtrap
@@ -2569,7 +2569,7 @@ class Measurement(object):
                     lat.append(transect.gps.gga_lat_ens_deg[ensemble])
                     lon.append(transect.gps.gga_lon_ens_deg[ensemble])
 
-            except (ValueError, AttributeError, TypeError):
+            except (ValueError, AttributeError, TypeError, IndexError):
                 lat.append("")
                 lon.append("")
             depth.append(depth_selected.depth_processed_m[ensemble])

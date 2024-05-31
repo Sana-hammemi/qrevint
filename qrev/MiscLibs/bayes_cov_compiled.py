@@ -5,7 +5,7 @@ log-normal distribution..
 Example
 -------
 
-from MiscLibs.bayes_cov_compiled import bayes_cov
+from qrev.MiscLibs.bayes_cov_compiled import bayes_cov
 
 cov_68 = bayes_cov(transects, cov_prior, cov_prior_u, nsim)
 """

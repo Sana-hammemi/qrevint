@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-from qrev.Classes import __qrev_version__
+from qrev import __qrev_version__
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater, sfrnd
 
@@ -1033,8 +1033,10 @@ class MAP(object):
         # idx_top = np.nanargmin(valid_cell_centers, axis=0)
         # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
 
-        idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float('inf')), axis=0)
-        idx_bot = np.argmax(np.nan_to_num(valid_cell_centers, nan=float('-inf')), axis=0)
+        idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float("inf")), axis=0)
+        idx_bot = np.argmax(
+            np.nan_to_num(valid_cell_centers, nan=float("-inf")), axis=0
+        )
 
         # Preallocate variables
         n_ensembles = valid_data.shape[1]
@@ -1861,7 +1863,9 @@ class MAP(object):
 
         df.to_csv(path, sep=sep, index=False, mode="a", header=True)
 
-    def export_kml(self, meas, path, palette='jet', arrow_scale=None, v_min=None, v_max=None):
+    def export_kml(
+        self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None
+    ):
         """Create KML file for MAP.
 
         Parameters
@@ -1911,7 +1915,9 @@ class MAP(object):
         lat_vec, lon_vec = utm.to_latlon(x_kml, y_kml, zone_number, zone_letter)
 
         if arrow_scale is None or v_min is None or v_max is None:
-            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(lat=lat, lon=lon)
+            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(
+                lat=lat, lon=lon
+            )
         else:
             u_mean, v_mean, vel_norm = self.auto_arrow()
 
@@ -1920,8 +1926,7 @@ class MAP(object):
 
         # Get color
         cmap = plt.get_cmap(palette)
-        norm = mcolors.Normalize(vmin=v_min,
-                                 vmax=v_max)
+        norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
         colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
 
         # Mean velocity on each ensemble
@@ -1930,8 +1935,15 @@ class MAP(object):
 
         for i in range(len(u_mean)):
             r, g, b, a = colors[i]
-            self.plot_arrow(w_folder, (lon_vec[i], lat_vec[i]), u_mean[i], v_mean[i], "Water Velocity " + str(i),
-                            arrow_scale, color=simplekml.Color.rgb(r, g, b, a))
+            self.plot_arrow(
+                w_folder,
+                (lon_vec[i], lat_vec[i]),
+                u_mean[i],
+                v_mean[i],
+                "Water Velocity " + str(i),
+                arrow_scale,
+                color=simplekml.Color.rgb(r, g, b, a),
+            )
 
         kml.save(path)
 
@@ -1978,7 +1990,7 @@ class MAP(object):
         v_mean = np.nanmean(v, axis=0)
 
         # Define length
-        vel_norm = np.sqrt(u_mean ** 2 + v_mean ** 2)
+        vel_norm = np.sqrt(u_mean**2 + v_mean**2)
 
         if lat is None or lon is None:
             if meas is not None:
@@ -1996,15 +2008,21 @@ class MAP(object):
 
         # Default arrow length : half the width of the section
         arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
-        start_point = utm.from_latlon(lat[0], lon[0],
-                                      force_zone_number=zone_number,
-                                      force_zone_letter=zone_letter)
-        end_point = utm.from_latlon(lat[0] + arrow_length, lon[0],
-                                    force_zone_number=zone_number,
-                                    force_zone_letter=zone_letter)
+        start_point = utm.from_latlon(
+            lat[0], lon[0], force_zone_number=zone_number, force_zone_letter=zone_letter
+        )
+        end_point = utm.from_latlon(
+            lat[0] + arrow_length,
+            lon[0],
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
         arrow_length_m = sfrnd(
-            np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2),
-            2
+            np.sqrt(
+                (end_point[0] - start_point[0]) ** 2
+                + (end_point[1] - start_point[1]) ** 2
+            ),
+            2,
         )
 
         v_min = 0
@@ -2031,9 +2049,10 @@ class MAP(object):
         color: string
             Kml Hex color of the arrow
         """
-        distance = arrow_scale * np.sqrt(ve ** 2 + vn ** 2)
-        coord_end = self.compute_new_coordinates(start_point=coord_start, distance=distance,
-                                                 bearing=math.atan2(ve, vn))
+        distance = arrow_scale * np.sqrt(ve**2 + vn**2)
+        coord_end = self.compute_new_coordinates(
+            start_point=coord_start, distance=distance, bearing=math.atan2(ve, vn)
+        )
 
         # Creation of the LineString tag for the arrow line
         line = folder.newlinestring(name=name, coords=[coord_start, coord_end])
@@ -2041,7 +2060,9 @@ class MAP(object):
 
         # Creating the triangle at the tip of the arrow
         arrow_polygon = folder.newpolygon(name=name)
-        arrow_coordinates_base = self.compute_arrow_coordinates_base(coord_start, coord_end, ve, vn)
+        arrow_coordinates_base = self.compute_arrow_coordinates_base(
+            coord_start, coord_end, ve, vn
+        )
         arrow_polygon.outerboundaryis = arrow_coordinates_base
         arrow_polygon.style.linestyle.width = 2
 
@@ -2075,17 +2096,22 @@ class MAP(object):
         arrow_angle = math.atan2(vy, vx)
 
         # Coordinates of the arrowhead
-        x_base, y_base = (0.2 * coord_start[0] + 0.8 * coord_end[0], 0.2 * coord_start[1] + 0.8 * coord_end[1])
+        x_base, y_base = (
+            0.2 * coord_start[0] + 0.8 * coord_end[0],
+            0.2 * coord_start[1] + 0.8 * coord_end[1],
+        )
 
-        head_distance = np.sqrt((coord_end[0] - x_base) ** 2 + (coord_end[1] - y_base) ** 2)
+        head_distance = np.sqrt(
+            (coord_end[0] - x_base) ** 2 + (coord_end[1] - y_base) ** 2
+        )
         head_size = head_distance * math.cos(math.radians(60))
         base_point2 = (
             x_base - head_size * math.sin(arrow_angle),
-            y_base + head_size * math.cos(arrow_angle)
+            y_base + head_size * math.cos(arrow_angle),
         )
         base_point3 = (
             x_base + head_size * math.sin(arrow_angle),
-            y_base - head_size * math.cos(arrow_angle)
+            y_base - head_size * math.cos(arrow_angle),
         )
 
         # Coordinates of the points forming the arrowhead
@@ -2115,9 +2141,13 @@ class MAP(object):
         earth_radius = 6371000
         lat1, lon1 = math.radians(start_point[1]), math.radians(start_point[0])
         d_over_earth_radius = distance / earth_radius
-        lat2 = math.asin(math.sin(lat1) * math.cos(d_over_earth_radius) +
-                         math.cos(lat1) * math.sin(d_over_earth_radius) * math.cos(bearing))
+        lat2 = math.asin(
+            math.sin(lat1) * math.cos(d_over_earth_radius)
+            + math.cos(lat1) * math.sin(d_over_earth_radius) * math.cos(bearing)
+        )
 
-        lon2 = lon1 + math.atan2(math.sin(bearing) * math.sin(d_over_earth_radius) * math.cos(lat1),
-                                 math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2))
+        lon2 = lon1 + math.atan2(
+            math.sin(bearing) * math.sin(d_over_earth_radius) * math.cos(lat1),
+            math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2),
+        )
         return math.degrees(lon2), math.degrees(lat2)

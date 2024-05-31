@@ -7,7 +7,7 @@ Both x and y values are required and are assumed to be 1D arrays (n,).
 Example
 -------
 
-from MiscLibs.matlab_rloess import rloess
+from qrev.MiscLibs.matlab_rloess import rloess
 
 smooth_fit = rloess(x, y, span)
 """

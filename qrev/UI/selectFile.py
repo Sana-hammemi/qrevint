@@ -3,7 +3,7 @@ import datetime as datetime
 from PyQt5 import QtWidgets
 from qrev.Classes.stickysettings import StickySettings as SSet
 from qrev.UI import wSelectFile
-from qrev.Classes import __version__
+from qrev import __version__
 
 
 class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):

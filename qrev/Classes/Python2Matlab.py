@@ -216,14 +216,14 @@ class Python2Matlab(object):
         new_dict = dict()
         for key in obj_dict:
             # If variable is another object convert to dictionary recursively
-            if str(type(obj_dict[key]))[8:13] == "Class":
+            if "qrev.Classes" in str(type(obj_dict[key])):
                 obj_dict[key] = Python2Matlab.obj2dict(obj_dict[key], new_key_dict)
 
             # If variable is a list of objects convert to dictionary
             elif (
                 type(obj_dict[key]) is list
                 and len(obj_dict[key]) > 0
-                and str(type(obj_dict[key][0]))[8:13] == "Class"
+                and "qrev.Classes" in str(type(obj_dict[key][0]))
             ):
                 obj_dict[key] = Python2Matlab.listobj2struct(
                     obj_dict[key], new_key_dict

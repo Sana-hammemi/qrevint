@@ -3,13 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
-from qrev.MiscLibs.common_functions import (
-    cart2pol,
-    pol2cart,
-    iqr,
-    nan_greater,
-    nan_less,
-)
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
 from qrev.MiscLibs.robust_loess import rloess
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
