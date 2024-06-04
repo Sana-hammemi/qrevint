@@ -145,6 +145,7 @@ class AdvGraphs(object):
             "U": "b",
             "1": "b",
             "Other": "b",
+            "255": "b",
         }
         self.p_type_marker = {
             "I": ".",
@@ -158,9 +159,10 @@ class AdvGraphs(object):
             "PC": "+",
             "PC/BB": "x",
             "PCBB": "x",
-            "U": " ",
+            "U": ".",
             "1": ".",
             "Other": ".",
+            "255": ".",
         }
         self.wt_legend_dict = {
             "I": "Incoherent",
@@ -192,6 +194,7 @@ class AdvGraphs(object):
             "PCBB": "PC/BB",
             "1": "U",
             "Other": "U",
+            "255": "3 MHz",
         }
         self.freq_color = {
             "0": "b",
@@ -212,6 +215,7 @@ class AdvGraphs(object):
             "2000": ".",
             "2400": ".",
             "3000": "+",
+            "255": ".",
         }
         self.wt_advanced_type_methods = {
             "cb_speed_filtered_cc": self.wt_speed_filtered_contour,

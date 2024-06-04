@@ -1,6 +1,7 @@
 # from profilehooks import profile
 import copy
 from datetime import datetime
+import math
 
 import numpy as np
 import pandas as pd
@@ -9,10 +10,12 @@ import utm
 from scipy.interpolate import griddata
 from scipy.optimize.minpack import curve_fit
 from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 from qrev import __qrev_version__
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater, sfrnd
 
 
 class MAP(object):
@@ -1028,8 +1031,13 @@ class MAP(object):
         valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
         valid_cell_centers = depth_cells_center * valid_data
         valid_cell_centers[valid_cell_centers == 0] = np.nan
-        idx_top = np.nanargmin(valid_cell_centers, axis=0)
-        idx_bot = np.nanargmax(valid_cell_centers, axis=0)
+        # idx_top = np.nanargmin(valid_cell_centers, axis=0)
+        # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
+
+        idx_top = np.argmin(
+            np.nan_to_num(valid_cell_centers, nan=float('inf')), axis=0)
+        idx_bot = np.argmax(
+            np.nan_to_num(valid_cell_centers, nan=float('-inf')), axis=0)
 
         # Preallocate variables
         n_ensembles = valid_data.shape[1]
@@ -1788,6 +1796,7 @@ class MAP(object):
         row, col = self.primary_velocity.shape
         ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
         data = {
+            "Vertical": np.repeat(np.arange(col), row),
             "Distance (Left bank) "
             + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
             "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
@@ -1855,18 +1864,30 @@ class MAP(object):
 
         df.to_csv(path, sep=sep, index=False, mode="a", header=True)
 
-    def export_kml(self, meas, path):
+    def export_kml(self, meas, path, palette='jet', arrow_scale=None, v_min=None, v_max=None):
         """Create KML file for MAP.
 
-        Parameters:
-            meas: Measurement
-            path: str
+        Parameters
+        ----------
+        meas: Measurement
+            Object of Measurement class
+        path: str
+            Path to save kml file
+        palette: str
+            Cmap palette to use for arrows color bar
+        arrow_scale: float
+            Equivalent scale (in meter) for 1m/s velocity
+        v_min: float
+            Min velocity of the gradient cbar
+        v_max: float
+            Max velocity of the gradient cbar
         """
 
         kml = simplekml.Kml(open=1)
         # Create a shiptrack for each checked transect
         lat = np.nan
         lon = np.nan
+
         for transect_idx in meas.checked_transect_idx:
             lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
             lon = lon[np.logical_not(np.isnan(lon))]
@@ -1878,11 +1899,228 @@ class MAP(object):
 
         # Get utm zone
         _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-        # Average ship track
-        lat, lon = utm.to_latlon(self.x, self.y, zone_number, zone_letter)
-        line_name = "MAP average ship track"
+
+        # Plot mean section
+        x = copy.deepcopy(self.x)
+        y = copy.deepcopy(self.y)
+        lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
         lon_lat = tuple(zip(lon, lat))
-        lin = kml.newlinestring(name=line_name, coords=lon_lat)
+        lin = kml.newlinestring(name="MAP averaged cross-section", coords=lon_lat)
         lin.style.linestyle.color = "ff0000ff"
 
+        # Get mid ensemble coordinates
+        x_kml = (self.x[1:] + self.x[:-1]) / 2
+        y_kml = (self.y[1:] + self.y[:-1]) / 2
+        lat_vec, lon_vec = utm.to_latlon(x_kml, y_kml, zone_number, zone_letter)
+
+        if arrow_scale is None or v_min is None or v_max is None:
+            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(lat=lat, lon=lon)
+        else:
+            u_mean, v_mean, vel_norm = self.auto_arrow()
+
+        # Folder to save water velocity arrows
+        w_folder = kml.newfolder(name="Water velocity")
+
+        # Get color
+        cmap = plt.get_cmap(palette)
+        norm = mcolors.Normalize(vmin=v_min,
+                                 vmax=v_max)
+        colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
+
+        # Mean velocity on each ensemble
+        u_mean = np.where(np.isnan(u_mean), 0, u_mean)
+        v_mean = np.where(np.isnan(v_mean), 0, v_mean)
+
+        for i in range(len(u_mean)):
+            r, g, b, a = colors[i]
+            self.plot_arrow(w_folder, (lon_vec[i], lat_vec[i]), u_mean[i], v_mean[i], "Water Velocity " + str(i),
+                            arrow_scale, color=simplekml.Color.rgb(r, g, b, a))
+
         kml.save(path)
+
+    def auto_arrow(self, lat=None, lon=None, meas=None):
+        """Create KML file for MAP.
+
+        Parameters
+        ----------
+        lat: Measurement
+            'left' or 'right'
+        lon: str
+            Path to save kml file
+        meas: Measurement
+            Objet of Measurement class
+
+        Returns
+        ----------
+        u_mean: array
+            Mean North velocity on each vertical
+        v_mean: array
+            Mean East velocity on each vertical
+        vel_norm: array
+            Norm of mean velocity on each vertical
+        arrow_length_m: float
+            Automatic arrow size for 1m/s velocity
+        v_min: float
+            Automatic vmin value for arrows cbar
+        v_max: float
+            Automatic vmax value for arrows cbar
+
+        """
+        # Get mean velocity of each ensemble
+        direction_section = np.arctan2(self.slope, 1)
+        u = self.streamwise_velocity * np.sin(
+            direction_section
+        ) + self.transverse_velocity * np.cos(direction_section)
+        v = self.transverse_velocity * np.sin(
+            direction_section
+        ) - self.streamwise_velocity * np.cos(direction_section)
+
+        u = u * -1 * self._unit
+        v = v * -1 * self._unit
+        u_mean = np.nanmean(u, axis=0)
+        v_mean = np.nanmean(v, axis=0)
+
+        # Define length
+        vel_norm = np.sqrt(u_mean ** 2 + v_mean ** 2)
+
+        if lat is None or lon is None:
+            if meas is not None:
+                transect_idx = meas.checked_transect_idx[0]
+                lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
+                lon = lon[np.logical_not(np.isnan(lon))]
+                lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
+                lat = lat[np.logical_not(np.isnan(lat))]
+                _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
+                x = copy.deepcopy(self.x)
+                y = copy.deepcopy(self.y)
+                lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
+            else:
+                return u_mean, v_mean, vel_norm
+
+        # Default arrow length : half the width of the section
+        arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
+        start_point = utm.from_latlon(lat[0], lon[0],
+                                      force_zone_number=zone_number,
+                                      force_zone_letter=zone_letter)
+        end_point = utm.from_latlon(lat[0] + arrow_length, lon[0],
+                                    force_zone_number=zone_number,
+                                    force_zone_letter=zone_letter)
+        arrow_length_m = sfrnd(
+            np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2),
+            2
+        )
+
+        v_min = 0
+        v_max = np.nanmax(vel_norm)
+
+        return u_mean, v_mean, vel_norm, arrow_length_m, v_max, v_min
+
+    def plot_arrow(self, folder, coord_start, ve, vn, name, arrow_scale, color=None):
+        """
+        Draw an arrow based on the North and East speed components.
+
+        Parameters
+        ----------
+        folder: simplekml object
+            kml folder to fold arrow (water velocity or moving-bed velocity)
+        coord_start: tuple
+            Arrow starting point coordinates (longitude, latitude)
+        ve: float
+            East velocity component
+        vn: float
+            North velocity component
+        name: string
+            Name of the arrow
+        color: string
+            Kml Hex color of the arrow
+        """
+        distance = arrow_scale * np.sqrt(ve ** 2 + vn ** 2)
+        coord_end = self.compute_new_coordinates(start_point=coord_start, distance=distance,
+                                                 bearing=math.atan2(ve, vn))
+
+        # Creation of the LineString tag for the arrow line
+        line = folder.newlinestring(name=name, coords=[coord_start, coord_end])
+        line.style.linestyle.width = 2
+
+        # Creating the triangle at the tip of the arrow
+        arrow_polygon = folder.newpolygon(name=name)
+        arrow_coordinates_base = self.compute_arrow_coordinates_base(coord_start, coord_end, ve, vn)
+        arrow_polygon.outerboundaryis = arrow_coordinates_base
+        arrow_polygon.style.linestyle.width = 2
+
+        if color is not None:
+            line.style.linestyle.color = color
+            arrow_polygon.style.linestyle.color = color
+
+    @staticmethod
+    def compute_arrow_coordinates_base(coord_start, coord_end, vx, vy):
+        """
+        Computes the coordinates of the points forming the angles of an arrow from the base.
+
+        Parameters
+        ----------
+        coord_start: tuple
+            Coordinates of the base of the arrow
+        coord_end: tuple
+            Coordinates of the head of the arrow
+        vx: float
+            East velocity component
+        vy: float
+            North velocity component
+
+        Returns
+        ----------
+        arrow_coordinates: list(tuple)
+            A list of tuples representing the coordinates of the points
+            forming the head of the arrow
+        """
+        # Calculating the angle in radians from the speed components
+        arrow_angle = math.atan2(vy, vx)
+
+        # Coordinates of the arrowhead
+        x_base, y_base = (0.2 * coord_start[0] + 0.8 * coord_end[0], 0.2 * coord_start[1] + 0.8 * coord_end[1])
+
+        head_distance = np.sqrt((coord_end[0] - x_base) ** 2 + (coord_end[1] - y_base) ** 2)
+        head_size = head_distance * math.cos(math.radians(60))
+        base_point2 = (
+            x_base - head_size * math.sin(arrow_angle),
+            y_base + head_size * math.cos(arrow_angle)
+        )
+        base_point3 = (
+            x_base + head_size * math.sin(arrow_angle),
+            y_base - head_size * math.cos(arrow_angle)
+        )
+
+        # Coordinates of the points forming the arrowhead
+        arrow_coordinates = [coord_end, base_point2, coord_end, base_point3]
+
+        return arrow_coordinates
+
+    @staticmethod
+    def compute_new_coordinates(start_point, distance, bearing):
+        """
+        Calculates the coordinates of the points forming the angles of an arrow from the base.
+
+        Parameters
+        ----------
+        start_point: tuple
+            Coordinates of the tail of the arrow
+        distance: float
+            Distance (in meters) to extend the arrow
+        bearing: float
+            Orientation of the arrow
+
+        Returns
+        ----------
+        coord_end: tuple
+            Coordinates of the head of the arrow
+        """
+        earth_radius = 6371000
+        lat1, lon1 = math.radians(start_point[1]), math.radians(start_point[0])
+        d_over_earth_radius = distance / earth_radius
+        lat2 = math.asin(math.sin(lat1) * math.cos(d_over_earth_radius) +
+                         math.cos(lat1) * math.sin(d_over_earth_radius) * math.cos(bearing))
+
+        lon2 = lon1 + math.atan2(math.sin(bearing) * math.sin(d_over_earth_radius) * math.cos(lat1),
+                                 math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2))
+        return math.degrees(lon2), math.degrees(lat2)
