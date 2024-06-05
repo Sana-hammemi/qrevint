@@ -471,10 +471,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             with open(options_file, "r") as f:
                 self.agency_options = json.load(f)
 
-            # sys.exit()
-
         # Setting file for settings to carry over from one session to the next
-        self.settingsFile = "QRev_Settings"
+        self.check_legacy()
+        self.settingsFile = "QRev/QRev_Settings"
         # Create settings object which contains the default values from
         # previous use
         self.sticky_settings = SSet(self.settingsFile)
@@ -1269,6 +1268,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.close()
         else:
             self.agreement = True
+
+    @staticmethod
+    def check_legacy():
+        """Check to see if settings file is present in appdata
+        directory."""
+
+        app_data = os.getenv("APPDATA")
+        legacy_sticky = os.path.join(os.getenv("APPDATA"), "QRev_Settings.json")
+
+        if not os.path.isdir(os.path.join(app_data, "QRev")):
+            os.mkdir(os.path.join(app_data, "QRev"))
+
+        if os.path.isfile(legacy_sticky):
+            shutil.move(
+                legacy_sticky, os.path.join(app_data, "QRev", "QRev_Settings.json")
+            )
 
     @staticmethod
     def get_icon():
@@ -16081,8 +16096,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_map_cell_width.blockSignals(True)
                 if user_width is not None:
                     user_width = user_width / self.units["L"]
-                    if np.round(user_width, 3) - np.round(cell_width,
-                                                          3) >= -0.01:
+                    if np.round(user_width, 3) - np.round(cell_width, 3) >= -0.01:
                         cell_width = user_width
                     else:
                         self.popup_message(
@@ -16101,8 +16115,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.ed_map_cell_height.blockSignals(True)
                 if user_height is not None:
                     user_height = user_height / self.units["L"]
-                    if np.round(user_height, 3) - np.round(cell_height,
-                                                           3) >= -0.01:
+                    if np.round(user_height, 3) - np.round(cell_height, 3) >= -0.01:
                         cell_height = user_height
                     else:
                         self.popup_message(
@@ -16136,8 +16149,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 if self.map_change is False and self.meas.map is not None:
                     for key in self.map_current_settings:
-                        if self.map_settings[key] != self.map_current_settings[
-                            key]:
+                        if self.map_settings[key] != self.map_current_settings[key]:
                             if key in [
                                 # "cb_map_interpolation",
                                 "ed_map_cell_width",
@@ -16161,10 +16173,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Apply changes
                 if change_data:
                     self.meas.compute_map(
-                        node_horizontal_user=self.map_settings[
-                            "ed_map_cell_width"],
-                        node_vertical_user=self.map_settings[
-                            "ed_map_cell_height"],
+                        node_horizontal_user=self.map_settings["ed_map_cell_width"],
+                        node_vertical_user=self.map_settings["ed_map_cell_height"],
                         extrap_option=self.map_settings["cb_map_top_bottom"],
                         edges_option=self.map_settings["cb_map_edges"],
                         # interp_option=self.map_settings["cb_map_interpolation"],
@@ -17733,6 +17743,7 @@ if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
 # Main
 # ====
 if __name__ == "__main__":
+
     mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     # splash_pix = QtGui.QPixmap('QRevInt_Splash.png')
