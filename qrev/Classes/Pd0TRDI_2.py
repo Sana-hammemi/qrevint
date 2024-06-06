@@ -2179,6 +2179,7 @@ class Inst(object):
         self.t_matrix = np.tile([np.nan], [4, 4])
         self.demod = nans((n_ensembles,))
         self.serial_number = np.nan
+        self.up_down = [""] * n_ensembles
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -2231,6 +2232,12 @@ class Inst(object):
                 self.xducer[i_ens] = "Attached"
             else:
                 self.xducer[i_ens] = "n/a"
+
+            val = int(bitls[0], 2)
+            if val == 0:
+                self.up_down[i_ens] = "D"
+            elif val == 1:
+                self.up_down[i_ens] = "U"
 
             # Convert system_configuration_ms to individual bits
             bitms = "{0:08b}".format(data["fixed_leader"]["system_configuration_ms"])
