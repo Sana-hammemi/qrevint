@@ -148,6 +148,12 @@ class QAData(object):
                 self.q_total_threshold_caution = 10
             self.q_total_threshold_warning = meas_struct.qa.qTotalThresholdWarning
 
+            if self.q_total_threshold_warning < self.q_total_threshold_caution:
+                temp = np.copy(self.q_total_threshold_warning)
+                self.q_total_threshold_warning = np.copy(
+                    self.q_total_threshold_caution)
+                self.q_total_threshold_caution = temp
+
             # Initialize instance variables
             self.transects = dict()
             self.transects["duration"] = meas_struct.qa.transects.duration
