@@ -1120,7 +1120,7 @@ class Oursin(object):
             u_water=self.u_invalid_water_user_list,
             cov_68=self.cov_68,
         )
-        self.dsm_edges_u(meas)
+        # self.dsm_edges_u(meas)
 
     @staticmethod
     def compute_combined_uncertainty(

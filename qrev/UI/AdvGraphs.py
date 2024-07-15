@@ -1588,7 +1588,7 @@ class AdvGraphs(object):
                 x_1d = np.copy(self.x)
 
             # If discharge data are provided, expanded data with extrapolated values
-            if self.show_unmeasured and self.x_axis_type == "L":
+            if self.show_unmeasured:
                 (
                     expanded_cell_size,
                     expanded_cell_depth,
@@ -3062,7 +3062,8 @@ class AdvGraphs(object):
             beam_depths = depth_selected.depth_processed_m
             if np.alltrue(np.isnan(beam_depths)):
                 return
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if self.x_axis_type == "L":
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
@@ -3575,8 +3576,12 @@ class AdvGraphs(object):
                 zorder=3,
             )
         else:
+            x_datetime = []
+            for timestamp in x:
+                x_datetime.append(datetime.utcfromtimestamp(timestamp))
+            x = np.array(x_datetime)
             self.expanded_x = x
-            ax.plot(x, depth * self.units["L"], color="k")
+            ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
 
         if self.transect is not None:
             depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
@@ -3605,7 +3610,7 @@ class AdvGraphs(object):
                         linewidth=0.5,
                     )
                 else:
-                    ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+                    ax.plot(self.expanded_x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
 
             # Upper bound of measured depth cells
             y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
@@ -3627,7 +3632,7 @@ class AdvGraphs(object):
                 ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
             # Extrapolated data plotting additions
-            if show_edge_speed and self.x_axis_type == "L":
+            if show_edge_speed:
                 top_valid = []
                 bottom_valid = []
 
@@ -3673,8 +3678,9 @@ class AdvGraphs(object):
                     color="w",
                     linestyle="dotted",
                 )
-                # Plot edge contours
-                self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+                # if self.x_axis_type == "L":
+                    # Plot edge contours
+                    # self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
 
         else:
             axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
