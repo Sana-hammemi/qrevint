@@ -519,6 +519,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout_84.addLayout(self.horizontalLayout_82)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_84.addItem(spacerItem)
+        self.label_time_zone = QtWidgets.QLabel(self.tab_summary_premeasurement)
+        self.label_time_zone.setObjectName("label_time_zone")
+        self.horizontalLayout_84.addWidget(self.label_time_zone)
+        self.ed_time_zone = QtWidgets.QLineEdit(self.tab_summary_premeasurement)
+        self.ed_time_zone.setObjectName("ed_time_zone")
+        self.horizontalLayout_84.addWidget(self.ed_time_zone)
         self.horizontalLayout_84.setStretch(3, 4)
         self.gridLayout_7.addLayout(self.horizontalLayout_84, 2, 0, 1, 1)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
@@ -4767,6 +4773,7 @@ class Ui_MainWindow(object):
         self.label_stage_start.setText(_translate("MainWindow", "Stage Start:"))
         self.label_stage_end.setText(_translate("MainWindow", "Stage End:"))
         self.label_stage_meas.setText(_translate("MainWindow", "Measurement Stage:"))
+        self.label_time_zone.setText(_translate("MainWindow", "Time Zone:"))
         self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_premeasurement), _translate("MainWindow", "Premeasurement"))
         self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_settings), _translate("MainWindow", "Settings"))
         self.tab_summary.setTabText(self.tab_summary.indexOf(self.tab_summary_adcp), _translate("MainWindow", "ADCP"))
@@ -5141,9 +5148,8 @@ class Ui_MainWindow(object):
         self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
         self.actionShow_Extrapolated.setText(_translate("MainWindow", "Show_Extrapolated"))
         self.actionShow_Extrapolated.setToolTip(_translate("MainWindow", "Show extrapolated speeds"))
-
-
 import qrev.UI.dsm_rc
+
 
 if __name__ == "__main__":
     import sys

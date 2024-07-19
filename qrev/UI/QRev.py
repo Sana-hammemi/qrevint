@@ -467,7 +467,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
 
             config = Config()
-            config.export_config()
+            if __company__ == "USGS":
+                config.export_config()
+            else:
+                config.export_international_config()
+
             with open(options_file, "r") as f:
                 self.agency_options = json.load(f)
 
@@ -894,14 +898,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ss = self.sticky_settings.get("PDFSummary")
                 self.pdf_setting = ss
             else:
-                self.pdf_setting = dateformat(
-                    self.agency_options["PDFSummary"]["default"]
-                )
+                self.pdf_setting = self.agency_options["PDFSummary"]["default"]
+ 
         except KeyError:
             self.sticky_settings.new(
                 "PDFSummary", self.agency_options["PDFSummary"]["default"]
             )
-            self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
+            self.pdf_setting = self.agency_options["PDFSummary"]["default"]
+
+        # Time zone
+        if "TimeZone" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: TimeZone parameter not found. Time zone not required."))
+            self.time_zone_required = False
+        elif "required" in self.agency_options["TimeZone"].keys():
+            self.time_zone_required = self.agency_options["TimeZone"]["required"]
+        else:
+            self.time_zone_required = False
 
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
@@ -1333,61 +1345,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def set_qrevint_ui(self):
         """If QRevInt set background of UI to blue."""
 
-        # Todo fix toolbar color.
-        # set main window pallete
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
-        brush.setStyle(QtCore.Qt.NoBrush)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
-        brush.setStyle(QtCore.Qt.NoBrush)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 128))
-        brush.setStyle(QtCore.Qt.NoBrush)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
-        self.setPalette(palette)
-
-        self.setStyleSheet("QToolBar{background: solid rgb(240, 240, 240)}")
-
-    def set_qrevint_ui(self):
-        """If QRevInt set background of UI to blue."""
-
         # set main window pallete
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
@@ -1489,6 +1446,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 "LeftRightFlowDirDiff"
                             ]["threshold"],
                             date_format=self.date_format,
+                            time_zone_required=self.time_zone_required,
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1514,6 +1472,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             "LeftRightFlowDirDiff"
                         ]["threshold"],
                         date_format=self.date_format,
+                        time_zone_required=self.time_zone_required,
                     )
 
             # Load and process TRDI data
@@ -1539,6 +1498,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             "LeftRightFlowDirDiff"
                         ]["threshold"],
                         date_format=self.date_format,
+                        time_zone_required=self.time_zone_required,
                     )
 
             # Load QRev data
@@ -1582,6 +1542,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 # Process QRev data
                 with self.wait_cursor():
                     if msg_box.clickedButton() == view_btn:
+                        # View
                         self.meas = Measurement(
                             in_file=mat_data,
                             source="QRev",
@@ -1590,6 +1551,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             gps_quality_threshold=self.gps_quality_threshold,
                         )
                     elif msg_box.clickedButton() == reprocess_btn:
+                        # Reprocess
                         self.meas = Measurement(
                             in_file=mat_data,
                             source="QRev",
@@ -1605,6 +1567,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                                 "LeftRightFlowDirDiff"
                             ]["threshold"],
                             date_format=self.date_format,
+                            time_zone_required=self.time_zone_required,
                         )
 
                 # Settings based on measurement settings
@@ -2525,6 +2488,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_stage_start.editingFinished.connect(self.update_stage_start)
                     self.ed_stage_end.editingFinished.connect(self.update_stage_end)
                     self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
+                    self.ed_time_zone.editingFinished.connect(self.update_time_zone)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust
                     )
@@ -4398,24 +4362,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         font.setPointSize(13)
         self.label_site_name.setFont(font)
         self.label_site_number.setFont(font)
+        self.label_time_zone.setFont(font)
         self.ed_site_name.setText(self.meas.station_name)
         if self.meas.qa.user["sta_name"]:
-            self.label_site_name.setStyleSheet("background: #ffcc00")
+            self.label_site_name.setStyleSheet("background-color: #ffcc00")
             self.label_site_name.setStyleSheet("QToolTip{font: 12pt}")
             self.label_site_name.setToolTip(self.tr("Missing site name."))
         else:
-            self.label_site_name.setStyleSheet("background: white")
+            self.label_site_name.setStyleSheet("background-color: white")
             self.label_site_name.setToolTip("")
         try:
             self.ed_site_number.setText(self.meas.station_number)
         except TypeError:
             self.ed_site_number.setText("")
         if self.meas.qa.user["sta_number"]:
-            self.label_site_number.setStyleSheet("background: #ffcc00")
+            self.label_site_number.setStyleSheet("background-color: #ffcc00")
             self.label_site_number.setStyleSheet("QToolTip{font: 12pt}")
             self.label_site_number.setToolTip(self.tr("Missing site name."))
         else:
-            self.label_site_number.setStyleSheet("background: white")
+            self.label_site_number.setStyleSheet("background-color: white")
             self.label_site_number.setToolTip("")
 
         self.ed_persons.setText(self.meas.persons)
@@ -4433,6 +4398,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ed_stage_meas.setText(
             "{:3.4f}".format(self.meas.stage_meas_m * self.units["L"])
         )
+
+        self.ed_time_zone.setText(self.meas.time_zone)
+
+        try:
+            self.ed_time_zone.setText(self.meas.time_zone)
+            if self.meas.qa.user["time_zone"]:
+                self.label_time_zone.setStyleSheet("background-color: #ffcc00")
+                self.label_time_zone.setStyleSheet("QToolTip{font: 12pt}")
+                self.label_time_zone.setToolTip(self.tr("Missing time zone."))
+            else:
+                self.label_time_zone.setStyleSheet("background-color: white")
+                self.label_time_zone.setToolTip("")
+        except TypeError:
+            self.ed_time_zone.setText("")
+            self.label_time_zone.setStyleSheet("background-color: white")
+            self.label_time_zone.setToolTip("")
 
         # Setup table
         tbl = self.table_premeas
@@ -4687,6 +4668,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         stage = self.check_numeric_input(self.ed_stage_meas)
         if stage is not None:
             self.meas.stage_meas_m = stage / self.units["L"]
+        self.main_premeasurement_table()
+
+    def update_time_zone(self):
+        """Records the time zone entered by the user. Value not used in any compuations"""
+
+        self.meas.time_zone = self.ed_time_zone.text()
         self.main_premeasurement_table()
 
     def main_settings_table(self):

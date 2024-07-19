@@ -56,7 +56,7 @@ class Config:
             "Units": {"show": True, "default": "SI"},
             "ColorMap": {"show": True, "default": "viridis"},
             "RatingPrompt": {"show": True, "default": False},
-            "SaveStyleSheet": {"show": True, "default": True},
+            "SaveStyleSheet": {"show": False, "default": False},
             "ExtrapWeighting": {"show": True, "default": True},
             "FilterUsingMeasurement": {"show": True, "default": False},
             "Uncertainty": {"show": True, "default": "Oursin"},
@@ -72,6 +72,8 @@ class Config:
             "LeftRightFlowDirDiff": {"threshold": 8.1},
             "PDFSummary": {"show": True, "default": "Prompt"},
             "DateFormat": {"show": True, "default": "y.m.d"},
+            "TimeZone": {"required": False},
+            "PercentMeasured": {"show": False}
         }
         path = os.path.join(os.getcwd(), "QRev.cfg")
 

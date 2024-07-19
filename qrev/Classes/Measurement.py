@@ -132,6 +132,7 @@ class Measurement(object):
         excluded=None,
         water_dir_diff_threshold=8.1,
         date_format="%Y.%m.%d",
+        time_zone_required=False
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -226,6 +227,9 @@ class Measurement(object):
                 "RioPro": excluded["RioPro"],
                 "M9": excluded["M9"],
             }
+        self.time_zone_required = time_zone_required
+        self.time_zone = ""
+
 
         # Load data from selected source
         if source == "QRev":
@@ -892,6 +896,16 @@ class Measurement(object):
                 self.meas_number = ""
             else:
                 self.meas_number = meas_struct.meas_number
+        if hasattr(meas_struct, "time_zone_required"):
+            self.time_zone_required = bool(meas_struct.time_zone_required)
+            if len(meas_struct.time_zone) == 0:
+                self.time_zone = ""
+            else:
+                self.time_zone = meas_struct.time_zone
+        else:
+            self.time_zone_required = False
+            self.time_zone = ""
+            
         if hasattr(meas_struct, "persons"):
             if len(meas_struct.persons) == 0:
                 self.persons = ""

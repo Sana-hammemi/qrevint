@@ -1213,7 +1213,7 @@
                 </layout>
                </item>
                <item row="2" column="0">
-                <layout class="QHBoxLayout" name="horizontalLayout_84" stretch="0,0,0,4">
+                <layout class="QHBoxLayout" name="horizontalLayout_84" stretch="0,0,0,4,0,0">
                  <item>
                   <layout class="QHBoxLayout" name="horizontalLayout_81">
                    <item>
@@ -1268,6 +1268,16 @@
                     </size>
                    </property>
                   </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_time_zone">
+                   <property name="text">
+                    <string>Time Zone:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="ed_time_zone"/>
                  </item>
                 </layout>
                </item>
@@ -7150,7 +7160,7 @@
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_66" stretch="1,1,1,6,1">
+           <layout class="QHBoxLayout" name="horizontalLayout_66" stretch="1,1,1,6,1,0">
             <item>
              <widget class="QLabel" name="txt_edi_offset">
               <property name="font">
@@ -7200,7 +7210,7 @@
               </property>
              </spacer>
             </item>
-			<item>
+            <item>
              <widget class="QCheckBox" name="cb_edi_pdf">
               <property name="font">
                <font>

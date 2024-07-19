@@ -290,6 +290,10 @@ class QAData(object):
             self.user["messages"] = self.make_list(meas_struct.qa.user.messages)
             self.user["sta_name"] = bool(meas_struct.qa.user.staName)
             self.user["sta_number"] = bool(meas_struct.qa.user.staNumber)
+            if hasattr(meas_struct.qa.user, "time_zone"):
+                self.user["time_zone"] = bool(meas_struct.qa.user.time_zone)
+            else:
+                self.user["time_zone"] = False
             self.user["status"] = meas_struct.qa.user.status
 
             # If QA check not available, get check from new QA
@@ -1986,6 +1990,16 @@ class QAData(object):
             )
             self.user["status"] = "caution"
             self.user["sta_number"] = True
+        
+        # Time zone
+        self.user["time_zone"] = False
+        if meas.time_zone_required:
+            if len(meas.time_zone) == 0:
+                self.user["messages"].append(
+                    ["Time Zone: Your agency requires the time zone to be entered.", 2, 2]
+                )
+                self.user["status"] = "caution"
+                self.user["time_zone"] = True
 
     def depths_qa(self, meas):
         """Apply quality checks to depth data.
