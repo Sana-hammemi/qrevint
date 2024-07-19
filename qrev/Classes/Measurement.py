@@ -2770,6 +2770,10 @@ class Measurement(object):
                 cross sectional area in m**2
             area_cov: float
                 coefficient of variation of are in percent
+            wetted_perimeter: float
+                wetted perimeter in m
+            hydraulic radius: float
+                hydraulic radius in m
             avg_boat_speed: float
                 average boat speed in mps
             avg_boat_course: float
@@ -2794,6 +2798,8 @@ class Measurement(object):
             "width_cov": np.array([np.nan] * (n_transects + 1)),
             "area": np.array([np.nan] * (n_transects + 1)),
             "area_cov": np.array([np.nan] * (n_transects + 1)),
+            "wetted_perimeter": np.array([np.nan] * (n_transects + 1)),
+            "hydraulic_radius": np.array([np.nan] * (n_transects + 1)),
             "avg_boat_speed": np.array([np.nan] * (n_transects + 1)),
             "avg_boat_course": np.array([np.nan] * n_transects),
             "avg_water_speed": np.array([np.nan] * (n_transects + 1)),
@@ -2899,6 +2905,33 @@ class Measurement(object):
                     [area_left, area_moving_boat, area_right]
                 )
 
+                # Compute wetted perimeter
+                wp = 0
+                for i in range(1, len(depth_a[in_transect_idx])):
+                    if (
+                        depth_a[in_transect_idx][i - 1] == 0
+                        or depth_a[in_transect_idx][i] == 0
+                    ):
+                        continue
+                    wp += np.sqrt(
+                        (station[in_transect_idx][i] - station[in_transect_idx][i - 1])
+                        ** 2
+                        + (
+                            depth_a[in_transect_idx][i]
+                            - depth_a[in_transect_idx][i - 1]
+                        )
+                        ** 2
+                    )
+                trans_prop["wetted_perimeter"][n] = wp
+
+                # Compute hydraulic radius
+                if np.isnan(wp) or wp == 0:
+                    hr = np.nan
+                else:
+                    hr = trans_prop["area"][n] / wp
+
+                trans_prop["hydraulic_radius"][n] = hr
+
                 # Compute average water speed
                 trans_prop["avg_water_speed"][n] = (
                     self.discharge[n].total / trans_prop["area"][n]
@@ -2950,6 +2983,12 @@ class Measurement(object):
                     np.nanstd(trans_prop["area"][checked_idx], ddof=1)
                     / trans_prop["area"][n]
                 ) * 100
+                trans_prop["wetted_perimeter"][n] = np.nanmean(
+                    trans_prop["wetted_perimeter"][checked_idx]
+                )
+                trans_prop["hydraulic_radius"][n] = np.nanmean(
+                    trans_prop["hydraulic_radius"][checked_idx]
+                )
                 trans_prop["avg_boat_speed"][n] = np.nanmean(
                     trans_prop["avg_boat_speed"][checked_idx]
                 )
@@ -4047,6 +4086,18 @@ class Measurement(object):
                     t_other, "Area", type="double", unitsCode="sqm"
                 ).text = "{:.4f}".format(temp)
 
+                # (4) WettedPerimeter
+                temp = other_prop["wetted_perimeter"][n]
+                ETree.SubElement(
+                    t_other, "WettedPerimeter", type="double", unitsCode="m"
+                ).text = "{:.4f}".format(temp)
+
+                # (4) HydraulicRadius
+                temp = other_prop["hydraulic_radius"][n]
+                ETree.SubElement(
+                    t_other, "HydraulicRadius", type="double", unitsCode="m"
+                ).text = "{:.4f}".format(temp)
+
                 # (4) MeanBoatSpeed
                 temp = other_prop["avg_boat_speed"][n]
                 ETree.SubElement(
@@ -4790,6 +4841,20 @@ class Measurement(object):
         temp = other_prop["area_cov"][-1]
         if not np.isnan(temp):
             ETree.SubElement(s_o, "AreaCOV", type="double").text = "{:.2f}".format(temp)
+
+        # (4) MeanWettedPerimeter
+        temp = other_prop["wetted_perimeter"][-1]
+        if not np.isnan(temp):
+            ETree.SubElement(
+                s_o, "MeanWettedPerimeter", type="double"
+            ).text = "{:.2f}".format(temp)
+
+        # (4) MeanHydraulicRadius
+        temp = other_prop["hydraulic_radius"][-1]
+        if not np.isnan(temp):
+            ETree.SubElement(
+                s_o, "MeanHydraulicRadius", type="double"
+            ).text = "{:.2f}".format(temp)
 
         # (4) MeanBoatSpeed
         temp = other_prop["avg_boat_speed"][-1]

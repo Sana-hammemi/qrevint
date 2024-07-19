@@ -147,6 +147,7 @@ class QAData(object):
             else:
                 self.q_total_threshold_caution = 10
             self.q_total_threshold_warning = meas_struct.qa.qTotalThresholdWarning
+
             if self.q_total_threshold_warning < self.q_total_threshold_caution:
                 temp = np.copy(self.q_total_threshold_warning)
                 self.q_total_threshold_warning = np.copy(self.q_total_threshold_caution)
@@ -647,6 +648,14 @@ class QAData(object):
                 start_edge.append(meas.transects[n].start_edge)
 
         num_checked = np.nansum(np.asarray(checked))
+
+        # Check minimum number of transects
+        if num_checked < meas.min_transects:
+            self.transects["status"] = "caution"
+            text = ("Transects: The number of selected transects is less than " + str(
+                meas.min_transects) + ";")
+            self.transects["messages"].append([text, 2, 0])
+            self.transects["duration"] = 1
 
         # Check duration
         total_duration = 0

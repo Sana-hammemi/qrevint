@@ -1033,10 +1033,10 @@ class MAP(object):
         # idx_top = np.nanargmin(valid_cell_centers, axis=0)
         # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
 
-        idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float("inf")), axis=0)
+        idx_top = np.argmin(
+            np.nan_to_num(valid_cell_centers, nan=float('inf')), axis=0)
         idx_bot = np.argmax(
-            np.nan_to_num(valid_cell_centers, nan=float("-inf")), axis=0
-        )
+            np.nan_to_num(valid_cell_centers, nan=float('-inf')), axis=0)
 
         # Preallocate variables
         n_ensembles = valid_data.shape[1]
@@ -2008,21 +2008,15 @@ class MAP(object):
 
         # Default arrow length : half the width of the section
         arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
-        start_point = utm.from_latlon(
-            lat[0], lon[0], force_zone_number=zone_number, force_zone_letter=zone_letter
-        )
-        end_point = utm.from_latlon(
-            lat[0] + arrow_length,
-            lon[0],
-            force_zone_number=zone_number,
-            force_zone_letter=zone_letter,
-        )
+        start_point = utm.from_latlon(lat[0], lon[0],
+                                      force_zone_number=zone_number,
+                                      force_zone_letter=zone_letter)
+        end_point = utm.from_latlon(lat[0] + arrow_length, lon[0],
+                                    force_zone_number=zone_number,
+                                    force_zone_letter=zone_letter)
         arrow_length_m = sfrnd(
-            np.sqrt(
-                (end_point[0] - start_point[0]) ** 2
-                + (end_point[1] - start_point[1]) ** 2
-            ),
-            2,
+            np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2),
+            2
         )
 
         v_min = 0

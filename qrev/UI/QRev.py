@@ -471,10 +471,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             with open(options_file, "r") as f:
                 self.agency_options = json.load(f)
 
-            # sys.exit()
-
         # Setting file for settings to carry over from one session to the next
-        self.settingsFile = "QRev_Settings"
+        self.check_legacy()
+        self.settingsFile = "QRev/QRev_Settings"
         # Create settings object which contains the default values from
         # previous use
         self.sticky_settings = SSet(self.settingsFile)
@@ -675,6 +674,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.tab_all.findChild(QtWidgets.QWidget, "tab_map")
                 )
             )
+
         self.kml_map = None
 
         # Autonomous GPS
@@ -1270,6 +1270,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.agreement = True
 
     @staticmethod
+    def check_legacy():
+        """Check to see if settings file is present in appdata
+        directory."""
+
+        app_data = os.getenv("APPDATA")
+        legacy_sticky = os.path.join(os.getenv("APPDATA"), "QRev_Settings.json")
+
+        if not os.path.isdir(os.path.join(app_data, "QRev")):
+            os.mkdir(os.path.join(app_data, "QRev"))
+
+        if os.path.isfile(legacy_sticky):
+            shutil.move(
+                legacy_sticky, os.path.join(app_data, "QRev", "QRev_Settings.json")
+            )
+
+    @staticmethod
     def get_icon():
         """Returns path to icon
 
@@ -1291,7 +1307,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         path = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__), "../..",
+                os.path.dirname(__file__),
+                "../..",
                 "docs",
                 "source",
                 "assets",
@@ -2399,7 +2416,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if __company__ == "USGS":
             landing_page = os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__), "../..",
+                    os.path.dirname(__file__),
+                    "../..",
                     "docs",
                     "_build",
                     "html",
@@ -2409,7 +2427,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             landing_page = os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__), "../..",
+                    os.path.dirname(__file__),
+                    "../..",
                     "docs_QRevInt",
                     "_build",
                     "html",
@@ -2445,7 +2464,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # will work when called by other projects using QRev.
         path = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__), "../..",
+                os.path.dirname(__file__),
+                "../..",
                 "docs",
                 "source",
                 "assets",
@@ -4027,6 +4047,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tr("Transect"),
             self.tr("Width" + "\n " + self.units["label_L"]),
             self.tr("Area" + "\n " + self.units["label_A"]),
+            self.tr("Wetted \n Perimeter " + self.units["label_L"]),
+            self.tr("Hydraulic \n Radius " + self.units["label_L"]),
             self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
             self.tr("Course Made \n Good" + " (deg)"),
             self.tr("Q/A" + " " + self.units["label_V"]),
@@ -4045,12 +4067,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             trans_prop = Measurement.compute_measurement_properties(self.meas)
             left_width = []
             left_area = []
+            left_wetted_perimeter = []
+            left_hydraulic_radius = []
             left_boat_speed = []
             left_boat_course = []
             left_water_speed = []
             left_water_dir = []
             right_width = []
             right_area = []
+            right_wetted_perimeter = []
+            right_hydraulic_radius = []
             right_boat_speed = []
             right_boat_course = []
             right_water_speed = []
@@ -4063,6 +4089,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if trans_prop["start_bank"][transect_id] == "Left":
                     left_width.append(trans_prop["width"][transect_id])
                     left_area.append(trans_prop["area"][transect_id])
+                    left_wetted_perimeter.append(
+                        trans_prop["wetted_perimeter"][transect_id]
+                    )
+                    left_hydraulic_radius.append(
+                        trans_prop["hydraulic_radius"][transect_id]
+                    )
                     left_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
                     left_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     left_water_speed.append(trans_prop["avg_water_speed"][transect_id])
@@ -4070,6 +4102,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     right_width.append(trans_prop["width"][transect_id])
                     right_area.append(trans_prop["area"][transect_id])
+                    right_wetted_perimeter.append(
+                        trans_prop["wetted_perimeter"][transect_id]
+                    )
+                    right_hydraulic_radius.append(
+                        trans_prop["hydraulic_radius"][transect_id]
+                    )
                     right_boat_speed.append(trans_prop["avg_boat_speed"][transect_id])
                     right_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     right_water_speed.append(trans_prop["avg_water_speed"][transect_id])
@@ -4101,6 +4139,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if not np.isnan(trans_prop["area"][transect_id]):
                     item = "{:10.2f}".format(
                         trans_prop["area"][transect_id] * self.units["A"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Transect wetted perimeter
+                col += 1
+                item = ""
+                if not np.isnan(trans_prop["wetted_perimeter"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["wetted_perimeter"][transect_id] * self.units["L"]
+                    )
+                tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Transect hydraulic radius
+                col += 1
+                item = ""
+                if not np.isnan(trans_prop["hydraulic_radius"][transect_id]):
+                    item = "{:10.2f}".format(
+                        trans_prop["hydraulic_radius"][transect_id] * self.units["L"]
                     )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
@@ -4186,6 +4244,50 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Average wetted perimeter
+            col += 1
+            item = "{:10.2f}".format(
+                trans_prop["wetted_perimeter"][n_transects] * self.units["L"]
+            )
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference wetted perimeter
+            if len(left_wetted_perimeter) > 0 and len(right_wetted_perimeter) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(
+                        np.nanmean(left_wetted_perimeter)
+                        - np.nanmean(right_wetted_perimeter)
+                    )
+                    * self.units["L"]
+                )
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Average hydraulic radius
+            col += 1
+            item = "{:10.2f}".format(
+                trans_prop["hydraulic_radius"][n_transects] * self.units["L"]
+            )
+            tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # LR difference hydraulic radius
+            if len(left_hydraulic_radius) > 0 and len(right_hydraulic_radius) > 0:
+                item = "{:10.2f}".format(
+                    np.abs(
+                        np.nanmean(left_hydraulic_radius)
+                        - np.nanmean(right_hydraulic_radius)
+                    )
+                    * self.units["L"]
+                )
+            else:
+                item = ""
+            tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+            tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average boat speed
             col += 1
             item = "{:6.2f}".format(
@@ -4261,7 +4363,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Set average row font to bold
             for col in range(ncols):
-                if col != 4:
+                if col != 6:
                     tbl.item(0, col).setFont(self.font_bold)
                 tbl.item(1, col).setFont(self.font_bold)
 
@@ -15452,8 +15554,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Create and save file to folder containing measurement data
         if ok_pressed and text != "":
             filename = text + ".pdf"
-            fullname = os.path.join(self.sticky_settings.get("Folder"),
-                                    filename)
+            fullname = os.path.join(self.sticky_settings.get("Folder"), filename)
 
             try:
                 edi_pdf = PDFEdiReport(fullname, self)
@@ -16751,39 +16852,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # rescaled using the data available from the plot axes. The
                     # reason the original plot method has priority is that for some
                     # graphs the tick scaling is customized.
-                    # try:
-                    # self.fig_calls[self.figs.index(self.current_fig)]()
+
                     self.change = True
                     self.tab_manager()
                     return
-                    # except:
-                    #     # Rescale the plot using data from the plot
-                    #     ydata = np.array([])
-                    #     xdata = np.array([])
-                    #     for line in self.current_axis.lines:
-                    #         ydata = np.hstack((ydata, line.get_ydata()))
-                    #         xdata = np.hstack((xdata, line.get_xdata()))
-                    #     ydata_max = np.nanmax(ydata) * 1.02
-                    #     ydata_min = 0 - np.nanmax(ydata) * 0.02
-                    #     xdata_max = np.nanmax(xdata) * 1.02
-                    #     xdata_min = 0 - np.nanmax(xdata) * 0.02
-                    #
-                    #     if np.isnan(ydata_max):
-                    #         ydata_max = 1
-                    #         ydata_min = 0
-                    #     if np.isnan(xdata_max):
-                    #         xdata_max = 1
-                    #         xdata_min = 0
-                    #
-                    #     if x_limits[0] < x_limits[1]:
-                    #         new_x_limits = [xdata_min, xdata_max]
-                    #     else:
-                    #         new_x_limits = [xdata_max, xdata_min]
-                    #
-                    #     if y_limits[0] < y_limits[1]:
-                    #         new_y_limits = [ydata_min, ydata_max]
-                    #     else:
-                    #         new_y_limits = [ydata_max, ydata_min]
+
                 else:
                     x_left = self.check_numeric_input(scale.ed_x_left, block=False)
                     x_right = self.check_numeric_input(scale.ed_x_right, block=False)
@@ -17670,6 +17743,7 @@ if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
 # Main
 # ====
 if __name__ == "__main__":
+
     mp.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     # splash_pix = QtGui.QPixmap('QRevInt_Splash.png')

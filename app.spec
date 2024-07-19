@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-from Classes import __app__
+from qrev import __app__
 icon = "docs\\source\\assets\\files\\" + __app__ + '.ico'
 
 added_files = [('docs\\_build\\html', 'qrev_documentation'),

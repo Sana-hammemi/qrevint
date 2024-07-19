@@ -5,7 +5,7 @@ equations used by TRDI and SonTek.
 Example
 -------
 
-from DischargeFunctions.top_discharge_extrapolation import
+from qrev.DischargeFunctions.top_discharge_extrapolation import
 
     trans_select = getattr(data_in.depths, data_in.depths.selected)
     num_top_method = {'Power': 0, 'Constant': 1, '3-Point': 2, None: -1}
