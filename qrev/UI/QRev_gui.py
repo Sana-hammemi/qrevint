@@ -3647,6 +3647,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout_66.addWidget(self.txt_edi_bank)
         spacerItem14 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_66.addItem(spacerItem14)
+        self.cb_edi_pdf = QtWidgets.QCheckBox(self.tab_edi)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.cb_edi_pdf.setFont(font)
+        self.cb_edi_pdf.setObjectName("cb_edi_pdf")
+        self.horizontalLayout_66.addWidget(self.cb_edi_pdf)
         self.cb_edi_topoquad = QtWidgets.QCheckBox(self.tab_edi)
         font = QtGui.QFont()
         font.setPointSize(14)
@@ -5009,6 +5015,7 @@ class Ui_MainWindow(object):
         self.gb_edi_transect.setTitle(_translate("MainWindow", "Select Transect"))
         self.txt_edi_offset.setText(_translate("MainWindow", "Zero Distance Offset (ft):"))
         self.txt_edi_bank.setText(_translate("MainWindow", " From Right Bank"))
+        self.cb_edi_pdf.setText(_translate("MainWindow", "Export PDF Report"))
         self.cb_edi_topoquad.setText(_translate("MainWindow", "Create TopoQuad File"))
         self.pb_edi_add_row.setText(_translate("MainWindow", "Add Row"))
         self.pb_edi_compute.setText(_translate("MainWindow", "Compute Stations"))
@@ -5134,8 +5141,9 @@ class Ui_MainWindow(object):
         self.actionGoogle_Earth.setToolTip(_translate("MainWindow", "Plot to Google Earth"))
         self.actionShow_Extrapolated.setText(_translate("MainWindow", "Show_Extrapolated"))
         self.actionShow_Extrapolated.setToolTip(_translate("MainWindow", "Show extrapolated speeds"))
-import qrev.UI.dsm_rc
 
+
+import qrev.UI.dsm_rc
 
 if __name__ == "__main__":
     import sys

@@ -7200,6 +7200,18 @@
               </property>
              </spacer>
             </item>
+			<item>
+             <widget class="QCheckBox" name="cb_edi_pdf">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Export PDF Report</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QCheckBox" name="cb_edi_topoquad">
               <property name="font">
