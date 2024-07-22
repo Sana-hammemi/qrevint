@@ -915,6 +915,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.time_zone_required = False
 
+        # Percent measured
+        if "PercentMeasured" not in self.agency_options.keys():
+            self.popup_message(self.tr(
+                "QRev.cfg: PercentMeasured parameter not found. PercentMeasured set to default."))
+            self.percent_measured_show = False
+        elif "show" in self.agency_options["PercentMeasured"].keys():
+            self.percent_measured_show = self.agency_options["PercentMeasured"]["show"]
+        else:
+            self.percent_measured_show = False
+
         self.manual_computational_settings = {
             "run_oursin": self.run_oursin,
             "use_measurement_thresholds": self.use_measurement_thresholds,
@@ -1208,6 +1218,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "border-bottom: 1px solid #D8D8D8;"
                 "background-color: white;"
                 "}"
+                "QToolTip{font: 12pt}"
             )
 
         # Used for command line interface
@@ -4007,17 +4018,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Setup table
         tbl = self.main_table_details
-        summary_header = [
-            self.tr("Transect"),
-            self.tr("Width" + "\n " + self.units["label_L"]),
-            self.tr("Area" + "\n " + self.units["label_A"]),
-            self.tr("Wetted \n Perimeter " + self.units["label_L"]),
-            self.tr("Hydraulic \n Radius " + self.units["label_L"]),
-            self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
-            self.tr("Course Made \n Good" + " (deg)"),
-            self.tr("Q/A" + " " + self.units["label_V"]),
-            self.tr("Avg Water \n Direction" + " (deg)"),
-        ]
+        if self.percent_measured_show:
+            summary_header = [self.tr("Transect"),
+                self.tr("Width" + "\n " + self.units["label_L"]),
+                self.tr("Area" + "\n " + self.units["label_A"]),
+                self.tr("Wetted \n Perimeter " + self.units["label_L"]),
+                self.tr("Hydraulic \n Radius " + self.units["label_L"]),
+                self.tr("Percent \n Measured"),
+                self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
+                self.tr("Course Made \n Good" + " (deg)"),
+                self.tr("Q/A" + " " + self.units["label_V"]),
+                self.tr("Avg Water \n Direction" + " (deg)"), ]
+
+        else:
+            summary_header = [
+                self.tr("Transect"),
+                self.tr("Width" + "\n " + self.units["label_L"]),
+                self.tr("Area" + "\n " + self.units["label_A"]),
+                self.tr("Wetted \n Perimeter " + self.units["label_L"]),
+                self.tr("Hydraulic \n Radius " + self.units["label_L"]),
+                self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
+                self.tr("Course Made \n Good" + " (deg)"),
+                self.tr("Q/A" + " " + self.units["label_V"]),
+                self.tr("Avg Water \n Direction" + " (deg)"),
+            ]
         ncols = len(summary_header)
         nrows = len(self.checked_transects_idx)
         tbl.setRowCount(nrows + 2)
@@ -4037,6 +4061,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             left_boat_course = []
             left_water_speed = []
             left_water_dir = []
+            left_percent_measured = []
             right_width = []
             right_area = []
             right_wetted_perimeter = []
@@ -4045,11 +4070,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             right_boat_course = []
             right_water_speed = []
             right_water_dir = []
+            right_percent_measured = []
 
             # Add transect data
             for row in range(nrows):
                 col = 0
                 transect_id = self.checked_transects_idx[row]
+                percent = (self.meas.discharge[transect_id].middle / self.meas.discharge[
+                    transect_id].total_uncorrected) * 100.
                 if trans_prop["start_bank"][transect_id] == "Left":
                     left_width.append(trans_prop["width"][transect_id])
                     left_area.append(trans_prop["area"][transect_id])
@@ -4063,6 +4091,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     left_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     left_water_speed.append(trans_prop["avg_water_speed"][transect_id])
                     left_water_dir.append(trans_prop["avg_water_dir"][transect_id])
+                    left_percent_measured.append(percent)
                 else:
                     right_width.append(trans_prop["width"][transect_id])
                     right_area.append(trans_prop["area"][transect_id])
@@ -4076,6 +4105,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     right_boat_course.append(trans_prop["avg_boat_course"][transect_id])
                     right_water_speed.append(trans_prop["avg_water_speed"][transect_id])
                     right_water_dir.append(trans_prop["avg_water_dir"][transect_id])
+                    right_percent_measured.append(percent)
 
                 # File/transect name
                 tbl.setItem(
@@ -4126,6 +4156,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     )
                 tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Percent measured
+                if self.percent_measured_show:
+                    col += 1
+                    item = ""
+                    if not np.isnan(self.meas.discharge[transect_id].middle):
+                        item = "{:10.1f}".format(percent)
+                    tbl.setItem(row + 2, col, QtWidgets.QTableWidgetItem(item))
+                    tbl.item(row + 2, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect average boat speed
                 col += 1
@@ -4252,6 +4291,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
             tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Percent measured
+            if self.percent_measured_show:
+                col += 1
+                discharge = Measurement.mean_discharges(self.meas)
+                percent = (discharge["mid_mean"] / discharge["uncorrected_mean"]) * 100
+                item = "{:10.1f}".format(percent)
+                tbl.setItem(0, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(0, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # LR difference hydraulic radius
+                if len(left_percent_measured) > 0 and len(right_percent_measured) > 0:
+                    item = "{:10.1f}".format(np.abs(
+                        np.nanmean(left_percent_measured) - np.nanmean(
+                            right_percent_measured)))
+                else:
+                    item = ""
+                tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
+                tbl.item(1, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
             # Average boat speed
             col += 1
             item = "{:6.2f}".format(
@@ -4327,8 +4385,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Set average row font to bold
             for col in range(ncols):
-                if col != 6:
+                try:
                     tbl.item(0, col).setFont(self.font_bold)
+                except AttributeError:
+                    pass
                 tbl.item(1, col).setFont(self.font_bold)
 
             tbl.item(self.transect_row + 2, 0).setFont(self.font_bold)
@@ -4365,8 +4425,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.label_time_zone.setFont(font)
         self.ed_site_name.setText(self.meas.station_name)
         if self.meas.qa.user["sta_name"]:
-            self.label_site_name.setStyleSheet("background-color: #ffcc00")
-            self.label_site_name.setStyleSheet("QToolTip{font: 12pt}")
+            self.label_site_name.setStyleSheet("background-color: #ffcc00;")
             self.label_site_name.setToolTip(self.tr("Missing site name."))
         else:
             self.label_site_name.setStyleSheet("background-color: white")
@@ -4377,7 +4436,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_site_number.setText("")
         if self.meas.qa.user["sta_number"]:
             self.label_site_number.setStyleSheet("background-color: #ffcc00")
-            self.label_site_number.setStyleSheet("QToolTip{font: 12pt}")
             self.label_site_number.setToolTip(self.tr("Missing site name."))
         else:
             self.label_site_number.setStyleSheet("background-color: white")
@@ -4405,7 +4463,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_time_zone.setText(self.meas.time_zone)
             if self.meas.qa.user["time_zone"]:
                 self.label_time_zone.setStyleSheet("background-color: #ffcc00")
-                self.label_time_zone.setStyleSheet("QToolTip{font: 12pt}")
                 self.label_time_zone.setToolTip(self.tr("Missing time zone."))
             else:
                 self.label_time_zone.setStyleSheet("background-color: white")
