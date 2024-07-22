@@ -132,8 +132,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     units: dict
         Dictionary containing units coversions and labels for length, area,
         velocity, and discharge
-    save_stylesheet: bool
-        Indicates whether to save a stylesheet with the measurement
     icon_caution: QtGui.QIcon
         Caution icon
     icon_warning: QtGui.QIcon
@@ -576,32 +574,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "FilterUsingMeasurement"
             ]["default"]
 
-        # Stylesheet setting
-        if "SaveStyleSheet" not in self.agency_options.keys():
-            self.popup_message(self.tr("QRev.cfg: SaveStyleSheet parameter not found."))
-            sys.exit()
-        if "show" not in self.agency_options["SaveStyleSheet"].keys():
-            self.popup_message(
-                self.tr("QRev.cfg SaveStyleSheet: show parameter not found.")
-            )
-            sys.exit()
-        if "default" not in self.agency_options["SaveStyleSheet"].keys():
-            self.popup_message(
-                self.tr("QRev.cfg SaveStyleSheet: default parameter not found.")
-            )
-            sys.exit()
-        try:
-            if self.agency_options["SaveStyleSheet"]["show"]:
-                ss = self.sticky_settings.get("StyleSheet")
-                self.save_stylesheet = ss
-            else:
-                self.save_stylesheet = self.agency_options["SaveStyleSheet"]["default"]
-        except KeyError:
-            self.sticky_settings.new(
-                "StyleSheet", self.agency_options["SaveStyleSheet"]["default"]
-            )
-            self.save_stylesheet = self.agency_options["SaveStyleSheet"]["default"]
-
         # Prompt for user rating
         if "RatingPrompt" not in self.agency_options.keys():
             self.popup_message(self.tr("QRev.cfg: RatingPrompt parameter not found."))
@@ -720,6 +692,42 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "ColorMap", self.agency_options["ColorMap"]["default"]
             )
             self.color_map = self.agency_options["ColorMap"]["default"]
+
+        # Discharge display digits
+        if "QDigits" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: QDigits " "parameter not found. Setting to 3 significant figures"))
+            self.q_digits_method = "sigfig"
+            self.q_digits_digits = 3
+
+        if "method" not in self.agency_options["QDigits"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg QDigits: " "method parameter not found. Setting to significant figures"))
+            self.q_digits_method = "sigfig"
+        else:
+            self.q_digits_method = self.agency_options["QDigits"]["method"]
+
+        if "digits" not in self.agency_options["QDigits"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg QDigits: " "digits parameter not found. Setting to default of 3"))
+            self.q_digits_digits = 3
+        else:
+            self.q_digits_method = self.agency_options["QDigits"]["digits"]
+
+        try:
+            ss = self.sticky_settings.get("QDigitsMethod")
+            self.q_digits_method = ss
+        except KeyError:
+            self.sticky_settings.new("QDigitsMethod",
+                self.agency_options["QDigits"]["method"])
+            self.q_digits_method = self.agency_options["QDigits"]["method"]
+
+        try:
+            ss = self.sticky_settings.get("QDigitsDigits")
+            self.q_digits_digits = ss
+        except KeyError:
+            self.sticky_settings.new("QDigitsDigits",
+                self.agency_options["QDigits"]["digits"])
+            self.q_digits_method = self.agency_options["QDigits"]["digits"]
 
         # Uncertainty model
         if "Uncertainty" not in self.agency_options.keys():
@@ -1757,18 +1765,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     # Save xml file
                     self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
 
-                    # Save stylesheet in measurement folder
-                    if self.save_stylesheet:
-                        meas_folder, _ = os.path.split(save_file.full_Name)
-                        dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
-
-                        if self.units["ID"] == "SI":
-                            stylesheet = "QRevStylesheet_si.xsl"
-                        else:
-                            stylesheet = "QRevStylesheet_english.xsl"
-
-                        self.export_stylesheet(stylesheet, dest)
-
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(
                     self,
@@ -2006,13 +2002,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.rb_checked.setChecked(True)
 
-        if not self.agency_options["SaveStyleSheet"]["show"]:
-            options.cb_stylesheet.hide()
-        if self.save_stylesheet:
-            options.cb_stylesheet.setChecked(True)
-        else:
-            options.cb_stylesheet.setChecked(False)
-
         if not self.agency_options["ExportCrossSection"]["show"]:
             options.cb_xs_export.hide()
         if self.xs_export:
@@ -2060,6 +2049,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             options.rb_viridis.setChecked(True)
         else:
             options.rb_jet.setChecked(True)
+
+        if self.q_digits_method == "sigfig":
+            options.rb_sigfig.setChecked(True)
+        else:
+            options.rb_decimal.setChecked(True)
+
+        options.ed_digits.setText("{:d}".format(self.q_digits_digits))
 
         if self.x_axis_type == "E":
             options.rb_opt_ensembles.setChecked(True)
@@ -2125,6 +2121,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.change = True
                             self.map_change = True
 
+                # Discharge display units options
+                if options.rb_sigfig.isChecked() and self.q_digits_method != "sigfig":
+                    self.q_digits_method = "sigfig"
+                    self.sticky_settings.set("QDigitsMethod", self.q_digits_method)
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                        self.map_change = True
+                elif options.rb_decimal.isChecked() and self.q_digits_method != "fixed":
+                    self.q_digits_method = "fixed"
+                    self.sticky_settings.set("QDigitsMethod", self.q_digits_method)
+                    if self.meas is not None:
+                        self.update_main()
+                        self.change = True
+                        self.map_change = True
+
+                digits = self.check_numeric_input(options.ed_digits)
+                if digits is not None:
+                    if int(digits) != self.q_digits_digits:
+                        self.q_digits_digits = int(digits)
+                        self.sticky_settings.set("QDigitsDigits", self.q_digits_digits)
+                        if self.meas is not None:
+                            self.update_main()
+                            self.change = True
+                            self.map_change = True
                 # X Axis
                 if options.rb_opt_ensembles.isChecked():
                     self.x_axis_type = "E"
@@ -2167,14 +2188,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.save_all = True
                 else:
                     self.save_all = False
-
-                # Stylesheet option
-                if options.cb_stylesheet.isChecked():
-                    self.save_stylesheet = True
-                    self.sticky_settings.set("StyleSheet", True)
-                else:
-                    self.save_stylesheet = False
-                    self.sticky_settings.set("StyleSheet", False)
 
                 # Prompt for user rating
                 if options.cb_rating.isChecked():
@@ -2420,44 +2433,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             landing_page = os.path.join(base_path, "qrev_documentation", "index.html")
             if os.path.exists(landing_page):
                 webbrowser.open("file://" + landing_page)
-
-    @staticmethod
-    def export_stylesheet(stylesheet, destination):
-        """Exports stylesheet on save.
-
-        Parameters:
-            stylesheet: str
-                stylesheet to use
-            destination: str
-                path to copy stylesheet to
-        """
-
-        # Code to call sphinx documentation adopted from SurfVelTool
-
-        # Use development-specific settings. Using __file__ path, so it
-        # will work when called by other projects using QRev.
-        path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../..",
-                "docs",
-                "source",
-                "assets",
-                "files",
-                stylesheet,
-            )
-        )
-
-        if os.path.exists(path):
-            shutil.copy2(path, destination)
-
-        else:
-            # Use production-specific settings
-            # PyInstaller creates a temp folder and stores path in _MEIPASS
-            base_path = sys._MEIPASS
-            path = os.path.join(base_path, "qrev_files", stylesheet)
-            if os.path.exists(path):
-                shutil.copy2(path, destination)
 
     def set_use_weighted(self):
         """Called by shortcut key cntrl+w toggle between use weighted and
@@ -17723,10 +17698,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_all.setCurrentIndex(0)
 
     def q_digits(self, q):
-        if self.agency_options["QDigits"]["method"] == "sigfig":
-            return sfrnd(q, self.agency_options["QDigits"]["digits"])
+        if self.q_digits_method == "sigfig":
+            return sfrnd(q, self.q_digits_digits)
         else:
-            return np.round(q, self.agency_options["QDigits"]["digits"])
+            return np.round(q, self.q_digits_digits)
 
     def default_folder(self):
         """Returns default folder.
