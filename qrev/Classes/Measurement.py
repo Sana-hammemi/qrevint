@@ -2877,41 +2877,50 @@ class Measurement(object):
                 # Get selected depth object
                 depth = getattr(transect.depths, transect.depths.selected)
                 depth_a = np.copy(depth.depth_processed_m)
-                depth_a[np.isnan(depth_a)] = 0
+                valid_idx = np.logical_not(np.isnan(depth_a))
+                valid_data_idx = in_transect_idx[valid_idx]
+
                 # Compute area of the moving-boat portion of the cross section
                 # using trapezoidal integration. This method is consistent with
                 # AreaComp but is different from QRev in Matlab
                 area_moving_boat = np.abs(
-                    np.trapz(depth_a[in_transect_idx], station[in_transect_idx])
-                )
-
+                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx]))
                 # Compute area of left edge
                 edge_type = transect.edges.left.type
+                edge_idx = QComp.edge_ensembles("left", transect)
+                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+                # Wetted perimeter computed as triangular edge unless rectangular specified
+                wp_left = np.sqrt(edge_depth ** 2 + transect.edges.left.distance_m ** 2)
                 coef = 1
                 if edge_type == "Triangular":
                     coef = 0.5
                 elif edge_type == "Rectangular":
                     coef = 1.0
+                    wp_left = edge_depth + transect.edges.left.distance_m
                 elif edge_type == "Custom":
                     coef = 0.5 + (transect.edges.left.cust_coef - 0.3535)
                 elif edge_type == "User Q":
                     coef = 0.5
-                edge_idx = QComp.edge_ensembles("left", transect)
-                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+
                 area_left = edge_depth * transect.edges.left.distance_m * coef
+
 
                 # Compute area of right edge
                 edge_type = transect.edges.right.type
+                edge_idx = QComp.edge_ensembles("right", transect)
+                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+                # Wetted perimeter computed as triangular edge unless rectangular specified
+                wp_right = np.sqrt(edge_depth ** 2 + transect.edges.left.distance_m ** 2)
                 if edge_type == "Triangular":
                     coef = 0.5
                 elif edge_type == "Rectangular":
                     coef = 1.0
+                    wp_right = edge_depth + transect.edges.left.distance_m
                 elif edge_type == "Custom":
                     coef = 0.5 + (transect.edges.right.cust_coef - 0.3535)
                 elif edge_type == "User Q":
                     coef = 0.5
-                edge_idx = QComp.edge_ensembles("right", transect)
-                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+
                 area_right = edge_depth * transect.edges.right.distance_m * coef
 
                 # Compute total cross sectional area
@@ -2921,21 +2930,24 @@ class Measurement(object):
 
                 # Compute wetted perimeter
                 wp = 0
-                for i in range(1, len(depth_a[in_transect_idx])):
+                for i in range(1, len(depth_a[valid_data_idx])):
                     if (
-                        depth_a[in_transect_idx][i - 1] == 0
-                        or depth_a[in_transect_idx][i] == 0
+                        depth_a[valid_data_idx][i - 1] == 0
+                        or depth_a[valid_data_idx][i] == 0
                     ):
                         continue
                     wp += np.sqrt(
-                        (station[in_transect_idx][i] - station[in_transect_idx][i - 1])
+                        (station[valid_data_idx][i] - station[valid_data_idx][i - 1])
                         ** 2
                         + (
-                            depth_a[in_transect_idx][i]
-                            - depth_a[in_transect_idx][i - 1]
+                            depth_a[valid_data_idx][i]
+                            - depth_a[valid_data_idx][i - 1]
                         )
                         ** 2
                     )
+
+                # Add wetted perimeter for the banks
+                wp = wp + wp_left + wp_right
                 trans_prop["wetted_perimeter"][n] = wp
 
                 # Compute hydraulic radius
