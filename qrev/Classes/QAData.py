@@ -616,6 +616,11 @@ class QAData(object):
 
         return list_out
 
+    @staticmethod
+    def guidance_prep(message_text, guidance_text):
+
+        return message_text + "\n" + " -- " + guidance_text + "\n\n"
+
     def transects_qa(self, meas):
         """Apply quality checks to transects
 
@@ -630,6 +635,7 @@ class QAData(object):
 
         # Initialize keys
         self.transects["messages"] = []
+        self.transects["guidance"] = []
         self.transects["recip"] = 0
         self.transects["sign"] = 0
         self.transects["duration"] = 0
@@ -659,6 +665,8 @@ class QAData(object):
             text = ("Transects: The number of selected transects is less than " + str(
                 meas.min_transects) + ";")
             self.transects["messages"].append([text, 2, 0])
+            guidance_text = "Collect additional transects until the total number of selected transects meets or exceeds the agency minimum recommended number and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation."
+            self.transects["guidance"].append(self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
             self.transects["duration"] = 1
 
         # Check duration
@@ -678,6 +686,10 @@ class QAData(object):
             )
             self.transects["messages"].append([text, 2, 0])
             self.transects["duration"] = 1
+            guidance_text = "Reduce the boat speed and/or collect additional transects until the total duration exceeds the agency minimum recommended duration and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation."
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
 
         # Check transects for missing ensembles
         left_invalid_exceeded = False
@@ -724,6 +736,10 @@ class QAData(object):
                         ]
                     )
                     self.transects["status"] = "caution"
+                    guidance_text = "Missing ensembles are typically due to communication problems between the instrument and the computer.  If the missing ensembles occur randomly and infrequently the measurement is likely unaffected by them. However, if the number of missing ensembles may affect the final discharge consider recollecting the data with a different computer/serial port/wireless communications/etc. If this measurement was made with an M9 or S5 download the data from the ADCP and use those data instead of the data stored on the computer by RiverSurveyor Live or RSQ."
+                    self.transects["guidance"].append(
+                        self.guidance_prep(self.transects["messages"][-1][0],
+                                           guidance_text))
 
                 # Invalid ensembles at left and/or right edge
                 boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
@@ -736,22 +752,6 @@ class QAData(object):
                 valid_depth = depth_selected.valid_data
                 valid_all = np.vstack([valid_bt, valid_wt, valid_depth])
                 valid = np.all(valid_all, axis=0)
-
-                # threshold = np.floor(0.05 * valid.shape[0])
-                # if transect.start_edge == "Left":
-                #     idx = np.where(np.logical_not(valid))
-                #     if idx[0].size > threshold:
-                #         left_invalid_exceeded = True
-                #     idx = np.where(np.logical_not(np.flip(valid)))
-                #     if idx[0].size > threshold:
-                #         right_invalid_exceeded = True
-                # else:
-                #     idx = np.where(np.logical_not(valid))
-                #     if idx[0].size > threshold:
-                #         right_invalid_exceeded = True
-                #     idx = np.where(np.logical_not(np.flip(valid)))
-                #     if idx[0].size > threshold:
-                #         left_invalid_exceeded = True
 
                 if transect.sensors is not None:
                     if hasattr(transect.sensors, "battery_voltage"):
@@ -769,30 +769,6 @@ class QAData(object):
                                     transect.file_name[:-4]
                                 )
 
-        # Message for invalid ensembles at left or right
-        # if left_invalid_exceeded:
-        #     self.transects["messages"].append(
-        #         [
-        #             "Transects: "
-        #             + " The number of invalid ensembles at the left"
-        #             + " edge exceeds 5 percent;",
-        #             2,
-        #             0,
-        #         ]
-        #     )
-        #     self.transects["status"] = "caution"
-        # if right_invalid_exceeded:
-        #     self.transects["messages"].append(
-        #         [
-        #             "Transects: "
-        #             + " The number of invalid ensembles at the right"
-        #             + " edge exceeds 5 percent;",
-        #             2,
-        #             0,
-        #         ]
-        #     )
-        #     self.transects["status"] = "caution"
-
         # Message for low battery
         if len(self.transects["batt_voltage"]) > 0:
             self.transects["status"] = "caution"
@@ -803,6 +779,9 @@ class QAData(object):
                 + str(batt_threshold)
             )
             self.transects["messages"].append([text, 2, 0])
+            guidance_text = """Low battery voltage may cause range issues with some ADCPs in some conditions. Evaluate the data carefully to ensure the data appear correct. If in the field, use a charged battery to recollect the data, if necessary."""
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
 
         # Check number of transects checked
         if num_checked == 0:
@@ -812,6 +791,13 @@ class QAData(object):
                 ["TRANSECTS: No transects selected;", 1, 0]
             )
             self.transects["number"] = 2
+            guidance_text = """For reasonably steady flow check a sufficient number or reciprocal 
+                            transects to achieve agency recommended minimum duration and number or 
+                            reciprocal transects. For rapidly varying flow check an appropriate number of 
+                            transects while trying to maintain reciprocal transects."""
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
+
         elif num_checked == 1:
             # Only one transect selected
             self.transects["status"] = "caution"
@@ -819,6 +805,10 @@ class QAData(object):
                 ["Transects: Only one transect selected;", 2, 0]
             )
             self.transects["number"] = 2
+            guidance_text = """Reciprocal transects are recommended to avoid potential directional bias. If flow is changing too rapidly for reciprocal transects add a comment to document the situation."""
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
+
         else:
             self.transects["number"] = num_checked
             if num_checked == 2:
@@ -835,6 +825,10 @@ class QAData(object):
                             0,
                         ]
                     )
+                    guidance_text = """Collecting additional reciprocal transects would reduce the random uncertainty associated with this measurement assuming near steady flow conditions.  """
+                    self.transects["guidance"].append(
+                        self.guidance_prep(self.transects["messages"][-1][0],
+                                           guidance_text))
 
             if num_checked < meas.min_transects:
                 self.transects["status"] = "caution"
@@ -843,6 +837,9 @@ class QAData(object):
                     "required minimum of " + str(meas.min_transects) + ";"
                 )
                 self.transects["messages"].append([text, 2, 0])
+                guidance_text = """Unless the flow is changing rapidly, collect additional transect to meet the agency minimum requirement. If conditions do not allow collection of additional transects, document the situation."""
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
 
             # Check for consistent sign
             q_positive = []
@@ -861,6 +858,9 @@ class QAData(object):
                         0,
                     ]
                 )
+                guidance_text = """Check the start bank for each transect. If the start banks are correct and the flow is rapidly changing to a reverse flow condition, consider breaking the measurement into multiple measurements to represent the conditions."""
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
 
             # Check for reciprocal transects
             num_left = start_edge.count("Left")
@@ -877,6 +877,9 @@ class QAData(object):
                         0,
                     ]
                 )
+                guidance_text = """Unless conditions require use of a single transect, transects should be collected in reciprocal pairs to reduce potential directional bias. Consider adding or removing a transect from the measurement to achieve reciprocal transects. """
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
 
         # Check for zero discharge transects
         q_zero = False
@@ -888,6 +891,9 @@ class QAData(object):
             self.transects["messages"].append(
                 ["TRANSECTS: One or more transects have zero Q;", 1, 0]
             )
+            guidance_text = """A zero discharge usually occurs when all ensembles have invalid depth, boat speed, or water speed. Changing the depth or boat reference may help. Otherwise the transect should not be included in the final discharge computation."""
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text))
 
     def system_tst_qa(self, meas):
         """Apply QA checks to system test.
@@ -900,6 +906,7 @@ class QAData(object):
 
         self.system_tst["messages"] = []
         self.system_tst["status"] = "good"
+        self.system_tst["guidance"] = []
 
         if "tab_systst" not in self.settings_dict:
             self.settings_dict["tab_systst"] = "Default"
@@ -909,6 +916,11 @@ class QAData(object):
             # No system test data recorded
             self.system_tst["status"] = "warning"
             self.system_tst["messages"].append(["SYSTEM TEST: No system test;", 1, 3])
+            guidance_text = "A system test is recommended to be completed prior to every discharge measurement to ensure the ADCP is operating properly. If still in the field, complete a system test."
+            self.system_tst["guidance"].append(
+                self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text)
+            )
+
         else:
             pt3_fail = False
             num_tests_with_failure = 0
@@ -962,6 +974,9 @@ class QAData(object):
                         3,
                     ]
                 )
+                guidance_text = "A failed PT3 test indicates there is potential electromagnetic interference. Errors in measured velocities caused by EMI tend to be a consistent bias (not related to true water velocity), so errors will be a greater percentage in lower velocities. EMI is more likely to occur on a StreamPro ADCP. To determine if EMI is affecting the measurement: 1) look for unusual patterns in the measured velocities, such as, higher velocities near the streambed, 2) use the Adv Graph tab and plot the average water track correlation contour plot and look for an increase in correlation with depth, 3) use the Adv Graph tab and plot the water track vertical velocity and look for a vertical pattern, such as, increasing negative or positive velocities towards the surface or streambed (a normal vertical velocity contour plot should look more random without vertical patterns). If any of these conditions are observed the measurement is affected and a different measurement site should be selected or the measurement at this site should be made with a different instrument."
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text))
 
             # Check for failed tests
             if num_tests_with_failure == len(meas.system_tst):
@@ -975,6 +990,10 @@ class QAData(object):
                         3,
                     ]
                 )
+                guidance_text = "If a system test fails, try repeating the test in calm water. If failures continue, proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably OK. However, if this ADCP continues to fail system tests at other sites, the ADCP should be evaluated and potentially sent to the manufacturer for their evaluation and repair."
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text))
+
             elif num_tests_with_failure > 0:
                 self.system_tst["status"] = "caution"
                 self.system_tst["messages"].append(
@@ -985,6 +1004,9 @@ class QAData(object):
                         3,
                     ]
                 )
+                guidance_text = "If a system test fails, try repeating the test in calm water. If at least one system test passed, the system is likely working properly. Always proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably valid."
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text))
 
         # Check for a custom transformation matrix
         for transect in meas.transects:
@@ -1018,6 +1040,11 @@ class QAData(object):
                                     3,
                                 ]
                             )
+                            guidance_text = "Most ADCPs have a custom transformation matrix (except for the RiverRay). If this ADCP as a nominal matrix, check the instruments history log to determine if it ever had a custom matrix. It may also be appropriate to contact the manufacturer to determine the transformation matrix for that ADCP serial number.  "
+                            self.system_tst["guidance"].append(
+                                self.guidance_prep(self.system_tst["messages"][-1][0],
+                                                   guidance_text))
+
                             break
 
     def compass_qa(self, meas):
@@ -1035,6 +1062,7 @@ class QAData(object):
         self.compass["status1"] = "good"
         self.compass["status2"] = "good"
         self.compass["lr_water_dir"] = "good"
+        self.compass["guidance"] = []
 
         # Check to see if measurement has compass data
         if not self.compass_qa_has_compass(meas):
@@ -1064,6 +1092,9 @@ class QAData(object):
                 ["Compass: Magnetic variation is not consistent among transects;", 2, 4]
             )
             self.compass["magvar"] = 1
+            guidance_text = "The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site. "
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         # Check heading offset consistency
         if len(np.unique(hpr["align"])) > 1:
@@ -1072,6 +1103,9 @@ class QAData(object):
                 ["Compass: Heading offset is not consistent among " "transects;", 2, 4]
             )
             self.compass["align"] = 1
+            guidance_text = "The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC. "
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         # Check that magvar was set if GPS data are available
         if magvar_required:
@@ -1084,6 +1118,9 @@ class QAData(object):
                 self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
                     0
                 ].tolist()
+                guidance_text = "A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         # Check pitch mean
         if np.any(np.asarray(np.abs(hpr["pitch_mean"])) > 8):
@@ -1091,6 +1128,10 @@ class QAData(object):
             self.compass["messages"].append(
                 ["PITCH: One or more transects have a mean pitch > 8 deg;", 1, 4]
             )
+            guidance_text = "A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
+
             temp = np.where(np.abs(hpr["pitch_mean"]) > 8)[0]
             if len(temp) > 0:
                 self.compass["pitch_mean_warning_idx"] = np.array(
@@ -1105,6 +1146,9 @@ class QAData(object):
             self.compass["messages"].append(
                 ["Pitch: One or more transects have a mean pitch > 4 deg;", 2, 4]
             )
+            guidance_text = "A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             temp = np.where(np.abs(hpr["pitch_mean"]) > 4)[0]
             if len(temp) > 0:
                 self.compass["pitch_mean_caution_idx"] = np.array(
@@ -1119,6 +1163,9 @@ class QAData(object):
             self.compass["messages"].append(
                 ["ROLL: One or more transects have a mean roll > 8 deg;", 1, 4]
             )
+            guidance_text = "A consistent roll is usually due to a poor mount or unevenly distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             temp = np.where(np.abs(hpr["roll_mean"]) > 8)[0]
             if len(temp) > 0:
                 self.compass["roll_mean_warning_idx"] = np.array(
@@ -1133,6 +1180,9 @@ class QAData(object):
             self.compass["messages"].append(
                 ["Roll: One or more transects have a mean roll > 4 deg;", 2, 4]
             )
+            guidance_text = "A consistent roll is usually due to a poor mount or unevenly distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             temp = np.where(np.abs(hpr["roll_mean"]) > 4)[0]
             if len(temp) > 0:
                 self.compass["roll_mean_caution_idx"] = np.array(
@@ -1148,6 +1198,9 @@ class QAData(object):
             self.compass["messages"].append(
                 ["Pitch: One or more transects have a pitch std dev > 5 deg;", 2, 4]
             )
+            guidance_text = "Variable pitch can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of pitch on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the pitch. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             temp = np.where(np.abs(hpr["pitch_std"]) > 5)[0]
             if len(temp) > 0:
                 self.compass["pitch_std_caution_idx"] = np.array(
@@ -1163,6 +1216,9 @@ class QAData(object):
             self.compass["messages"].append(
                 ["Roll: One or more transects have a roll std dev > 5 deg;", 2, 4]
             )
+            guidance_text = "Variable roll can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of roll on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the roll. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             temp = np.where(np.abs(hpr["roll_std"]) > 5)[0]
             if len(temp) > 0:
                 self.compass["roll_std_caution_idx"] = np.array(
@@ -1183,6 +1239,9 @@ class QAData(object):
                     4,
                 ]
             )
+            guidance_text = "An accurate heading is required for this measurement since either GPS is used or a loop moving-bed test was completed. There is a greater than expected difference in the water direction measured for transects starting on the left bank from those starting on the right bank. This difference indicates the compass is not accurate. Recalibrate the compass and recollect the data, if possible.  "
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         # Additional checks for SonTek G3 compass
         if meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer == "SonTek":
@@ -1198,6 +1257,9 @@ class QAData(object):
                         4,
                     ]
                 )
+                guidance_text = "Exceeding the pitch range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate pitch range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in pitch beyond the limits."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
             # Check if roll limits were exceeded
             if any(hpr["roll_exceeded"]):
@@ -1211,6 +1273,9 @@ class QAData(object):
                         4,
                     ]
                 )
+                guidance_text = "Exceeding the roll range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate roll range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in roll beyond the limits."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
             # Check if magnetic error was exceeded
             self.compass["mag_error_idx"] = []
@@ -1226,6 +1291,9 @@ class QAData(object):
                         4,
                     ]
                 )
+                guidance_text = "The G3 compass evaluates the strength of the magnetic field during calibration and during collection of transects. A change in magnetic field greater than 2% during a transect indicates the magnetic field has change from that measured during the compass calibration due to magnetic interference. Using the Compass/P/R tab look at the heading time series plot for changes in heading that correlate with changes in the magnetic field. If the interference is substantial consider moving up or down stream away from the source of the interference."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         # Determine status of compass tab
         if self.compass["status1"] == "warning" or self.compass["status2"] == "warning":
@@ -1334,6 +1402,9 @@ class QAData(object):
             # No compass calibration
             self.compass["status1"] = "warning"
             self.compass["messages"].append(["COMPASS: No compass calibration;", 1, 4])
+            guidance_text = "Using GPS as the navigation reference and conducting a loop moving-bed test require an accurate compass. Substantial errors can occur if the compass is not accurate. If in the field, calibrated the compass and recollect the data. If in the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
         elif meas.compass_cal[-1].result["compass"]["error"] == "N/A":
             # If the error cannot be decoded from the
             # calibration assume the calibration is good
@@ -1346,6 +1417,9 @@ class QAData(object):
                 self.compass["messages"].append(
                     ["Compass: Calibration result > 0.2 deg;", 2, 4]
                 )
+                guidance_text = "Experience has demonstrated that a calibration result greater than 0.2 degree could result in inconsistent headings. Accurate headings are critical when using GPS as a reference or using a loop moving-bed test. If in the field, try to recalibrate the compass (up to 3 times) near the measurement section but away from any magnetic interference. Your cell phone, keys, belt buckle are potential sources of interference if you are holding the ADCP. After 3 attempts that fail to be below 0.2 degree, document the results and proceed with the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
     def compass_qa_trdi_caleval(self, meas):
         """Evaluate compass calibration and/or evaluation for TRDI ADCPs.
@@ -1369,6 +1443,9 @@ class QAData(object):
                         4,
                     ]
                 )
+                guidance_text = "Using GPS as the navigation reference and conducting a loop moving-bed test require an accurate compass. Substantial errors can occur if the compass is not accurate. If in the field, calibrated the compass and recollect the data. If in the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
             else:
                 # No calibration but an evaluation was completed
@@ -1376,6 +1453,9 @@ class QAData(object):
                 self.compass["messages"].append(
                     ["Compass: No compass calibration;", 2, 4]
                 )
+                guidance_text = "If the evaluation result is < 1 degree a calibration is probably not necessary and the headings should be accurate. However, if the evaluation is greater than 1 degree a compass calibration should be completed. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
         else:
             # Compass was calibrated
             if len(meas.compass_eval) == 0:
@@ -1384,6 +1464,9 @@ class QAData(object):
                 self.compass["messages"].append(
                     ["Compass: No compass evaluation;", 2, 4]
                 )
+                guidance_text = "A compass evaluation provides information on the quality of the calibration. If in the field, complete an evaluation, even if it is after the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
             else:
                 # Check results of evaluation
                 try:
@@ -1394,6 +1477,10 @@ class QAData(object):
                         self.compass["messages"].append(
                             ["Compass: Evaluation result > 1 deg;", 2, 4]
                         )
+                        guidance_text = "If in the field, try to recalibrate the compass (up to 3 times) near the measurement section but away from any magnetic interference. Your cell phone, keys, belt buckle are potential sources of interference if you are holding the ADCP. After 3 attempts that fail to be below 1 degree, document the results and proceed with the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section."
+                        self.compass["guidance"].append(
+                            self.guidance_prep(self.compass["messages"][-1][0],
+                                               guidance_text))
                 except ValueError:
                     self.compass["status1"] = "good"
 

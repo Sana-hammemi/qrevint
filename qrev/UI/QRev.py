@@ -2507,6 +2507,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.main_adcp_table()
                 self.messages_tab()
                 self.comments_tab()
+                self.main_messages()
 
                 # Setup and create graphs
                 if len(self.checked_transects_idx) > 0:
@@ -5164,6 +5165,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.setSpan(row, col, row_span, col_span)
         tbl.setWordWrap(True)
 
+    def main_messages(self):
+        """Displays messages associated with the transects in Messages tab.
+        """
+
+        # Clear comments and messages
+        self.display_main_messages.clear()
+
+        if self.meas is not None:
+
+            # Display each message on a new line
+            self.display_main_messages.moveCursor(QtGui.QTextCursor.Start)
+            for message in self.meas.qa.transects["guidance"]:
+                if type(message) is str:
+                    self.display_main_messages.textCursor().insertText(message)
+                else:
+                    self.display_main_messages.textCursor().insertText(message[0])
+                self.display_main_messages.moveCursor(QtGui.QTextCursor.End)
+                self.display_main_messages.textCursor().insertBlock()
+
+            self.display_main_messages.moveCursor(QtGui.QTextCursor.Start)
+            self.update_tab_icons()
+
     # System test tab
     # ===============
     def system_tab(self, idx_systest=0):
@@ -5336,7 +5359,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Messages
             self.display_systest_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.system_tst["messages"]:
+            for message in self.meas.qa.system_tst["guidance"]:
                 # Display each comment on a new line
                 if type(message) is str:
                     self.display_systest_messages.textCursor().insertText(message)
@@ -5345,6 +5368,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_systest_messages.moveCursor(QtGui.QTextCursor.End)
                 self.display_systest_messages.textCursor().insertBlock()
 
+            self.display_systest_messages.moveCursor(QtGui.QTextCursor.Start)
             self.update_tab_icons()
 
     def select_systest(self, row, column):
@@ -5653,7 +5677,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Messages
             self.display_compass_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.compass["messages"]:
+            for message in self.meas.qa.compass["guidance"]:
                 # Display each comment on a new line
                 if type(message) is str:
                     self.display_compass_messages.textCursor().insertText(message)

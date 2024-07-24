@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1602</width>
+    <width>1766</width>
     <height>1003</height>
    </rect>
   </property>
@@ -1010,9 +1010,9 @@
        <attribute name="title">
         <string>Main</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_49">
+       <layout class="QGridLayout" name="gridLayout_56">
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_76" stretch="8,2">
+         <layout class="QHBoxLayout" name="horizontalLayout_87" stretch="8,2">
           <item>
            <widget class="QSplitter" name="splitter">
             <property name="orientation">
@@ -1083,7 +1083,7 @@
               <attribute name="title">
                <string>Summary</string>
               </attribute>
-              <layout class="QGridLayout" name="gridLayout_2">
+              <layout class="QGridLayout" name="gridLayout_49">
                <item row="0" column="0">
                 <widget class="QTableWidget" name="main_table_summary">
                  <property name="font">
@@ -1334,6 +1334,53 @@
                </item>
               </layout>
              </widget>
+             <widget class="QWidget" name="tab_messages">
+              <attribute name="title">
+               <string>Messages</string>
+              </attribute>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="0" column="0">
+                <widget class="QGroupBox" name="box_main_messages">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="title">
+                  <string>Quality Check Messages and Guidance</string>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_76">
+                  <item>
+                   <widget class="QTextEdit" name="display_main_messages">
+                    <property name="font">
+                     <font>
+                      <pointsize>12</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="html">
+                     <string notr="true">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
+                    <property name="textInteractionFlags">
+                     <set>Qt::NoTextInteraction</set>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
             </widget>
             <widget class="QWidget" name="layoutWidget">
              <layout class="QHBoxLayout" name="horizontalLayout" stretch="4,2">
@@ -1397,7 +1444,7 @@
                   </sizepolicy>
                  </property>
                  <attribute name="title">
-                  <string>Messages</string>
+                  <string>All Messages</string>
                  </attribute>
                  <layout class="QGridLayout" name="gridLayout_3">
                   <item row="0" column="0">
@@ -1547,7 +1594,7 @@
            <enum>QTabWidget::Triangular</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_systest_2_results">
            <attribute name="title">
