@@ -4,21 +4,20 @@
 
 from setuptools import setup
 
-with open('README.md') as f:
-    readme = f.read()
+# with open('README.md') as f:
+#     readme = f.read()
 
-with open('LICENSE.md') as f:
-    license = f.read()
+# with open('LICENSE.md') as f:
+#     license = f.read()
 
 setup(
     name='qrevpy',
     version='4.38.0',
     description='QRev port to python',
-    long_description=readme,
     author='David S. Mueller',
     author_email='dmueller@usgs.gov',
     url="https://code.usgs.gov/QRev/QRevPy",
-    license=license,
+    license="CC0 1.0",
     REQUIRES_PYTHON='>=3.8.10',
     packages=['qrev', 'qrev.Classes', 'qrev.DischargeFunctions',
               'qrev.MiscLibs', 'qrev.UI'],
