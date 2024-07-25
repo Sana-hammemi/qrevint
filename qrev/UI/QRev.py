@@ -3367,10 +3367,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # For each qa check retrieve messages and set tab icon based on the
         # status
         messages = []
+        guidance = []
         for key in qa_check_keys:
             qa_type = getattr(qa, key)
             if qa_type["messages"]:
-                for message in qa_type["messages"]:
+                for idx, message in enumerate(qa_type["messages"]):
                     if type(message) == np.ndarray:
                         message = message.tolist()
                     if type(message) is str:
@@ -3381,6 +3382,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         message[1] = int(message[1])
                         messages.append(message)
+                    messages[-1].append(qa_type["guidance"][idx])
             self.set_icon(key, qa_type["status"])
 
         # Sort messages with warning at top
@@ -3420,9 +3422,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
                 tbl.setItem(row, 0, item_warning)
             else:
+                tbl.item(row, 1).setFont(self.font_normal)
                 item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
                 tbl.setItem(row, 0, item_caution)
-
+            tbl.item(row, 1).setToolTip(message[-1])
         tbl.resizeColumnsToContents()
         tbl.resizeRowsToContents()
 
@@ -5169,22 +5172,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Displays messages associated with the transects in Messages tab.
         """
 
-        # Clear comments and messages
-        self.display_main_messages.clear()
-
         if self.meas is not None:
+            qa_check_keys = ["transects", "user"]
+            self.messages_table(self.table_main_messages, qa_check_keys)
 
-            # Display each message on a new line
-            self.display_main_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.transects["guidance"]:
-                if type(message) is str:
-                    self.display_main_messages.textCursor().insertText(message)
-                else:
-                    self.display_main_messages.textCursor().insertText(message[0])
-                self.display_main_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_main_messages.textCursor().insertBlock()
-
-            self.display_main_messages.moveCursor(QtGui.QTextCursor.Start)
             self.update_tab_icons()
 
     # System test tab
@@ -17236,6 +17227,94 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 + "%;\n"
             )
         return text
+
+    def combine_selected_qa_messages(self, qa_check_keys):
+        """Combines multiple qa keys into a single list including the associated guidance.
+
+        Parameters
+        ----------
+        qa_check_keys: list
+            List of qa attributes
+
+        Returns
+        -------
+        messages: list
+            List of messages, codes, and guidance
+        """
+        # Initialize local variables
+        qa = self.meas.qa
+
+
+        # For each qa check retrieve messages and set tab icon based on the
+        # status
+        messages = []
+        for key in qa_check_keys:
+            qa_type = getattr(qa, key)
+            if qa_type["messages"]:
+                for idx, message in enumerate(qa_type["messages"]):
+                    if type(message) == np.ndarray:
+                        message = message.tolist()
+                    if type(message) is str:
+                        if message[:3].isupper():
+                            messages.append([message, 1])
+                        else:
+                            messages.append([message, 2])
+                    else:
+                        message[1] = int(message[1])
+                        messages.append(message)
+                    messages[-1].append(qa_type["guidance"][idx])
+            self.set_icon(key, qa_type["status"])
+
+        # Sort messages with warning at top
+        messages.sort(key=lambda x: x[1])
+
+        return messages
+
+    def messages_table(self, tbl, qa_check_keys):
+        """Creates a messages table with tooltips containing guidance.
+
+        Parameter
+        ---------
+        tbl: QTableWidget
+            Object of QTableWidget to be populated
+        qa_check_keys: list
+            List of qa attributes to be included in the table
+        """
+
+        messages = self.combine_selected_qa_messages(qa_check_keys)
+        # Setup table
+        tbl.clear()
+        tbl_header = [self.tr("Status"), self.tr("Message")]
+        ncols = len(tbl_header)
+        nrows = len(messages)
+        tbl.setRowCount(nrows + 1)
+        tbl.setColumnCount(ncols)
+        tbl.setHorizontalHeaderLabels(tbl_header)
+        tbl.horizontalHeader().setFont(self.font_bold)
+        tbl.verticalHeader().hide()
+        tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+
+        # Populate table
+        for row, message in enumerate(messages):
+            # Handle messages from old QRev that did not have integer codes
+            if type(message) is str:
+                warn = message[:3].isupper()
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
+            # Handle newer style messages
+            else:
+                warn = int(message[1]) == 1
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
+            if warn:
+                tbl.item(row, 1).setFont(self.font_bold)
+                item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
+                tbl.setItem(row, 0, item_warning)
+            else:
+                tbl.item(row, 1).setFont(self.font_normal)
+                item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
+                tbl.setItem(row, 0, item_caution)
+            tbl.item(row, 1).setToolTip(message[-1])
+        tbl.resizeColumnsToContents()
+        tbl.resizeRowsToContents()
 
     @staticmethod
     def popup_message(text):
