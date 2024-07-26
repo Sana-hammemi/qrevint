@@ -3345,93 +3345,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
         self.main_discharge_canvas.draw()
 
-    def combine_qa_messages(self):
-        # Initialize local variables
-        qa = self.meas.qa
-        qa_check_keys = [
-            "bt_vel",
-            "compass",
-            "depths",
-            "edges",
-            "extrapolation",
-            "gga_vel",
-            "movingbed",
-            "system_tst",
-            "temperature",
-            "transects",
-            "user",
-            "vtg_vel",
-            "w_vel",
-        ]
-
-        # For each qa check retrieve messages and set tab icon based on the
-        # status
-        messages = []
-        guidance = []
-        for key in qa_check_keys:
-            qa_type = copy.deepcopy(getattr(qa, key))
-            if qa_type["messages"]:
-                for idx, message in enumerate(qa_type["messages"]):
-                    if type(message) == np.ndarray:
-                        message = message.tolist()
-                    if type(message) is str:
-                        if message[:3].isupper():
-                            messages.append([message, 1])
-                        else:
-                            messages.append([message, 2])
-                    else:
-                        message[1] = int(message[1])
-                        messages.append(message)
-                    if len(qa_type["guidance"]) > 0:
-                        messages[-1].append(qa_type["guidance"][idx])
-                    else:
-                        messages[-1].append("")
-            self.set_icon(key, qa_type["status"])
-
-        # Sort messages with warning at top
-        messages.sort(key=lambda x: x[1])
-
-        return messages
-
     def messages_tab(self):
         """Update messages tab."""
 
-        messages = self.combine_qa_messages()
-        # Setup table
-        tbl = self.main_message_table
-        tbl.clear()
-        main_message_header = [self.tr("Status"), self.tr("Message")]
-        ncols = len(main_message_header)
-        nrows = len(messages)
-        tbl.setRowCount(nrows + 1)
-        tbl.setColumnCount(ncols)
-        tbl.setHorizontalHeaderLabels(main_message_header)
-        tbl.horizontalHeader().setFont(self.font_bold)
-        tbl.verticalHeader().hide()
-        tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-
-        # Populate table
-        for row, message in enumerate(messages):
-            # Handle messages from old QRev that did not have integer codes
-            if type(message) is str:
-                warn = message[:3].isupper()
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
-            # Handle newer style messages
-            else:
-                warn = int(message[1]) == 1
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
-            if warn:
-                tbl.item(row, 1).setFont(self.font_bold)
-                item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
-                tbl.setItem(row, 0, item_warning)
-            else:
-                tbl.item(row, 1).setFont(self.font_normal)
-                item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
-                tbl.setItem(row, 0, item_caution)
-            if len(message[-1]) > 0:
-                tbl.item(row, 1).setToolTip(message[-1])
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
+        qa_check_keys = ["bt_vel", "compass", "depths", "edges", "extrapolation",
+            "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
+            "vtg_vel", "w_vel", ]
+        self.messages_table(self.main_message_table, qa_check_keys)
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis."""
