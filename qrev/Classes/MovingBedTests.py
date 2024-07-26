@@ -575,8 +575,6 @@ class MovingBedTests(object):
                     "WARNING: The water velocity is less than recommended "
                     "minimum for " + "this test and could cause the loop method to be "
                     "inaccurate. "
-                    + "CONSIDER USING A STATIONARY TEST TO CHECK MOVING-BED "
-                    "CONDITIONS"
                 )
                 guidance_text = "The low water velocity could result in an inaccurate result simply due to random errors. Use a stationary test."
                 self.guidance.append(
@@ -587,8 +585,6 @@ class MovingBedTests(object):
             if self.percent_invalid_bt > 20:
                 self.messages.append(
                     "ERROR: Percent invalid bottom track exceeds 20 percent. "
-                    + "THE LOOP IS NOT ACCURATE. TRY A STATIONARY MOVING-BED "
-                    "TEST."
                 )
                 guidance_text = "The loop test is dependent of accurate bottom track. Use a stationary moving-bed test.  "
                 self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
@@ -596,7 +592,7 @@ class MovingBedTests(object):
             elif self.percent_invalid_bt > 5:
                 self.messages.append(
                     "WARNING: Percent invalid bottom track exceeds 5 percent. "
-                    + "Loop may not be accurate. PLEASE REVIEW DATA."
+                    + "Loop may not be accurate."
                 )
                 guidance_text = "The loop test is dependent of accurate bottom track. Carefully review the test. If bottom track appears to cause inaccuracies complete a stationary test."
                 self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
@@ -607,8 +603,6 @@ class MovingBedTests(object):
                 self.messages.append(
                     "ERROR: Bottom track is invalid for more than 9 "
                     "consecutive seconds."
-                    + "THE LOOP IS NOT ACCURATE. TRY A STATIONARY MOVING-BED "
-                    "TEST."
                 )
                 guidance_text = "The loop test is dependent of accurate bottom track. Carefully review the test to see the invalid bottom track occurred. If the invalid data is in a location where the boat speed and direction was consistent the effect may be small. However, it is recommended to collect a stationary test."
                 self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
@@ -624,8 +618,6 @@ class MovingBedTests(object):
                     "back sections of "
                     + "loop could result in a 5 percent or greater error in "
                     "final discharge. "
-                    + "REPEAT LOOP AFTER COMPASS CAL. OR USE A STATIONARY "
-                    "MOVING-BED TEST."
                 )
                 guidance_text = "In addition to bottom tracking, accurate headings are required for a valid loop test. The loop shows substantial difference in water direction for the outgoing and return portions of the loop, which is indicative of invalid headings. Repeat the loop after recalibrating the compass or use a stationary test."
                 self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
@@ -634,8 +626,6 @@ class MovingBedTests(object):
         else:
             self.messages.append(
                 "ERROR: Loop has no valid bottom track data. "
-                + "REPEAT OR USE A STATIONARY MOVING-BED "
-                "TEST."
             )
             guidance_text = "Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate."
             self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
@@ -672,7 +662,6 @@ class MovingBedTests(object):
                 else:
                     self.messages.append(
                         "ERROR: Loop closure error not in upstream direction. "
-                        + "REPEAT LOOP or USE STATIONARY TEST"
                     )
                     guidance_text = "Collect a valid moving-bed test either loop or stationary."
                     self.guidance.append(
@@ -1241,3 +1230,7 @@ class MovingBedTests(object):
                 for test in moving_bed_tests:
                     test.use_2_correct = False
         return moving_bed_tests
+
+    @staticmethod
+    def guidance_prep(message_text, guidance_text):
+        return message_text + "\n" + " -- " + guidance_text + "\n"

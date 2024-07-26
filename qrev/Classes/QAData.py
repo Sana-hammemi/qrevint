@@ -2493,6 +2493,7 @@ class QAData(object):
             boat["q_total"] = np.tile(np.nan, (n_transects, 6))
             boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
             boat["messages"] = []
+            boat["guidance"] = []
             status_switch = 0
             avg_speed_check = 0
 
@@ -2582,9 +2583,9 @@ class QAData(object):
                                                 ]
                                             )
                                             guidance_text = "VTG velocities are based on a Doppler shift in the satellite signals. At velocities lower than 0.24 m/s these velocities may not be accurate in either magnitude and/or direction."
-                                            self.boat["guidance"].append(
+                                            boat["guidance"].append(
                                                 self.guidance_prep(
-                                                    self.boat["messages"][-1][0],
+                                                    boat["messages"][-1][0],
                                                     guidance_text))
                                             avg_speed_check = 1
 
@@ -2605,8 +2606,8 @@ class QAData(object):
                     ]
                 )
                 guidance_text = "More than 5% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable."
-                self.boat["guidance"].append(
-                    self.guidance_prep(self.boat["messages"][-1][0], guidance_text))
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 status_switch = 2
             elif boat["q_total_warning"].any():
                 if dt_key == "BT":
@@ -2623,8 +2624,8 @@ class QAData(object):
                     ]
                 )
                 guidance_text = "More than 25% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable."
-                self.boat["guidance"].append(
-                    self.guidance_prep(self.boat["messages"][-1][0], guidance_text))
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 status_switch = 2
             elif boat["q_max_run_caution"].any():
                 if dt_key == "BT":
@@ -2642,8 +2643,8 @@ class QAData(object):
                     ]
                 )
                 guidance_text = "More than 3% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable."
-                self.boat["guidance"].append(
-                    self.guidance_prep(self.boat["messages"][-1][0], guidance_text))
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
@@ -2662,8 +2663,8 @@ class QAData(object):
                     ]
                 )
                 guidance_text = "More than 10% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable."
-                self.boat["guidance"].append(
-                    self.guidance_prep(self.boat["messages"][-1][0], guidance_text))
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
@@ -2684,8 +2685,8 @@ class QAData(object):
                     ]
                 )
                 guidance_text = "Carefully review the data with special attention to the identified filter. If for some reason the filter results do not appear reasonable, change the filter setting. Provide justification for any changes made."
-                self.boat["guidance"].append(
-                    self.guidance_prep(self.boat["messages"][-1][0], guidance_text))
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
 
             # Set status
             if status_switch == 2:

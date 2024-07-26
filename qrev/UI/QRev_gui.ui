@@ -1647,16 +1647,11 @@
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_7">
                  <item>
-                  <widget class="QPlainTextEdit" name="display_systest_messages">
+                  <widget class="QTableWidget" name="table_systest_messages">
                    <property name="font">
                     <font>
                      <pointsize>12</pointsize>
-                     <weight>50</weight>
-                     <bold>false</bold>
                     </font>
-                   </property>
-                   <property name="readOnly">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2117,16 +2112,11 @@
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_12">
                  <item>
-                  <widget class="QPlainTextEdit" name="display_compass_messages">
+                  <widget class="QTableWidget" name="table_compass_messages">
                    <property name="font">
                     <font>
                      <pointsize>12</pointsize>
-                     <weight>50</weight>
-                     <bold>false</bold>
                     </font>
-                   </property>
-                   <property name="readOnly">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2434,7 +2424,7 @@
             <item row="0" column="0">
              <layout class="QVBoxLayout" name="verticalLayout_12">
               <item>
-               <widget class="QGroupBox" name="box_compass_messages_2">
+               <widget class="QGroupBox" name="box_tempsal_messages">
                 <property name="font">
                  <font>
                   <pointsize>12</pointsize>
@@ -2447,16 +2437,11 @@
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_15">
                  <item>
-                  <widget class="QPlainTextEdit" name="display_tempsal_messages">
+                  <widget class="QTableWidget" name="table_tempsal_messages">
                    <property name="font">
                     <font>
                      <pointsize>12</pointsize>
-                     <weight>50</weight>
-                     <bold>false</bold>
                     </font>
-                   </property>
-                   <property name="readOnly">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2464,7 +2449,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QGroupBox" name="box_compass_comments_2">
+               <widget class="QGroupBox" name="box_tempsal_comments">
                 <property name="font">
                  <font>
                   <pointsize>12</pointsize>
@@ -2843,16 +2828,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_20">
                <item>
-                <widget class="QPlainTextEdit" name="display_mb_messages">
+                <widget class="QTableWidget" name="table_mb_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -3516,16 +3496,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_23">
                <item>
-                <widget class="QPlainTextEdit" name="display_bt_messages">
+                <widget class="QTableWidget" name="table_bt_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -4461,16 +4436,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_47">
                <item>
-                <widget class="QPlainTextEdit" name="display_gps_messages">
+                <widget class="QTableWidget" name="table_gps_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -5209,16 +5179,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_49">
                <item>
-                <widget class="QPlainTextEdit" name="display_depth_messages">
+                <widget class="QTableWidget" name="table_depth_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -5960,16 +5925,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_53">
                <item>
-                <widget class="QPlainTextEdit" name="display_wt_messages">
+                <widget class="QTableWidget" name="table_wt_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -6960,16 +6920,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_59">
                <item>
-                <widget class="QPlainTextEdit" name="display_extrap_messages">
+                <widget class="QTableWidget" name="table_extrap_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -7096,13 +7051,13 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_wt_2_messages_3">
+          <widget class="QWidget" name="tab_edges_messages">
            <attribute name="title">
             <string>Messages</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_43">
             <item row="0" column="0">
-             <widget class="QGroupBox" name="box_extrap_messages_2">
+             <widget class="QGroupBox" name="box_edges_messages">
               <property name="font">
                <font>
                 <pointsize>12</pointsize>
@@ -7115,16 +7070,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_63">
                <item>
-                <widget class="QPlainTextEdit" name="display_edges_messages">
+                <widget class="QTableWidget" name="table_edges_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -7132,7 +7082,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QGroupBox" name="box_extrap_comments_2">
+             <widget class="QGroupBox" name="box_edges_comments">
               <property name="font">
                <font>
                 <pointsize>12</pointsize>
@@ -7449,16 +7399,11 @@
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_65">
                <item>
-                <widget class="QPlainTextEdit" name="display_uncertainty_messages">
+                <widget class="QTableWidget" name="table_uncertainty_messages">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
                   </font>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
                  </property>
                 </widget>
                </item>

@@ -5338,7 +5338,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear current contents
         self.display_systest_comments.clear()
-        self.display_systest_messages.clear()
+
         if self.meas is not None:
             # Comments
             self.display_systest_comments.moveCursor(QtGui.QTextCursor.Start)
@@ -5349,17 +5349,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_systest_comments.textCursor().insertBlock()
 
             # Messages
-            self.display_systest_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.system_tst["guidance"]:
-                # Display each comment on a new line
-                if type(message) is str:
-                    self.display_systest_messages.textCursor().insertText(message)
-                else:
-                    self.display_systest_messages.textCursor().insertText(message[0])
-                self.display_systest_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_systest_messages.textCursor().insertBlock()
+            self.messages_table(self.table_systest_messages, ["system_tst"])
 
-            self.display_systest_messages.moveCursor(QtGui.QTextCursor.Start)
             self.update_tab_icons()
 
     def select_systest(self, row, column):
@@ -5656,7 +5647,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear current content
         self.display_compass_comments.clear()
-        self.display_compass_messages.clear()
+
         if self.meas is not None:
             # Comments
             self.display_compass_comments.moveCursor(QtGui.QTextCursor.Start)
@@ -5667,15 +5658,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_compass_comments.textCursor().insertBlock()
 
             # Messages
-            self.display_compass_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.compass["guidance"]:
-                # Display each comment on a new line
-                if type(message) is str:
-                    self.display_compass_messages.textCursor().insertText(message)
-                else:
-                    self.display_compass_messages.textCursor().insertText(message[0])
-                self.display_compass_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_compass_messages.textCursor().insertBlock()
+            self.messages_table(self.table_compass_messages, ["compass"])
 
             self.update_tab_icons()
             if self.meas.qa.compass["status1"] != "default":
@@ -6973,7 +6956,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_tempsal_comments.clear()
-        self.display_tempsal_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -6984,14 +6966,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_tempsal_comments.textCursor().insertBlock()
 
             # Display each message on a new line
-            self.display_tempsal_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.temperature["messages"]:
-                if type(message) is str:
-                    self.display_tempsal_messages.textCursor().insertText(message)
-                else:
-                    self.display_tempsal_messages.textCursor().insertText(message[0])
-                self.display_tempsal_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_tempsal_messages.textCursor().insertBlock()
+            self.messages_table(self.table_tempsal_messages, ["temperature"])
             self.update_tab_icons()
 
     def plot_temperature(self):
@@ -7795,7 +7770,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_mb_comments.clear()
-        self.display_mb_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -7805,29 +7779,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_mb_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_mb_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_mb_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.movingbed["messages"]:
-                if type(message) is str:
-                    self.display_mb_messages.textCursor().insertText(message)
-                else:
-                    self.display_mb_messages.textCursor().insertText(message[0])
-                self.display_mb_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_mb_messages.textCursor().insertBlock()
 
+            # QAData messages
+            qa_messages = self.combine_selected_qa_messages(["movingbed"])
+            mbt_messages = []
             for test in self.meas.mb_tests:
                 test_file = test.transect.file_name[:-4]
                 if len(test.messages) > 0:
-                    self.display_mb_messages.textCursor().insertText(" ")
-                    self.display_mb_messages.moveCursor(QtGui.QTextCursor.End)
-                    self.display_mb_messages.textCursor().insertBlock()
-                    self.display_mb_messages.textCursor().insertText(test_file)
-                    self.display_mb_messages.moveCursor(QtGui.QTextCursor.End)
-                    self.display_mb_messages.textCursor().insertBlock()
-                    for message in test.messages:
-                        self.display_mb_messages.textCursor().insertText(message)
-                        self.display_mb_messages.moveCursor(QtGui.QTextCursor.End)
-                        self.display_mb_messages.textCursor().insertBlock()
+                    for idx, message in enumerate(test.messages):
+                        message = [test_file + "\n" + message, test.guidance[idx]]
+                        mbt_messages.append(message)
+            messages = qa_messages + mbt_messages
+
+            self.messages_table(self.table_mb_messages, [], messages)
 
             self.update_tab_icons()
 
@@ -8760,7 +8724,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_bt_comments.clear()
-        self.display_bt_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -8770,15 +8733,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_bt_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_bt_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_bt_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.bt_vel["messages"]:
-                if type(message) is str:
-                    self.display_bt_messages.textCursor().insertText(message)
-                else:
-                    self.display_bt_messages.textCursor().insertText(message[0])
-                self.display_bt_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_bt_messages.textCursor().insertBlock()
+            # Display messages
+            self.messages_table(self.table_bt_messages, ["bt_vel"])
 
             self.update_tab_icons()
 
@@ -10283,7 +10239,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_gps_comments.clear()
-        self.display_gps_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -10293,22 +10248,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_gps_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_gps_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_gps_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.gga_vel["messages"]:
-                if type(message) is str:
-                    self.display_gps_messages.textCursor().insertText(message)
-                else:
-                    self.display_gps_messages.textCursor().insertText(message[0])
-                self.display_gps_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_gps_messages.textCursor().insertBlock()
-            for message in self.meas.qa.vtg_vel["messages"]:
-                if type(message) is str:
-                    self.display_gps_messages.textCursor().insertText(message)
-                else:
-                    self.display_gps_messages.textCursor().insertText(message[0])
-                self.display_gps_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_gps_messages.textCursor().insertBlock()
+                # Display messages
+                self.messages_table(self.table_gps_messages, ["gga_vel", "vtg_vel"])
 
             self.update_tab_icons()
 
@@ -11001,7 +10942,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_depth_comments.clear()
-        self.display_depth_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -11011,15 +10951,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_depth_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_depth_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_depth_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.depths["messages"]:
-                if type(message) is str:
-                    self.display_depth_messages.textCursor().insertText(message)
-                else:
-                    self.display_depth_messages.textCursor().insertText(message[0])
-                self.display_depth_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_depth_messages.textCursor().insertBlock()
+                # Display messages
+                self.messages_table(self.table_depth_messages, ["depths"])
 
             self.update_tab_icons()
 
@@ -12025,7 +11958,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_wt_comments.clear()
-        self.display_wt_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -12035,15 +11967,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_wt_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_wt_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_wt_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.w_vel["messages"]:
-                if type(message) is str:
-                    self.display_wt_messages.textCursor().insertText(message)
-                else:
-                    self.display_wt_messages.textCursor().insertText(message[0])
-                self.display_wt_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_wt_messages.textCursor().insertBlock()
+                # Display messages
+                self.messages_table(self.table_wt_messages, ["w_vel"])
 
             self.update_tab_icons()
 
@@ -12903,7 +12828,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_extrap_comments.clear()
-        self.display_extrap_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -12913,15 +12837,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_extrap_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_extrap_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_extrap_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.extrapolation["messages"]:
-                if type(message) is str:
-                    self.display_extrap_messages.textCursor().insertText(message)
-                else:
-                    self.display_extrap_messages.textCursor().insertText(message[0])
-                self.display_extrap_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_extrap_messages.textCursor().insertBlock()
+                # Display messages
+                self.messages_table(self.table_extrap_messages, ["extrapolation"])
 
             self.update_tab_icons()
 
@@ -13951,7 +13868,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_edges_comments.clear()
-        self.display_edges_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -13961,15 +13877,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_edges_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_edges_comments.textCursor().insertBlock()
 
-            # Display each message on a new line
-            self.display_edges_messages.moveCursor(QtGui.QTextCursor.Start)
-            for message in self.meas.qa.edges["messages"]:
-                if type(message) is str:
-                    self.display_edges_messages.textCursor().insertText(message)
-                else:
-                    self.display_edges_messages.textCursor().insertText(message[0])
-                self.display_edges_messages.moveCursor(QtGui.QTextCursor.End)
-                self.display_edges_messages.textCursor().insertBlock()
+                # Display messages
+                self.messages_table(self.table_edges_messages, ["edges"])
 
             self.update_tab_icons()
 
@@ -15071,7 +14980,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Clear comments and messages
         self.display_uncertainty_comments.clear()
-        self.display_uncertainty_messages.clear()
 
         if self.meas is not None:
             # Display each comment on a new line
@@ -17270,7 +17178,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         return messages
 
-    def messages_table(self, tbl, qa_check_keys):
+    def messages_table(self, tbl, qa_check_keys, messages=None):
         """Creates a messages table with tooltips containing guidance.
 
         Parameter
@@ -17280,8 +17188,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         qa_check_keys: list
             List of qa attributes to be included in the table
         """
-
-        messages = self.combine_selected_qa_messages(qa_check_keys)
+        if messages is None:
+            messages = self.combine_selected_qa_messages(qa_check_keys)
         # Setup table
         tbl.clear()
         tbl_header = [self.tr("Status"), self.tr("Message")]
@@ -17290,7 +17198,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setRowCount(nrows + 1)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(tbl_header)
-        tbl.horizontalHeader().setFont(self.font_bold)
+        # tbl.horizontalHeader().setFont(self.font_bold)
+        hh_font = tbl.horizontalHeader().font()
+        hh_font.setPointSize(12)
+        hh_font.setBold(True)
+        tbl.horizontalHeader().setFont(hh_font)
         tbl.verticalHeader().hide()
         tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 
@@ -17302,7 +17214,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
             # Handle newer style messages
             else:
-                warn = int(message[1]) == 1
+                try:
+                    warn = int(message[1]) == 1
+                except ValueError:
+                    if "ERROR" in message[0]:
+                        warn = True
+                    else:
+                        warn = False
                 tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
             if warn:
                 tbl.item(row, 1).setFont(self.font_bold)
