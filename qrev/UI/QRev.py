@@ -727,7 +727,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         except KeyError:
             self.sticky_settings.new("QDigitsDigits",
                 self.agency_options["QDigits"]["digits"])
-            self.q_digits_method = self.agency_options["QDigits"]["digits"]
+            self.q_digits_digits = self.agency_options["QDigits"]["digits"]
 
         # Uncertainty model
         if "Uncertainty" not in self.agency_options.keys():

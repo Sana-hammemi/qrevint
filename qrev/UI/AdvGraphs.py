@@ -3575,14 +3575,16 @@ class AdvGraphs(object):
                 color="k",
                 zorder=3,
             )
-        else:
+        elif self.x_axis_type == "T":
             x_datetime = []
             for timestamp in x:
                 x_datetime.append(datetime.utcfromtimestamp(timestamp))
             x = np.array(x_datetime)
             self.expanded_x = x
             ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
-
+        else:
+            self.expanded_x = x
+            ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
         if self.transect is not None:
             depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
@@ -3678,9 +3680,9 @@ class AdvGraphs(object):
                     color="w",
                     linestyle="dotted",
                 )
-                # if self.x_axis_type == "L":
+                if self.x_axis_type == "L":
                     # Plot edge contours
-                    # self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+                    self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
 
         else:
             axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
@@ -3782,6 +3784,10 @@ class AdvGraphs(object):
         d: np.array(float)
             Array of depths along transect with edge shapes in m
         """
+
+        if self.transect is None:
+            return x, depth
+
         valid_idx = np.where(np.logical_not(np.isnan(depth)))[0]
         # Left edge
         if self.transect.start_edge == "Left":
@@ -4257,6 +4263,7 @@ class AdvGraphs(object):
 
         self.units = units
         self.color_map = color_map
+        self.x_axis_type = "L"
 
         (
             x_plt,
