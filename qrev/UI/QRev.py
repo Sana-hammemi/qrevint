@@ -3369,7 +3369,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         messages = []
         guidance = []
         for key in qa_check_keys:
-            qa_type = getattr(qa, key)
+            qa_type = copy.deepcopy(getattr(qa, key))
             if qa_type["messages"]:
                 for idx, message in enumerate(qa_type["messages"]):
                     if type(message) == np.ndarray:
@@ -3382,7 +3382,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         message[1] = int(message[1])
                         messages.append(message)
-                    messages[-1].append(qa_type["guidance"][idx])
+                    if len(qa_type["guidance"]) > 0:
+                        messages[-1].append(qa_type["guidance"][idx])
+                    else:
+                        messages[-1].append("")
             self.set_icon(key, qa_type["status"])
 
         # Sort messages with warning at top
@@ -3425,7 +3428,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, 1).setFont(self.font_normal)
                 item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
                 tbl.setItem(row, 0, item_caution)
-            tbl.item(row, 1).setToolTip(message[-1])
+            if len(message[-1]) > 0:
+                tbl.item(row, 1).setToolTip(message[-1])
         tbl.resizeColumnsToContents()
         tbl.resizeRowsToContents()
 
@@ -7787,7 +7791,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 test_file = test.transect.file_name[:-4]
                 if len(test.messages) > 0:
                     for idx, message in enumerate(test.messages):
-                        message = [test_file + "\n" + message, test.guidance[idx]]
+                        if len(test.guidance) > 0:
+                            message = [test_file + "\n" + message, test.guidance[idx]]
+                        else:
+                            message = [test_file + "\n" + message, ""]
                         mbt_messages.append(message)
             messages = qa_messages + mbt_messages
 
@@ -17157,7 +17164,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # status
         messages = []
         for key in qa_check_keys:
-            qa_type = getattr(qa, key)
+            qa_type = copy.deepcopy(getattr(qa, key))
             if qa_type["messages"]:
                 for idx, message in enumerate(qa_type["messages"]):
                     if type(message) == np.ndarray:
@@ -17170,7 +17177,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         message[1] = int(message[1])
                         messages.append(message)
-                    messages[-1].append(qa_type["guidance"][idx])
+                    if len(qa_type["guidance"]) > 0:
+                        messages[-1].append(qa_type["guidance"][idx])
+                    else:
+                        messages[-1].append("")
             self.set_icon(key, qa_type["status"])
 
         # Sort messages with warning at top
@@ -17198,7 +17208,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setRowCount(nrows + 1)
         tbl.setColumnCount(ncols)
         tbl.setHorizontalHeaderLabels(tbl_header)
-        # tbl.horizontalHeader().setFont(self.font_bold)
         hh_font = tbl.horizontalHeader().font()
         hh_font.setPointSize(12)
         hh_font.setBold(True)
@@ -17230,7 +17239,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tbl.item(row, 1).setFont(self.font_normal)
                 item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
                 tbl.setItem(row, 0, item_caution)
-            tbl.item(row, 1).setToolTip(message[-1])
+            if len(message[-1]) > 0:
+                tbl.item(row, 1).setToolTip(message[-1])
         tbl.resizeColumnsToContents()
         tbl.resizeRowsToContents()
 

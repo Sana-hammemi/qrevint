@@ -238,6 +238,12 @@ class MovingBedTests(object):
             self.messages = mat_data.messages.tolist()
         else:
             self.messages = [mat_data.messages]
+        if hasattr(mat_data, "guidance"):
+            if type(mat_data.guidance) == np.ndarray:
+                self.guidance = mat_data.guidance.tolist()
+            else:
+                self.guidance = [mat_data.guidance]
+            self.guidance = []
 
         self.stationary_us_track = mat_data.stationaryUSTrack
         self.stationary_cs_track = mat_data.stationaryCSTrack

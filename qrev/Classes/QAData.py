@@ -159,6 +159,11 @@ class QAData(object):
             self.transects["messages"] = self.make_list(
                 meas_struct.qa.transects.messages
             )
+            if hasattr(meas_struct.qa.transects, "guidance"):
+                self.transects["guidance"] = self.make_list(
+                    meas_struct.qa.transects.guidance)
+            else:
+                self.transects["guidance"] = []
             self.transects["number"] = meas_struct.qa.transects.number
             self.transects["recip"] = meas_struct.qa.transects.recip
             self.transects["sign"] = meas_struct.qa.transects.sign
@@ -168,9 +173,19 @@ class QAData(object):
             self.system_tst["messages"] = self.make_list(
                 meas_struct.qa.systemTest.messages
             )
+            if hasattr(meas_struct.qa.systemTest, "guidance"):
+                self.system_tst["guidance"] = self.make_list(
+                    meas_struct.qa.systemTest.guidance)
+            else:
+                self.system_tst["guidance"] = []
             self.system_tst["status"] = meas_struct.qa.systemTest.status
             self.compass = dict()
             self.compass["messages"] = self.make_list(meas_struct.qa.compass.messages)
+            if hasattr(meas_struct.qa.compass, "guidance"):
+                self.compass["guidance"] = self.make_list(
+                    meas_struct.qa.compass.guidance)
+            else:
+                self.compass["guidance"] = []
             self.compass["status"] = meas_struct.qa.compass.status
             if hasattr(meas_struct.qa.compass, "status1"):
                 self.compass["status1"] = meas_struct.qa.compass.status1
@@ -279,15 +294,30 @@ class QAData(object):
             self.temperature["messages"] = self.make_list(
                 meas_struct.qa.temperature.messages
             )
+            if hasattr(meas_struct.qa.temperature, "guidance"):
+                self.temperature["guidance"] = self.make_list(
+                    meas_struct.qa.temperature.guidance)
+            else:
+                self.temperature["guidance"] = []
             self.temperature["status"] = meas_struct.qa.temperature.status
             self.movingbed = dict()
             self.movingbed["messages"] = self.make_list(
                 meas_struct.qa.movingbed.messages
             )
+            if hasattr(meas_struct.qa.movingbed, "guidance"):
+                self.movingbed["guidance"] = self.make_list(
+                    meas_struct.qa.movingbed.guidance)
+            else:
+                self.movingbed["guidance"] = []
             self.movingbed["status"] = meas_struct.qa.movingbed.status
             self.movingbed["code"] = meas_struct.qa.movingbed.code
             self.user = dict()
             self.user["messages"] = self.make_list(meas_struct.qa.user.messages)
+            if hasattr(meas_struct.qa.user, "guidance"):
+                self.user["guidance"] = self.make_list(
+                    meas_struct.qa.user.guidance)
+            else:
+                self.user["guidance"] = []
             self.user["sta_name"] = bool(meas_struct.qa.user.staName)
             self.user["sta_number"] = bool(meas_struct.qa.user.staNumber)
             if hasattr(meas_struct.qa.user, "time_zone"):
@@ -338,9 +368,19 @@ class QAData(object):
             self.extrapolation["messages"] = self.make_list(
                 meas_struct.qa.extrapolation.messages
             )
+            if hasattr(meas_struct.qa.extrapolation, "guidance"):
+                self.extrapolation["guidance"] = self.make_list(
+                    meas_struct.qa.extrapolation.guidance)
+            else:
+                self.extrapolation["guidance"] = []
             self.extrapolation["status"] = meas_struct.qa.extrapolation.status
             self.edges = dict()
             self.edges["messages"] = self.make_list(meas_struct.qa.edges.messages)
+            if hasattr(meas_struct.qa.edges, "guidance"):
+                self.edges["guidance"] = self.make_list(
+                    meas_struct.qa.edges.guidance)
+            else:
+                self.edges["guidance"] = []
             self.edges["status"] = meas_struct.qa.edges.status
             self.edges["left_q"] = meas_struct.qa.edges.leftQ
             self.edges["right_q"] = meas_struct.qa.edges.rightQ
@@ -521,6 +561,10 @@ class QAData(object):
 
         # Populate dictionary from Matlab data
         qa_dict["messages"] = QAData.make_list(mat_data.messages)
+        if hasattr(mat_data, "guidance"):
+            qa_dict["guidance"] = self.make_list(mat_data.guidance)
+        else:
+            qa_dict["guidance"] = []
 
         # allInvalid not available in older QRev data
         if hasattr(mat_data, "allInvalid"):
@@ -2699,9 +2743,7 @@ class QAData(object):
         lag_gga = []
         lag_vtg = []
         self.gga_vel["lag_status"] = "good"
-        self.gga_vel["guidance"] = []
         self.vtg_vel["lag_status"] = "good"
-        self.gga_vel["guidance"] = []
         for transect in meas.transects:
             gga, vtg = TransectData.compute_gps_lag(transect)
             if gga is not None:
