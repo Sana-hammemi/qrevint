@@ -749,7 +749,10 @@ class Report:
         """
         data = [["Automated QA Messages:"]]
 
-        messages = self.parent.combine_qa_messages()
+        qa_check_keys = ["bt_vel", "compass", "depths", "edges", "extrapolation",
+            "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
+            "vtg_vel", "w_vel", ]
+        messages = self.parent.combine_selected_qa_messages(qa_check_keys)
 
         # Create each message as a list appended to data
         if len(messages) > 0:

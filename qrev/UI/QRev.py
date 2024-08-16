@@ -1466,6 +1466,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             ]["threshold"],
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
+                            qt_gui=self,
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1492,6 +1493,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         ]["threshold"],
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
+                        qt_gui=self,
                     )
 
             # Load and process TRDI data
@@ -1518,6 +1520,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         ]["threshold"],
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
+                        qt_gui=self,
                     )
 
             # Load QRev data
@@ -1587,6 +1590,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             ]["threshold"],
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
+                            qt_gui=self
                         )
 
                 # Settings based on measurement settings
