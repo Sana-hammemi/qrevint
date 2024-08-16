@@ -664,16 +664,7 @@ class Python2Matlab(object):
         """
 
         # Make copy to prevent changing Python meas data
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
-        meas_mat = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
-        
+        meas_mat = copy.deepcopy(meas)    
         
         # Process changes for each transect
         for transect in meas_mat.transects:

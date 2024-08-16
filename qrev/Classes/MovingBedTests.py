@@ -87,7 +87,7 @@ class MovingBedTests(object):
         Corrected flow speed using BT and GPS
     """
 
-    def __init__(self, qt_gui=None):
+    def __init__(self, qt_tr=None):
         """Initialize class and instance variables."""
 
         self.type = None
@@ -125,10 +125,10 @@ class MovingBedTests(object):
         self.gps_flow_spd_mps = np.nan
 
         # Check for use of qt_gui for translation
-        if qt_gui is None:
+        if qt_tr is None:
             self.tr = self.no_tr
         else:
-            self.tr = qt_gui.tr
+            self.tr = qt_tr
 
     @staticmethod
     def no_tr(text):
@@ -190,7 +190,7 @@ class MovingBedTests(object):
             raise ValueError(self.tr("Invalid moving-bed test identifier specified."))
 
     @staticmethod
-    def qrev_mat_in(meas_struct):
+    def qrev_mat_in(meas_struct, qt_tr=None):
         """Processes the Matlab data structure to obtain a list of
          TransectData objects containing transect data from the Matlab data structure.
 
@@ -217,7 +217,7 @@ class MovingBedTests(object):
                         mb_tests.append(temp)
                 # If only one test, that test is not stored in an array
                 else:
-                    temp = MovingBedTests()
+                    temp = MovingBedTests(qt_tr=qt_tr)
                     temp.populate_from_qrev_mat(meas_struct.mbTests, meas_struct)
                     mb_tests.append(temp)
             except (TypeError, AttributeError):

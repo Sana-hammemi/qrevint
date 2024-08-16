@@ -1466,7 +1466,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             ]["threshold"],
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
-                            qt_gui=self,
+                            qt_tr=self.tr,
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1493,7 +1493,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         ]["threshold"],
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
-                        qt_gui=self,
+                        qt_tr=self.tr,
                     )
 
             # Load and process TRDI data
@@ -1520,7 +1520,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         ]["threshold"],
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
-                        qt_gui=self,
+                        qt_tr=self.tr,
                     )
 
             # Load QRev data
@@ -1571,6 +1571,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             proc_type="None",
                             export_xs=self.xs_export,
                             gps_quality_threshold=self.gps_quality_threshold,
+                            qt_tr=self.tr
                         )
                     elif msg_box.clickedButton() == reprocess_btn:
                         # Reprocess
@@ -1590,7 +1591,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             ]["threshold"],
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
-                            qt_gui=self
+                            qt_tr=self.tr
                         )
 
                 # Settings based on measurement settings

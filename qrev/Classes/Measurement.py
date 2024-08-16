@@ -133,7 +133,7 @@ class Measurement(object):
         water_dir_diff_threshold=8.1,
         date_format="%Y.%m.%d",
         time_zone_required=False,
-        qt_gui=None,
+        qt_tr=None,
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -176,7 +176,7 @@ class Measurement(object):
             Format string for date
         """
 
-        self.qt_gui = qt_gui
+        self.qt_tr = qt_tr
         self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
@@ -291,7 +291,7 @@ class Measurement(object):
 
                         self.discharge.append(q)
 
-                self.qa = QAData(self, qt_gui=self.qt_gui)
+                self.qa = QAData(self, qt_tr=self.qt_tr)
 
         if run_map:
             self.compute_map()
@@ -578,7 +578,7 @@ class Measurement(object):
             if len(transects) > 0:
                 for n in range(len(transects)):
                     # Create moving-bed test object
-                    mb_test = MovingBedTests(qt_gui=self.qt_gui)
+                    mb_test = MovingBedTests(qt_tr=self.qt_tr)
                     mb_test.populate_data(
                         source="TRDI",
                         file=transects[n],
@@ -858,7 +858,7 @@ class Measurement(object):
 
         # Process Loop test
         if file.lower().startswith("loop"):
-            self.mb_tests.append(MovingBedTests(qt_gui=self.qt_gui))
+            self.mb_tests.append(MovingBedTests(qt_tr=self.qt_tr))
             self.mb_tests[-1].populate_data(
                 source="SonTek",
                 file=os.path.join(pathname, file),
@@ -867,7 +867,7 @@ class Measurement(object):
             )
         # Process Stationary test
         elif file.lower().startswith("smba"):
-            self.mb_tests.append(MovingBedTests(qt_gui=self.qt_gui))
+            self.mb_tests.append(MovingBedTests(qt_tr=self.qt_tr))
             self.mb_tests[-1].populate_data(
                 source="SonTek",
                 file=os.path.join(pathname, file),
@@ -1027,7 +1027,7 @@ class Measurement(object):
             self.compass_eval = []
 
         self.transects = TransectData.qrev_mat_in(meas_struct)
-        self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct)
+        self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct, qt_tr=self.qt_tr)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
@@ -1063,7 +1063,7 @@ class Measurement(object):
 
         self.uncertainty = Uncertainty()
         self.uncertainty.populate_from_qrev_mat(meas_struct)
-        self.qa = QAData(self, mat_struct=meas_struct, compute=False, qt_gui=self.qt_gui )
+        self.qa = QAData(self, mat_struct=meas_struct, compute=False, qt_tr=self.qt_tr)
         if hasattr(meas_struct, "run_oursin"):
             self.run_oursin = meas_struct.run_oursin
         else:
@@ -2297,7 +2297,7 @@ class Measurement(object):
         return settings
 
     def update_qa(self):
-        self.qa = QAData(self, qt_gui=self.qt_gui)
+        self.qa = QAData(self, qt_tr=self.qt_tr)
 
     @staticmethod
     def no_filter_interp_settings(self):
@@ -2420,7 +2420,7 @@ class Measurement(object):
 
         self.uncertainty = Uncertainty()
         self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self, qt_gui=self.qt_gui)
+        self.qa = QAData(self, qt_tr=self.qt_tr)
 
         if self.run_oursin:
             if self.oursin is None:

@@ -54,7 +54,7 @@ class QAData(object):
         Dictionary of quality assurance checks on edges
     """
 
-    def __init__(self, meas, mat_struct=None, compute=True, qt_gui=None):
+    def __init__(self, meas, mat_struct=None, compute=True, qt_tr=None):
         """Checks the measurement for all quality assurance issues.
 
         Parameters
@@ -64,10 +64,10 @@ class QAData(object):
         """
 
         # Check for use of qt_gui for translation
-        if qt_gui is None:
+        if qt_tr is None:
             self.tr = self.no_tr
         else:
-            self.tr = qt_gui.tr
+            self.tr = qt_tr
 
 
         # Set default thresholds

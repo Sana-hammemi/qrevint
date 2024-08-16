@@ -2314,15 +2314,7 @@ class Oursin(object):
         self.sim_edge_max = pd.DataFrame(columns=self.sim_edge_max.columns)
 
         # Create measurement copy to allow changes without affecting original
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
         meas_temp = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
 
         # Process each checked transect
         for trans_id in self.checked_idx:
@@ -2388,15 +2380,7 @@ class Oursin(object):
         self.sim_draft_max = pd.DataFrame(columns=self.sim_draft_max.columns)
 
         # Create copy of meas to avoid changing original
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
         meas_temp = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
 
         for trans_id in self.checked_idx:
             # Compute max and min draft
@@ -2449,15 +2433,8 @@ class Oursin(object):
         self.sim_cells_after = pd.DataFrame(columns=self.sim_cells_after.columns)
 
         # Simulations for invalid cells and ensembles
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
         meas_temp = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
+
         for trans_id in self.checked_idx:
             # TRDI method
             meas_temp.transects[trans_id].w_vel.interpolate_cells_trdi(
@@ -2564,15 +2541,9 @@ class Oursin(object):
         self.sim_depth_next = pd.DataFrame(columns=self.sim_depth_next.columns)
 
         # Simulations for invalid depths
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
+
         meas_temp = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
+
         for trans_id in self.checked_idx:
             depths = getattr(
                 meas_temp.transects[trans_id].depths,
@@ -2620,15 +2591,9 @@ class Oursin(object):
         self.sim_boat_next = pd.DataFrame(columns=self.sim_boat_next.columns)
 
         # Simulations for invalid boat velocity
-        # Save qa because it may contain a qt widget which cannot be in a
-        # deepcopy object
-        saved_qa = meas.qa
-        saved_qt_gui = meas.qt_gui
-        meas.qa = None
-        meas.qt_gui = None
+        
         meas_temp = copy.deepcopy(meas)
-        meas.qa = saved_qa
-        meas.qt_gui = saved_qt_gui
+
         for trans_id in self.checked_idx:
             # Hold last
             boat_data = getattr(
