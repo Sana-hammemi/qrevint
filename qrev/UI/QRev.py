@@ -2479,7 +2479,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_stage_start.editingFinished.connect(self.update_stage_start)
                     self.ed_stage_end.editingFinished.connect(self.update_stage_end)
                     self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
-                    self.ed_time_zone.editingFinished.connect(self.update_time_zone)
+                    self.combo_timezone.currentIndexChanged[str].connect(self.update_time_zone)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust
                     )
@@ -2489,6 +2489,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
                     self.cb_user_rating.currentIndexChanged.connect(self.rating_change)
+
+                    self.timezone_list = ["", "UTC", "UTC-1", "UTC-2", "UTC-3", "UTC-4",
+                                          "UTC-5", "UTC-6", "UTC-7", "UTC-8", "UTC-9",
+                                          "UTC-10", "UTC-11", "UTC-12", "UTC+1", "UTC+2",
+                                          "UTC+3", "UTC+4", "UTC+5", "UTC+6", "UTC+7",
+                                          "UTC+8", "UTC+9", "UTC+10", "UTC+11",
+                                          "UTC+12", ]
 
                     # Main tab has been initialized
                     self.main_initialized = True
@@ -4365,10 +4372,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "{:3.4f}".format(self.meas.stage_meas_m * self.units["L"])
         )
 
-        self.ed_time_zone.setText(self.meas.time_zone)
-
         try:
-            self.ed_time_zone.setText(self.meas.time_zone)
+            tz_idx = self.timezone_list.index(self.meas.time_zone)
+            self.combo_timezone.setCurrentIndex(tz_idx)
             if self.meas.qa.user["time_zone"]:
                 self.label_time_zone.setStyleSheet("background-color: #ffcc00")
                 self.label_time_zone.setToolTip(self.tr("Missing time zone."))
@@ -4376,7 +4382,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.label_time_zone.setStyleSheet("background-color: white")
                 self.label_time_zone.setToolTip("")
         except TypeError:
-            self.ed_time_zone.setText("")
+            self.combo_timezone.setCurrentIndex(0)
             self.label_time_zone.setStyleSheet("background-color: white")
             self.label_time_zone.setToolTip("")
 
@@ -4635,10 +4641,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.meas.stage_meas_m = stage / self.units["L"]
         self.main_premeasurement_table()
 
-    def update_time_zone(self):
+    def update_time_zone(self, text):
         """Records the time zone entered by the user. Value not used in any compuations"""
 
-        self.meas.time_zone = self.ed_time_zone.text()
+        self.meas.time_zone = text
         self.main_premeasurement_table()
 
     def main_settings_table(self):

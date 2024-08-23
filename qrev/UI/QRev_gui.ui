@@ -1277,7 +1277,139 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="ed_time_zone"/>
+                  <widget class="QComboBox" name="combo_timezone">
+                   <property name="minimumSize">
+                    <size>
+                     <width>125</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-1</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-2</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-3</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-4</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-5</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-6</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-7</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-8</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-9</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-10</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-11</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC-12</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UCT+1</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+2</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+3</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+4</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+5</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+6</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+7</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+8</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+9</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+10</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>UTC+11</string>
+                    </property>
+                   </item>
+                  </widget>
                  </item>
                 </layout>
                </item>

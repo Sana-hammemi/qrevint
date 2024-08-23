@@ -54,7 +54,7 @@ class QAData(object):
         Dictionary of quality assurance checks on edges
     """
 
-    def __init__(self, meas, mat_struct=None, compute=True, qt_tr=None):
+    def __init__(self, meas, mat_struct=None, compute=True, tr=None):
         """Checks the measurement for all quality assurance issues.
 
         Parameters
@@ -63,12 +63,8 @@ class QAData(object):
             Object of class Measurement
         """
 
-        # Check for use of qt_gui for translation
-        if qt_tr is None:
-            self.tr = self.no_tr
-        else:
-            self.tr = qt_tr
-
+        
+        self.tr = tr
 
         # Set default thresholds
         self.q_run_threshold_caution = 3
@@ -128,22 +124,7 @@ class QAData(object):
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
 
-    @staticmethod
-    def no_tr(text):
-        """This method replaces the pyqt tr method when this code is not run from a pyqt
-        user interface. It simply returns the string provided.
-        
-        Parameters
-        ----------
-        text: str
-            Input text string
-            
-        Returns
-        -------
-        text: str
-            Same as input text
-        """
-        return text
+    
 
     def populate_from_qrev_mat(self, meas, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
@@ -161,7 +142,7 @@ class QAData(object):
         # current QA code. When QA checks from the current QA are not
         # available from old QRev files, these
         # checks will be included to supplement the old QRev file data.
-        new_qa = QAData(meas)
+        new_qa = QAData(meas, tr=meas.tr)
         if hasattr(meas_struct, "qa"):
             # Set default thresholds
             self.q_run_threshold_caution = meas_struct.qa.qRunThresholdCaution
