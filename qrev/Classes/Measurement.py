@@ -1554,6 +1554,10 @@ class Measurement(object):
 
         self.apply_settings(s)
 
+    def change_timezone (self, text):
+        self.time_zone = text
+        self.qa = QAData(self, tr=self.tr)
+        
     @staticmethod
     def h_external_valid(meas):
         """Determine if valid external heading data is included in the

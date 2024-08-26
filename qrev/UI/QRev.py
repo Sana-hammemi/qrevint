@@ -1769,7 +1769,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                     # Save xml file
                     self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
-
+            
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(
                     self,
@@ -4644,7 +4644,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def update_time_zone(self, text):
         """Records the time zone entered by the user. Value not used in any compuations"""
 
-        self.meas.time_zone = text
+        self.meas.change_timezone(text)
         self.main_premeasurement_table()
 
     def main_settings_table(self):

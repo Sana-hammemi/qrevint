@@ -337,6 +337,7 @@ class Report:
             ],
             [self.tr("Navigation Ref.") + ":", nav_reference],
             [self.tr("Total Duration") + " (s):", duration],
+            [self.tr("Time Zone") + ":", meas.time_zone],
             [self.tr("Start Time") + ":", start_time],
             [self.tr("End Time") + ":", end_time],
             [self.tr("Stage Start") + ":", stage_start],

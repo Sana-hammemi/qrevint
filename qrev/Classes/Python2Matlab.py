@@ -636,6 +636,10 @@ class Python2Matlab(object):
             "meas_struct": Python2Matlab(meas, checked).matlab_dict,
             "version": version,
         }
+        mat_struct["meas_struct"]["tr"] = ""
+        mat_struct["meas_struct"]["mbTests"]["tr"] = ""
+        mat_struct["meas_struct"]["qa"]["tr"] = ""
+        
         sio.savemat(
             file_name=file_name,
             mdict=mat_struct,
