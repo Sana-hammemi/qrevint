@@ -4645,6 +4645,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Records the time zone entered by the user. Value not used in any compuations"""
 
         self.meas.change_timezone(text)
+        self.messages_tab()
         self.main_premeasurement_table()
 
     def main_settings_table(self):
@@ -15939,6 +15940,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.pb_map_save.clicked.connect(self.map_save_data)
         self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
+        self.pb_map_bathy.clicked.connect(lambda: self.map_save_data(verticals=True))
 
         # Limit edit to two decimals float
         rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
@@ -16430,7 +16432,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.map_canvas.draw()
 
-    def map_save_data(self):
+    def map_save_data(self, verticals=False):
         """Save MAP data as csv or txt."""
         if self.meas.map is not None and self.meas.map.total_discharge is not None:
             # ascii file delimiter
@@ -16458,6 +16460,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         units=self.units,
                         delimiter=save_map.delimiter,
                         manufacturer=manufacturer,
+                        verticals=verticals
                     )
                 except Exception:
                     self.popup_message(self.tr("Failed to save MAP data."))

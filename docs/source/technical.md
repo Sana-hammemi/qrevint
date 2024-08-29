@@ -710,7 +710,20 @@ ensembles where one beam is marked invalid due to the SNR filter.
 This filter is only applied to data collected with SonTek ADCPs.
 
 #### Interpolation
-QRev interpolates water velocity data that have been determined to be invalid by using a different approach than that used by the manufacturers. There are no interpolation algorithms in RiverSurveyor Live for water data. TRDI in WinRiver II does not interpolate water velocities but accounts for the invalid data by interpolating or extrapolating the cross product of the water and boat velocities used in the discharge computation (see “Computing Discharge from Invalid Data” section). QRev uses a different approach for estimating water velocities. Previous Matlab based versions of QRev used a two-dimensional linear interpolation method called scatteredInterpolant, which is available in Matlab version 2015b, in combination with TRDI’s approach for invalid data at the top and bottom of the profile. QRev 4.xx uses a purpose-built interpolation method called ABBA (above, below, before, after). The velocity for all depth cells with invalid velocities between the bottom of the blank or excluded distance and the side lobe cutoff are estimated using the abba method.
+QRev interpolates water velocity data that have been determined to be invalid 
+by using a different approach than that used by the manufacturers. There are 
+no interpolation algorithms in RiverSurveyor Live for water data. TRDI in 
+WinRiver II does not interpolate water velocities but accounts for the invalid 
+data by interpolating or extrapolating the cross product of the water and boat 
+velocities used in the discharge computation (see “Computing Discharge from 
+Invalid Data” section). QRev uses a different approach for estimating water 
+velocities. Previous Matlab based versions of QRev used a two-dimensional 
+linear interpolation method called scatteredInterpolant, which is available in 
+Matlab version 2015b, in combination with TRDI’s approach for invalid data at 
+the top and bottom of the profile. QRev 4.xx uses a purpose-built interpolation 
+method called ABBA (above, below, before, after). The velocity for all depth 
+cells with invalid velocities between the bottom of the blank or excluded 
+distance and the side lobe cutoff are estimated using the abba method.
 
 ![](./assets/tech_manual/figure_3.png)
 
@@ -1108,10 +1121,73 @@ The uncertainty of measurements with only two transects can often be
 reduced by collecting additional transects. QRev checks for these 
 situations and provides the user feedback as shown in Table 6.
 
+#### Transect quality checks, messages, and guidance
+**Quality Check:** Number of transects < agency minimum number of transects  
+**Status:** Caution  
+**Message:** Transects: The number of selected transects is less than agency recommendation.  
+**Guidance:** Collect additional transects until the total number of selected transects meets or exceeds the agency minimum recommended number and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation.  
 
-**Table 6.** Transect quality checks and messages.
 
-![](./assets/tech_manual/table_6.png)
+
+**Quality Check:** Measurement duration < agency minimum duration  
+**Status:** Caution  
+**Message:** Transects: Duration of selected transects is less than agency recommendation.  
+**Guidance:** Reduce the boat speed and/or collect additional transects until the total duration exceeds the agency minimum recommended duration and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation.  
+
+**Quality Check:** Missing ensembles > 0  
+**Status:** Caution  
+**Message:** Transects: (transect name) is missing (xx) ensembles.  
+**Guidance:** Missing ensembles are typically due to communication problems between 
+the instrument and the computer.  If the missing ensembles occur randomly and 
+infrequently the measurement is likely unaffected by them. However, 
+if the number of missing ensembles may affect the final discharge consider 
+recollecting the data with a different computer/serial port/wireless communications/etc. 
+If this measurement was made with an M9 or S5 download the data from the 
+ADCP and use those data instead of the data stored on the computer by 
+RiverSurveyor Live or RSQ.   
+
+**Quality Check:** Number of transects checked = 0  
+**Status:** Warning  
+**Message:** TRANSECTS: No transects selected  
+**Guidance:** For reasonably steady flow check a sufficient number or reciprocal 
+transects to achieve agency recommended minimum duration and number or 
+reciprocal transects. For rapidly varying flow check an appropriate number of 
+transects while trying to maintain reciprocal transects.  
+
+**Quality Check:** Number of transects checked = 1  
+**Status:** Caution  
+**Message:** Transects: Only one transect selected  
+**Guidance:** Reciprocal transects are recommended to avoid potential directional bias. If flow is changing too rapidly for reciprocal transects add a comment to document the situation.  
+
+**Quality Check:** Number of checked transects is less than the agency minimum number of transects.  
+**Status:**  Caution  
+**Message:** Transects: Number of transects is below the required minimum of (minimum transects)    
+**Guidance:** Unless the flow is changing rapidly, collect additional transect to meet the agency minimum requirement. If conditions do not allow collection of additional transects, document the situation.
+
+**Quality Check:** Number of transects checked = 2 and COV > 2		   
+**Status:** Caution  
+**Message:** Transects: Uncertainty would be reduced by additional transects  
+**Guidance:** Collecting additional reciprocal transects would reduce the random uncertainty associated with this measurement assuming near steady flow conditions.  
+
+**Quality Check:** Sign of transect discharges is inconsistent  
+**Status:**  Warning  
+**Message:** TRANSECTS: Sign of total Q is not consistent. One or more start banks may be incorrect    
+**Guidance:** Check the start bank for each transect. If the start banks are correct and the flow is rapidly changing to a reverse flow condition, consider breaking the measurement into multiple measurements to represent the conditions.  
+
+**Quality Check:** Number of start bank left is not equal to number of start bank right  
+**Status:** Warning   
+**Message:** TRANSECTS: Transects selected are not reciprocal transects     
+**Guidance:** Unless conditions require use of a single transect, transects should be collected in reciprocal pairs to reduce potential directional bias. Consider adding or removing a transect from the measurement to achieve reciprocal transects.  
+
+**Quality Check:** Transect(s) has zero discharge  
+**Status:** Warning  
+**Message:** TRANSECTS: One or more transects have zero Q  
+**Guidance:** A zero discharge usually occurs when all ensembles have invalid depth, boat speed, or water speed. Changing the depth or boat reference may help. Otherwise the transect should not be included in the final discharge computation.  
+
+**Quality Check:** Battery voltage less than 10.5 volts or less than 3.3 volts for RS5  
+**Status:** Caution   
+**Message:** Transects: (transects) have battery voltage less than (battery threshold)    
+**Guidance:** Low battery voltage may cause range issues with some ADCPs in some conditions. Evaluate the data carefully to ensure the data appear correct. If in the field, use a charged battery to recollect the data, if necessary.  
 
 ### System Test
 The USGS policy is that a system test be completed prior to making a 
@@ -1125,9 +1201,39 @@ identified by date and time, or if loaded manually, the results will be identifi
 
 A system test is a series of different tests for various aspects of the ADCP. A complete series of discrete tests is referred to as a “system test”, and a single test within that series is referred to as a “discrete test”. QRev automatically scans the results, reports the number of failed tests, and provides feedback to the user by coloring the system test button and providing messages as shown in Table 7.
 
-**Table 7.** System test quality checks and messages.
+####System test quality checks, messages, and guidance
 
-![](./assets/tech_manual/table_7.png)
+**Quality Check:** No recorded system test	  
+**Status:** Warning	    
+**Message:** SYSTEM TEST: No system test  
+**Guidance:** A system test is recommended to be completed prior to every discharge measurement to ensure the ADCP is operating properly. If still in the field, complete a system test.
+
+**Quality Check:** TRDI Only: pt3 test failed	    
+**Status:** Caution	    
+**Message:** System Test: One or more PT3 tests in the system test indicate potential EMI     
+**Guidance:** A failed PT3 test indicates there is potential electromagnetic interference. Errors in measured velocities caused by EMI tend to be a consistent bias (not related to true water velocity), so errors will be a greater percentage in lower velocities. EMI is more likely to occur on a StreamPro ADCP. To determine if EMI is affecting the measurement: 1) look for unusual patterns in the measured velocities, such as, higher velocities near the streambed, 2) use the Adv Graph tab and plot the average water track correlation contour plot and look for an increase in correlation with depth, 3) use the Adv Graph tab and plot the water track vertical velocity and look for a vertical pattern, such as, increasing negative or positive velocities towards the surface or streambed (a normal vertical velocity contour plot should look more random without vertical patterns). If any of these conditions are observed the measurement is affected and a different measurement site should be selected or the measurement at this site should be made with a different instrument.
+
+**Quality Check:** All system tests have failures  	   
+**Status:** Warning	  
+**Message:** SYSTEM TEST: All system test sets have at least one test that failed  
+**Guidance:** If a system test fails, try repeating the test in calm water. If failures continue, proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably OK. However, if this ADCP continues to fail system tests at other sites, the ADCP should be evaluated and potentially sent to the manufacturer for their evaluation and repair.
+
+**Quality Check:** Multiple system tests were recorded and at least one passed all tests but others failed	  
+**Status:** Caution	  
+**Message:** System Test: One or more system test sets have at least one test that failed  
+**Guidance:** If a system test fails, try repeating the test in calm water. If at least one system test passed, the system is likely working properly. Always proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably valid.
+
+**Quality Check:** Check that a custom transformation matrix is used (TRDI Only)  
+**Status:** Caution	  
+**Message:** System Test: ADCP is using a nominal matrix rather than a custom matrix   
+**Guidance:** Most ADCPs have a custom transformation matrix (except for the RiverRay). If this ADCP as a nominal matrix, check the instruments history log to determine if it ever had a custom matrix. It may also be appropriate to contact the manufacturer to determine the transformation matrix for that ADCP serial number.  
+
+**Quality Check:** System test added  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: A moving-bed test has been manually added to the measurement.  
+**Guidance:** Provide documentation on the source of the system test and 
+why it was not originally collected with this measurement.
+
 
 ### Compass, Pitch, and Roll
 Most ADCPs contain an internal compass and procedures for calibrating the 
@@ -1140,8 +1246,197 @@ discharge. However, a compass calibration is still encouraged so that the
 direction of the velocity data will be correct for any use of the data 
 other than discharge. In addition, the pitch and roll of the ADCP can 
 affect the accuracy of the compass heading and the measured depth and 
-velocity. The quality checks for the compass, pitch, and roll sensors are 
-shown in Table 8.
+velocity. 
+
+#### Compass, Pitch, and Roll Quality Checks, Messages, and Guidance
+
+**Quality Check:** SonTek: No compass calibration and either GPS data or a loop test   
+**Status:** Warning	    
+**Message:** COMPASS: No compass calibration     
+**Guidance:** Using GPS as the navigation reference and conducting a loop 
+moving-bed test require an accurate compass. Substantial errors can occur 
+if the compass is not accurate. If in the field, calibrated the compass and 
+recollect the data. If in the office, carefully evaluate the measurement. If GPS 
+is used as the navigation reference, use the shiptrack plot and compare the 
+angle between the GPS data and the BT data for reciprocal transects 
+(turning off the vectors may help). The angle should be reasonably 
+consistent if the headings are accurate and the magnetic variation is 
+correct. The angle should always be in the upstream direction if there is a 
+moving bed. Using the Main.Details tab, the Avg Water 
+Direction L/R Difference should be less than a few degrees if the compass is 
+calibrated, the magnetic variation is correct, and there is no magnetic 
+interference in the cross section.
+
+**Quality Check:** SonTek: Compass calibration error > 0.2 and either GPS data or a loop test     	   
+**Status:** Caution	     
+**Message:** Compass: Calibration result > 0.2 deg     
+**Guidance:** Experience has demonstrated that a calibration result greater 
+than 0.2 degree could result in inconsistent headings. Accurate headings are 
+critical when using GPS as a reference or using a loop moving-bed test. If in 
+the field, try to recalibrate the compass (up to 3 times) near the measurement
+section but away from any magnetic interference. Your cell phone, keys, 
+belt buckle are potential sources of interference if you are holding the ADCP. 
+After 3 attempts that fail to be below 0.2 degree, document the results and 
+proceed with the measurement. In the office, carefully evaluate the measurement. 
+If GPS is used as the navigation reference, use the shiptrack plot and compare
+the angle between the GPS data and the BT data for reciprocal transects 
+(turning off the vectors may help). The angle should be reasonably 
+consistent if the headings are accurate and the magnetic variation is 
+correct. The angle should always be in the upstream direction if there is a 
+moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
+should be less than a few degrees if the compass is calibrated, the magnetic 
+variation is correct, and there is no magnetic interference in the cross section.
+
+
+**Quality Check:** TRDI: No compass calibration or evaluation and either GPS data or a loop test  
+**Status:** Warning	  
+**Message:** COMPASS: No compass calibration or evaluation  
+**Guidance:** Using GPS as the navigation reference and conducting a loop 
+moving-bed test require an accurate compass. Substantial errors can occur if 
+the compass is not accurate. If in the field, calibrated the compass and 
+recollect the data. If in the office, carefully evaluate the measurement. 
+If GPS is used as the navigation reference, use the shiptrack plot and compare 
+the angle between the GPS data and the BT data for reciprocal transects 
+(turning off the vectors may help). The angle should be reasonably 
+consistent if the headings are accurate and the magnetic variation is 
+correct. The angle should always be in the upstream direction if there is a 
+moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
+should be less than a few degrees if the compass is calibrated, the magnetic 
+variation is correct, and there is no magnetic interference in the cross section.
+
+**Quality Check:** TRDI: Compass evaluation but no calibration and either GPS data or a loop test  	      
+**Status:** Caution	  
+**Message:** Compass: No compass calibration  
+**Guidance:** If the evaluation result is < 1 degree a calibration is probably 
+not necessary and the headings should be accurate. However, if the evaluation 
+is greater than 1 degree a compass calibration should be completed. In the office, 
+carefully evaluate the measurement. If GPS is used as the navigation reference, 
+use the shiptrack plot and compare the angle between the GPS data and the BT
+data for reciprocal transects (turning off the vectors may help). 
+The angle should be reasonably consistent if the headings are accurate and 
+the magnetic variation is correct. The angle should always be in the upstream 
+direction if there is a moving bed. Using the Main.Details tab, the Avg Water 
+Direction L/R Difference should be less than a few degrees if the compass is 
+calibrated, the magnetic variation is correct, and there is no magnetic 
+interference in the cross section.
+
+**Quality Check:** TRDI: Compass calibration but no evaluation and either GPS data or a loop test  	   
+**Status:** Caution	  
+**Message:** Compass: No compass evaluation  
+**Guidance:** A compass evaluation provides information on the quality of the 
+calibration. If in the field, complete an evaluation, even if it is after the 
+measurement. In the office, carefully evaluate the measurement. If GPS is used 
+as the navigation reference, use the shiptrack plot and compare the angle 
+between the GPS data and the BT data for reciprocal transects 
+(turning off the vectors may help). The angle should be reasonably 
+consistent if the headings are accurate and the magnetic variation is 
+correct. The angle should always be in the upstream direction if there is a 
+moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
+should be less than a few degrees if the compass is calibrated, the magnetic 
+variation is correct, and there is no magnetic interference in the cross section.
+
+**Quality Check:** TRDI: Compass evaluation has an error > 1 and either GPS data or a loop test  	   
+**Status:** Caution	  
+**Message:** Compass: Evaluation result > 1 deg  
+**Guidance:** If in the field, try to recalibrate the compass (up to 3 times) 
+near the measurement section but away from any magnetic interference. Your cell 
+phone, keys, belt buckle are potential sources of interference if you are holding 
+the ADCP. After 3 attempts that fail to be below 1 degree, document the results 
+and proceed with the measurement. In the office, carefully evaluate the 
+measurement. If GPS is used as the navigation reference, use the shiptrack plot
+and compare the angle between the GPS data and the BT data for reciprocal 
+transects (turning off the vectors may help). The angle should be reasonably 
+consistent if the headings are accurate and the magnetic variation is 
+correct. The angle should always be in the upstream direction if there is a 
+moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
+should be less than a few degrees if the compass is calibrated, the magnetic 
+variation is correct, and there is no magnetic interference in the cross section.
+
+**Quality Check:** Magnetic variation is not consistent among transects  	   
+**Status:** Caution	  
+**Message:** Compass: Magnetic variation is not consistent among transects  
+**Guidance:** The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site. 
+
+**Quality Check:** Heading offset is not consistent among transects  	   
+**Status:** Caution	  
+**Message:** Compass: Heading offset is not consistent among transects  
+**Guidance:** The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC. 
+
+**Quality Check:** Difference in flow direction from transects starting on 
+the left and on the right exceed the agency threshold           	
+**Status:** Caution  	   
+**Message:** Compass: The difference in the left and right water directions could cause and error in the average Q of (error).     
+**Guidance:** An accurate heading is required for this measurement since either GPS is used or a loop moving-bed test was completed. There is a greater than expected difference in the water direction measured for transects starting on the left bank from those starting on the right bank. This difference indicates the compass is not accurate. Recalibrate the compass and recollect the data, if possible.  
+
+**Quality Check:** Magnetic variation = 0 and GPS data are available  	     
+**Status:** Warning	  
+**Message:** COMPASS: Magnetic variation is 0 and GPS data are present     
+**Guidance:** A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.
+
+**Quality Check:** Mean pitch > +/- 8  
+**Status:** Warning	  
+**Message:** PITCH: One or more transects have a mean pitch > 8 deg     
+**Guidance:** A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch.
+
+**Quality Check:** Mean pitch > +/- 4	  
+**Status:** Caution	  
+**Message:** Pitch: One or more transects have a mean pitch > 4 deg     
+**Guidance:** A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch.
+
+**Quality Check:** Mean roll > +/- 8   	 
+**Status:** Warning	  
+**Message:** ROLL: One or more transects have a mean roll > 8 deg     
+**Guidance:** A consistent roll is usually due to a poor mount or unevenly 
+distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution.
+
+**Quality Check:** Mean roll > +/- 4	    
+**Status:** Caution	  
+**Message:** Roll: One or more transects have a mean roll > 4 deg     
+**Guidance:** A consistent roll is usually due to a poor mount or unevenly 
+distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution.
+
+**Quality Check:** Pitch standard deviation > 5	  
+**Status:** Caution	  
+**Message:** Pitch: One or more transects have a pitch std dev > 5 deg     
+**Guidance:** Variable pitch can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of pitch on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the pitch. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded.
+
+**Quality Check:** Roll standard deviation > 5	  
+**Status:** Caution	  
+**Message:** Roll: One or more transects have a roll std dev > 5 deg  
+**Guidance:** Variable roll can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of roll on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the roll. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded.
+
+**Quality Check:** SonTek G3 compass: pitch exceeds calibration limits	  
+**Status:** Caution	  
+**Message:** Compass: One or more transects have pitch exceeding calibration limits  
+**Guidance:** Exceeding the pitch range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate pitch range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in pitch beyond the limits.
+
+**Quality Check:** SonTek G3 compass: roll exceeds calibration limits	  
+**Status:** Caution	  
+**Message:** Compass: One or more transects have roll exceeding calibration limits  
+**Guidance:** Exceeding the roll range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate roll range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in roll beyond the limits.
+
+**Quality Check:** SonTek G3 compass: Magnetic error > 2	  
+**Status:** Caution	  
+**Message:** Compass: One or more transects have a change in mag field exceeding 2%  
+**Guidance:** The G3 compass evaluates the strength of the magnetic field during calibration and during collection of transects. A change in magnetic field greater than 2% during a transect indicates the magnetic field has change from that measured during the compass calibration due to magnetic interference. Using the Compass/P/R tab look at the heading time series plot for changes in heading that correlate with changes in the magnetic field. If the interference is substantial consider moving up or down stream away from the source of the interference.
+
+**Quality Check:** User change	  
+**Status:** Caution	  
+**Message:** Compass: User modified magnetic variation  
+**Guidance:** If the user has modified the magnetic variation, check that the variation is reasonable for the site.
+
+**Quality Check:** User change	  
+**Status:** Caution	  
+**Message:** Compass: User modified heading offset  
+**Guidance:** If the user has modified the heading offset, look for collected transects or documentation to justify the heading offset.
+
+**Quality Check:** Compass cal/eval added  
+**Status:** Caution	  
+**Message:** Compass: A compass cal/eval has been manually added to the measurement.  
+**Guidance:** Provide documentation on the source of the compass 
+calibration and/or evaluatation and why it was not originally collected 
+with this measurement.
+
 
 ### Water Temperature Validation
 The accuracy of discharge measurements made with an ADCP is dependent on an 
@@ -1157,15 +1452,51 @@ ADCP reading or the mean ADCP water temperature for the whole measurement.
 Consistent with USGS policy, if the difference in temperatures exceed 2 
 degrees Celsius, a warning is issued.
 
-**Table 8.** Compass, pitch, and roll quality checks and messages.
 
-![](./assets/tech_manual/table_8.png)
 
-QRev also evaluates the change in ADCP measured water temperature for the duration of the measurement. At some sites, the water temperature may change during the measurement or spatially in the cross section. However, a change in measured water temperature during a measurement is often indicative of the ADCP not being given sufficient time to equilibrate to the water temperature. In this situation, the ADCP is measuring the wrong water temperature and, thus, using the wrong speed of sound. Checks used to assess water temperature and the feedback messages are shown in Table 9.
+QRev also evaluates the change in ADCP measured water temperature for the duration of the measurement. At some sites, the water temperature may change during the measurement or spatially in the cross section. However, a change in measured water temperature during a measurement is often indicative of the ADCP not being given sufficient time to equilibrate to the water temperature. In this situation, the ADCP is measuring the wrong water temperature and, thus, using the wrong speed of sound.  
+#### Temperature quality checks, messages, and guidance
 
-**Table 9.** Temperature quality checks and messages.
+**Quality Check:** Temperature range for measurement > 2 C	  
+**Status:** Warning	  
+**Message:** TEMPERATURE: Temperature range is <xx> degrees C which is greater than 2 degrees  
+**Guidance:** It is likely that the ADCP was not allowed to equilibrate to 
+the water temperature prior to starting the measurement. However, it is also possible, though rare, that the water temperature is different from one side of the river to the other. If the temperature changes during the measurement and reaches an equilibrium value, then the ADCP was not given sufficient time to equilibrate. If the equilibrated ADCP temperature is close to the independent water temperature, change the water temperature source to user and enter either the independent temperature or the equilibrated ADCP temperature. 
 
-![](./assets/tech_manual/table_9.png)
+**Quality Check:** Temperature range for measurement > 1 C	  
+**Status:** Caution	  
+**Message:** Temperature: Temperature range is <xx> degrees C which is greater than 1 degree  
+**Guidance:** It is likely that the ADCP was not allowed to equilibrate to the water temperature prior to starting the measurement. However, it is also possible, though rare, that the water temperature is different from one side of the river to the other. If the temperature changes during the measurement and reaches an equilibrium value, then the ADCP was not given sufficient time to equilibrate. If the equilibrated ADCP temperature is close to the independent water temperature, change the water temperature source to user and enter either the independent temperature or the equilibrated ADCP temperature. 
+
+**Quality Check:** User did not provide an independent temperature  
+**Status:** Caution	  
+**Message:** Temperature: No independent temperature reading  
+**Guidance:** The temperature measured by the ADCP cannot be verified without an independent temperature. The water temperature is critical to computing the speed of sound and the velocity from the Doppler shift. If still in the field, collect an independent water temperature. If in the office, look for other measurements using this ADCP and check that the ADCP temperature agrees with the water temperature in other measurements.
+
+**Quality Check:** Difference between user suppled independent temperature and ADCP temperature > 2  
+**Status:** Warning	  
+**Message:** TEMPERATURE: The difference between ADCP and reference is > 2: <xx> C  
+**Guidance:** Ensure that the ADCP has had time to equilibrate to the water temperature and make another comparison. If the difference is still greater than 2 degrees, continue with the measurement. However, check the independent temperature source against another temperature source. If the independent temperature reading is correct, change the temperature source to user and enter the independent temperature source and reprocess the measurement.
+
+**Quality Check:** User changed temperature source	  
+**Status:** Caution	  
+**Message:** Temperature: User modified temperature source  
+**Guidance:** The user has modified the temperature source. Validate the new data from field notes or other documentation.
+
+**Quality Check:** User changed speed of sound source	  
+**Status:** Caution	  
+**Message:** Temperature: User modified speed of sound source  
+**Guidance:** The user has modified the speed of sound source. Validate the new data from field notes or other documentation.
+
+**Quality Check:** User change the independent temperature	  
+**Status:** Caution	  
+**Message:** Temperature: User modified independent temperature  
+**Guidance:** The user has modified the independent temperature reading. Validate this reading from the field notes.
+
+**Quality Check:** User changed the ADCP temperature	  
+**Status:** Caution	  
+**Message:** Temperature: User modified ADCP temperature  
+**Guidance:** The user has modified the ADCP temperature. Validate this reading from the field notes and with the ADCP temperature time series.
 
 ### Moving-Bed Tests
 The USGS policy requires a moving-bed test to be completed for every ADCP 
@@ -1210,24 +1541,111 @@ variation could have substantial impact on the results using GPS. The
 magnetic variation, heading offset, and heading source can be changed by 
 changing them on the Compass P/R tab and applying to all transects.
 
-**Table 10.** Loop moving-bed test quality checks and messages.
+#### Loop test quality checks, messages and guidance
 
-![](./assets/tech_manual/table_10.png)
+**Quality Check:** Mean water velocity < 0.25 mps  	   
+**Status:** Warnings	     
+**Message:** WARNING: The water velocity is less than recommended minimum for the test and could cause the loop to be inaccurate. CONSIDER USING A STATIONARY TEST.     
+**Guidance:** The low water velocity could result in an inaccurate result simply due to random errors. Use a stationary test.
 
-**Table 11.** Loop moving-bed test moving-bed determination checks and 
-messages.
+**Quality Check:** Invalid bottom track > 20%	  
+**Status:** Errors	  
+**Message:** ERROR: Percent invalid bottom track exceeds 20%. LOOP IS NOT ACCEPTABLE. TRY A STATIONARY MOVING-BED TEST.  
+**Guidance:** The loop test is dependent of accurate bottom track. Use a stationary moving-bed test.  
 
-![](./assets/tech_manual/table_11.png)
+**Quality Check:** Invalid bottom track > 5%  	  
+**Status:** Warnings	  
+**Message:** WARNING: Percent invalid bottom track exceeds 5%. Loop may not be accurate. PLEASE REVIEW DATA.  
+**Guidance:** The loop test is dependent of accurate bottom track. Carefully review the test. If bottom track appears to cause inaccuracies complete a stationary test.
+
+**Quality Check:** Consecutive invalid bottom track > 9 seconds	  
+**Status:** Errors	  
+**Message:** ERROR: Bottom track is invalid for more than 9 consecutive seconds. LOOP IS NOT ACCURATE. TRY A STATIONARY MOVING-BED TEST.  
+**Guidance:** The loop test is dependent of accurate bottom track. Carefully 
+review the test to see the invalid bottom track occurred. If the invalid 
+data is in a location where the boat speed and direction was consistent the 
+effect may be small. However, it is recommended to collect a stationary test. 
+
+**Quality Check:** Difference in flow direction out and back > 3 degrees AND Potential compass error results in discharge error > 5% AND Difference in flow direction > flow direction uncertainty  
+**Status:** Errors  	   
+**Message:** ERROR: Difference in flow direction between out and back sections of loop could result in a 5% or greater error in the final discharge. REPEAT LOOP AFTER COMPASS CALIBRATION OR USE STATIONARY TEST.     
+**Guidance:** In addition to bottom tracking, accurate headings are required for a valid loop test. The loop shows substantial difference in water direction for the outgoing and return portions of the loop, which is indicative of invalid headings. Repeat the loop after recalibrating the compass or use a stationary test.
+
+**Quality Check:** No valid bottom track	  
+**Status:** Error	  
+**Message:** ERROR - Loop has no valid bottom track data. REPEAT OR USE A 
+STATIONARY MOVING-BED TEST 
+**Guidance:** Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate.
+
+#### Loop moving-bed results   
+
+**Result:** Test status = Error	  
+**Moving bed:** Unknown	  
+**Message:** ERROR: Due to ERRORS noted above this loop is NOT VALID. Please consider suggestions.  
+**Guidance:** Collect a valid moving-bed test either loop or stationary. 
+
+**Result:** Closure error not within +/- 45 degrees of upstream	  
+**Moving bed:** Unknown	  
+**Message:** ERROR: Loop closure error not in upstream direction. REPEAT LOOP or USE STATIONARY TEST.  
+**Guidance:** Collect a valid moving-bed test either loop or stationary.
+
+**Result:** Moving-bed percent > 1%	  
+**Moving bed:** Yes	  
+**Message:** Loop Indicates a Moving Bed -- Use GPS as reference. If GPS is unavailable or invalid use the loop method to correct the final discharge.    
+**Guidance:** Use GPS as reference. If GPS is unavailable or invalid use the loop method to correct the final discharge.
+
+**Result:** Moving-bed percent < 1%	  
+**Moving bed:** No	  
+**Message:** Moving Bed Velocity < 1% of Mean Velocity -- No Correction Recommended  
+**Guidance:** Use bottom track as navigation reference unless automated filters indicate substantial problems with bottom track.
+
+**Result:** Moving-bed speed < 0.012 m/s	  
+**Moving bed:** No	  
+**Message:** Moving-bed velocity < Minimum moving-bed velocity criteria -- No correction recommended.  
+**Guidance:** Use bottom track as navigation reference unless automated filters indicate substantial problems with bottom track.
 
 Unlike WinRiver II, RiverSurveyor Live, or SMBA, QRev evaluates the quality of individual stationary moving-bed tests. The evaluation examines the percentage of ensembles with invalid bottom track velocities, the duration of the test, and if the test appears to have reached equilibrium. Data with invalid bottom track are excluded from the stationary test. The logic for the evaluation of stationary moving-bed test is provided in Tables 12 and 13.
 
-**Table 12.** Stationary moving-bed test quality checks and messages.
+#### Stationary moving-bed test quality checks, messages, and guidance   
 
-![](./assets/tech_manual/table_12.png)
+**Quality Check:** No valid bottom track	  
+**Status:** Error	  
+**Message:** ERROR - Stationary moving-bed test has no valid bottom track data.  
+**Guidance:** Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate.
 
-**Table 13.** Stationary moving-bed test moving-bed determination.
+**Quality Check:** Duration < 300 seconds	  
+**Status:** Warning	  
+**Message:** WARNING - Duration of stationary test is less than 5 minutes  
+**Guidance:** It is recommended that the duration of the stationary moving-bed test be at least 5 minutes to allow clear delineation between random boat movement and the effects of a moving-bed condition. Review the data to validate the test or collect a test with a longer duration.
 
-![](./assets/tech_manual/table_13.png)
+**Quality Check:** Last 30 seconds of test has a coefficient of variation > 0.25 and a velocity standard deviation > 0.03	  
+**Status:** Warning	  
+**Message:** WARNING - Moving-bed velocity may not be consistent. Average maybe inaccurate.  
+**Guidance:** The moving-bed velocity is not expected to be constant but will vary as pulses of sediment are transported. However, over the duration of the test an average or equilibrium value is expected. This test indicates considerable variability in the average at the end of the test. Either the duration of the test should be extended or the random movement of the boat is causing this effect and the boat needs to be stabilized.
+
+**Quality Check:** Duration of valid bottom track <= 120 seconds  	   
+**Status:** Error	  
+**Message:** ERROR - Total duration of valid BT data is insufficient for a valid test.  
+**Guidance:** The duration of the stationary moving-bed test is too short to ensure that the effects of a moving-bed condition dominate the potential random motion of the ADCP. Collect a longer duration test.
+
+**Quality Check:** Percent of invalid bottom track > 10%	  
+**Status:** Warning	  
+**Message:** WARNING - Number of ensembles with invalid bottom track exceeds 10%  
+**Guidance:** Invalid bottom track during a stationary moving-bed test can occur during the most severe sediment transport conditions. This loss of bottom track data can result in a moving-bed test result that biases the effect of the moving bed low. If there is indication of a moving-bed, the use of GPS for the navigation reference is recommended, as correction of bottom track referenced discharge by the moving-bed test results may not completely compensate for the moving-bed bias.
+
+#### Stationary moving-bed test results  
+
+**Result:** Stationary test has errors  
+**Moving bed:** Unknown  
+**Guidance:** Repeat stationary test. If a valid stationary test can not be collected, it is unlikely that a valid moving-boat ADCP discharge measurement can be completed, unless GPS can be used for the navigation reference. A mid- or mean-section measurement may be more appropriate.  
+
+**Result:** Percent moving bed >= 1%  
+**Moving bed:** Yes  
+**Guidance:** A moving bed is present. Use GPS as the navigation reference is possible. If GPS is not valid or available collect at least 3 stationary moving-bed test distributed evenly across the channel and use the results of these tests to correct the discharge for the low bias caused by a moving bed. The correction will be automatically computed by QRev.  
+
+**Result:** Percent moving bed < 1%   
+**Moving bed:** No  
+**Guidance:** No moving bed is present. Use bottom track for the navigation reference, if the bottom track is valid.
 
 If more than one loop test or a loop test(s) and stationary test(s) are 
 completed, QRev must decide which test(s) should be selected to determine 
@@ -1240,12 +1658,141 @@ referenced discharge.
 
 The general quality assessment uses the selected moving-bed test to set the tab color and symbol and provide messages to the user. The quality checks and messages for moving-bed tests are shown in Table 14.
 
+#### Moving-bed test quality checks, messages, and guidance
+**Quality Check:** No recorded moving-bed test	  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: No moving bed test  
+**Guidance:** A moving-bed test is required to determine if a moving-bed condition exists. If a moving-bed test cannot or was not collected, provide documentation and analysis as to the likely moving-bed condition at the time of the measurement.
+
+**Quality Check:** All moving-bed tests have been marked invalid by user	  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: No valid moving-bed test based on user input  
+**Guidance:** Provide documentation why a valid moving-bed test could not be collected. Include in the documentation the likely moving-bed condition at the time of the measurement and  justification for that determination.
+
+**Quality Check:** Moving-bed tests have duplicate filenames	  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: Duplicate moving-bed test files marked valid  
+**Guidance:** Duplicate filenames are typically a manufacturer's software bug. Only one of the duplicate tests should be used, that other should be marked invalid.
+
+**Quality Check:** Moving-bed present, BT referenced, no correction applied	  
+**Status:** Warning	  
+**Message:** MOVING-BED: Moving-bed present and BT used, but no correction applied.  
+**Guidance:** A moving-bed is present, but the user has manually turned off the correction. Lack of correction in a moving-bed condition will result in a discharge that is biased low. The discharge should be corrected by a moving-bed test result or GPS should be used for the navigation reference.
+
+**Quality Check:** Moving-bed tests indicate a moving-bed	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: A moving-bed is present.  
+**Guidance:** Moving-bed tests indicate a moving-bed condition. Use GPS for the navigation reference or use the moving-bed test results to correct the discharge for the effect of the moving-bed.
+
+**Quality Check:** Moving-bed present, BT referenced, correction applied  	   
+**Status:** Caution	  
+**Message:** Moving-Bed: BT based moving-bed correction applied  
+**Guidance:** A moving-bed is present and the moving-bed test has been applied to correct the discharge because bottom track is used as the reference. If valid GPS data are available, it is recommended to use GPS as the navigation reference.
+
+**Quality Check:** Moving-bed present, GGA used	  
+**Status:** Caution	  
+**Message:** Moving-Bed: GGA used  
+**Guidance:** A moving-bed is present. GGA is used. Verify the GGA data are valid.
+
+**Quality Check:** Moving-bed present, VTG used	  
+**Status:** Caution	  
+**Message:** Moving-Bed: VTG used  
+**Guidance:** A moving-bed is present. VTG is used. Verify the VTG data are valid.
+
+**Quality Check:** Moving-bed present, composite tracks turned on	  
+**Status:** Caution	  
+**Message:** Moving-Bed: Use of composite tracks could cause inaccurate results  
+**Guidance:** Use of composite tracks in moving-bed conditions is generally not recommended. GPS data are not affected by moving-bed conditions but bottom track data are biased by moving-bed conditions. So mixing of bottom track and GPS data will result in inconsistent handling of moving-bed effects.
+
+**Quality Check:** Stationary moving-bed tests indicated a moving bed, no GPS data, and less than 3 stationary tests	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Less than 3 stationary tests available for moving-bed correction  
+**Guidance:** A moving-bed is present and the results of the stationary moving-bed test will be used to correct the discharge for the effects of the moving-bed. Moving-bed conditions vary across the channel, so at least 3 stationary tests distributed evenly across the channel are recommended to capture the variability of the moving-bed and provide a better correction for the discharge. A correction will be computed using only one test, but a better result would be obtained with at least 3 stationary tests.
+
+**Quality Check:** All moving-bed tests have warnings	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: The moving-bed test(s) has warnings, please review tests to determine validity  
+**Guidance:** Review the tests to determine if they are valid. If in the field, consider collecting another moving-bed test, perhaps using a different method (stationary or loop).
+
+**Quality Check:** User forced use of moving-bed tests for correction that had critical errors	  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: The user has manually forced the use of some tests  
+**Guidance:** Justification for using moving-bed tests with critical errors should be provided in the documentation.
+
+**Quality Check:** All moving-bed tests have critical errors	  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: The moving-bed test(s) have critical errors and will not be used  
+**Guidance:** If in the field, consider collecting another moving-bed test, perhaps using a different method (stationary or loop). If a moving-bed test cannot or was not collected provide documentation and analysis as to the likely moving-bed condition at the time of the measurement.
+
+**Quality Check:** Multiple valid loop tests did not produce consistent results	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Results of valid loops are not consistent, review moving-bed tests  
+**Guidance:** The loop tests are not consistent. Review the tests and determine which test should be used by marking the other tests invalid. By default QRev will use the last valid loop test.
+
+**Quality Check:** User changed valid tests	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test:  User modified valid test settings.  
+**Guidance:** Provide documentation as to why the test has been determined to be valid or invalid.
+
+**Quality Check**: User changed correction application  
+**Status:** Caution	  
+**Message:** Moving-Bed Test:  User modified use to correct settings.  
+**Guidance:** Provide documentation as to justify the decision to use or not use the test for correction.
+
+**Quality Check:** Difference in percent moving bed between BT and GPS > 2%	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Bottom track and GPS results differ by more than 2%.  
+**Guidance:** GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and a the ADCP was stationary during the stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user knowledge of the test and the validation of the data.
+
+**Quality Check:** Results of moving bed tests using BT and GPS do not agree	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Bottom track and GPS results do not agree.  
+**Guidance:** GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and the ADCP was stationary during a stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference, the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user's knowledge of the test and the validation of the data.
+
+**Quality Check:** Optional visual observation checked	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Visually observed no moving bed  
+**Guidance:** Provide documentation describing the visual observation and why it was determined that there was no moving bed.
+
+**Quality Check:** Compass required for loop test  
+**Status:** Warning	  
+**Message:** MOVING-BED TEST: Loop test is not valid. ADCP has no compass.  
+**Guidance:** A loop test requires a accurate compass. Collect a stationary test instead of a loop test.
+
+**Quality Check:** Loop test with poor compass calibration	  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: Loop test used but compass calibration is (compass status)  
+**Guidance:** A loop test requires a accurate compass. Recalibrate the compass prior to collecting another loop test or collect a stationary test instead of a loop test.
+
+**Quality Check:** Moving-bed test added  
+**Status:** Caution	  
+**Message:** Moving-Bed Test: A moving-bed test has been manually added to the measurement.  
+**Guidance:** Provide documentation on the source of the moving-bed test and why it was not originally collected with this measurement.
+
 ### User Input
 QRev checks that a station name and station number have been entered. If 
 the station name and number are entered in WinRiver II, QRev will read and 
 use those values. The Matlab output from SonTek does not provide a station 
 name and number; therefore, for SonTek ADCPs, the user must enter the 
 station name and number manually in QRev.
+
+#### User Input Quality Checks, Messages, and Guidance
+**Quality Check:** Site name not entered   
+**Status:** Caution   
+**Message:** Site Info: Site name not entered   
+**Guidance:** Enter site name or description of site location to identify 
+the location of this measurement.   
+
+**Quality Check:** Site number not entered   
+**Status:** Caution   
+**Message:** Site Info: Site number not entered   
+**Guidance:** If the measurement was made at numbered gauging site, enter 
+the site number.   
+
+**Quality Check:** Time zone required   
+**Status:** Caution   
+**Message:** Time Zone: Your agency requires the time zone to be entered.    
+**Guidance:** Your agency requires the time zone to be entered. Select the appropriate time zone from the list on the Premeasurement tab.   
 
 ### Measured Discharge Variables
 The measured discharge variables are boat velocity, depth, and water 
@@ -1257,22 +1804,216 @@ the maximum discharge interpolated for a continuous segment of invalid data,
 and (3) the total number of invalid ensembles. The quality checks and 
 resulting messages are provided in Tables 15-16.
 
-**Table 14.** Moving-bed test quality checks and messages.
+#### Boat velocity quality checks, messages, and guidance  
 
-![](./assets/tech_manual/table_14.png)
+**Quality Check:** All date invalid	    
+**Status:** Warning	    
+**Message:** <ref> <filter> - There are no valid data for one or more 
+transects  
+**Guidance:** Carefully review the data with special attention to the 
+identified filter. If for some reason the filter results do not appear 
+reasonable, change the filter setting. Provide 
+justification for any changes made.
 
-**Table 15.** Summary of quality assessment messages for boat velocity. 
-[<ref>: bt, gga, or vtg; <REF> BT, GGA, VTG]
+**Quality Check:** Percent of discharge interpolated for ensembles with invalid <ref> > 10%	  
+**Status:** Caution	  
+**Message:** <ref> - Int. Q for invalid ensembles in a transect exceeds 10%  
+**Guidance:** More than 10% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.
 
-![](./assets/tech_manual/table_15.png)
+**Quality Check:** Percent of discharge interpolated for ensembles with invalid <ref> > 25%	  
+**Status:** Warning	  
+**Message:** <REF> -  Int. Q for invalid ensembles in a transect exceeds 25%  
+**Guidance:** More than 25% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.
 
-**Table 16.** Summary of quality assessment messages for depth.
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid <ref> > 3%	  
+**Status:** Caution	  
+**Message:** <ref> -  Int. Q for consecutive invalid ensembles exceeds 3%  
+**Guidance:** More than 3% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.
 
-![](./assets/tech_manual/table_16.png)
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid <ref> > 5%	  
+**Status:** Warning	  
+**Message:** <REF> -  Int. Q for consecutive invalid ensembles exceeds 5%  
+**Guidance:** More than 5% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.
 
-**Table 17.** Summary of quality assessment messages for water velocity.
+**Quality Check:** VTG selected as navigation reference and average boat speed < 0.24 m/s  	   
+**Status:** Caution	  
+**Message:** vtg-AvgSpeed: VTG data may not be accurate for average boat speed less than  
+**Guidance:** VTG velocities are based on a Doppler shift in the satellite signals. At velocities lower than 0.24 m/s these velocities may not be accurate in either magnitude and/or direction.
 
-![](./assets/tech_manual/table_17.png)
+**Quality Check:** GGA lag > 10 sec	  
+**Status:** Warning	  
+**Message:** GGA: BT and GGA do not appear to be synchronized  
+**Guidance:** The GGA data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate. 
+
+**Quality Check:** GGA lag > 2 sec	  
+**Status:** Caution	  
+**Message:** gga: Lag between BT and GGA > 2 sec  
+**Guidance:** The GGA data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate. 
+
+**Quality Check:** VTG lag > 10 sec	  
+**Status:** Warning	  
+**Message:** VTG: BT and VTG do not appear to be synchronized  
+**Guidance:** The VTG data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate. 
+
+**Quality Check:** VTG lag > 2 sec	  
+**Status:** Caution	  
+**Message:** vtg: Lag between BT and VTG > 2 sec  
+**Guidance:** The VTG data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate. 
+
+**Quality Check:** User changed	default beam setting  
+**Status:** Caution	  
+**Message:** BT: User modified default beam setting.  
+**Guidance:** This filter determines the use of 3-beam solutions for bottom track. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default error velocity filter  
+**Status:** Caution	  
+**Message:** BT: User modified default error velocity filter.  
+**Guidance:** This filter is based on an assumption of a random distribution of the error velocity. For SonTek data, each frequency is treated separately. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default vertical velocity filter  
+**Status:** Caution	  
+**Message:** BT: User modified default vertical velocity filter.  
+**Guidance:** This filter is based on an assumption of a random distribution of the vertical velocity. For SonTek data, each frequency is treated separately. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default smooth filter  
+**Status:** Caution	  
+**Message:** BT: User modified default smooth filter.  
+**Guidance:** The smooth filter is not used by default. It can be used when the standard 3-beam, error velocity, and vertical velocity filters fail to mark obvious spikes in the boat velocity invalid. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default quality setting  
+**Status:** Caution	  
+**Message:** GPS: User modified default quality setting.  
+**Guidance:** If the quality setting is less than 2, evaluate the time series and shiptrack for large random errors. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default altitude filter  
+**Status:** Caution	  
+**Message:** GPS: User modified default altitude filter.  
+**Guidance:** The altitude filter is well correlated with the horizontal accuracy of the GGA data. The default setting is based on a target of sub-meter accuracy. Increasing the altitude filter would allow less accurate data to be used. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default HDOP filter  
+**Status:** Caution	  
+**Message:** GPS: User modified default HDOP filter.  
+**Guidance:** The HDOP is a measure of accuracy based on satellite configuration. Increasing the value of HDOP could result in the acceptance of less accurate data. Provide documentation on the logic for changing the default filter setting.
+
+**Quality Check:** User changed	default smooth filter  
+**Status:** Caution	  
+**Message:** GPS: User modified default smooth filter.  
+**Guidance:** The smooth filter is not used by default. It can be used when the other filters fail to mark obvious spikes in the boat velocity invalid. Provide documentation on the logic for changing the default filter setting.   
+ 
+
+#### Depth quality checks, messages, and guidance
+
+**Quality Check:** Depth of transducer is inconsistent for all transects  
+**Status:** Caution	  
+**Message:** Depth: Transducer depth is not consistent among transects  
+**Guidance:** Generally the depth of the transducer is set at the beginning of the measurement and not changed. If the change in the depth of the transducer is correct, provide documentation, if not, set the depth of transducer to the correct value.
+
+**Quality Check:** Depth of transducer < 0.01 m	  
+**Status:** Warning	  
+**Message:** DEPTH: Transducer depth is too shallow, likely 0  
+**Guidance:** The transducer must be submerged, thus a value less than 0.01 m is not reasonable. Set the correct depth of transducer.
+
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid mean depth > 5%	  
+**Status:** Warning	  
+**Message:** DEPTH: Int. Q for consecutive invalid ensembles exceeds 5%  
+**Guidance:** More than 5% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.
+
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid mean depth > 3%	  
+**Status:** Caution	  
+**Message:** Depth: Int. Q for consecutive invalid ensembles exceeds 3%  
+**Guidance:** More than 3% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.
+
+**Quality Check:** Percent of discharge interpolated for ensembles with invalid mean depth > 25%	  
+**Status:** Warning	  
+**Message:** DEPTH: Int. Q for invalid ensembles in a transect exceeds 25%  
+**Guidance:** More than 25% of the discharge was computed for ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.
+
+**Quality Check:** Percent of discharge interpolated for ensembles with invalid mean depth > 10%	  
+**Status:** Caution	  
+**Message:** Depth: Int. Q for invalid ensembles in a transect exceeds 10%  
+**Guidance:** More than 10% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.
+
+**Quality Check:** No valid depths  
+**Status:** Warning  
+**Message:** DEPTH: There are no valid depths for one or more transects  
+**Guidance:** Review the depth filters and measured depths to ensure that the filter settings are appropriate. If there are no valid depths, remove the transect from consideration in computing discharge.
+
+**Quality Check:** User changed depth reference  
+**Status:** Caution	  
+**Message:** Depths: User modified depth reference.  
+**Guidance:** Provide documentation to justify the selected depth reference.
+
+**Quality Check:** User changed depth composite setting	  
+**Status:** Caution	  
+**Message:** Depths: User modified depth reference.  
+**Guidance:** Provide documentation to justify the selected depth reference.
+
+**Quality Check:** User changed averaging method  
+**Status:** Caution	  
+**Message:** Depths: User modified averaging method.  
+**Guidance:** The default inverse distance weighting method was changed to a simple average. Provide documentation to justify the change.
+
+**Quality Check:** User changed	filter type  
+**Status:** Caution	  
+**Message:** Depths: User modified filter type.  
+**Guidance:** The default filter was changed. Provide documentation to justify the change.
+
+**Quality Check:** User changed draft  
+**Status:** Caution	  
+**Message:** Depths: User modified draft.  
+**Guidance:** The depth of the transducer (draft) was changed. Provide documentation to justify the change.
+
+#### Water velocity quality checks, messages, and guidance
+
+**Quality Check:** Percent of discharge interpolated for depth cells with invalid water track > 10%	  
+**Status:** Caution	  
+**Message:** wt - Int. Q for invalid cells and ensembles in a transect exceeds 10%  
+**Guidance:** More than 10% of the discharge was computed for invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.
+
+**Quality Check:** Percent of discharge interpolated for depth cells with invalid water track > 25%	  
+**Status:** Warning	  
+**Message:** WT - Int. Q for invalid cells and ensembles in a transect exceeds 25%  
+**Guidance:** More than 25% of the discharge was computed for invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.
+
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid water track > 3%	  
+**Status:** Caution	  
+**Message:** wt -  Int. Q for consecutive invalid ensembles exceeds 3%  
+**Guidance:** More than 3% of the discharge was computed for consecutive ensembles with invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.
+
+**Quality Check:** Percent of discharge interpolated for consecutive ensembles with invalid water track > 5%	  
+**Status:** Warning	  
+**Message:** WT - Int. Q for consecutive invalid ensembles exceeds 5%  
+**Guidance:** More than 5% of the discharge was computed for consecutive ensembles with invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.
+
+**Quality Check:** No valid water velocities	  
+**Status:** Warning	  
+**Message:** WT - All: There are no valid data for one or more transects.  
+**Guidance:** There are no valid water velocities. Check the filters to make sure the settings are reasonable. If the filter settings are good, then remove the transect from consideration in the computation of discharge. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.
+
+**Quality Check:** User changed excluded distance  
+**Status:** Caution	  
+**Message:** WT: User modified excluded distance.  
+**Guidance:** The excluded distance is set in QRev to remove the potential low bias caused by flow disturbance. Reducing the excluded distance could result in a low bias in the cells near the transducer. Provide documentation to justify the setting.
+
+**Quality Check:** User change	default beam solution setting  
+**Status:** Caution	  
+**Message:** WT: User modified default beam setting.  
+**Guidance:** This filter determines the use of 3-beam solutions for bottom track. Provide documentation for the logic of changing the default filter.
+
+**Quality Check:** User changed default error velocity filter  	   
+**Status:** Caution	  
+**Message:** WT: User modified default error velocity filter.  
+**Guidance:** This filter is based on an assumption of a random distribution of the error velocity. When set to Auto each ping type is treated separately. A manually provided value is applied to all ping types. Provide documentation for the logic of changing the default filter.
+
+**Quality Check:** User changed default vertical velocity filter	  
+**Status:** Caution	  
+**Message:** WT: User modified default vertical velocity filter.  
+**Guidance:** This filter is based on an assumption of a random distribution of the vertical velocity. When set to Auto each ping type is treated separately. A manually provided value is applied to all ping types. Provide documentation for the logic of changing the default filter.
+
+**Quality Check:** User changed default SNR filter  
+**Status:** Caution	  
+**Message:** WT: User modified default SNR filter.  
+**Guidance:** The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off. Provide documentation for the logic of changing the default filter.
 
 ### Extrapolation
 The quality of the extrapolation is based on the extrapolation uncertainty 
@@ -1280,9 +2021,37 @@ The quality of the extrapolation is based on the extrapolation uncertainty
 extrapolation uncertainty). The quality checks and resulting messages are 
 provided in Table 18.
 
-**Table 18.** Extrapolation Quality Checks
+#### Extrapolation quality checks, messages, and guidance
 
-![](./assets/tech_manual/table_18.png)
+**Quality Check:** Extrapolation uncertainty is greater than 2%	  
+**Status:** Caution	  
+**Message:** Extrapolation: The extrapolation uncertainty is more than 2 percent. Carefully review the extrapolation.  
+**Guidance:** The extrapolation method will have a substantial effect on 
+the discharge. Carefully evaluate various extrapolation methods and choose 
+the method that best fits the data. Provide justification for the selected 
+method in the comments.
+
+**Quality Check:** User changed automatic setting  
+**Status:** Caution	  
+**Message:** Extrapolation: User modified default automatic setting.  
+**Guidance:** The extrapolation has been set manually. Provide 
+justification for the selected method in the comments.
+
+
+**Quality Check:** User change	modified data type  
+**Status:** Caution	  
+**Message:** Extrapolation: User modified data type  
+**Guidance:** It is not recommend to use velocity as the data type when evaluating the extrapolation methods for use in the moving-boat discharge measurement.
+
+**Quality Check:** User changed default threshold  
+**Status:** Caution	  
+**Message:** Extrapolation: User modified default threshold.  
+**Guidance:** Changing the default threshold can be used to remove a median value from consideration that has fewer points in the median. Provide justification for the threshold setting in the documentation.
+
+**Quality Check:** User changed default subsectioning  
+**Status:** Caution	  
+**Message:** Extrapolation: User modified subsectioning  
+**Guidance:** Changing the default subsectioning can be used to remove the influence of data near the stream banks. Provide justification for the subsectioning in the documentation.
 
 ### Edges
 The quality assessment of edges is a combination of USGS policy, 
@@ -1290,17 +2059,80 @@ reasonableness of edge estimates, and consistency. The USGS policy requires
 supporting documentation or data for any edge estimate that exceeds 5 
 percent of the total discharge (Mueller and others, 2013). In addition, 
 edges should not have a zero discharge and the edge type and sign 
-(direction) should be consistent. The logic for assessing the quality of 
-the edges is provided in Table 19.
+(direction) should be consistent. 
+
+#### Edge quality checks, messages, and guidance
+
+**Quality Check:** Left or right edge discharge > 5% of total	  
+**Status:** Caution	  
+**Message:** Edges: Edge Q is greater than 5%  
+**Guidance:** It is recommended that an edge contain a maximum of 5% of the total discharge. If an edge contains more than 5% consider using a different cross section, if possible. If it is not possible, provide documentation, including if the edge discharge appears reasonable.
+
+**Quality Check:** Left or right edge discharge for a transect is > 5% of total	  
+**Status:** Caution	  
+**Message:** Edges: One or more transects have an edge Q greater than 5%  
+**Guidance:** It is recommended that an edge contain a maximum of 5% of the total discharge. If an edge contains more than 5% consider using a different cross section, if possible. If it is not possible, provide documentation, including if the edge discharge appears reasonable.
+
+**Quality Check:** Sign of left or right edge discharges is inconsistent among transects  
+**Status:** Caution	  
+**Message:** Edges: Sign of edge Q is not consistent  
+**Guidance:** The sign of the discharge for an edge is not consistent, as expected. This may happen if the velocities are very low and there is flow fluctuation. This could also happen if there is a flow reversal on the edge and the transect is not started or stopped in a consistent location. If there is negative flow in the edge that flow should be captured in the transect.
+
+**Quality Check:** Distance moved during collection of left or right edge data 
+exceeds 5% of distance made good or the user provided left or right edge distance	  
+**Status:** Caution	  
+**Message:** Edges: Excessive boat movement in edge ensembles  
+**Guidance:** Data used to compute the edge discharge should be collected in a fixed location and the distance from that location to the water's edge should be measured. Excessive movement of the boat during the collection of ensembles used to compute the edge discharge may result in inaccurate average depth and velocity used in the edge discharge computation. Verify the ensembles used in the edge computation.
+
+**Quality Check:** Invalid left or right edge ensembles > 25%	  
+**Status:** Caution	  
+**Message:** Edges: The percent of invalid ensembles exceeds 25% in one or more transects.  
+**Guidance:** More than 25% of the ensembles used to compute the mean depth and velocity for edge discharge computations are invalid. Verify the ensembles used in the edge computation provide a good average depth and velocity. If more ensembles are needed change the number of edge ensembles and adjust the distance to the water's edge as appropriate.
+
+**Quality Check:** Left or right edge discharge in one or more transects = 0	  
+**Status:** Warning	  
+**Message:** EDGES: Edge has zero Q  
+**Guidance:** Edges typically do not have a zero discharge. Check that the edge distance has been entered and there are sufficient valid ensembles to compute a mean depth and velocity. Provide documentation for any needed changes.
+
+**Quality Check:** Type of edge for left or right edge is not consistent     	   
+**Status:** Warning	  
+**Message:** EDGES: An edge has an inconsistent edge type  
+**Guidance:** Unless the transects have been collected at different cross sections the edge type should be consistent for all transects in a measurement. Adjust the edge type as appropriate and provide documentation to explain the difference or needed change.
+
+**Quality Check:** User changed	start edge  
+**Status:** Caution	  
+**Message:** Edges: User modified start edge.  
+**Guidance:** Verify that the sign of the total discharge is correct and provide documentation of any changes.
+
+**Quality Check:** User changed left or right edge type  
+**Status:** Caution	  
+**Message:** Edges: User modified (left, right) edge type.  
+**Guidance:** Verify that the edge types are consistent and/or correct and provide documentation for the difference or any changes.
+
+**Quality Check:** User changed left or right edge distance	  
+**Status:** Caution	  
+**Message:** Edges: User modified (left, right) edge distance.  
+**Guidance:** Document the reason for changing the edge distance, such as, incorrect value entered or a change due to changing the number of edge ensembles.
+
+**Quality Check:** User changed left or right number of ensembles  
+**Status:** Caution	  
+**Message:** Edges: User modified (left, right) number of ensembles.  
+**Guidance:** Document the reason for changing the number of ensembles and adjust the edge distance as appropriate.
+
+**Quality Check:** User changed left or right user discharge  
+**Status:** Caution	  
+**Message:** Edges: User modified (left, right) user discharge.  
+**Guidance:** Provide documentation to support the specified user discharge.
+
+**Quality Check:** User change	left or right custom coefficient  
+**Status:** Caution	  
+**Message:** Edges: User modified (left, right) custom coefficient.  
+**Guidance:** Document the logic used to obtain the custom edge coefficient.
 
 ## Uncertainty Computation
 Computing the uncertainty of an ADCP moving-boat discharge measurement is a complex task. Although many researchers have proposed approaches to determining the uncertainty of an ADCP moving-boat discharge measurement, an uncertainty model that has been generally accepted and that can be applied to actual field measurements does not exist. QRev provides two options for estimating the uncertainty of a measurement:
 1. original QRev model (QRev-UA) based on simple assumptions of what are likely the largest error sources, and
 2. OURSIN model based on the framework of the Guide to the expression of Uncertainty in Measurement (GUM).
-
-**Table 19.** Edge discharge quality checks and messages.
-
-![](./assets/tech_manual/table_19.png)
 
 ### QRev-UA
 The approach used in QRev-UA is neither detailed nor comprehensive but is presented as a guide to the user in rating the measurement. QRev assesses the uncertainty based on the following six categories:
@@ -2126,8 +2958,8 @@ contains all the depth data
    - dzi_prct_user: user specified percent error in depth cell size
    - right_edge_dist_prct_user: user specified percent error in right edge distance
    - left_edge_dist_prct_user: user specified percent error in left edge distance
-   - gga_boat_user: user specified standard deviation of boat velocities based on gga in m/s
-   - vtg_boat_user: user specified standard deviation of boat velocities based on vtg in m/s
+   - gga_boat_user: user specified standard deviation of boat velocities based on GGA in m/s
+   - vtg_boat_user: user specified standard deviation of boat velocities based on VTG in m/s
    - compass_error_user: user specified compass error in degrees
    - default_advanced_settings: default values for advanced settings
    - exp_pp_min: default minimum exponent for power fit
@@ -2138,8 +2970,8 @@ contains all the depth data
    - dzi_prct: default percent error in depth cell size
    - right_edge_dist_prct: default percent error in right edge distance
    - left_edge_dist_prct: default percent error in left edge distance
-   - gga_boat: default standard deviation of boat velocities based on gga in m/s
-   - vtg_boat: default standard deviation of boat velocities based on vtg in m/s
+   - gga_boat: default standard deviation of boat velocities based on GGA in m/s
+   - vtg_boat: default standard deviation of boat velocities based on VTG in m/s
    - compass_error: default compass error in degrees
    - user_specified_u: user specified uncertainties as standard deviation in percent
    - u_syst_mean_user: user specified uncertianty (bias) due to the system, in percent
@@ -2381,7 +3213,7 @@ contains all the depth data
       - rawGGADifferential: differential correction indicator, [n,ensemble]
       - rawGGAHDOP: horizontal dilution of precision, [n,ensemble]
       - rawGGAUTC: UTC time, hhmmss.ss, [n,ensemble]
-      - rawGGASerialTime: UTC time of gga data in seconds past midnight, [n,ensemble]
+      - rawGGASerialTime: UTC time of GGA data in seconds past midnight, [n,ensemble]
       - rawGGANumSats: number of satellites reported in GGA sentence, [n,ensemble]
       - rawVTGCourse_deg: course in degrees, [n, ensemble]
       - rawVTGSpeed_mps: speed in meters per second, [n, ensemble]
@@ -2393,19 +3225,19 @@ contains all the depth data
       - extGGADifferential: differential correction indicator computed by external source, [1,ensemble]
       - extGGAHDOP: horizontal dilution of precision computed by external source, [1,ensemble]
       - extGGAUTC: UTC time, hhmmss.ss computed by external source, [1,ensemble]
-      - extGGASerialTime: UTC time of gga data in seconds past midnight computed by external source, [1,ensemble]
+      - extGGASerialTime: UTC time of GGA data in seconds past midnight computed by external source, [1,ensemble]
       - extGGANumSats: number of satellites computed by external source [1,ensemble]
       - extVTGCourse_deg: course in degrees computed by external source, [1, ensemble]
       - extVTGSpeed_mps: speed in meters per second computed by external source, [1, ensemble]
-      - ggaPositionMethod: method used to process gga data for position ('End', 'Average', 'External')
-      - ggaVelocityMethod: method used to process gga data for velocity ('End', 'Average', 'External')
-      - vtgVelocityMethod: method used to process vtg data for velocity ('Average', 'External)
+      - ggaPositionMethod: method used to process GGA data for position ('End', 'Average', 'External')
+      - ggaVelocityMethod: method used to process GGA data for velocity ('End', 'Average', 'External')
+      - vtgVelocityMethod: method used to process VTG data for velocity ('Average', 'External)
       - ggaLatEns_deg: processed latitude in degrees, [1,ensemble]
       - ggaLonEns_deg: processed longitude in degrees, [1,ensemble]
-      - UTMEns_m: UTM position from processed gga data, [2,ensemble]
-      - ggaVelocityEns_mps: Boat velocity computed from gga data [2,ensemble]
-      - ggaSerialTimeEns: UTC time of gga data in seconds past midnight, [1,ensemble]
-      - vtgVelocityEns_mps: boat velocity computed from vtg data [2,ensemble]
+      - UTMEns_m: UTM position from processed GGA data, [2,ensemble]
+      - ggaVelocityEns_mps: Boat velocity computed from GGA data [2,ensemble]
+      - ggaSerialTimeEns: UTC time of GGA data in seconds past midnight, [1,ensemble]
+      - vtgVelocityEns_mps: boat velocity computed from VTG data [2,ensemble]
       - perGoodEns: percentage of available data used to compute ensemble value
       - hdopEns: horizontal dilution of precision for each ensemble using velocity method
       - numSatsEns: number of satellites for each ensemble, using velocity method

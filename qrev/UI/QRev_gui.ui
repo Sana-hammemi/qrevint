@@ -8741,6 +8741,18 @@
                </widget>
               </item>
               <item>
+               <widget class="QPushButton" name="pb_map_bathy">
+                <property name="font">
+                 <font>
+                  <pointsize>11</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Export Bathy.</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="pb_map_open_earth">
                 <property name="font">
                  <font>
