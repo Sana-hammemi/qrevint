@@ -1103,7 +1103,7 @@ class QAData(object):
                                     3,
                                 ]
                             )
-                            guidance_text = self.tr("Most ADCPs have a custom transformation matrix (except for the RiverRay). If this ADCP as a nominal matrix, check the instruments history log to determine if it ever had a custom matrix. It may also be appropriate to contact the manufacturer to determine the transformation matrix for that ADCP serial number.")
+                            guidance_text = self.tr("Most ADCPs have a custom transformation matrix (except for the RiverRay). If this ADCP has a nominal matrix, check the instruments history log to determine if it ever had a custom matrix. It may also be appropriate to contact the manufacturer to determine the transformation matrix for that ADCP serial number.")
                             self.system_tst["guidance"].append(
                                 self.guidance_prep(
                                     self.system_tst["messages"][-1][0], guidance_text

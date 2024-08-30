@@ -190,7 +190,7 @@ class MovingBedTests(object):
                 # array
                 if type(meas_struct.mbTests) == np.ndarray:
                     for test in meas_struct.mbTests:
-                        temp = MovingBedTests()
+                        temp = MovingBedTests(tr=tr)
                         temp.populate_from_qrev_mat(test, meas_struct)
                         mb_tests.append(temp)
                 # If only one test, that test is not stored in an array
