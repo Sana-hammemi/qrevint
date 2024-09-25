@@ -1603,6 +1603,8 @@ class TransectData(object):
 
         return ping_type
 
+    def rsq(self, transect_data):
+        pass
     @staticmethod
     def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of

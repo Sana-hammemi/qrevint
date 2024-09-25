@@ -2089,6 +2089,10 @@ class WaterData(object):
         if setting == "Auto":
             # Determines if invalid data should use 3-beam computations
             if self.snr_3beam_comp and self.d_filter != 3:
+                if self.snr_beam_velocities is not None:
+                    self.snr_beam_velocities = None
+                    self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                    self.set_nav_reference(transect.boat_vel)
                 cells_above_sl = np.copy(self.cells_above_sl.astype(float))
                 cells_above_sl[cells_above_sl < 0.5] = np.nan
                 snr_adjusted = self.rssi * cells_above_sl

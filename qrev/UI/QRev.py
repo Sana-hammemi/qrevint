@@ -1593,7 +1593,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             time_zone_required=self.time_zone_required,
                             qt_tr=self.tr
                         )
-
+            
                 # Settings based on measurement settings
                 self.use_weighted = self.meas.use_weighted
                 self.run_oursin = self.meas.run_oursin
@@ -1608,7 +1608,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.tab_all.findChild(QtWidgets.QWidget, "tab_uncertainty")
                         )
                     )
-
+            elif select.type == "RSQ":
+                self.meas = Measurement(
+                    in_file=select.fullName, 
+                    source="RSQ",
+                    proc_type="QRev", 
+                    run_oursin=self.run_oursin,
+                    use_weighted=self.use_weighted,
+                    use_measurement_thresholds=self.use_measurement_thresholds,
+                    min_transects=self.agency_options["QA"]["MinTransects"],
+                    min_duration=self.agency_options["QA"]["MinDuration"],
+                    export_xs=self.xs_export,
+                    gps_quality_threshold=self.gps_quality_threshold,
+                    snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
+                    excluded=self.agency_options["Excluded"],
+                    water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                        "threshold"], 
+                    date_format=self.date_format,
+                    time_zone_required=self.time_zone_required, 
+                    qt_tr=self.tr, 
+                )
             if self.meas is not None:
                 # Identify transects to be used in discharge computation
                 self.checked_transects_idx = Measurement.checked_transects(self.meas)

@@ -1,6 +1,9 @@
 import ctypes
 import datetime
 import os
+import shutil
+import json
+import re
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
 
@@ -86,16 +89,6 @@ class Measurement(object):
     use_measurement_thresholds: bool
         Indicates if the entire measurement should be used to set filter
         thresholds
-    stage_start_m: float
-        Stage at start of measurement
-    stage_end_m: float
-        Stage at end of measurement
-    stage_meas_m: float
-        Stage assigned to measurement
-    use_weighted: bool
-        Indicates the setting for use_weighted to be used for reprocessing
-    use_ping_type: bool
-        Indicates if ping types should be used in BT and WT filters
     stage_start_m: float
         Stage at start of measurement
     stage_end_m: float
@@ -189,8 +182,8 @@ class Measurement(object):
         self.run_oursin = run_oursin
         self.min_transects = min_transects
         self.min_duration = min_duration
-        self.station_name = None
-        self.station_number = None
+        self.station_name = ""
+        self.station_number = ""
         self.persons = ""
         self.meas_number = ""
         self.transects = []
@@ -262,6 +255,9 @@ class Measurement(object):
 
             elif source == "Nortek":
                 self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
+
+            elif source == "RSQ":
+                self.load_rsq(in_file, snr_3beam_comp=snr_3beam_comp)
 
             # Process data
             if len(self.transects) > 0:
@@ -700,16 +696,15 @@ class Measurement(object):
             if hasattr(rsdata.SiteInfo, "Site_Name"):
                 if len(rsdata.SiteInfo.Site_Name) > 0:
                     self.station_name = rsdata.SiteInfo.Site_Name
-                else:
-                    self.station_name = ""
+
             if hasattr(rsdata.SiteInfo, "Station_Number"):
                 if len(rsdata.SiteInfo.Station_Number) > 0:
                     self.station_number = rsdata.SiteInfo.Station_Number
-                else:
-                    self.station_number = ""
+
             if hasattr(rsdata.SiteInfo, "Meas_Number"):
                 if len(rsdata.SiteInfo.Meas_Number) > 0:
                     self.meas_number = rsdata.SiteInfo.Meas_Number
+                    
             if hasattr(rsdata.SiteInfo, "Party"):
                 if len(rsdata.SiteInfo.Party) > 0:
                     self.persons = rsdata.SiteInfo.Party
@@ -896,6 +891,150 @@ class Measurement(object):
                 test_type="Stationary",
                 snr_3beam_comp=snr_3beam_comp,
             )
+
+    def load_rsq(self, filename, snr_3beam_comp):
+        temp_path = os.path.join(os.getenv("APPDATA"), "QRev_Data")
+        shutil.unpack_archive(filename[0], temp_path, "zip")
+
+        sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
+
+        # DataSessionProperties (Probably not needed)
+        with open(os.path.join(temp_path, "DataSessionProperties.json")) as json_file:
+            sontek_data["data_properties"] = json.load(json_file)
+
+        # TransectSetupTemplate (Site Info, Inst. Info, Systest, Compcal)
+        with open(os.path.join(temp_path, "TransectSetupTemplate.json")) as json_file:
+            sontek_data["transect_setup"] = json.load(json_file)
+
+        # Create path to transects
+        data_path = os.path.join(temp_path, "AdcpData")
+
+        # Load data to dictionary
+        for folder in os.listdir(data_path):
+            if "Transect" in  folder:
+                # Read transect data
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["transects"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Smba" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Loop" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+        # Remove temporary files
+        shutil.rmtree(temp_path)
+
+        # Assign data to QRev data structure
+        self.rsq_2_qrev(sontek_data)
+        
+    @staticmethod
+    def rsq_read_transect(transect_folder):
+        """Reads the files for a single transect and returns a dictionary of the data.
+        
+        Parameters
+        ----------
+        transect_folder: str
+            Path to containing the transect files
+            
+        Returns
+        -------
+        transect: dict
+            Dictionary of the transect data and configuration
+        
+        """
+        # Define transect dictionary
+        transect = {"config_json": None, "config_jsonlog": None, "data": []}
+
+        # Read configuration
+        try:
+            with open(os.path.join(transect_folder, "Configuration_Updated.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+        except BaseException:
+            with open(os.path.join(transect_folder, "Configuration.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+
+        # Read raw data file to string
+        with open(os.path.join(transect_folder, "RawData.jsonlog")) as json_file:
+            json_log = json_file.read()
+
+        # Find start index for all samples
+        samples_idx = [m.start() for m in re.finditer("RiverSample", json_log)]
+
+        # Read InstrumentRawSessionConfiguration
+        inst_idx = json_log.find("InstrumentRawSessionConfiguration")
+        end_json = samples_idx[0] - 1
+        substring = json_log[inst_idx: end_json]
+        start_json = substring.find("{")
+        transect["config_jsonlog"] = json.loads(substring[start_json::])
+
+        # Loop through samples to create json substring and read json data
+        for n in range(len(samples_idx) - 1):
+            end_json = samples_idx[n + 1] - 1
+            substring = json_log[samples_idx[n]:end_json]
+            start_json = substring.find("{")
+            transect["data"].append(json.loads(substring[start_json::]))
+        
+        # Read last sample
+        substring = json_log[samples_idx[-1]::]
+        start_json = substring.find("{")
+        transect["data"].append(json.loads(substring[start_json::]))
+        
+        return transect
+
+    def rsq_2_qrev(self, sontek_data):
+
+        # Site information pulled from last file
+        if len(sontek_data["transects"]) > 0:
+            transect = sontek_data["transects"][-1]
+            if "SiteInformation" in transect["config_json"]["Setup"]:
+                if "SiteName" in transect["config_json"]["Setup"]["SiteInformation"]:
+                    site_name = transect["config_json"]["Setup"]["SiteInformation"]["SiteName"]
+                    if len(site_name) > 0:
+                        self.station_name = site_name
+
+            if "StationNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                station_number = transect["config_json"]["Setup"]["SiteInformation"]["StationNumber"]
+                if len(station_number) > 0:
+                    self.station_number = station_number
+
+            if "MeasurementNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                meas_no = transect["config_json"]["Setup"]["SiteInformation"]["MeasurementNumber"]
+                if len(meas_no) > 0:
+                    self.meas_number = meas_no
+ 
+            if "Operator" in transect["config_json"]["Setup"]["SiteInformation"]:
+                operator = transect["config_json"]["Setup"]["SiteInformation"]["Operator"]
+                if len(operator) > 0:
+                    self.persons = operator
+                    
+            if "Comments" in transect["config_json"]["Setup"]["SiteInformation"]:
+                comments = transect["config_json"]["Setup"]["SiteInformation"]["Comments"]
+                if len(comments) > 0:
+                    self.comments.append("RSQ Comments: " + comments)
+                else:
+                    self.comments.append("RSQ Comments:")
+
+            # Gauge height information stored as string
+            if "GaugeHeightInformation" in transect["config_json"]["Setup"]["SiteInformation"]:
+                self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
+
+            # System tests
+
+            # Compass calibration
+            
+            # Temperature check
+
+            # Transects
+            for transect_data in sontek_data["transects"]:
+                self.transects.append(TransectData())
+                self.transects[-1].rsq
+
+            # Moving-bed tests
+            
+            
 
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
