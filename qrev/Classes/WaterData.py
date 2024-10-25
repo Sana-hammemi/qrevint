@@ -1288,6 +1288,7 @@ class WaterData(object):
         ):
             # Because the snr filter may apply 3-beam solutions the result
             # could affect other filters, thus it should be run first
+
             if snr is not None:
                 self.filter_snr(transect=transect, setting=snr)
             if difference is not None:
@@ -2084,67 +2085,64 @@ class WaterData(object):
             Setting for filter (Auto, Off)
         """
 
-        self.snr_filter = setting
+        # Set filter result to all valid
+        self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
+        self.all_valid_data()
 
-        if setting == "Auto":
-            # Determines if invalid data should use 3-beam computations
-            if self.snr_3beam_comp and self.d_filter != 3:
-                if self.snr_beam_velocities is not None:
-                    self.snr_beam_velocities = None
+        # Filter only applies to SonTek data
+        if transect.adcp.manufacturer == "SonTek":
+            self.snr_filter = setting
+
+            # Reset data to no snr filter
+            self.snr_beam_velocities = None
+            self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+            self.set_nav_reference(transect.boat_vel)
+
+            if setting == "Auto":
+                # Determines if invalid data should use 3-beam computations
+                if self.snr_3beam_comp and self.d_filter != 3:
+                    cells_above_sl = np.copy(self.cells_above_sl.astype(float))
+                    cells_above_sl[cells_above_sl < 0.5] = np.nan
+                    snr_adjusted = self.rssi * cells_above_sl
+                    snr_average = np.nanmean(snr_adjusted, 1)
+
+                    # Find invalid beams
+                    snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
+
+                    ens_bad_snr = np.any(snr_beam_invalid, axis=0)
+                    valid = np.copy(self.cells_above_sl)
+
+                    bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
+                    valid[bad_snr_array] = False
+                    w_vel_copy = copy.deepcopy(self)
+                    beam_velocities = w_vel_copy.earth_to_beam(
+                        sensors=transect.sensors, adcp=transect.adcp
+                    )
+                    invalid_beam_value = np.tile(np.nan, valid.shape[0])
+
+                    invalid_snr_idx = np.where(snr_beam_invalid)
+
+                    beam_velocities[
+                        invalid_snr_idx[0], :, invalid_snr_idx[1]
+                    ] = invalid_beam_value
+                    self.snr_beam_velocities = beam_velocities
+
+                    # Recompute water velocities using snr adjusted beam velocities
+                    self.snr_beam_velocities = beam_velocities
                     self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
                     self.set_nav_reference(transect.boat_vel)
-                cells_above_sl = np.copy(self.cells_above_sl.astype(float))
-                cells_above_sl[cells_above_sl < 0.5] = np.nan
-                snr_adjusted = self.rssi * cells_above_sl
-                snr_average = np.nanmean(snr_adjusted, 1)
 
-                # Find invalid beams
-                snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
+                else:
+                    bad_snr_idx = np.greater(self.snr_rng, 12)
+                    valid = np.copy(self.cells_above_sl)
 
-                ens_bad_snr = np.any(snr_beam_invalid, axis=0)
-                valid = np.copy(self.cells_above_sl)
+                    bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
+                    valid[bad_snr_array] = False
 
-                bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
-                valid[bad_snr_array] = False
-                w_vel_copy = copy.deepcopy(self)
-                beam_velocities = w_vel_copy.earth_to_beam(
-                    sensors=transect.sensors, adcp=transect.adcp
-                )
-                invalid_beam_value = np.tile(np.nan, valid.shape[0])
+                self.valid_data[7, :, :] = valid
 
-                invalid_snr_idx = np.where(snr_beam_invalid)
-
-                beam_velocities[
-                    invalid_snr_idx[0], :, invalid_snr_idx[1]
-                ] = invalid_beam_value
-                self.snr_beam_velocities = beam_velocities
-
-                # Recompute water velocities using snr adjusted beam velocities
-                self.snr_beam_velocities = beam_velocities
-                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
-                self.set_nav_reference(transect.boat_vel)
-
-            else:
-                bad_snr_idx = np.greater(self.snr_rng, 12)
-                valid = np.copy(self.cells_above_sl)
-
-                bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
-                valid[bad_snr_array] = False
-
-            self.valid_data[7, :, :] = valid
-
-            # Combine all filter data and update processed properties
-            self.all_valid_data()
-        elif transect.adcp.manufacturer == "SonTek":
-            if self.snr_beam_velocities is not None:
-                self.snr_beam_velocities = None
-                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
-                self.set_nav_reference(transect.boat_vel)
-            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
-            self.all_valid_data()
-        elif transect.adcp.manufacturer != "SonTek":
-            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
-            self.all_valid_data()
+                # Combine all filter data and update processed properties
+                self.all_valid_data()
 
     def filter_wt_depth(self, transect, setting):
         """Marks water velocity data invalid if there is no valid or

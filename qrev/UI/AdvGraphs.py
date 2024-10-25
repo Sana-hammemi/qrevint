@@ -218,17 +218,6 @@ class AdvGraphs(object):
             "255": ".",
         }
         self.wt_advanced_type_methods = {
-            "cb_speed_filtered_cc": self.wt_speed_filtered_contour,
-            "cb_speed_final_cc": self.wt_speed_final_contour,
-            "cb_projected_cc": self.wt_projected_contour,
-            "cb_vertical_cc": self.wt_vertical_contour,
-            "cb_error_cc": self.wt_error_contour,
-            "cb_direction_cc": self.wt_direction_contour,
-            "cb_avg_corr_cc": self.wt_avg_corr_contour,
-            "cb_corr_beam_cc": self.wt_corr_beam_contour,
-            "cb_avg_rssi_cc": self.wt_avg_rssi_contour,
-            "cb_rssi_beam_cc": self.wt_rssi_beam_contour,
-            "cb_ping_type_cc": self.wt_ping_type,
             "cb_discharge_ts": self.discharge_ts,
             "cb_discharge_percent_ts": self.discharge_percent_ts,
             "cb_avg_speed_ts": self.wt_avg_speed_ts,
@@ -261,6 +250,17 @@ class AdvGraphs(object):
             "cb_final_depths_ts": self.depths_final_ts,
             "cb_depths_source_ts": self.depths_source_ts,
             "cb_battery_voltage_ts": self.battery_voltage_ts,
+            "cb_speed_filtered_cc": self.wt_speed_filtered_contour,
+            "cb_speed_final_cc": self.wt_speed_final_contour,
+            "cb_projected_cc": self.wt_projected_contour,
+            "cb_vertical_cc": self.wt_vertical_contour,
+            "cb_error_cc": self.wt_error_contour,
+            "cb_direction_cc": self.wt_direction_contour,
+            "cb_avg_corr_cc": self.wt_avg_corr_contour,
+            "cb_corr_beam_cc": self.wt_corr_beam_contour,
+            "cb_avg_rssi_cc": self.wt_avg_rssi_contour,
+            "cb_rssi_beam_cc": self.wt_rssi_beam_contour,
+            "cb_ping_type_cc": self.wt_ping_type,
         }
 
     def create(
@@ -816,7 +816,7 @@ class AdvGraphs(object):
         color_map="viridis",
         discharge=None,
     ):
-        """Creates the plots for the bottom track tab.
+        """Creates the plots for the water track tab.
         This approach allows zoom and pan to work together for both plots.
 
         Parameters
@@ -3073,8 +3073,11 @@ class AdvGraphs(object):
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
@@ -3083,8 +3086,11 @@ class AdvGraphs(object):
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#aa00ff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
@@ -3094,8 +3100,11 @@ class AdvGraphs(object):
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#00aaff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]

@@ -15490,17 +15490,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Configure dictionary of plot options
             self.adv_graph_types = [
-                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
-                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
-                ("cb_projected_cc", self.cb_adv_graph_projected),
-                ("cb_vertical_cc", self.cb_adv_graph_vertical),
-                ("cb_error_cc", self.cb_adv_graph_error),
-                ("cb_direction_cc", self.cb_adv_graph_direction),
-                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
-                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
-                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
-                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
-                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
                 ("cb_discharge_ts", self.cb_adv_graph_discharge),
                 ("cb_discharge_percent_ts", self.cb_adv_graph_discharge_percent),
                 ("cb_avg_speed_ts", self.cb_adv_graph_avg_speed),
@@ -15533,6 +15522,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
                 ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage),
+                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
+                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
+                ("cb_projected_cc", self.cb_adv_graph_projected),
+                ("cb_vertical_cc", self.cb_adv_graph_vertical),
+                ("cb_error_cc", self.cb_adv_graph_error),
+                ("cb_direction_cc", self.cb_adv_graph_direction),
+                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
+                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
+                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
+                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
+                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)

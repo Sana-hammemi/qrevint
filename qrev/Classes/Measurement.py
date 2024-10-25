@@ -35,6 +35,7 @@ from qrev.MiscLibs.common_functions import (
     azdeg2rad,
     units_conversion,
 )
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
 # from profilehooks import profile
 
@@ -988,7 +989,11 @@ class Measurement(object):
 
         # Site information pulled from last file
         if len(sontek_data["transects"]) > 0:
-            transect = sontek_data["transects"][-1]
+            # Find valid transect
+            for transect in sontek_data["transects"]:
+                if transect["config_json"]["IsEnabledInSessionSummary"]:
+                    break
+
             if "SiteInformation" in transect["config_json"]["Setup"]:
                 if "SiteName" in transect["config_json"]["Setup"]["SiteInformation"]:
                     site_name = transect["config_json"]["Setup"]["SiteInformation"]["SiteName"]
@@ -1019,23 +1024,80 @@ class Measurement(object):
 
             # Gauge height information stored as string
             if "GaugeHeightInformation" in transect["config_json"]["Setup"]["SiteInformation"]:
-                self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
+                try:
+                    self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
+                except ValueError:
+                    pass
+            # Get local time offset
+            utc_time_offset = sontek_data["data_properties"]["DataCollectionLocalTimeUtcOffset"]
 
             # System tests
+            #TODO Not sure what to do for multiple tests or calibrations
+            self.rsq_add_systest(transect, utc_time_offset)
 
             # Compass calibration
-            
-            # Temperature check
+            self.rsq_add_compass_cal(transect, utc_time_offset)
 
             # Transects
             for transect_data in sontek_data["transects"]:
                 self.transects.append(TransectData())
-                self.transects[-1].rsq
+                self.transects[-1].rsq(transect_data=transect_data, utc_time_offset=utc_time_offset, date_format=self.date_format)
 
             # Moving-bed tests
             
-            
+    def rsq_add_systest(self, transect, utc_time_offset):
+        """Adds a system test to the measurement system test list.
+        
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+        
+        # Check for presence of system test
+        if "SystemTest" in transect["config_json"]["Setup"]:
+            # Create premeasurement object of system test
+            sys_test = PreMeasurement()
+            data = transect["config_json"]["Setup"]["SystemTest"]
+            time_stamp = local_time_from_iso(data["TestTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc test time
+            data.pop("TestTime", None)
+            # Populate sys_test
+            sys_test.populate_data(time_stamp=time_stamp, data_in=data,
+                                   data_type="RSQST")
+            # Append system test to measurement system test list
+            self.system_tst.append(sys_test)
 
+    def rsq_add_compass_cal(self, transect, utc_time_offset):
+        """Adds a compass calibration to the measurement compass calibration list.
+
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+        
+        # Check for presence of compass calibration
+        if "CompassCalibration" in transect["config_json"]["Setup"]:
+            # Create premeasurment object of compass calibration
+            compass_cal = PreMeasurement()
+            data = transect["config_json"]["Setup"]["CompassCalibration"]
+            time_stamp = local_time_from_iso(data["CalibrationTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc calibration time
+            data.pop("CalibrationTime", None)
+            # Populate compass_cal
+            compass_cal.populate_data(time_stamp=time_stamp, data_in=data, data_type="RSQCC")
+            # Append compass calibration to measurement compass calibration list
+            self.compass_cal.append(compass_cal)
+            
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
         into Python instance variables.

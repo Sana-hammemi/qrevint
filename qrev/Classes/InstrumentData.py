@@ -65,6 +65,9 @@ class InstrumentData(object):
         elif manufacturer == "Nortek":
             self.manufacturer = manufacturer
             self.nortek(rs=raw_data)
+        elif manufacturer == "rsqst":
+            self.manufacturer = "SonTek"
+            self.rsqst(adcp_data=raw_data)
 
     def trdi(self, pd0, mmt_transect, mmt):
         """Populates the variables with data from TRDI ADCPs.
@@ -270,6 +273,52 @@ class InstrumentData(object):
         self.beam_pattern = "Convex"
         self.t_matrix = TransformationMatrix()
         self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
+        self.configuration_commands = None
+
+    def rsqst(self, adcp_data):
+        """Populates the variables with stationary data from SonTek RSQ.
+
+        Parameters
+        ----------
+        adcp_data: dict
+            Dictionary containing RSQ data
+        """
+
+        try:
+            self.serial_num = adcp_data["InstrumentInfo"]["SerialNumber"]
+        except KeyError:
+            self.serial_num = ""
+
+        self.frequency_khz = []
+        beam_azimuth = []
+        beam_elev = []
+        for n in range(adcp_data["SensorConfiguration"]["Info"]["beamSetCount"]):
+            freq = (adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                        "systemFrequency (Hz)"] / 1000)
+            self.frequency_khz.append(freq)
+
+            beam_azimuth.append(list(
+                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                    "beamAzimuth"].values()))
+            beam_elev.append(list(
+                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                    "beamElevation"].values()))
+
+        if len(self.frequency_khz) > 2:
+            if self.frequency_khz[2] > 0:
+                self.model = "M9"
+            else:
+                self.model = "S5"
+        else:
+            self.model = "RS5"
+
+        self.firmware = adcp_data["InstrumentInfo"]["InstrumentVersion"] / 100.0
+
+        self.frequency_khz = np.array(self.frequency_khz)
+        self.beam_angle_deg = 25
+        self.beam_pattern = "Convex"
+        self.t_matrix = TransformationMatrix()
+        self.t_matrix.populate_data("rsqst", data_in=(beam_elev, beam_azimuth))
         self.configuration_commands = None
 
     def nortek(self, rs):

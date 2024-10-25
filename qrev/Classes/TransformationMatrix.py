@@ -36,6 +36,8 @@ class TransformationMatrix(object):
             self.trdi(model, data_in)
         elif manufacturer == "SonTek":
             self.sontek(data_in)
+        elif manufacturer == "rsqst":
+            self.rsqst(data_in)
 
     def trdi(self, model=None, data_in=None):
         """Processes the data to store the transformation matrix for
@@ -218,3 +220,91 @@ class TransformationMatrix(object):
     def populate_from_qrev_mat(self, tmatrix):
         self.matrix = tmatrix.matrix
         self.source = tmatrix.source
+    
+    def rsqst(self, data_in):
+        """Coordinates creation of transformation matrices from raw data from RSQ.
+
+        Parameters
+        ----------
+        data_in: tuple
+            Tuple containing beam elevation and beam azimuth
+        """
+
+        beam_elev = data_in[0]
+        beam_azimuth = data_in[1]
+
+        self.matrix = np.zeros((4, 4, len(beam_elev)))
+        for n in range(len(beam_elev)):
+            if beam_elev[n][0] == 0:
+                self.matrix[2, 0, n] = -1
+            else:
+                self.create_matrix(n, beam_elev[n], beam_azimuth[n])
+
+    def create_matrix(self, n, beam_elev, beam_azimuth):
+        """Code provided by SonTek to create beam matrix.
+
+        Parameters
+        ----------
+        n: int
+            3rd index for final transformation matrix
+        beam_elev: list
+            Beam elevations in radians
+        beam_azimuth: list
+            Beam azimuths in radians
+        """
+
+        beam_count = len(beam_elev)
+        beam_matrix = np.zeros((beam_count, beam_count))
+        bdc = np.zeros((beam_count, 3))
+
+        for beam in range(beam_count):
+            bdc[beam, 0] = np.sin(beam_elev[beam]) * np.cos(beam_azimuth[beam])
+            bdc[beam, 1] = -1 * np.sin(beam_elev[beam]) * np.sin(beam_azimuth[beam])
+            bdc[beam, 2] = -1 * np.cos(beam_elev[beam])
+
+        bdct = bdc.T
+
+        am = np.linalg.inv(np.matmul(bdct, bdc))
+
+        b_2_instrument = np.matmul(am, bdct)
+
+        z2 = np.zeros((1, beam_count))
+
+        if beam_count == 4:
+            bdc24i = np.zeros((3, 3))
+            err24 = np.zeros((1, 3))
+            for row in range(3):
+                for col in range(3):
+                    bdc24i[row, col] = bdc[row + 1, col]
+                err24[0, row] = bdc[0, row]
+
+            bdc24i = np.linalg.inv(bdc24i)
+            err24 = -1 * np.matmul(err24, bdc24i)
+            err = np.zeros((1, 4))
+            err[0, 0] = 1
+            err[0, 1] = err24[0, 0]
+            err[0, 2] = err24[0, 1]
+            err[0, 3] = err24[0, 2]
+
+            t1 = 0
+            t2 = 0
+
+            for col in range(4):
+                t1 = t1 + b_2_instrument[2, col] * b_2_instrument[2, col]
+                t2 = t2 + err[0, col] * err[0, col]
+
+            err_norm = np.sqrt(t1) / np.sqrt(t2)
+
+            for col in range(4):
+                z2[0, col] = err_norm * err[0, col] * 2
+
+        k = 0
+
+        for row in range(beam_count):
+            for col in range(beam_count):
+                if row <= 2:
+                    beam_matrix[row, col] = b_2_instrument[row, col]
+                else:
+                    beam_matrix[row, col] = z2[0, col]
+                k = k + 1
+        self.matrix[:, :, n] = beam_matrix
