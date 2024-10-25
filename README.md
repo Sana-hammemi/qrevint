@@ -1,3 +1,6 @@
+# Releases
+New packaged versions of QRev can be downloaded from the [Releases](https://code.usgs.gov/QRev/QRevPy/-/releases) section of the repository. Fixes, additions, and changes to the code can be viewed in the [changelog](https://code.usgs.gov/QRev/QRevPy/-/blob/master/docs/source/changelog.md?ref_type=heads).
+
 # Description:
 
 **QRev** version 4 is a Python port of the Matlab code QRev developed by the USGS to compute the discharge from a 
@@ -50,22 +53,24 @@ the U.S. Government.
 # Installation Instructions
 - Download the latest version of QRev.
 - Select or create a folder for QRev and unzip the file into that folder.
-- Run the program by double-clicking on QRev_*.exe in Windows Explorer or My Computer. You may wish to create a 
+- Run the program by double-clicking on QRev.exe in Windows Explorer or My Computer. You may wish to create a 
 shortcut in a convenient location in the Start Menu or on the Desktop.
 ---
 
 # Integration with Site Visit Mobile Aquarius (SVMAQ) and Aquarius (AQ)
 
 The results of data processed with QRev can be efficiently loaded into AQ through the use of SVMAQ. Saving a 
-processed measurement in QRev automatically creates an XML file (*_QRev.xml). This xml file can be loaded into SVMAQ. 
+processed measurement in QRev automatically creates an XML file (_QRev.xml). This xml file can be loaded into SVMAQ. 
 After completing the site visit information in SVMAQ, the saved SVMAQ file can be loaded into AQ using the normal 
 procedures.
+
+
 ---
 
 # Recommended Workflow
 QRev is intended to be used for both field processing and office review. Thus, QRev should be installed on both field 
 and office computers. The recommended workflow is:
-- Collect data using the manufacturer's software (WinRiver II or RiverSurveyor Live)
+- Collect data using the manufacturer's software (WinRiver II, RiverSurveyor Live, RSQ)
 - Immediately after data collection process the data with QRev. MATLAB output files for RiverSurveyor Live data are
 - required.
 - Investigate all messages and warnings provided by QRev and make any necessary changes.
@@ -92,73 +97,22 @@ review that portion of the data.
 of this repository are currently in use by the USGS, however, no warranty, expressed or implied, is made by the USGS 
 or the U.S. Government as to the functionality of the software and related material nor shall the fact of release 
 constitute any such warranty. If you would like to contribute, please use the pull request process to provide new 
-or improved code. 
+or improved code or contact the HaWG with details on the suggested contributions to request developer access to the repository. 
 ---
 
 ## Requirements and Dependencies
 ### Source Code
 
-QRev is currently being developed using Python 3.8 and makes use of the following packages:
+QRev is currently being developed using Python 3.8 and makes use of the following packages listed in the [requirements.txt](https://code.usgs.gov/QRev/QRevPy/-/blob/master/requirements.txt?ref_type=heads) file.
 
-PyQt5~=5.15.6
-PyQt5-sip
-PyQt5-stubs
-altgraph==0.16.1
-atomicwrites==1.3.0
-attrs==19.1.0
-click==7.1.2
-colorama==0.4.1
-cycler==0.10.0
-future==0.17.1
-importlib-metadata==0.23
-kiwisolver==1.4.2
-macholib==1.11
-matplotlib==3.3.3
-more-itertools==7.2.0
-numpy==1.22.1
-numba~=0.53.0
-packaging==19.2
-pandas==1.4.0
-patsy==0.5.1
-pefile==2019.4.18
-pluggy==0.13.0
-py==1.8.0
-pyparsing==2.4.2
-pytest==5.1.3
-python-dateutil
-python-dotenv==0.10.3
-pytz
-pywin32-ctypes==0.2.0
-scipy==1.7.3
-setuptools==41.2.0
-simplekml~=1.3.6
-sip
-six==1.12.0
-statsmodels==0.10.1
-utm~=0.7.0
-wcwidth==0.1.7
-xmltodict==0.12.0
-zipp==0.6.0
 ---
 
 # Updates and Bugs
-In order to provide support for QRev and to provide an efficient means to communicate with users and allow users an 
-efficient and organized means of providing suggestions and comments, you are encouraged to register for the USGS 
-Hydroacoustic Forum. In the forum you will find a "QRev" board under Hydroacoustics Moving-Boat Deployments. 
-Open the QRev board and click "Notify" to automatically receive emails on any bug fixes or issues identified with 
-QRev. You are also encouraged to report any problems you encounter with QRev and attach the associated 
-files so that any identified problem can be resolved. To access the USGS Hydroacoustics Forums you must be a registered 
-user of the forums.
-
-Bugs and feature requests can also be reported using the [Issues](https://code.usgs.gov/QRev/QRevPy/-/issues/new) 
+Bugs and feature requests can be reported using the [Issues](https://code.usgs.gov/QRev/QRevPy/-/issues/new) 
 section of the QRev repository or by submitting comments through the form available [here](https://forms.office.com/Pages/ResponsePage.aspx?id=urWTBhhLe02TQfMvQApUlAlv4jGjsJhOstclxasDPuZUOE1UWkZIV0JKWVY0NDdHVVlDVkxNNkFKNiQlQCN0PWcu).
 
-[Register for access to USGS Hydroacoustics Forums](https://hydroacoustics.usgs.gov/software/Forum_Reg1.html)
-
-[USGS Hydroacoustics Forums for Registered Users](https://simon.er.usgs.gov/smf/index.php?board=53)
-
-Although the Forum is the preferred means of communication you can also email the Hydroacoustics work group (Hawg) 
-at GS-W HaWG All@usgs.gov with questions and bugs.
+Questions, comments, bugs, enhancements, and requests for assistance can also be emailed to the Hydroacoustics work group (Hawg) 
+at GS-W HaWG All@usgs.gov.
 
 ---
 
@@ -176,3 +130,12 @@ U.S. Geological Survey
 9818 Bluegrass Parkway  
 Louisville, KY  
 <dmueller@usgs.gov>
+
+# Contributions
+
+Contributions to the code have been provided by:
+
+Travis Knight USGS
+Colleen Barr USGS
+Anders Hopkins USGS
+Blaime Calmel EDF-DTG
