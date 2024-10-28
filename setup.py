@@ -11,7 +11,7 @@ from setuptools import setup
 #     license = f.read()
 
 setup(
-    name='qrevpy',
+    name='qrev',
     version='4.38.0',
     description='QRev port to python',
     author='David S. Mueller',
