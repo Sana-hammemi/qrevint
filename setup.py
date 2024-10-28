@@ -30,7 +30,7 @@ setup(
                       'altgraph==0.16.1',
                       'atomicwrites==1.3.0',
                       'attrs==19.1.0',
-                      'click==7.1.2',
+                      'click>=7.1.2',
                       'colorama==0.4.1',
                       'cycler==0.10.0',
                       'future==0.17.1',
