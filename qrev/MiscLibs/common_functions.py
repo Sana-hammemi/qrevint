@@ -538,3 +538,21 @@ def dateformat (input_str):
         else:
             date_format = date_format + chr
     return date_format
+
+def deg_min_2_deg(angle_deg_min):
+    """Converts a float defined as ddmm.mmmmmmmm to dd.ddddddddd
+
+    Parameters
+    ----------
+    angle_deg_min: float
+        Angle in ddmm.mmmmm format
+
+    Returns
+    angle_deg: float
+        Angle in dd.ddddd format
+    """
+
+    deg_min = np.divmod(angle_deg_min, 100)
+    angle_deg = deg_min[0] + deg_min[1] / 60
+    
+    return angle_deg

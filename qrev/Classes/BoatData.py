@@ -218,7 +218,7 @@ class BoatData(object):
         """
 
         # Identify invalid ensembles for SonTek data.
-        if source == "SonTek":
+        if source == "SonTek" or source == "rsq":
             vel_in = BoatData.filter_sontek(vel_in)
 
         # Store input data
@@ -561,19 +561,27 @@ class BoatData(object):
 
                 for ii in range(n_ens):
                     # Compute matrix for heading, pitch, and roll
-                    hpr_matrix = [
-                        [
-                            ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                            (sh[ii] * cp[ii]),
-                            ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                        ],
-                        [
-                            (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                            ch[ii] * cp[ii],
-                            (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                        ],
-                        [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                    ]
+                    if adcp.manufacturer == "SonTek":
+                        hpr_matrix = [
+                                    [sh[ii] * cp[ii] + (ch[ii] * sp[ii] * sr[ii])/2, -1 * ch[ii] * cr[ii], -1 * sh[ii] * sp[ii] + (ch[ii] * cp[ii] * sr[ii])/2],
+                                    [ch[ii] * cp[ii] + -1 * (sh[ii] * sp[ii] * sr[ii])/2, sh[ii] * cr[ii], -1 * ch[ii] * sp[ii] + (-1 * sh[ii] * cp[ii] * sr[ii])/2],
+                                    [sp[ii] * cr[ii], sr[ii], cp[ii] * cr[ii]]
+                        ]
+
+                    else:
+                        hpr_matrix = [
+                            [
+                                ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
+                                (sh[ii] * cp[ii]),
+                                ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
+                            ],
+                            [
+                                (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
+                                ch[ii] * cp[ii],
+                                (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
+                            ],
+                            [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
+                        ]
 
                     # Transform beam coordinates
                     if o_coord_sys == "Beam":
@@ -770,7 +778,6 @@ class BoatData(object):
                             # Apply transformation matrix for 3 beam solutions
                             temp_thpr = np.array(hpr_matrix).dot(temp_t[:3])
                             temp_thpr = np.hstack([temp_thpr, np.nan])
-
                         else:
                             # Apply transformation matrix for 4 beam solutions
                             temp_t = t_mult.dot(np.squeeze(self.raw_vel_mps[:, ii]))

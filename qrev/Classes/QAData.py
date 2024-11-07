@@ -3406,7 +3406,6 @@ class QAData(object):
 
         s = meas.current_settings()
         d = meas.qrev_default_settings()
-        self.bt_vel["guidance"] = []
 
         if s["BTbeamFilter"] != d["BTbeamFilter"]:
             self.bt_vel["messages"].append(

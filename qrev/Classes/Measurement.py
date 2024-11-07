@@ -929,7 +929,56 @@ class Measurement(object):
         shutil.rmtree(temp_path)
 
         # Assign data to QRev data structure
-        self.rsq_2_qrev(sontek_data)
+        self.rsq_2_qrev(sontek_data, snr_3beam_comp)
+
+        # Identify checked transects
+        self.checked_transect_idx = self.checked_transects(self)
+
+        for transect in self.transects:
+            transect.change_coord_sys(new_coord_sys="Earth")
+            transect.change_nav_reference(
+                update=False,
+                new_nav_ref=self.transects[
+                    self.checked_transect_idx[0]
+                ].boat_vel.selected,
+            )
+            transect.boat_interpolations(update=False, target="BT", method="Hold9")
+            transect.boat_interpolations(update=False, target="GPS", method="None")
+            transect.apply_averaging_method(setting="Simple")
+            transect.process_depths(update=False, interpolation_method="HoldLast")
+            transect.update_water()
+
+            # Filter water data
+            transect.w_vel.apply_filter(transect=transect, wt_depth=True)
+
+            # Interpolate water data
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="None"
+            )
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="TRDI"
+            )
+
+            if transect.sensors.speed_of_sound_mps.selected == "user":
+                transect.sensors.speed_of_sound_mps.selected = "internal"
+                transect.change_sos(
+                    parameter="sosSrc",
+                    selected="user",
+                    speed=transect.sensors.speed_of_sound_mps.user.data,
+                )
+            elif transect.sensors.salinity_ppt.selected == "user":
+                transect.change_sos(
+                    parameter="salinity",
+                    selected="user",
+                    salinity=transect.sensors.salinity_ppt.user.data,
+                )
+            elif transect.sensors.temperature_deg_c.selected == "user":
+                transect.change_sos(
+                    parameter="temperature",
+                    selected="user",
+                    temperature=transect.sensors.temperature_deg_c.user.data[0],
+                )
+
         
     @staticmethod
     def rsq_read_transect(transect_folder):
@@ -985,7 +1034,7 @@ class Measurement(object):
         
         return transect
 
-    def rsq_2_qrev(self, sontek_data):
+    def rsq_2_qrev(self, sontek_data, snr_3beam_comp):
 
         # Site information pulled from last file
         if len(sontek_data["transects"]) > 0:
@@ -1041,9 +1090,10 @@ class Measurement(object):
             # Transects
             for transect_data in sontek_data["transects"]:
                 self.transects.append(TransectData())
-                self.transects[-1].rsq(transect_data=transect_data, utc_time_offset=utc_time_offset, date_format=self.date_format)
+                self.transects[-1].rsq(transect_data=transect_data, utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
 
             # Moving-bed tests
+            self.rsq_add_mb_test(tests=sontek_data["mb_tests"], utc_time_offset=utc_time_offset, snr_3beam_comp=snr_3beam_comp)
             
     def rsq_add_systest(self, transect, utc_time_offset):
         """Adds a system test to the measurement system test list.
@@ -1097,7 +1147,19 @@ class Measurement(object):
             compass_cal.populate_data(time_stamp=time_stamp, data_in=data, data_type="RSQCC")
             # Append compass calibration to measurement compass calibration list
             self.compass_cal.append(compass_cal)
-            
+    
+    def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
+
+        for test in tests:
+            #Process Loop test
+            if "Loop" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Loop", utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+            if "Smba" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Stationary",
+                                                utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+      
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
         into Python instance variables.
@@ -2041,6 +2103,8 @@ class Measurement(object):
                 ens_interp=settings["WTEnsInterpolation"],
                 cells_interp=settings["WTCellInterpolation"],
             )
+            transect.w_vel.d_mps[np.isnan(transect.w_vel.d_mps)] = 0
+            transect.boat_vel.bt_vel.d_mps[np.isnan(transect.boat_vel.bt_vel.d_mps)] = 0
 
         if self.extrap_fit is None:
             self.extrap_fit = ComputeExtrap()

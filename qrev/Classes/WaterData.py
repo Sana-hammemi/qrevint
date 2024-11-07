@@ -3,7 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less,
 from qrev.MiscLibs.robust_loess import rloess
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -237,6 +237,7 @@ class WaterData(object):
         use_measurement_thresholds=False,
         snr_3beam_comp=True,
         excluded_dist_in=0,
+        source=None
     ):
         """Populates the variables with input, computed, or default values.
 
@@ -383,15 +384,6 @@ class WaterData(object):
         self.water_mode = wm_in
         self.excluded_dist_m = excluded_dist_in
         self.orig_excluded_dist_m = excluded_dist_in
-
-        # In some rare situations the blank is empty so it is set to the
-        # excluded_dist_in
-        try:
-            blank_in = float(blank_in)
-            self.blanking_distance_m = blank_in
-        except ValueError:
-            self.blanking_distance_m = excluded_dist_in
-
         self.cells_above_sl = cells_above_sl_in
         self.cells_above_sl_bt = cells_above_sl_in
         self.sl_cutoff_percent = sl_cutoff_per_in
@@ -517,6 +509,12 @@ class WaterData(object):
                 self.v_processed_mps = self.v_processed_mps.reshape(
                     1, self.v_processed_mps.shape[0]
                 )
+                if hasattr(transect.wVel, "w_processed_mps"):
+                    self.w_processed_mps = transect.wVel.w_processed_mps
+                    self.w_processed_mps = self.w_processed_mps.reshape(1,
+                        self.w_processed_mps.shape[0])
+                else:
+                    self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
                 self.w_mps = transect.wVel.w_mps
                 self.w_mps = self.w_mps.reshape((1, self.w_mps.shape[0]))
                 self.d_mps = transect.wVel.d_mps
@@ -585,6 +583,12 @@ class WaterData(object):
                 self.v_processed_mps = self.v_processed_mps.reshape(
                     self.v_processed_mps.shape[0], 1
                 )
+                if hasattr(transect.wVel, "w_processed_mps"):
+                    self.w_processed_mps = transect.wVel.w_processed_mps
+                    self.w_processed_mps = self.w_processed_mps.reshape(1,
+                        self.w_processed_mps.shape[0], 1)
+                else:
+                    self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
                 self.w_mps = transect.wVel.w_mps
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
@@ -658,6 +662,10 @@ class WaterData(object):
             self.v_mps = transect.wVel.v_mps
             self.u_processed_mps = transect.wVel.uProcessed_mps
             self.v_processed_mps = transect.wVel.vProcessed_mps
+            if hasattr(transect.wVel, "w_processed_mps"):
+                self.w_processed_mps = transect.wVel.w_processed_mps
+            else:
+                self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
             self.snr_rng = transect.wVel.snrRng
@@ -843,21 +851,32 @@ class WaterData(object):
 
                 for ii in range(n_ens):
                     # Compute matrix for heading, pitch, and roll
-                    hpr_matrix = np.array(
-                        [
+                    if adcp.manufacturer == "SonTek":
+                        hpr_matrix = np.array([
+                            [sh[ii] * cp[ii] + (ch[ii] * sp[ii] * sr[ii]) / 2,
+                             -1 * ch[ii] * cr[ii],
+                             -1 * sh[ii] * sp[ii] + (ch[ii] * cp[ii] * sr[ii]) / 2],
+                            [ch[ii] * cp[ii] + -1 * (sh[ii] * sp[ii] * sr[ii]) / 2,
+                             sh[ii] * cr[ii],
+                             -1 * ch[ii] * sp[ii] + (-1 * sh[ii] * cp[ii] * sr[ii]) / 2],
+                            [sp[ii] * cr[ii], sr[ii], cp[ii] * cr[ii]]]
+                        )
+                    else:
+                        hpr_matrix = np.array(
                             [
-                                ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                                (sh[ii] * cp[ii]),
-                                ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                            ],
-                            [
-                                (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                                ch[ii] * cp[ii],
-                                (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                            ],
-                            [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                        ]
-                    )
+                                [
+                                    ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
+                                    (sh[ii] * cp[ii]),
+                                    ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
+                                ],
+                                [
+                                    (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
+                                    ch[ii] * cp[ii],
+                                    (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
+                                ],
+                                [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
+                            ]
+                        )
 
                     # Transform beam coordinates
                     if o_coord_sys == "Beam":
@@ -905,7 +924,6 @@ class WaterData(object):
                                 # beam solutions
                                 temp_thpr[0:3, col_idx[i3]] = hpr_matrix.dot(temp_t[:3])
                                 temp_thpr[3, col_idx[i3]] = np.nan
-
                     else:
                         # Get velocity data
                         vel_raw = np.copy(np.squeeze(self.raw_vel_mps[:, :, ii]))
@@ -913,11 +931,11 @@ class WaterData(object):
                         temp_thpr = np.vstack([temp_thpr, vel_raw[3, :]])
 
                     # Update object
-                    temp_thpr = temp_thpr.T
-                    self.u_mps[:, ii] = temp_thpr[:, 0]
-                    self.v_mps[:, ii] = temp_thpr[:, 1]
-                    self.w_mps[:, ii] = temp_thpr[:, 2]
-                    self.d_mps[:, ii] = temp_thpr[:, 3]
+                    # temp_thpr = temp_thpr.T
+                    self.u_mps[:, ii] = temp_thpr[0, :]
+                    self.v_mps[:, ii] = temp_thpr[1, :]
+                    self.w_mps[:, ii] = temp_thpr[2, :]
+                    self.d_mps[:, ii] = temp_thpr[3, :]
 
                 # Because of padded arrays with zeros and RR has a variable
                 # number of bins, the raw data may be padded with zeros.  The next 4
@@ -1026,21 +1044,30 @@ class WaterData(object):
         n_ens = self.raw_vel_mps.shape[2]
         for ii in range(n_ens):
             # Compute matrix for heading, pitch, and roll
-            hpr_matrix = np.array(
-                [
+            if adcp.manufacturer == "SonTek":
+                hpr_matrix = np.array([[sh[ii] * cp[ii] + (ch[ii] * sp[ii] * sr[ii]) / 2,
+                                        -1 * ch[ii] * cr[ii], -1 * sh[ii] * sp[ii] + (
+                                                    ch[ii] * cp[ii] * sr[ii]) / 2],
+                    [ch[ii] * cp[ii] + -1 * (sh[ii] * sp[ii] * sr[ii]) / 2,
+                     sh[ii] * cr[ii],
+                     -1 * ch[ii] * sp[ii] + (-1 * sh[ii] * cp[ii] * sr[ii]) / 2],
+                    [sp[ii] * cr[ii], sr[ii], cp[ii] * cr[ii]]])
+            else:
+                hpr_matrix = np.array(
                     [
-                        ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                        (sh[ii] * cp[ii]),
-                        ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                    ],
-                    [
-                        (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                        ch[ii] * cp[ii],
-                        (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                    ],
-                    [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                ]
-            )
+                        [
+                            ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
+                            (sh[ii] * cp[ii]),
+                            ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
+                        ],
+                        [
+                            (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
+                            ch[ii] * cp[ii],
+                            (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
+                        ],
+                        [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
+                    ]
+                )
 
             # Determine frequency index for transformation
             if len(t_matrix.shape) > 2:
@@ -2251,7 +2278,6 @@ class WaterData(object):
         # those that are not in the in_transect_idx array
         self.u_processed_mps[:, :] = np.nan
         self.v_processed_mps[:, :] = np.nan
-        self.w_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
         self.v_processed_mps[:, transect.in_transect_idx] = v
         self.w_processed_mps[:, transect.in_transect_idx] = w

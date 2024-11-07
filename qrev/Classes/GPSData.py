@@ -1,5 +1,6 @@
 import utm
 import numpy as np
+from datetime import datetime
 from qrev.MiscLibs.common_functions import azdeg2rad, pol2cart, nans, nan_less
 
 
@@ -298,11 +299,14 @@ class GPSData(object):
         self.ext_gga_differential = ext_gga_diff
         self.ext_gga_hdop = ext_gga_hdop
         self.ext_gga_num_sats = ext_gga_num_sats
-        self.ext_gga_serial_time = (
-            np.floor(np.array(ext_gga_utc) / 10000) * 3600
-            + np.floor(np.mod(ext_gga_utc, 10000) / 100) * 60
-            + np.mod(ext_gga_utc, 100)
-        )
+        try:
+            self.ext_gga_serial_time = (
+                np.floor(np.array(ext_gga_utc) / 10000) * 3600
+                + np.floor(np.mod(ext_gga_utc, 10000) / 100) * 60
+                + np.mod(ext_gga_utc, 100)
+            )
+        except TypeError:
+            self.ext_gga_serial_time = int(ext_gga_utc[0:2]) * 3600 + int(ext_gga_utc[3:5]) * 60 + float(ext_gga_utc[6::])
         self.ext_vtg_course_deg = ext_vtg_course
         self.ext_vtg_speed_mps = ext_vtg_speed
 
