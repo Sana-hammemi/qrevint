@@ -518,7 +518,7 @@ class TransectData(object):
             self.w_vel.populate_data(
                 vel_in=pd0_data.Wt.vel_mps,
                 freq_in=freq_ts,
-                coord_sys_in=pd0_data.Cfg.coord_sys,
+                coord_sys_in=pd0_data.Cfg.coord_sys[0],
                 nav_ref_in="None",
                 rssi_in=pd0_data.Wt.rssi,
                 rssi_units_in="Counts",

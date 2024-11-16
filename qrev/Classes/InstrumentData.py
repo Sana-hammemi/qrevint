@@ -393,3 +393,93 @@ class InstrumentData(object):
 
         else:
             self.configuration_commands = None
+
+
+    @staticmethod
+    def create_hpr_matrix(manufacturer, heading, pitch, roll):
+        """Creates hpr_matrix for transforming instrument coordinates to earth coordinates.
+
+        Parameters
+        ----------
+        manufacturer: str
+            Name of manufacturer SonTek, TRDI, Nortek
+        heading: float
+            Heading including magnetic variation in degrees
+        pitch: float
+            Pitch in degrees
+        roll: float
+            Roll in degrees
+
+        """
+
+        ch = np.cos(np.deg2rad(heading))
+        sh = np.sin(np.deg2rad(heading))
+        cp = np.cos(np.deg2rad(pitch))
+        sp = np.sin(np.deg2rad(pitch))
+        cr = np.cos(np.deg2rad(roll))
+        sr = np.sin(np.deg2rad(roll))
+
+        if manufacturer == "SonTek":
+            hpr_matrix = np.array([[sh * cp + (ch * sp * sr) / 2, -1 * ch * cr,
+                                    -1 * sh * sp + (ch * cp * sr) / 2],
+                [ch * cp + -1 * (sh * sp * sr) / 2, sh * cr,
+                 -1 * ch * sp + (-1 * sh * cp * sr) / 2], [sp * cr, sr, cp * cr]])
+        else:
+            hpr_matrix = np.array([
+                [((ch * cr) + (sh * sp * sr)), (sh * cp),
+                    ((ch * sr) - sh * sp * cr)],
+                [(-1 * sh * cr) + (ch * sp * sr), ch * cp,
+                 (-1 * sh * sr) - (ch * sp * cr)],
+                [(-1.0 * cp * sr), sp, cp * cr]])
+
+        return hpr_matrix
+
+    def get_transformation_matrix(self, frequency):
+        # Determine frequency index for transformation matrix
+        if len(self.t_matrix.matrix.shape) > 2:
+            idx_freq = np.where(self.frequency_kHz == frequency)
+            matrix = np.copy(self.t_matrix.matrix[:, :, idx_freq[0][0]])
+        else:
+            matrix = np.copy(self.t_matrix.matrix)
+        return matrix
+
+    @staticmethod
+    def get_coordinate_system_code(coord_sys):
+        """Returns the coordinate system code based on the coordinate system.
+
+        Parameters
+        ----------
+        coord_sys: str
+            Coordinate system (Beam, Inst, Ship, Earth)
+
+        Returns
+        -------
+        coord_sys_code: int
+            Integer representing the coordinate system
+        """
+        if coord_sys == "Beam":
+            coord_sys_code = 1
+        elif coord_sys == "Inst":
+            coord_sys_code = 2
+        elif coord_sys == "Ship":
+            coord_sys_code = 3
+        elif coord_sys == "Earth":
+            coord_sys_code = 4
+        return coord_sys_code
+
+    @staticmethod
+    def compute_inst_coordinates(transformation_matrix, beam_velocities):
+        return transformation_matrix.dot(beam_velocities)
+
+    @staticmethod
+    def adjust_for_3_beam_solution(transformation_matrix, beam_velocities, idx_3_beam):
+        vel_3_beam_zero = beam_velocities
+        vel_3_beam_zero[np.isnan(beam_velocities)] = 0
+        vel_error = np.matmul(transformation_matrix[3, :], vel_3_beam_zero)
+        beam_velocities[idx_3_beam] = (
+                -1 * vel_error / np.squeeze(transformation_matrix[3, idx_3_beam]))
+
+    @staticmethod
+    def compute_new_coordinates(hpr_matrix, current_coordinates):
+        new_coordinates = hpr_matrix.dot(current_coordinates[:3])
+        return new_coordinates[0], new_coordinates[1], new_coordinates[2], current_coordinates[3]

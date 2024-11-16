@@ -144,3 +144,22 @@ class Sensors(object):
                     temps, transect.sensors.temperature_deg_c.internal.data
                 )
         return np.nanmean(temps)
+
+    def get_hpr(self):
+        """Returns the heading, pitch and roll data for the transect.
+
+        Returns
+        -------
+        h: np.array(float)
+            Array of heading in degrees
+        p: np.array(float)
+            Array of pitch in degrees
+        r: np.array(float)
+            Array of roll in degrees
+        """
+        p = getattr(self.pitch_deg, self.pitch_deg.selected).data
+        r = getattr(self.roll_deg, self.roll_deg.selected).data
+        h = getattr(self.heading_deg, self.heading_deg.selected).data
+
+        return h, p, r
+

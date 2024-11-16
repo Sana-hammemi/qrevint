@@ -3,7 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less,
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
 from qrev.MiscLibs.robust_loess import rloess
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -788,10 +788,7 @@ class WaterData(object):
             Object of instrument data
         """
 
-        if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
-            o_coord_sys = self.orig_coord_sys[0].strip()
-        else:
-            o_coord_sys = self.orig_coord_sys.strip()
+        o_coord_sys = self.orig_coord_sys.strip()
 
         if self.snr_beam_velocities is None:
             data = self.raw_vel_mps
@@ -799,215 +796,131 @@ class WaterData(object):
             data = self.snr_beam_velocities
             o_coord_sys = "Beam"
 
-        orig_sys = None
-        new_sys = None
+        # Assign a value to the new coordinate system
+        new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys)
+        orig_sys_code = adcp.get_coordinate_system_code(coord_sys= o_coord_sys)
 
-        if o_coord_sys != new_coord_sys:
-            # Assign the transformation matrix and retrieve the sensor data
-            t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
-            t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
 
-            p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
-            r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
-            h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
+        if new_sys_code - orig_sys_code > 0:
+            # Transform coordinates to a higher order
 
-            # Modify the transformation matrix and heading, pitch
-            # and roll values based on the original coordinate
-            # system so that only the needed values ar used in
-            # computing the new coordinate system.
-            if o_coord_sys.strip() == "Beam":
-                orig_sys = 1
-            elif o_coord_sys.strip() == "Inst":
-                orig_sys = 2
-            elif o_coord_sys.strip() == "Ship":
-                orig_sys = 3
-                p = np.zeros(h.shape)
-                r = np.zeros(h.shape)
-            elif o_coord_sys.strip() == "Earth":
-                orig_sys = 4
+            h, p, r = sensors.get_hpr()
+            n_ens = self.raw_vel_mps.shape[1]
 
-            # Assign a value to the new coordinate system
-            if new_coord_sys.strip() == "Beam":
-                new_sys = 1
-            elif new_coord_sys.strip() == "Inst":
-                new_sys = 2
-            elif new_coord_sys.strip() == "Ship":
-                new_sys = 3
-            elif new_coord_sys.strip() == "Earth":
-                new_sys = 4
-
-            # Check to ensure the new coordinate system is a higher order than
-            # the original system
-            if new_sys - orig_sys > 0:
-                # Compute trig function for heaing, pitch and roll
-                ch = np.cos(np.deg2rad(h))
-                sh = np.sin(np.deg2rad(h))
-                cp = np.cos(np.deg2rad(p))
-                sp = np.sin(np.deg2rad(p))
-                cr = np.cos(np.deg2rad(r))
-                sr = np.sin(np.deg2rad(r))
-
-                n_ens = self.raw_vel_mps.shape[2]
-
+            if o_coord_sys == "Beam":
+                # Transform beam coordinates to new specified coordinates
                 for ii in range(n_ens):
-                    # Compute matrix for heading, pitch, and roll
-                    if adcp.manufacturer == "SonTek":
-                        hpr_matrix = np.array([
-                            [sh[ii] * cp[ii] + (ch[ii] * sp[ii] * sr[ii]) / 2,
-                             -1 * ch[ii] * cr[ii],
-                             -1 * sh[ii] * sp[ii] + (ch[ii] * cp[ii] * sr[ii]) / 2],
-                            [ch[ii] * cp[ii] + -1 * (sh[ii] * sp[ii] * sr[ii]) / 2,
-                             sh[ii] * cr[ii],
-                             -1 * ch[ii] * sp[ii] + (-1 * sh[ii] * cp[ii] * sr[ii]) / 2],
-                            [sp[ii] * cr[ii], sr[ii], cp[ii] * cr[ii]]]
-                        )
-                    else:
-                        hpr_matrix = np.array(
-                            [
-                                [
-                                    ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                                    (sh[ii] * cp[ii]),
-                                    ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                                ],
-                                [
-                                    (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                                    ch[ii] * cp[ii],
-                                    (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                                ],
-                                [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                            ]
-                        )
+                    transformation_matrix = adcp.get_transformation_matrix(
+                        self.frequency[ii])
+                    vel_beams = np.copy(data[:, :, ii])
 
-                    # Transform beam coordinates
-                    if o_coord_sys == "Beam":
-                        # Determine frequency index for transformation
-                        if len(t_matrix.shape) > 2:
-                            idx_freq = np.where(t_matrix_freq == self.frequency[ii])
-                            t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
-                        else:
-                            t_mult = np.copy(t_matrix)
+                    # Adjust beam velocities for 3 beam solution, if necessary
+                    col_idx = np.where(np.sum(np.isnan(vel_beams), axis=0) == 1)[0]
+                    if len(col_idx) > 0:
+                        for i3 in range(len(col_idx)):
+                            # Id invalid beam
+                            vel_3_beam = vel_beams[:, col_idx[i3]]
+                            idx_3_beam = np.where(np.isnan(vel_3_beam))[0]
 
-                        # Get velocity data
-                        vel_beams = np.copy(data[:, :, ii])
+                            adcp.adjust_for_3_beam_solution(
+                                transformation_matrix=transformation_matrix,
+                                beam_velocities=vel_3_beam,
+                                idx_3_beam=idx_3_beam
+                            )
 
-                        # Apply transformation matrix for 4 beam solutions
-                        temp_t = t_mult.dot(vel_beams)
+                    inst_coordinates = adcp.compute_inst_coordinates(
+                        transformation_matrix=transformation_matrix,
+                        beam_velocities=vel_beams)
 
-                        # Apply hpr_matrix
-                        temp_thpr = hpr_matrix.dot(temp_t[:3])
-                        temp_thpr = np.vstack([temp_thpr, temp_t[3]])
+                    if len(col_idx) > 0:
+                        inst_coordinates[3, col_idx] = np.nan
 
-                        # Check for invalid beams
-                        invalid_idx = np.isnan(vel_beams)
+                    if new_coord_sys == "Earth":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=h[ii],
+                            pitch=p[ii], roll=r[ii])
 
-                        # Identify rows requiring 3 beam solutions
-                        n_invalid_col = np.sum(invalid_idx, axis=0)
-                        col_idx = np.where(n_invalid_col == 1)[0]
+                    elif new_coord_sys == "Ship":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=0,
+                            pitch=p[ii], roll=r[ii])
 
-                        # Compute 3 beam solution, if necessary
-                        if len(col_idx) > 0:
-                            for i3 in range(len(col_idx)):
-                                # Id invalid beam
-                                vel_3_beam = vel_beams[:, col_idx[i3]]
-                                idx_3_beam = np.where(np.isnan(vel_3_beam))[0]
+                    elif new_coord_sys == "Inst":
+                        hpr_matrix = np.eye(3)
 
-                                # 3 beam solution for non-RiverRay
-                                vel_3_beam_zero = vel_3_beam
-                                vel_3_beam_zero[np.isnan(vel_3_beam)] = 0
-                                vel_error = t_mult[3, :].dot(vel_3_beam_zero)
-                                vel_3_beam[idx_3_beam] = (
-                                    -1 * vel_error / t_mult[3, idx_3_beam]
-                                )
-                                temp_t = t_mult.dot(vel_3_beam)
+                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
 
-                                # Apply transformation matrix for 3
-                                # beam solutions
-                                temp_thpr[0:3, col_idx[i3]] = hpr_matrix.dot(temp_t[:3])
-                                temp_thpr[3, col_idx[i3]] = np.nan
-                    else:
-                        # Get velocity data
-                        vel_raw = np.copy(np.squeeze(self.raw_vel_mps[:, :, ii]))
-                        temp_thpr = np.array(hpr_matrix).dot(vel_raw[:3, :])
-                        temp_thpr = np.vstack([temp_thpr, vel_raw[3, :]])
+            elif orig_coord_sys == "Inst":
+                # Transform from instrument coordinates
+                for ii in range(n_ens):
+                    inst_coordinates = np.copy(data[:, :, ii])
 
-                    # Update object
-                    # temp_thpr = temp_thpr.T
-                    self.u_mps[:, ii] = temp_thpr[0, :]
-                    self.v_mps[:, ii] = temp_thpr[1, :]
-                    self.w_mps[:, ii] = temp_thpr[2, :]
-                    self.d_mps[:, ii] = temp_thpr[3, :]
+                    if new_coord_sys == "Earth":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=h[ii],
+                            pitch=p[ii], roll=r[ii])
 
-                # Because of padded arrays with zeros and RR has a variable
-                # number of bins, the raw data may be padded with zeros.  The next 4
-                # statements changes those to nan
-                find_padded = (
-                    np.abs(self.u_mps)
-                    + np.abs(self.v_mps)
-                    + np.abs(self.w_mps)
-                    + np.abs(self.d_mps)
-                )
-                self.u_mps[find_padded == 0] = np.nan
-                self.v_mps[find_padded == 0] = np.nan
-                self.w_mps[find_padded == 0] = np.nan
-                self.d_mps[find_padded == 0] = np.nan
+                    elif new_coord_sys == "Ship":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=0,
+                            pitch=p[ii], roll=r[ii])
 
-                # Assign processed object properties
-                self.u_processed_mps = np.copy(self.u_mps)
-                self.v_processed_mps = np.copy(self.v_mps)
+                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
 
-                # Assign coordinate system and reference properties
-                self.coord_sys = new_coord_sys
-                self.nav_ref = self.orig_nav_ref
+            elif orig_coord_sys == "Ship":
+                # Transform from ship coordinates
+                for ii in range(n_ens):
+                    ship_coordinates = np.copy(data[:, :, ii])
 
-            else:
-                # Reset velocity properties to raw values
-                self.u_mps = np.copy(self.raw_vel_mps[0])
-                self.v_mps = np.copy(self.raw_vel_mps[1])
-                self.w_mps = np.copy(self.raw_vel_mps[2])
-                self.d_mps = np.copy(self.raw_vel_mps[3])
+                    if new_coord_sys == "Earth":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=h[ii],
+                            pitch=0, roll=0)
 
-                if adcp.manufacturer == "TRDI":
-                    find_padded = (
-                        np.abs(self.u_mps)
-                        + np.abs(self.v_mps)
-                        + np.abs(self.w_mps)
-                        + np.abs(self.d_mps)
-                    )
-                    self.u_mps[find_padded == 0] = np.nan
-                    self.v_mps[find_padded == 0] = np.nan
-                    self.w_mps[find_padded == 0] = np.nan
-                    self.d_mps[find_padded == 0] = np.nan
+                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
 
-                # Assign processed properties
-                self.u_processed_mps = np.copy(self.u_mps)
-                self.v_processed_mps = np.copy(self.v_mps)
+            self.fix_zero_padding()
 
-        else:
-            # Reset velocity properties to raw values
+        elif new_sys_code - orig_sys_code == 0:
+            # Reset coordinates to original values
             self.u_mps = np.copy(self.raw_vel_mps[0])
             self.v_mps = np.copy(self.raw_vel_mps[1])
             self.w_mps = np.copy(self.raw_vel_mps[2])
             self.d_mps = np.copy(self.raw_vel_mps[3])
 
             if adcp.manufacturer == "TRDI":
-                find_padded = (
-                    np.abs(self.u_mps)
-                    + np.abs(self.v_mps)
-                    + np.abs(self.w_mps)
-                    + np.abs(self.d_mps)
-                )
-                self.u_mps[find_padded == 0] = np.nan
-                self.v_mps[find_padded == 0] = np.nan
-                self.w_mps[find_padded == 0] = np.nan
-                self.d_mps[find_padded == 0] = np.nan
+                self.fix_zero_padding()
 
-            # Assign processed properties
-            self.u_processed_mps = np.copy(self.u_mps)
-            self.v_processed_mps = np.copy(self.v_mps)
+        else:
+            # Transforming to lower order not supported
+            self.u_mps = np.nan
+            self.v_mps = np.nan
+            self.w_mps = np.nan
+            self.d_mps = np.nan
+
+        # Assign processed object properties
+        self.u_processed_mps = np.copy(self.u_mps)
+        self.v_processed_mps = np.copy(self.v_mps)
+
+        # Assign coordinate system and reference properties
+        self.coord_sys = new_coord_sys
+        self.nav_ref = self.orig_nav_ref
 
         if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+
+    def fix_zero_padding(self):
+        # Because of padded arrays with zeros and RR has a variable
+        # number of bins, the raw data may be padded with zeros.  The next 4
+        # statements changes those to nan
+        find_padded = (
+                np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(self.w_mps) + np.abs(
+            self.d_mps))
+        self.u_mps[find_padded == 0] = np.nan
+        self.v_mps[find_padded == 0] = np.nan
+        self.w_mps[find_padded == 0] = np.nan
+        self.d_mps[find_padded == 0] = np.nan
 
     def earth_to_beam(self, sensors, adcp):
         """Converts earth coordinates to beam coordinates.

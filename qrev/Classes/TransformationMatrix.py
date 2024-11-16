@@ -308,3 +308,4 @@ class TransformationMatrix(object):
                     beam_matrix[row, col] = z2[0, col]
                 k = k + 1
         self.matrix[:, :, n] = beam_matrix
+
