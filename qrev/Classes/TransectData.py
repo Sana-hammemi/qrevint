@@ -1046,6 +1046,8 @@ class TransectData(object):
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
             bt_vel = np.around(bt_vel * sos_correction, 3)
+        # Scale the difference velocity to be error velocity
+        bt_vel[3, :] = bt_vel[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
 
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(
@@ -1266,13 +1268,15 @@ class TransectData(object):
 
         # Apply TRDI scaling to SonTek difference velocity to convert to a
         # TRDI compatible error velocity
-        # vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
+        vel[3, :, :] = vel[3, :, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
 
         # Convert velocity reference from what was used in RiverSurveyor Live
         # to None by adding the boat velocity to the reported water velocity
         boat_vel = np.swapaxes(rsdata.Summary.Boat_Vel, 1, 0)
         vel[0, :, :] = vel[0, :, :] + boat_vel[0, :]
         vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
+        vel[2, :, :] = vel[2, :, :] + boat_vel[2, :]
+        vel[3, :, :] = vel[3, :, :] + boat_vel[3, :]
 
         ref_water = "None"
 
@@ -2013,6 +2017,11 @@ class TransectData(object):
         cell_size = np.array(wt["cell_size"])
         cell_size[np.equal(cell_size, None)] = np.nan
         cell_size = cell_size.astype(float)
+
+        # Fill cell_size array, repeating last valid cell size
+        for col in range(cell_size.shape[1]):
+            size_idx = np.where(np.isnan(cell_size[:, col]))
+            cell_size [size_idx[0], col] = cell_size[size_idx[0][0]-1, col]
         draft = system_configuration["TransducerDepth (m)"]
         top_of_cells = (
             np.array(wt["cell_start"]).astype(float)

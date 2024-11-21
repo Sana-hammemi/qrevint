@@ -215,6 +215,9 @@ class TransformationMatrix(object):
             self.source = "ADCP"
             # Note: for M9 this is a 4x4x3 matrix (300,500,1000)
             # Note: for S5 this is a 4x4x2 matrix (3000,1000)
+            data_in[3, :, 0] = data_in[3, :, 0] / ((2 ** 0.5) * np.tan(np.deg2rad(25)))
+            if len(data_in.shape) == 3:
+                data_in[3, :, 2] = data_in[3, :, 0] / ((2 ** 0.5) * np.tan(np.deg2rad(25)))
             self.matrix = data_in
 
     def populate_from_qrev_mat(self, tmatrix):
@@ -307,5 +310,7 @@ class TransformationMatrix(object):
                 else:
                     beam_matrix[row, col] = z2[0, col]
                 k = k + 1
+        # Scale the last row (difference velocity) to compute the scaled error velocity
+        beam_matrix[3, :] = beam_matrix[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
         self.matrix[:, :, n] = beam_matrix
 

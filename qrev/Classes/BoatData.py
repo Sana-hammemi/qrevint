@@ -240,8 +240,8 @@ class BoatData(object):
             # thus must be reversed
             self.u_mps = np.copy(-1 * vel_in[0, :])
             self.v_mps = np.copy(-1 * vel_in[1, :])
-            self.w_mps = np.copy(vel_in[2, :])
-            self.d_mps = np.copy(vel_in[3, :])
+            self.w_mps = np.copy(-1 * vel_in[2, :])
+            self.d_mps = np.copy(-1 * vel_in[3, :])
 
             # Default filtering applied during initial construction of object
             self.d_filter = "Off"
@@ -506,19 +506,20 @@ class BoatData(object):
         inst_coordinates = None
         orig_coord_sys = self.orig_coord_sys.strip()
         orig_sys_code = adcp.get_coordinate_system_code(coord_sys=orig_coord_sys)
-        new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys )
+        new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys)
 
         # Check to ensure the new coordinate system is a higher order
         # than the original system
         if new_sys_code - orig_sys_code > 0:
-
             h, p, r = sensors.get_hpr()
             n_ens = self.raw_vel_mps.shape[1]
 
             if orig_coord_sys == "Beam":
                 # Transform beam coordinates to new coordinates
                 for ii in range(n_ens):
-                    transformation_matrix = adcp.get_transformation_matrix(self.frequency_khz[ii])
+                    transformation_matrix = adcp.get_transformation_matrix(
+                        self.frequency_khz[ii]
+                    )
                     vel_beams = np.copy(np.squeeze(self.raw_vel_mps[:, ii]))
 
                     # Adjust beam velocities for 3 beam solution, if necessary
@@ -527,60 +528,100 @@ class BoatData(object):
                         adcp.adjust_for_3_beam_solution(
                             transformation_matrix=transformation_matrix,
                             beam_velocities=vel_beams,
-                            idx_3_beam=idx_3_beam
+                            idx_3_beam=idx_3_beam,
                         )
+
+                    # Compute instrument coordinates
                     inst_coordinates = adcp.compute_inst_coordinates(
                         transformation_matrix=transformation_matrix,
-                        beam_velocities=vel_beams)
+                        beam_velocities=vel_beams,
+                    )
 
+                    # Set error velocity to nan for 3-beam solutions
                     if len(idx_3_beam[0] == 1):
                         inst_coordinates[3] = np.nan
 
-                    if new_coord_sys == "Earth":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=h[ii], pitch=p[ii],
-                            roll=r[ii])
-
-                    elif new_coord_sys == "Ship":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=0, pitch=p[ii],
-                            roll=r[ii])
-
-                    elif new_coord_sys == "Inst":
-                        hpr_matrix = np.eye(3)
-
-                    self.u_mps[ii], self.v_mps[ii], self.w_mps[ii], self.d_mps[ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
+                    # Compute new coordinates
+                    (
+                        self.u_mps[ii],
+                        self.v_mps[ii],
+                        self.w_mps[ii],
+                        self.d_mps[ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
+                    )
 
             elif orig_coord_sys == "Inst":
+                # Transform instrument coordinates to new coordinates
                 for ii in range(n_ens):
                     inst_coordinates = np.copy(np.squeeze(self.raw_vel_mps[:, ii]))
 
-                    if new_coord_sys == "Earth":
-                        hpr_matrix = adcp.create_hpr_matrix(manufacturer=adcp.manufacturer,
-                            heading=h[ii], pitch=p[ii], roll=r[ii])
-
-                    elif new_coord_sys == "Ship":
-                        hpr_matrix = adcp.create_hpr_matrix(manufacturer=adcp.manufacturer,
-                            heading=0, pitch=p[ii], roll=r[ii])
-
-                    self.u_mps[ii], self.v_mps[ii], self.w_mps[ii], self.d_mps[ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
+                    # Compute new coordinates
+                    (
+                        self.u_mps[ii],
+                        self.v_mps[ii],
+                        self.w_mps[ii],
+                        self.d_mps[ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
+                    )
 
             elif orig_coord_sys == "Ship":
+                # Transform ship coordinates
                 for ii in range(n_ens):
                     ship_coordinates = np.copy(np.squeeze(self.raw_vel_mps[:, ii]))
 
                     if new_coord_sys == "Earth":
-                        hpr_matrix = adcp.create_hpr_matrix(manufacturer=adcp.manufacturer,
-                            heading=h[ii], pitch=0, roll=0)
+                        # Generate matrix for earth coordinates
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer,
+                            heading=h[ii],
+                            pitch=0,
+                            roll=0,
+                        )
 
-                    self.u_mps[ii], self.v_mps[ii], self.w_mps[ii], self.d_mps[ii] = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
+                    # Compute coordinates
+                    (
+                        self.u_mps[ii],
+                        self.v_mps[ii],
+                        self.w_mps[ii],
+                        self.d_mps[ii],
+                    ) = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
 
-            self.coord_sys = new_coord_sys
+            # Convert boat coordinates relative to stable streambed
             self.u_mps = -1 * self.u_mps
             self.v_mps = -1 * self.v_mps
             self.w_mps = -1 * self.w_mps
-            self.u_processed_mps = np.copy(self.u_mps)
-            self.v_processed_mps = np.copy(self.v_mps)
+
+        elif new_sys_code - orig_sys_code < 0:
+            # Transforming to lower order not supported
+            self.u_mps = np.nan
+            self.v_mps = np.nan
+            self.w_mps = np.nan
+            self.d_mps = np.nan
+
+        else:
+            # Original data same as new system coordinates
+            self.u_mps = np.copy(self.raw_vel_mps[0])
+            self.v_mps = np.copy(self.raw_vel_mps[1])
+            self.w_mps = np.copy(self.raw_vel_mps[2])
+            self.d_mps = np.copy(self.raw_vel_mps[3])
+
+        # Assign processed object properties
+        self.coord_sys = new_coord_sys
+        self.u_processed_mps = np.copy(self.u_mps)
+        self.v_processed_mps = np.copy(self.v_mps)
+        self.w_processed_mps = np.copy(self.w_mps)
 
     def change_heading(self, heading_change):
         """Rotates the boat velocities for a change in heading due to a change

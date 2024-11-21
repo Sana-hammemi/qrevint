@@ -3521,9 +3521,9 @@ class AdvGraphs(object):
 
         # Create color map
         if cmap_in is None:
-            cmap = cm.get_cmap(self.color_map)
+            cmap = copy.copy(cm.get_cmap(self.color_map))
         else:
-            cmap = cm.get_cmap(cmap_in)
+            cmap = copy.copy(cm.get_cmap(cmap_in))
 
         cmap.set_under("white")
 

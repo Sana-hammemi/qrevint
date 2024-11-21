@@ -293,16 +293,28 @@ class InstrumentData(object):
         beam_azimuth = []
         beam_elev = []
         for n in range(adcp_data["SensorConfiguration"]["Info"]["beamSetCount"]):
-            freq = (adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
-                        "systemFrequency (Hz)"] / 1000)
+            freq = (
+                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                    "systemFrequency (Hz)"
+                ]
+                / 1000
+            )
             self.frequency_khz.append(freq)
 
-            beam_azimuth.append(list(
-                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
-                    "beamAzimuth"].values()))
-            beam_elev.append(list(
-                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
-                    "beamElevation"].values()))
+            beam_azimuth.append(
+                list(
+                    adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                        "beamAzimuth"
+                    ].values()
+                )
+            )
+            beam_elev.append(
+                list(
+                    adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                        "beamElevation"
+                    ].values()
+                )
+            )
 
         if len(self.frequency_khz) > 2:
             if self.frequency_khz[2] > 0:
@@ -394,7 +406,6 @@ class InstrumentData(object):
         else:
             self.configuration_commands = None
 
-
     @staticmethod
     def create_hpr_matrix(manufacturer, heading, pitch, roll):
         """Creates hpr_matrix for transforming instrument coordinates to earth coordinates.
@@ -420,24 +431,44 @@ class InstrumentData(object):
         sr = np.sin(np.deg2rad(roll))
 
         if manufacturer == "SonTek":
-            hpr_matrix = np.array([[sh * cp + (ch * sp * sr) / 2, -1 * ch * cr,
-                                    -1 * sh * sp + (ch * cp * sr) / 2],
-                [ch * cp + -1 * (sh * sp * sr) / 2, sh * cr,
-                 -1 * ch * sp + (-1 * sh * cp * sr) / 2], [sp * cr, sr, cp * cr]])
+            hpr_matrix = np.array(
+                [
+                    [
+                        sh * cp + (ch * sp * sr) / 2,
+                        -1 * ch * cr,
+                        -1 * sh * sp + (ch * cp * sr) / 2,
+                    ],
+                    [
+                        ch * cp + -1 * (sh * sp * sr) / 2,
+                        sh * cr,
+                        -1 * ch * sp + (-1 * sh * cp * sr) / 2,
+                    ],
+                    [sp * cr, sr, cp * cr],
+                ]
+            )
         else:
-            hpr_matrix = np.array([
-                [((ch * cr) + (sh * sp * sr)), (sh * cp),
-                    ((ch * sr) - sh * sp * cr)],
-                [(-1 * sh * cr) + (ch * sp * sr), ch * cp,
-                 (-1 * sh * sr) - (ch * sp * cr)],
-                [(-1.0 * cp * sr), sp, cp * cr]])
+            hpr_matrix = np.array(
+                [
+                    [
+                        ((ch * cr) + (sh * sp * sr)),
+                        (sh * cp),
+                        ((ch * sr) - sh * sp * cr),
+                    ],
+                    [
+                        (-1 * sh * cr) + (ch * sp * sr),
+                        ch * cp,
+                        (-1 * sh * sr) - (ch * sp * cr),
+                    ],
+                    [(-1.0 * cp * sr), sp, cp * cr],
+                ]
+            )
 
         return hpr_matrix
 
     def get_transformation_matrix(self, frequency):
         # Determine frequency index for transformation matrix
         if len(self.t_matrix.matrix.shape) > 2:
-            idx_freq = np.where(self.frequency_kHz == frequency)
+            idx_freq = np.where(self.frequency_khz == frequency)
             matrix = np.copy(self.t_matrix.matrix[:, :, idx_freq[0][0]])
         else:
             matrix = np.copy(self.t_matrix.matrix)
@@ -477,9 +508,48 @@ class InstrumentData(object):
         vel_3_beam_zero[np.isnan(beam_velocities)] = 0
         vel_error = np.matmul(transformation_matrix[3, :], vel_3_beam_zero)
         beam_velocities[idx_3_beam] = (
-                -1 * vel_error / np.squeeze(transformation_matrix[3, idx_3_beam]))
+            -1 * vel_error / np.squeeze(transformation_matrix[3, idx_3_beam])
+        )
 
     @staticmethod
     def compute_new_coordinates(hpr_matrix, current_coordinates):
         new_coordinates = hpr_matrix.dot(current_coordinates[:3])
-        return new_coordinates[0], new_coordinates[1], new_coordinates[2], current_coordinates[3]
+        return (
+            new_coordinates[0],
+            new_coordinates[1],
+            new_coordinates[2],
+            current_coordinates[3],
+        )
+
+    @staticmethod
+    def transform_instrument_coordinates(manufacturer, inst_coordinates, h, p, r, new_coord_sys):
+        if new_coord_sys == "Earth":
+            # Generate matrix to compute earth coordinates
+            hpr_matrix = InstrumentData.create_hpr_matrix(
+                manufacturer=manufacturer,
+                heading=h,
+                pitch=p,
+                roll=r,
+            )
+
+        elif new_coord_sys == "Ship":
+            # Generate matrix to compute ship coordinates
+            hpr_matrix = InstrumentData.create_hpr_matrix(
+                manufacturer=manufacturer,
+                heading=0,
+                pitch=p,
+                roll=r,
+            )
+
+        elif new_coord_sys == "Inst":
+            # Identity matrix for instrument coordinates
+            hpr_matrix = np.eye(3)
+
+        return InstrumentData.compute_new_coordinates(hpr_matrix, inst_coordinates)
+        # new_coordinates = hpr_matrix.dot(current_coordinates[:3])
+        # return (
+        #     new_coordinates[0],
+        #     new_coordinates[1],
+        #     new_coordinates[2],
+        #     current_coordinates[3],
+        # )

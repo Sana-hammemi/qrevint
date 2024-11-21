@@ -2103,8 +2103,6 @@ class Measurement(object):
                 ens_interp=settings["WTEnsInterpolation"],
                 cells_interp=settings["WTCellInterpolation"],
             )
-            transect.w_vel.d_mps[np.isnan(transect.w_vel.d_mps)] = 0
-            transect.boat_vel.bt_vel.d_mps[np.isnan(transect.boat_vel.bt_vel.d_mps)] = 0
 
         if self.extrap_fit is None:
             self.extrap_fit = ComputeExtrap()

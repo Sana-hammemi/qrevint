@@ -805,7 +805,7 @@ class WaterData(object):
             # Transform coordinates to a higher order
 
             h, p, r = sensors.get_hpr()
-            n_ens = self.raw_vel_mps.shape[1]
+            n_ens = self.raw_vel_mps.shape[2]
 
             if o_coord_sys == "Beam":
                 # Transform beam coordinates to new specified coordinates
@@ -827,45 +827,49 @@ class WaterData(object):
                                 beam_velocities=vel_3_beam,
                                 idx_3_beam=idx_3_beam
                             )
-
+                    # Compute instrument coordinates
                     inst_coordinates = adcp.compute_inst_coordinates(
                         transformation_matrix=transformation_matrix,
                         beam_velocities=vel_beams)
 
+                    # Set error velocity to nan for 3-beam solutions
                     if len(col_idx) > 0:
                         inst_coordinates[3, col_idx] = np.nan
 
-                    if new_coord_sys == "Earth":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=h[ii],
-                            pitch=p[ii], roll=r[ii])
-
-                    elif new_coord_sys == "Ship":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=0,
-                            pitch=p[ii], roll=r[ii])
-
-                    elif new_coord_sys == "Inst":
-                        hpr_matrix = np.eye(3)
-
-                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
+                    # Compute new coordinates
+                    (
+                        self.u_mps[:, ii],
+                        self.v_mps[:, ii],
+                        self.w_mps[:, ii],
+                     self.d_mps[:, ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
+                    )
 
             elif orig_coord_sys == "Inst":
                 # Transform from instrument coordinates
                 for ii in range(n_ens):
                     inst_coordinates = np.copy(data[:, :, ii])
 
-                    if new_coord_sys == "Earth":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=h[ii],
-                            pitch=p[ii], roll=r[ii])
-
-                    elif new_coord_sys == "Ship":
-                        hpr_matrix = adcp.create_hpr_matrix(
-                            manufacturer=adcp.manufacturer, heading=0,
-                            pitch=p[ii], roll=r[ii])
-
-                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, inst_coordinates)
+                    # Compute new coordinates
+                    (
+                        self.u_mps[:, ii],
+                        self.v_mps[:, ii],
+                        self.w_mps[:, ii],
+                     self.d_mps[:, ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
+                    )
 
             elif orig_coord_sys == "Ship":
                 # Transform from ship coordinates
@@ -881,22 +885,21 @@ class WaterData(object):
 
             self.fix_zero_padding()
 
-        elif new_sys_code - orig_sys_code == 0:
-            # Reset coordinates to original values
-            self.u_mps = np.copy(self.raw_vel_mps[0])
-            self.v_mps = np.copy(self.raw_vel_mps[1])
-            self.w_mps = np.copy(self.raw_vel_mps[2])
-            self.d_mps = np.copy(self.raw_vel_mps[3])
-
-            if adcp.manufacturer == "TRDI":
-                self.fix_zero_padding()
-
-        else:
+        elif new_sys_code - orig_sys_code < 0:
             # Transforming to lower order not supported
             self.u_mps = np.nan
             self.v_mps = np.nan
             self.w_mps = np.nan
             self.d_mps = np.nan
+
+        else:
+            # Original data same as new system coordinates
+            self.u_mps = np.copy(self.raw_vel_mps[0])
+            self.v_mps = np.copy(self.raw_vel_mps[1])
+            self.w_mps = np.copy(self.raw_vel_mps[2])
+            self.d_mps = np.copy(self.raw_vel_mps[3])
+
+            self.fix_zero_padding()
 
         # Assign processed object properties
         self.u_processed_mps = np.copy(self.u_mps)
@@ -909,6 +912,7 @@ class WaterData(object):
         if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+            self.w_earth_no_ref_mps = np.copy(self.w_mps)
 
     def fix_zero_padding(self):
         # Because of padded arrays with zeros and RR has a variable
@@ -1023,6 +1027,8 @@ class WaterData(object):
         if boat_select is not None:
             self.u_mps = np.add(self.u_earth_no_ref_mps, boat_select.u_processed_mps)
             self.v_mps = np.add(self.v_earth_no_ref_mps, boat_select.v_processed_mps)
+            self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
+            self.d_mps = np.add(self.d_mps, boat_select.d_mps)
             self.nav_ref = boat_select.nav_ref
         else:
             self.u_mps = repmat(
