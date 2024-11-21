@@ -1027,8 +1027,9 @@ class WaterData(object):
         if boat_select is not None:
             self.u_mps = np.add(self.u_earth_no_ref_mps, boat_select.u_processed_mps)
             self.v_mps = np.add(self.v_earth_no_ref_mps, boat_select.v_processed_mps)
-            self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
-            self.d_mps = np.add(self.d_mps, boat_select.d_mps)
+            if boat_select.nav_ref.lower() == "bt":
+                self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
+                self.d_mps = np.add(self.d_mps, boat_select.d_mps)
             self.nav_ref = boat_select.nav_ref
         else:
             self.u_mps = repmat(

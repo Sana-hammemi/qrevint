@@ -610,13 +610,6 @@ class BoatData(object):
             self.w_mps = np.nan
             self.d_mps = np.nan
 
-        else:
-            # Original data same as new system coordinates
-            self.u_mps = np.copy(self.raw_vel_mps[0])
-            self.v_mps = np.copy(self.raw_vel_mps[1])
-            self.w_mps = np.copy(self.raw_vel_mps[2])
-            self.d_mps = np.copy(self.raw_vel_mps[3])
-
         # Assign processed object properties
         self.coord_sys = new_coord_sys
         self.u_processed_mps = np.copy(self.u_mps)
