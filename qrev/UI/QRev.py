@@ -12418,7 +12418,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             meas=self.meas,
             checked=self.checked_transects_idx,
             idx=self.idx,
-            data_type=self.combo_extrap_type.currentText(),
             cb_data=self.cb_extrap_data.isChecked(),
             cb_surface=self.cb_extrap_surface.isChecked(),
             cb_trans_medians=self.cb_extrap_trans_medians.isChecked(),
