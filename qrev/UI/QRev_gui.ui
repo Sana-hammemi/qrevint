@@ -987,7 +987,7 @@
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -1356,7 +1356,7 @@
                    </item>
                    <item>
                     <property name="text">
-                     <string>UCT+1</string>
+                     <string>UTC+1</string>
                     </property>
                    </item>
                    <item>
@@ -9036,7 +9036,7 @@
   </action>
   <action name="actionOptions">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Application.png</normaloff>
      <normalon>:/images/24x24/Application.png</normalon>:/images/24x24/Application.png</iconset>
    </property>
@@ -9049,7 +9049,7 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/images/22.png</normaloff>:/images/images/22.png</iconset>
    </property>
    <property name="text">
@@ -9058,7 +9058,7 @@
   </action>
   <action name="actionComment">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Notes.png</normaloff>
      <normalon>:/images/24x24/Notes.png</normalon>:/images/24x24/Notes.png</iconset>
    </property>
@@ -9068,7 +9068,7 @@
   </action>
   <action name="actionHelp">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Help book 3d.png</normaloff>:/images/24x24/Help book 3d.png</iconset>
    </property>
    <property name="text">
@@ -9077,7 +9077,7 @@
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">
@@ -9184,7 +9184,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Home.png</normaloff>:/images/24x24/Home.png</iconset>
    </property>
    <property name="text">
@@ -9199,7 +9199,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/images/83.png</normaloff>:/images/images/83.png</iconset>
    </property>
    <property name="text">
@@ -9214,7 +9214,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Move.png</normaloff>:/images/24x24/Move.png</iconset>
    </property>
    <property name="text">
@@ -9229,7 +9229,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Info.png</normaloff>:/images/24x24/Info.png</iconset>
    </property>
    <property name="text">
@@ -9241,7 +9241,7 @@
   </action>
   <action name="actionGoogle_Earth">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/Globe.png</normaloff>:/images/24x24/Globe.png</iconset>
    </property>
    <property name="text">
@@ -9256,7 +9256,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/images/60.png</normaloff>:/images/images/60.png</iconset>
    </property>
    <property name="text">

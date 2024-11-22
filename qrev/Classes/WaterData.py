@@ -912,6 +912,9 @@ class WaterData(object):
         if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+            # The w_earth_no_ref_mps is not currently used. However, it is computed to
+            # allow correcting of the water track vertical velocity for the vertical
+            # velocity of the boat (ADCP). See also comment in set_nav_reference
             self.w_earth_no_ref_mps = np.copy(self.w_mps)
 
     def fix_zero_padding(self):
@@ -1027,9 +1030,19 @@ class WaterData(object):
         if boat_select is not None:
             self.u_mps = np.add(self.u_earth_no_ref_mps, boat_select.u_processed_mps)
             self.v_mps = np.add(self.v_earth_no_ref_mps, boat_select.v_processed_mps)
-            if boat_select.nav_ref.lower() == "bt":
-                self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
-                self.d_mps = np.add(self.d_mps, boat_select.d_mps)
+            # SonTek and TRDI correct the vertical water velocity for the BT vertical
+            # velocity. However, there is no vertical velocity computed with using GPS
+            # as the navigation reference. Thus, the vertical water velocity is only
+            # corrected when using BT. This results in and inconsistency in the
+            # vertical water velocity. For discharge, the only potential affect is on
+            # the vertical water velocity filter. 11/21/2024 David Mueller and Travis
+            # Knight have decided not to make the correction when computing discharge
+            # to maintain consistency. However, this may need to be addressed differently
+            # for velocity mapping applications.
+
+            # if boat_select.nav_ref.lower() == "bt":
+            #     self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
+            #     self.d_mps = np.add(self.d_mps, boat_select.d_mps)
             self.nav_ref = boat_select.nav_ref
         else:
             self.u_mps = repmat(

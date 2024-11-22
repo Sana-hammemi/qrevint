@@ -1686,6 +1686,10 @@ class TransectData(object):
                 
         # Define dictionaries
         bt = {
+            "ping_type": np.full([n_ensembles], ""),
+            "ping_count": np.full([n_ensembles], 0),
+            "good_ping_count": np.full([n_ensembles], 0),
+            "beam_set_id": np.full([n_ensembles], 0),
             "beam_rng": np.full([4, n_ensembles], np.nan),
             "beam_vel": np.full([4, n_ensembles], np.nan),
             "beam_vel_std": np.full([4, n_ensembles], np.nan),
@@ -1749,6 +1753,12 @@ class TransectData(object):
             ens_time.append(sample["SampleTime"][0:-2])
 
             # Bottom Track
+            if "PingType" in sample["Bt"]:
+                bt["ping_type"][sample_n] = sample["Bt"]["PingType"]
+
+            bt["ping_count"][sample_n] = sample["Bt"]["PingCount"]
+            bt["good_ping_count"][sample_n] = sample["Bt"]["GoodPingCount"]
+            bt["beam_set_id"][sample_n] = sample["Bt"]["BeamSetId"]
             bt["beam_rng"][:, sample_n] = sample["Bt"]["Range (m)"]
             bt["beam_vel"][:, sample_n] = sample["Bt"]["Velocity (m/s)"]
             bt["beam_vel_std"][:, sample_n] = sample["Bt"]["VelocityStdDev (m/s)"]
@@ -1919,6 +1929,15 @@ class TransectData(object):
         # Create initial object
         self.boat_vel = BoatStructure()
 
+        # Apply QRev ping type categories
+        if np.all(bt["ping_type"] == "PCBB"):
+            ping_type = None
+        else:
+            ping_type = np.full(bt["ping_type"].shape[0], "    ")
+            ping_type[bt["ping_type"] == "B"] = "BB"
+            ping_type[bt["ping_type"] == "P"] = "PC"
+            ping_type[bt["ping_count"] > 2] = "PCBB"
+
         # Populate object
         self.boat_vel.add_boat_object(
             source="rsq",
@@ -1926,6 +1945,7 @@ class TransectData(object):
             freq_in=bt["frequency"],
             coord_sys_in="Beam",
             nav_ref_in="BT",
+            ping_type=ping_type
         )
 
         # Set track reference
@@ -1983,7 +2003,7 @@ class TransectData(object):
                                           coord_sys_in="Earth", nav_ref_in="GGA", )
 
         # If valid vtg data exist create vtg boat velocity object
-        if self.gps.vtg_velocity_ens_mps is not None > 0:
+        if self.gps.vtg_velocity_ens_mps is not None:
             self.boat_vel.add_boat_object(source="rsq",
                                           vel_in=self.gps.vtg_velocity_ens_mps,
                                           coord_sys_in="Earth", nav_ref_in="VTG", )
@@ -2263,9 +2283,15 @@ class TransectData(object):
         if excluded_top < 0:
             excluded_top = 0
 
-        ping_type = []
-        for n in range(len(wt["mode"])):
-            ping_type.append(str(wt["freq"][n])[0] + wt["mode"][n])
+        # ping_type = []
+        # for n in range(len(wt["mode"])):
+        #     ping_type.append(str(wt["freq"][n])[0] + wt["mode"][n])
+
+
+        cells_used = cells_above_sl.astype(float)
+        cells_used[cells_used == 0] = np.nan
+        expected_std = wt["expected_std"] * cells_used
+        ping_type = self.sontek_ping_type(corr=wt["corr"], expected_std=expected_std, freq=wt["freq"])
 
         # Set track reference
         nav_ref = "bt_vel"

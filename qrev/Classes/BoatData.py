@@ -241,7 +241,7 @@ class BoatData(object):
             self.u_mps = np.copy(-1 * vel_in[0, :])
             self.v_mps = np.copy(-1 * vel_in[1, :])
             self.w_mps = np.copy(-1 * vel_in[2, :])
-            self.d_mps = np.copy(-1 * vel_in[3, :])
+            self.d_mps = np.copy(vel_in[3, :])
 
             # Default filtering applied during initial construction of object
             self.d_filter = "Off"
@@ -1752,11 +1752,11 @@ class BoatData(object):
         test2 = test2[1:] * 4
 
         # Combine criteria
-        test_sum = np.sum(test1, 0) + test2
+        test_sum = np.nansum(test1, 0) + test2
 
         # Develop logical vector of invalid ensembles
         invalid_bool = np.full(test_sum.size, False)
-        invalid_bool[test_sum > 3] = True
+        invalid_bool[test_sum >= 3] = True
 
         # Handle first ensemble
         invalid_bool = np.concatenate((np.array([False]), invalid_bool), 0)
@@ -1766,6 +1766,10 @@ class BoatData(object):
         # Set invalid ensembles to nan
         vel_out = np.copy(vel_in)
         vel_out[:, invalid_bool] = np.nan
+
+        if vel_out.shape[0] > 2:
+            # Set difference velocity to nan for 3-beam solutions, BT only
+            vel_out[3, np.abs(vel_out[3, :]) < 0.000001] = np.nan
 
         return vel_out
 
