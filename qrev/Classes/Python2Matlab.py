@@ -637,8 +637,12 @@ class Python2Matlab(object):
             "version": version,
         }
         mat_struct["meas_struct"]["tr"] = ""
-        if not np.isnan(mat_struct["meas_struct"]["mbTests"]):
+
+        # if not np.isnan(mat_struct["meas_struct"]["mbTests"]):
+        try:
             mat_struct["meas_struct"]["mbTests"]["tr"] = ""
+        except IndexError:
+            pass
         mat_struct["meas_struct"]["qa"]["tr"] = ""
         
         sio.savemat(
