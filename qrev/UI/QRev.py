@@ -1471,8 +1471,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except CoordError as error:
                         self.popup_message(error.text)
 
-            # Load and process Sontek data
-            if select.type == "Nortek":
+            # Load and process Nortek data
+            elif select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
                     self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
@@ -1609,6 +1609,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
             elif select.type == "RSQ":
+                # Show folder name in GUI header
+                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
                 self.meas = Measurement(
                     in_file=select.fullName, 
                     source="RSQ",
@@ -13365,7 +13367,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.edges_graphics()
 
         # Left number of ensembles
-        elif col == 6:
+        elif col == 5:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -13529,7 +13531,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.edges_graphics()
 
         # Right number of ensembles
-        elif col == 13:
+        elif col == 12:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)

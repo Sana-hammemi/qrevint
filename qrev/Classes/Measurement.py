@@ -1080,6 +1080,14 @@ class Measurement(object):
             # Get local time offset
             utc_time_offset = sontek_data["data_properties"]["DataCollectionLocalTimeUtcOffset"]
 
+            hour = int(utc_time_offset.split(":")[0])
+            if hour > 0:
+                self.time_zone = "UTC" + "+" + str(hour)
+            elif hour < 0:
+                self.time_zone = "UTC" + str(hour)
+            else:
+                self.time_zone = "UTC"
+
             # System tests
             #TODO Not sure what to do for multiple tests or calibrations
             self.rsq_add_systest(transect, utc_time_offset)

@@ -1041,11 +1041,18 @@ class TransectData(object):
         else:
             ping_ts = None
 
+        # Remove bt error velocity from wt
+        wt_d = rsdata.WaterTrack.Velocity[:, 3, :] + np.tile(rsdata.BottomTrack.BT_Vel[:, 3], (
+            rsdata.WaterTrack.Velocity.shape[0], 1))
+        wt_d[np.abs(wt_d) < 0.000001] = np.nan
+        rsdata.WaterTrack.Velocity[:, 3, :] = wt_d
+
         bt_vel = np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0)
 
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
-            bt_vel = np.around(bt_vel * sos_correction, 3)
+            # bt_vel = np.around(bt_vel * sos_correction, 3)
+            bt_vel = bt_vel * sos_correction
         # Scale the difference velocity to be error velocity
         bt_vel[3, :] = bt_vel[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
 
@@ -1322,10 +1329,11 @@ class TransectData(object):
 
         if hasattr(rsdata.WaterTrack, "Vel_Expected_StdDev"):
             # RS5
+            vel_expected_std = rsdata.WaterTrack.Vel_Expected_StdDev.swapaxes(1, 0)
             ping_type = self.sontek_ping_type(
                 corr=corr,
                 freq=rsdata.WaterTrack.WT_Frequency,
-                expected_std=rsdata.WaterTrack.Vel_Expected_StdDev,
+                expected_std=vel_expected_std,
             )
         else:
             # M9 or S5
@@ -1597,7 +1605,7 @@ class TransectData(object):
             # RS5
             ves = []
             for n in range(4):
-                ves.append(np.nanmean(expected_std[:, n, :], axis=0))
+                ves.append(np.nanmean(expected_std[n, :, :], axis=0))
 
             ves = np.array(ves)
 
@@ -1623,7 +1631,7 @@ class TransectData(object):
         self.adcp.populate_data(manufacturer="rsqst", raw_data=transect_data["config_jsonlog"])
 
         # Extract samples for vertical from adcp_data
-        (ens_time, bt, gps_ens, gps_raw_ens, sensors_ens, vb, compass,
+        (ens_time, bt, gps_ens, gps_raw_ens, gps_raw_ens2, sensors_ens, vb, compass,
          wt,) = self.rsqmb_extract_samples(transect_data)
 
         # Date and time
@@ -1633,7 +1641,7 @@ class TransectData(object):
         self.rsqmb_boat(bt, system_configuration)
 
         # GPS
-        self.rsqmb_gps(gps_ens, gps_raw_ens, utc_time_offset)
+        self.rsqmb_gps(gps_ens, gps_raw_ens2, utc_time_offset)
 
         # Depths
         self.rsqmb_depths(bt, vb, wt, transect_data, system_configuration)
@@ -1686,7 +1694,7 @@ class TransectData(object):
                 
         # Define dictionaries
         bt = {
-            "ping_type": np.full([n_ensembles], ""),
+            "ping_type": np.full([n_ensembles], "    "),
             "ping_count": np.full([n_ensembles], 0),
             "good_ping_count": np.full([n_ensembles], 0),
             "beam_set_id": np.full([n_ensembles], 0),
@@ -1711,6 +1719,17 @@ class TransectData(object):
             "vtg_speed_kph": np.full([n_ensembles, 20], np.nan),
             "vtg_mode": np.tile("", [n_ensembles, 20])
                    }
+
+        raw_gps2 = {"gga_utc_time": np.full([n_ensembles, 20], np.nan),
+            "gga_latitude": np.full([n_ensembles, 20], np.nan),
+            "gga_longitude": np.full([n_ensembles, 20], np.nan),
+            "gga_quality": np.full([n_ensembles, 20], np.nan),
+            "gga_altitude": np.full([n_ensembles, 20], np.nan),
+            "gga_hdop": np.full([n_ensembles, 20], np.nan),
+            "gga_sats": np.full([n_ensembles, 20], np.nan),
+            "vtg_true_course": np.full([n_ensembles, 20], np.nan),
+            "vtg_speed_kph": np.full([n_ensembles, 20], np.nan),
+            "vtg_mode": np.tile("", [n_ensembles, 20])}
 
         ext_gps = {
             "gga_utc_time": np.full([n_ensembles], np.nan),
@@ -1744,7 +1763,8 @@ class TransectData(object):
             "pulse_length": np.full([n_ensembles], np.nan),
             "pulse_lag": np.full([n_ensembles], np.nan),
             "freq": np.full([n_ensembles], np.nan),
-            "mode": np.full([n_ensembles], ""),
+            "mode": np.full([n_ensembles], "    "),
+            "ping_count": np.full([n_ensembles], np.nan)
         }
 
         # Extract data from each sample and assign to appropriate dictionary and key
@@ -1775,48 +1795,69 @@ class TransectData(object):
                 # Store raw data NMEA strings
                 raw_gga_list = []
                 raw_vtg_list = []
-                for item in sample["RawGpsData"]:
-                    if "$GPGGA" in item:
-                        raw_gga_list.append(item)
-                    elif "$GPVTG" in item:
-                        raw_vtg_list.append(item)
+                if "RawGpsData" in sample:
+                    for item in sample["RawGpsData"]:
+                        if "$GPGGA" in item:
+                            raw_gga_list.append(item)
+                        elif "$GPVTG" in item:
+                            raw_vtg_list.append(item)
 
-                for record_n, record in enumerate(sample["GpsRecords"]):
-                    # Store raw gga data
-                    if record_n <= len(raw_gga_list):
+                    for record_n, record in enumerate(sample["GpsRecords"]):
+
+
+                        raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
+                        raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
+                        raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
+                        raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
+                        raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
+
                         try:
                             raw_gga = raw_gga_list[record_n].split(",")
-                            raw_gps["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
-                            raw_gps["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
-                            # Determine correct sign for latitude
-                            if raw_gga[3] == "S":
-                                raw_gps["gga_latitude"][sample_n, record_n] = raw_gps["gga_latitude"][sample_n, record_n] * -1
-                            raw_gps["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
-                            # Determing correct sign for longitude
-                            if raw_gga[5] == "W":
-                                raw_gps["gga_longitude"][sample_n, record_n] = raw_gps["gga_longitude"][sample_n, record_n] * -1
-                            raw_gps["gga_quality"][sample_n, record_n] = float(raw_gga[6])
-                            raw_gps["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
                             raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
                             raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
-                        except:
+                        except (ValueError, IndexError):
                             pass
 
-                    # Store raw vtg data
-                    if record_n <= len(raw_vtg_list):
-                        try:
-                            raw_vtg = raw_vtg_list[record_n].split(",")
-                            raw_gps["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
-                            # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
-                            # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
-                            # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
-                            # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
-                            # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
-                            raw_gps["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
-                            # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
-                            raw_gps["vtg_mode"] = raw_vtg[9]
-                        except:
-                            pass
+                        raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
+                        # speed actually in kph
+                        raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
+                        raw_gps["vtg_mode"] = record["VtgFaaMode"]
+
+                        # Store raw gga data
+                        if record_n <= len(raw_gga_list):
+                            try:
+                                raw_gga = raw_gga_list[record_n].split(",")
+                                raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
+                                raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
+                                # Determine correct sign for latitude
+                                if raw_gga[3] == "S":
+                                    raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
+                                raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
+                                # Determing correct sign for longitude
+                                if raw_gga[5] == "W":
+                                    raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
+                                raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
+                                raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
+                                raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                            except:
+                                pass
+
+                        # Store raw vtg data
+                        if record_n <= len(raw_vtg_list):
+                            try:
+                                raw_vtg = raw_vtg_list[record_n].split(",")
+                                raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
+                                # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
+                                # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
+                                # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
+                                # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
+                                # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
+                                raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
+                                # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
+                                raw_gps2["vtg_mode"] = raw_vtg[9]
+                            except:
+                                pass
 
             # Ext GPS
             ext_gps["gga_utc_time"][sample_n] = float(sample["Gga"]["SatelliteTime"].replace(":", ""))
@@ -1869,8 +1910,9 @@ class TransectData(object):
                 str(sample["Adp"]["BeamSetId"])]["systemFrequency (Hz)"]) / 1000
             wt["freq"][sample_n] = freq
             wt["mode"][sample_n] = sample["Adp"]["ProfileType"]
+            wt["ping_count"][sample_n] = sample["Adp"]["PingCount"]
 
-        return ens_time, bt, ext_gps, raw_gps, sensors, vb, compass, wt
+        return ens_time, bt, ext_gps, raw_gps, raw_gps2, sensors, vb, compass, wt
 
     def rsqmb_date_time(self, ens_time, utc_time_offset, date_format):
         """Create date_time object.
@@ -1930,13 +1972,10 @@ class TransectData(object):
         self.boat_vel = BoatStructure()
 
         # Apply QRev ping type categories
-        if np.all(bt["ping_type"] == "PCBB"):
+        if np.all(bt["ping_type"] == "    "):
             ping_type = None
         else:
-            ping_type = np.full(bt["ping_type"].shape[0], "    ")
-            ping_type[bt["ping_type"] == "B"] = "BB"
-            ping_type[bt["ping_type"] == "P"] = "PC"
-            ping_type[bt["ping_count"] > 2] = "PCBB"
+            ping_type = bt["ping_type"]
 
         # Populate object
         self.boat_vel.add_boat_object(
@@ -2275,6 +2314,10 @@ class TransectData(object):
             value=1 - sl_cutoff_percent,
         )
 
+        snr_min_threshold = adcp_data["config_json"]["Setup"]["CalculationThresholds"]["MinBeamSnr (dB)"]
+        wt["vel"][wt["snr"] < snr_min_threshold] = np.nan
+        # wt["expected_std"][wt["snr"] < snr_min_threshold] = np.nan
+
         # Determine excluded distance (Similar to SonTek's screening distance)
         excluded_top = (
             system_configuration["ScreeningDistance (m)"] - system_configuration["TransducerDepth (m)"]
@@ -2283,15 +2326,10 @@ class TransectData(object):
         if excluded_top < 0:
             excluded_top = 0
 
-        # ping_type = []
-        # for n in range(len(wt["mode"])):
-        #     ping_type.append(str(wt["freq"][n])[0] + wt["mode"][n])
-
-
-        cells_used = cells_above_sl.astype(float)
-        cells_used[cells_used == 0] = np.nan
-        expected_std = wt["expected_std"] * cells_used
-        ping_type = self.sontek_ping_type(corr=wt["corr"], expected_std=expected_std, freq=wt["freq"])
+        if np.all(wt["mode"] == "    "):
+            ping_type = None
+        else:
+            ping_type = wt["mode"]
 
         # Set track reference
         nav_ref = "bt_vel"
@@ -2772,8 +2810,7 @@ class TransectData(object):
 
     @staticmethod
     def side_lobe_cutoff(
-        depths, draft, cell_depth, sl_lag_effect, slc_type="Percent", value=None
-    ):
+        depths, draft, cell_depth, sl_lag_effect, slc_type="Percent", value=None):
         """Computes side lobe cutoff.
 
         The side lobe cutoff is based on the beam angle and is computed to
@@ -2838,6 +2875,7 @@ class TransectData(object):
 
         # Compute boolean side lobe cutoff matrix
         cells_above_sl = nan_less(cell_depth, cutoff)
+
         return cells_above_sl, cutoff
 
     def boat_interpolations(self, update, target, method=None):
