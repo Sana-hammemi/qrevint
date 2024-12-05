@@ -434,14 +434,14 @@ class InstrumentData(object):
             hpr_matrix = np.array(
                 [
                     [
-                        sh * cp + (ch * sp * sr) / 2,
+                        sh * cp + (ch * sp * sr),
                         -1 * ch * cr,
-                        -1 * sh * sp + (ch * cp * sr) / 2,
+                        -1 * sh * sp + (ch * cp * sr),
                     ],
                     [
-                        ch * cp + -1 * (sh * sp * sr) / 2,
+                        ch * cp + -1 * (sh * sp * sr),
                         sh * cr,
-                        -1 * ch * sp + (-1 * sh * cp * sr) / 2,
+                        -1 * ch * sp + (-1 * sh * cp * sr),
                     ],
                     [sp * cr, sr, cp * cr],
                 ]

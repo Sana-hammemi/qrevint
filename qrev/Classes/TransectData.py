@@ -1037,7 +1037,7 @@ class TransectData(object):
         # Add ping types
         if hasattr(rsdata.BottomTrack, "BT_PingType_Text"):
             # RS5
-            ping_ts = self.rs5_bt_ping_type(rsdata.BottomTrack.BT_PingType_Text)
+            ping_ts = self.rsq_mat_ping_type(rsdata.BottomTrack.BT_PingType_Text)
         else:
             ping_ts = None
 
@@ -1327,14 +1327,16 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
-        if hasattr(rsdata.WaterTrack, "Vel_Expected_StdDev"):
-            # RS5
-            vel_expected_std = rsdata.WaterTrack.Vel_Expected_StdDev.swapaxes(1, 0)
-            ping_type = self.sontek_ping_type(
-                corr=corr,
-                freq=rsdata.WaterTrack.WT_Frequency,
-                expected_std=vel_expected_std,
-            )
+        if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
+            ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
+        # elif hasattr(rsdata.WaterTrack, "Vel_Expected_StdDev"):
+        #     # RS5
+        #     vel_expected_std = rsdata.WaterTrack.Vel_Expected_StdDev.swapaxes(1, 0)
+        #     ping_type = self.sontek_ping_type(
+        #         corr=corr,
+        #         freq=rsdata.WaterTrack.WT_Frequency,
+        #         expected_std=vel_expected_std,
+        #     )
         else:
             # M9 or S5
             ping_type = self.sontek_ping_type(
@@ -1540,7 +1542,7 @@ class TransectData(object):
         self.depths.composite_depths(transect=self, setting="On")
 
     @staticmethod
-    def rs5_bt_ping_type(mat_data):
+    def rsq_mat_ping_type(mat_data):
         """Pulls ping type from mat_strut object
 
         Parameters
@@ -1762,6 +1764,8 @@ class TransectData(object):
             "blanking_dist": np.full([n_ensembles], np.nan),
             "pulse_length": np.full([n_ensembles], np.nan),
             "pulse_lag": np.full([n_ensembles], np.nan),
+            "code_length": np.full([n_ensembles], np.nan),
+            "corr_lag": np.full([n_ensembles], np.nan),
             "freq": np.full([n_ensembles], np.nan),
             "mode": np.full([n_ensembles], "    "),
             "ping_count": np.full([n_ensembles], np.nan)
@@ -1906,6 +1910,8 @@ class TransectData(object):
             wt["blanking_dist"][sample_n] = sample["Adp"]["BlankingDistance (m)"]
             wt["pulse_length"][sample_n] = sample["Adp"]["PulseLength (m)"]
             wt["pulse_lag"][sample_n] = sample["Adp"]["PulseLag (m)"]
+            wt["corr_lag"][sample_n] = sample["Adp"]["CorrelationLag (m)"]
+            wt["code_length"][sample_n] = sample["Adp"]["CodeLength"]
             freq = (adcp_data["config_jsonlog"]["SensorConfiguration"]["Info"]["beamSetInfo"][
                 str(sample["Adp"]["BeamSetId"])]["systemFrequency (Hz)"]) / 1000
             wt["freq"][sample_n] = freq
@@ -2098,7 +2104,7 @@ class TransectData(object):
         depth = depth + draft
 
         # Compute cell depth
-        cell_depth = np.cumsum(cell_size, 0) - (0.5 * cell_size) + + np.tile(top_of_cells, (max_cells, 1))
+        cell_depth = np.cumsum(cell_size, 0) - (0.5 * cell_size) + np.tile(top_of_cells, (max_cells, 1))
 
         # Create depth object for bottom track beams
         self.depths.add_depth_object(
@@ -2297,13 +2303,27 @@ class TransectData(object):
             "NumberOfCells"
         ]
 
+        min_depth = np.nanmin(self.depths.bt_depths.depth_beams_m, axis=0)
+
+        blanking_plus_pulse_length = wt["blanking_dist"] + wt["pulse_length"]
+
+        valid_cells = (min_depth * (1 - sl_cutoff_percent) - (wt["blanking_dist"] + wt["pulse_length"])) / wt["cell_size"][0, :]
+
+        sl_lag_effect_m = np.copy(wt["corr_lag"])
+
+        idx = np.logical_and(wt["code_length"] > 1, wt["pulse_lag"] < 0)
+        sl_lag_effect_m[idx] = 2 * wt["corr_lag"][idx]
+        sl_lag_effect_m[wt["pulse_lag"] > 0] = 0
+
+        # cell_end = wt["blanking_dist"] + wt["pulse_length"] + wt["cell_size"] + processing_lag
+
         sl_cutoff_type = "Percent"
         pulse_length = np.array(wt["pulse_length"])
         pulse_length[np.equal(pulse_length, None)] = np.nan
         pulse_length = pulse_length.astype(float)
-        sl_lag_effect_m = (
-            pulse_length + self.depths.bt_depths.depth_cell_size_m[0, :]
-        ) / 2.0
+        # sl_lag_effect_m = (
+        #     pulse_length + self.depths.bt_depths.depth_cell_size_m[0, :]
+        # ) / 2.0
 
         cells_above_sl, sl_cutoff_m = self.side_lobe_cutoff(
             depths=self.depths.bt_depths.depth_orig_m,
@@ -2316,7 +2336,6 @@ class TransectData(object):
 
         snr_min_threshold = adcp_data["config_json"]["Setup"]["CalculationThresholds"]["MinBeamSnr (dB)"]
         wt["vel"][wt["snr"] < snr_min_threshold] = np.nan
-        # wt["expected_std"][wt["snr"] < snr_min_threshold] = np.nan
 
         # Determine excluded distance (Similar to SonTek's screening distance)
         excluded_top = (

@@ -6,7 +6,7 @@ import json
 import re
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
-
+import pandas as pd
 import numpy as np
 import simplekml
 
@@ -5488,6 +5488,58 @@ class Measurement(object):
 
         kml.save(path)
 
+    def export_depth_averaged_velocity(self, units):
+
+        # Initialize arrays
+        vel_e = np.array([])
+        vel_n = np.array([])
+        vel_up = np.array([])
+        mag = np.array([])
+        az = np.array([])
+        lat = np.array([])
+        lon = np.array([])
+
+        for transect in self.transects:
+            if transect.checked:
+                valid_cells = np.logical_not(np.isnan(transect.w_vel.u_processed_mps))
+                sum_weights = np.nansum(transect.depths.bt_depths.depth_cell_size_m * valid_cells, axis=0)
+                u = np.nansum(transect.w_vel.u_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                v = np.nansum(transect.w_vel.v_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                w = np.nansum(transect.w_vel.w_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                dir_temp, mag_temp = cart2pol(u, v)
+                az_temp = rad2azdeg(dir_temp)
+
+                vel_e = np.hstack((vel_e, u))
+                vel_n = np.hstack((vel_n, v))
+                vel_up = np.hstack((vel_up, w))
+                mag = np.hstack((mag, mag_temp))
+                az = np.hstack((az, az_temp))
+                lat = np.hstack((lat, transect.gps.gga_lat_ens_deg))
+                lon = np.hstack((lon, transect.gps.gga_lon_ens_deg))
+
+        data = {
+            "vel_east": vel_e * units["V"],
+            "vel_north": vel_n * units["V"],
+            "vel_up": vel_up * units["V"],
+            "magnitude": mag * units["V"],
+            "azimuth": az,
+            "lat": lat,
+            "lon": lon
+        }
+        df = pd.DataFrame(data)
+        df.rename(columns={
+            "vel_east": "vel_east " + units["label_V"],
+            "vel_north": "vel_north" + units["label_V"],
+            "vel_up": "vel_up" + units["label_V"],
+            "magnitude": "magnitude" + units["label_V"],
+            "azimuth": "azimuth (deg)",
+            "lat": "lat (deg)",
+            "lon": "lon (deg)"
+        }, inplace=True)
+
+        return df
+
+        # final_array = np.vstack((vel_e, vel_n, vel_up, mag, az, lat, lon)).T
 
 if __name__ == "__main__":
     pass

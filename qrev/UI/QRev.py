@@ -1275,6 +1275,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_advanced.activated.connect(self.set_show_below_sl)
         self.sc_unmeasured = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+U"), self)
         self.sc_unmeasured.activated.connect(self.show_extrapolated)
+        self.sc_jeremy = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+J"), self)
+        self.sc_jeremy.activated.connect(self.jeremy_output)
         self.sc_gga = None
         self.sc_vtg = None
 
@@ -1806,6 +1808,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tr("Save"),
                 self.tr("No transects are selected." " Save cancelled."),
             )
+
+    def jeremy_output(self):
+
+        df = self.meas.export_depth_averaged_velocity(self.units)
+        save_file = SaveDialog(parent=self, save_type="csv")
+        df.to_csv(save_file.full_Name, index=False)
+
 
     def add_comment(self):
         """Add comment triggered by actionComment"""
