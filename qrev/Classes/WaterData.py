@@ -3,7 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less, rotate_coordinates
 from qrev.MiscLibs.robust_loess import rloess
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -943,58 +943,18 @@ class WaterData(object):
         # Create matrix to store results
         vel_beam = np.tile(np.nan, self.raw_vel_mps.shape)
 
-        # Assign the transformation matrix retrieve the sensor data
-        t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
-        t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
-
         # Retrieve the sensor data
-        p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
-        r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
-        h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
-
-        # Compute trig function for heading, pitch and roll
-        ch = np.cos(np.deg2rad(h))
-        sh = np.sin(np.deg2rad(h))
-        cp = np.cos(np.deg2rad(p))
-        sp = np.sin(np.deg2rad(p))
-        cr = np.cos(np.deg2rad(r))
-        sr = np.sin(np.deg2rad(r))
+        h, p, r = sensors.get_hpr()
 
         # Process each ensemble
         n_ens = self.raw_vel_mps.shape[2]
         for ii in range(n_ens):
-            # Compute matrix for heading, pitch, and roll
-            if adcp.manufacturer == "SonTek":
-                hpr_matrix = np.array([[sh[ii] * cp[ii] + (ch[ii] * sp[ii] * sr[ii]) / 2,
-                                        -1 * ch[ii] * cr[ii], -1 * sh[ii] * sp[ii] + (
-                                                    ch[ii] * cp[ii] * sr[ii]) / 2],
-                    [ch[ii] * cp[ii] + -1 * (sh[ii] * sp[ii] * sr[ii]) / 2,
-                     sh[ii] * cr[ii],
-                     -1 * ch[ii] * sp[ii] + (-1 * sh[ii] * cp[ii] * sr[ii]) / 2],
-                    [sp[ii] * cr[ii], sr[ii], cp[ii] * cr[ii]]])
-            else:
-                hpr_matrix = np.array(
-                    [
-                        [
-                            ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                            (sh[ii] * cp[ii]),
-                            ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                        ],
-                        [
-                            (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                            ch[ii] * cp[ii],
-                            (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                        ],
-                        [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                    ]
-                )
 
-            # Determine frequency index for transformation
-            if len(t_matrix.shape) > 2:
-                idx_freq = np.where(t_matrix_freq == self.frequency[ii])
-                t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
-            else:
-                t_mult = np.copy(t_matrix)
+            # Compute matrix for heading, pitch, and roll
+            hpr_matrix =  adcp.create_hpr_matrix(adcp.manufacturer, h[ii], p[ii], r[ii])
+
+            # Determine transformation based on frequency
+            transformation_matrix = adcp.get_transformation_matrix(self.frequency[ii])
 
             # Construct earth velocity matrix for ensemble
             vel_enu = np.vstack(
@@ -1009,7 +969,7 @@ class WaterData(object):
             # Compute beam velocities
             vel_xyz = np.copy(vel_enu)
             vel_xyz[0:3, :] = np.matmul(np.linalg.inv(hpr_matrix), vel_enu[:3])
-            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(t_mult), vel_xyz)
+            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(transformation_matrix), vel_xyz)
 
         return vel_beam
 
@@ -1083,12 +1043,10 @@ class WaterData(object):
         heading_chng: float
             Heading change due to change in magvar or offset, in degrees.
         """
-        u_nr = self.u_earth_no_ref_mps
-        v_nr = self.v_earth_no_ref_mps
-        direction, mag = cart2pol(u_nr, v_nr)
-        u_nr_rotated, v_nr_rotated = pol2cart(direction - np.deg2rad(heading_chng), mag)
-        self.u_earth_no_ref_mps = u_nr_rotated
-        self.v_earth_no_ref_mps = v_nr_rotated
+
+        self.u_earth_no_ref_mps, self.v_earth_no_ref_mps = rotate_coordinates(
+            self.u_earth_no_ref_mps, self.v_earth_no_ref_mps, heading_chng
+        )
 
         # Reprocess water data to get navigation reference corrected velocities
         self.set_nav_reference(boat_vel)
@@ -2055,8 +2013,6 @@ class WaterData(object):
 
             # Reset data to no snr filter
             self.snr_beam_velocities = None
-            self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
-            self.set_nav_reference(transect.boat_vel)
 
             if setting == "Auto":
                 # Determines if invalid data should use 3-beam computations
@@ -2091,7 +2047,15 @@ class WaterData(object):
                     self.snr_beam_velocities = beam_velocities
                     self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
                     self.set_nav_reference(transect.boat_vel)
-
+                    # Restore values to pre-snr 3-beam solution values
+                    # This allows future snr 3-beam solutions to have the pre-screen
+                    # data for all ensembles and cells. The no_ref data, w, and d
+                    # velocities are using in the earth_to_beam computations and
+                    # need to represent pre-screen data
+                    self.u_earth_no_ref_mps = w_vel_copy.u_earth_no_ref_mps
+                    self.v_earth_no_ref_mps = w_vel_copy.v_earth_no_ref_mps
+                    self.w_mps = w_vel_copy.w_mps
+                    self.d_mps = w_vel_copy.d_mps
                 else:
                     bad_snr_idx = np.greater(self.snr_rng, 12)
                     valid = np.copy(self.cells_above_sl)

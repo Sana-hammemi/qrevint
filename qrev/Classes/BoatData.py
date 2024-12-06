@@ -11,6 +11,7 @@ from qrev.MiscLibs.common_functions import (
     nan_greater_equal,
     nan_greater,
     nan_less,
+    rotate_coordinates
 )
 from qrev.MiscLibs.robust_loess import rloess
 
@@ -627,14 +628,13 @@ class BoatData(object):
         """
 
         # Apply change to processed data
-        direction, mag = cart2pol(self.u_processed_mps, self.v_processed_mps)
-        self.u_processed_mps, self.v_processed_mps = pol2cart(
-            direction - np.deg2rad(heading_change), mag
+        self.u_processed_mps, self.v_processed_mps = rotate_coordinates(
+            self.u_processed_mps, self.v_processed_mps, heading_change
         )
 
-        # Apply change to unprocessed data
-        direction, mag = cart2pol(self.u_mps, self.v_mps)
-        self.u_mps, self.v_mps = pol2cart(direction - np.deg2rad(heading_change), mag)
+        self.u_mps, self.v_mps = rotate_coordinates(
+            self.u_mps, self.v_mps, heading_change
+        )
 
     def apply_interpolation(self, transect, interpolation_method=None):
         """Function to apply interpolations to navigation data.

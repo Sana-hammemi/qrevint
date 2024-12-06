@@ -2752,6 +2752,7 @@ class TransectData(object):
             heading_selected.set_mag_var(magvar, "internal")
             self.boat_vel.bt_vel.change_heading(magvar_change)
             self.w_vel.change_heading(self.boat_vel, magvar_change)
+            self.w_vel.apply_interpolation(self)
         else:
             self.sensors.heading_deg.internal.set_mag_var(magvar, "internal")
 

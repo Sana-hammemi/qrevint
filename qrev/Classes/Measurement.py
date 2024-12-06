@@ -1673,9 +1673,6 @@ class Measurement(object):
             transects.
         """
 
-        # Get current settings
-        s = self.current_settings()
-
         # Initialize variables
         n_transects = len(self.transects)
         recompute = False
@@ -1704,7 +1701,8 @@ class Measurement(object):
 
         # Recompute is specified
         if recompute:
-            self.apply_settings(s)
+            self.compute_discharge()
+            self.compute_uncertainty()
         else:
             self.qa.compass_qa(self)
             self.qa.check_compass_settings(self)
