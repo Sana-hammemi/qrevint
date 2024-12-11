@@ -2309,22 +2309,20 @@ class TransectData(object):
 
         valid_cells = (min_depth * (1 - sl_cutoff_percent) - (wt["blanking_dist"] + wt["pulse_length"])) / wt["cell_size"][0, :]
 
-        sl_lag_effect_m = np.copy(wt["corr_lag"])
-
+        # Compute processing lag
+        processing_lag = np.copy(wt["corr_lag"])
         idx = np.logical_and(wt["code_length"] > 1, wt["pulse_lag"] < 0)
-        sl_lag_effect_m[idx] = 2 * wt["corr_lag"][idx]
-        sl_lag_effect_m[wt["pulse_lag"] > 0] = 0
+        processing_lag[idx] = 2 * wt["corr_lag"][idx]
+        processing_lag[wt["pulse_lag"] > 0] = 0
 
-        # cell_end = wt["blanking_dist"] + wt["pulse_length"] + wt["cell_size"] + processing_lag
-
-        sl_cutoff_type = "Percent"
+        # Account for rare occurance of None in pulse_length
         pulse_length = np.array(wt["pulse_length"])
         pulse_length[np.equal(pulse_length, None)] = np.nan
         pulse_length = pulse_length.astype(float)
-        # sl_lag_effect_m = (
-        #     pulse_length + self.depths.bt_depths.depth_cell_size_m[0, :]
-        # ) / 2.0
 
+        # Compute sidelobe cutoff
+        sl_lag_effect_m = (processing_lag + wt["pulse_length"] + wt["cell_size"][0, :]) / 2
+        sl_cutoff_type = "Percent"
         cells_above_sl, sl_cutoff_m = self.side_lobe_cutoff(
             depths=self.depths.bt_depths.depth_orig_m,
             draft=self.depths.bt_depths.draft_use_m,
