@@ -236,10 +236,10 @@ class TransformationMatrix(object):
         beam_elev = data_in[0]
         beam_azimuth = data_in[1]
 
-        self.matrix = np.zeros((4, 4, len(beam_elev)))
+        self.matrix = np.zeros((len(beam_elev), 4, 4, ))
         for n in range(len(beam_elev)):
             if beam_elev[n][0] == 0:
-                self.matrix[2, 0, n] = -1
+                self.matrix[n, 2, 0] = -1
             else:
                 self.create_matrix(n, beam_elev[n], beam_azimuth[n])
 
@@ -312,5 +312,5 @@ class TransformationMatrix(object):
                 k = k + 1
         # Scale the last row (difference velocity) to compute the scaled error velocity
         beam_matrix[3, :] = beam_matrix[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
-        self.matrix[:, :, n] = beam_matrix
+        self.matrix[n, :, :] = beam_matrix
 

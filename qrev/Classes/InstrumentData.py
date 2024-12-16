@@ -469,7 +469,7 @@ class InstrumentData(object):
         # Determine frequency index for transformation matrix
         if len(self.t_matrix.matrix.shape) > 2:
             idx_freq = np.where(self.frequency_khz == frequency)
-            matrix = np.copy(self.t_matrix.matrix[:, :, idx_freq[0][0]])
+            matrix = np.copy(self.t_matrix.matrix[idx_freq[0][0],:, :])
         else:
             matrix = np.copy(self.t_matrix.matrix)
         return matrix

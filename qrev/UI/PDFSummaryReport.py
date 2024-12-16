@@ -526,7 +526,7 @@ class Report:
             [self.tr("MovBed Test Type") + ":", mb_test_type],
             [self.tr("MovBed Test Quality") + ":", quality],
             [self.tr("MovBed Test Dur.") + "(s):", "{:.1f}".format(mb_duration)],
-            [self.tr("Max MovBed") + " (%):", max_mb_per],
+            [self.tr("Avg MovBed") + " (%):", max_mb_per],
             [self.tr("Q Correction") + " (%):", per_correction],
         ]
 

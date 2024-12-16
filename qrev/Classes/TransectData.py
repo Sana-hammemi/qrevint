@@ -1294,6 +1294,8 @@ class TransectData(object):
         sl_cutoff_percent = rsdata.Setup.extrapolation_dDiscardPercent
         sl_cutoff_number = rsdata.Setup.extrapolation_nDiscardCells
         if hasattr(rsdata.Summary, "Transmit_Length"):
+            # SonTek’s algorithms for handling the side lobe cutoff for RiverSurveyor ADCPs (Lyn
+            # Harris, SonTek, written commun., 2014)
             sl_lag_effect_m = (
                 rsdata.Summary.Transmit_Length
                 + self.depths.bt_depths.depth_cell_size_m[0, :]
@@ -2291,8 +2293,8 @@ class TransectData(object):
         """
 
         # Correct SonTek difference velocity for error in earlier transformation matrices.
-        if self.adcp.t_matrix.matrix[3, 0, 0] < 0.5:
-            vel[3, :, :] = vel[3, :, :] * 2
+        if self.adcp.t_matrix.matrix[0, 3, 0] < 0.5:
+            vel[0, 3, :] = vel[0, 3, :] * 2
 
         # Compute side lobe cutoff using Transmit Length information if available, if not it is assumed to be equal
         # to 1/2 depth_cell_size_m. The percent method is use for the side lobe cutoff computation.

@@ -851,7 +851,7 @@ class WaterData(object):
                         new_coord_sys=new_coord_sys
                     )
 
-            elif orig_coord_sys == "Inst":
+            elif o_coord_sys == "Inst":
                 # Transform from instrument coordinates
                 for ii in range(n_ens):
                     inst_coordinates = np.copy(data[:, :, ii])
@@ -871,7 +871,7 @@ class WaterData(object):
                         new_coord_sys=new_coord_sys
                     )
 
-            elif orig_coord_sys == "Ship":
+            elif o_coord_sys == "Ship":
                 # Transform from ship coordinates
                 for ii in range(n_ens):
                     ship_coordinates = np.copy(data[:, :, ii])
