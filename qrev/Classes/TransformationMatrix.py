@@ -37,7 +37,7 @@ class TransformationMatrix(object):
         elif manufacturer == "SonTek":
             self.sontek(data_in)
         elif manufacturer == "rsqst":
-            self.rsqst(data_in)
+            self.rsq(data_in)
 
     def trdi(self, model=None, data_in=None):
         """Processes the data to store the transformation matrix for
@@ -224,7 +224,7 @@ class TransformationMatrix(object):
         self.matrix = tmatrix.matrix
         self.source = tmatrix.source
     
-    def rsqst(self, data_in):
+    def rsq(self, data_in):
         """Coordinates creation of transformation matrices from raw data from RSQ.
 
         Parameters
@@ -236,10 +236,10 @@ class TransformationMatrix(object):
         beam_elev = data_in[0]
         beam_azimuth = data_in[1]
 
-        self.matrix = np.zeros((len(beam_elev), 4, 4, ))
+        self.matrix = np.zeros((4, 4, len(beam_elev)))
         for n in range(len(beam_elev)):
             if beam_elev[n][0] == 0:
-                self.matrix[n, 2, 0] = -1
+                self.matrix[2, 0, n] = -1
             else:
                 self.create_matrix(n, beam_elev[n], beam_azimuth[n])
 
@@ -312,5 +312,5 @@ class TransformationMatrix(object):
                 k = k + 1
         # Scale the last row (difference velocity) to compute the scaled error velocity
         beam_matrix[3, :] = beam_matrix[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
-        self.matrix[n, :, :] = beam_matrix
+        self.matrix[:, :, n] = beam_matrix
 

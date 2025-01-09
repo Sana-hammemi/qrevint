@@ -1331,14 +1331,7 @@ class TransectData(object):
 
         if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
             ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
-        # elif hasattr(rsdata.WaterTrack, "Vel_Expected_StdDev"):
-        #     # RS5
-        #     vel_expected_std = rsdata.WaterTrack.Vel_Expected_StdDev.swapaxes(1, 0)
-        #     ping_type = self.sontek_ping_type(
-        #         corr=corr,
-        #         freq=rsdata.WaterTrack.WT_Frequency,
-        #         expected_std=vel_expected_std,
-        #     )
+
         else:
             # M9 or S5
             ping_type = self.sontek_ping_type(
@@ -1632,7 +1625,7 @@ class TransectData(object):
         self.file_name = transect_data["config_json"]["AdcpMeasurementId"][0:18]
         # ADCP
         self.adcp = InstrumentData()
-        self.adcp.populate_data(manufacturer="rsqst", raw_data=transect_data["config_jsonlog"])
+        self.adcp.populate_data(manufacturer="rsq", raw_data=transect_data["config_jsonlog"])
 
         # Extract samples for vertical from adcp_data
         (ens_time, bt, gps_ens, gps_raw_ens, gps_raw_ens2, sensors_ens, vb, compass,
@@ -2291,10 +2284,6 @@ class TransectData(object):
             Indicates if invalid data due to SNR filter should be computed using 3-beam
             solution
         """
-
-        # Correct SonTek difference velocity for error in earlier transformation matrices.
-        if self.adcp.t_matrix.matrix[0, 3, 0] < 0.5:
-            vel[0, 3, :] = vel[0, 3, :] * 2
 
         # Compute side lobe cutoff using Transmit Length information if available, if not it is assumed to be equal
         # to 1/2 depth_cell_size_m. The percent method is use for the side lobe cutoff computation.

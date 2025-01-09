@@ -790,6 +790,10 @@ class WaterData(object):
 
         o_coord_sys = self.orig_coord_sys.strip()
 
+        # Check for presence of snr_beam_velocities. snr_beam_velocities will be populated
+        # if the option to use 3-beam solutions for invalid ensembles due to snr filter
+        # is requested. Substituting the snr_beam_velocities allows the velocities to
+        # be recomputed without modifying the original raw data.
         if self.snr_beam_velocities is None:
             data = self.raw_vel_mps
         else:

@@ -65,9 +65,9 @@ class InstrumentData(object):
         elif manufacturer == "Nortek":
             self.manufacturer = manufacturer
             self.nortek(rs=raw_data)
-        elif manufacturer == "rsqst":
+        elif manufacturer == "rsq":
             self.manufacturer = "SonTek"
-            self.rsqst(adcp_data=raw_data)
+            self.rsq(adcp_data=raw_data)
 
     def trdi(self, pd0, mmt_transect, mmt):
         """Populates the variables with data from TRDI ADCPs.
@@ -275,7 +275,7 @@ class InstrumentData(object):
         self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
-    def rsqst(self, adcp_data):
+    def rsq(self, adcp_data):
         """Populates the variables with stationary data from SonTek RSQ.
 
         Parameters
@@ -469,7 +469,7 @@ class InstrumentData(object):
         # Determine frequency index for transformation matrix
         if len(self.t_matrix.matrix.shape) > 2:
             idx_freq = np.where(self.frequency_khz == frequency)
-            matrix = np.copy(self.t_matrix.matrix[idx_freq[0][0],:, :])
+            matrix = np.copy(self.t_matrix.matrix[:, :, idx_freq[0][0]])
         else:
             matrix = np.copy(self.t_matrix.matrix)
         return matrix
