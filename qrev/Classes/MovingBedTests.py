@@ -125,7 +125,7 @@ class MovingBedTests(object):
         self.gps_flow_spd_mps = np.nan
         self.tr = tr
 
-    def populate_data(self, source, snr_3beam_comp=False, file=None, test_type=None):
+    def populate_data(self, source, snr_3beam_comp=False, file=None, test_type=None, utc_time_offset=None, date_format=None):
         """Process and store moving-bed test data.
 
         Parameters
@@ -138,12 +138,18 @@ class MovingBedTests(object):
             Type of moving-bed test (Loop or Stationary)
         snr_3beam_comp: bool
             Indicates is 3 beam solutions should be used for invalid snr data
+        utc_time_offset: str
+            Offset from utc to achieve local time
+        date_format: str
+            Format for date
         """
 
         if source == "TRDI":
             self.mb_trdi(file, test_type)
-        else:
+        elif source == "SonTek":
             self.mb_sontek(file, test_type, snr_3beam_comp)
+        elif source == "rsq":
+            self.mb_rsq(file, test_type, utc_time_offset, date_format, snr_3beam_comp)
 
         self.process_mb_test(source)
 
@@ -348,6 +354,12 @@ class MovingBedTests(object):
         # Create transect objects for each discharge transect
         self.transect = TransectData()
         self.transect.sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
+
+    def mb_rsq(self, test, test_type, utc_time_offset, date_format, snr_3beam_comp):
+        
+        self.type = test_type
+        self.transect = TransectData()
+        self.transect.rsq(test, utc_time_offset, date_format, snr_3beam_comp)
 
     def loop_test(self, ens_duration=None, ref=None):
         """Process loop moving bed test.

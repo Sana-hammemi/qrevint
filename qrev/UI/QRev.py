@@ -1275,6 +1275,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sc_advanced.activated.connect(self.set_show_below_sl)
         self.sc_unmeasured = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+U"), self)
         self.sc_unmeasured.activated.connect(self.show_extrapolated)
+        self.sc_jeremy = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+J"), self)
+        self.sc_jeremy.activated.connect(self.jeremy_output)
         self.sc_gga = None
         self.sc_vtg = None
 
@@ -1471,8 +1473,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except CoordError as error:
                         self.popup_message(error.text)
 
-            # Load and process Sontek data
-            if select.type == "Nortek":
+            # Load and process Nortek data
+            elif select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
                     self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
@@ -1593,7 +1595,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             time_zone_required=self.time_zone_required,
                             qt_tr=self.tr
                         )
-
+            
                 # Settings based on measurement settings
                 self.use_weighted = self.meas.use_weighted
                 self.run_oursin = self.meas.run_oursin
@@ -1608,7 +1610,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.tab_all.findChild(QtWidgets.QWidget, "tab_uncertainty")
                         )
                     )
-
+            elif select.type == "RSQ":
+                # Show folder name in GUI header
+                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                self.meas = Measurement(
+                    in_file=select.fullName, 
+                    source="RSQ",
+                    proc_type="QRev", 
+                    run_oursin=self.run_oursin,
+                    use_weighted=self.use_weighted,
+                    use_measurement_thresholds=self.use_measurement_thresholds,
+                    min_transects=self.agency_options["QA"]["MinTransects"],
+                    min_duration=self.agency_options["QA"]["MinDuration"],
+                    export_xs=self.xs_export,
+                    gps_quality_threshold=self.gps_quality_threshold,
+                    snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
+                    excluded=self.agency_options["Excluded"],
+                    water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                        "threshold"], 
+                    date_format=self.date_format,
+                    time_zone_required=self.time_zone_required, 
+                    qt_tr=self.tr, 
+                )
             if self.meas is not None:
                 # Identify transects to be used in discharge computation
                 self.checked_transects_idx = Measurement.checked_transects(self.meas)
@@ -1785,6 +1808,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tr("Save"),
                 self.tr("No transects are selected." " Save cancelled."),
             )
+
+    def jeremy_output(self):
+
+        df = self.meas.export_depth_averaged_velocity(self.units)
+        save_file = SaveDialog(parent=self, save_type="csv")
+        df.to_csv(save_file.full_Name, index=False)
+
 
     def add_comment(self):
         """Add comment triggered by actionComment"""
@@ -12399,7 +12429,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             meas=self.meas,
             checked=self.checked_transects_idx,
             idx=self.idx,
-            data_type=self.combo_extrap_type.currentText(),
             cb_data=self.cb_extrap_data.isChecked(),
             cb_surface=self.cb_extrap_surface.isChecked(),
             cb_trans_medians=self.cb_extrap_trans_medians.isChecked(),
@@ -13347,7 +13376,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.edges_graphics()
 
         # Left number of ensembles
-        elif col == 6:
+        elif col == 5:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -13511,7 +13540,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.edges_graphics()
 
         # Right number of ensembles
-        elif col == 13:
+        elif col == 12:
             # Initialize dialog
             ens_dialog = EdgeEns()
             ens_dialog.rb_transect.setChecked(True)
@@ -15471,17 +15500,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Configure dictionary of plot options
             self.adv_graph_types = [
-                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
-                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
-                ("cb_projected_cc", self.cb_adv_graph_projected),
-                ("cb_vertical_cc", self.cb_adv_graph_vertical),
-                ("cb_error_cc", self.cb_adv_graph_error),
-                ("cb_direction_cc", self.cb_adv_graph_direction),
-                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
-                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
-                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
-                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
-                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
                 ("cb_discharge_ts", self.cb_adv_graph_discharge),
                 ("cb_discharge_percent_ts", self.cb_adv_graph_discharge_percent),
                 ("cb_avg_speed_ts", self.cb_adv_graph_avg_speed),
@@ -15514,6 +15532,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
                 ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage),
+                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
+                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
+                ("cb_projected_cc", self.cb_adv_graph_projected),
+                ("cb_vertical_cc", self.cb_adv_graph_vertical),
+                ("cb_error_cc", self.cb_adv_graph_error),
+                ("cb_direction_cc", self.cb_adv_graph_direction),
+                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
+                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
+                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
+                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
+                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)

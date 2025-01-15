@@ -49,6 +49,11 @@ class PreMeasurement(object):
             self.pt3_data()
         elif data_type == "SST":
             self.sys_test_read()
+        elif data_type == "RSQCC":
+            self.rsqcc(data_in)
+        elif data_type == "RSQST":
+            self.data = str(data_in)
+            self.sys_test_read()
 
     def compass_read(self):
         """Method for getting compass evaluation data"""
@@ -145,6 +150,17 @@ class PreMeasurement(object):
             else:
                 error = "N/A"
             self.result["compass"] = {"error": error}
+
+    def rsqcc(self, data_in):
+        """Compass calibration data from RSQ file.
+
+        data_in: dict
+            Dictionary of RSQ data
+        """
+        self.data = str(data_in)
+        self.result["compass"] = {
+            "error": data_in["CalibrationError (deg)"]
+        }
 
     def sys_test_read(self):
         """Method for reading the system test data"""

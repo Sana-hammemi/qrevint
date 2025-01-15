@@ -29,7 +29,7 @@ class DateTime(object):
         self.transect_duration_sec = None
         self.ens_duration_sec = None
 
-    def populate_data(self, date_in, start_in, end_in, ens_dur_in):
+    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):
         """Populate data in object.
 
         Parameters
@@ -42,6 +42,8 @@ class DateTime(object):
             Python serial time for end of transect.
         ens_dur_in: np.array(float)
             Duration of each ensemble, in seconds.
+        utc_time_offset=str
+            String containing utc time offset to acheive local time
         """
 
         self.date = date_in
@@ -49,6 +51,7 @@ class DateTime(object):
         self.end_serial_time = end_in
         self.transect_duration_sec = float(end_in - start_in)
         self.ens_duration_sec = ens_dur_in.astype(float)
+        self.utc_time_offset = utc_time_offset
 
     def populate_from_qrev_mat(self, transect):
         """Populates the object using data from previously saved QRev Matlab

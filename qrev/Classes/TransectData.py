@@ -27,8 +27,10 @@ from qrev.MiscLibs.common_functions import (
     cart2pol,
     rad2azdeg,
     nan_less,
+    deg_min_2_deg,
+    rotate_coordinates
 )
-
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
 class TransectData(object):
     """Class to hold Transect properties.
@@ -516,7 +518,7 @@ class TransectData(object):
             self.w_vel.populate_data(
                 vel_in=pd0_data.Wt.vel_mps,
                 freq_in=freq_ts,
-                coord_sys_in=pd0_data.Cfg.coord_sys,
+                coord_sys_in=pd0_data.Cfg.coord_sys[0],
                 nav_ref_in="None",
                 rssi_in=pd0_data.Wt.rssi,
                 rssi_units_in="Counts",
@@ -1035,15 +1037,24 @@ class TransectData(object):
         # Add ping types
         if hasattr(rsdata.BottomTrack, "BT_PingType_Text"):
             # RS5
-            ping_ts = self.rs5_bt_ping_type(rsdata.BottomTrack.BT_PingType_Text)
+            ping_ts = self.rsq_mat_ping_type(rsdata.BottomTrack.BT_PingType_Text)
         else:
             ping_ts = None
+
+        # Remove bt error velocity from wt
+        wt_d = rsdata.WaterTrack.Velocity[:, 3, :] + np.tile(rsdata.BottomTrack.BT_Vel[:, 3], (
+            rsdata.WaterTrack.Velocity.shape[0], 1))
+        wt_d[np.abs(wt_d) < 0.000001] = np.nan
+        rsdata.WaterTrack.Velocity[:, 3, :] = wt_d
 
         bt_vel = np.swapaxes(rsdata.BottomTrack.BT_Vel, 1, 0)
 
         # Apply correction for manual sos parameters to obtain raw values
         if sos_correction is not None:
-            bt_vel = np.around(bt_vel * sos_correction, 3)
+            # bt_vel = np.around(bt_vel * sos_correction, 3)
+            bt_vel = bt_vel * sos_correction
+        # Scale the difference velocity to be error velocity
+        bt_vel[3, :] = bt_vel[3, :] / ((2**0.5) * np.tan(np.deg2rad(25)))
 
         self.boat_vel = BoatStructure()
         self.boat_vel.add_boat_object(
@@ -1271,6 +1282,8 @@ class TransectData(object):
         boat_vel = np.swapaxes(rsdata.Summary.Boat_Vel, 1, 0)
         vel[0, :, :] = vel[0, :, :] + boat_vel[0, :]
         vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
+        vel[2, :, :] = vel[2, :, :] + boat_vel[2, :]
+        vel[3, :, :] = vel[3, :, :] + boat_vel[3, :]
 
         ref_water = "None"
 
@@ -1281,6 +1294,8 @@ class TransectData(object):
         sl_cutoff_percent = rsdata.Setup.extrapolation_dDiscardPercent
         sl_cutoff_number = rsdata.Setup.extrapolation_nDiscardCells
         if hasattr(rsdata.Summary, "Transmit_Length"):
+            # SonTek’s algorithms for handling the side lobe cutoff for RiverSurveyor ADCPs (Lyn
+            # Harris, SonTek, written commun., 2014)
             sl_lag_effect_m = (
                 rsdata.Summary.Transmit_Length
                 + self.depths.bt_depths.depth_cell_size_m[0, :]
@@ -1314,13 +1329,9 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
-        if hasattr(rsdata.WaterTrack, "Vel_Expected_StdDev"):
-            # RS5
-            ping_type = self.sontek_ping_type(
-                corr=corr,
-                freq=rsdata.WaterTrack.WT_Frequency,
-                expected_std=rsdata.WaterTrack.Vel_Expected_StdDev,
-            )
+        if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
+            ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
+
         else:
             # M9 or S5
             ping_type = self.sontek_ping_type(
@@ -1526,7 +1537,7 @@ class TransectData(object):
         self.depths.composite_depths(transect=self, setting="On")
 
     @staticmethod
-    def rs5_bt_ping_type(mat_data):
+    def rsq_mat_ping_type(mat_data):
         """Pulls ping type from mat_strut object
 
         Parameters
@@ -1591,7 +1602,7 @@ class TransectData(object):
             # RS5
             ves = []
             for n in range(4):
-                ves.append(np.nanmean(expected_std[:, n, :], axis=0))
+                ves.append(np.nanmean(expected_std[n, :, :], axis=0))
 
             ves = np.array(ves)
 
@@ -1603,6 +1614,865 @@ class TransectData(object):
 
         return ping_type
 
+    def rsq(self, transect_data, utc_time_offset, date_format, snr_3beam_comp):
+
+        system_configuration = transect_data["config_json"]["Setup"]["SystemConfiguration"]
+
+        # Transect used in discharge computations
+        self.checked = transect_data["config_json"]["IsEnabledInSessionSummary"]
+
+        # Filename
+        self.file_name = transect_data["config_json"]["AdcpMeasurementId"][0:18]
+        # ADCP
+        self.adcp = InstrumentData()
+        self.adcp.populate_data(manufacturer="rsq", raw_data=transect_data["config_jsonlog"])
+
+        # Extract samples for vertical from adcp_data
+        (ens_time, bt, gps_ens, gps_raw_ens, gps_raw_ens2, sensors_ens, vb, compass,
+         wt,) = self.rsqmb_extract_samples(transect_data)
+
+        # Date and time
+        self.rsqmb_date_time(ens_time, utc_time_offset, date_format)
+
+        # Bottom Track
+        self.rsqmb_boat(bt, system_configuration)
+
+        # GPS
+        self.rsqmb_gps(gps_ens, gps_raw_ens2, utc_time_offset)
+
+        # Depths
+        self.rsqmb_depths(bt, vb, wt, transect_data, system_configuration)
+
+        # Sensors
+        self.rsqmb_sensors(compass, sensors_ens, transect_data, system_configuration)
+
+        # Water Track
+        self.rsqmb_wt(wt, transect_data, system_configuration, snr_3beam_comp)
+
+        # Edges
+        self.rsqmb_edges(transect_data["config_json"]["Setup"]["EdgeConfiguration"])
+
+        # Extrapolation
+        self.rsqmb_extrap(transect_data["config_json"]["Setup"]["ExtrapolationConfiguration"])
+
+        self.in_transect_idx = np.arange(self.w_vel.cells_above_sl.shape[1])
+        
+    @staticmethod
+    def rsqmb_extract_samples(adcp_data):
+        """Extracts samples from raw data for a transect.
+
+        Parameters
+        ----------
+        adcp_data: dict
+            Raw data from a transect
+
+        Returns
+        -------
+        ens_time: list
+            List of ensemble times
+        bt: dict
+            Dictionary of bottom track sample data
+        gps: dict
+            Dictionary of gps sample data
+        raw_gps: dict
+            Dictionary of raw gps data, multiple gps data for each sample
+        sensors: dict
+            Dictionary of sensor sample data
+        vb: dict
+            Dictionary of vertical beam sample data
+        compass: dict
+            Dictionary of heading, pitch, roll, and magnetic error sample data
+        wt: dict
+            Dictionary of water track sample data
+        """
+
+        ens_time = []
+        n_ensembles = len(adcp_data["data"])
+                
+        # Define dictionaries
+        bt = {
+            "ping_type": np.full([n_ensembles], "    "),
+            "ping_count": np.full([n_ensembles], 0),
+            "good_ping_count": np.full([n_ensembles], 0),
+            "beam_set_id": np.full([n_ensembles], 0),
+            "beam_rng": np.full([4, n_ensembles], np.nan),
+            "beam_vel": np.full([4, n_ensembles], np.nan),
+            "beam_vel_std": np.full([4, n_ensembles], np.nan),
+            "contrast": np.full([4, n_ensembles], np.nan),
+            "strength": np.full([4, n_ensembles], np.nan),
+            "recovered_fraction": np.full([4, n_ensembles], np.nan),
+            "frequency": np.full([n_ensembles], np.nan),
+        }
+
+        raw_gps = {
+            "gga_utc_time": np.full([n_ensembles, 20], np.nan),
+            "gga_latitude": np.full([n_ensembles, 20], np.nan),
+            "gga_longitude": np.full([n_ensembles, 20], np.nan),
+            "gga_quality": np.full([n_ensembles, 20], np.nan),
+            "gga_altitude": np.full([n_ensembles, 20], np.nan),
+            "gga_hdop": np.full([n_ensembles, 20], np.nan),
+            "gga_sats": np.full([n_ensembles, 20], np.nan),
+            "vtg_true_course": np.full([n_ensembles, 20], np.nan),
+            "vtg_speed_kph": np.full([n_ensembles, 20], np.nan),
+            "vtg_mode": np.tile("", [n_ensembles, 20])
+                   }
+
+        raw_gps2 = {"gga_utc_time": np.full([n_ensembles, 20], np.nan),
+            "gga_latitude": np.full([n_ensembles, 20], np.nan),
+            "gga_longitude": np.full([n_ensembles, 20], np.nan),
+            "gga_quality": np.full([n_ensembles, 20], np.nan),
+            "gga_altitude": np.full([n_ensembles, 20], np.nan),
+            "gga_hdop": np.full([n_ensembles, 20], np.nan),
+            "gga_sats": np.full([n_ensembles, 20], np.nan),
+            "vtg_true_course": np.full([n_ensembles, 20], np.nan),
+            "vtg_speed_kph": np.full([n_ensembles, 20], np.nan),
+            "vtg_mode": np.tile("", [n_ensembles, 20])}
+
+        ext_gps = {
+            "gga_utc_time": np.full([n_ensembles], np.nan),
+            "gga_latitude": np.full([n_ensembles], np.nan),
+            "gga_longitude": np.full([n_ensembles], np.nan),
+            "gga_quality": np.tile("", [n_ensembles]),
+            "gga_altitude": np.full([n_ensembles], np.nan),
+            "gga_hdop": np.full([n_ensembles], np.nan),
+            "gga_sats": np.full([n_ensembles], np.nan),
+            "vtg_true_course": np.full([n_ensembles], np.nan),
+            "vtg_speed_kph": np.full([n_ensembles], np.nan),
+        }
+
+        sensors = {"temperature": [], "salinity": [], "battery": [], "sos": []}
+
+        vb = {"rng": [], "rng_std": [], "contrast": [], "strength": []}
+
+        compass = {"heading": [], "pitch": [], "roll": [], "heading_std": [],
+            "pitch_std": [], "roll_std": [], "mag_error": [], }
+
+    
+        wt = {
+            "snr": np.full([4, 128, n_ensembles], np.nan),
+            "vel": np.full([4, 128, n_ensembles], np.nan),
+            "vel_std": np.full([4, 128, n_ensembles], np.nan),
+            "expected_std": np.full([4, 128, n_ensembles], np.nan),
+            "corr": np.full([4, 128, n_ensembles], np.nan),
+            "cell_size": np.full([128, n_ensembles], np.nan),
+            "cell_start": np.full([n_ensembles], np.nan),
+            "blanking_dist": np.full([n_ensembles], np.nan),
+            "pulse_length": np.full([n_ensembles], np.nan),
+            "pulse_lag": np.full([n_ensembles], np.nan),
+            "code_length": np.full([n_ensembles], np.nan),
+            "corr_lag": np.full([n_ensembles], np.nan),
+            "freq": np.full([n_ensembles], np.nan),
+            "mode": np.full([n_ensembles], "    "),
+            "ping_count": np.full([n_ensembles], np.nan)
+        }
+
+        # Extract data from each sample and assign to appropriate dictionary and key
+        for sample_n, sample in enumerate(adcp_data["data"]):
+            # Ensemble times
+            ens_time.append(sample["SampleTime"][0:-2])
+
+            # Bottom Track
+            if "PingType" in sample["Bt"]:
+                bt["ping_type"][sample_n] = sample["Bt"]["PingType"]
+
+            bt["ping_count"][sample_n] = sample["Bt"]["PingCount"]
+            bt["good_ping_count"][sample_n] = sample["Bt"]["GoodPingCount"]
+            bt["beam_set_id"][sample_n] = sample["Bt"]["BeamSetId"]
+            bt["beam_rng"][:, sample_n] = sample["Bt"]["Range (m)"]
+            bt["beam_vel"][:, sample_n] = sample["Bt"]["Velocity (m/s)"]
+            bt["beam_vel_std"][:, sample_n] = sample["Bt"]["VelocityStdDev (m/s)"]
+            bt["contrast"][:, sample_n] = sample["Bt"]["Contrast (dB)"]
+            bt["strength"][:, sample_n] = sample["Bt"]["Strength (dB)"]
+            bt["recovered_fraction"][:, sample_n] = sample["Bt"]["RecoveredFraction"]
+            freq = (adcp_data["config_jsonlog"]["SensorConfiguration"]["Info"]["beamSetInfo"][
+                str(sample["Bt"]["BeamSetId"])]["systemFrequency (Hz)"]) / 1000
+            bt["frequency"][sample_n] = freq
+
+            # Raw GPS
+            if len(sample["GpsRecords"]) > 0:
+
+                # Store raw data NMEA strings
+                raw_gga_list = []
+                raw_vtg_list = []
+                if "RawGpsData" in sample:
+                    for item in sample["RawGpsData"]:
+                        if "$GPGGA" in item:
+                            raw_gga_list.append(item)
+                        elif "$GPVTG" in item:
+                            raw_vtg_list.append(item)
+
+                    for record_n, record in enumerate(sample["GpsRecords"]):
+
+
+                        raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
+                        raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
+                        raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
+                        raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
+                        raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
+
+                        try:
+                            raw_gga = raw_gga_list[record_n].split(",")
+                            raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                            raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                        except (ValueError, IndexError):
+                            pass
+
+                        raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
+                        # speed actually in kph
+                        raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
+                        raw_gps["vtg_mode"] = record["VtgFaaMode"]
+
+                        # Store raw gga data
+                        if record_n <= len(raw_gga_list):
+                            try:
+                                raw_gga = raw_gga_list[record_n].split(",")
+                                raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
+                                raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
+                                # Determine correct sign for latitude
+                                if raw_gga[3] == "S":
+                                    raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
+                                raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
+                                # Determing correct sign for longitude
+                                if raw_gga[5] == "W":
+                                    raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
+                                raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
+                                raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
+                                raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                            except:
+                                pass
+
+                        # Store raw vtg data
+                        if record_n <= len(raw_vtg_list):
+                            try:
+                                raw_vtg = raw_vtg_list[record_n].split(",")
+                                raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
+                                # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
+                                # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
+                                # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
+                                # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
+                                # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
+                                raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
+                                # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
+                                raw_gps2["vtg_mode"] = raw_vtg[9]
+                            except:
+                                pass
+
+            # Ext GPS
+            ext_gps["gga_utc_time"][sample_n] = float(sample["Gga"]["SatelliteTime"].replace(":", ""))
+            ext_gps["gga_latitude"][sample_n] = sample["Gga"]["Latitude"]
+            ext_gps["gga_longitude"][sample_n] = sample["Gga"]["Longitude"]
+            ext_gps["gga_quality"][sample_n] = sample["Gga"]["FixQuality"]
+            ext_gps["gga_altitude"][sample_n] = sample["Gga"]["Altitude (m)"]
+            ext_gps["gga_hdop"][sample_n] = sample["Gga"]["Hdop"]
+            ext_gps["gga_sats"][sample_n] = sample["Gga"]["SatelliteCount"]
+            ext_gps["vtg_true_course"][sample_n] = sample["Vtg"]["TmgTrue (deg)"]
+            if sample["Vtg"]["Speed (m/s)"] is not None:
+                ext_gps["vtg_speed_kph"][sample_n] = sample["Vtg"]["Speed (m/s)"] / 1000
+
+            # Sensors
+            sensors["temperature"].append(sample["Sensors"]["Temperature (C)"])
+            sensors["salinity"].append(sample["Sensors"]["Salinity (PSS-78)"])
+            sensors["battery"].append(sample["Sensors"]["BatteryVoltage (V)"])
+            sensors["sos"].append(sample["Sensors"]["SoundSpeed (m/s)"])
+
+            # Vertical beam
+            vb["rng"].append(sample["Vb"]["Range (m)"])
+            vb["rng_std"].append(sample["Vb"]["RangeStdDev (m)"])
+            vb["contrast"].append(sample["Vb"]["Contrast (dB)"])
+            vb["strength"].append(sample["Vb"]["Strength (dB)"])
+
+            # Compass
+            compass["heading"].append(sample["Compass"]["Heading (deg)"])
+            compass["pitch"].append(sample["Compass"]["Pitch (deg)"])
+            compass["roll"].append(sample["Compass"]["Roll (deg)"])
+            compass["heading_std"].append(sample["Compass"]["HeadingStdDev (deg)"])
+            compass["pitch_std"].append(sample["Compass"]["PitchStdDev (deg)"])
+            compass["roll_std"].append(sample["Compass"]["RollStdDev (deg)"])
+            compass["mag_error"].append(sample["Compass"]["MagneticError"])
+
+            # Water Track  
+            for beam_n, beam in enumerate(sample["ProfileBeams"]):
+                n_cells = len(beam["CellVelocity (m/s)"])
+                if n_cells > 0:
+                    wt["snr"][beam_n, 0:n_cells, sample_n] = beam["CellSnr (dB)"]
+                    wt["vel"][beam_n, 0:n_cells, sample_n] = beam["CellVelocity (m/s)"]
+                    wt["vel_std"][beam_n, 0:n_cells, sample_n] = beam["CellVelocityStdDev (m/s)"]
+                    wt["expected_std"][beam_n, 0:n_cells, sample_n] = beam["CellVelocityExpectedStdDev (m/s)"]
+                    wt["corr"][beam_n, 0:n_cells, sample_n] = beam["CellCorrelationScore"]
+            wt["cell_size"][0:n_cells, sample_n] = [sample["Adp"]["CellSize (m)"]] * n_cells
+            wt["cell_start"][sample_n] = sample["Adp"]["CellStart (m)"]
+            wt["blanking_dist"][sample_n] = sample["Adp"]["BlankingDistance (m)"]
+            wt["pulse_length"][sample_n] = sample["Adp"]["PulseLength (m)"]
+            wt["pulse_lag"][sample_n] = sample["Adp"]["PulseLag (m)"]
+            wt["corr_lag"][sample_n] = sample["Adp"]["CorrelationLag (m)"]
+            wt["code_length"][sample_n] = sample["Adp"]["CodeLength"]
+            freq = (adcp_data["config_jsonlog"]["SensorConfiguration"]["Info"]["beamSetInfo"][
+                str(sample["Adp"]["BeamSetId"])]["systemFrequency (Hz)"]) / 1000
+            wt["freq"][sample_n] = freq
+            wt["mode"][sample_n] = sample["Adp"]["ProfileType"]
+            wt["ping_count"][sample_n] = sample["Adp"]["PingCount"]
+
+        return ens_time, bt, ext_gps, raw_gps, raw_gps2, sensors, vb, compass, wt
+
+    def rsqmb_date_time(self, ens_time, utc_time_offset, date_format):
+        """Create date_time object.
+
+        Parameters
+        ----------
+        ens_time: list
+            List of ensemble times
+        utc_time_offset: str
+            String containing time offset to get to local time.
+        date_format: str
+            String defining date format
+        """
+
+        # Create list of serial times in datetime format
+        serial_time = []
+        for tm in ens_time:
+            time_local = local_time_from_iso(tm, utc_time_offset)
+            serial_time.append(time_local)
+
+        # Compute delta time
+        diff = np.diff(serial_time)
+        ensemble_delta_time = [0]
+        for tm in diff:
+            ensemble_delta_time.append(tm.total_seconds())
+
+        # First ensemble counts for averaging velocity
+        # Assume first ensemble time is equal to second
+        ensemble_delta_time[0] = ensemble_delta_time[1]
+        ens_dur_in = np.array(ensemble_delta_time)
+
+        # Create object
+        start_serial_time = serial_time[0].timestamp()
+        end_serial_time = serial_time[-1].timestamp()
+        meas_date = datetime.strftime(serial_time[0], date_format)
+        self.date_time = DateTime()
+        self.date_time.populate_data(
+            date_in=meas_date,
+            start_in=start_serial_time,
+            end_in=end_serial_time,
+            ens_dur_in=ens_dur_in,
+            utc_time_offset=utc_time_offset
+        )
+
+    def rsqmb_boat(self, bt, system_configuration):
+        """Create boat_vel object.
+
+        Parameters
+        ----------
+        bt: dict
+            Dictionary of bottom track sample data
+        system_configuration: dict
+            General measurement configuration
+        """
+
+        # Create initial object
+        self.boat_vel = BoatStructure()
+
+        # Apply QRev ping type categories
+        if np.all(bt["ping_type"] == "    "):
+            ping_type = None
+        else:
+            ping_type = bt["ping_type"]
+
+        # Populate object
+        self.boat_vel.add_boat_object(
+            source="rsq",
+            vel_in=bt["beam_vel"],
+            freq_in=bt["frequency"],
+            coord_sys_in="Beam",
+            nav_ref_in="BT",
+            ping_type=ping_type
+        )
+
+        # Set track reference
+        self.boat_vel.selected = "bt_vel"
+        if system_configuration["TrackReference"] == "Gga":
+            self.boat_vel.selected = "gga_vel"
+        elif system_configuration["TrackReference"] == "Vtg":
+            self.boat_vel.selected = "vtg_vel"
+
+    def rsqmb_gps(self, ext_gps, raw_gps, utc_time_offset):
+        """Create gps object.
+
+        Parameters
+        ----------
+        ext_gps: dict
+            Dictionary of gps sample data assigned by RSQ
+        raw_gps: dict
+            Dictionary of raw gps data for the sample decoded from NMEA strings
+        utc_time_offset: str
+            Offset from utc to local time
+        """
+
+        self.gps = GPSData()
+        self.gps.populate_data(
+            raw_gga_utc=raw_gps["gga_utc_time"],
+            raw_gga_lat=raw_gps["gga_latitude"],
+            raw_gga_lon=raw_gps["gga_longitude"],
+            raw_gga_alt=raw_gps["gga_altitude"],
+            raw_gga_diff=raw_gps["gga_quality"],
+            raw_gga_hdop=raw_gps["gga_hdop"],
+            raw_gga_num_sats=raw_gps["gga_sats"],
+            raw_gga_delta_time=None,
+            raw_vtg_course=raw_gps["vtg_true_course"],
+            raw_vtg_speed=raw_gps["vtg_speed_kph"],
+            raw_vtg_delta_time=None,
+            raw_vtg_mode_indicator=raw_gps["vtg_mode"],
+            ext_gga_utc=ext_gps["gga_utc_time"],
+            ext_gga_lat=ext_gps["gga_latitude"],
+            ext_gga_lon=ext_gps["gga_longitude"],
+            ext_gga_alt=ext_gps["gga_altitude"],
+            ext_gga_diff=ext_gps["gga_quality"],
+            ext_gga_hdop=ext_gps["gga_hdop"],
+            ext_gga_num_sats=ext_gps["gga_sats"],
+            ext_vtg_course=ext_gps["vtg_true_course"],
+            ext_vtg_speed=ext_gps["vtg_speed_kph"],
+            gga_p_method="End",
+            gga_v_method="End",
+            vtg_method="End",
+        )
+
+        # If valid gga data exists create gga boat velocity object
+        if self.gps.gga_velocity_ens_mps is not None:
+            self.boat_vel.add_boat_object(source="rsq",
+                                          vel_in=self.gps.gga_velocity_ens_mps,
+                                          coord_sys_in="Earth", nav_ref_in="GGA", )
+
+        # If valid vtg data exist create vtg boat velocity object
+        if self.gps.vtg_velocity_ens_mps is not None:
+            self.boat_vel.add_boat_object(source="rsq",
+                                          vel_in=self.gps.vtg_velocity_ens_mps,
+                                          coord_sys_in="Earth", nav_ref_in="VTG", )
+
+    def rsqmb_depths(self, bt, vb, wt, adcp_data, system_configuration):
+        """Create depths object.
+
+        Parameters
+        ----------
+        bt: dict
+            Dictionary of bottom track sample data
+        vb: dict
+            Dictionary of vertical beam sample data
+        wt: dict
+            Dictionary of water track sample data
+        adcp_data: dict
+            Raw data from a vertical
+        system_configuration: dict
+            General measurement configuration
+        """
+
+        # Initialize depth data structure
+        self.depths = DepthStructure()
+
+        # Determine array rows and cols
+        max_cells = 128
+
+        num_ens = len(wt["vel"])
+
+        # Compute cell sizes
+        cell_size = np.array(wt["cell_size"])
+        cell_size[np.equal(cell_size, None)] = np.nan
+        cell_size = cell_size.astype(float)
+
+        # Fill cell_size array, repeating last valid cell size
+        for col in range(cell_size.shape[1]):
+            size_idx = np.where(np.isnan(cell_size[:, col]))
+            cell_size [size_idx[0], col] = cell_size[size_idx[0][0]-1, col]
+        draft = system_configuration["TransducerDepth (m)"]
+        top_of_cells = (
+            np.array(wt["cell_start"]).astype(float)
+            + draft
+        )
+
+        # Prepare bottom track depth variable
+        depth = np.array(bt["beam_rng"]).astype(float)
+        freq = np.array(bt["frequency"]).astype(float)
+
+        # Zero depths are not valid
+        depth[depth == 0] = np.nan
+
+        # Draft
+        depth = depth + draft
+
+        # Compute cell depth
+        cell_depth = np.cumsum(cell_size, 0) - (0.5 * cell_size) + np.tile(top_of_cells, (max_cells, 1))
+
+        # Create depth object for bottom track beams
+        self.depths.add_depth_object(
+            depth_in=depth,
+            source_in="BT",
+            freq_in=freq,
+            draft_in=draft, 
+            cell_depth_in=cell_depth, 
+            cell_size_in=cell_size,
+        )
+        # Prepare vertical beam depth variable
+        depth_vb = np.tile(np.nan, (1, cell_depth.shape[1]))
+
+        # Retrieve raw data
+        depth_vb[0, :] = vb["rng"]
+
+        # Zero depths are not valid
+        depth_vb[depth_vb == 0] = np.nan
+        depth_vb = depth_vb + draft
+
+        freq = (
+            np.array(
+                [
+                    adcp_data["config_jsonlog"]["SensorConfiguration"]["Info"]["beamSetInfo"]["1"][
+                        "systemFrequency (Hz)"
+                    ]
+                ]
+                * depth.shape[-1]
+            )
+            / 1000
+        )
+
+        # Create depth object for vertical beam
+        self.depths.add_depth_object(
+            depth_in=depth_vb,
+            source_in="VB",
+            freq_in=freq,
+            draft_in=draft,
+            cell_depth_in=cell_depth,
+            cell_size_in=cell_size,
+        )
+
+        # Set depth reference
+        if system_configuration["DepthReference"] == "VerticalBeam":
+            self.depths.selected = "vb_depths"
+            self.depths.composite_depths(transect=self, setting="On")
+        else:
+            self.depths.selected = "bt_depths"
+            self.depths.composite_depths(transect=self, setting="On")
+
+    def rsqmb_sensors(self, compass, sensors_ens, adcp_data, system_configuration):
+        """Create sensors object.
+
+        Parameters
+        ----------
+        compass: dict
+            Dictionary of heading, pitch, roll, and magnetic error sample data
+        sensors_ens: dict
+            Dictionary of sensor sample data
+        adcp_data: dict
+            Raw data from a vertical
+        system_configuration: dict
+            General measurement configuration
+        """
+
+        # Sensor data
+        # -----------
+        self.sensors = Sensors()
+
+        # Internal heading
+        self.sensors.heading_deg.internal = HeadingData()
+
+        # Assign data
+        mag_error = np.array(compass["mag_error"]).astype(float) * 100.
+        pitch_limit = np.array(
+            (
+                adcp_data["config_jsonlog"]["SensorConfiguration"]["CompassCalInfo"]["pitchMax (deg)"],
+                adcp_data["config_jsonlog"]["SensorConfiguration"]["CompassCalInfo"]["pitchMin (deg)"],
+            )
+        ).T
+        roll_limit = np.array(
+            (
+                adcp_data["config_jsonlog"]["SensorConfiguration"]["CompassCalInfo"]["rollMax (deg)"],
+                adcp_data["config_jsonlog"]["SensorConfiguration"]["CompassCalInfo"]["rollMin (deg)"],
+            )
+        ).T
+        heading = np.array(compass["heading"]).astype(float)
+        pitch = np.array(compass["pitch"]).astype(float)
+        roll = np.array(compass["roll"]).astype(float)
+
+        # Populate object
+        self.sensors.heading_deg.internal.populate_data(
+            data_in=heading,
+            source_in="internal",
+            magvar=adcp_data["config_json"]["Setup"]["SystemConfiguration"]["MagneticDeclination (deg)"],
+            mag_error=mag_error,
+            pitch_limit=pitch_limit,
+            roll_limit=roll_limit,
+        )
+        self.sensors.heading_deg.selected = "internal"
+
+        # Pitch and roll
+        self.sensors.pitch_deg.internal = SensorData()
+        self.sensors.pitch_deg.internal.populate_data(
+            data_in=pitch, source_in="internal"
+        )
+        self.sensors.pitch_deg.selected = "internal"
+        self.sensors.roll_deg.internal = SensorData()
+        self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in="internal")
+        self.sensors.roll_deg.selected = "internal"
+
+        # Temperature
+        temperature = np.array(sensors_ens["temperature"]).astype(float)
+        self.sensors.temperature_deg_c.internal = SensorData()
+        self.sensors.temperature_deg_c.internal.populate_data(
+            data_in=temperature, source_in="internal"
+        )
+        self.sensors.temperature_deg_c.selected = "internal"
+
+        # Manual temperature
+        if system_configuration["TemperatureOverride (C)"] is not None:
+            temperature = [system_configuration["TemperatureOverride (C)"]] * len(
+                sensors_ens["temperature"]
+            )
+            self.sensors.temperature_deg_c.user = SensorData()
+            self.sensors.temperature_deg_c.user.populate_data(
+                data_in=temperature, source_in="Manual"
+            )
+            self.sensors.temperature_deg_c.selected = "user"
+
+        # Salinity
+        # Initial salinity is saved in both internal and user with initial selection
+        # internal to support QA check for changes
+        salinity = np.array(
+            [system_configuration["Salinity (PSS-78)"]]
+            * len(sensors_ens["temperature"])
+        )
+        self.sensors.salinity_ppt.internal = SensorData()
+        self.sensors.salinity_ppt.internal.populate_data(
+            data_in=salinity, source_in="Manual"
+        )
+        self.sensors.salinity_ppt.user = SensorData()
+        self.sensors.salinity_ppt.user.populate_data(
+            data_in=salinity, source_in="Manual"
+        )
+        self.sensors.salinity_ppt.selected = "internal"
+
+        # Speed of sound
+        self.sensors.speed_of_sound_mps.internal = SensorData()
+        self.sensors.speed_of_sound_mps.internal.populate_data(
+            data_in=sensors_ens["sos"], source_in="ADCP"
+        )
+        # Set selected salinity
+        self.sensors.speed_of_sound_mps.selected = "internal"
+
+        if system_configuration["SoundSpeedOverride (m/s)"] is not None:
+            sos = [system_configuration["SoundSpeedOverride (m/s)"]] * len(
+                sensors_ens["temperature"]
+            )
+            self.sensors.speed_of_sound_mps.user = SensorData()
+            self.sensors.speed_of_sound_mps.user.populate_data(
+                data_in=sos, source_in="Manual"
+            )
+            self.sensors.speed_of_sound_mps.selected = "user"
+
+        # Battery voltage
+        self.sensors.battery_voltage.internal = SensorData()
+        self.sensors.battery_voltage.internal.populate_data(
+            data_in=sensors_ens["battery"], source_in="internal"
+        )
+
+    def rsqmb_wt(self, wt, adcp_data, system_configuration, snr_3beam_comp):
+        """Create w_vel object.
+
+        Parameters
+        ----------
+        wt: dict
+            Dictionary of water track sample data
+        system_configuration: dict
+            General measurement configuration
+        snr_3beam_comp: bool
+            Indicates if invalid data due to SNR filter should be computed using 3-beam
+            solution
+        """
+
+        # Compute side lobe cutoff using Transmit Length information if available, if not it is assumed to be equal
+        # to 1/2 depth_cell_size_m. The percent method is use for the side lobe cutoff computation.
+        sl_cutoff_percent = adcp_data["config_json"]["Setup"]["ExtrapolationConfiguration"]["BottomDiscard"][
+            "ProfileFraction"
+        ]
+        sl_cutoff_number = adcp_data["config_json"]["Setup"]["ExtrapolationConfiguration"]["BottomDiscard"][
+            "NumberOfCells"
+        ]
+
+        min_depth = np.nanmin(self.depths.bt_depths.depth_beams_m, axis=0)
+
+        blanking_plus_pulse_length = wt["blanking_dist"] + wt["pulse_length"]
+
+        valid_cells = (min_depth * (1 - sl_cutoff_percent) - (wt["blanking_dist"] + wt["pulse_length"])) / wt["cell_size"][0, :]
+
+        # Compute processing lag
+        processing_lag = np.copy(wt["corr_lag"])
+        idx = np.logical_and(wt["code_length"] > 1, wt["pulse_lag"] < 0)
+        processing_lag[idx] = 2 * wt["corr_lag"][idx]
+        processing_lag[wt["pulse_lag"] > 0] = 0
+
+        # Account for rare occurance of None in pulse_length
+        pulse_length = np.array(wt["pulse_length"])
+        pulse_length[np.equal(pulse_length, None)] = np.nan
+        pulse_length = pulse_length.astype(float)
+
+        # Compute sidelobe cutoff
+        sl_lag_effect_m = (processing_lag + wt["pulse_length"] + wt["cell_size"][0, :]) / 2
+        sl_cutoff_type = "Percent"
+        cells_above_sl, sl_cutoff_m = self.side_lobe_cutoff(
+            depths=self.depths.bt_depths.depth_orig_m,
+            draft=self.depths.bt_depths.draft_use_m,
+            cell_depth=self.depths.bt_depths.depth_cell_depth_m,
+            sl_lag_effect=sl_lag_effect_m,
+            slc_type=sl_cutoff_type,
+            value=1 - sl_cutoff_percent,
+        )
+
+        snr_min_threshold = adcp_data["config_json"]["Setup"]["CalculationThresholds"]["MinBeamSnr (dB)"]
+        wt["vel"][wt["snr"] < snr_min_threshold] = np.nan
+
+        # Determine excluded distance (Similar to SonTek's screening distance)
+        excluded_top = (
+            system_configuration["ScreeningDistance (m)"] - system_configuration["TransducerDepth (m)"]
+        )
+        excluded_top_type = "Distance"
+        if excluded_top < 0:
+            excluded_top = 0
+
+        if np.all(wt["mode"] == "    "):
+            ping_type = None
+        else:
+            ping_type = wt["mode"]
+
+        # Set track reference
+        nav_ref = "bt_vel"
+        if system_configuration["TrackReference"] == "Gga":
+            nav_ref = "gga_vel"
+        elif system_configuration["TrackReference"] == "Vtg":
+            nav_ref = "vtg_vel"
+
+        # Create water velocity object
+        self.w_vel = WaterData()
+
+        # # In some rare situations the blank is empty so it is set to the excluded_dist_in
+        # if blanking_dist.shape[0] == 0:
+        #     if excluded_top_type == "Distance":
+        #         blanking_dist = excluded_top
+        #     else:
+        #         blanking_dist = 0
+
+        self.w_vel.populate_data(
+            vel_in=wt["vel"],
+            freq_in=wt["freq"],
+            coord_sys_in="Beam",
+            nav_ref_in=nav_ref,
+            rssi_in=wt["snr"],
+            rssi_units_in="SNR",
+            cells_above_sl_in=cells_above_sl,
+            sl_cutoff_per_in=sl_cutoff_percent,
+            sl_cutoff_num_in=sl_cutoff_number,
+            sl_cutoff_type_in=sl_cutoff_type,
+            sl_lag_effect_in=sl_lag_effect_m,
+            sl_cutoff_m=sl_cutoff_m,
+            wm_in=wt["mode"],
+            blank_in=wt["blanking_dist"],
+            corr_in=wt["corr"],
+            ping_type=np.array(ping_type),
+            snr_3beam_comp=snr_3beam_comp,
+            excluded_dist_in=excluded_top,
+            source="rsq"
+            
+        )
+
+    def rsqmb_edges(self, setup):
+
+        # Edges
+        # -----
+        # Create edge object
+        self.edges = Edges()
+        self.edges.populate_data(rec_edge_method="Variable", vel_method="VectorProf")
+
+        # Determine number of ensembles for each edge
+        if "Right" in setup["StartEdge"]:
+            self.start_edge = "Right"
+            self.orig_start_edge = "Right"
+        else:
+            self.start_edge = "Left"
+            self.orig_start_edge = "Left"
+
+        # Create left edge object
+        edge_type = None
+        coefficient = None
+        if setup["LeftBank"]["EdgeMethod"] == "Slope":
+            edge_type = "Triangular"
+            if "UserEdgeCoefficient" in setup["LeftBank"]:
+                if setup["LeftBank"]["UserEdgeCoefficient"] > 0:
+                    coefficient = setup["LeftBank"]["UserEdgeCoefficient"]
+                    edge_type = "Custom"
+
+        elif setup["LeftBank"]["EdgeMethod"] == "VerticalBank":
+            edge_type = "Rectangular"
+        elif setup["LeftBank"]["EdgeMethod"] == "UserEstimate":
+            edge_type = "User Q"
+        user_discharge = setup["LeftBank"]["EstimatedFlow (m3/s)"]
+        self.edges.left.populate_data(
+            edge_type=edge_type,
+            distance=setup["LeftBank"]["DistanceToBank (m)"],
+            number_ensembles=setup["LeftBank"]["NumberOfEdgeProfiles"],
+            coefficient=coefficient,
+            user_discharge=user_discharge, )
+
+        # Create right edge object
+        edge_type = None
+        coefficient = None
+        if setup["RightBank"]["EdgeMethod"] == "Slope":
+            edge_type = "Triangular"
+            if "UserEdgeCoefficient" in setup["RightBank"]:
+                if setup["RightBank"]["UserEdgeCoefficient"] > 0:
+                    coefficient = setup["RightBank"]["UserEdgeCoefficient"]
+                    edge_type = "Custom"
+        elif setup["RightBank"]["EdgeMethod"] == "VerticalBank":
+            edge_type = "Rectangular"
+        elif setup["RightBank"]["EdgeMethod"] == "UserEstimate":
+            edge_type = "User Q"
+        user_discharge = setup["RightBank"]["EstimatedFlow (m3/s)"]
+        self.edges.right.populate_data(edge_type=edge_type,
+            distance=setup["RightBank"]["DistanceToBank (m)"],
+            number_ensembles=setup["RightBank"]["NumberOfEdgeProfiles"],
+            coefficient=coefficient, user_discharge=user_discharge, )
+
+    def rsqmb_extrap(self, setup):
+        """Create extrap object.
+
+        Parameters
+        ----------
+        system_configuration: dict
+            General measurement configuration
+        """
+
+        # Create translation dictionary for fit types
+        method = {
+            "PowerFit": "Power",
+            "Constant": "Constant",
+            "NoSlip": "No Slip",
+            "ThreePointSlope": "3-Point",
+        }
+
+        # Determine QRev compatible fit and exponent
+        top = setup["TopExtrapolation"]["Method"]
+
+        # SonTek allows Power at the top and no slip or power at the bottom with top and bottom having different
+        # exponents. QRev does not support different exponents for open water situations.
+        if method[top] == "Power":
+            bot = "PowerFit"
+            exp = setup["TopExtrapolation"][
+                "Coefficient"
+            ]
+        else:
+            bot = "NoSlip"
+            exp = setup["BottomExtrapolation"][
+                "Coefficient"
+            ]
+
+        # Create extrap object
+        self.extrap = ExtrapData()
+        self.extrap.populate_data(top=method[top], bot=method[bot], exp=exp)
+        
     @staticmethod
     def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
@@ -1871,6 +2741,7 @@ class TransectData(object):
             heading_selected.set_mag_var(magvar, "internal")
             self.boat_vel.bt_vel.change_heading(magvar_change)
             self.w_vel.change_heading(self.boat_vel, magvar_change)
+            self.w_vel.apply_interpolation(self)
         else:
             self.sensors.heading_deg.internal.set_mag_var(magvar, "internal")
 
@@ -1948,8 +2819,7 @@ class TransectData(object):
 
     @staticmethod
     def side_lobe_cutoff(
-        depths, draft, cell_depth, sl_lag_effect, slc_type="Percent", value=None
-    ):
+        depths, draft, cell_depth, sl_lag_effect, slc_type="Percent", value=None):
         """Computes side lobe cutoff.
 
         The side lobe cutoff is based on the beam angle and is computed to
@@ -2014,6 +2884,7 @@ class TransectData(object):
 
         # Compute boolean side lobe cutoff matrix
         cells_above_sl = nan_less(cell_depth, cutoff)
+
         return cells_above_sl, cutoff
 
     def boat_interpolations(self, update, target, method=None):

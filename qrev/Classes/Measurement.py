@@ -1,9 +1,12 @@
 import ctypes
 import datetime
 import os
+import shutil
+import json
+import re
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
-
+import pandas as pd
 import numpy as np
 import simplekml
 
@@ -32,6 +35,7 @@ from qrev.MiscLibs.common_functions import (
     azdeg2rad,
     units_conversion,
 )
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
 # from profilehooks import profile
 
@@ -86,16 +90,6 @@ class Measurement(object):
     use_measurement_thresholds: bool
         Indicates if the entire measurement should be used to set filter
         thresholds
-    stage_start_m: float
-        Stage at start of measurement
-    stage_end_m: float
-        Stage at end of measurement
-    stage_meas_m: float
-        Stage assigned to measurement
-    use_weighted: bool
-        Indicates the setting for use_weighted to be used for reprocessing
-    use_ping_type: bool
-        Indicates if ping types should be used in BT and WT filters
     stage_start_m: float
         Stage at start of measurement
     stage_end_m: float
@@ -189,8 +183,8 @@ class Measurement(object):
         self.run_oursin = run_oursin
         self.min_transects = min_transects
         self.min_duration = min_duration
-        self.station_name = None
-        self.station_number = None
+        self.station_name = ""
+        self.station_number = ""
         self.persons = ""
         self.meas_number = ""
         self.transects = []
@@ -262,6 +256,9 @@ class Measurement(object):
 
             elif source == "Nortek":
                 self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
+
+            elif source == "RSQ":
+                self.load_rsq(in_file, snr_3beam_comp=snr_3beam_comp)
 
             # Process data
             if len(self.transects) > 0:
@@ -700,16 +697,15 @@ class Measurement(object):
             if hasattr(rsdata.SiteInfo, "Site_Name"):
                 if len(rsdata.SiteInfo.Site_Name) > 0:
                     self.station_name = rsdata.SiteInfo.Site_Name
-                else:
-                    self.station_name = ""
+
             if hasattr(rsdata.SiteInfo, "Station_Number"):
                 if len(rsdata.SiteInfo.Station_Number) > 0:
                     self.station_number = rsdata.SiteInfo.Station_Number
-                else:
-                    self.station_number = ""
+
             if hasattr(rsdata.SiteInfo, "Meas_Number"):
                 if len(rsdata.SiteInfo.Meas_Number) > 0:
                     self.meas_number = rsdata.SiteInfo.Meas_Number
+                    
             if hasattr(rsdata.SiteInfo, "Party"):
                 if len(rsdata.SiteInfo.Party) > 0:
                     self.persons = rsdata.SiteInfo.Party
@@ -897,6 +893,281 @@ class Measurement(object):
                 snr_3beam_comp=snr_3beam_comp,
             )
 
+    def load_rsq(self, filename, snr_3beam_comp):
+        temp_path = os.path.join(os.getenv("APPDATA"), "QRev_Data")
+        shutil.unpack_archive(filename[0], temp_path, "zip")
+
+        sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
+
+        # DataSessionProperties (Probably not needed)
+        with open(os.path.join(temp_path, "DataSessionProperties.json")) as json_file:
+            sontek_data["data_properties"] = json.load(json_file)
+
+        # TransectSetupTemplate (Site Info, Inst. Info, Systest, Compcal)
+        with open(os.path.join(temp_path, "TransectSetupTemplate.json")) as json_file:
+            sontek_data["transect_setup"] = json.load(json_file)
+
+        # Create path to transects
+        data_path = os.path.join(temp_path, "AdcpData")
+
+        # Load data to dictionary
+        for folder in os.listdir(data_path):
+            if "Transect" in  folder:
+                # Read transect data
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["transects"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Smba" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Loop" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+        # Remove temporary files
+        shutil.rmtree(temp_path)
+
+        # Assign data to QRev data structure
+        self.rsq_2_qrev(sontek_data, snr_3beam_comp)
+
+        # Identify checked transects
+        self.checked_transect_idx = self.checked_transects(self)
+
+        for transect in self.transects:
+            transect.change_coord_sys(new_coord_sys="Earth")
+            transect.change_nav_reference(
+                update=False,
+                new_nav_ref=self.transects[
+                    self.checked_transect_idx[0]
+                ].boat_vel.selected,
+            )
+            transect.boat_interpolations(update=False, target="BT", method="Hold9")
+            transect.boat_interpolations(update=False, target="GPS", method="None")
+            transect.apply_averaging_method(setting="Simple")
+            transect.process_depths(update=False, interpolation_method="HoldLast")
+            transect.update_water()
+
+            # Filter water data
+            transect.w_vel.apply_filter(transect=transect, wt_depth=True)
+
+            # Interpolate water data
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="None"
+            )
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="TRDI"
+            )
+
+            if transect.sensors.speed_of_sound_mps.selected == "user":
+                transect.sensors.speed_of_sound_mps.selected = "internal"
+                transect.change_sos(
+                    parameter="sosSrc",
+                    selected="user",
+                    speed=transect.sensors.speed_of_sound_mps.user.data,
+                )
+            elif transect.sensors.salinity_ppt.selected == "user":
+                transect.change_sos(
+                    parameter="salinity",
+                    selected="user",
+                    salinity=transect.sensors.salinity_ppt.user.data,
+                )
+            elif transect.sensors.temperature_deg_c.selected == "user":
+                transect.change_sos(
+                    parameter="temperature",
+                    selected="user",
+                    temperature=transect.sensors.temperature_deg_c.user.data[0],
+                )
+
+        
+    @staticmethod
+    def rsq_read_transect(transect_folder):
+        """Reads the files for a single transect and returns a dictionary of the data.
+        
+        Parameters
+        ----------
+        transect_folder: str
+            Path to containing the transect files
+            
+        Returns
+        -------
+        transect: dict
+            Dictionary of the transect data and configuration
+        
+        """
+        # Define transect dictionary
+        transect = {"config_json": None, "config_jsonlog": None, "data": []}
+
+        # Read configuration
+        try:
+            with open(os.path.join(transect_folder, "Configuration_Updated.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+        except BaseException:
+            with open(os.path.join(transect_folder, "Configuration.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+
+        # Read raw data file to string
+        with open(os.path.join(transect_folder, "RawData.jsonlog")) as json_file:
+            json_log = json_file.read()
+
+        # Find start index for all samples
+        samples_idx = [m.start() for m in re.finditer("RiverSample", json_log)]
+
+        # Read InstrumentRawSessionConfiguration
+        inst_idx = json_log.find("InstrumentRawSessionConfiguration")
+        end_json = samples_idx[0] - 1
+        substring = json_log[inst_idx: end_json]
+        start_json = substring.find("{")
+        transect["config_jsonlog"] = json.loads(substring[start_json::])
+
+        # Loop through samples to create json substring and read json data
+        for n in range(len(samples_idx) - 1):
+            end_json = samples_idx[n + 1] - 1
+            substring = json_log[samples_idx[n]:end_json]
+            start_json = substring.find("{")
+            transect["data"].append(json.loads(substring[start_json::]))
+        
+        # Read last sample
+        substring = json_log[samples_idx[-1]::]
+        start_json = substring.find("{")
+        transect["data"].append(json.loads(substring[start_json::]))
+        
+        return transect
+
+    def rsq_2_qrev(self, sontek_data, snr_3beam_comp):
+
+        # Site information pulled from last file
+        if len(sontek_data["transects"]) > 0:
+            # Find valid transect
+            for transect in sontek_data["transects"]:
+                if transect["config_json"]["IsEnabledInSessionSummary"]:
+                    break
+
+            if "SiteInformation" in transect["config_json"]["Setup"]:
+                if "SiteName" in transect["config_json"]["Setup"]["SiteInformation"]:
+                    site_name = transect["config_json"]["Setup"]["SiteInformation"]["SiteName"]
+                    if len(site_name) > 0:
+                        self.station_name = site_name
+
+            if "StationNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                station_number = transect["config_json"]["Setup"]["SiteInformation"]["StationNumber"]
+                if len(station_number) > 0:
+                    self.station_number = station_number
+
+            if "MeasurementNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                meas_no = transect["config_json"]["Setup"]["SiteInformation"]["MeasurementNumber"]
+                if len(meas_no) > 0:
+                    self.meas_number = meas_no
+ 
+            if "Operator" in transect["config_json"]["Setup"]["SiteInformation"]:
+                operator = transect["config_json"]["Setup"]["SiteInformation"]["Operator"]
+                if len(operator) > 0:
+                    self.persons = operator
+                    
+            if "Comments" in transect["config_json"]["Setup"]["SiteInformation"]:
+                comments = transect["config_json"]["Setup"]["SiteInformation"]["Comments"]
+                if len(comments) > 0:
+                    self.comments.append("RSQ Comments: " + comments)
+                else:
+                    self.comments.append("RSQ Comments:")
+
+            # Gauge height information stored as string
+            if "GaugeHeightInformation" in transect["config_json"]["Setup"]["SiteInformation"]:
+                try:
+                    self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
+                except ValueError:
+                    pass
+            # Get local time offset
+            utc_time_offset = sontek_data["data_properties"]["DataCollectionLocalTimeUtcOffset"]
+
+            hour = int(utc_time_offset.split(":")[0])
+            if hour > 0:
+                self.time_zone = "UTC" + "+" + str(hour)
+            elif hour < 0:
+                self.time_zone = "UTC" + str(hour)
+            else:
+                self.time_zone = "UTC"
+
+            # System tests
+            #TODO Not sure what to do for multiple tests or calibrations
+            self.rsq_add_systest(transect, utc_time_offset)
+
+            # Compass calibration
+            self.rsq_add_compass_cal(transect, utc_time_offset)
+
+            # Transects
+            for transect_data in sontek_data["transects"]:
+                self.transects.append(TransectData())
+                self.transects[-1].rsq(transect_data=transect_data, utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+
+            # Moving-bed tests
+            self.rsq_add_mb_test(tests=sontek_data["mb_tests"], utc_time_offset=utc_time_offset, snr_3beam_comp=snr_3beam_comp)
+            
+    def rsq_add_systest(self, transect, utc_time_offset):
+        """Adds a system test to the measurement system test list.
+        
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+        
+        # Check for presence of system test
+        if "SystemTest" in transect["config_json"]["Setup"]:
+            # Create premeasurement object of system test
+            sys_test = PreMeasurement()
+            data = transect["config_json"]["Setup"]["SystemTest"]
+            time_stamp = local_time_from_iso(data["TestTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc test time
+            data.pop("TestTime", None)
+            # Populate sys_test
+            sys_test.populate_data(time_stamp=time_stamp, data_in=data,
+                                   data_type="RSQST")
+            # Append system test to measurement system test list
+            self.system_tst.append(sys_test)
+
+    def rsq_add_compass_cal(self, transect, utc_time_offset):
+        """Adds a compass calibration to the measurement compass calibration list.
+
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+        
+        # Check for presence of compass calibration
+        if "CompassCalibration" in transect["config_json"]["Setup"]:
+            # Create premeasurment object of compass calibration
+            compass_cal = PreMeasurement()
+            data = transect["config_json"]["Setup"]["CompassCalibration"]
+            time_stamp = local_time_from_iso(data["CalibrationTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc calibration time
+            data.pop("CalibrationTime", None)
+            # Populate compass_cal
+            compass_cal.populate_data(time_stamp=time_stamp, data_in=data, data_type="RSQCC")
+            # Append compass calibration to measurement compass calibration list
+            self.compass_cal.append(compass_cal)
+    
+    def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
+
+        for test in tests:
+            #Process Loop test
+            if "Loop" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Loop", utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+            if "Smba" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Stationary",
+                                                utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+      
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
         into Python instance variables.
@@ -1402,9 +1673,6 @@ class Measurement(object):
             transects.
         """
 
-        # Get current settings
-        s = self.current_settings()
-
         # Initialize variables
         n_transects = len(self.transects)
         recompute = False
@@ -1433,7 +1701,8 @@ class Measurement(object):
 
         # Recompute is specified
         if recompute:
-            self.apply_settings(s)
+            self.compute_discharge()
+            self.compute_uncertainty()
         else:
             self.qa.compass_qa(self)
             self.qa.check_compass_settings(self)
@@ -5217,6 +5486,58 @@ class Measurement(object):
 
         kml.save(path)
 
+    def export_depth_averaged_velocity(self, units):
+
+        # Initialize arrays
+        vel_e = np.array([])
+        vel_n = np.array([])
+        vel_up = np.array([])
+        mag = np.array([])
+        az = np.array([])
+        lat = np.array([])
+        lon = np.array([])
+
+        for transect in self.transects:
+            if transect.checked:
+                valid_cells = np.logical_not(np.isnan(transect.w_vel.u_processed_mps))
+                sum_weights = np.nansum(transect.depths.bt_depths.depth_cell_size_m * valid_cells, axis=0)
+                u = np.nansum(transect.w_vel.u_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                v = np.nansum(transect.w_vel.v_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                w = np.nansum(transect.w_vel.w_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                dir_temp, mag_temp = cart2pol(u, v)
+                az_temp = rad2azdeg(dir_temp)
+
+                vel_e = np.hstack((vel_e, u))
+                vel_n = np.hstack((vel_n, v))
+                vel_up = np.hstack((vel_up, w))
+                mag = np.hstack((mag, mag_temp))
+                az = np.hstack((az, az_temp))
+                lat = np.hstack((lat, transect.gps.gga_lat_ens_deg))
+                lon = np.hstack((lon, transect.gps.gga_lon_ens_deg))
+
+        data = {
+            "vel_east": vel_e * units["V"],
+            "vel_north": vel_n * units["V"],
+            "vel_up": vel_up * units["V"],
+            "magnitude": mag * units["V"],
+            "azimuth": az,
+            "lat": lat,
+            "lon": lon
+        }
+        df = pd.DataFrame(data)
+        df.rename(columns={
+            "vel_east": "vel_east " + units["label_V"],
+            "vel_north": "vel_north" + units["label_V"],
+            "vel_up": "vel_up" + units["label_V"],
+            "magnitude": "magnitude" + units["label_V"],
+            "azimuth": "azimuth (deg)",
+            "lat": "lat (deg)",
+            "lon": "lon (deg)"
+        }, inplace=True)
+
+        return df
+
+        # final_array = np.vstack((vel_e, vel_n, vel_up, mag, az, lat, lon)).T
 
 if __name__ == "__main__":
     pass

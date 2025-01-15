@@ -2569,7 +2569,7 @@ class QAData(object):
                                             ** 0.5
                                         )
                                         if avg_speed < 0.24:
-                                            boat["q_total_caution"][n, 2] = True
+                                            # boat["q_total_caution"][n, 2] = True
                                             if status_switch < 1:
                                                 status_switch = 1
                                             boat["messages"].append(
@@ -3310,7 +3310,7 @@ class QAData(object):
 
         n_end = len(valid_run) - 1
 
-        if n_runs > 1:
+        if n_runs > 0:
             m = 0
             q_invalid_run = []
             for n in range(n_start, n_end, 2):
@@ -3406,7 +3406,6 @@ class QAData(object):
 
         s = meas.current_settings()
         d = meas.qrev_default_settings()
-        self.bt_vel["guidance"] = []
 
         if s["BTbeamFilter"] != d["BTbeamFilter"]:
             self.bt_vel["messages"].append(
