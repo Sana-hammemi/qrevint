@@ -505,7 +505,10 @@ class BoatData(object):
 
         # Initialize variables
         inst_coordinates = None
-        orig_coord_sys = self.orig_coord_sys.strip()
+        if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
+            orig_coord_sys = self.orig_coord_sys[0].strip()
+        else:
+            orig_coord_sys = self.orig_coord_sys.strip()
         orig_sys_code = adcp.get_coordinate_system_code(coord_sys=orig_coord_sys)
         new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys)
 
@@ -907,7 +910,12 @@ class BoatData(object):
             self.v_processed_mps = np.interp(
                 ens_time, mono_array[0, :], mono_array[2, :]
             )
-
+            
+            idx_invalid = np.where(valid == False)[0]
+            for idx in idx_invalid:
+                if np.logical_not(np.isnan(self.u_processed_mps[idx])):
+                    self.processed_source[idx] = "INT"
+            
     def apply_filter(
         self,
         transect,

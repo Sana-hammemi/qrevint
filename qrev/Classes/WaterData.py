@@ -788,7 +788,10 @@ class WaterData(object):
             Object of instrument data
         """
 
-        o_coord_sys = self.orig_coord_sys.strip()
+        if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
+            o_coord_sys = self.orig_coord_sys[0].strip()
+        else:
+            o_coord_sys = self.orig_coord_sys.strip()
 
         # Check for presence of snr_beam_velocities. snr_beam_velocities will be populated
         # if the option to use 3-beam solutions for invalid ensembles due to snr filter
