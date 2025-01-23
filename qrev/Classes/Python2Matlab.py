@@ -686,7 +686,7 @@ class Python2Matlab(object):
 
         # Adjust 1-D array to be row based
         for fit in meas_mat.extrap_fit.sel_fit:
-            if fit.u is None:
+            if fit.u is None or np.all(np.isnan(fit.u)):
                 fit.u = np.nan
                 fit.z = np.nan
             else:
