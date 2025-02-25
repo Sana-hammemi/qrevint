@@ -1046,27 +1046,27 @@ class Measurement(object):
             if "SiteInformation" in transect["config_json"]["Setup"]:
                 if "SiteName" in transect["config_json"]["Setup"]["SiteInformation"]:
                     site_name = transect["config_json"]["Setup"]["SiteInformation"]["SiteName"]
-                    if len(site_name) > 0:
+                    if site_name is not None and len(site_name) > 0:
                         self.station_name = site_name
 
             if "StationNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
                 station_number = transect["config_json"]["Setup"]["SiteInformation"]["StationNumber"]
-                if len(station_number) > 0:
+                if station_number is not None and len(station_number) > 0:
                     self.station_number = station_number
 
             if "MeasurementNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
                 meas_no = transect["config_json"]["Setup"]["SiteInformation"]["MeasurementNumber"]
-                if len(meas_no) > 0:
+                if meas_no is not None and len(meas_no) > 0:
                     self.meas_number = meas_no
  
             if "Operator" in transect["config_json"]["Setup"]["SiteInformation"]:
                 operator = transect["config_json"]["Setup"]["SiteInformation"]["Operator"]
-                if len(operator) > 0:
+                if operator is not None and len(operator) > 0:
                     self.persons = operator
                     
             if "Comments" in transect["config_json"]["Setup"]["SiteInformation"]:
                 comments = transect["config_json"]["Setup"]["SiteInformation"]["Comments"]
-                if len(comments) > 0:
+                if comments is not None and len(comments) > 0:
                     self.comments.append("RSQ Comments: " + comments)
                 else:
                     self.comments.append("RSQ Comments:")
@@ -1075,7 +1075,7 @@ class Measurement(object):
             if "GaugeHeightInformation" in transect["config_json"]["Setup"]["SiteInformation"]:
                 try:
                     self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
-                except ValueError:
+                except (TypeError, ValueError):
                     pass
             # Get local time offset
             utc_time_offset = sontek_data["data_properties"]["DataCollectionLocalTimeUtcOffset"]

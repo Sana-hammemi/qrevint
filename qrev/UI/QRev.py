@@ -35,6 +35,7 @@ from qrev.MiscLibs.common_functions import (
     sfrnd,
     dateformat,
 )
+from qrev.MiscLibs.local_time_utilities import tz_formatted_string
 from qrev.UI.AdvGraphs import AdvGraphs
 from qrev.UI.ArrowsScale import ArrowsScale
 from qrev.UI.AxesScale import AxesScale
@@ -1815,7 +1816,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         save_file = SaveDialog(parent=self, save_type="csv")
         df.to_csv(save_file.full_Name, index=False)
 
-
     def add_comment(self):
         """Add comment triggered by actionComment"""
 
@@ -2295,7 +2295,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                         self.use_measurement_thresholds = filter_meas
 
-                # Units options
+                # Uncertainty options
                 if options.rb_oursin_u.isChecked():
                     use_oursin = True
                 else:
@@ -3655,19 +3655,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Transect start time
                 col += 1
+                item = tz_formatted_string(
+                    self.meas.transects[transect_id].date_time.start_serial_time, 
+                    self.meas.transects[transect_id].date_time.utc_time_offset, 
+                    "%H:%M:%S")
                 tbl.setItem(
                     row + 1,
                     col,
-                    QtWidgets.QTableWidgetItem(
-                        datetime.strftime(
-                            datetime.utcfromtimestamp(
-                                self.meas.transects[
-                                    transect_id
-                                ].date_time.start_serial_time
-                            ),
-                            "%H:%M:%S",
-                        )
-                    ),
+                    QtWidgets.QTableWidgetItem(item),
                 )
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
