@@ -92,6 +92,10 @@ class MAP(object):
         """Initialize class and instance variables."""
 
         self.n_transects = 0
+        self.ve =[]
+        self.vn=[]
+        self.ve_list = []  # List to store ve values
+        self.vn_list = []  # List to store vn values
         self.data_transects = None
         self.slope = np.nan  # Slope of the average cross-section
         self.intercept = np.nan  # Intercept of the average cross-section
@@ -2000,36 +2004,7 @@ class MAP(object):
 
         return df
 
-    def export_csv(self, path, units, delimiter="comma delimited", manufacturer=None, verticals=False):
-        """Exports map data to ascii file with specified delimiter.
-
-        Parameters
-        ----------
-            path: str
-                path to exported file
-            units: dict
-                dictionary of unit labels and conversions
-            delimiter: str
-                type of delimiter to use
-            manufacturer: str
-                name of instrument manufacturer
-        """
-        date = datetime.today().strftime("%d-%b-%Y")
-        header = ["# " + __qrev_version__ + "\n", "# Exported " + date + "\n"]
-
-        with open(path, "w") as file:
-            file.writelines(header)
-
-        df = self.create_map_df(units=units, manufacturer=manufacturer, verticals=verticals)
-
-        if "comma" in delimiter:
-            sep = ","
-        elif "colon" in delimiter:
-            sep = ";"
-        else:
-            sep = " "
-
-        df.to_csv(path, sep=sep, index=False, mode="a", header=True)
+    
 
     def export_kml(
         self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None
@@ -2211,6 +2186,11 @@ class MAP(object):
         color: string
             Kml Hex color of the arrow
         """
+        self.ve = ve
+        self.vn = vn
+        # Append ve and vn to their respective lists
+        self.ve_list.append(ve)
+        self.vn_list.append(vn)
         distance = arrow_scale * np.sqrt(ve**2 + vn**2)
         coord_end = self.compute_new_coordinates(
             start_point=coord_start, distance=distance, bearing=math.atan2(ve, vn)
@@ -2313,3 +2293,37 @@ class MAP(object):
             math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2),
         )
         return math.degrees(lon2), math.degrees(lat2)
+        
+        def export_csv(self, path, units, delimiter="comma delimited", manufacturer=None, verticals=False):
+        """Exports map data to ascii file with specified delimiter.
+
+        Parameters
+        ----------
+            path: str
+                path to exported file
+            units: dict
+                dictionary of unit labels and conversions
+            delimiter: str
+                type of delimiter to use
+            manufacturer: str
+                name of instrument manufacturer
+        """
+        date = datetime.today().strftime("%d-%b-%Y")
+        header = ["# " + __qrev_version__ + "\n", "# Exported " + date + "\n"]
+
+        with open(path, "w") as file:
+            file.writelines(header)
+
+        df = self.create_map_df(units=units, manufacturer=manufacturer, verticals=verticals)
+        #Add East and North velocity columns if they exist
+        if hasattr(self, "ve_list") and hasattr(self, "vn_list") and self.ve_list and self.vn_list:
+             df["East velocity"] = pd.Series(self.ve_list).reindex(df.index)
+             df["North velocity"] = pd.Series(self.vn_list).reindex(df.index)
+        if "comma" in delimiter:
+            sep = ","
+        elif "colon" in delimiter:
+            sep = ";"
+        else:
+            sep = " "
+
+        df.to_csv(path, sep=sep, index=False, mode="a", header=True)
