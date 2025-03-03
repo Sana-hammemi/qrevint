@@ -1,23 +1,96 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, collect_dynamic_libs
 block_cipher = None
 from qrev import __app__
+# Initialize hiddenimports list
+hiddenimports = [
+    'numba',
+    'numba.core',
+    'numba.core.types',
+    'numba.core.typing',
+    'numba.core.dispatcher',
+    'numba.npyufunc',
+    'numba.core.errors',
+    'numba.pycc',
+    'numba.pycc.cc',
+    'numba.cext',
+    'numba.misc.special',
+    'numba.typed',
+    'numba.typed.typedlist',
+    'numba.core.registry',
+    'qrev.Classes.QComp',
+    'qrev.Classes.TransectData',
+    'qrev.Classes.DepthStructure',
+    'qrev.Classes.DepthData',
+    'qrev.MiscLibs.robust_loess_compiled',
+    'qrev.UI.QRev',
+    'qrev.Classes.Measurement',
+    'qrev.Classes.ComputeExtrap',
+    'qrev.Classes.ExtrapQSensitivity',
+    'qrev.DischargeFunctions.top_discharge_extrapolation'
+]
+
+# Collect all submodules and extend hiddenimports
+all_submodules = collect_submodules('numba')
+hiddenimports.extend(all_submodules)
+
+# Collect all necessary files
+datas = (collect_data_files('numba') + 
+         collect_data_files('numpy'))
+
+
+
 icon = "docs\\source\\assets\\files\\" + __app__ + '.ico'
 
 added_files = [('docs\\_build\\html', 'qrev_documentation'),
                ("docs\\source\\assets\\files\\*", "qrev_files")]
+# Add binaries
+binaries = collect_dynamic_libs('numba') + collect_dynamic_libs('numpy')
+a = Analysis(
+    ['app.py'],
+    pathex=['.'],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
+    hookspath=['.'],
+    runtime_hooks=['runtime_hook.py'],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+)
 
-a = Analysis(['app.py'],
-             binaries=[],
-             datas=added_files,
-             hiddenimports=[],
-             hookspath=[],
-             runtime_hooks=[],
-             excludes=[],
-             win_no_prefer_redirects=False,
-             win_private_assemblies=False,
-             cipher=block_cipher,
-             noarchive=False)
+hiddenimports = [
+    'numba',
+    'numba.core',
+    'numba.core.types',
+    'numba.core.typing',
+    'numba.core.dispatcher',
+    'numba.npyufunc',
+    'numba.core.errors',
+    'numba.pycc',
+    'numba.pycc.cc',
+    'numba.cext',
+    'numba.misc.special',
+    'numba.typed',
+    'numba.typed.typedlist',
+    'numba.core.registry',
+    'qrev.Classes.QComp',
+    'qrev.Classes.TransectData',
+    'qrev.Classes.DepthStructure',
+    'qrev.Classes.DepthData',
+    'qrev.MiscLibs.robust_loess_compiled',
+    'qrev.UI.QRev',
+    'qrev.Classes.Measurement',
+    'qrev.Classes.ComputeExtrap',
+    'qrev.Classes.ExtrapQSensitivity',
+    'qrev.DischargeFunctions.top_discharge_extrapolation'
+]
+datas = collect_data_files('numba')+ collect_data_files('numpy')
+
+# Include MSVC runtime files
+msvc_runtime = collect_data_files('msvcrt')
+
 
 splash = Splash(
     icon,
