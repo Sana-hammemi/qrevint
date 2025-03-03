@@ -22,19 +22,13 @@ from qrev.DischargeFunctions.top_discharge_extrapolation import
 """
 
 import numpy as np
-from numba.pycc import CC
 from numba import njit
 
-cc = CC("top_discharge_extrapolation")
 
 
 # Top Discharge Extrapolation with Numba
 # ======================================
-@cc.export(
-    "extrapolate_top",
-    "f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], "
-    "optional(i8), optional(f8))",
-)
+
 def extrapolate_top(
     xprod,
     w_valid_data,
@@ -129,11 +123,6 @@ def extrapolate_top(
 
 
 @njit
-@cc.export(
-    "discharge_top",
-    "f8[:](i8, f8, i4[:], i4[:, :], f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], "
-    "f8[:], f8[:, :])",
-)
 def discharge_top(
     top_method,
     exponent,
@@ -281,7 +270,6 @@ def discharge_top(
 
 
 @njit
-@cc.export("top_variables", "(f8[:, :], b1[:, :], f8[:, :], f8[:, :])")
 def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
     """Computes the index to the top and top three valid cells in each ensemble and
     the range from the water surface to the top of the topmost cell.
@@ -341,6 +329,4 @@ def top_variables(xprod, w_valid_data, depth_cell_size_m, depth_cell_depth_m):
     return idx_top, idx_top_3, top_rng
 
 
-if __name__ == "__main__":
-    # Used to compile code
-    cc.compile()
+
