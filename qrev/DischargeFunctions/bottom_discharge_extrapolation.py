@@ -22,19 +22,13 @@ from qrev.DischargeFunctions.bottom_discharge_extrapolation import
 """
 
 import numpy as np
-from numba.pycc import CC
 from numba import njit
 
-cc = CC("bottom_discharge_extrapolation")
 
 
 # Bottom Discharge Extrapolation with Numba
 # =========================================
-@cc.export(
-    "extrapolate_bot",
-    "f8[:](f8[:, :], b1[:, :], i8, f8, i4[:], f8[:, :], f8[:, :], f8[:], f8[:], "
-    "optional(i8), optional(f8))",
-)
+
 def extrapolate_bot(
     xprod,
     w_valid_data,
@@ -126,10 +120,7 @@ def extrapolate_bot(
 
 
 @njit
-@cc.export(
-    "discharge_top",
-    "f8[:](i8, f8, f8[:], f8[:, :], f8[:, :], f8[:, :], f8[:], f8[:], f8[:, :])",
-)
+
 def discharge_bot(
     bot_method,
     exponent,
@@ -294,7 +285,6 @@ def discharge_bot(
 
 
 @njit
-@cc.export("top_variables", "f8[:](f8[:, :], b1[:, :], f8[:, :], f8[:, :], f8[:])")
 def bot_variables(x_prod, w_valid_data, cell_size, cell_depth, depth_ens):
     """Computes the index to the bottom most valid cell in each ensemble
     and the range from the bottom to the bottom of the bottom most cell.
@@ -346,6 +336,4 @@ def bot_variables(x_prod, w_valid_data, cell_size, cell_depth, depth_ens):
     return bot_rng
 
 
-if __name__ == "__main__":
-    # Used to compile code
-    cc.compile()
+
