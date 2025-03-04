@@ -96,6 +96,7 @@ class MAP(object):
         self.vn=[]
         self.ve_list = []  # List to store ve values
         self.vn_list = []  # List to store vn values
+        self.bearing_list = []  # List to store bearings in degrees
         self.data_transects = None
         self.slope = np.nan  # Slope of the average cross-section
         self.intercept = np.nan  # Intercept of the average cross-section
@@ -2195,11 +2196,11 @@ class MAP(object):
         coord_end = self.compute_new_coordinates(
             start_point=coord_start, distance=distance, bearing=math.atan2(ve, vn)
         )
-        print(self.ve,self.vn)
-        print(self.ve_list)
-        print(self.vn_list)
-        print(len(self.ve_list))
-        print(len(self.vn_list))
+        bearing_rad = math.atan2(ve, vn)
+        bearing_deg = math.degrees(bearing_rad)
+        self.bearing_list.append(bearing_deg)  # Store bearing in degrees
+
+
         # Creation of the LineString tag for the arrow line
         line = folder.newlinestring(name=name, coords=[coord_start, coord_end])
         line.style.linestyle.width = 2
@@ -2321,9 +2322,16 @@ class MAP(object):
         df = self.create_map_df(units=units, manufacturer=manufacturer, verticals=verticals)
         #Add East and North velocity columns if they exist
         if hasattr(self, "ve_list") and hasattr(self, "vn_list") and self.ve_list and self.vn_list:
-             df["East velocity"] = pd.Series(self.ve_list).reindex(df.index)
-             df["North velocity"] = pd.Series(self.vn_list).reindex(df.index)
-
+             df["East velocity(m/s)"] = pd.Series(self.ve_list).reindex(df.index)
+             df["North velocity(m/s)"] = pd.Series(self.vn_list).reindex(df.index)
+        # Calculate and add magnitude
+             magnitude_list = np.sqrt(np.array(self.ve_list)**2 + np.array(self.vn_list)**2)
+             df["Velocity magnitude(m/s) "] = pd.Series(magnitude_list).reindex(df.index)
+             
+         # Add bearing in degrees
+         
+        if hasattr(self, "bearing_list") and self.bearing_list:
+            df["Velocity heading (deg.)"] = pd.Series(self.bearing_list).reindex(df.index)
         if "comma" in delimiter:
             sep = ","
         elif "colon" in delimiter:
