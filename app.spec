@@ -2,7 +2,7 @@
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, collect_dynamic_libs
 block_cipher = None
 from qrev import __app__
-# Initialize hiddenimports list
+# Initialize hiddenimports list first
 hiddenimports = [
     'numba',
     'numba.core',
