@@ -2,7 +2,9 @@
 import copy
 from datetime import datetime
 import math
-
+import os
+import shutil
+import sys
 import numpy as np
 import pandas as pd
 import simplekml
@@ -2006,10 +2008,8 @@ class MAP(object):
         return df
 
 
-
-    def export_kml(
-        self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None
-    ):
+    def export_kml(self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None, 
+        overlay_image_path=None):
         """Create KML file for MAP.
 
         Parameters
@@ -2026,71 +2026,242 @@ class MAP(object):
             Min velocity of the gradient cbar
         v_max: float
             Max velocity of the gradient cbar
+        overlay_image_path: str
+            Path to PNG image to use as ground overlay (optional)
         """
-
+        print(f"Starting KML export to: {path}")
+        
+        # Create KML object
         kml = simplekml.Kml(open=1)
+        
         # Create a shiptrack for each checked transect
-        lat = np.nan
-        lon = np.nan
-
-        for transect_idx in meas.checked_transect_idx:
-            lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
-            lon = lon[np.logical_not(np.isnan(lon))]
-            lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
-            lat = lat[np.logical_not(np.isnan(lat))]
-            line_name = meas.transects[transect_idx].file_name[:-4]
-            lon_lat = tuple(zip(lon, lat))
-            _ = kml.newlinestring(name=line_name, coords=lon_lat)
-
-        # Get utm zone
-        _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-
+        lat = []
+        lon = []
+        
+        try:
+            for transect_idx in meas.checked_transect_idx:
+                transect_lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
+                transect_lon = transect_lon[np.logical_not(np.isnan(transect_lon))]
+                transect_lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
+                transect_lat = transect_lat[np.logical_not(np.isnan(transect_lat))]
+                
+                if len(transect_lat) > 0 and len(transect_lon) > 0:
+                    lat.extend(transect_lat)
+                    lon.extend(transect_lon)
+                    line_name = meas.transects[transect_idx].file_name[:-4]
+                    lon_lat = tuple(zip(transect_lon, transect_lat))
+                    _ = kml.newlinestring(name=line_name, coords=lon_lat)
+        except Exception as e:
+            print(f"Error creating shiptracks: {e}")
+        
+        # Check if we have valid coordinates before proceeding
+        if len(lat) == 0 or len(lon) == 0:
+            print("Warning: No valid GPS coordinates found. KML file cannot be created.")
+            kml.save(path)
+            return
+        
+        # Convert lists to arrays
+        lat = np.array(lat)
+        lon = np.array(lon)
+        
+        # Get UTM zone from valid coordinates
+        valid_lat_idx = np.logical_not(np.isnan(lat))
+        valid_lon_idx = np.logical_not(np.isnan(lon))
+        valid_idx = np.logical_and(valid_lat_idx, valid_lon_idx)
+        
+        if not np.any(valid_idx):
+            print("Warning: No valid lat/lon coordinates. KML file cannot be created.")
+            kml.save(path)
+            return
+        
+        try:
+            _, _, zone_number, zone_letter = utm.from_latlon(lat[valid_idx][0], lon[valid_idx][0])
+            print(f"Using UTM zone: {zone_number}{zone_letter}")
+        except Exception as e:
+            print(f"Error getting UTM zone: {e}")
+            kml.save(path)
+            return
+        
         # Plot mean section
-        x = copy.deepcopy(self.x)
-        y = copy.deepcopy(self.y)
-        lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
-        lon_lat = tuple(zip(lon, lat))
-        lin = kml.newlinestring(name="MAP averaged cross-section", coords=lon_lat)
-        lin.style.linestyle.color = "ff0000ff"
-
-        # Get mid ensemble coordinates
-        x_kml = (self.x[1:] + self.x[:-1]) / 2
-        y_kml = (self.y[1:] + self.y[:-1]) / 2
-        lat_vec, lon_vec = utm.to_latlon(x_kml, y_kml, zone_number, zone_letter)
-
-        if arrow_scale is None or v_min is None or v_max is None:
-            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(
-                lat=lat, lon=lon
-            )
-        else:
-            u_mean, v_mean, vel_norm = self.auto_arrow()
-
-        # Folder to save water velocity arrows
+        try:
+            x = copy.deepcopy(self.x)
+            y = copy.deepcopy(self.y)
+            
+            if len(x) > 0 and len(y) > 0 and not np.isnan(x).all() and not np.isnan(y).all():
+                section_lat, section_lon = utm.to_latlon(x, y, zone_number, zone_letter)
+                lon_lat = tuple(zip(section_lon, section_lat))
+                lin = kml.newlinestring(name="MAP averaged cross-section", coords=lon_lat)
+                lin.style.linestyle.color = "ff0000ff"  # Red line
+                lin.style.linestyle.width = 3  # Make line more visible
+                
+                # Store for later use
+                lat = section_lat
+                lon = section_lon
+            else:
+                print("Warning: MAP data invalid. Using transect coordinates instead.")
+        except Exception as e:
+            print(f"Error plotting mean section: {e}")
+        
+        # Get mid ensemble coordinates for arrow placement
+        try:
+            if len(self.x) > 1 and len(self.y) > 1:
+                x_kml = (self.x[1:] + self.x[:-1]) / 2
+                y_kml = (self.y[1:] + self.y[:-1]) / 2
+                lat_vec, lon_vec = utm.to_latlon(x_kml, y_kml, zone_number, zone_letter)
+            else:
+                print("Warning: Not enough MAP data points for velocity arrows.")
+                kml.save(path)
+                return
+        except Exception as e:
+            print(f"Error calculating mid ensemble coordinates: {e}")
+            kml.save(path)
+            return
+        
+        # Calculate arrow parameters
+        try:
+            # Always get all 6 return values from auto_arrow
+            u_mean, v_mean, vel_norm, arrow_scale_auto, v_max_auto, v_min_auto = self.auto_arrow(
+                lat=lat, lon=lon, meas=meas)
+            
+            # Use auto values if input parameters are None
+            if arrow_scale is None:
+                arrow_scale = arrow_scale_auto
+                print(f"Using auto arrow scale: {arrow_scale}")
+            if v_min is None:
+                v_min = v_min_auto
+                print(f"Using auto v_min: {v_min}")
+            if v_max is None:
+                v_max = v_max_auto
+                print(f"Using auto v_max: {v_max}")
+                
+            print(f"Arrow parameters: scale={arrow_scale}, v_min={v_min}, v_max={v_max}")
+        except Exception as e:
+            print(f"Error calculating arrows: {e}")
+            kml.save(path)
+            return
+        
+        # Create folder to save water velocity arrows
         w_folder = kml.newfolder(name="Water velocity")
-
-        # Get color
+        
+        # Get color map
         cmap = plt.get_cmap(palette)
         norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
-        colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
-
-        # Mean velocity on each ensemble
-        u_mean = np.where(np.isnan(u_mean), 0, u_mean)
-        v_mean = np.where(np.isnan(v_mean), 0, v_mean)
-
-        for i in range(len(u_mean)):
-            r, g, b, a = colors[i]
-            self.plot_arrow(
-                w_folder,
-                (lon_vec[i], lat_vec[i]),
-                u_mean[i],
-                v_mean[i],
-                "Water Velocity " + str(i),
-                arrow_scale,
-                color=simplekml.Color.rgb(r, g, b, a),
-            )
-
+        
+        # Check if velocity data is valid
+        if vel_norm is None or len(vel_norm) == 0 or np.isnan(vel_norm).all():
+            print("Warning: No valid velocity data for coloring arrows.")
+        else:
+            # Calculate colors for each arrow
+            colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
+            
+            # Replace NaN values with zeros for plotting
+            u_mean = np.where(np.isnan(u_mean), 0, u_mean)
+            v_mean = np.where(np.isnan(v_mean), 0, v_mean)
+            
+            # Plot arrows
+            print(f"Creating {len(u_mean)} velocity arrows...")
+            arrows_created = 0
+            for i in range(len(u_mean)):
+                try:
+                    if np.isfinite(u_mean[i]) and np.isfinite(v_mean[i]) and np.isfinite(vel_norm[i]):
+                        r, g, b, a = colors[i]
+                        self.plot_arrow(
+                            w_folder,
+                            (lon_vec[i], lat_vec[i]),
+                            u_mean[i],
+                            v_mean[i],
+                            f"Water Velocity {i+1}",
+                            arrow_scale,
+                            color=simplekml.Color.rgb(r, g, b, a),
+                        )
+                        arrows_created += 1
+                except Exception as e:
+                    print(f"Error plotting arrow {i}: {e}")
+            print(f"Successfully created {arrows_created} arrows")
+        
+        # ===== Handle overlay image =====
+        # Determine path to colorbar image
+        if overlay_image_path is None:
+            # Get the current module's directory and build paths relative to it
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(current_dir)  # qrev directory
+            
+            # Try multiple paths for the overlay image using relative paths first
+            possible_paths = [
+                # Relative paths within package structure
+                os.path.join(parent_dir, "UI", "images", f"color_bar_{palette}_QRevInt.png"),
+                os.path.join(parent_dir, "UI", f"color_bar_{palette}_QRevInt.png"),
+                
+                # Fallback to original absolute paths only if needed
+                r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\images\color_bar_{}_QRevInt.png'.format(palette),
+                r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\color_bar_{}_QRevInt.png'.format(palette)
+            ]
+            
+            # Find first existing path
+            for img_path in possible_paths:
+                print(f"Checking for image at: {img_path}")
+                if os.path.exists(img_path):
+                    overlay_image_path = img_path
+                    print(f"Found overlay image at: {overlay_image_path}")
+                    break
+            else:
+                print("Could not find colorbar image in any location")
+        
+        # ==== Add overlay image to KML ====
+        if overlay_image_path is not None and os.path.exists(overlay_image_path):
+            try:
+                print(f"Adding colorbar overlay from: {overlay_image_path}")
+                
+                # Get directory where KML will be saved
+                kml_dir = os.path.dirname(os.path.abspath(path))
+                os.makedirs(kml_dir, exist_ok=True)
+                
+                # Copy the image file to the same directory as the KML
+                image_filename = os.path.basename(overlay_image_path)
+                target_image_path = os.path.join(kml_dir, image_filename)
+                
+                # Copy image file if needed
+                if os.path.normpath(overlay_image_path) != os.path.normpath(target_image_path):
+                    try:
+                        print(f"Copying from {overlay_image_path} to {target_image_path}")
+                        shutil.copy2(overlay_image_path, target_image_path)
+                        print("Image copied successfully")
+                    except Exception as e:
+                        print(f"Error copying image: {e}")
+                        try:
+                            # Try alternate copy method
+                            with open(overlay_image_path, 'rb') as src, open(target_image_path, 'wb') as dst:
+                                dst.write(src.read())
+                            print("Image copied using direct file I/O")
+                        except Exception as e2:
+                            print(f"Fatal: Could not copy image: {e2}")
+                
+                # ==== Add as screen overlay (always visible) ====
+                screen = kml.newscreenoverlay(name="Velocity Scale")
+                screen.icon.href = image_filename
+                
+                # Position in top-right corner
+                screen.overlayxy = simplekml.OverlayXY(x=1, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+                screen.screenxy = simplekml.ScreenXY(x=0.98, y=0.9, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+                
+                # Set fixed size for consistent appearance regardless of original image dimensions
+                screen.size.x = 0.80  # Width is 15% of screen width
+                screen.size.y = 0.10   # Height is 60% of screen height
+                screen.size.xunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
+                screen.size.yunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
+                
+                print("Added screen overlay with standardized size")
+                
+            except Exception as e:
+                print(f"Error adding overlay: {e}")
+        else:
+            print("No valid overlay image available")
+        
+        # Save the KML file
+        print(f"Saving KML file to: {path}")
         kml.save(path)
-
+        print("KML export completed successfully")
+        
     def auto_arrow(self, lat=None, lon=None, meas=None):
         """Create KML file for MAP.
 
@@ -2136,35 +2307,82 @@ class MAP(object):
         # Define length
         vel_norm = np.sqrt(u_mean**2 + v_mean**2)
 
+        # Initialize default values
+        zone_number = None
+        zone_letter = None
+
         if lat is None or lon is None:
             if meas is not None:
-                transect_idx = meas.checked_transect_idx[0]
-                lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
-                lon = lon[np.logical_not(np.isnan(lon))]
-                lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
-                lat = lat[np.logical_not(np.isnan(lat))]
-                _, _, zone_number, zone_letter = utm.from_latlon(lat, lon)
-                x = copy.deepcopy(self.x)
-                y = copy.deepcopy(self.y)
-                lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
+                try:
+                    transect_idx = meas.checked_transect_idx[0]
+                    temp_lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
+                    temp_lon = temp_lon[np.logical_not(np.isnan(temp_lon))]
+                    temp_lat = meas.transects[transect_idx].gps.gga_lat_ens_deg
+                    temp_lat = temp_lat[np.logical_not(np.isnan(temp_lat))]
+                    
+                    # Check if we have valid GPS coordinates
+                    if len(temp_lat) > 0 and len(temp_lon) > 0:
+                        lat = temp_lat
+                        lon = temp_lon
+                        _, _, zone_number, zone_letter = utm.from_latlon(lat[0], lon[0])
+                        x = copy.deepcopy(self.x)
+                        y = copy.deepcopy(self.y)
+                        lat, lon = utm.to_latlon(x, y, zone_number, zone_letter)
+                    else:
+                        print("Warning: No valid GPS coordinates found. Cannot calculate arrow parameters.")
+                        return u_mean, v_mean, vel_norm
+                except Exception as e:
+                    print(f"Error retrieving GPS coordinates: {e}")
+                    return u_mean, v_mean, vel_norm
             else:
                 return u_mean, v_mean, vel_norm
+        else:
+            # Extract zone information from the first valid coordinate pair
+            try:
+                valid_idx = np.logical_and(
+                    np.logical_not(np.isnan(lat)), np.logical_not(np.isnan(lon)))
+                if np.any(valid_idx):
+                    _, _, zone_number, zone_letter = utm.from_latlon(
+                        lat[valid_idx][0], lon[valid_idx][0])
+                else:
+                    print("Warning: No valid lat/lon coordinates provided. Cannot calculate arrow scale.")
+                    arrow_length_m = 20  # Default value
+                    v_min = 0
+                    v_max = np.nanmax(vel_norm) if not np.isnan(vel_norm).all() else 1.0
+                    return u_mean, v_mean, vel_norm, arrow_length_m, v_max, v_min
+            except Exception as e:
+                print(f"Error processing lat/lon coordinates: {e}")
+                arrow_length_m = 20  # Default value
+                v_min = 0
+                v_max = np.nanmax(vel_norm) if not np.isnan(vel_norm).all() else 1.0
+                return u_mean, v_mean, vel_norm, arrow_length_m, v_max, v_min
 
-        # Default arrow length : half the width of the section
-        arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
-        start_point = utm.from_latlon(lat[0], lon[0],
-                                      force_zone_number=zone_number,
-                                      force_zone_letter=zone_letter)
-        end_point = utm.from_latlon(lat[0] + arrow_length, lon[0],
-                                    force_zone_number=zone_number,
-                                    force_zone_letter=zone_letter)
-        arrow_length_m = sfrnd(
-            np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2),
-            2
-        )
+        # Default arrow length: half the width of the section
+        try:
+            if len(lat) >= 2 and len(lon) >= 2:
+                arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
+                start_point = utm.from_latlon(
+                    lat[0], lon[0],
+                    force_zone_number=zone_number,
+                    force_zone_letter=zone_letter)
+                end_point = utm.from_latlon(
+                    lat[0] + arrow_length, lon[0],
+                    force_zone_number=zone_number,
+                    force_zone_letter=zone_letter)
+                arrow_length_m = sfrnd(
+                    np.sqrt((end_point[0] - start_point[0]) ** 2 + 
+                        (end_point[1] - start_point[1]) ** 2),
+                    2
+                )
+            else:
+                # Not enough points to calculate arrow length
+                arrow_length_m = 20  # Default value
+        except Exception as e:
+            print(f"Error calculating arrow length: {e}")
+            arrow_length_m = 20  # Default value
 
         v_min = 0
-        v_max = np.nanmax(vel_norm)
+        v_max = np.nanmax(vel_norm) if not np.isnan(vel_norm).all() else 1.0
 
         return u_mean, v_mean, vel_norm, arrow_length_m, v_max, v_min
 
