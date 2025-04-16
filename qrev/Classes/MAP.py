@@ -1568,7 +1568,8 @@ class MAP(object):
             edge_vertical_velocity = np.tile(
                 [np.nan], (len(edge_size_raw) - 1, nb_nodes)
             )
-
+            depth = (border_depths[1:] + border_depths[:-1]) / 2
+            edge_layers = np.tile(self.main_depth_layers[:, np.newaxis], depth.shape)
         else:
             # Primary velocity : Power-power extrapolation from first ensemble
             # Mean velocity on the first valid ensemble
@@ -2245,8 +2246,8 @@ class MAP(object):
                 screen.screenxy = simplekml.ScreenXY(x=0.98, y=0.9, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
                 
                 # Set fixed size for consistent appearance regardless of original image dimensions
-                screen.size.x = 0.80  # Width is 15% of screen width
-                screen.size.y = 0.10   # Height is 60% of screen height
+                screen.size.x = 0.80  # Width is 80% of screen width
+                screen.size.y = 0.10   # Height is 12% of screen height
                 screen.size.xunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
                 screen.size.yunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
                 
