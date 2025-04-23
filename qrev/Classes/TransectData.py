@@ -1691,7 +1691,7 @@ class TransectData(object):
                 
         # Define dictionaries
         bt = {
-            "ping_type": np.full([n_ensembles], "    "),
+            "ping_type": np.full([n_ensembles], "     "),
             "ping_count": np.full([n_ensembles], 0),
             "good_ping_count": np.full([n_ensembles], 0),
             "beam_set_id": np.full([n_ensembles], 0),
