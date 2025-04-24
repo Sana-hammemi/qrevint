@@ -4,8 +4,6 @@ import numpy as np
 from datetime import datetime
 from datetime import timezone
 from scipy import signal, fftpack
-
-from qrev.Classes.Pd0TRDI_2 import Pd0TRDI
 from qrev.Classes.DepthStructure import DepthStructure
 from qrev.Classes.WaterData import WaterData
 from qrev.Classes.BoatStructure import BoatStructure
