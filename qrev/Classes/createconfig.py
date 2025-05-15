@@ -14,8 +14,10 @@ class Config:
     def __init__(self):
         """Initiate attributes"""
 
+        # Todo: update config for new additions.
+
         self.config = {
-            "Units": {"show": True, "default": "SI"},
+            "Units": {"show": True, "default": "English"},
             "ColorMap": {"show": True, "default": "viridis"},
             "RatingPrompt": {"show": True, "default": False},
             "SaveStyleSheet": {"show": True, "default": False},
@@ -34,6 +36,8 @@ class Config:
             "LeftRightFlowDirDiff": {"threshold": 8.1},
             "PDFSummary": {"show": True, "default": False},
             "DateFormat": {"show": True, "default": "y.m.d"},
+            "TimeZone": {"required": False},
+            "PercentMeasured": {"show": True}
         }
 
     def export_config(self, output_path=None):
@@ -72,6 +76,8 @@ class Config:
             "LeftRightFlowDirDiff": {"threshold": 8.1},
             "PDFSummary": {"show": True, "default": "Prompt"},
             "DateFormat": {"show": True, "default": "y.m.d"},
+            "TimeZone": {"required": False},
+            "PercentMeasured": {"show": False}
         }
         path = os.path.join(os.getcwd(), "QRev.cfg")
 

@@ -1120,6 +1120,7 @@ class Oursin(object):
             u_water=self.u_invalid_water_user_list,
             cov_68=self.cov_68,
         )
+        # self.dsm_edges_u(meas)
 
     @staticmethod
     def compute_combined_uncertainty(
@@ -1756,6 +1757,188 @@ class Oursin(object):
                 0.01 * self.user_specified_u["u_left_mean_user"]
             ] * self.nb_transects
 
+    def dsm_edges_u(self, meas):
+        u_left_list = []
+        u_left_random_list = []
+        u_left_sys_list = []
+        q_left_list = []
+        u_right_list = []
+        u_right_random_list = []
+        u_right_sys_list = []
+        q_right_list = []
+        q_total_list = []
+
+        # Compute fixed systematic uncertainties
+        u_coef = (1.0 - 0) / (2.0 * np.sqrt(3))
+        u_draft = 0.05
+
+        # For the total uncertainty in the left distance compute the random and
+        # systematic components assuming they are equal
+        left_dist_u = self.default_advanced_settings["left_edge_dist_prct"] / 100.0
+        if not np.isnan(self.user_advanced_settings["left_edge_dist_prct_user"]):
+            left_dist_u = (
+                self.user_advanced_settings["left_edge_dist_prct_user"] / 100.0
+            )
+        u_left_dist_random = np.sqrt((left_dist_u**2) / 2.0)
+        u_left_dist_sys = u_left_dist_random
+
+        # For the total uncertainty in the right distance compute the random and
+        # systematic components assuming they are equal
+        right_dist_u = self.default_advanced_settings["right_edge_dist_prct"] / 100.0
+        if not np.isnan(self.user_advanced_settings["right_edge_dist_prct_user"]):
+            right_dist_u = (
+                self.user_advanced_settings["right_edge_dist_prct_user"] / 100.0
+            )
+        u_right_dist_random = np.sqrt((left_dist_u**2) / 2.0)
+        u_right_dist_sys = u_right_dist_random
+
+        # Compute the uncertainty and associated components for each transect
+        for q_id, trans_id in enumerate(self.checked_idx):
+            transect = meas.transects[trans_id]
+
+            left_n_ensembles = int(transect.edges.left.number_ensembles)
+            right_n_ensembles = int(transect.edges.right.number_ensembles)
+            depth_selected = getattr(transect.depths, transect.depths.selected)
+            if transect.start_edge == "Right":
+                # Right edge data
+                right_depths = depth_selected.depth_processed_m[0:right_n_ensembles]
+                right_cell_size = depth_selected.depth_cell_size_m[
+                    :, 0:right_n_ensembles
+                ]
+                right_u = transect.w_vel.u_processed_mps[:, 0:right_n_ensembles]
+                right_v = transect.w_vel.v_processed_mps[:, 0:right_n_ensembles]
+
+                # Left edge data
+                left_depths = depth_selected.depth_processed_m[
+                    -1 * left_n_ensembles : :
+                ]
+                left_cell_size = depth_selected.depth_cell_size_m[
+                    :, -1 * left_n_ensembles : :
+                ]
+                left_u = transect.w_vel.u_processed_mps[:, -1 * left_n_ensembles : :]
+                left_v = transect.w_vel.v_processed_mps[:, -1 * left_n_ensembles : :]
+
+            else:
+                # Right edge data
+                right_depths = depth_selected.depth_processed_m[
+                    -1 * right_n_ensembles : :
+                ]
+                right_cell_size = depth_selected.depth_cell_size_m[
+                    :, -1 * right_n_ensembles : :
+                ]
+                right_u = transect.w_vel.u_processed_mps[:, -1 * right_n_ensembles : :]
+                right_v = transect.w_vel.v_processed_mps[:, -1 * right_n_ensembles : :]
+
+                # Left edge data
+                left_depths = depth_selected.depth_processed_m[0:left_n_ensembles]
+                left_cell_size = depth_selected.depth_cell_size_m[:, 0:left_n_ensembles]
+                left_u = transect.w_vel.u_processed_mps[:, 0:left_n_ensembles]
+                left_v = transect.w_vel.v_processed_mps[:, 0:left_n_ensembles]
+
+            # Compute right edge uncertainty
+            u_right_random, u_right_sys = self.dsm_compute_edge_u(
+                u_coef=u_coef,
+                u_draft=u_draft,
+                depths=right_depths,
+                cell_size=right_cell_size,
+                u_dist_random=u_right_dist_random,
+                u_dist_sys=u_right_dist_sys,
+                u=right_u,
+                v=right_v,
+            )
+            u_right_trans = (
+                np.sqrt((u_right_random**2 / right_n_ensembles) + u_right_sys**2)
+                * (meas.discharge[q_id].right / meas.discharge[q_id].total)
+                * 100.0
+            )
+            u_right_list.append(u_right_trans)
+            u_right_random_list.append(u_right_random / np.sqrt(right_n_ensembles))
+            u_right_sys_list.append(u_right_sys)
+            q_right_list.append(meas.discharge[q_id].right)
+
+            # Compute left edge uncertainty
+            u_left_random, u_left_sys = self.dsm_compute_edge_u(
+                u_coef=u_coef,
+                u_draft=u_draft,
+                depths=left_depths,
+                cell_size=left_cell_size,
+                u_dist_random=u_left_dist_random,
+                u_dist_sys=u_left_dist_sys,
+                u=left_u,
+                v=left_v,
+            )
+            left_edge_u = (
+                np.sqrt((u_left_random**2 / left_n_ensembles) + u_left_sys**2)
+                * (meas.discharge[q_id].left / meas.discharge[q_id].total)
+                * 100.0
+            )
+            u_left_list.append(left_edge_u)
+            u_left_random_list.append(u_left_random / np.sqrt(left_n_ensembles))
+            u_left_sys_list.append(u_left_sys)
+            q_left_list.append(meas.discharge[q_id].left)
+
+            q_total_list.append(meas.discharge[q_id].total)
+
+        # Compute edges uncertainty for measurement
+        total_discharge = np.nanmean(q_total_list)
+        u_left = (
+            (
+                np.sqrt(
+                    (np.nanmean(np.array(u_left_random_list)) ** 2)
+                    / len(u_left_random_list)
+                )
+                + np.nanmean(np.array(u_left_sys_list)) ** 2
+            )
+            * (np.nanmean(q_left_list) / total_discharge)
+            * 100
+        )
+
+        u_right = (
+            (
+                np.sqrt(
+                    (np.nanmean(np.array(u_right_random_list)) ** 2)
+                    / len(u_right_random_list)
+                )
+                + np.nanmean(np.array(u_right_sys_list)) ** 2
+            )
+            * (np.nanmean(q_right_list) / total_discharge)
+            * 100
+        )
+
+        print(u_right_list)
+        print(u_right)
+        print(u_left_list)
+        print(u_left)
+        # return u_right_list, u_left_list
+
+    def dsm_compute_edge_u(
+        self,
+        u_coef,
+        u_draft,
+        depths,
+        cell_size,
+        u_dist_random,
+        u_dist_sys,
+        u,
+        v,
+    ):
+        # Compute edge depth uncertainty
+        u_depth_random = np.nanstd(depths, ddof=1) / np.nanmean(depths)
+
+        # Compute edge velocity uncertainty
+        ma_u = np.ma.MaskedArray(u, mask=np.isnan(u))
+        u_ens = np.ma.average(ma_u, axis=0, weights=cell_size)
+        ma_v = np.ma.MaskedArray(v, mask=np.isnan(v))
+        v_ens = np.ma.average(ma_v, axis=0, weights=cell_size)
+        vel = np.sqrt(u_ens**2 + v_ens**2)
+        u_vel = np.nanstd(vel, ddof=1) / np.nanmean(vel)
+
+        # Compute right edge uncertainty
+        edge_u_random = np.sqrt(u_depth_random**2 + u_vel**2 + u_dist_random**2)
+        edge_u_bias = np.sqrt(u_coef**2 + u_draft**2 + u_dist_sys)
+
+        return edge_u_random, edge_u_bias
+
     def uncertainty_right_discharge(self):
         """Computes the uncertainty of the right edge discharge using
         simulations and the rectangular law.
@@ -2251,6 +2434,7 @@ class Oursin(object):
 
         # Simulations for invalid cells and ensembles
         meas_temp = copy.deepcopy(meas)
+
         for trans_id in self.checked_idx:
             # TRDI method
             meas_temp.transects[trans_id].w_vel.interpolate_cells_trdi(
@@ -2357,7 +2541,9 @@ class Oursin(object):
         self.sim_depth_next = pd.DataFrame(columns=self.sim_depth_next.columns)
 
         # Simulations for invalid depths
+
         meas_temp = copy.deepcopy(meas)
+
         for trans_id in self.checked_idx:
             depths = getattr(
                 meas_temp.transects[trans_id].depths,
@@ -2405,7 +2591,9 @@ class Oursin(object):
         self.sim_boat_next = pd.DataFrame(columns=self.sim_boat_next.columns)
 
         # Simulations for invalid boat velocity
+        
         meas_temp = copy.deepcopy(meas)
+
         for trans_id in self.checked_idx:
             # Hold last
             boat_data = getattr(

@@ -87,7 +87,7 @@ class MovingBedTests(object):
         Corrected flow speed using BT and GPS
     """
 
-    def __init__(self):
+    def __init__(self, tr=None):
         """Initialize class and instance variables."""
 
         self.type = None
@@ -107,6 +107,7 @@ class MovingBedTests(object):
         self.use_2_correct = None
         self.selected = None
         self.messages = None
+        self.guidance = []
         self.near_bed_speed_mps = np.nan
         self.stationary_us_track = np.array([])
         self.stationary_cs_track = np.array([])
@@ -122,8 +123,9 @@ class MovingBedTests(object):
         self.gps_mb_dir = np.nan
         self.gps_mb_spd_mps = np.nan
         self.gps_flow_spd_mps = np.nan
+        self.tr = tr
 
-    def populate_data(self, source, snr_3beam_comp=False, file=None, test_type=None):
+    def populate_data(self, source, snr_3beam_comp=False, file=None, test_type=None, utc_time_offset=None, date_format=None):
         """Process and store moving-bed test data.
 
         Parameters
@@ -136,12 +138,18 @@ class MovingBedTests(object):
             Type of moving-bed test (Loop or Stationary)
         snr_3beam_comp: bool
             Indicates is 3 beam solutions should be used for invalid snr data
+        utc_time_offset: str
+            Offset from utc to achieve local time
+        date_format: str
+            Format for date
         """
 
         if source == "TRDI":
             self.mb_trdi(file, test_type)
-        else:
+        elif source == "SonTek":
             self.mb_sontek(file, test_type, snr_3beam_comp)
+        elif source == "rsq":
+            self.mb_rsq(file, test_type, utc_time_offset, date_format, snr_3beam_comp)
 
         self.process_mb_test(source)
 
@@ -163,10 +171,10 @@ class MovingBedTests(object):
         elif self.type == "Stationary":
             self.stationary_test()
         else:
-            raise ValueError("Invalid moving-bed test identifier specified.")
+            raise ValueError(self.tr("Invalid moving-bed test identifier specified."))
 
     @staticmethod
-    def qrev_mat_in(meas_struct):
+    def qrev_mat_in(meas_struct, tr=None):
         """Processes the Matlab data structure to obtain a list of
          TransectData objects containing transect data from the Matlab data structure.
 
@@ -188,12 +196,12 @@ class MovingBedTests(object):
                 # array
                 if type(meas_struct.mbTests) == np.ndarray:
                     for test in meas_struct.mbTests:
-                        temp = MovingBedTests()
+                        temp = MovingBedTests(tr=tr)
                         temp.populate_from_qrev_mat(test, meas_struct)
                         mb_tests.append(temp)
                 # If only one test, that test is not stored in an array
                 else:
-                    temp = MovingBedTests()
+                    temp = MovingBedTests(tr=tr)
                     temp.populate_from_qrev_mat(meas_struct.mbTests, meas_struct)
                     mb_tests.append(temp)
             except (TypeError, AttributeError):
@@ -237,6 +245,12 @@ class MovingBedTests(object):
             self.messages = mat_data.messages.tolist()
         else:
             self.messages = [mat_data.messages]
+        if hasattr(mat_data, "guidance"):
+            if type(mat_data.guidance) == np.ndarray:
+                self.guidance = mat_data.guidance.tolist()
+            else:
+                self.guidance = [mat_data.guidance]
+            self.guidance = []
 
         self.stationary_us_track = mat_data.stationaryUSTrack
         self.stationary_cs_track = mat_data.stationaryCSTrack
@@ -340,6 +354,12 @@ class MovingBedTests(object):
         # Create transect objects for each discharge transect
         self.transect = TransectData()
         self.transect.sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
+
+    def mb_rsq(self, test, test_type, utc_time_offset, date_format, snr_3beam_comp):
+        
+        self.type = test_type
+        self.transect = TransectData()
+        self.transect.rsq(test, utc_time_offset, date_format, snr_3beam_comp)
 
     def loop_test(self, ens_duration=None, ref=None):
         """Process loop moving bed test.
@@ -571,37 +591,36 @@ class MovingBedTests(object):
             # Low water velocity
             if self.flow_spd_mps < 0.25:
                 self.messages.append(
-                    "WARNING: The water velocity is less than recommended "
-                    "minimum for " + "this test and could cause the loop method to be "
-                    "inaccurate. "
-                    + "CONSIDER USING A STATIONARY TEST TO CHECK MOVING-BED "
-                    "CONDITIONS"
+                    self.tr("WARNING: The water velocity is less than recommended minimum for this test and could cause the loop method to be inaccurate") + ";"
                 )
+                guidance_text = self.tr("The low water velocity could result in an inaccurate result simply due to random errors. Use a stationary test.")
+                self.guidance.append(
+                    self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Warnings"
 
             # Percent invalid bottom track
             if self.percent_invalid_bt > 20:
                 self.messages.append(
-                    "ERROR: Percent invalid bottom track exceeds 20 percent. "
-                    + "THE LOOP IS NOT ACCURATE. TRY A STATIONARY MOVING-BED "
-                    "TEST."
+                    self.tr("ERROR: Percent invalid bottom track exceeds 20 percent") + ";"
                 )
+                guidance_text = self.tr("The loop test is dependent of accurate bottom track. Use a stationary moving-bed test.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Errors"
             elif self.percent_invalid_bt > 5:
                 self.messages.append(
-                    "WARNING: Percent invalid bottom track exceeds 5 percent. "
-                    + "Loop may not be accurate. PLEASE REVIEW DATA."
+                    self.tr("WARNING: Percent invalid bottom track exceeds 5 percent. Loop may not be accurate") + ";"
                 )
+                guidance_text = self.tr("The loop test is dependent of accurate bottom track. Carefully review the test. If bottom track appears to cause inaccuracies complete a stationary test.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Warnings"
 
             # More than 9 consecutive seconds of invalid BT
             if max_consect_bt_time > 9:
                 self.messages.append(
-                    "ERROR: Bottom track is invalid for more than 9 "
-                    "consecutive seconds."
-                    + "THE LOOP IS NOT ACCURATE. TRY A STATIONARY MOVING-BED "
-                    "TEST."
+                    self.tr("ERROR: Bottom track is invalid for more than 9 consecutive seconds") + ";"
                 )
+                guidance_text = self.tr("The loop test is dependent of accurate bottom track. Carefully review the test to see the invalid bottom track occurred. If the invalid data is in a location where the boat speed and direction was consistent the effect may be small. However, it is recommended to collect a stationary test.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Errors"
 
             if (
@@ -610,21 +629,18 @@ class MovingBedTests(object):
                 and np.abs(diff_dir) > uncert
             ):
                 self.messages.append(
-                    "ERROR: Difference in flow direction between out and "
-                    "back sections of "
-                    + "loop could result in a 5 percent or greater error in "
-                    "final discharge. "
-                    + "REPEAT LOOP AFTER COMPASS CAL. OR USE A STATIONARY "
-                    "MOVING-BED TEST."
+                    self.tr("ERROR: Difference in flow direction between out and back sections of loop could result in a 5 percent or greater error in final discharge") + ";"
                 )
+                guidance_text = self.tr("In addition to bottom tracking, accurate headings are required for a valid loop test. The loop shows substantial difference in water direction for the outgoing and return portions of the loop, which is indicative of invalid headings. Repeat the loop after recalibrating the compass or use a stationary test.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Errors"
 
         else:
             self.messages.append(
-                "ERROR: Loop has no valid bottom track data. "
-                + "REPEAT OR USE A STATIONARY MOVING-BED "
-                "TEST."
+                self.tr("ERROR: Loop has no valid bottom track data") + ";"
             )
+            guidance_text = self.tr("Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate.")
+            self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
             self.test_quality = "Errors"
 
         # If loop is valid then evaluate moving-bed condition
@@ -637,52 +653,63 @@ class MovingBedTests(object):
                     # flow speed
                     if self.percent_mb > 1:
                         self.messages.append(
-                            "Loop Indicates a Moving Bed -- Use GPS as "
-                            "reference. If GPS is "
-                            + "unavailable or invalid use the loop method to "
-                            "correct the " + "final discharge."
+                            self.tr("Loop Indicates a Moving Bed") + ";"
                         )
+                        guidance_text = self.tr("Use GPS as reference. If GPS is unavailable or invalid use the loop method to correct the final discharge.")
+                        self.guidance.append(
+                            self.guidance_prep(self.messages[-1], guidance_text))
                         self.moving_bed = "Yes"
                     else:
                         self.messages.append(
-                            "Moving Bed Velocity < 1% of Mean Velocity -- No "
-                            "Correction Recommended"
+                            self.tr("Moving Bed Velocity < 1% of Mean Velocity -- No Correction Recommended") + ";"
                         )
+                        guidance_text = self.tr("Use bottom track as navigation reference unless automated filters indicate substantial problems with bottom track.")
+                        self.guidance.append(
+                            self.guidance_prep(self.messages[-1], guidance_text))
                         self.moving_bed = "No"
                 else:
                     self.messages.append(
-                        "ERROR: Loop closure error not in upstream direction. "
-                        + "REPEAT LOOP or USE STATIONARY TEST"
+                        self.tr("ERROR: Loop closure error not in upstream direction") + ";"
                     )
+                    guidance_text = self.tr("Collect a valid moving-bed test either loop or stationary.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Errors"
                     self.moving_bed = "Unknown"
             else:
                 self.messages.append(
-                    "Moving-bed velocity < Minimum moving-bed velocity "
-                    "criteria " + "-- No correction recommended"
+                    self.tr("Moving-bed velocity < Minimum moving-bed velocity criteria -- No correction recommended") + ";"
                 )
+                guidance_text = self.tr("Use bottom track as navigation reference unless automated filters indicate substantial problems with bottom track.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.moving_bed = "No"
 
             # Notify of differences in results of test between BT and GPS
             if not np.isnan(self.gps_percent_mb):
                 if np.abs(self.bt_percent_mb - self.gps_percent_mb) > 2:
                     self.messages.append(
-                        "WARNING - Bottom track and GPS results differ by "
-                        "more than 2%."
+                        self.tr("WARNING - Bottom track and GPS results differ by more than 2%") + ";"
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and a the ADCP was stationary during the stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user knowledge of the test and the validation of the data.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Warnings"
 
                 if np.logical_xor(self.bt_percent_mb >= 1, self.gps_percent_mb >= 1):
                     self.messages.append(
-                        "WARNING - Bottom track and GPS results do not agree."
+                        self.tr("WARNING - Bottom track and GPS results do not agree") + ";"
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and the ADCP was stationary during a stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference, the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user's knowledge of the test and the validation of the data.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Warnings"
 
         else:
             self.messages.append(
-                "ERROR: Due to ERRORS noted above this loop is NOT VALID. "
-                + "Please consider suggestions."
+                self.tr("ERROR: Due to ERRORS noted above this loop is NOT VALID") + ";"
             )
+            guidance_text = self.tr("Collect a valid moving-bed test either loop or stationary.")
+            self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
             self.moving_bed = "Unknown"
 
     def stationary_test(self, ref=None):
@@ -819,8 +846,10 @@ class MovingBedTests(object):
             # Check duration
             if self.duration_sec < 299:
                 self.messages.append(
-                    "WARNING - Duration of stationary test is less than 5 " "minutes"
+                    self.tr("WARNING - Duration of stationary test is less than 5 minutes") + ";"
                 )
+                guidance_text = self.tr("It is recommended that the duration of the stationary moving-bed test be at least 5 minutes to allow clear delineation between random boat movement and the effects of a moving-bed condition. Review the data to validate the test or collect a test with a longer duration.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Warnings"
 
             # Check validity of mean moving-bed velocity
@@ -829,24 +858,28 @@ class MovingBedTests(object):
                 cov = mb_vel_std / mb_vel[-1]
                 if cov > 0.25 and mb_vel_std > 0.03:
                     self.messages.append(
-                        "WARNING - Moving-bed velocity may not be consistent. "
-                        + "Average maybe inaccurate."
+                        self.tr("WARNING - Moving-bed velocity may not be consistent. Average maybe inaccurate.") + ";"
                     )
+                    guidance_text = self.tr("The moving-bed velocity is not expected to be constant but will vary as pulses of sediment are transported. However, over the duration of the test an average or equilibrium value is expected. This test indicates considerable variability in the average at the end of the test. Either the duration of the test should be extended or the random movement of the boat is causing this effect and the boat needs to be stabilized.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Warnings"
 
             # Check percentage of invalid BT data
             if np.nansum(ens_duration[valid_bt_vel_up_strm]) <= 120:
                 self.messages.append(
-                    "ERROR - Total duration of valid BT data is insufficient "
-                    "for a valid test."
+                    self.tr("ERROR - Total duration of valid BT data is insufficient for a valid test.")
                 )
+                guidance_text = self.tr("The duration of the stationary moving-bed test is too short to ensure that the effects of a moving-bed condition dominate the potential random motion of the ADCP. Collect a longer duration test.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Errors"
                 self.moving_bed = "Unknown"
             elif self.percent_invalid_bt > 10:
                 self.messages.append(
-                    "WARNING - Number of ensembles with invalid bottom track "
-                    "exceeds 10%"
+                    self.tr("WARNING - Number of ensembles with invalid bottom track exceeds 10%") + ";"
                 )
+                guidance_text = self.tr("Invalid bottom track during a stationary moving-bed test can occur during the most severe sediment transport conditions. This loss of bottom track data can result in a moving-bed test result that biases the effect of the moving bed low. If there is indication of a moving-bed, the use of GPS for the navigation reference is recommended, as correction of bottom track referenced discharge by the moving-bed test results may not completely compensate for the moving-bed bias.")
+                self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Warnings"
 
             # Determine if the test indicates a moving bed
@@ -860,21 +893,28 @@ class MovingBedTests(object):
             if not np.isnan(self.gps_percent_mb):
                 if np.abs(self.bt_percent_mb - self.gps_percent_mb) > 2:
                     self.messages.append(
-                        "WARNING - Bottom track and GPS results differ by "
-                        "more than 2%."
+                        self.tr("WARNING - Bottom track and GPS results differ by more than 2%") + ";"
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and a the ADCP was stationary during the stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user knowledge of the test and the validation of the data.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Warnings"
 
                 if np.logical_xor(self.bt_percent_mb >= 1, self.gps_percent_mb >= 1):
                     self.messages.append(
-                        "WARNING - Bottom track and GPS results do not agree."
+                        self.tr("WARNING - Bottom track and GPS results do not agree") + ";"
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and the ADCP was stationary during a stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference, the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user's knowledge of the test and the validation of the data.")
+                    self.guidance.append(
+                        self.guidance_prep(self.messages[-1], guidance_text))
                     self.test_quality = "Warnings"
 
         else:
             self.messages.append(
-                "ERROR - Stationary moving-bed test has no valid bottom " "track data."
+                self.tr("ERROR - Stationary moving-bed test has no valid bottom track data") + ";"
             )
+            guidance_text = self.tr("Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate.")
+            self.guidance.append(self.guidance_prep(self.messages[-1], guidance_text))
             self.test_quality = "Errors"
             self.moving_bed = "Unknown"
             self.duration_sec = np.nansum(
@@ -1191,3 +1231,7 @@ class MovingBedTests(object):
                 for test in moving_bed_tests:
                     test.use_2_correct = False
         return moving_bed_tests
+
+    @staticmethod
+    def guidance_prep(message_text, guidance_text):
+        return message_text + "\n" + " -- " + guidance_text + "\n"

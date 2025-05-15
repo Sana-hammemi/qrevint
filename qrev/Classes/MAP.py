@@ -1,21 +1,25 @@
-# from profilehooks import profile
 import copy
-from datetime import datetime
 import math
+from datetime import datetime
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import simplekml
 import utm
+# from profilehooks import profile
 from scipy.interpolate import griddata
 from scipy.optimize.minpack import curve_fit
 from sklearn.linear_model import LinearRegression
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 from qrev import __qrev_version__
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater, sfrnd
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater, \
+    sfrnd
+
+
+# Todo add ability to specify flow direction like in AdvGraph
 
 
 class MAP(object):
@@ -57,6 +61,8 @@ class MAP(object):
         Transverse velocity of each MAP cell
     depths: np.array(float) 1D
         Depths for each MAP vertical
+    transverse_mixing_coefficient: np.array(float) 1D
+        Transverse mixing coefficient (from Jung 2019) for each MAP vertical
     direction_ens: np.array(float) 1D
         Main direction of each MAP ensemble
     borders_ens: np.array(float) 1D
@@ -123,6 +129,9 @@ class MAP(object):
         self.north_velocity = None  # Velocity component in North direction
         self.depths = None  # Depths for each MAP vertical
         self.temperature = None  # Temperature for each vertical
+        self.transverse_mixing_coefficient = (
+            None  # Transverse mixing coefficient from Jung 2019
+        )
 
         self.rssi = None  # RSSI of each MAP cell
         self.count_valid = None  # Count used values to compute each cell
@@ -426,31 +435,25 @@ class MAP(object):
     def compute_coef(self):
         """Compute straight average cross-section from edges coordinates."""
 
-        x_left = []
-        x_right = []
-        y_left = []
-        y_right = []
+        # Compute median coordinates of left and right banks
+        x_left = [arr["x_raw_coordinates"][0] for arr in self.data_transects]
+        x_right = [arr["x_raw_coordinates"][-1] for arr in self.data_transects]
+        y_left = [arr["y_raw_coordinates"][0] for arr in self.data_transects]
+        y_right = [arr["y_raw_coordinates"][-1] for arr in self.data_transects]
 
-        for transect in self.data_transects:
-            x_left.append(transect["x_raw_coordinates"][0])
-            x_right.append(transect["x_raw_coordinates"][-1])
-            y_left.append(transect["y_raw_coordinates"][0])
-            y_right.append(transect["y_raw_coordinates"][-1])
+        self._x_left = np.nanmedian(x_left)
+        self._y_left = np.nanmedian(y_left)
 
-        x_med_left = np.nanmedian(x_left)
-        y_med_left = np.nanmedian(y_left)
-
-        self.slope = (np.nanmedian(y_right) - y_med_left) / (
-            np.nanmedian(x_right) - x_med_left
+        self.slope = (np.nanmedian(y_right) - self._y_left) / (
+            np.nanmedian(x_right) - self._x_left
         )
-        self.intercept = y_med_left - self.slope * x_med_left
+        self.intercept = self._y_left - self.slope * self._x_left
 
-        self._x_left = x_med_left
-        self._y_left = y_med_left
+        self.intercept = self._y_left - self.slope * self._x_left
 
         # if LEW is > the start bank was REW. If not REW was
         # the start and velocities should be inversed.
-        if x_med_left > np.nanmedian(x_right):
+        if self._x_left > np.nanmedian(x_right):
             self._unit = -1
         else:
             self._unit = 1
@@ -458,12 +461,11 @@ class MAP(object):
     def project_transect(self):
         """Project transects on the average cross-section."""
 
-        left_x = []
-        left_y = []
         x_min = []
         x_max = []
         y_min = []
         y_max = []
+
         for transect in self.data_transects:
             # Projected x-coordinate
             transect["x_projected"] = (
@@ -479,13 +481,13 @@ class MAP(object):
                 + self.slope**2 * transect["y_raw_coordinates"]
             ) / (self.slope**2 + 1)
 
-            left_x.append(transect["x_projected"][0])
-            left_y.append(transect["y_projected"][0])
             x_min.append(np.nanmin(transect["x_projected"]))
             x_max.append(np.nanmax(transect["x_projected"]))
             y_min.append(np.nanmin(transect["y_projected"]))
             y_max.append(np.nanmax(transect["y_projected"]))
 
+        left_x = [transect["x_projected"][0] for transect in self.data_transects]
+        left_y = [transect["y_projected"][0] for transect in self.data_transects]
         left_x = np.nanmedian(left_x)
         left_y = np.nanmedian(left_y)
 
@@ -501,19 +503,25 @@ class MAP(object):
             y_distance = transect["y_projected"] - y_offset
             transect["acs_distance"] = np.sqrt(x_distance**2 + y_distance**2)
 
+    @staticmethod
+    def compute_max_min_distance(transects):
+        max_dist = []
+        min_dist = []
+
+        for transect in transects:
+            max_dist.append(np.nanmax(transect["acs_distance"]))
+            min_dist.append(np.nanmin(transect["acs_distance"]))
+
+        return max_dist, min_dist
+
     def translated_transects(self):
         """Compare bathymetry and translate transects on average cross-section if needed."""
 
         # Use the transect with the maximum acs_distance as the reference.
         transect_length = []
-        max_tr = []
-        min_tr = []
-        for transect in self.data_transects:
-            max_dist = np.nanmax(transect["acs_distance"])
-            min_dist = np.nanmin(transect["acs_distance"])
-            max_tr.append(max_dist)
-            min_tr.append(min_dist)
-            transect_length.append(max_dist - min_dist)
+        max_tr, min_tr = self.compute_max_min_distance(self.data_transects)
+        transect_length = [x - y for x, y in zip(max_tr, min_tr)]
+
         id_max = np.argmax(transect_length)
 
         # Compute grid
@@ -578,13 +586,7 @@ class MAP(object):
             transect["acs_distance"] -= min_dist
 
     def compute_auto_node_size(self):
-        """Computes auto node sizes.
-
-        Parameters:
-            transect: TransectData
-                First checked transect of the measurement
-
-        """
+        """Computes auto node sizes."""
 
         max_transect_horz = []
         max_transect_vert = []
@@ -616,11 +618,7 @@ class MAP(object):
         """
 
         # Mesh width
-        max_dist = []
-        min_dist = []
-        for transect in self.data_transects:
-            max_dist.append(np.nanmax(transect["acs_distance"]))
-            min_dist.append(np.nanmin(transect["acs_distance"]))
+        max_dist, min_dist = self.compute_max_min_distance(self.data_transects)
         max_acs_distance = np.nanmax(max_dist)
         min_acs_distance = np.nanmin(min_dist)
         acs_total = max_acs_distance - min_acs_distance
@@ -651,9 +649,7 @@ class MAP(object):
         )
 
         # Mesh height
-        all_depth = np.array([])
-        for transect in self.data_transects:
-            all_depth = np.hstack((all_depth, transect["depths"]))
+        max_depth = np.nanmax([np.nanmax(arr["depths"]) for arr in self.data_transects])
 
         # Vertical node
         node_vert = self.auto_node_vert
@@ -666,7 +662,7 @@ class MAP(object):
         self.main_depth_layers = np.round(
             np.arange(
                 0,
-                np.nanmax(all_depth) + node_vert,
+                max_depth + node_vert,
                 node_vert,
             ).tolist(),
             3,
@@ -1034,10 +1030,10 @@ class MAP(object):
         # idx_top = np.nanargmin(valid_cell_centers, axis=0)
         # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
 
-        idx_top = np.argmin(
-            np.nan_to_num(valid_cell_centers, nan=float('inf')), axis=0)
+        idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float("inf")), axis=0)
         idx_bot = np.argmax(
-            np.nan_to_num(valid_cell_centers, nan=float('-inf')), axis=0)
+            np.nan_to_num(valid_cell_centers, nan=float("-inf")), axis=0
+        )
 
         # Preallocate variables
         n_ensembles = valid_data.shape[1]
@@ -1619,6 +1615,14 @@ class MAP(object):
             edge_secondary_velocity[is_nan] = np.nan
             edge_vertical_velocity[is_nan] = np.nan
 
+            # Get depth layers on the center of the ensemble
+            depth = (border_depths[1:] + border_depths[:-1]) / 2
+            edge_layers = np.tile(self.main_depth_layers[:, np.newaxis], depth.shape)
+            for i in range(edge_layers.shape[1]):
+                invalid_layer = edge_layers[:, i] > depth[i]
+                edge_layers[invalid_layer, i] = np.nan
+                edge_layers[np.argmax(invalid_layer), i] = depth[i]
+
         if edge == "right":
             self.primary_velocity = np.c_[
                 self.primary_velocity, edge_primary_velocity[:, ::-1]
@@ -1642,6 +1646,9 @@ class MAP(object):
             self.depths = np.append(self.depths, depth[::-1])
             self.depth_cells_center = np.c_[
                 self.depth_cells_center, mid_cells_y[:, ::-1]
+            ]
+            self.depth_cells_layers = np.c_[
+                self.depth_cells_layers, edge_layers[:, ::-1]
             ]
 
             nan_array = np.tile(np.nan, len(depth))
@@ -1685,6 +1692,7 @@ class MAP(object):
             depth = (border_depths[1:] + border_depths[:-1]) / 2
             self.depths = np.insert(self.depths, 0, depth)
             self.depth_cells_center = np.c_[mid_cells_y, self.depth_cells_center]
+            self.depth_cells_layers = np.c_[edge_layers, self.depth_cells_layers]
 
             nan_array = np.tile(np.nan, len(depth))
             self.temperature = np.insert(self.temperature, 0, nan_array)
@@ -1772,7 +1780,138 @@ class MAP(object):
 
         return lat[1:], lon[1:]
 
-    def create_map_df(self, units, manufacturer=None):
+    def compute_transverse_mixing_coef(self, karman=0.41, manning=0.026):
+        """Compute Transverse Mixing Coefficient from Jung 2019 (DOI: 10.1061/(ASCE)HY.1943-7900.0001638)
+
+        Parameters:
+            karman: float
+                Von Karman constant usually taken as 0.41
+            manning: float
+                 Manning’s roughness coefficient of the study area
+        """
+        # Constants
+        g = 9.807
+
+        # Average transverse velocity on ensembles
+        tranverse_velocity_deviation = np.subtract(
+            self.transverse_velocity, np.nanmean(self.transverse_velocity, axis=0)
+        )
+
+        mean_streamwise_velocity = np.nanmean(self.streamwise_velocity)
+        distance_ens = (self.borders_ens[1:] + self.borders_ens[:-1]) / 2
+        depth_ens = copy.deepcopy(self.depths)
+
+        # Add left edge
+        _, left_coef = self.left_geometry
+        left_distance = self.borders_ens[0]
+        if left_coef == 0.707:
+            distance_ens = np.insert(distance_ens, 0, [left_distance, left_distance])
+            depth_ens = np.insert(depth_ens, 0, [0, depth_ens[0]])
+        else:
+            distance_ens = np.insert(distance_ens, 0, left_distance)
+            depth_ens = np.insert(depth_ens, 0, 0)
+
+        # Add left edge
+        _, right_coef = self.right_geometry
+        right_distance = self.borders_ens[-1]
+        if left_coef == 0.707:
+            distance_ens = np.append(distance_ens, [right_distance, right_distance])
+            depth_ens = np.append(depth_ens, [depth_ens[-1], 0])
+        else:
+            distance_ens = np.append(distance_ens, right_distance)
+            depth_ens = np.append(depth_ens, 0)
+
+        # Compute area following trapezoidal method
+        area = np.abs(np.trapz(distance_ens, depth_ens))
+
+        # Compute perimeter
+        perimeter = self.compute_perimeter(distance_ens, depth_ens)
+
+        # Compute hydraulic radius
+        hydraulic_radius = area / perimeter
+
+        # Compute shear velocity
+        shear_velocity = np.sqrt(
+            g * (manning * mean_streamwise_velocity) ** 2 * hydraulic_radius ** (-1 / 3)
+        )
+
+        # Compute distance from streambed
+        z = self.depths - self.depth_cells_center
+        z[z < 0] = np.nan
+
+        # Compute vertical mixing coefficient
+        vertical_mixing_coefficient = (
+            karman * z * (1 - z / self.depths) * shear_velocity
+        )
+
+        # Compute transverse mixing coefficient
+        depths = np.where(self.depths == 0, np.nan, self.depths)
+        cells_height = self.depth_cells_layers[1:, :] - self.depth_cells_layers[:-1, :]
+        transverse_mixing_coefficient = np.tile(np.nan, self.depths.shape[0])
+
+        # Compute among ensembles
+        for i in range(len(self.depths)):
+            heights = cells_height[:, i]
+            valid_cells = np.count_nonzero(~np.isnan(z[:, i]))
+            total_ens = 0
+            # Run among depth layers from current ensemble from the bottom
+            for j in range(valid_cells):
+                idx_j = valid_cells - j - 1
+                total_mixing_coef = 0
+
+                # Run among depth layers until current depth layer from the bottom
+                for k in range(j + 1):
+                    idx_k = valid_cells - k - 1
+                    z_k = heights[idx_k]
+                    total_transverse = 0
+
+                    # Run among depth layers until previously selected depth layer
+                    for l in range(k + 1):
+                        idx_l = valid_cells - l - 1
+                        z_l = heights[idx_l]
+                        total_transverse += z_l * tranverse_velocity_deviation[idx_l, i]
+                    total_mixing_coef += (
+                        z_k * total_transverse / vertical_mixing_coefficient[idx_k, i]
+                    )
+
+                total_ens += (
+                    heights[idx_j]
+                    * tranverse_velocity_deviation[idx_j, i]
+                    * total_mixing_coef
+                )
+
+            transverse_mixing_coefficient[i] = (-1 / depths[i]) * total_ens
+
+        self.transverse_mixing_coefficient = copy.deepcopy(
+            transverse_mixing_coefficient
+        )
+
+    @staticmethod
+    def compute_perimeter(distance, depths):
+        """Compute perimeter for MAP averaged profile
+
+        Parameters:
+            distance: array
+                Array of distance from the left bank for each vertical
+            depths: array
+                 Array of depth for each vertical
+
+        Return:
+            perimeter: float
+                Value of the perimeter
+
+        """
+        points = np.vstack((distance, depths)).T
+        perimeter = 0
+        for i in range(len(points)):
+            x1, y1 = points[i]  # x : abscisse, y : hauteur d’eau
+            x2, y2 = points[(i + 1) % len(points)]
+            d = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            perimeter += d
+
+        return perimeter
+
+    def create_map_df(self, units, manufacturer=None, verticals=False):
         """Create a pandas dataframe of data computed by MAP.
 
         Parameters:
@@ -1795,45 +1934,91 @@ class MAP(object):
             intensity_label = "Intensity"
         row, col = self.primary_velocity.shape
         ens_mid = (self.borders_ens[1:] + self.borders_ens[:-1]) * 0.5
-        data = {
-            "Vertical": np.repeat(np.arange(col), row),
-            "Distance (Left bank) "
-            + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
-            "Distance X " + units["label_L"]: np.repeat(distance_x, row) * units["L"],
-            "Distance Y " + units["label_L"]: np.repeat(distance_y, row) * units["L"],
-            "Latitude": np.repeat(lat, row),
-            "Longitude": np.repeat(lon, row),
-            "Primary velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
-            "Secondary velocity "
-            + units["label_V"]: self.secondary_velocity.ravel(order="F") * units["V"],
-            "Streamwise velocity "
-            + units["label_V"]: self.streamwise_velocity.ravel(order="F") * units["V"],
-            "Transverse velocity (Left to Right) "
-            + units["label_V"]: self.transverse_velocity.ravel(order="F") * units["V"],
-            "Vertical velocity "
-            + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
-            "Depth " + units["label_L"]: np.repeat(self.depths, row) * units["L"],
-            "Cells discharge "
-            + units["label_Q"]: self.cells_discharge.ravel(order="F") * units["Q"],
-            "Cells area "
-            + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
-            "Distance cells center "
-            + units["label_L"]: self.distance_cells_center.ravel(order="F")
-            * units["L"],
-            "Depth cells center "
-            + units["label_L"]: self.depth_cells_center.ravel(order="F") * units["L"],
-            "Temperature": np.repeat(self.temperature, row),
-            intensity_label: self.rssi.ravel(order="F"),
-            "Nb. of Transects averaged": self.count_valid.ravel(order="F"),
-        }
+
+        direction_section = np.arctan2(self.slope, 1)
+        u = self.streamwise_velocity * np.sin(
+            direction_section
+        ) + self.transverse_velocity * np.cos(direction_section)
+        v = self.transverse_velocity * np.sin(
+            direction_section
+        ) - self.streamwise_velocity * np.cos(direction_section)
+
+        east_velocity = u * -1 * self._unit
+        north_velocity = v * -1 * self._unit
+
+        magnitude = np.sqrt(north_velocity**2 + east_velocity**2) * units["V"]
+
+        if not verticals:
+            data = {
+                "Vertical": np.repeat(np.arange(col), row),
+                "Distance (Left bank) "
+                + units["label_L"]: np.repeat(ens_mid, row) * units["L"],
+                "Distance X "
+                + units["label_L"]: np.repeat(distance_x, row) * units["L"],
+                "Distance Y "
+                + units["label_L"]: np.repeat(distance_y, row) * units["L"],
+                "Latitude": np.repeat(lat, row),
+                "Longitude": np.repeat(lon, row),
+                "Primary velocity "
+                + units["label_V"]: self.primary_velocity.ravel(order="F") * units["V"],
+                "Secondary velocity "
+                + units["label_V"]: self.secondary_velocity.ravel(order="F")
+                * units["V"],
+                "Streamwise velocity "
+                + units["label_V"]: self.streamwise_velocity.ravel(order="F")
+                * units["V"],
+                "Transverse velocity (Left to Right) "
+                + units["label_V"]: self.transverse_velocity.ravel(order="F")
+                * units["V"],
+                "Vertical velocity "
+                + units["label_V"]: self.vertical_velocity.ravel(order="F")
+                * units["V"],
+                "North velocity "
+                + units["label_V"]: north_velocity.ravel(order="F") * units["V"],
+                "East velocity "
+                + units["label_V"]: east_velocity.ravel(order="F") * units["V"],
+                "Magnitude" + units["label_V"]: magnitude.ravel(order="F") * units["V"],
+                "Depth " + units["label_L"]: np.repeat(self.depths, row) * units["L"],
+                "Cells discharge "
+                + units["label_Q"]: self.cells_discharge.ravel(order="F") * units["Q"],
+                "Cells area "
+                + units["label_A"]: self.cells_area.ravel(order="F") * units["A"],
+                "Distance cells center "
+                + units["label_L"]: self.distance_cells_center.ravel(order="F")
+                * units["L"],
+                "Depth cells center "
+                + units["label_L"]: self.depth_cells_center.ravel(order="F")
+                * units["L"],
+                "Temperature": np.repeat(self.temperature, row),
+                intensity_label: self.rssi.ravel(order="F"),
+                "Nb. of Transects averaged": self.count_valid.ravel(order="F"),
+            }
+        else:
+            data = {
+                "Vertical": np.arange(col),
+                "Distance (Left bank) " + units["label_L"]: ens_mid * units["L"],
+                "Distance X " + units["label_L"]: distance_x * units["L"],
+                "Distance Y " + units["label_L"]: distance_y * units["L"],
+                "Latitude": lat,
+                "Longitude": lon,
+                "Depth " + units["label_L"]: self.depths * units["L"],
+            }
 
         df = pd.DataFrame(data)
-        df = df[df["Cells discharge " + units["label_Q"]].notna()]
+        # df = df[df["Cells discharge " + units["label_Q"]].notna()]
+        if "Cells discharge " + units["label_Q"] in df.columns:
+            df = df[df["Cells discharge " + units["label_Q"]].notna()]
 
         return df
 
-    def export_csv(self, path, units, delimiter="comma delimited", manufacturer=None):
+    def export_csv(
+        self,
+        path,
+        units,
+        delimiter="comma delimited",
+        manufacturer=None,
+        verticals=False,
+    ):
         """Exports map data to ascii file with specified delimiter.
 
         Parameters
@@ -1853,7 +2038,9 @@ class MAP(object):
         with open(path, "w") as file:
             file.writelines(header)
 
-        df = self.create_map_df(units=units, manufacturer=manufacturer)
+        df = self.create_map_df(
+            units=units, manufacturer=manufacturer, verticals=verticals
+        )
 
         if "comma" in delimiter:
             sep = ","
@@ -1864,7 +2051,83 @@ class MAP(object):
 
         df.to_csv(path, sep=sep, index=False, mode="a", header=True)
 
-    def export_kml(self, meas, path, palette='jet', arrow_scale=None, v_min=None, v_max=None):
+    def export_shiptrack_csv(
+        self,
+        path,
+        units,
+        delimiter="comma delimited",
+    ):
+        """Exports shiptrack data to ascii file with specified delimiter.
+
+        Parameters
+        ----------
+            path: str
+                path to exported file
+            units: dict
+                dictionary of unit labels and conversions
+            delimiter: str
+                type of delimiter to use
+
+        """
+
+        if self.streamwise_velocity is not None:
+            direction_section = np.arctan2(self.slope, 1)
+
+            u = self.streamwise_velocity * np.sin(
+                direction_section
+            ) + self.transverse_velocity * np.cos(direction_section)
+            v = self.transverse_velocity * np.sin(
+                direction_section
+            ) - self.streamwise_velocity * np.cos(direction_section)
+
+            u = u * -1 * self._unit
+            v = v * -1 * self._unit
+
+            u_mean = np.nanmean(u, axis=0) * units["V"]
+            v_mean = np.nanmean(v, axis=0) * units["V"]
+
+            x = (self.x[1:] + self.x[:-1]) / 2
+            y = (self.y[1:] + self.y[:-1]) / 2
+
+            df = pd.DataFrame({"x": x, "y": y, "u": u_mean, "v": v_mean})
+
+        else:
+            return
+
+        # write file header
+        date = datetime.today().strftime("%d-%b-%Y")
+
+        # Set X/Y meta data for header
+        if self.gps_zone_letter is None:
+            xy_str = "# X/Y: Distance in " + units["label_L"]
+        else:
+            xy_str = "# X/Y: UTM North coordinates"
+
+        # set velocity meta data for header
+        vel_str = "# Velocity: " + units["label_V"]
+
+        header = [
+            "# " + __qrev_version__ + "\n",
+            "# Exported " + date + "\n" + xy_str + "\n" + vel_str + "\n",
+        ]
+
+        with open(path, "w") as file:
+            file.writelines(header)
+
+        # set the delimiter
+        if "comma" in delimiter:
+            sep = ","
+        elif "colon" in delimiter:
+            sep = ";"
+        else:
+            sep = " "
+
+        # write dataframe to file
+        df.to_csv(path, sep=sep, index=False, mode="a", header=True)
+
+    def export_kml(
+        self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None
+    ):
         """Create KML file for MAP.
 
         Parameters
@@ -1914,7 +2177,9 @@ class MAP(object):
         lat_vec, lon_vec = utm.to_latlon(x_kml, y_kml, zone_number, zone_letter)
 
         if arrow_scale is None or v_min is None or v_max is None:
-            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(lat=lat, lon=lon)
+            u_mean, v_mean, vel_norm, arrow_scale, v_max, v_min = self.auto_arrow(
+                lat=lat, lon=lon
+            )
         else:
             u_mean, v_mean, vel_norm = self.auto_arrow()
 
@@ -1923,8 +2188,7 @@ class MAP(object):
 
         # Get color
         cmap = plt.get_cmap(palette)
-        norm = mcolors.Normalize(vmin=v_min,
-                                 vmax=v_max)
+        norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
         colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
 
         # Mean velocity on each ensemble
@@ -1933,8 +2197,15 @@ class MAP(object):
 
         for i in range(len(u_mean)):
             r, g, b, a = colors[i]
-            self.plot_arrow(w_folder, (lon_vec[i], lat_vec[i]), u_mean[i], v_mean[i], "Water Velocity " + str(i),
-                            arrow_scale, color=simplekml.Color.rgb(r, g, b, a))
+            self.plot_arrow(
+                w_folder,
+                (lon_vec[i], lat_vec[i]),
+                u_mean[i],
+                v_mean[i],
+                "Water Velocity " + str(i),
+                arrow_scale,
+                color=simplekml.Color.rgb(r, g, b, a),
+            )
 
         kml.save(path)
 
@@ -1981,7 +2252,7 @@ class MAP(object):
         v_mean = np.nanmean(v, axis=0)
 
         # Define length
-        vel_norm = np.sqrt(u_mean ** 2 + v_mean ** 2)
+        vel_norm = np.sqrt(u_mean**2 + v_mean**2)
 
         if lat is None or lon is None:
             if meas is not None:
@@ -1999,15 +2270,21 @@ class MAP(object):
 
         # Default arrow length : half the width of the section
         arrow_length = 0.5 * np.sqrt((lat[-1] - lat[0]) ** 2 + (lon[-1] - lon[0]) ** 2)
-        start_point = utm.from_latlon(lat[0], lon[0],
-                                      force_zone_number=zone_number,
-                                      force_zone_letter=zone_letter)
-        end_point = utm.from_latlon(lat[0] + arrow_length, lon[0],
-                                    force_zone_number=zone_number,
-                                    force_zone_letter=zone_letter)
+        start_point = utm.from_latlon(
+            lat[0], lon[0], force_zone_number=zone_number, force_zone_letter=zone_letter
+        )
+        end_point = utm.from_latlon(
+            lat[0] + arrow_length,
+            lon[0],
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
         arrow_length_m = sfrnd(
-            np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2),
-            2
+            np.sqrt(
+                (end_point[0] - start_point[0]) ** 2
+                + (end_point[1] - start_point[1]) ** 2
+            ),
+            2,
         )
 
         v_min = 0
@@ -2034,9 +2311,10 @@ class MAP(object):
         color: string
             Kml Hex color of the arrow
         """
-        distance = arrow_scale * np.sqrt(ve ** 2 + vn ** 2)
-        coord_end = self.compute_new_coordinates(start_point=coord_start, distance=distance,
-                                                 bearing=math.atan2(ve, vn))
+        distance = arrow_scale * np.sqrt(ve**2 + vn**2)
+        coord_end = self.compute_new_coordinates(
+            start_point=coord_start, distance=distance, bearing=math.atan2(ve, vn)
+        )
 
         # Creation of the LineString tag for the arrow line
         line = folder.newlinestring(name=name, coords=[coord_start, coord_end])
@@ -2044,7 +2322,9 @@ class MAP(object):
 
         # Creating the triangle at the tip of the arrow
         arrow_polygon = folder.newpolygon(name=name)
-        arrow_coordinates_base = self.compute_arrow_coordinates_base(coord_start, coord_end, ve, vn)
+        arrow_coordinates_base = self.compute_arrow_coordinates_base(
+            coord_start, coord_end, ve, vn
+        )
         arrow_polygon.outerboundaryis = arrow_coordinates_base
         arrow_polygon.style.linestyle.width = 2
 
@@ -2078,17 +2358,22 @@ class MAP(object):
         arrow_angle = math.atan2(vy, vx)
 
         # Coordinates of the arrowhead
-        x_base, y_base = (0.2 * coord_start[0] + 0.8 * coord_end[0], 0.2 * coord_start[1] + 0.8 * coord_end[1])
+        x_base, y_base = (
+            0.2 * coord_start[0] + 0.8 * coord_end[0],
+            0.2 * coord_start[1] + 0.8 * coord_end[1],
+        )
 
-        head_distance = np.sqrt((coord_end[0] - x_base) ** 2 + (coord_end[1] - y_base) ** 2)
+        head_distance = np.sqrt(
+            (coord_end[0] - x_base) ** 2 + (coord_end[1] - y_base) ** 2
+        )
         head_size = head_distance * math.cos(math.radians(60))
         base_point2 = (
             x_base - head_size * math.sin(arrow_angle),
-            y_base + head_size * math.cos(arrow_angle)
+            y_base + head_size * math.cos(arrow_angle),
         )
         base_point3 = (
             x_base + head_size * math.sin(arrow_angle),
-            y_base - head_size * math.cos(arrow_angle)
+            y_base - head_size * math.cos(arrow_angle),
         )
 
         # Coordinates of the points forming the arrowhead
@@ -2118,9 +2403,13 @@ class MAP(object):
         earth_radius = 6371000
         lat1, lon1 = math.radians(start_point[1]), math.radians(start_point[0])
         d_over_earth_radius = distance / earth_radius
-        lat2 = math.asin(math.sin(lat1) * math.cos(d_over_earth_radius) +
-                         math.cos(lat1) * math.sin(d_over_earth_radius) * math.cos(bearing))
+        lat2 = math.asin(
+            math.sin(lat1) * math.cos(d_over_earth_radius)
+            + math.cos(lat1) * math.sin(d_over_earth_radius) * math.cos(bearing)
+        )
 
-        lon2 = lon1 + math.atan2(math.sin(bearing) * math.sin(d_over_earth_radius) * math.cos(lat1),
-                                 math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2))
+        lon2 = lon1 + math.atan2(
+            math.sin(bearing) * math.sin(d_over_earth_radius) * math.cos(lat1),
+            math.cos(d_over_earth_radius) - math.sin(lat1) * math.sin(lat2),
+        )
         return math.degrees(lon2), math.degrees(lat2)

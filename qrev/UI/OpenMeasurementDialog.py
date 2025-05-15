@@ -54,7 +54,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
             self.tr("Open File"),
             folder,
             self.tr(
-                "All (*.mat *.mmt);;SonTek Matlab File (*.mat);;"
+                "All (*.mat *.mmt *.rsqmb);;SonTek Matlab File (*.mat);; SonTek RSQ (*.rsqmb);;"
                 "TRDI mmt File (*.mmt);;"
                 "QRev File (*_QRev.mat)"
             ),
@@ -107,6 +107,11 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
 
                 if checked_transect_dialog == QtWidgets.QMessageBox.Yes:
                     self.checked = True
+            
+            elif file_extension == ".rsqmb":
+                self.type = "RSQ"
+                if type(file_name) != str:
+                    self.popup_message("Only one RSQ file can be loaded.")
 
             # SonTek, Nortek, or QRev file
             else:

@@ -523,7 +523,6 @@ def sfrnd(n, sig: int = 3):
     #     n_sn = str(n_sn_temp)
     return sigfig_round(n, sig)
 
-
 def rotate_coordinates(x, y, angle_d):
     xr = x * cosd(angle_d) + y * sind(angle_d)
     yr = -x * sind(angle_d) + y * cosd(angle_d)
@@ -538,3 +537,21 @@ def dateformat (input_str):
         else:
             date_format = date_format + chr
     return date_format
+
+def deg_min_2_deg(angle_deg_min):
+    """Converts a float defined as ddmm.mmmmmmmm to dd.ddddddddd
+
+    Parameters
+    ----------
+    angle_deg_min: float
+        Angle in ddmm.mmmmm format
+
+    Returns
+    angle_deg: float
+        Angle in dd.ddddd format
+    """
+
+    deg_min = np.divmod(angle_deg_min, 100)
+    angle_deg = deg_min[0] + deg_min[1] / 60
+    
+    return angle_deg

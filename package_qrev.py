@@ -4,12 +4,22 @@ import click
 import pyinstaller_versionfile
 import PyInstaller.__main__
 import shutil
+import subprocess
 
 from qrev import __version__, __app__, __company__
 
-# before running, if updates the docs have occurred, user should through a
-# terminal activate the QRev env, navigate to the docs folder, type ./make html
+# Build Sphinx documentation
+print("Building Sphinx documentation...")
+docs_dir = os.path.join(os.getcwd(), 'docs')
 
+if os.name == 'nt':
+    make_cmd = os.path.join(docs_dir, "make.bat")
+else:
+    make_cmd = "make"
+
+subprocess.run([make_cmd, "html"], cwd=docs_dir, check=True)
+
+print("Sphinx documentation built successfully.")
 print("Checking if package exits...")
 qrev_package = __app__ + __version__.replace(".", "")
 qrev_dir = os.path.join(os.getcwd(), "dist", qrev_package)
@@ -29,7 +39,7 @@ os.mkdir(qrev_dir)
 print("Updating version information")
 pyinstaller_versionfile.create_versionfile(
     output_file="file_version_info.txt",
-    version=__version__ + ".0.0",
+    version=__version__ + ".0",
     company_name=__company__,
     file_description="",
     internal_name=__app__,

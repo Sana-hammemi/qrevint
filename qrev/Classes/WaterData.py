@@ -3,7 +3,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
-from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less
+from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less, rotate_coordinates
 from qrev.MiscLibs.robust_loess import rloess
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
 
@@ -237,6 +237,7 @@ class WaterData(object):
         use_measurement_thresholds=False,
         snr_3beam_comp=True,
         excluded_dist_in=0,
+        source=None
     ):
         """Populates the variables with input, computed, or default values.
 
@@ -383,15 +384,6 @@ class WaterData(object):
         self.water_mode = wm_in
         self.excluded_dist_m = excluded_dist_in
         self.orig_excluded_dist_m = excluded_dist_in
-
-        # In some rare situations the blank is empty so it is set to the
-        # excluded_dist_in
-        try:
-            blank_in = float(blank_in)
-            self.blanking_distance_m = blank_in
-        except ValueError:
-            self.blanking_distance_m = excluded_dist_in
-
         self.cells_above_sl = cells_above_sl_in
         self.cells_above_sl_bt = cells_above_sl_in
         self.sl_cutoff_percent = sl_cutoff_per_in
@@ -517,6 +509,12 @@ class WaterData(object):
                 self.v_processed_mps = self.v_processed_mps.reshape(
                     1, self.v_processed_mps.shape[0]
                 )
+                if hasattr(transect.wVel, "w_processed_mps"):
+                    self.w_processed_mps = transect.wVel.w_processed_mps
+                    self.w_processed_mps = self.w_processed_mps.reshape(1,
+                        self.w_processed_mps.shape[0])
+                else:
+                    self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
                 self.w_mps = transect.wVel.w_mps
                 self.w_mps = self.w_mps.reshape((1, self.w_mps.shape[0]))
                 self.d_mps = transect.wVel.d_mps
@@ -585,6 +583,12 @@ class WaterData(object):
                 self.v_processed_mps = self.v_processed_mps.reshape(
                     self.v_processed_mps.shape[0], 1
                 )
+                if hasattr(transect.wVel, "w_processed_mps"):
+                    self.w_processed_mps = transect.wVel.w_processed_mps
+                    self.w_processed_mps = self.w_processed_mps.reshape(1,
+                        self.w_processed_mps.shape[0], 1)
+                else:
+                    self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
                 self.w_mps = transect.wVel.w_mps
                 self.w_mps = self.w_mps.reshape(self.w_mps.shape[0], 1)
                 self.d_mps = transect.wVel.d_mps
@@ -658,6 +662,10 @@ class WaterData(object):
             self.v_mps = transect.wVel.v_mps
             self.u_processed_mps = transect.wVel.uProcessed_mps
             self.v_processed_mps = transect.wVel.vProcessed_mps
+            if hasattr(transect.wVel, "w_processed_mps"):
+                self.w_processed_mps = transect.wVel.w_processed_mps
+            else:
+                self.w_processed_mps = np.full(self.u_processed_mps.shape, np.nan)
             self.w_mps = transect.wVel.w_mps
             self.d_mps = transect.wVel.d_mps
             self.snr_rng = transect.wVel.snrRng
@@ -785,211 +793,148 @@ class WaterData(object):
         else:
             o_coord_sys = self.orig_coord_sys.strip()
 
+        # Check for presence of snr_beam_velocities. snr_beam_velocities will be populated
+        # if the option to use 3-beam solutions for invalid ensembles due to snr filter
+        # is requested. Substituting the snr_beam_velocities allows the velocities to
+        # be recomputed without modifying the original raw data.
         if self.snr_beam_velocities is None:
             data = self.raw_vel_mps
         else:
             data = self.snr_beam_velocities
             o_coord_sys = "Beam"
 
-        orig_sys = None
-        new_sys = None
+        # Assign a value to the new coordinate system
+        new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys)
+        orig_sys_code = adcp.get_coordinate_system_code(coord_sys= o_coord_sys)
 
-        if o_coord_sys != new_coord_sys:
-            # Assign the transformation matrix and retrieve the sensor data
-            t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
-            t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
 
-            p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
-            r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
-            h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
+        if new_sys_code - orig_sys_code > 0:
+            # Transform coordinates to a higher order
 
-            # Modify the transformation matrix and heading, pitch
-            # and roll values based on the original coordinate
-            # system so that only the needed values ar used in
-            # computing the new coordinate system.
-            if o_coord_sys.strip() == "Beam":
-                orig_sys = 1
-            elif o_coord_sys.strip() == "Inst":
-                orig_sys = 2
-            elif o_coord_sys.strip() == "Ship":
-                orig_sys = 3
-                p = np.zeros(h.shape)
-                r = np.zeros(h.shape)
-            elif o_coord_sys.strip() == "Earth":
-                orig_sys = 4
+            h, p, r = sensors.get_hpr()
+            n_ens = self.raw_vel_mps.shape[2]
 
-            # Assign a value to the new coordinate system
-            if new_coord_sys.strip() == "Beam":
-                new_sys = 1
-            elif new_coord_sys.strip() == "Inst":
-                new_sys = 2
-            elif new_coord_sys.strip() == "Ship":
-                new_sys = 3
-            elif new_coord_sys.strip() == "Earth":
-                new_sys = 4
-
-            # Check to ensure the new coordinate system is a higher order than
-            # the original system
-            if new_sys - orig_sys > 0:
-                # Compute trig function for heaing, pitch and roll
-                ch = np.cos(np.deg2rad(h))
-                sh = np.sin(np.deg2rad(h))
-                cp = np.cos(np.deg2rad(p))
-                sp = np.sin(np.deg2rad(p))
-                cr = np.cos(np.deg2rad(r))
-                sr = np.sin(np.deg2rad(r))
-
-                n_ens = self.raw_vel_mps.shape[2]
-
+            if o_coord_sys == "Beam":
+                # Transform beam coordinates to new specified coordinates
                 for ii in range(n_ens):
-                    # Compute matrix for heading, pitch, and roll
-                    hpr_matrix = np.array(
-                        [
-                            [
-                                ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                                (sh[ii] * cp[ii]),
-                                ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                            ],
-                            [
-                                (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                                ch[ii] * cp[ii],
-                                (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                            ],
-                            [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                        ]
+                    transformation_matrix = adcp.get_transformation_matrix(
+                        self.frequency[ii])
+                    vel_beams = np.copy(data[:, :, ii])
+
+                    # Adjust beam velocities for 3 beam solution, if necessary
+                    col_idx = np.where(np.sum(np.isnan(vel_beams), axis=0) == 1)[0]
+                    if len(col_idx) > 0:
+                        for i3 in range(len(col_idx)):
+                            # Id invalid beam
+                            vel_3_beam = vel_beams[:, col_idx[i3]]
+                            idx_3_beam = np.where(np.isnan(vel_3_beam))[0]
+
+                            adcp.adjust_for_3_beam_solution(
+                                transformation_matrix=transformation_matrix,
+                                beam_velocities=vel_3_beam,
+                                idx_3_beam=idx_3_beam
+                            )
+                    # Compute instrument coordinates
+                    inst_coordinates = adcp.compute_inst_coordinates(
+                        transformation_matrix=transformation_matrix,
+                        beam_velocities=vel_beams)
+
+                    # Set error velocity to nan for 3-beam solutions
+                    if len(col_idx) > 0:
+                        inst_coordinates[3, col_idx] = np.nan
+
+                    # Compute new coordinates
+                    (
+                        self.u_mps[:, ii],
+                        self.v_mps[:, ii],
+                        self.w_mps[:, ii],
+                     self.d_mps[:, ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
                     )
 
-                    # Transform beam coordinates
-                    if o_coord_sys == "Beam":
-                        # Determine frequency index for transformation
-                        if len(t_matrix.shape) > 2:
-                            idx_freq = np.where(t_matrix_freq == self.frequency[ii])
-                            t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
-                        else:
-                            t_mult = np.copy(t_matrix)
+            elif o_coord_sys == "Inst":
+                # Transform from instrument coordinates
+                for ii in range(n_ens):
+                    inst_coordinates = np.copy(data[:, :, ii])
 
-                        # Get velocity data
-                        vel_beams = np.copy(data[:, :, ii])
-
-                        # Apply transformation matrix for 4 beam solutions
-                        temp_t = t_mult.dot(vel_beams)
-
-                        # Apply hpr_matrix
-                        temp_thpr = hpr_matrix.dot(temp_t[:3])
-                        temp_thpr = np.vstack([temp_thpr, temp_t[3]])
-
-                        # Check for invalid beams
-                        invalid_idx = np.isnan(vel_beams)
-
-                        # Identify rows requiring 3 beam solutions
-                        n_invalid_col = np.sum(invalid_idx, axis=0)
-                        col_idx = np.where(n_invalid_col == 1)[0]
-
-                        # Compute 3 beam solution, if necessary
-                        if len(col_idx) > 0:
-                            for i3 in range(len(col_idx)):
-                                # Id invalid beam
-                                vel_3_beam = vel_beams[:, col_idx[i3]]
-                                idx_3_beam = np.where(np.isnan(vel_3_beam))[0]
-
-                                # 3 beam solution for non-RiverRay
-                                vel_3_beam_zero = vel_3_beam
-                                vel_3_beam_zero[np.isnan(vel_3_beam)] = 0
-                                vel_error = t_mult[3, :].dot(vel_3_beam_zero)
-                                vel_3_beam[idx_3_beam] = (
-                                    -1 * vel_error / t_mult[3, idx_3_beam]
-                                )
-                                temp_t = t_mult.dot(vel_3_beam)
-
-                                # Apply transformation matrix for 3
-                                # beam solutions
-                                temp_thpr[0:3, col_idx[i3]] = hpr_matrix.dot(temp_t[:3])
-                                temp_thpr[3, col_idx[i3]] = np.nan
-
-                    else:
-                        # Get velocity data
-                        vel_raw = np.copy(np.squeeze(self.raw_vel_mps[:, :, ii]))
-                        temp_thpr = np.array(hpr_matrix).dot(vel_raw[:3, :])
-                        temp_thpr = np.vstack([temp_thpr, vel_raw[3, :]])
-
-                    # Update object
-                    temp_thpr = temp_thpr.T
-                    self.u_mps[:, ii] = temp_thpr[:, 0]
-                    self.v_mps[:, ii] = temp_thpr[:, 1]
-                    self.w_mps[:, ii] = temp_thpr[:, 2]
-                    self.d_mps[:, ii] = temp_thpr[:, 3]
-
-                # Because of padded arrays with zeros and RR has a variable
-                # number of bins, the raw data may be padded with zeros.  The next 4
-                # statements changes those to nan
-                find_padded = (
-                    np.abs(self.u_mps)
-                    + np.abs(self.v_mps)
-                    + np.abs(self.w_mps)
-                    + np.abs(self.d_mps)
-                )
-                self.u_mps[find_padded == 0] = np.nan
-                self.v_mps[find_padded == 0] = np.nan
-                self.w_mps[find_padded == 0] = np.nan
-                self.d_mps[find_padded == 0] = np.nan
-
-                # Assign processed object properties
-                self.u_processed_mps = np.copy(self.u_mps)
-                self.v_processed_mps = np.copy(self.v_mps)
-
-                # Assign coordinate system and reference properties
-                self.coord_sys = new_coord_sys
-                self.nav_ref = self.orig_nav_ref
-
-            else:
-                # Reset velocity properties to raw values
-                self.u_mps = np.copy(self.raw_vel_mps[0])
-                self.v_mps = np.copy(self.raw_vel_mps[1])
-                self.w_mps = np.copy(self.raw_vel_mps[2])
-                self.d_mps = np.copy(self.raw_vel_mps[3])
-
-                if adcp.manufacturer == "TRDI":
-                    find_padded = (
-                        np.abs(self.u_mps)
-                        + np.abs(self.v_mps)
-                        + np.abs(self.w_mps)
-                        + np.abs(self.d_mps)
+                    # Compute new coordinates
+                    (
+                        self.u_mps[:, ii],
+                        self.v_mps[:, ii],
+                        self.w_mps[:, ii],
+                     self.d_mps[:, ii],
+                    ) = adcp.transform_instrument_coordinates(
+                        manufacturer=adcp.manufacturer,
+                        inst_coordinates=inst_coordinates,
+                        h=h[ii],
+                        p=p[ii],
+                        r=r[ii],
+                        new_coord_sys=new_coord_sys
                     )
-                    self.u_mps[find_padded == 0] = np.nan
-                    self.v_mps[find_padded == 0] = np.nan
-                    self.w_mps[find_padded == 0] = np.nan
-                    self.d_mps[find_padded == 0] = np.nan
 
-                # Assign processed properties
-                self.u_processed_mps = np.copy(self.u_mps)
-                self.v_processed_mps = np.copy(self.v_mps)
+            elif o_coord_sys == "Ship":
+                # Transform from ship coordinates
+                for ii in range(n_ens):
+                    ship_coordinates = np.copy(data[:, :, ii])
+
+                    if new_coord_sys == "Earth":
+                        hpr_matrix = adcp.create_hpr_matrix(
+                            manufacturer=adcp.manufacturer, heading=h[ii],
+                            pitch=0, roll=0)
+
+                    self.u_mps[:, ii], self.v_mps[:, ii], self.w_mps[:, ii], self.d_mps[:, ii] = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
+
+            self.fix_zero_padding()
+
+        elif new_sys_code - orig_sys_code < 0:
+            # Transforming to lower order not supported
+            self.u_mps = np.nan
+            self.v_mps = np.nan
+            self.w_mps = np.nan
+            self.d_mps = np.nan
 
         else:
-            # Reset velocity properties to raw values
+            # Original data same as new system coordinates
             self.u_mps = np.copy(self.raw_vel_mps[0])
             self.v_mps = np.copy(self.raw_vel_mps[1])
             self.w_mps = np.copy(self.raw_vel_mps[2])
             self.d_mps = np.copy(self.raw_vel_mps[3])
 
-            if adcp.manufacturer == "TRDI":
-                find_padded = (
-                    np.abs(self.u_mps)
-                    + np.abs(self.v_mps)
-                    + np.abs(self.w_mps)
-                    + np.abs(self.d_mps)
-                )
-                self.u_mps[find_padded == 0] = np.nan
-                self.v_mps[find_padded == 0] = np.nan
-                self.w_mps[find_padded == 0] = np.nan
-                self.d_mps[find_padded == 0] = np.nan
+            self.fix_zero_padding()
 
-            # Assign processed properties
-            self.u_processed_mps = np.copy(self.u_mps)
-            self.v_processed_mps = np.copy(self.v_mps)
+        # Assign processed object properties
+        self.u_processed_mps = np.copy(self.u_mps)
+        self.v_processed_mps = np.copy(self.v_mps)
+
+        # Assign coordinate system and reference properties
+        self.coord_sys = new_coord_sys
+        self.nav_ref = self.orig_nav_ref
 
         if new_coord_sys == "Earth":
             self.u_earth_no_ref_mps = np.copy(self.u_mps)
             self.v_earth_no_ref_mps = np.copy(self.v_mps)
+            # The w_earth_no_ref_mps is not currently used. However, it is computed to
+            # allow correcting of the water track vertical velocity for the vertical
+            # velocity of the boat (ADCP). See also comment in set_nav_reference
+            self.w_earth_no_ref_mps = np.copy(self.w_mps)
+
+    def fix_zero_padding(self):
+        # Because of padded arrays with zeros and RR has a variable
+        # number of bins, the raw data may be padded with zeros.  The next 4
+        # statements changes those to nan
+        find_padded = (
+                np.abs(self.u_mps) + np.abs(self.v_mps) + np.abs(self.w_mps) + np.abs(
+            self.d_mps))
+        self.u_mps[find_padded == 0] = np.nan
+        self.v_mps[find_padded == 0] = np.nan
+        self.w_mps[find_padded == 0] = np.nan
+        self.d_mps[find_padded == 0] = np.nan
 
     def earth_to_beam(self, sensors, adcp):
         """Converts earth coordinates to beam coordinates.
@@ -1005,49 +950,18 @@ class WaterData(object):
         # Create matrix to store results
         vel_beam = np.tile(np.nan, self.raw_vel_mps.shape)
 
-        # Assign the transformation matrix retrieve the sensor data
-        t_matrix = copy.deepcopy(adcp.t_matrix.matrix)
-        t_matrix_freq = copy.deepcopy(adcp.frequency_khz)
-
         # Retrieve the sensor data
-        p = getattr(sensors.pitch_deg, sensors.pitch_deg.selected).data
-        r = getattr(sensors.roll_deg, sensors.roll_deg.selected).data
-        h = getattr(sensors.heading_deg, sensors.heading_deg.selected).data
-
-        # Compute trig function for heading, pitch and roll
-        ch = np.cos(np.deg2rad(h))
-        sh = np.sin(np.deg2rad(h))
-        cp = np.cos(np.deg2rad(p))
-        sp = np.sin(np.deg2rad(p))
-        cr = np.cos(np.deg2rad(r))
-        sr = np.sin(np.deg2rad(r))
+        h, p, r = sensors.get_hpr()
 
         # Process each ensemble
         n_ens = self.raw_vel_mps.shape[2]
         for ii in range(n_ens):
-            # Compute matrix for heading, pitch, and roll
-            hpr_matrix = np.array(
-                [
-                    [
-                        ((ch[ii] * cr[ii]) + (sh[ii] * sp[ii] * sr[ii])),
-                        (sh[ii] * cp[ii]),
-                        ((ch[ii] * sr[ii]) - sh[ii] * sp[ii] * cr[ii]),
-                    ],
-                    [
-                        (-1 * sh[ii] * cr[ii]) + (ch[ii] * sp[ii] * sr[ii]),
-                        ch[ii] * cp[ii],
-                        (-1 * sh[ii] * sr[ii]) - (ch[ii] * sp[ii] * cr[ii]),
-                    ],
-                    [(-1.0 * cp[ii] * sr[ii]), sp[ii], cp[ii] * cr[ii]],
-                ]
-            )
 
-            # Determine frequency index for transformation
-            if len(t_matrix.shape) > 2:
-                idx_freq = np.where(t_matrix_freq == self.frequency[ii])
-                t_mult = np.copy(np.squeeze(t_matrix[:, :, idx_freq[0][0]]))
-            else:
-                t_mult = np.copy(t_matrix)
+            # Compute matrix for heading, pitch, and roll
+            hpr_matrix =  adcp.create_hpr_matrix(adcp.manufacturer, h[ii], p[ii], r[ii])
+
+            # Determine transformation based on frequency
+            transformation_matrix = adcp.get_transformation_matrix(self.frequency[ii])
 
             # Construct earth velocity matrix for ensemble
             vel_enu = np.vstack(
@@ -1062,7 +976,7 @@ class WaterData(object):
             # Compute beam velocities
             vel_xyz = np.copy(vel_enu)
             vel_xyz[0:3, :] = np.matmul(np.linalg.inv(hpr_matrix), vel_enu[:3])
-            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(t_mult), vel_xyz)
+            vel_beam[:, :, ii] = np.matmul(np.linalg.inv(transformation_matrix), vel_xyz)
 
         return vel_beam
 
@@ -1083,6 +997,19 @@ class WaterData(object):
         if boat_select is not None:
             self.u_mps = np.add(self.u_earth_no_ref_mps, boat_select.u_processed_mps)
             self.v_mps = np.add(self.v_earth_no_ref_mps, boat_select.v_processed_mps)
+            # SonTek and TRDI correct the vertical water velocity for the BT vertical
+            # velocity. However, there is no vertical velocity computed with using GPS
+            # as the navigation reference. Thus, the vertical water velocity is only
+            # corrected when using BT. This results in and inconsistency in the
+            # vertical water velocity. For discharge, the only potential affect is on
+            # the vertical water velocity filter. 11/21/2024 David Mueller and Travis
+            # Knight have decided not to make the correction when computing discharge
+            # to maintain consistency. However, this may need to be addressed differently
+            # for velocity mapping applications.
+
+            # if boat_select.nav_ref.lower() == "bt":
+            #     self.w_mps = np.add(self.w_earth_no_ref_mps, boat_select.w_processed_mps)
+            #     self.d_mps = np.add(self.d_mps, boat_select.d_mps)
             self.nav_ref = boat_select.nav_ref
         else:
             self.u_mps = repmat(
@@ -1123,12 +1050,10 @@ class WaterData(object):
         heading_chng: float
             Heading change due to change in magvar or offset, in degrees.
         """
-        u_nr = self.u_earth_no_ref_mps
-        v_nr = self.v_earth_no_ref_mps
-        direction, mag = cart2pol(u_nr, v_nr)
-        u_nr_rotated, v_nr_rotated = pol2cart(direction - np.deg2rad(heading_chng), mag)
-        self.u_earth_no_ref_mps = u_nr_rotated
-        self.v_earth_no_ref_mps = v_nr_rotated
+
+        self.u_earth_no_ref_mps, self.v_earth_no_ref_mps = rotate_coordinates(
+            self.u_earth_no_ref_mps, self.v_earth_no_ref_mps, heading_chng
+        )
 
         # Reprocess water data to get navigation reference corrected velocities
         self.set_nav_reference(boat_vel)
@@ -1288,6 +1213,7 @@ class WaterData(object):
         ):
             # Because the snr filter may apply 3-beam solutions the result
             # could affect other filters, thus it should be run first
+
             if snr is not None:
                 self.filter_snr(transect=transect, setting=snr)
             if difference is not None:
@@ -2084,63 +2010,70 @@ class WaterData(object):
             Setting for filter (Auto, Off)
         """
 
-        self.snr_filter = setting
+        # Set filter result to all valid
+        self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
+        self.all_valid_data()
 
-        if setting == "Auto":
-            # Determines if invalid data should use 3-beam computations
-            if self.snr_3beam_comp and self.d_filter != 3:
-                cells_above_sl = np.copy(self.cells_above_sl.astype(float))
-                cells_above_sl[cells_above_sl < 0.5] = np.nan
-                snr_adjusted = self.rssi * cells_above_sl
-                snr_average = np.nanmean(snr_adjusted, 1)
+        # Filter only applies to SonTek data
+        if transect.adcp.manufacturer == "SonTek":
+            self.snr_filter = setting
 
-                # Find invalid beams
-                snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
+            # Reset data to no snr filter
+            self.snr_beam_velocities = None
 
-                ens_bad_snr = np.any(snr_beam_invalid, axis=0)
-                valid = np.copy(self.cells_above_sl)
+            if setting == "Auto":
+                # Determines if invalid data should use 3-beam computations
+                if self.snr_3beam_comp and self.d_filter != 3:
+                    cells_above_sl = np.copy(self.cells_above_sl.astype(float))
+                    cells_above_sl[cells_above_sl < 0.5] = np.nan
+                    snr_adjusted = self.rssi * cells_above_sl
+                    snr_average = np.nanmean(snr_adjusted, 1)
 
-                bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
-                valid[bad_snr_array] = False
-                w_vel_copy = copy.deepcopy(self)
-                beam_velocities = w_vel_copy.earth_to_beam(
-                    sensors=transect.sensors, adcp=transect.adcp
-                )
-                invalid_beam_value = np.tile(np.nan, valid.shape[0])
+                    # Find invalid beams
+                    snr_beam_invalid = (np.max(snr_average, axis=0) - snr_average) > 12
 
-                invalid_snr_idx = np.where(snr_beam_invalid)
+                    ens_bad_snr = np.any(snr_beam_invalid, axis=0)
+                    valid = np.copy(self.cells_above_sl)
 
-                beam_velocities[
-                    invalid_snr_idx[0], :, invalid_snr_idx[1]
-                ] = invalid_beam_value
-                self.snr_beam_velocities = beam_velocities
+                    bad_snr_array = np.tile(ens_bad_snr, (valid.shape[0], 1))
+                    valid[bad_snr_array] = False
+                    w_vel_copy = copy.deepcopy(self)
+                    beam_velocities = w_vel_copy.earth_to_beam(
+                        sensors=transect.sensors, adcp=transect.adcp
+                    )
+                    invalid_beam_value = np.tile(np.nan, valid.shape[0])
 
-                # Recompute water velocities using snr adjusted beam velocities
-                self.snr_beam_velocities = beam_velocities
-                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
-                self.set_nav_reference(transect.boat_vel)
+                    invalid_snr_idx = np.where(snr_beam_invalid)
 
-            else:
-                bad_snr_idx = np.greater(self.snr_rng, 12)
-                valid = np.copy(self.cells_above_sl)
+                    beam_velocities[
+                        invalid_snr_idx[0], :, invalid_snr_idx[1]
+                    ] = invalid_beam_value
+                    self.snr_beam_velocities = beam_velocities
 
-                bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
-                valid[bad_snr_array] = False
+                    # Recompute water velocities using snr adjusted beam velocities
+                    self.snr_beam_velocities = beam_velocities
+                    self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
+                    self.set_nav_reference(transect.boat_vel)
+                    # Restore values to pre-snr 3-beam solution values
+                    # This allows future snr 3-beam solutions to have the pre-screen
+                    # data for all ensembles and cells. The no_ref data, w, and d
+                    # velocities are using in the earth_to_beam computations and
+                    # need to represent pre-screen data
+                    self.u_earth_no_ref_mps = w_vel_copy.u_earth_no_ref_mps
+                    self.v_earth_no_ref_mps = w_vel_copy.v_earth_no_ref_mps
+                    self.w_mps = w_vel_copy.w_mps
+                    self.d_mps = w_vel_copy.d_mps
+                else:
+                    bad_snr_idx = np.greater(self.snr_rng, 12)
+                    valid = np.copy(self.cells_above_sl)
 
-            self.valid_data[7, :, :] = valid
+                    bad_snr_array = np.tile(bad_snr_idx, (valid.shape[0], 1))
+                    valid[bad_snr_array] = False
 
-            # Combine all filter data and update processed properties
-            self.all_valid_data()
-        elif transect.adcp.manufacturer == "SonTek":
-            if self.snr_beam_velocities is not None:
-                self.snr_beam_velocities = None
-                self.change_coord_sys(self.coord_sys, transect.sensors, transect.adcp)
-                self.set_nav_reference(transect.boat_vel)
-            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
-            self.all_valid_data()
-        elif transect.adcp.manufacturer != "SonTek":
-            self.valid_data[7, :, :] = np.copy(self.cells_above_sl)
-            self.all_valid_data()
+                self.valid_data[7, :, :] = valid
+
+                # Combine all filter data and update processed properties
+                self.all_valid_data()
 
     def filter_wt_depth(self, transect, setting):
         """Marks water velocity data invalid if there is no valid or
@@ -2249,7 +2182,6 @@ class WaterData(object):
         # those that are not in the in_transect_idx array
         self.u_processed_mps[:, :] = np.nan
         self.v_processed_mps[:, :] = np.nan
-        self.w_processed_mps[:, :] = np.nan
         self.u_processed_mps[:, transect.in_transect_idx] = u
         self.v_processed_mps[:, transect.in_transect_idx] = v
         self.w_processed_mps[:, transect.in_transect_idx] = w

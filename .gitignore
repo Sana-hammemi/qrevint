@@ -56,3 +56,11 @@ lib64
 ehthumbs.db
 Thumbs.db
 /Classes/__pycache__
+
+/qrev/Classes/__pycache__
+/docs/_build/
+/docs/_static/
+/docs/_templates/
+/docs/_build/
+/docs/_static/
+/docs/_templates/

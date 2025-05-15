@@ -54,7 +54,7 @@ class QAData(object):
         Dictionary of quality assurance checks on edges
     """
 
-    def __init__(self, meas, mat_struct=None, compute=True):
+    def __init__(self, meas, mat_struct=None, compute=True, tr=None):
         """Checks the measurement for all quality assurance issues.
 
         Parameters
@@ -62,6 +62,9 @@ class QAData(object):
         meas: Measurement
             Object of class Measurement
         """
+
+
+        self.tr = tr
 
         # Set default thresholds
         self.q_run_threshold_caution = 3
@@ -121,6 +124,8 @@ class QAData(object):
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
 
+
+
     def populate_from_qrev_mat(self, meas, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
         file.
@@ -137,7 +142,7 @@ class QAData(object):
         # current QA code. When QA checks from the current QA are not
         # available from old QRev files, these
         # checks will be included to supplement the old QRev file data.
-        new_qa = QAData(meas)
+        new_qa = QAData(meas, tr=meas.tr)
         if hasattr(meas_struct, "qa"):
             # Set default thresholds
             self.q_run_threshold_caution = meas_struct.qa.qRunThresholdCaution
@@ -150,8 +155,7 @@ class QAData(object):
 
             if self.q_total_threshold_warning < self.q_total_threshold_caution:
                 temp = np.copy(self.q_total_threshold_warning)
-                self.q_total_threshold_warning = np.copy(
-                    self.q_total_threshold_caution)
+                self.q_total_threshold_warning = np.copy(self.q_total_threshold_caution)
                 self.q_total_threshold_caution = temp
 
             # Initialize instance variables
@@ -160,6 +164,11 @@ class QAData(object):
             self.transects["messages"] = self.make_list(
                 meas_struct.qa.transects.messages
             )
+            if hasattr(meas_struct.qa.transects, "guidance"):
+                self.transects["guidance"] = self.make_list(
+                    meas_struct.qa.transects.guidance)
+            else:
+                self.transects["guidance"] = []
             self.transects["number"] = meas_struct.qa.transects.number
             self.transects["recip"] = meas_struct.qa.transects.recip
             self.transects["sign"] = meas_struct.qa.transects.sign
@@ -169,9 +178,19 @@ class QAData(object):
             self.system_tst["messages"] = self.make_list(
                 meas_struct.qa.systemTest.messages
             )
+            if hasattr(meas_struct.qa.systemTest, "guidance"):
+                self.system_tst["guidance"] = self.make_list(
+                    meas_struct.qa.systemTest.guidance)
+            else:
+                self.system_tst["guidance"] = []
             self.system_tst["status"] = meas_struct.qa.systemTest.status
             self.compass = dict()
             self.compass["messages"] = self.make_list(meas_struct.qa.compass.messages)
+            if hasattr(meas_struct.qa.compass, "guidance"):
+                self.compass["guidance"] = self.make_list(
+                    meas_struct.qa.compass.guidance)
+            else:
+                self.compass["guidance"] = []
             self.compass["status"] = meas_struct.qa.compass.status
             if hasattr(meas_struct.qa.compass, "status1"):
                 self.compass["status1"] = meas_struct.qa.compass.status1
@@ -280,17 +299,36 @@ class QAData(object):
             self.temperature["messages"] = self.make_list(
                 meas_struct.qa.temperature.messages
             )
+            if hasattr(meas_struct.qa.temperature, "guidance"):
+                self.temperature["guidance"] = self.make_list(
+                    meas_struct.qa.temperature.guidance)
+            else:
+                self.temperature["guidance"] = []
             self.temperature["status"] = meas_struct.qa.temperature.status
             self.movingbed = dict()
             self.movingbed["messages"] = self.make_list(
                 meas_struct.qa.movingbed.messages
             )
+            if hasattr(meas_struct.qa.movingbed, "guidance"):
+                self.movingbed["guidance"] = self.make_list(
+                    meas_struct.qa.movingbed.guidance)
+            else:
+                self.movingbed["guidance"] = []
             self.movingbed["status"] = meas_struct.qa.movingbed.status
             self.movingbed["code"] = meas_struct.qa.movingbed.code
             self.user = dict()
             self.user["messages"] = self.make_list(meas_struct.qa.user.messages)
+            if hasattr(meas_struct.qa.user, "guidance"):
+                self.user["guidance"] = self.make_list(
+                    meas_struct.qa.user.guidance)
+            else:
+                self.user["guidance"] = []
             self.user["sta_name"] = bool(meas_struct.qa.user.staName)
             self.user["sta_number"] = bool(meas_struct.qa.user.staNumber)
+            if hasattr(meas_struct.qa.user, "time_zone"):
+                self.user["time_zone"] = bool(meas_struct.qa.user.time_zone)
+            else:
+                self.user["time_zone"] = False
             self.user["status"] = meas_struct.qa.user.status
 
             # If QA check not available, get check from new QA
@@ -335,9 +373,19 @@ class QAData(object):
             self.extrapolation["messages"] = self.make_list(
                 meas_struct.qa.extrapolation.messages
             )
+            if hasattr(meas_struct.qa.extrapolation, "guidance"):
+                self.extrapolation["guidance"] = self.make_list(
+                    meas_struct.qa.extrapolation.guidance)
+            else:
+                self.extrapolation["guidance"] = []
             self.extrapolation["status"] = meas_struct.qa.extrapolation.status
             self.edges = dict()
             self.edges["messages"] = self.make_list(meas_struct.qa.edges.messages)
+            if hasattr(meas_struct.qa.edges, "guidance"):
+                self.edges["guidance"] = self.make_list(
+                    meas_struct.qa.edges.guidance)
+            else:
+                self.edges["guidance"] = []
             self.edges["status"] = meas_struct.qa.edges.status
             self.edges["left_q"] = meas_struct.qa.edges.leftQ
             self.edges["right_q"] = meas_struct.qa.edges.rightQ
@@ -518,6 +566,10 @@ class QAData(object):
 
         # Populate dictionary from Matlab data
         qa_dict["messages"] = QAData.make_list(mat_data.messages)
+        if hasattr(mat_data, "guidance"):
+            qa_dict["guidance"] = self.make_list(mat_data.guidance)
+        else:
+            qa_dict["guidance"] = []
 
         # allInvalid not available in older QRev data
         if hasattr(mat_data, "allInvalid"):
@@ -613,6 +665,10 @@ class QAData(object):
 
         return list_out
 
+    @staticmethod
+    def guidance_prep(message_text, guidance_text):
+        return message_text + "\n" + " -- " + guidance_text + "\n"
+
     def transects_qa(self, meas):
         """Apply quality checks to transects
 
@@ -627,6 +683,7 @@ class QAData(object):
 
         # Initialize keys
         self.transects["messages"] = []
+        self.transects["guidance"] = []
         self.transects["recip"] = 0
         self.transects["sign"] = 0
         self.transects["duration"] = 0
@@ -650,6 +707,21 @@ class QAData(object):
 
         num_checked = np.nansum(np.asarray(checked))
 
+        # Check minimum number of transects
+        if num_checked < meas.min_transects:
+            self.transects["status"] = "caution"
+            text = (self.tr(
+                "Transects: The number of selected transects is less than ")
+                + str(meas.min_transects)
+                + ";"
+            )
+            self.transects["messages"].append([text, 2, 0])
+            guidance_text = self.tr("Collect additional transects until the total number of selected transects meets or exceeds the agency minimum recommended number and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
+            self.transects["duration"] = 1
+
         # Check duration
         total_duration = 0
         if num_checked >= 1:
@@ -661,12 +733,16 @@ class QAData(object):
         if total_duration < meas.min_duration:
             self.transects["status"] = "caution"
             text = (
-                "Transects: Duration of selected transects is less than "
+                self.tr("Transects: Duration of selected transects is less than ")
                 + str(meas.min_duration)
-                + " seconds;"
+                + self.tr(" seconds") + ";"
             )
             self.transects["messages"].append([text, 2, 0])
             self.transects["duration"] = 1
+            guidance_text = self.tr("Reduce the boat speed and/or collect additional transects until the total duration exceeds the agency minimum recommended duration and transects are reciprocal transects. If this is not possible, provide a comment explaining the situation.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
 
         # Check transects for missing ensembles
         left_invalid_exceeded = False
@@ -703,16 +779,22 @@ class QAData(object):
                 if num_missing > 0:
                     self.transects["messages"].append(
                         [
-                            "Transects: "
+                            self.tr("Transects: ")
                             + str(transect.file_name)
-                            + " is missing "
+                            + self.tr(" is missing ")
                             + str(int(num_missing))
-                            + " ensembles;",
+                            + self.tr(" ensembles") + ";",
                             2,
                             0,
                         ]
                     )
                     self.transects["status"] = "caution"
+                    guidance_text = self.tr("Missing ensembles are typically due to communication problems between the instrument and the computer.  If the missing ensembles occur randomly and infrequently the measurement is likely unaffected by them. However, if the number of missing ensembles may affect the final discharge consider recollecting the data with a different computer/serial port/wireless communications/etc. If this measurement was made with an M9 or S5 download the data from the ADCP and use those data instead of the data stored on the computer by RiverSurveyor Live or RSQ.")
+                    self.transects["guidance"].append(
+                        self.guidance_prep(
+                            self.transects["messages"][-1][0], guidance_text
+                        )
+                    )
 
                 # Invalid ensembles at left and/or right edge
                 boat_selected = getattr(transect.boat_vel, transect.boat_vel.selected)
@@ -725,22 +807,6 @@ class QAData(object):
                 valid_depth = depth_selected.valid_data
                 valid_all = np.vstack([valid_bt, valid_wt, valid_depth])
                 valid = np.all(valid_all, axis=0)
-
-                # threshold = np.floor(0.05 * valid.shape[0])
-                # if transect.start_edge == "Left":
-                #     idx = np.where(np.logical_not(valid))
-                #     if idx[0].size > threshold:
-                #         left_invalid_exceeded = True
-                #     idx = np.where(np.logical_not(np.flip(valid)))
-                #     if idx[0].size > threshold:
-                #         right_invalid_exceeded = True
-                # else:
-                #     idx = np.where(np.logical_not(valid))
-                #     if idx[0].size > threshold:
-                #         right_invalid_exceeded = True
-                #     idx = np.where(np.logical_not(np.flip(valid)))
-                #     if idx[0].size > threshold:
-                #         left_invalid_exceeded = True
 
                 if transect.sensors is not None:
                     if hasattr(transect.sensors, "battery_voltage"):
@@ -758,56 +824,46 @@ class QAData(object):
                                     transect.file_name[:-4]
                                 )
 
-        # Message for invalid ensembles at left or right
-        # if left_invalid_exceeded:
-        #     self.transects["messages"].append(
-        #         [
-        #             "Transects: "
-        #             + " The number of invalid ensembles at the left"
-        #             + " edge exceeds 5 percent;",
-        #             2,
-        #             0,
-        #         ]
-        #     )
-        #     self.transects["status"] = "caution"
-        # if right_invalid_exceeded:
-        #     self.transects["messages"].append(
-        #         [
-        #             "Transects: "
-        #             + " The number of invalid ensembles at the right"
-        #             + " edge exceeds 5 percent;",
-        #             2,
-        #             0,
-        #         ]
-        #     )
-        #     self.transects["status"] = "caution"
-
         # Message for low battery
         if len(self.transects["batt_voltage"]) > 0:
             self.transects["status"] = "caution"
             text = (
-                "Transects: "
+                self.tr("Transects: ")
                 + str(self.transects["batt_voltage"])
-                + " have battery voltage less than "
+                + self.tr(" have battery voltage less than ")
                 + str(batt_threshold)
             )
             self.transects["messages"].append([text, 2, 0])
+            guidance_text = self.tr("Low battery voltage may cause range issues with some ADCPs in some conditions. Evaluate the data carefully to ensure the data appear correct. If in the field, use a charged battery to recollect the data, if necessary.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
 
         # Check number of transects checked
         if num_checked == 0:
             # No transects selected
             self.transects["status"] = "warning"
             self.transects["messages"].append(
-                ["TRANSECTS: No transects selected;", 1, 0]
+                [self.tr("TRANSECTS: No transects selected") +";", 1, 0]
             )
             self.transects["number"] = 2
+            guidance_text = self.tr("For reasonably steady flow check a sufficient number or reciprocal transects to achieve agency recommended minimum duration and number or reciprocal transects. For rapidly varying flow check an appropriate number of transects while trying to maintain reciprocal transects.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
+
         elif num_checked == 1:
             # Only one transect selected
             self.transects["status"] = "caution"
             self.transects["messages"].append(
-                ["Transects: Only one transect selected;", 2, 0]
+                [self.tr("Transects: Only one transect selected") + ";", 2, 0]
             )
             self.transects["number"] = 2
+            guidance_text = self.tr("Reciprocal transects are recommended to avoid potential directional bias. If flow is changing too rapidly for reciprocal transects add a comment to document the situation.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+            )
+
         else:
             self.transects["number"] = num_checked
             if num_checked == 2:
@@ -818,20 +874,30 @@ class QAData(object):
                     self.transects["status"] = "caution"
                     self.transects["messages"].append(
                         [
-                            "Transects: Uncertainty would be reduced by "
-                            "additional transects;",
+                            self.tr("Transects: Uncertainty would be reduced by additional transects") +
+                            ";",
                             2,
                             0,
                         ]
+                    )
+                    guidance_text = self.tr("Collecting additional reciprocal transects would reduce the random uncertainty associated with this measurement assuming near steady flow conditions.")
+                    self.transects["guidance"].append(
+                        self.guidance_prep(
+                            self.transects["messages"][-1][0], guidance_text
+                        )
                     )
 
             if num_checked < meas.min_transects:
                 self.transects["status"] = "caution"
                 text = (
-                    "Transects: Number of transects is below the "
-                    "required minimum of " + str(meas.min_transects) + ";"
+                    self.tr("Transects: Number of transects is below the required minimum of ")
+                    + str(meas.min_transects) + ";"
                 )
                 self.transects["messages"].append([text, 2, 0])
+                guidance_text = self.tr("Unless the flow is changing rapidly, collect additional transect to meet the agency minimum requirement. If conditions do not allow collection of additional transects, document the situation.")
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
+                )
 
             # Check for consistent sign
             q_positive = []
@@ -844,11 +910,14 @@ class QAData(object):
                 self.transects["status"] = "warning"
                 self.transects["messages"].append(
                     [
-                        "TRANSECTS: Sign of total Q is not consistent. One "
-                        "or more start banks may be incorrect;",
+                        self.tr("TRANSECTS: Sign of total Q is not consistent. One or more start banks may be incorrect") + ";",
                         1,
                         0,
                     ]
+                )
+                guidance_text = self.tr("Check the start bank for each transect. If the start banks are correct and the flow is rapidly changing to a reverse flow condition, consider breaking the measurement into multiple measurements to represent the conditions.")
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
                 )
 
             # Check for reciprocal transects
@@ -859,12 +928,14 @@ class QAData(object):
                 self.transects["status"] = "warning"
                 self.transects["messages"].append(
                     [
-                        "TRANSECTS: Transects "
-                        "selected are not "
-                        "reciprocal transects;",
+                        self.tr("TRANSECTS: Transects selected are not reciprocal transects") + ";",
                         1,
                         0,
                     ]
+                )
+                guidance_text = self.tr("Unless conditions require use of a single transect, transects should be collected in reciprocal pairs to reduce potential directional bias. Consider adding or removing a transect from the measurement to achieve reciprocal transects.")
+                self.transects["guidance"].append(
+                    self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
                 )
 
         # Check for zero discharge transects
@@ -875,7 +946,11 @@ class QAData(object):
         if q_zero:
             self.transects["status"] = "warning"
             self.transects["messages"].append(
-                ["TRANSECTS: One or more transects have zero Q;", 1, 0]
+                [self.tr("TRANSECTS: One or more transects have zero Q") + ";", 1, 0]
+            )
+            guidance_text = self.tr("A zero discharge usually occurs when all ensembles have invalid depth, boat speed, or water speed. Changing the depth or boat reference may help. Otherwise the transect should not be included in the final discharge computation.")
+            self.transects["guidance"].append(
+                self.guidance_prep(self.transects["messages"][-1][0], guidance_text)
             )
 
     def system_tst_qa(self, meas):
@@ -889,6 +964,7 @@ class QAData(object):
 
         self.system_tst["messages"] = []
         self.system_tst["status"] = "good"
+        self.system_tst["guidance"] = []
 
         if "tab_systst" not in self.settings_dict:
             self.settings_dict["tab_systst"] = "Default"
@@ -897,7 +973,12 @@ class QAData(object):
         if not meas.system_tst:
             # No system test data recorded
             self.system_tst["status"] = "warning"
-            self.system_tst["messages"].append(["SYSTEM TEST: No system test;", 1, 3])
+            self.system_tst["messages"].append([self.tr("SYSTEM TEST: No system test") + ";", 1, 3])
+            guidance_text = self.tr("A system test is recommended to be completed prior to every discharge measurement to ensure the ADCP is operating properly. If still in the field, complete a system test.")
+            self.system_tst["guidance"].append(
+                self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text)
+            )
+
         else:
             pt3_fail = False
             num_tests_with_failure = 0
@@ -945,11 +1026,16 @@ class QAData(object):
                 self.system_tst["status"] = "caution"
                 self.system_tst["messages"].append(
                     [
-                        "System Test: One or more PT3 tests in the system "
-                        "test indicate potential EMI;",
+                        self.tr("System Test: One or more PT3 tests in the system test indicate potential EMI") + ";",
                         2,
                         3,
                     ]
+                )
+                guidance_text = self.tr("A failed PT3 test indicates there is potential electromagnetic interference. Errors in measured velocities caused by EMI tend to be a consistent bias (not related to true water velocity), so errors will be a greater percentage in lower velocities. EMI is more likely to occur on a StreamPro ADCP. To determine if EMI is affecting the measurement: 1) look for unusual patterns in the measured velocities, such as, higher velocities near the streambed, 2) use the Adv Graph tab and plot the average water track correlation contour plot and look for an increase in correlation with depth, 3) use the Adv Graph tab and plot the water track vertical velocity and look for a vertical pattern, such as, increasing negative or positive velocities towards the surface or streambed (a normal vertical velocity contour plot should look more random without vertical patterns). If any of these conditions are observed the measurement is affected and a different measurement site should be selected or the measurement at this site should be made with a different instrument.")
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(
+                        self.system_tst["messages"][-1][0], guidance_text
+                    )
                 )
 
             # Check for failed tests
@@ -958,21 +1044,32 @@ class QAData(object):
                 self.system_tst["status"] = "warning"
                 self.system_tst["messages"].append(
                     [
-                        "SYSTEM TEST: All system test sets have at least one "
-                        "test that failed;",
+                        self.tr("SYSTEM TEST: All system test sets have at least one test that failed") + ";",
                         1,
                         3,
                     ]
                 )
+                guidance_text = self.tr("If a system test fails, try repeating the test in calm water. If failures continue, proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably OK. However, if this ADCP continues to fail system tests at other sites, the ADCP should be evaluated and potentially sent to the manufacturer for their evaluation and repair.")
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(
+                        self.system_tst["messages"][-1][0], guidance_text
+                    )
+                )
+
             elif num_tests_with_failure > 0:
                 self.system_tst["status"] = "caution"
                 self.system_tst["messages"].append(
                     [
-                        "System Test: One or more system test sets have at "
-                        "least one test that failed;",
+                        self.tr("System Test: One or more system test sets have at least one test that failed") + ";",
                         2,
                         3,
                     ]
+                )
+                guidance_text = self.tr("If a system test fails, try repeating the test in calm water. If at least one system test passed, the system is likely working properly. Always proceed with the measurement and monitor the data closely. If the data appear valid, the measurement is probably valid.")
+                self.system_tst["guidance"].append(
+                    self.guidance_prep(
+                        self.system_tst["messages"][-1][0], guidance_text
+                    )
                 )
 
         # Check for a custom transformation matrix
@@ -1001,12 +1098,18 @@ class QAData(object):
                             self.system_tst["status"] = "caution"
                             self.system_tst["messages"].append(
                                 [
-                                    "System Test: ADCP is using a nominal matrix rather "
-                                    "than a custom matrix;",
+                                    self.tr("System Test: ADCP is using a nominal matrix rather than a custom matrix") + ";",
                                     2,
                                     3,
                                 ]
                             )
+                            guidance_text = self.tr("Most ADCPs have a custom transformation matrix (except for the RiverRay). If this ADCP has a nominal matrix, check the instruments history log to determine if it ever had a custom matrix. It may also be appropriate to contact the manufacturer to determine the transformation matrix for that ADCP serial number.")
+                            self.system_tst["guidance"].append(
+                                self.guidance_prep(
+                                    self.system_tst["messages"][-1][0], guidance_text
+                                )
+                            )
+
                             break
 
     def compass_qa(self, meas):
@@ -1024,6 +1127,7 @@ class QAData(object):
         self.compass["status1"] = "good"
         self.compass["status2"] = "good"
         self.compass["lr_water_dir"] = "good"
+        self.compass["guidance"] = []
 
         # Check to see if measurement has compass data
         if not self.compass_qa_has_compass(meas):
@@ -1050,36 +1154,53 @@ class QAData(object):
         if len(np.unique(hpr["magvar"])) > 1:
             self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Compass: Magnetic variation is not consistent among transects;", 2, 4]
+                [self.tr("Compass: Magnetic variation is not consistent among transects") + ";", 2, 4]
             )
             self.compass["magvar"] = 1
+            guidance_text = self.tr("The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+            )
 
         # Check heading offset consistency
         if len(np.unique(hpr["align"])) > 1:
             self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Compass: Heading offset is not consistent among " "transects;", 2, 4]
+                [self.tr("Compass: Heading offset is not consistent among transects") + ";", 2, 4]
             )
             self.compass["align"] = 1
+            guidance_text = self.tr("The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+            )
 
         # Check that magvar was set if GPS data are available
         if magvar_required:
             if 0 in hpr["magvar"]:
                 self.compass["status2"] = "warning"
                 self.compass["messages"].append(
-                    ["COMPASS: Magnetic variation is 0 and GPS data are present;", 1, 4]
+                    [self.tr("COMPASS: Magnetic variation is 0 and GPS data are present") + ";", 1, 4]
                 )
                 self.compass["magvar"] = 2
                 self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
                     0
                 ].tolist()
+                guidance_text = self.tr("A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+                )
 
         # Check pitch mean
         if np.any(np.asarray(np.abs(hpr["pitch_mean"])) > 8):
             self.compass["status2"] = "warning"
             self.compass["messages"].append(
-                ["PITCH: One or more transects have a mean pitch > 8 deg;", 1, 4]
+                [self.tr("PITCH: One or more transects have a mean pitch > 8 deg") + ";", 1, 4]
             )
+            guidance_text = self.tr("A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+            )
+
             temp = np.where(np.abs(hpr["pitch_mean"]) > 8)[0]
             if len(temp) > 0:
                 self.compass["pitch_mean_warning_idx"] = np.array(
@@ -1092,7 +1213,11 @@ class QAData(object):
             if self.compass["status2"] == "good":
                 self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Pitch: One or more transects have a mean pitch > 4 deg;", 2, 4]
+                [self.tr("Pitch: One or more transects have a mean pitch > 4 deg") + ";", 2, 4]
+            )
+            guidance_text = self.tr("A consistent pitch is usually the result of a poor mount or the upward tension on the tether of a tethered boat. Adjust the mount to reduce the pitch or add a weight onto the tether near the tether boat to reduce the pitch.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
             temp = np.where(np.abs(hpr["pitch_mean"]) > 4)[0]
             if len(temp) > 0:
@@ -1106,7 +1231,11 @@ class QAData(object):
         if np.any(np.asarray(np.abs(hpr["roll_mean"])) > 8):
             self.compass["status2"] = "warning"
             self.compass["messages"].append(
-                ["ROLL: One or more transects have a mean roll > 8 deg;", 1, 4]
+                [self.tr("ROLL: One or more transects have a mean roll > 8 deg") + ";", 1, 4]
+            )
+            guidance_text = self.tr("A consistent roll is usually due to a poor mount or unevenly distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
             temp = np.where(np.abs(hpr["roll_mean"]) > 8)[0]
             if len(temp) > 0:
@@ -1120,7 +1249,11 @@ class QAData(object):
             if self.compass["status2"] == "good":
                 self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Roll: One or more transects have a mean roll > 4 deg;", 2, 4]
+                [self.tr("Roll: One or more transects have a mean roll > 4 deg") + ";", 2, 4]
+            )
+            guidance_text = self.tr("A consistent roll is usually due to a poor mount or unevenly distributed weight on the boat (manned, tethered, or remote-control). Correct the mount or weight distribution.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
             temp = np.where(np.abs(hpr["roll_mean"]) > 4)[0]
             if len(temp) > 0:
@@ -1135,7 +1268,11 @@ class QAData(object):
             if self.compass["status2"] == "good":
                 self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Pitch: One or more transects have a pitch std dev > 5 deg;", 2, 4]
+                [self.tr("Pitch: One or more transects have a pitch std dev > 5 deg") + ";", 2, 4]
+            )
+            guidance_text = self.tr("Variable pitch can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of pitch on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the pitch. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
             temp = np.where(np.abs(hpr["pitch_std"]) > 5)[0]
             if len(temp) > 0:
@@ -1150,7 +1287,11 @@ class QAData(object):
             if self.compass["status2"] == "good":
                 self.compass["status2"] = "caution"
             self.compass["messages"].append(
-                ["Roll: One or more transects have a roll std dev > 5 deg;", 2, 4]
+                [self.tr("Roll: One or more transects have a roll std dev > 5 deg") + ";", 2, 4]
+            )
+            guidance_text = self.tr("Variable roll can cause inaccuracies in the measured water and bottom track. To evaluate the potential effects of roll on the collected data, use the Adv Graph tab and plot the water track speed, bottom track speed, and pitch time series and look for correlation between spikes in the water or bottom track and spikes in the roll. If the spikes appear to make a substantial change in discharge, the quality of the measurement may need to be downgraded.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
             temp = np.where(np.abs(hpr["roll_std"]) > 5)[0]
             if len(temp) > 0:
@@ -1166,11 +1307,14 @@ class QAData(object):
             self.compass["lr_water_dir"] = "caution"
             self.compass["messages"].append(
                 [
-                    "Compass: The difference in the left and right water directions could "
-                    "cause an error in average Q of {:3.1f}% ;".format(error),
+                    self.tr("Compass: The difference in the left and right water directions could cause an error in average Q of ") + " {:3.1f}% ;".format(error),
                     2,
                     4,
                 ]
+            )
+            guidance_text = self.tr("An accurate heading is required for this measurement since either GPS is used or a loop moving-bed test was completed. There is a greater than expected difference in the water direction measured for transects starting on the left bank from those starting on the right bank. This difference indicates the compass is not accurate. Recalibrate the compass and recollect the data, if possible.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
             )
 
         # Additional checks for SonTek G3 compass
@@ -1181,11 +1325,14 @@ class QAData(object):
                     self.compass["status2"] = "caution"
                 self.compass["messages"].append(
                     [
-                        "Compass: One or more transects have pitch "
-                        "exceeding calibration limits;",
+                        self.tr("Compass: One or more transects have pitch exceeding calibration limits") + ";",
                         2,
                         4,
                     ]
+                )
+                guidance_text = self.tr("Exceeding the pitch range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate pitch range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in pitch beyond the limits.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
 
             # Check if roll limits were exceeded
@@ -1194,11 +1341,14 @@ class QAData(object):
                     self.compass["status2"] = "caution"
                 self.compass["messages"].append(
                     [
-                        "Compass: One or more transects have roll "
-                        "exceeding calibration limits;",
+                        self.tr("Compass: One or more transects have roll exceeding calibration limits") + ";",
                         2,
                         4,
                     ]
+                )
+                guidance_text = self.tr("Exceeding the roll range from the compass calibration can result in inaccurate headings. If the exceedance is small the inaccuracies are likely small. If they are large and you are in the field, recalibrate the compass using an appropriate roll range. If in the office, look at the Compass/P/R tab and see if there is a change in heading with a change in roll beyond the limits.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
 
             # Check if magnetic error was exceeded
@@ -1209,11 +1359,14 @@ class QAData(object):
                     self.compass["status2"] = "caution"
                 self.compass["messages"].append(
                     [
-                        "Compass: One or more transects have a change in "
-                        "mag field exceeding 2%;",
+                        self.tr("Compass: One or more transects have a change in mag field exceeding 2%") + ";",
                         2,
                         4,
                     ]
+                )
+                guidance_text = self.tr("The G3 compass evaluates the strength of the magnetic field during calibration and during collection of transects. A change in magnetic field greater than 2% during a transect indicates the magnetic field has change from that measured during the compass calibration due to magnetic interference. Using the Compass/P/R tab look at the heading time series plot for changes in heading that correlate with changes in the magnetic field. If the interference is substantial consider moving up or down stream away from the source of the interference.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
 
         # Determine status of compass tab
@@ -1322,7 +1475,11 @@ class QAData(object):
         if len(meas.compass_cal) == 0:
             # No compass calibration
             self.compass["status1"] = "warning"
-            self.compass["messages"].append(["COMPASS: No compass calibration;", 1, 4])
+            self.compass["messages"].append([self.tr("COMPASS: No compass calibration") + ";", 1, 4])
+            guidance_text = self.tr("Using GPS as the navigation reference and conducting a loop moving-bed test require an accurate compass. Substantial errors can occur if the compass is not accurate. If in the field, calibrated the compass and recollect the data. If in the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+            self.compass["guidance"].append(
+                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+            )
         elif meas.compass_cal[-1].result["compass"]["error"] == "N/A":
             # If the error cannot be decoded from the
             # calibration assume the calibration is good
@@ -1333,7 +1490,11 @@ class QAData(object):
             else:
                 self.compass["status1"] = "caution"
                 self.compass["messages"].append(
-                    ["Compass: Calibration result > 0.2 deg;", 2, 4]
+                    [self.tr("Compass: Calibration result > 0.2 deg") + ";", 2, 4]
+                )
+                guidance_text = self.tr("Experience has demonstrated that a calibration result greater than 0.2 degree could result in inconsistent headings. Accurate headings are critical when using GPS as a reference or using a loop moving-bed test. If in the field, try to recalibrate the compass (up to 3 times) near the measurement section but away from any magnetic interference. Your cell phone, keys, belt buckle are potential sources of interference if you are holding the ADCP. After 3 attempts that fail to be below 0.2 degree, document the results and proceed with the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
 
     def compass_qa_trdi_caleval(self, meas):
@@ -1353,17 +1514,25 @@ class QAData(object):
                 self.compass["status1"] = "warning"
                 self.compass["messages"].append(
                     [
-                        "COMPASS: No " "compass " "calibration " "or " "evaluation;",
+                        self.tr("COMPASS: No compass calibration or evaluation") + ";",
                         1,
                         4,
                     ]
+                )
+                guidance_text = self.tr("Using GPS as the navigation reference and conducting a loop moving-bed test require an accurate compass. Substantial errors can occur if the compass is not accurate. If in the field, calibrated the compass and recollect the data. If in the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
 
             else:
                 # No calibration but an evaluation was completed
                 self.compass["status1"] = "caution"
                 self.compass["messages"].append(
-                    ["Compass: No compass calibration;", 2, 4]
+                    [self.tr("Compass: No compass calibration") + ";", 2, 4]
+                )
+                guidance_text = self.tr("If the evaluation result is < 1 degree a calibration is probably not necessary and the headings should be accurate. However, if the evaluation is greater than 1 degree a compass calibration should be completed. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
         else:
             # Compass was calibrated
@@ -1371,7 +1540,11 @@ class QAData(object):
                 # No compass evaluation
                 self.compass["status1"] = "caution"
                 self.compass["messages"].append(
-                    ["Compass: No compass evaluation;", 2, 4]
+                    [self.tr("Compass: No compass evaluation") + ";", 2, 4]
+                )
+                guidance_text = self.tr("A compass evaluation provides information on the quality of the calibration. If in the field, complete an evaluation, even if it is after the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
             else:
                 # Check results of evaluation
@@ -1381,7 +1554,13 @@ class QAData(object):
                     else:
                         self.compass["status1"] = "caution"
                         self.compass["messages"].append(
-                            ["Compass: Evaluation result > 1 deg;", 2, 4]
+                            [self.tr("Compass: Evaluation result > 1 deg") + ";", 2, 4]
+                        )
+                        guidance_text = self.tr("If in the field, try to recalibrate the compass (up to 3 times) near the measurement section but away from any magnetic interference. Your cell phone, keys, belt buckle are potential sources of interference if you are holding the ADCP. After 3 attempts that fail to be below 1 degree, document the results and proceed with the measurement. In the office, carefully evaluate the measurement. If GPS is used as the navigation reference, use the shiptrack plot and compare the angle between the GPS data and the BT data for reciprocal transects (turning off the vectors may help). The angle should be reasonably consistent if the headings are accurate and the magnetic variation is correct. The angle should always be in the upstream direction if there is a moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference should be less than a few degrees if the compass is calibrated, the magnetic variation is correct, and there is no magnetic interference in the cross section.")
+                        self.compass["guidance"].append(
+                            self.guidance_prep(
+                                self.compass["messages"][-1][0], guidance_text
+                            )
                         )
                 except ValueError:
                     self.compass["status1"] = "good"
@@ -1520,6 +1699,7 @@ class QAData(object):
         """
 
         self.temperature["messages"] = []
+        self.temperature["guidance"] = []
         check = [0, 0]
 
         # Create array of all temperatures
@@ -1547,24 +1727,31 @@ class QAData(object):
             check[0] = 3
             self.temperature["messages"].append(
                 [
-                    "TEMPERATURE: Temperature range is "
+                    self.tr("TEMPERATURE: Temperature range is ")
                     + "{:3.1f}".format(temp_range)
-                    + " degrees C which is greater than 2 degrees;",
+                    + self.tr(" degrees C which is greater than 2 degrees") + ";",
                     1,
                     5,
                 ]
             )
+            guidance_text = self.tr("It is likely that the ADCP was not allowed to equilibrate to the water temperature prior to starting the measurement. However, it is also possible, though rare, that the water temperature is different from one side of the river to the other. If the temperature changes during the measurement and reaches an equilibrium value, then the ADCP was not given sufficient time to equilibrate. If the equilibrated ADCP temperature is close to the independent water temperature, change the water temperature source to user and enter either the independent temperature or the equilibrated ADCP temperature.")
+            self.temperature["guidance"].append(
+                self.guidance_prep(self.temperature["messages"][-1][0], guidance_text))
         elif temp_range > 1:
             check[0] = 2
             self.temperature["messages"].append(
                 [
-                    "Temperature: Temperature range is "
+                    self.tr("Temperature: Temperature range is ")
                     + "{:3.1f}".format(temp_range)
-                    + " degrees C which is greater than 1 degree;",
+                    + self.tr(" degrees C which is greater than 1 degree") + ";",
                     2,
                     5,
                 ]
             )
+            guidance_text = self.tr("It is likely that the ADCP was not allowed to equilibrate to the water temperature prior to starting the measurement. However, it is also possible, though rare, that the water temperature is different from one side of the river to the other. If the temperature changes during the measurement and reaches an equilibrium value, then the ADCP was not given sufficient time to equilibrate. If the equilibrated ADCP temperature is close to the independent water temperature, change the water temperature source to user and enter either the independent temperature or the equilibrated ADCP temperature.")
+            self.temperature["guidance"].append(
+                self.guidance_prep(self.temperature["messages"][-1][0], guidance_text))
+
         else:
             check[0] = 1
 
@@ -1578,8 +1765,13 @@ class QAData(object):
                 # No independent temperature reading
                 check[1] = 2
                 self.temperature["messages"].append(
-                    ["Temperature: No independent temperature reading;", 2, 5]
+                    [self.tr("Temperature: No independent temperature reading") + ";", 2, 5]
                 )
+                guidance_text = self.tr("The temperature measured by the ADCP cannot be verified without an independent temperature. The water temperature is critical to computing the speed of sound and the velocity from the Doppler shift. If still in the field, collect an independent water temperature. If in the office, look for other measurements using this ADCP and check that the ADCP temperature agrees with the water temperature in other measurements.")
+                self.temperature["guidance"].append(
+                    self.guidance_prep(self.temperature["messages"][-1][0],
+                                       guidance_text))
+
             elif not np.isnan(meas.ext_temp_chk["adcp"]):
                 # Compare user to manually entered ADCP temperature
                 diff = np.abs(user - meas.ext_temp_chk["adcp"])
@@ -1589,12 +1781,15 @@ class QAData(object):
                     check[1] = 3
                     self.temperature["messages"].append(
                         [
-                            "TEMPERATURE: The difference between ADCP and "
-                            "reference is > 2:  " + "{:3.1f}".format(diff) + " C;",
+                            self.tr("TEMPERATURE: The difference between ADCP and reference is > 2:  ") + "{:3.1f}".format(diff) + " C;",
                             1,
                             5,
                         ]
                     )
+                    guidance_text = self.tr("Ensure that the ADCP has had time to equilibrate to the water temperature and make another comparison. If the difference is still greater than 2 degrees, continue with the measurement. However, check the independent temperature source against another temperature source. If the independent temperature reading is correct, change the temperature source to user and enter the independent temperature source and reprocess the measurement.")
+                    self.temperature["guidance"].append(
+                        self.guidance_prep(self.temperature["messages"][-1][0],
+                                           guidance_text))
             else:
                 # Compare user to mean of all temperature data
                 diff = np.abs(user - np.nanmean(temp))
@@ -1604,12 +1799,15 @@ class QAData(object):
                     check[1] = 3
                     self.temperature["messages"].append(
                         [
-                            "TEMPERATURE: The difference between ADCP and "
-                            "reference is > 2:  " + "{:3.1f}".format(diff) + " C;",
+                            self.tr("TEMPERATURE: The difference between ADCP and reference is > 2:  ") + "{:3.1f}".format(diff) + " C;",
                             1,
                             5,
                         ]
                     )
+                    guidance_text = self.tr("Ensure that the ADCP has had time to equilibrate to the water temperature and make another comparison. If the difference is still greater than 2 degrees, continue with the measurement. However, check the independent temperature source against another temperature source. If the independent temperature reading is correct, change the temperature source to user and enter the independent temperature source and reprocess the measurement.")
+                    self.temperature["guidance"].append(
+                        self.guidance_prep(self.temperature["messages"][-1][0],
+                                           guidance_text))
 
         # Assign temperature status
         max_check = max(check)
@@ -1630,21 +1828,29 @@ class QAData(object):
         """
 
         self.movingbed["messages"] = []
+        self.movingbed["guidance"] = []
         self.movingbed["code"] = 0
 
         # Are there moving-bed tests?
         if len(meas.mb_tests) < 1:
             if meas.observed_no_moving_bed:
                 self.movingbed["messages"].append(
-                    ["Moving-Bed Test: Visually observed no moving bed;", 2, 6]
+                    [self.tr("Moving-Bed Test: Visually observed no moving bed") + ";", 2, 6]
                 )
+                guidance_text = self.tr("Provide documentation describing the visual observation and why it was determined that there was no moving bed.")
+                self.movingbed["guidance"].append(
+                    self.guidance_prep(self.movingbed["messages"][-1][0],
+                                       guidance_text))
                 self.movingbed["status"] = "caution"
                 self.movingbed["code"] = 2
             else:
                 # No moving-bed test
                 self.movingbed["messages"].append(
-                    ["MOVING-BED TEST: No moving bed test;", 1, 6]
+                    [self.tr("MOVING-BED TEST: No moving bed test") + ";", 1, 6]
                 )
+                guidance_text = self.tr("A moving-bed test is required to determine if a moving-bed condition exists. If a moving-bed test cannot or was not collected, provide documentation and analysis as to the likely moving-bed condition at the time of the measurement.")
+                self.movingbed["guidance"].append(
+                    self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
                 self.movingbed["status"] = "warning"
                 self.movingbed["code"] = 3
 
@@ -1694,14 +1900,14 @@ class QAData(object):
                 # No valid test according to user
                 self.movingbed["messages"].append(
                     [
-                        "MOVING-BED TEST: No "
-                        "valid moving-bed test "
-                        "based on user input;",
+                        self.tr("MOVING-BED TEST: No valid moving-bed test based on user input") + ";",
                         1,
                         6,
                     ]
                 )
-
+                guidance_text = self.tr("Provide documentation why a valid moving-bed test could not be collected. Include in the documentation the likely moving-bed condition at the time of the measurement and  justification for that determination.")
+                self.movingbed["guidance"].append(
+                    self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
                 self.movingbed["status"] = "warning"
                 self.movingbed["code"] = 3
             else:
@@ -1709,12 +1915,15 @@ class QAData(object):
                 if len(np.unique(file_names)) < len(file_names):
                     self.movingbed["messages"].append(
                         [
-                            "MOVING-BED TEST: Duplicate moving-bed test files "
-                            "marked valid;",
+                            self.tr("MOVING-BED TEST: Duplicate moving-bed test files marked valid") + ";",
                             1,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("Duplicate filenames are typically a manufacturer's software bug. Only one of the duplicate tests should be used, that other should be marked invalid.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
                     self.movingbed["status"] = "warning"
                     self.movingbed["code"] = 3
 
@@ -1728,8 +1937,12 @@ class QAData(object):
                     if "Yes" in mb:
                         # Moving-bed present
                         self.movingbed["messages"].append(
-                            ["Moving-Bed Test: A moving-bed is present.", 2, 6]
+                            [self.tr("Moving-Bed Test: A moving-bed is present") + ";", 2, 6]
                         )
+                        guidance_text = self.tr("Moving-bed tests indicate a moving-bed condition. Use GPS for the navigation reference or use the moving-bed test results to correct the discharge for the effect of the moving-bed.")
+                        self.movingbed["guidance"].append(
+                            self.guidance_prep(self.movingbed["messages"][-1][0],
+                                               guidance_text))
                         self.movingbed["code"] = 2
                         self.movingbed["status"] = "caution"
                         if (
@@ -1740,12 +1953,15 @@ class QAData(object):
                         ):
                             self.movingbed["messages"].append(
                                 [
-                                    "Moving-Bed: Use of composite tracks "
-                                    "could cause inaccurate results.",
+                                    self.tr("Moving-Bed: Use of composite tracks could cause inaccurate results") + ";",
                                     2,
                                     6,
                                 ]
                             )
+                            guidance_text = self.tr("Use of composite tracks in moving-bed conditions is generally not recommended. GPS data are not affected by moving-bed conditions but bottom track data are biased by moving-bed conditions. So mixing of bottom track and GPS data will result in inconsistent handling of moving-bed effects.")
+                            self.movingbed["guidance"].append(
+                                self.guidance_prep(self.movingbed["messages"][-1][0],
+                                                   guidance_text))
 
                         if (
                             meas.transects[
@@ -1756,21 +1972,27 @@ class QAData(object):
                             if any(use_2_correct):
                                 self.movingbed["messages"].append(
                                     [
-                                        "Moving-Bed: BT based moving-bed "
-                                        "correction applied.",
+                                        self.tr("Moving-Bed: BT based moving-bed correction applied") + ";",
                                         2,
                                         6,
                                     ]
                                 )
+                                guidance_text = self.tr("A moving-bed is present and the moving-bed test has been applied to correct the discharge because bottom track is used as the reference. If valid GPS data are available, it is recommended to use GPS as the navigation reference.")
+                                self.movingbed["guidance"].append(
+                                    self.guidance_prep(self.movingbed["messages"][-1][0],
+                                                       guidance_text))
                             else:
                                 self.movingbed["messages"].append(
                                     [
-                                        "MOVING-BED: Moving-bed present and "
-                                        "BT used, but no correction applied.",
+                                        self.tr("MOVING-BED: Moving-bed present and BT used, but no correction applied") + ";",
                                         1,
                                         6,
                                     ]
                                 )
+                                guidance_text = self.tr("A moving-bed is present, but the user has manually turned off the correction. Lack of correction in a moving-bed condition will result in a discharge that is biased low. The discharge should be corrected by a moving-bed test result or GPS should be used for the navigation reference.")
+                                self.movingbed["guidance"].append(
+                                    self.guidance_prep(self.movingbed["messages"][-1][0],
+                                                       guidance_text))
                                 self.movingbed["code"] = 3
                                 self.movingbed["status"] = "warning"
                         elif (
@@ -1780,8 +2002,12 @@ class QAData(object):
                             == "gga_vel"
                         ):
                             self.movingbed["messages"].append(
-                                ["Moving-Bed: GGA used.", 2, 6]
+                                [self.tr("Moving-Bed: GGA used") + ";", 2, 6]
                             )
+                            guidance_text = self.tr("A moving-bed is present. GGA is used. Verify the GGA data are valid.")
+                            self.movingbed["guidance"].append(
+                                self.guidance_prep(self.movingbed["messages"][-1][0],
+                                                   guidance_text))
                         elif (
                             meas.transects[
                                 meas.checked_transect_idx[0]
@@ -1789,8 +2015,12 @@ class QAData(object):
                             == "vtg_vel"
                         ):
                             self.movingbed["messages"].append(
-                                ["Moving-Bed: VTG used.", 2, 6]
+                                [self.tr("Moving-Bed: VTG used") + ";", 2, 6]
                             )
+                            guidance_text = self.tr("A moving-bed is present. VTG is used. Verify the VTG data are valid.")
+                            self.movingbed["guidance"].append(
+                                self.guidance_prep(self.movingbed["messages"][-1][0],
+                                                   guidance_text))
 
                         # Check for test type
                         if sum(np.array(mb_test_type) == "Stationary"):
@@ -1808,14 +2038,14 @@ class QAData(object):
                                     # transects
                                     self.movingbed["messages"].append(
                                         [
-                                            "Moving-Bed Test: "
-                                            + "Less than 3 stationary tests "
-                                            "available for moving-bed "
-                                            "correction;",
+                                            self.tr("Moving-Bed Test: Less than 3 stationary tests available for moving-bed correction") + ";",
                                             2,
                                             6,
                                         ]
                                     )
+                                    guidance_text = self.tr("A moving-bed is present and the results of the stationary moving-bed test will be used to correct the discharge for the effects of the moving-bed. Moving-bed conditions vary across the channel, so at least 3 stationary tests distributed evenly across the channel are recommended to capture the variability of the moving-bed and provide a better correction for the discharge. A correction will be computed using only one test, but a better result would be obtained with at least 3 stationary tests.")
+                                    self.movingbed["guidance"].append(self.guidance_prep(
+                                        self.movingbed["messages"][-1][0], guidance_text))
 
                 elif (
                     len(test_quality) > 0
@@ -1824,17 +2054,15 @@ class QAData(object):
                     # Quality check has warnings
                     self.movingbed["messages"].append(
                         [
-                            "Moving-Bed Test: "
-                            "The moving-bed "
-                            "test(s) has "
-                            "warnings, " + "please review "
-                            "tests to "
-                            "determine "
-                            "validity;",
+                            self.tr("Moving-Bed Test: The moving-bed test(s) has warnings, please review tests to determine validity") + ";",
                             2,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("Review the tests to determine if they are valid. If in the field, consider collecting another moving-bed test, perhaps using a different method (stationary or loop).")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
 
                     self.movingbed["status"] = "caution"
                     self.movingbed["code"] = 2
@@ -1846,30 +2074,30 @@ class QAData(object):
                     # Manual override used
                     self.movingbed["messages"].append(
                         [
-                            "MOVING-BED TEST: " + "The user has "
-                            "manually forced "
-                            "the use of some "
-                            "tests;",
+                            self.tr("MOVING-BED TEST: The user has manually forced the use of some tests") + ";",
                             1,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("Justification for using moving-bed tests with critical errors should be provided in the documentation.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
                     self.movingbed["status"] = "warning"
                     self.movingbed["code"] = 3
 
                 else:
                     # Test has critical errors
                     self.movingbed["messages"].append(
-                        [
-                            "MOVING-BED TEST: "
-                            "The moving-bed "
-                            "test(s) have "
-                            "critical errors " + "and will not be "
-                            "used;",
+                        [self.tr( "MOVING-BED TEST: The moving-bed test(s) have critical errors and will not be used") + ";",
                             1,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("If in the field, consider collecting another moving-bed test, perhaps using a different method (stationary or loop). If a moving-bed test cannot or was not collected provide documentation and analysis as to the likely moving-bed condition at the time of the measurement.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
 
                     self.movingbed["status"] = "warning"
                     self.movingbed["code"] = 3
@@ -1878,16 +2106,15 @@ class QAData(object):
                 if len(np.unique(loop)) > 1:
                     self.movingbed["messages"].append(
                         [
-                            "Moving-Bed Test: "
-                            "Results of valid "
-                            "loops are not "
-                            "consistent, " + "review "
-                            "moving-bed "
-                            "tests;",
+                            self.tr("Moving-Bed Test: Results of valid loops are not consistent, review moving-bed tests") + ";",
                             2,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("The loop tests are not consistent. Review the tests and determine which test should be used by marking the other tests invalid. By default QRev will use the last valid loop test.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
                     if self.movingbed["code"] < 3:
                         self.movingbed["code"] = 2
                         self.movingbed["status"] = "caution"
@@ -1896,12 +2123,15 @@ class QAData(object):
                 if gps_diff2:
                     self.movingbed["messages"].append(
                         [
-                            "Moving-Bed Test: Bottom track and "
-                            "GPS results differ by more than 2%.",
+                            self.tr("Moving-Bed Test: Bottom track and GPS results differ by more than 2%") + ";",
                             2,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and a the ADCP was stationary during the stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user knowledge of the test and the validation of the data.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
                     if self.movingbed["code"] < 3:
                         self.movingbed["code"] = 2
                         self.movingbed["status"] = "caution"
@@ -1909,14 +2139,15 @@ class QAData(object):
                 if gps_diff1:
                     self.movingbed["messages"].append(
                         [
-                            "Moving-Bed Test: "
-                            "Bottom track and "
-                            "GPS results do "
-                            "not agree.",
+                            self.tr("Moving-Bed Test: Bottom track and GPS results do not agree") + ";",
                             2,
                             6,
                         ]
                     )
+                    guidance_text = self.tr("GPS data are available for the moving-bed tests. The test results are computed assuming a loop test returned to the same starting position and the ADCP was stationary during a stationary test. Using GPS to identify the start and stop points for a loop test and to track the movement of the ADCP during the stationary test provides a check on those base assumptions. If there is a difference, the user should verify that the GPS data appear valid and then assess whether the loop test returned to the same starting location or if the stationary test may be bias by movement of the ADCP. Selecting which to use is based on the user's knowledge of the test and the validation of the data.")
+                    self.movingbed["guidance"].append(
+                        self.guidance_prep(self.movingbed["messages"][-1][0],
+                                           guidance_text))
                     if self.movingbed["code"] < 3:
                         self.movingbed["code"] = 2
                         self.movingbed["status"] = "caution"
@@ -1925,20 +2156,28 @@ class QAData(object):
                 if "Loop" in mb_test_type:
                     if self.compass["status"] == "inactive":
                         self.movingbed["messages"].append(
-                            "MOVING-BED TEST: Loop test is not valid. ADCP has no compass."
+                            self.tr("MOVING-BED TEST: Loop test is not valid. ADCP has no compass") + ";"
                         )
+                        guidance_text = self.tr("A loop test requires a accurate compass. Collect a stationary test instead of a loop test.")
+                        self.movingbed["guidance"].append(
+                            self.guidance_prep(self.movingbed["messages"][-1][0],
+                                               guidance_text))
                         self.movingbed["code"] = 3
                         self.movingbed["status"] = "caution"
 
                     if self.compass["status1"] != "good":
                         self.movingbed["messages"].append(
                             [
-                                "Moving-Bed Test: Loop test used but compass calibration is "
+                                self.tr("Moving-Bed Test: Loop test used but compass calibration is ")
                                 + self.compass["status1"],
                                 2,
                                 6,
                             ]
                         )
+                        guidance_text = self.tr("A loop test requires a accurate compass. Recalibrate the compass prior to collecting another loop test or collect a stationary test instead of a loop test.")
+                        self.movingbed["guidance"].append(
+                            self.guidance_prep(self.movingbed["messages"][-1][0],
+                                               guidance_text))
                         if self.movingbed["code"] < 3:
                             self.movingbed["code"] = 2
                             self.movingbed["status"] = "caution"
@@ -1955,12 +2194,16 @@ class QAData(object):
         """
 
         self.user["messages"] = []
+        self.user["guidance"] = []
         self.user["status"] = "good"
 
         # Check for Station Name
         self.user["sta_name"] = False
         if meas.station_name is None or len(meas.station_name.strip()) < 1:
-            self.user["messages"].append(["Site Info: Station name not entered;", 2, 2])
+            self.user["messages"].append([self.tr("Site Info: Station name not entered") + ";", 2, 2])
+            guidance_text = self.tr("Enter site name or description of site location to identify the location of this measurement.")
+            self.user["guidance"].append(
+                self.guidance_prep(self.user["messages"][-1][0], guidance_text))
             self.user["status"] = "caution"
             self.user["sta_name"] = True
 
@@ -1969,16 +2212,40 @@ class QAData(object):
         try:
             if meas.station_number is None or len(meas.station_number.strip()) < 1:
                 self.user["messages"].append(
-                    ["Site Info: Station number not entered;", 2, 2]
+                    [self.tr("Site Info: Station number not entered") + ";", 2, 2]
                 )
+                guidance_text = self.tr("If the measurement was made at numbered gauging site, enter the site number.")
+                self.user["guidance"].append(
+                    self.guidance_prep(self.user["messages"][-1][0], guidance_text))
                 self.user["status"] = "caution"
                 self.user["sta_number"] = True
         except AttributeError:
             self.user["messages"].append(
-                ["Site Info: Station number not entered;", 2, 2]
+                [self.tr("Site Info: Station number not entered") + ";", 2, 2]
             )
+            guidance_text = self.tr(
+                "If the measurement was made at numbered gauging site, enter the site number.")
+            self.user["guidance"].append(
+                self.guidance_prep(self.user["messages"][-1][0], guidance_text))
             self.user["status"] = "caution"
             self.user["sta_number"] = True
+
+        # Time zone
+        self.user["time_zone"] = False
+        if meas.time_zone_required:
+            if len(meas.time_zone) == 0:
+                self.user["messages"].append(
+                    [
+                        self.tr("Time Zone: Your agency requires the time zone to be entered") + ";",
+                        2,
+                        2,
+                    ]
+                )
+                guidance_text = self.tr("Your agency requires the time zone to be entered. Select the appropriate time zone from the list on the Premeasurement tab.")
+                self.user["guidance"].append(
+                    self.guidance_prep(self.user["messages"][-1][0], guidance_text))
+                self.user["status"] = "caution"
+                self.user["time_zone"] = True
 
     def depths_qa(self, meas):
         """Apply quality checks to depth data.
@@ -1999,6 +2266,7 @@ class QAData(object):
         self.depths["q_max_run_warning"] = np.tile(False, n_transects)
         self.depths["all_invalid"] = np.tile(False, n_transects)
         self.depths["messages"] = []
+        self.depths["guidance"] = []
         self.depths["status"] = "good"
         self.depths["draft"] = 0
         checked = []
@@ -2065,83 +2333,97 @@ class QAData(object):
                 self.depths["draft"] = 1
                 self.depths["messages"].append(
                     [
-                        "Depth: Transducer depth "
-                        "is not consistent among "
-                        "transects;",
+                        self.tr("Depth: Transducer depth is not consistent among transects") + ";",
                         2,
                         10,
                     ]
                 )
+                guidance_text = self.tr("Generally the depth of the transducer is set at the beginning of the measurement and not changed. If the change in the depth of the transducer is correct, provide documentation, if not, set the depth of transducer to the correct value.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
 
             # Check for zero draft
             if np.any(np.less(draft_check, 0.01)):
                 self.depths["status"] = "warning"
                 self.depths["draft"] = 2
                 self.depths["messages"].append(
-                    ["DEPTH: Transducer depth is too shallow, likely 0;", 1, 10]
+                    [self.tr("DEPTH: Transducer depth is too shallow, likely 0") + ";", 1, 10]
                 )
+                guidance_text = self.tr("The transducer must be submerged, thus a value less than 0.01 m is not reasonable. Set the correct depth of transducer.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
 
             # Check interpolated discharge criteria
             if np.any(self.depths["q_max_run_warning"]):
                 self.depths["messages"].append(
                     [
-                        "DEPTH: Int. Q for consecutive invalid ensembles exceeds "
+                        self.tr("DEPTH: Int. Q for consecutive invalid ensembles exceeds ")
                         + "%2.0f" % self.q_run_threshold_warning
                         + "%;",
                         1,
                         10,
                     ]
                 )
+                guidance_text = self.tr("More than 5% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.depths["status"] = "warning"
 
             elif np.any(self.depths["q_total_warning"]):
                 self.depths["messages"].append(
                     [
-                        "DEPTH: Int. Q for invalid ensembles in a "
-                        "transect exceeds "
+                        self.tr("DEPTH: Int. Q for invalid ensembles in a transect exceeds ")
                         + "%2.0f" % self.q_total_threshold_warning
                         + "%;",
                         1,
                         10,
                     ]
                 )
+                guidance_text = self.tr("More than 25% of the discharge was computed for ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.depths["status"] = "warning"
             elif np.any(self.depths["q_max_run_caution"]):
                 self.depths["messages"].append(
                     [
-                        "Depth: Int. Q for consecutive invalid ensembles exceeds "
+                        self.tr("Depth: Int. Q for consecutive invalid ensembles exceeds ")
                         + "%2.0f" % self.q_run_threshold_caution
                         + "%;",
                         2,
                         10,
                     ]
                 )
+                guidance_text = self.tr("More than 3% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.depths["status"] = "caution"
             elif np.any(self.depths["q_total_caution"]):
                 self.depths["messages"].append(
                     [
-                        "Depth: Int. Q for "
-                        "invalid ensembles in a "
-                        "transect exceeds "
+                        self.tr("Depth: Int. Q for invalid ensembles in a transect exceeds ")
                         + "%2.0f" % self.q_total_threshold_caution
                         + "%;",
                         2,
                         10,
                     ]
                 )
+                guidance_text = self.tr("More than 10% of the discharge was computed for consecutive ensembles with invalid depths using interpolated depths. Check that the shape of the cross section is reasonable using the interpolated depths.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.depths["status"] = "caution"
 
             # Check if all depths are invalid
             if np.any(self.depths["all_invalid"]):
                 self.depths["messages"].append(
                     [
-                        "DEPTH: There are no "
-                        "valid depths for one or "
-                        "more transects.",
+                        self.tr("DEPTH: There are no valid depths for one or more transects") + ";",
                         2,
                         10,
                     ]
                 )
+                guidance_text = self.tr("Review the depth filters and measured depths to ensure that the filter settings are appropriate. If there are no valid depths, remove the transect from consideration in computing discharge.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.depths["status"] = "warning"
 
         else:
@@ -2164,12 +2446,12 @@ class QAData(object):
                 "warning": "BT-",
                 "caution": "bt-",
                 "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("ErrorVel: ", 2),
-                    ("VertVel: ", 3),
-                    ("Other: ", 4),
-                    ("3Beams: ", 5),
+                    (self.tr("All") + ": ", 0),
+                    (self.tr("Original") + ": ", 1),
+                    (self.tr("ErrorVel") + ": ", 2),
+                    (self.tr("VertVel") + ": ", 3),
+                    (self.tr("Other") + ": ", 4),
+                    (self.tr("3Beams") + ": ", 5),
                 ],
             },
             "GGA": {
@@ -2177,12 +2459,12 @@ class QAData(object):
                 "warning": "GGA-",
                 "caution": "gga-",
                 "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("DGPS: ", 2),
-                    ("Altitude: ", 3),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
+                    (self.tr("All") + ": ", 0),
+                    (self.tr("Original") + ": ", 1),
+                    (self.tr("DGPS") + ": ", 2),
+                    (self.tr("Altitude") + ": ", 3),
+                    (self.tr("Other") + ": ", 4),
+                    (self.tr("HDOP") + ": ", 5),
                 ],
             },
             "VTG": {
@@ -2190,14 +2472,15 @@ class QAData(object):
                 "warning": "VTG-",
                 "caution": "vtg-",
                 "filter": [
-                    ("All: ", 0),
-                    ("Original: ", 1),
-                    ("Other: ", 4),
-                    ("HDOP: ", 5),
+                    (self.tr("All") + ": ", 0),
+                    (self.tr("Original") + ": ", 1),
+                    (self.tr("Other") + ": ", 4),
+                    (self.tr("HDOP") + ": ", 5),
                 ],
             },
         }
         self.boat["messages"] = []
+        self.boat["guidance"] = []
 
         for dt_key, dt_value in data_type.items():
             boat = getattr(self, dt_value["class"])
@@ -2211,6 +2494,7 @@ class QAData(object):
             boat["q_total"] = np.tile(np.nan, (n_transects, 6))
             boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
             boat["messages"] = []
+            boat["guidance"] = []
             status_switch = 0
             avg_speed_check = 0
 
@@ -2285,20 +2569,21 @@ class QAData(object):
                                             ** 0.5
                                         )
                                         if avg_speed < 0.24:
-                                            boat["q_total_caution"][n, 2] = True
+                                            # boat["q_total_caution"][n, 2] = True
                                             if status_switch < 1:
                                                 status_switch = 1
                                             boat["messages"].append(
                                                 [
-                                                    "vtg-AvgSpeed: VTG data may "
-                                                    "not be accurate for average "
-                                                    "boat speed "
-                                                    "less than" + "0.24 m/s (0.8 "
-                                                    "ft/s);",
+                                                    self.tr("vtg-AvgSpeed: VTG data may not be accurate for average boat speed less than 0.24 m/s (0.8  ft/s)") + ";",
                                                     2,
                                                     8,
                                                 ]
                                             )
+                                            guidance_text = self.tr("VTG velocities are based on a Doppler shift in the satellite signals. At velocities lower than 0.24 m/s these velocities may not be accurate in either magnitude and/or direction.")
+                                            boat["guidance"].append(
+                                                self.guidance_prep(
+                                                    boat["messages"][-1][0],
+                                                    guidance_text))
                                             avg_speed_check = 1
 
             # Create message for consecutive invalid discharge
@@ -2310,13 +2595,16 @@ class QAData(object):
                 boat["messages"].append(
                     [
                         dt_value["warning"]
-                        + "Int. Q for consecutive invalid ensembles exceeds "
+                        + self.tr("Int. Q for consecutive invalid ensembles exceeds ")
                         + "%3.1f" % self.q_run_threshold_warning
                         + "%;",
                         1,
                         module_code,
                     ]
                 )
+                guidance_text = self.tr("More than 5% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.")
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 status_switch = 2
             elif boat["q_total_warning"].any():
                 if dt_key == "BT":
@@ -2326,12 +2614,15 @@ class QAData(object):
                 boat["messages"].append(
                     [
                         dt_value["warning"]
-                        + "Int. Q for invalid ensembles in a transect exceeds"
-                        " " + "%3.1f" % self.q_total_threshold_warning + "%;",
+                        + self.tr("Int. Q for invalid ensembles in a transect exceeds ")
+                        + "%3.1f" % self.q_total_threshold_warning + "%;",
                         1,
                         module_code,
                     ]
                 )
+                guidance_text = self.tr("More than 25% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.")
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 status_switch = 2
             elif boat["q_max_run_caution"].any():
                 if dt_key == "BT":
@@ -2341,13 +2632,16 @@ class QAData(object):
                 boat["messages"].append(
                     [
                         dt_value["caution"]
-                        + "Int. Q for consecutive invalid ensembles exceeds "
+                        + self.tr("Int. Q for consecutive invalid ensembles exceeds ")
                         + "%3.1f" % self.q_run_threshold_caution
                         + "%;",
                         2,
                         module_code,
                     ]
                 )
+                guidance_text = self.tr("More than 3% of the discharge base on the reference is invalid in a consecutive group. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.")
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
@@ -2359,12 +2653,15 @@ class QAData(object):
                 boat["messages"].append(
                     [
                         dt_value["caution"]
-                        + "Int. Q for invalid ensembles in a transect exceeds "
-                        "" + "%3.1f" % self.q_total_threshold_caution + "%;",
+                        + self.tr("Int. Q for invalid ensembles in a transect exceeds ")
+                        + "%3.1f" % self.q_total_threshold_caution + "%;",
                         2,
                         module_code,
                     ]
                 )
+                guidance_text = self.tr("More than 10% of the discharge base on the reference is invalid. Carefully review the time series and shiptrack to ensure that the linear interpolation of invalid data appear reasonable.")
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
@@ -2379,11 +2676,14 @@ class QAData(object):
                     [
                         dt_value["warning"]
                         + dt_value["filter"][0][0]
-                        + "There are no valid data for one or more transects.;",
+                        + self.tr("There are no valid data for one or more transects") + ";",
                         1,
                         module_code,
                     ]
                 )
+                guidance_text = self.tr("Carefully review the data with special attention to the identified filter. If for some reason the filter results do not appear reasonable, change the filter setting. Provide justification for any changes made.")
+                boat["guidance"].append(
+                    self.guidance_prep(boat["messages"][-1][0], guidance_text))
 
             # Set status
             if status_switch == 2:
@@ -2406,30 +2706,42 @@ class QAData(object):
         if len(lag_gga) > 0:
             if np.mean(np.abs(lag_gga)) > 10:
                 self.gga_vel["messages"].append(
-                    ["GGA: BT and GGA do not appear to be sychronized", 1, 8]
+                    [self.tr("GGA: BT and GGA do not appear to be sychronized") + ";", 1, 8]
                 )
+                guidance_text = self.tr("The GGA data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 if self.gga_vel["status"] != "warning":
                     self.gga_vel["status"] = "warning"
                     self.gga_vel["lag_status"] = "warning"
             elif np.mean(np.abs(lag_gga)) > 2:
                 self.gga_vel["messages"].append(
-                    ["gga: Lag between BT and GGA > 2 sec", 2, 8]
+                    [self.tr("gga: Lag between BT and GGA > 2 sec") + ";", 2, 8]
                 )
+                guidance_text = self.tr("The GGA data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 if self.gga_vel["status"] != "warning":
                     self.gga_vel["status"] = "caution"
                     self.gga_vel["lag_status"] = "caution"
         if len(lag_vtg) > 0:
             if np.mean(np.abs(lag_vtg)) > 10:
                 self.vtg_vel["messages"].append(
-                    ["VTG: BT and VTG do not appear to be sychronized", 1, 8]
+                    [self.tr("VTG: BT and VTG do not appear to be sychronized") + ";", 1, 8]
                 )
+                guidance_text = self.tr("The VTG data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate.")
+                self.vtg_vel["guidance"].append(
+                    self.guidance_prep(self.vtg_vel["messages"][-1][0], guidance_text))
                 if self.vtg_vel["status"] != "warning":
                     self.vtg_vel["status"] = "warning"
                     self.vtg_vel["lag status"] = "warning"
             elif np.mean(np.abs(lag_vtg)) > 2:
                 self.vtg_vel["messages"].append(
-                    ["vtg: Lag between BT and VTG > 2 sec", 2, 8]
+                    [self.tr("vtg: Lag between BT and VTG > 2 sec") + ";", 2, 8]
                 )
+                guidance_text = self.tr("The VTG data are not synchronized with the ADCP data, which if GGA is used as the reference will result in incorrect water velocities. This could be due to serial port buffering or filters used by the GPS receiver. Turn off filters on the GPS receiver. Try reducing the update rate from the GPS receiver to 2 Hz. If the baud rate is > 19.2k, try reducing to 19.2k. If the baud rate is lower than 115.2k try increasing the baud rate.")
+                self.vtg_vel["guidance"].append(
+                    self.guidance_prep(self.vtg_vel["messages"][-1][0], guidance_text))
                 if self.vtg_vel["status"] != "warning":
                     self.vtg_vel["status"] = "caution"
                     self.vtg_vel["lag_status"] = "caution"
@@ -2460,6 +2772,7 @@ class QAData(object):
         self.w_vel["q_total"] = np.tile(np.nan, (n_transects, n_filters))
         self.w_vel["q_max_run"] = np.tile(np.nan, (n_transects, n_filters))
         self.w_vel["messages"] = []
+        self.w_vel["guidance"] = []
         status_switch = 0
 
         # TODO if meas had a property checked as list it would save creating
@@ -2559,54 +2872,60 @@ class QAData(object):
             if np.any(self.w_vel["q_max_run_warning"]):
                 self.w_vel["messages"].append(
                     [
-                        "WT-" + "Int. Q for consecutive "
-                        "invalid ensembles "
-                        "exceeds " + "%3.0f" % self.q_run_threshold_warning + "%;",
+                        self.tr("WT: Int. Q for consecutive invalid ensembles exceeds ")
+                        + "%3.0f" % self.q_run_threshold_warning + "%;",
                         1,
                         11,
                     ]
                 )
+                guidance_text = self.tr("More than 5% of the discharge was computed for consecutive ensembles with invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.")
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
                 status_switch = 2
 
             elif np.any(self.w_vel["q_total_warning"]):
                 self.w_vel["messages"].append(
                     [
-                        "WT-" + "Int. Q for invalid "
-                        "cells and ensembles in "
-                        "a transect exceeds "
+                        self.tr("WT: Int. Q for invalid cells and ensembles in a transect exceeds ")
                         + "%3.0f" % self.q_total_threshold_warning
                         + "%;",
                         1,
                         11,
                     ]
                 )
+                guidance_text = self.tr("More than 25% of the discharge was computed for invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.")
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
                 status_switch = 2
 
             elif np.any(self.w_vel["q_max_run_caution"]):
                 self.w_vel["messages"].append(
                     [
-                        "wt-" + "Int. Q for consecutive "
-                        "invalid ensembles "
-                        "exceeds " + "%3.0f" % self.q_run_threshold_caution + "%;",
+                        self.tr("wt: Int. Q for consecutive invalid ensembles exceeds ")
+                        + "%3.0f" % self.q_run_threshold_caution + "%;",
                         2,
                         11,
                     ]
                 )
+                guidance_text = self.tr("More than 3% of the discharge was computed for consecutive ensembles with invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.")
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
             elif np.any(self.w_vel["q_total_caution"]):
                 self.w_vel["messages"].append(
                     [
-                        "wt-" + "Int. Q for invalid "
-                        "cells and ensembles in "
-                        "a transect exceeds "
+                        self.tr("wt: Int. Q for invalid cells and ensembles in a transect exceeds ")
                         + "%3.0f" % self.q_total_threshold_caution
                         + "%;",
                         2,
                         11,
                     ]
                 )
+                guidance_text = self.tr("More than 10% of the discharge was computed for invalid water track data using interpolated velocities. Review the velocity distribution to verify that the interpolated values are reasonable. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.")
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
                 if status_switch < 1:
                     status_switch = 1
 
@@ -2614,11 +2933,14 @@ class QAData(object):
             if np.any(self.w_vel["all_invalid"]):
                 self.w_vel["messages"].append(
                     [
-                        "WT-" + "There are no valid data for one or more transects.",
+                        self.tr("WT: There are no valid data for one or more transects") + ";",
                         1,
                         11,
                     ]
                 )
+                guidance_text = self.tr("There are no valid water velocities. Check the filters to make sure the settings are reasonable. If the filter settings are good, then remove the transect from consideration in the computation of discharge. The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off.")
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
                 status_switch = 2
 
             # Set status
@@ -2640,6 +2962,7 @@ class QAData(object):
         """
 
         self.extrapolation["messages"] = []
+        self.extrapolation["guidance"] = []
 
         checked = []
         discharges = []
@@ -2655,17 +2978,14 @@ class QAData(object):
             if np.abs(extrap_uncertainty) > 2:
                 self.extrapolation["messages"].append(
                     [
-                        "Extrapolation: "
-                        "The extrapolation "
-                        "uncertainty is "
-                        "more than " + "2 percent;",
+                        self.tr("Extrapolation: The extrapolation uncertainty is more than 2 percent") + ";",
                         2,
                         12,
                     ]
                 )
-                self.extrapolation["messages"].append(
-                    ["    Carefully review the extrapolation;", 2, 12]
-                )
+                guidance_text = self.tr("The extrapolation method will have a substantial effect on the discharge. Carefully evaluate various extrapolation methods and choose the method that best fits the data. Provide justification for the selected method in the comments.")
+                self.extrapolation["guidance"].append(
+                    self.guidance_prep(self.extrapolation["messages"][-1][0], guidance_text))
                 self.extrapolation["status"] = "caution"
         else:
             self.extrapolation["status"] = "inactive"
@@ -2681,6 +3001,7 @@ class QAData(object):
 
         # Initialize variables
         self.edges["messages"] = []
+        self.edges["guidance"] = []
         checked = []
         left_q = []
         right_q = []
@@ -2750,20 +3071,25 @@ class QAData(object):
             if np.abs(right_q_percent) > 5 or np.abs(left_q_percent) > 5:
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Edge Q is greater than 5%;", 1, 13]
+                    [self.tr("Edges: Edge Q is greater than 5%") + ";", 1, 13]
                 )
+                guidance_text = self.tr("It is recommended that an edge contain a maximum of 5% of the total discharge. If an edge contains more than 5% consider using a different cross section, if possible. If it is not possible, provide documentation, including if the edge discharge appears reasonable.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             elif (
                 len(self.edges["right_q_idx"]) > 0 or len(self.edges["left_q_idx"]) > 0
             ):
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
                     [
-                        "Edges: One or more transects have an edge edge Q "
-                        "greater than 5%;",
+                        self.tr("Edges: One or more transects have an edge edge Q greater than 5%") + ";",
                         1,
                         13,
                     ]
                 )
+                guidance_text = self.tr("It is recommended that an edge contain a maximum of 5% of the total discharge. If an edge contains more than 5% consider using a different cross section, if possible. If it is not possible, provide documentation, including if the edge discharge appears reasonable.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
             # Check for consistent sign
             q_positive = []
@@ -2789,8 +3115,11 @@ class QAData(object):
             if self.edges["right_sign"] or self.edges["left_sign"]:
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Sign of edge Q is not consistent;", 2, 13]
+                    [self.tr("Edges: Sign of edge Q is not consistent") + ";", 2, 13]
                 )
+                guidance_text = self.tr("The sign of the discharge for an edge is not consistent, as expected. This may happen if the velocities are very low and there is flow fluctuation. This could also happen if there is a flow reversal on the edge and the transect is not started or stopped in a consistent location. If there is negative flow in the edge that flow should be captured in the transect.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
             # Check distance moved
             dmg_5_percent = 0.05 * np.nanmean(dist_made_good)
@@ -2817,8 +3146,11 @@ class QAData(object):
             ):
                 self.edges["status"] = "caution"
                 self.edges["messages"].append(
-                    ["Edges: Excessive boat movement in edge ensembles;", 2, 13]
+                    [self.tr("Edges: Excessive boat movement in edge ensembles") + ";", 2, 13]
                 )
+                guidance_text = self.tr("Data used to compute the edge discharge should be collected in a fixed location and the distance from that location to the water's edge should be measured. Excessive movement of the boat during the collection of ensembles used to compute the edge discharge may result in inaccurate average depth and velocity used in the edge discharge computation. Verify the ensembles used in the edge computation.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
             # Check for edge ensembles marked invalid due to excluded distance
             self.edges["invalid_transect_left_idx"] = []
@@ -2871,12 +3203,14 @@ class QAData(object):
             ):
                 self.edges["messages"].append(
                     [
-                        "Edges: The percent of invalid ensembles exceeds 25% in"
-                        + " one or more transects.",
+                        self.tr("Edges: The percent of invalid ensembles exceeds 25% in one or more transects") + ";",
                         2,
                         13,
                     ]
                 )
+                guidance_text = self.tr("More than 25% of the ensembles used to compute the mean depth and velocity for edge discharge computations are invalid. Verify the ensembles used in the edge computation provide a good average depth and velocity. If more ensembles are needed change the number of edge ensembles and adjust the distance to the water's edge as appropriate.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
             # Check edges for zero discharge
             self.edges["left_zero"] = 0
@@ -2898,7 +3232,10 @@ class QAData(object):
             # Zero Q Message
             if self.edges["right_zero"] == 2 or self.edges["left_zero"] == 2:
                 self.edges["status"] = "warning"
-                self.edges["messages"].append(["EDGES: Edge has zero Q;", 1, 13])
+                self.edges["messages"].append([self.tr("EDGES: Edge has zero Q") + ";", 1, 13])
+                guidance_text = self.tr("Edges typically do not have a zero discharge. Check that the edge distance has been entered and there are sufficient valid ensembles to compute a mean depth and velocity. Provide documentation for any needed changes.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
             # Check consistent edge type
             self.edges["left_type"] = 0
@@ -2913,8 +3250,11 @@ class QAData(object):
             if self.edges["right_type"] == 2 or self.edges["left_type"] == 2:
                 self.edges["status"] = "warning"
                 self.edges["messages"].append(
-                    ["EDGES: An edge has an inconsistent edge type;", 1, 13]
+                    [self.tr("EDGES: An edge has an inconsistent edge type") + ";", 1, 13]
                 )
+                guidance_text = self.tr("Unless the transects have been collected at different cross sections the edge type should be consistent for all transects in a measurement. Adjust the edge type as appropriate and provide documentation to explain the difference or needed change.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
 
         else:
             self.edges["status"] = "inactive"
@@ -2970,7 +3310,7 @@ class QAData(object):
 
         n_end = len(valid_run) - 1
 
-        if n_runs > 1:
+        if n_runs > 0:
             m = 0
             q_invalid_run = []
             for n in range(n_start, n_end, 2):
@@ -3069,26 +3409,44 @@ class QAData(object):
 
         if s["BTbeamFilter"] != d["BTbeamFilter"]:
             self.bt_vel["messages"].append(
-                ["BT: User modified default beam setting.", 3, 8]
+                [self.tr("BT: User modified default beam setting") + ";", 3, 8]
             )
+            guidance_text = self.tr("This filter determines the use of 3-beam solutions for bottom track. Provide documentation on the logic for changing the default filter setting.")
+            self.bt_vel["guidance"].append(
+                self.guidance_prep(self.bt_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_bt"] = "Custom"
 
         if s["BTdFilter"] != d["BTdFilter"]:
             self.bt_vel["messages"].append(
-                ["BT: User modified default error velocity filter.", 3, 8]
+                [self.tr("BT: User modified default error velocity filter") + ";", 3, 8]
             )
+            guidance_text = self.tr("This filter is based on an assumption of a random distribution of the error velocity. For SonTek data, each frequency is treated separately. Provide documentation on the logic for changing the default filter setting.")
+            self.bt_vel["guidance"].append(
+                self.guidance_prep(self.bt_vel["messages"][-1][0], guidance_text))
+            self.settings_dict["tab_bt"] = "Custom"
+            self.settings_dict["tab_bt"] = "Custom"
             self.settings_dict["tab_bt"] = "Custom"
 
         if s["BTwFilter"] != d["BTwFilter"]:
             self.bt_vel["messages"].append(
-                ["BT: User modified default vertical velocity filter.", 3, 8]
+                [self.tr("BT: User modified default vertical velocity filter") + ";", 3, 8]
             )
+            guidance_text = self.tr("This filter is based on an assumption of a random distribution of the vertical velocity. For SonTek data, each frequency is treated separately. Provide documentation on the logic for changing the default filter setting.")
+            self.bt_vel["guidance"].append(
+                self.guidance_prep(self.bt_vel["messages"][-1][0], guidance_text))
+            self.settings_dict["tab_bt"] = "Custom"
+            self.settings_dict["tab_bt"] = "Custom"
             self.settings_dict["tab_bt"] = "Custom"
 
         if s["BTsmoothFilter"] != d["BTsmoothFilter"]:
             self.bt_vel["messages"].append(
-                ["BT: User modified default smooth filter.", 3, 8]
+                [self.tr("BT: User modified default smooth filter") + ";", 3, 8]
             )
+            guidance_text = self.tr("The smooth filter is not used by default. It can be used when the standard 3-beam, error velocity, and vertical velocity filters fail to mark obvious spikes in the boat velocity invalid. Provide documentation on the logic for changing the default filter setting.")
+            self.bt_vel["guidance"].append(
+                self.guidance_prep(self.bt_vel["messages"][-1][0], guidance_text))
+            self.settings_dict["tab_bt"] = "Custom"
+            self.settings_dict["tab_bt"] = "Custom"
             self.settings_dict["tab_bt"] = "Custom"
 
     def check_wt_settings(self, meas):
@@ -3108,32 +3466,47 @@ class QAData(object):
 
         if round(s["WTExcludedDistance"], 2) != round(d["WTExcludedDistance"], 2):
             self.w_vel["messages"].append(
-                ["WT: User modified excluded distance.", 3, 11]
+                [self.tr("WT: User modified excluded distance") + ";", 3, 11]
             )
+            guidance_text = self.tr("The excluded distance is set in QRev to remove the potential low bias caused by flow disturbance. Reducing the excluded distance could result in a low bias in the cells near the transducer. Provide documentation to justify the setting.")
+            self.w_vel["guidance"].append(
+                self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_wt"] = "Custom"
 
         if s["WTbeamFilter"] != d["WTbeamFilter"]:
             self.w_vel["messages"].append(
-                ["WT: User modified default beam setting.", 3, 11]
+                [self.tr("WT: User modified default beam setting") + ";", 3, 11]
             )
+            guidance_text = self.tr("This filter determines the use of 3-beam solutions for bottom track. Provide documentation for the logic of changing the default filter.")
+            self.w_vel["guidance"].append(
+                self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_wt"] = "Custom"
 
         if s["WTdFilter"] != d["WTdFilter"]:
             self.w_vel["messages"].append(
-                ["WT: User modified default error velocity filter.", 3, 11]
+                [self.tr("WT: User modified default error velocity filter") + ";", 3, 11]
             )
+            guidance_text = self.tr("This filter is based on an assumption of a random distribution of the error velocity. When set to Auto each ping type is treated separately. A manually provided value is applied to all ping types. Provide documentation for the logic of changing the default filter.")
+            self.w_vel["guidance"].append(
+                self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_wt"] = "Custom"
 
         if s["WTwFilter"] != d["WTwFilter"]:
             self.w_vel["messages"].append(
-                ["WT: User modified default vertical velocity filter.", 3, 11]
+                [self.tr("WT: User modified default vertical velocity filter") + ";", 3, 11]
             )
+            guidance_text = self.tr("This filter is based on an assumption of a random distribution of the vertical velocity. When set to Auto each ping type is treated separately. A manually provided value is applied to all ping types. Provide documentation for the logic of changing the default filter.")
+            self.w_vel["guidance"].append(
+                self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_wt"] = "Custom"
 
         if s["WTsnrFilter"] != d["WTsnrFilter"]:
             self.w_vel["messages"].append(
-                ["WT: User modified default SNR filter.", 3, 11]
+                [self.tr("WT: User modified default SNR filter") + ";", 3, 11]
             )
+            guidance_text = self.tr("The SNR filter for SonTek data can cause considerable loss of data and should be evaluated with the filter on and off. Provide documentation for the logic of changing the default filter.")
+            self.w_vel["guidance"].append(
+                self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text))
             self.settings_dict["tab_wt"] = "Custom"
 
     def check_extrap_settings(self, meas):
@@ -3152,27 +3525,39 @@ class QAData(object):
         if meas.extrap_fit.sel_fit[0].fit_method != "Automatic":
             self.settings_dict["tab_extrap"] = "Custom"
             self.extrapolation["messages"].append(
-                ["Extrapolation: User modified default automatic setting.", 3, 12]
+                [self.tr("Extrapolation: User modified default automatic setting") + ";", 3, 12]
             )
+            guidance_text = self.tr("The extrapolation has been set manually. Provide justification for the selected method in the comments.")
+            self.extrapolation["guidance"].append(
+                self.guidance_prep(self.extrapolation["messages"][-1][0], guidance_text))
 
         # Check data parameters
         if meas.extrap_fit.sel_fit[-1].data_type.lower() != "q":
             self.settings_dict["tab_extrap"] = "Custom"
             self.extrapolation["messages"].append(
-                ["Extrapolation: User modified data type ", 3, 12]
+                [self.tr("Extrapolation: User modified data type") + ";", 3, 12]
             )
+            guidance_text = self.tr("It is not recommend to use velocity as the data type when evaluating the extrapolation methods for use in the moving-boat discharge measurement.")
+            self.extrapolation["guidance"].append(
+                self.guidance_prep(self.extrapolation["messages"][-1][0], guidance_text))
 
         if meas.extrap_fit.threshold != 20:
             self.settings_dict["tab_extrap"] = "Custom"
             self.extrapolation["messages"].append(
-                ["Extrapolation: User modified default threshold.", 3, 12]
+                [self.tr("Extrapolation: User modified default threshold") + ";", 3, 12]
             )
+            guidance_text = self.tr("Changing the default threshold can be used to remove a median value from consideration that has fewer points in the median. Provide justification for the threshold setting in the documentation.")
+            self.extrapolation["guidance"].append(
+                self.guidance_prep(self.extrapolation["messages"][-1][0], guidance_text))
 
         if meas.extrap_fit.subsection[0] != 0 or meas.extrap_fit.subsection[1] != 100:
             self.settings_dict["tab_extrap"] = "Custom"
             self.extrapolation["messages"].append(
-                ["Extrapolation: User modified subsectioning", 3, 12]
+                [self.tr("Extrapolation: User modified subsectioning") + ";", 3, 12]
             )
+            guidance_text = self.tr("Changing the default subsectioning can be used to remove the influence of data near the stream banks. Provide justification for the subsectioning in the documentation.")
+            self.extrapolation["guidance"].append(
+                self.guidance_prep(self.extrapolation["messages"][-1][0], guidance_text))
 
     def check_tempsal_settings(self, meas):
         """Checks the temp and salinity settings to see if they are still on
@@ -3243,23 +3628,39 @@ class QAData(object):
 
             if t_source_change:
                 self.temperature["messages"].append(
-                    ["Temperature: User modified temperature source.", 3, 5]
+                    [self.tr("Temperature: User modified temperature source") + ";", 3, 5]
                 )
+                guidance_text = self.tr("The user has modified the temperature source. Validate the new data from field notes or other documentation.")
+                self.temperature["guidance"].append(
+                    self.guidance_prep(self.temperature["messages"][-1][0],
+                                       guidance_text))
 
             if s_sound_change:
                 self.temperature["messages"].append(
-                    ["Temperature: User modified speed of sound source.", 3, 5]
+                    [self.tr("Temperature: User modified speed of sound source") + ";", 3, 5]
                 )
+                guidance_text = self.tr("The user has modified the speed of sound source. Validate the new data from field notes or other documentation.")
+                self.temperature["guidance"].append(
+                    self.guidance_prep(self.temperature["messages"][-1][0],
+                                       guidance_text))
 
             if t_user_change:
                 self.temperature["messages"].append(
-                    ["Temperature: User modified independent temperature.", 3, 5]
+                    [self.tr("Temperature: User modified independent temperature") + ";", 3, 5]
                 )
+                guidance_text = self.tr("The user has modified the independent temperature reading. Validate this reading from the field notes.")
+                self.temperature["guidance"].append(
+                    self.guidance_prep(self.temperature["messages"][-1][0],
+                                       guidance_text))
 
             if t_adcp_change:
                 self.temperature["messages"].append(
-                    ["Temperature: User modified ADCP temperature.", 3, 5]
+                    [self.tr("Temperature: User modified ADCP temperature") + ";", 3, 5]
                 )
+                guidance_text = self.tr("The user has modified the ADCP temperature. Validate this reading from the field notes and with the ADCP temperature time series.")
+                self.temperature["guidance"].append(
+                    self.guidance_prep(self.temperature["messages"][-1][0],
+                                       guidance_text))
 
     def check_gps_settings(self, meas):
         """Checks the gps settings to see if they are still on the default
@@ -3291,26 +3692,38 @@ class QAData(object):
 
             if s["ggaDiffQualFilter"] != d["ggaDiffQualFilter"]:
                 self.gga_vel["messages"].append(
-                    ["GPS: User modified default quality setting.", 3, 8]
+                    [self.tr("GPS: User modified default quality setting") + ";", 3, 8]
                 )
+                guidance_text = self.tr("If the quality setting is less than 2, evaluate the time series and shiptrack for large random errors. Provide documentation on the logic for changing the default filter setting.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 self.settings_dict["tab_gps"] = "Custom"
 
             if s["ggaAltitudeFilter"] != d["ggaAltitudeFilter"]:
                 self.gga_vel["messages"].append(
-                    ["GPS: User modified default altitude filter.", 3, 8]
+                    [self.tr("GPS: User modified default altitude filter") + ";", 3, 8]
                 )
+                guidance_text = self.tr("The altitude filter is well correlated with the horizontal accuracy of the GGA data. The default setting is based on a target of sub-meter accuracy. Increasing the altitude filter would allow less accurate data to be used. Provide documentation on the logic for changing the default filter setting.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 self.settings_dict["tab_gps"] = "Custom"
 
             if s["GPSHDOPFilter"] != d["GPSHDOPFilter"]:
                 self.gga_vel["messages"].append(
-                    ["GPS: User modified default HDOP filter.", 3, 8]
+                    [self.tr("GPS: User modified default HDOP filter") + ";", 3, 8]
                 )
+                guidance_text = self.tr("The HDOP is a measure of accuracy based on satellite configuration. Increasing the value of HDOP could result in the acceptance of less accurate data. Provide documentation on the logic for changing the default filter setting.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 self.settings_dict["tab_gps"] = "Custom"
 
             if s["GPSSmoothFilter"] != d["GPSSmoothFilter"]:
                 self.gga_vel["messages"].append(
-                    ["GPS: User modified default smooth filter.", 3, 8]
+                    [self.tr("GPS: User modified default smooth filter") + ";", 3, 8]
                 )
+                guidance_text = self.tr("The smooth filter is not used by default. It can be used when the other filters fail to mark obvious spikes in the boat velocity invalid. Provide documentation on the logic for changing the default filter setting.")
+                self.gga_vel["guidance"].append(
+                    self.guidance_prep(self.gga_vel["messages"][-1][0], guidance_text))
                 self.settings_dict["tab_gps"] = "Custom"
 
     def check_depth_settings(self, meas):
@@ -3330,26 +3743,38 @@ class QAData(object):
 
         if s["depthReference"] != d["depthReference"]:
             self.depths["messages"].append(
-                ["Depths: User modified " "depth reference.", 3, 10]
+                [self.tr("Depths: User modified depth reference") + ";", 3, 10]
             )
+            guidance_text = self.tr("Provide documentation to justify the selected depth reference.")
+            self.depths["guidance"].append(
+                self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
             self.settings_dict["tab_depth"] = "Custom"
 
         if s["depthComposite"] != d["depthComposite"]:
             self.depths["messages"].append(
-                ["Depths: User modified " "depth reference.", 3, 10]
+                [self.tr("Depths: User modified depth reference") + ";", 3, 10]
             )
+            guidance_text = self.tr("Provide documentation to justify the selected depth reference.")
+            self.depths["guidance"].append(
+                self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
             self.settings_dict["tab_depth"] = "Custom"
 
         if s["depthAvgMethod"] != d["depthAvgMethod"]:
             self.depths["messages"].append(
-                ["Depths: User modified " "averaging method.", 3, 10]
+                [self.tr("Depths: User modified averaging method") + ";", 3, 10]
             )
+            guidance_text = self.tr("The default inverse distance weighting method was changed to a simple average. Provide documentation to justify the change.")
+            self.depths["guidance"].append(
+                self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
             self.settings_dict["tab_depth"] = "Custom"
 
         if s["depthFilterType"] != d["depthFilterType"]:
             self.depths["messages"].append(
-                ["Depths: User modified " "filter type.", 3, 10]
+                [self.tr("Depths: User modified filter type") + ";", 3, 10]
             )
+            guidance_text = self.tr("The default filter was changed. Provide documentation to justify the change.")
+            self.depths["guidance"].append(
+                self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
             self.settings_dict["tab_depth"] = "Custom"
 
         for idx in meas.checked_transect_idx:
@@ -3359,14 +3784,17 @@ class QAData(object):
                 != transect.depths.bt_depths.draft_use_m
             ):
                 self.depths["messages"].append(
-                    ["Depths: User modified " "draft.", 3, 10]
+                    [self.tr("Depths: User modified draft") + ";", 3, 10]
                 )
+                guidance_text = self.tr("The depth of the transducer (draft) was changed. Provide documentation to justify the change.")
+                self.depths["guidance"].append(
+                    self.guidance_prep(self.depths["messages"][-1][0], guidance_text))
                 self.settings_dict["tab_depth"] = "Custom"
                 break
 
     def check_edge_settings(self, meas):
         """Checks the edge settings to see if they are still on the original
-        ettings.
+        settings.
 
         Parameters
         ----------
@@ -3453,48 +3881,81 @@ class QAData(object):
 
             if start_edge_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified start edge.", 3, 10]
+                    [self.tr("Edges: User modified start edge") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Verify that the sign of the total discharge is correct and provide documentation of any changes.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if left_edge_type_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified left edge type.", 3, 10]
+                    [self.tr("Edges: User modified left edge type") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Verify that the edge types are consistent and/or correct and provide documentation for the difference or any changes.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if left_edge_dist_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified left edge distance.", 3, 10]
+                    [self.tr("Edges: User modified left edge distance") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the reason for changing the edge distance, such as, incorrect value entered or a change due to changing the number of edge ensembles.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if left_edge_ens_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified left number of ensembles.", 3, 10]
+                    [self.tr("Edges: User modified left number of ensembles") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the reason for changing the number of ensembles and adjust the edge distance as appropriate.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if left_edge_q_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified left user discharge.", 3, 10]
+                    [self.tr("Edges: User modified left user discharge") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Provide documentation to support the specified user discharge.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if left_edge_coef_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified left custom coefficient.", 3, 10]
+                    [self.tr("Edges: User modified left custom coefficient") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the logic used to obtain the custom edge coefficient.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if right_edge_type_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified right edge type.", 3, 10]
+                    [self.tr("Edges: User modified right edge type") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Verify that the edge types are consistent and/or correct and provide documentation for the difference or any changes.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if right_edge_dist_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified right edge distance.", 3, 10]
+                    [self.tr("Edges: User modified right edge distance") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the reason for changing the edge distance, such as, incorrect value entered or a change due to changing the number of edge ensembles.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if right_edge_ens_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified right number of ensembles.", 3, 10]
+                    [self.tr("Edges: User modified right number of ensembles") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the reason for changing the number of ensembles and adjust the edge distance as appropriate.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if right_edge_q_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified right user discharge.", 3, 10]
+                    [self.tr("Edges: User modified right user discharge") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Provide documentation to support the specified user discharge.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
             if right_edge_coef_change:
                 self.edges["messages"].append(
-                    ["Edges: User modified right custom coefficient.", 3, 10]
+                    [self.tr("Edges: User modified right custom coefficient") + ";", 3, 10]
                 )
+                guidance_text = self.tr("Document the logic used to obtain the custom edge coefficient.")
+                self.edges["guidance"].append(
+                    self.guidance_prep(self.edges["messages"][-1][0], guidance_text))
         else:
             self.settings_dict["tab_edges"] = "Default"
 
@@ -3537,17 +3998,23 @@ class QAData(object):
             if any(mb_user_valid):
                 self.settings_dict["tab_mbt"] = "Custom"
                 self.movingbed["messages"].append(
-                    ["Moving-Bed Test: " "User modified " "valid test settings.", 3, 6]
+                    [self.tr("Moving-Bed Test: User modified valid test settings") + ";", 3, 6]
                 )
+                guidance_text = self.tr("Provide documentation as to why the test has been determined to be valid or invalid.")
+                self.movingbed["guidance"].append(
+                    self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
             if any(mb_used):
                 self.settings_dict["tab_mbt"] = "Custom"
                 self.movingbed["messages"].append(
                     [
-                        "Moving-Bed Test: " "User modified " "use to correct settings.",
+                        self.tr("Moving-Bed Test: User modified use to correct settings") + ";",
                         3,
                         6,
                     ]
                 )
+                guidance_text = self.tr("Provide documentation as to justify the decision to use or not use the test for correction.")
+                self.movingbed["guidance"].append(
+                    self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
 
         if meas.observed_no_moving_bed:
             self.settings_dict["tab_mbt"] = "Custom"
@@ -3594,13 +4061,19 @@ class QAData(object):
 
             if magvar_change:
                 self.compass["messages"].append(
-                    ["Compass: User modified magnetic variation.", 3, 4]
+                    [self.tr("Compass: User modified magnetic variation") + ";", 3, 4]
                 )
+                guidance_text = self.tr("If the user has modified the magnetic variation, check that the variation is reasonable for the site.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
             if align_change:
                 self.compass["messages"].append(
-                    ["Compass: User modified heading offset.", 3, 4]
+                    [self.tr("Compass: User modified heading offset") + ";", 3, 4]
                 )
+                guidance_text = self.tr("If the user has modified the heading offset, look for collected transects or documentation to justify the heading offset.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
     def check_oursin(self, meas):
         """Checks the compass settings for changes.
@@ -3637,11 +4110,14 @@ class QAData(object):
         self.system_tst_qa(meas)
         self.system_tst["messages"].append(
             [
-                "System Test: A system test has been manually added to the measurement.",
+                self.tr("System Test: A system test has been manually added to the measurement") + ";",
                 2,
                 3,
             ]
         )
+        guidance_text = self.tr("Provide documentation on the source of the system test and why it was not originally collected with this measurement.")
+        self.system_tst["guidance"].append(
+            self.guidance_prep(self.system_tst["messages"][-1][0], guidance_text))
 
         self.settings_dict["tab_systest"] = "Custom"
 
@@ -3658,11 +4134,14 @@ class QAData(object):
         self.compass_qa(meas)
         self.compass["messages"].append(
             [
-                "Compass: A compass cal/eval has been manually added to the measurement.",
+                self.tr("Compass: A compass cal/eval has been manually added to the measurement") + ";",
                 2,
                 3,
             ]
         )
+        guidance_text = self.tr("Provide documentation on the source of the compass calibration and/or evaluatation and why it was not originally collected with this measurement.")
+        self.compass["guidance"].append(
+            self.guidance_prep(self.compass["messages"][-1][0], guidance_text))
 
         self.settings_dict["tab_compass"] = "Custom"
 
@@ -3679,10 +4158,13 @@ class QAData(object):
         self.moving_bed_qa(meas)
         self.movingbed["messages"].append(
             [
-                "Moving-Bed Test: A moving-bed test has been manually added to the measurement.",
+                self.tr("Moving-Bed Test: A moving-bed test has been manually added to the measurement") + ";",
                 2,
                 3,
             ]
         )
+        guidance_text = self.tr("Provide documentation on the source of the moving-bed test and why it was not originally collected with this measurement.")
+        self.movingbed["guidance"].append(
+            self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
 
         self.settings_dict["tab_mbt"] = "Custom"

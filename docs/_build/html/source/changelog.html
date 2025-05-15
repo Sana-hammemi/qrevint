@@ -7,7 +7,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>QRev Change Log &#8212; Python  documentation</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -33,13 +33,14 @@
     <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'source/changelog';</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -56,15 +57,6 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  
-  <div id="pst-scroll-pixel-helper"></div>
-
-  
-  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>
-    Back to top
-  </button>
-
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -123,6 +115,10 @@
 <li class="toctree-l1"><a class="reference internal" href="user.html">User Manual</a></li>
 <li class="toctree-l1"><a class="reference internal" href="technical.html">Technical Manual</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">QRev Change Log</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-4-40-0"><strong>Version 4.40.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-4-39"><strong>Version 4.39</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#changed"><strong>Changed:</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-4-38"><strong>Version 4.38</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-34"><strong>Version 4.34</strong></a></li>
@@ -142,7 +138,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#version-4-20"><strong>Version 4.20</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-19"><strong>Version 4.19</strong></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#version-4-13"><strong>Version 4.13</strong></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#software-firmware-status-definitions">Software/Firmware Status Definitions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
@@ -272,10 +267,10 @@
 
 <script>
 document.write(`
-  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
   </button>
 `);
 </script>
@@ -283,7 +278,7 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+    <i class="fa-solid fa-magnifying-glass"></i>
   </button>
 `);
 </script>
@@ -310,6 +305,10 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-40-0"><strong>Version 4.40.0</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-39"><strong>Version 4.39</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#changed"><strong>Changed:</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-38"><strong>Version 4.38</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-34"><strong>Version 4.34</strong></a></li>
@@ -329,7 +328,6 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-20"><strong>Version 4.20</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-19"><strong>Version 4.19</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-13"><strong>Version 4.13</strong></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#software-firmware-status-definitions">Software/Firmware Status Definitions</a></li>
 </ul>
             </nav>
         </div>
@@ -343,9 +341,95 @@ document.write(`
                   
   <section id="qrev-change-log">
 <h1>QRev Change Log<a class="headerlink" href="#qrev-change-log" title="Permalink to this heading">#</a></h1>
+<section id="version-4-40-0">
+<h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.0"><strong>Version 4.40.0</strong></a><a class="headerlink" href="#version-4-40-0" title="Permalink to this heading">#</a></h2>
+<p>Versioning changed to Major, minor, patch format starting with version 4.40.0</p>
+<p><strong>Added:</strong></p>
+<ul class="simple">
+<li><p>Added Alpha and Phi computations to backend.</p></li>
+<li><p>Added tab (currently hidden) for Alpha and Phi computations.</p></li>
+<li><p>Added additional MAP CSV export options and updated UI to show additional
+buttons to trigger exports.</p></li>
+</ul>
+<p><strong>Changed:</strong></p>
+<ul class="simple">
+<li><p>Optimized some of the MAP computations to increase processing speeds.</p></li>
+</ul>
+<p><strong>Fixed:</strong></p>
+<ul class="simple">
+<li><p>Fixed crash due GPS data containing Lat/Longs outside valid range.</p></li>
+<li><p>Fixed MAP contour plot crash</p></li>
+<li><p>Fixed erroneous MAP contour plots</p></li>
+<li><p>Fixed crash caused by new time zone feature.</p></li>
+<li><p>Fixed UTC offset crashes.</p></li>
+<li><p>Added phase 1 translation files.</p></li>
+<li><p>Fixed ADCP Frequency for M9s in PDF export to show Multi instead of 3000.</p></li>
+</ul>
+<p>*Merges in QRevInt changes since last version:</p>
+<ul class="simple">
+<li><p>Fixed bug identifying invalid edge ensembles</p></li>
+<li><p>Add processing of vertical velocity</p></li>
+<li><p>Fixed reporting of end time in pdf file</p></li>
+<li><p>Fixed crash when using automatic scaling from Set Axis Limits context menu</p></li>
+<li><p>Fixed bug in SNR filter for non-SonTek data</p></li>
+<li><p>Fixed graphing of data with unspecified ping type</p></li>
+<li><p>Fixed bug not reading SNR range for QRev.mat files</p></li>
+<li><p>Fixed issues with side lobe cutoff data in QRev.mat files</p></li>
+<li><p>Fixed bug computing 3-beam solutions for SNR filtered SonTek data</p></li>
+<li><p>Modified some legend names and colors for ping types</p></li>
+<li><p>Fixed issue with SNR filter when 3-beam computations for SNR are used</p></li>
+<li><p>Fixed bug in bottom track velocity guidance</p></li>
+<li><p>Fixed bug display extrapolation on Main tab when velocity is selected</p></li>
+<li><p>Added support for rsqmb data files without the need to export to Matlab</p></li>
+<li><p>Ping type for rsqmb data files read from files rather than empirically determined for some Matlab files</p></li>
+<li><p>Sidelobe cutoff for rsqmb data computed using data not available in Matlab output</p></li>
+<li><p>Added correct hpr matrix for Sontek ADCPs</p></li>
+<li><p>Added code to identify and filter 3-beam solutions in SonTek Matlab files</p></li>
+<li><p>Fixed error velocity scaling for bottom track for SonTek Matlab files</p></li>
+<li><p>The number of ensembles in an edge is changed by clicking the Left or Right # Ens. column rather than the # Valid column</p></li>
+<li><p>Changed “Max MovBed” to “Avg MovBed” in pdf summary report.</p></li>
+</ul>
+</section>
+<section id="version-4-39">
+<h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/4.39"><strong>Version 4.39</strong></a><a class="headerlink" href="#version-4-39" title="Permalink to this heading">#</a></h2>
+<p><strong>Added:</strong></p>
+<ul class="simple">
+<li><p>MAP shiptrack CSV export.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h2><strong>Changed:</strong><a class="headerlink" href="#changed" title="Permalink to this heading">#</a></h2>
+<p><strong>Fixed:</strong></p>
+<ul class="simple">
+<li><p>Fixed MAP contour CSV export vertical velocity column which was values
+for primary velocity.</p></li>
+<li><p>Fixed missing stations in MAP CSV export.</p></li>
+</ul>
+</section>
+<section id="version-4-38">
+<h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/4.38"><strong>Version 4.38</strong></a><a class="headerlink" href="#version-4-38" title="Permalink to this heading">#</a></h2>
+<p><strong>Added:</strong></p>
+<ul class="simple">
+<li><p>EDI PDF Export.</p></li>
+<li><p>Added Ctrl+M shortcut to maximize Select Transect dialog.</p></li>
+<li><p>Added Wetted perimeter and hydraulic radius computations.</p></li>
+</ul>
+<p><strong>Changed:</strong></p>
+<ul class="simple">
+<li><p>Package structure updated to better fit use by other applications.</p></li>
+<li><p>Increased default size of Select Transects dialog.</p></li>
+</ul>
+<p><strong>Fixed:</strong></p>
+<ul class="simple">
+<li><p>Corrected end time in PDF Summary</p></li>
+<li><p>Fixed change in discharge when opening a saved QRev .mat and reprocessing
+due to missing SNR range.</p></li>
+<li><p>Display of edge units in exported PDF now honor unit system setting.</p></li>
+<li><p>Added rounding to the magnetic variation in the PDF summary.</p></li>
+</ul>
+</section>
 <section id="version-4-37">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37"><strong>Version 4.37</strong></a><a class="headerlink" href="#version-4-37" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Testing</em></p>
 <p><strong>Added:</strong></p>
 <ul class="simple">
 <li><p>MAP: Added radio buttons to plot SNR/RSSI and Number of transects used.</p></li>
@@ -372,7 +456,6 @@ display.</p></li>
 </section>
 <section id="version-4-36">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36"><strong>Version 4.36</strong></a><a class="headerlink" href="#version-4-36" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Updated Export Mean Cross-Option signal</p></li>
@@ -405,7 +488,6 @@ Left and Right transects.</p></li>
 </section>
 <section id="version-4-34">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34"><strong>Version 4.34</strong></a><a class="headerlink" href="#version-4-34" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed RS5 frequency display.</p></li>
@@ -418,7 +500,6 @@ shiptrack coordinates.</p></li>
 <hr class="docutils" />
 <section id="version-4-33">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.33"><strong>Version 4.33</strong></a><a class="headerlink" href="#version-4-33" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed auto application of MBT correction when no bed is detected.</p></li>
@@ -429,7 +510,6 @@ shiptrack coordinates.</p></li>
 <hr class="docutils" />
 <section id="version-4-32">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.32"><strong>Version 4.32</strong></a><a class="headerlink" href="#version-4-32" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fix plotting of error and vertical velocity time series data on WT tab.</p></li>
@@ -441,7 +521,6 @@ export of RSQ_V2.1.11 or later.</p></li>
 <hr class="docutils" />
 <section id="version-4-31">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.31"><strong>Version 4.31</strong></a><a class="headerlink" href="#version-4-31" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fix plotting of error and vertical velocity time series data on the BT tab.</p></li>
@@ -450,7 +529,6 @@ export of RSQ_V2.1.11 or later.</p></li>
 <hr class="docutils" />
 <section id="version-4-30">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.30"><strong>Version 4.30</strong></a><a class="headerlink" href="#version-4-30" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Upgraded Python to 3.8 2. Fixed crash on main tab due to lollipop plot if
@@ -492,7 +570,6 @@ to xml file.</p></li>
 <hr class="docutils" />
 <section id="version-4-29">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.29"><strong>Version 4.29</strong></a><a class="headerlink" href="#version-4-29" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fix crash associated with auto beam filters for TRDI data.</p></li>
@@ -515,7 +592,6 @@ data was present.</p></li>
 <hr class="docutils" />
 <section id="version-4-27">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.27"><strong>Version 4.27</strong></a><a class="headerlink" href="#version-4-27" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Changed composite depths to interpolate for invalid depths using the
@@ -548,7 +624,6 @@ previously saved QRev file.</p></li>
 <hr class="docutils" />
 <section id="version-4-26">
 <h2><a class="reference external" href="https://code.usgs.gov/QRev/QRevPy/-/releases/V4.26"><strong>Version 4.26</strong></a><a class="headerlink" href="#version-4-26" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fix crash resulting from NaN values in BT data for GPS class.</p></li>
@@ -560,7 +635,6 @@ mat file.</p></li>
 <hr class="docutils" />
 <section id="version-4-25">
 <h2><strong>Version 4.25</strong><a class="headerlink" href="#version-4-25" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed bug in EDI associated with GPS data.</p></li>
@@ -582,7 +656,6 @@ to right</p></li>
 <hr class="docutils" />
 <section id="version-4-24">
 <h2><strong>Version 4.24</strong><a class="headerlink" href="#version-4-24" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Added user option to prompt for rating on save</p></li>
@@ -596,7 +669,6 @@ that could not be computed</p></li>
 <hr class="docutils" />
 <section id="version-4-23">
 <h2><strong>Version 4.23</strong><a class="headerlink" href="#version-4-23" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>New TRDI raw data reader that is 3+ times faster</p></li>
@@ -614,7 +686,6 @@ were collected</p></li>
 <hr class="docutils" />
 <section id="version-4-22">
 <h2><strong>Version 4.22</strong><a class="headerlink" href="#version-4-22" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Added code to identify and notify of user changes to original values</p></li>
@@ -647,7 +718,6 @@ checked</p></li>
 <hr class="docutils" />
 <section id="version-4-21">
 <h2><strong>Version 4.21</strong><a class="headerlink" href="#version-4-21" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed incomplete system test for TRDI causing crash when saving</p></li>
@@ -669,7 +739,6 @@ vertical beam or depth sounder data are available.</p></li>
 <hr class="docutils" />
 <section id="version-4-20">
 <h2><strong>Version 4.20</strong><a class="headerlink" href="#version-4-20" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed issue with shiptrack when all GPS data are invalid</p></li>
@@ -679,7 +748,6 @@ vertical beam or depth sounder data are available.</p></li>
 <hr class="docutils" />
 <section id="version-4-19">
 <h2><strong>Version 4.19</strong><a class="headerlink" href="#version-4-19" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Fixed issue with applying a loop test when preceded by a stationary test.</p></li>
@@ -690,7 +758,6 @@ no GPS</p></li>
 <hr class="docutils" />
 <section id="version-4-13">
 <h2><strong>Version 4.13</strong><a class="headerlink" href="#version-4-13" title="Permalink to this heading">#</a></h2>
-<p><strong>Status</strong>: <em>Allowed</em></p>
 <p><strong>Changes:</strong></p>
 <ul class="simple">
 <li><p>Ported code from Matlab to Python</p></li>
@@ -709,35 +776,7 @@ to top or bottom extrapolation</p></li>
 <li><p>Statistics and interpolation methods in Python may result in small
 differences from Matlab</p></li>
 </ul>
-</section>
 <hr class="docutils" />
-<section id="software-firmware-status-definitions">
-<h2>Software/Firmware Status Definitions<a class="headerlink" href="#software-firmware-status-definitions" title="Permalink to this heading">#</a></h2>
-<p><strong>Required Minimum</strong>: Minimum version required. This version has proven
-stable and may contain enhancements that are significant over previous
-required versions</p>
-<p><strong>Recommended</strong>: Shown to have been reliable and contains features that
-result in a recommended upgrade over the required version. There could be a
-few specific use cases where this version may have issues that would result
-in some users not using this version. If so, those cases will be noted.</p>
-<p><strong>Allowed</strong>: Deemed reliable during initial testing. Any issues will be
-noted along with improvements available over prior versions. Use of allowed
-versions may be desired in cases when the changes benefit a significant
-number of the user’s conditions or equipment. For example: a new version of
-software is released that adds support for new hardware. If the user has
-this hardware, they would need to upgrade to the newer software before it
-becomes recommended or required. Use of these versions by experienced users
-will also help OSW identify any unknown issues.</p>
-<p><strong>Testing</strong>: OSW is currently testing; any known issues or advantages over
-prior release will be noted. The use of a version that is in testing should
-usually be limited to advanced users that can trouble shoot potential
-issues and provide feedback on any irregularities or problems observed.</p>
-<p><strong>Do Not Use</strong>: A version either prior to the required minimum or that
-contains issues that significantly affect operations.</p>
-<p><strong>Note</strong>: A version may remain in <strong>Allowed</strong> or <strong>Testing</strong> indefinitely.
-Example: A new version is released while the prior version is still in
-Testing. In this case the prior version may remain in Testing, while future
-testing efforts are placed on the newer version.</p>
 </section>
 </section>
 
@@ -747,10 +786,11 @@ testing efforts are placed on the newer version.</p>
 
               
               
-              
-              
-                <footer class="prev-next-footer">
-                  <!-- Previous / next buttons -->
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="technical.html"
@@ -770,7 +810,10 @@ testing efforts are placed on the newer version.</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
+</div></div>
+  
 </div>
+
                 </footer>
               
             </div>
@@ -785,6 +828,10 @@ testing efforts are placed on the newer version.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-40-0"><strong>Version 4.40.0</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-39"><strong>Version 4.39</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#changed"><strong>Changed:</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-38"><strong>Version 4.38</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-37"><strong>Version 4.37</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-36"><strong>Version 4.36</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-34"><strong>Version 4.34</strong></a></li>
@@ -804,7 +851,6 @@ testing efforts are placed on the newer version.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-20"><strong>Version 4.20</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-19"><strong>Version 4.19</strong></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-4-13"><strong>Version 4.13</strong></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#software-firmware-status-definitions">Software/Firmware Status Definitions</a></li>
 </ul>
   </nav></div>
 
@@ -841,8 +887,8 @@ testing efforts are placed on the newer version.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
 
   <footer class="bd-footer">
   </footer>

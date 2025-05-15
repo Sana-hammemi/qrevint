@@ -197,6 +197,9 @@ class NormData(object):
             w_vel_y[invalid_data] = np.nan
 
             # Compute mean velocity components in each ensemble
+            if len(w_vel_x) < 1:
+                x = 1
+
             w_vel_mean_1 = np.nanmean(w_vel_x, 0)
             w_vel_mean_2 = np.nanmean(w_vel_y, 0)
 
