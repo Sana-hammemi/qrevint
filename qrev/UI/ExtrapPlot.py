@@ -43,7 +43,6 @@ class ExtrapPlot(object):
         meas,
         checked,
         idx=-1,
-        data_type="Discharge",
         cb_data=True,
         cb_surface=False,
         cb_trans_medians=False,
@@ -63,8 +62,6 @@ class ExtrapPlot(object):
             List of indices of transects used to compute discharge
         idx: int
             Index of data to plot
-        data_type: str
-            Type of data (Discharge or Velocity)
         cb_data: bool
             Plot depth cell data (True or False)
         cb_surface: bool
@@ -130,7 +127,7 @@ class ExtrapPlot(object):
                 self.extrap_plot_fit(extrap_fit.sel_fit[-1], -1, auto)
 
             # Configure axes
-            if data_type == "Discharge":
+            if extrap_fit.norm_data[-1].data_type == "q":
                 self.fig.ax.set_xlabel(self.canvas.tr("Normalized Unit Q "))
             else:
                 self.fig.ax.set_xlabel(self.canvas.tr("Normalized Velocity"))

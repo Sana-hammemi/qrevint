@@ -54,6 +54,8 @@ class Python2Matlab(object):
         self.matlab_dict["extTempChk"] = meas_mat.ext_temp_chk
         self.matlab_dict["userRating"] = meas_mat.user_rating
         self.matlab_dict["initialSettings"] = meas_mat.initial_settings
+        self.matlab_dict["time_zone"] = meas_mat.time_zone
+        self.matlab_dict["time_zone_required"] = meas_mat.time_zone_required
         self.matlab_dict["comments"] = self.comment2struct(meas_mat.comments)
         self.matlab_dict["compassCal"] = self.listobj2struct(
             meas_mat.compass_cal, py_2_mat_dict
@@ -634,6 +636,15 @@ class Python2Matlab(object):
             "meas_struct": Python2Matlab(meas, checked).matlab_dict,
             "version": version,
         }
+        mat_struct["meas_struct"]["tr"] = ""
+
+        # if not np.isnan(mat_struct["meas_struct"]["mbTests"]):
+        try:
+            mat_struct["meas_struct"]["mbTests"]["tr"] = ""
+        except IndexError:
+            pass
+        mat_struct["meas_struct"]["qa"]["tr"] = ""
+        
         sio.savemat(
             file_name=file_name,
             mdict=mat_struct,
@@ -662,8 +673,8 @@ class Python2Matlab(object):
         """
 
         # Make copy to prevent changing Python meas data
-        meas_mat = copy.deepcopy(meas)
-
+        meas_mat = copy.deepcopy(meas)    
+        
         # Process changes for each transect
         for transect in meas_mat.transects:
             transect = Python2Matlab.reconfigure_transect(transect)
@@ -675,7 +686,7 @@ class Python2Matlab(object):
 
         # Adjust 1-D array to be row based
         for fit in meas_mat.extrap_fit.sel_fit:
-            if fit.u is None:
+            if fit.u is None or np.all(np.isnan(fit.u)):
                 fit.u = np.nan
                 fit.z = np.nan
             else:

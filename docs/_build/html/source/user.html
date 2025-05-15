@@ -7,7 +7,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>User Manual &#8212; Python  documentation</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -33,13 +33,14 @@
     <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'source/user';</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -56,15 +57,6 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  
-  <div id="pst-scroll-pixel-helper"></div>
-
-  
-  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>
-    Back to top
-  </button>
-
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -482,10 +474,10 @@
 
 <script>
 document.write(`
-  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
   </button>
 `);
 </script>
@@ -493,7 +485,7 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+    <i class="fa-solid fa-magnifying-glass"></i>
   </button>
 `);
 </script>
@@ -1162,7 +1154,7 @@ Transect: File name of the transect.</p>
 </section>
 <section id="premeasurement-tab">
 <h3>3.3 PREMEASUREMENT TAB<a class="headerlink" href="#premeasurement-tab" title="Permalink to this heading">#</a></h3>
-<p><img alt="" src="../_images/premeas_tab.png" /></p>
+<p><img alt="" src="../_images/premeas_tab_tz.png" /></p>
 <p>The Premeasurement tab provides information on the completion status and results of procedures that should be completed to ensure an identifiable and defendable measurement.</p>
 <ul class="simple">
 <li><p><strong>Site Name:</strong> The name of the site measured.</p></li>
@@ -1172,6 +1164,7 @@ Transect: File name of the transect.</p>
 <li><p><strong>Stage start:</strong> Stage at start of measurement in selected units</p></li>
 <li><p><strong>Stage end:</strong> Stage at end of measurement in selected units</p></li>
 <li><p><strong>Stage meas:</strong> Stage assigned to the measurement in selected units. QRev automatically averages stage start and end to populate stage meas. The user can edit stage meas to a value different from that automatically generated by QRev.</p></li>
+<li><p><strong>Time zone:</strong> Time zone for date and time zone data.</p></li>
 <li><p><strong>ADCP Test:</strong> Was an ADCP system test was performed?</p></li>
 <li><p><strong>ADCP Test Fails:</strong> How many tests within the system test suite failed.</p></li>
 <li><p><strong>Compass Calibration:</strong> Was a compass calibration completed?</p></li>
@@ -1232,6 +1225,10 @@ caution has the symbol <img alt="" src="../_images/caution_symbol.png" /> and th
 and preceded by an identifier in title case. Warnings are associated with
 buttons that are red and cautions with buttons that are yellow. The scroll
 bar on the right allows the user to scroll through messages if the messages exceed the panel size.</p>
+<p><img alt="" src="../_images/msg_tab_with_guidance.png" /></p>
+<p>Placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on impact on the measurement and suggest
+ways to resolve the issue.</p>
 </section>
 <section id="comments-tab">
 <h3>3.7 COMMENTS TAB<a class="headerlink" href="#comments-tab" title="Permalink to this heading">#</a></h3>
@@ -1300,7 +1297,12 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <section id="id2">
 <h3>4.2 MESSAGES TAB<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/messages_tab.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the system test(s). The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with the system test(s). Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom
+panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="compass-p-r-tab">
@@ -1334,7 +1336,11 @@ is assumed to be 30 percent of the total of the absolute value of the discharge 
 <section id="messages">
 <h3>5.3 MESSAGES<a class="headerlink" href="#messages" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/comp_msg.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the compass, pitch, and roll sensors. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with the compass, pitch, and roll sensors. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="temp-sal-tab">
@@ -1355,7 +1361,11 @@ The table at the top of the Data tab displays the speed of sound, the parameters
 <section id="id4">
 <h2>6.2 MESSAGES<a class="headerlink" href="#id4" title="Permalink to this heading">#</a></h2>
 <p><img alt="" src="../_images/temp_sal_msg.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the speed of sound and associated parameters and policies. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with the speed of sound and associated parameters and policies. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 <section id="movbedtst-tab">
 <h2>7. MOVBEDTST TAB<a class="headerlink" href="#movbedtst-tab" title="Permalink to this heading">#</a></h2>
@@ -1401,7 +1411,11 @@ Based on criteria documented in Mueller (2016), the quality of the measurement i
 <section id="id6">
 <h3>7.2 MESSAGES<a class="headerlink" href="#id6" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/mbt_msgs.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with moving-bed test. These messages include details about each test not included in the messages shown on the Main tab. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with moving-bed test. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. These messages include details about each test not included in the messages shown on the Main tab. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="bt-tab">
@@ -1504,7 +1518,11 @@ dynamic moving window is applied. Details are documented in Mueller (2016).</p><
 <section id="id9">
 <h3>8.2 MESSAGES TAB<a class="headerlink" href="#id9" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/bt_msg_tab.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with bottom tracking. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with bottom tracking. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="gps-tab">
@@ -1656,7 +1674,10 @@ graph are controlled by the checkboxes at the top of the graph.</p>
 <h3>9.3 MESSAGES<a class="headerlink" href="#id19" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/gps_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
-by the ADQA associated with GPS data. The bottom panel shows all the
+by the ADQA associated with GPS data. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the
 comments associated with the measurement.</p>
 </section>
 </section>
@@ -1762,7 +1783,10 @@ to Smooth but can also be turned off.</p>
 <h3>10.2 MESSAGES<a class="headerlink" href="#id22" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/depth_msg.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
-by the ADQA associated with depth data. The bottom panel shows all the
+by the ADQA associated with depth data. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the
 comments associated with the measurement.</p>
 </section>
 </section>
@@ -1941,7 +1965,10 @@ thresholds to RSL data only. Details are documented in Mueller (2016).</p></li>
 <h3>11.2 MESSAGES<a class="headerlink" href="#id30" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/wt_msg_tab.png" /></p>
 <p>The Messages tab has two panels. The top panel shows any messages generated
-by the ADQA associated with WT data. The bottom panel shows all the
+by the ADQA associated with WT data. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the
 comments associated with the measurement.</p>
 </section>
 </section>
@@ -2104,7 +2131,11 @@ changed by manually typing a value in the edit.</p></li>
 <section id="id32">
 <h3>12.2 MESSAGES<a class="headerlink" href="#id32" title="Permalink to this heading">#</a></h3>
 <p><img alt="" src="../_images/extrap_msg_tab.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the extrapolation. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with the extrapolation. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="edges-tab">
@@ -2183,7 +2214,11 @@ the discharge in the right edge by entering the discharge in the Right Discharge
 <section id="id36">
 <h4>13.1.7 Messages<a class="headerlink" href="#id36" title="Permalink to this heading">#</a></h4>
 <p><img alt="" src="../_images/edges_msg_tab.png" /></p>
-<p>The Messages tab has two panels. The top panel shows any messages generated by the ADQA associated with the edge data and settings. The bottom panel shows all the comments associated with the measurement.</p>
+<p>The Messages tab has two panels. The top panel shows any messages generated
+by the ADQA associated with the edge data and settings. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel shows all the comments associated with the measurement.</p>
 </section>
 </section>
 </section>
@@ -2474,25 +2509,25 @@ depths is less than 2.50 m and then the default value is 0.02. The value is used
 <section id="id40">
 <h3>16.3 MESSAGES<a class="headerlink" href="#id40" title="Permalink to this heading">#</a></h3>
 <p>The Messages tab has two panels. The top panel shows any messages generated
-by the ADQA associated with the uncertainty computations. The bottom panel
+by the ADQA associated with the uncertainty computations. Like in the Main Messages
+tab, placing the cursor on the message will display a tooltip explaining the
+message and providing guidance on the impact on the measurement and suggest
+ways to resolve the issue. The bottom panel
 shows all the comments associated with the measurement.</p>
 </section>
 </section>
 <section id="map">
 <h2>17. MAP<a class="headerlink" href="#map" title="Permalink to this heading">#</a></h2>
-<p><img alt="" src="../_images/map_tab.png" /></p>
+<p><img alt="" src="../_images/map_tab_20240826.png" /></p>
 <p>The Multitransect Average Profile (MAP) tab allows the user to view the
 measurement data projected and averaged. The data displayed on the plot can
 be toggled using the radio buttons above the plot. The current options are
 contour, bathymetry, temperature, and stick ship.</p>
 <section id="id41">
 <h3>17.1 Options<a class="headerlink" href="#id41" title="Permalink to this heading">#</a></h3>
-<p><img alt="" src="../_images/map_options.png" /></p>
+<p><img alt="" src="../_images/map_options_20240826.png" /></p>
 <p>The data displayed can be further customized by changing the settings in
 the options section of tab.</p>
-<p>The Velocity Type can be toggled between
-Primary and Streamwise Velocity to change the data depicted in the Contour
-plot.</p>
 <p><img alt="" src="../_images/map_velocitytype.png" /></p>
 <p>If the user wishes to view the Secondary velocities plotted on the contour
 plot, values for the Secondary Velocity Scale can be entered. The scale is
@@ -2509,6 +2544,9 @@ Bathymetry setting which is only used to show or hide the transect data.
 The Top/Bottom Extrap and Edges Extrap buttons enable the display and use of
 the estimated zones of the cross-section. The Interpolation check box
 enables the interpolation of missing data.</p>
+<p>Data can be exported to a csv file that will contain all the velocity data,
+or export only the bathymetry data or create a kml file for viewing in
+Google Earth.</p>
 </section>
 </section>
 <section id="references">
@@ -2556,6 +2594,8 @@ as well as, set the minimum number of transects and duration for a measurement.<
 “LeftRightFlowDirDiff”: {“threshold”: 8.1},<br />
 “PDFSummary”: {“show”: True, “default”: “Prompt”},<br />
 “DateFormat”: {“show”: True, “default”: “y.m.d”},<br />
+“TimeZone”: {“required”: false},
+“PercentMeasured”: {“show”: false},
 }</p>
 <p><em>(Default settings for QRev.cfg are in bold.)</em></p>
 <p><em>Units</em></p>
@@ -2687,6 +2727,17 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 <li><p><strong>show:</strong> indicates if the Date Format option should be displayed in the options dialog (<strong>true</strong> or false).</p></li>
 <li><p><strong>default:</strong> the default setting for the date format (<strong>y.m.d</strong>). “y” for year, “m” for month, and “d” for day.</p></li>
 </ul>
+<p><em>TimeZone</em></p>
+<ul class="simple">
+<li><p><strong>required:</strong> indicates if entry of the time zone is required (true or
+<strong>false</strong>).</p></li>
+</ul>
+<p><strong>PercentMeasured:</strong></p>
+<ul class="simple">
+<li><p><strong>show:</strong> option to show percent of total discharge for the
+middle or measured portion of the cross section in the Details table (true
+or <strong>False</strong>).</p></li>
+</ul>
 </section>
 </section>
 
@@ -2696,10 +2747,11 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
 
               
               
-              
-              
-                <footer class="prev-next-footer">
-                  <!-- Previous / next buttons -->
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="../index.html"
@@ -2719,7 +2771,10 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
+</div></div>
+  
 </div>
+
                 </footer>
               
             </div>
@@ -3000,8 +3055,8 @@ automated data quality assessment code (any number of seconds, <strong>720</stro
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
 
   <footer class="bd-footer">
   </footer>

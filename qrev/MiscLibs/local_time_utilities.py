@@ -1,0 +1,38 @@
+from datetime import datetime, timezone
+
+def local_time_from_iso(time_str, utc_offset):
+
+    # Covert iso to datetime object
+    utc = datetime.fromisoformat(time_str)
+    # Add UTC timezone to make datetime timezone aware
+    utc = utc.replace(tzinfo=timezone.utc)
+    # Get time zone
+    tz = utc_offset_to_tz(utc_offset)
+    # Compute local time
+    time_local = utc.astimezone(tz)
+    return time_local
+
+def utc_offset_to_tz(utc_time_offset):
+
+    tz = None
+    if utc_time_offset is not None:
+        offset = utc_time_offset
+        if utc_time_offset[0] != "+" and utc_time_offset[0] != "-":
+            if len(utc_time_offset) > 3:
+                tz_strip = utc_time_offset[3:]
+                if len(tz_strip) <= 2:
+                    offset = tz_strip[0] + '0' + tz_strip[1] + '00'
+                else:
+                    offset = utc_time_offset[3:] + '00'
+            else:
+                offset = "+" + utc_time_offset
+        tz = datetime.strptime(offset, "%z").tzinfo
+    return tz
+
+def tz_formatted_string(serial_time, utc_time_offset, format):
+    tz = utc_offset_to_tz(utc_time_offset)
+    if tz is None:
+        formatted_string = datetime.utcfromtimestamp(serial_time).strftime(format)
+    else:
+        formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(format)
+    return formatted_string

@@ -1,8 +1,13 @@
+import copy
 import ctypes
 import datetime
 import os
+import shutil
+import json
+import re
 import xml.etree.ElementTree as ETree
 from xml.dom.minidom import parseString
+import pandas as pd
 
 import numpy as np
 import simplekml
@@ -32,9 +37,9 @@ from qrev.MiscLibs.common_functions import (
     azdeg2rad,
     units_conversion,
 )
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
 # from profilehooks import profile
-
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
@@ -132,6 +137,8 @@ class Measurement(object):
         excluded=None,
         water_dir_diff_threshold=8.1,
         date_format="%Y.%m.%d",
+        time_zone_required=False,
+        qt_tr=None,
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -174,6 +181,12 @@ class Measurement(object):
             Format string for date
         """
 
+        # Check for use of qt_tr for translation
+        if qt_tr is None:
+            self.tr = self.no_tr
+        else:
+            self.tr = qt_tr
+
         self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
@@ -181,8 +194,8 @@ class Measurement(object):
         self.run_oursin = run_oursin
         self.min_transects = min_transects
         self.min_duration = min_duration
-        self.station_name = None
-        self.station_number = None
+        self.station_name = ""
+        self.station_number = ""
         self.persons = ""
         self.meas_number = ""
         self.transects = []
@@ -226,6 +239,9 @@ class Measurement(object):
                 "RioPro": excluded["RioPro"],
                 "M9": excluded["M9"],
             }
+        self.time_zone_required = time_zone_required
+        self.time_zone = ""
+
 
         # Load data from selected source
         if source == "QRev":
@@ -251,6 +267,9 @@ class Measurement(object):
 
             elif source == "Nortek":
                 self.load_sontek(in_file, snr_3beam_comp=snr_3beam_comp)
+
+            elif source == "RSQ":
+                self.load_rsq(in_file, snr_3beam_comp=snr_3beam_comp)
 
             # Process data
             if len(self.transects) > 0:
@@ -285,10 +304,27 @@ class Measurement(object):
 
                         self.discharge.append(q)
 
-                self.qa = QAData(self)
+                self.qa = QAData(self, tr=self.tr)
 
         if run_map:
             self.compute_map()
+
+    @staticmethod
+    def no_tr(text):
+        """This method replaces the pyqt tr method when this code is not run from a pyqt
+        user interface. It simply returns the string provided.
+
+        Parameters
+        ----------
+        text: str
+            Input text string
+
+        Returns
+        -------
+        text: str
+            Same as input text
+        """
+        return text
 
     def load_trdi(self, mmt_file, transect_type="Q", checked=False):
         """Method to load TRDI data.
@@ -572,7 +608,7 @@ class Measurement(object):
             if len(transects) > 0:
                 for n in range(len(transects)):
                     # Create moving-bed test object
-                    mb_test = MovingBedTests()
+                    mb_test = MovingBedTests(tr=self.tr)
                     mb_test.populate_data(
                         source="TRDI",
                         file=transects[n],
@@ -672,16 +708,15 @@ class Measurement(object):
             if hasattr(rsdata.SiteInfo, "Site_Name"):
                 if len(rsdata.SiteInfo.Site_Name) > 0:
                     self.station_name = rsdata.SiteInfo.Site_Name
-                else:
-                    self.station_name = ""
+
             if hasattr(rsdata.SiteInfo, "Station_Number"):
                 if len(rsdata.SiteInfo.Station_Number) > 0:
                     self.station_number = rsdata.SiteInfo.Station_Number
-                else:
-                    self.station_number = ""
+
             if hasattr(rsdata.SiteInfo, "Meas_Number"):
                 if len(rsdata.SiteInfo.Meas_Number) > 0:
                     self.meas_number = rsdata.SiteInfo.Meas_Number
+
             if hasattr(rsdata.SiteInfo, "Party"):
                 if len(rsdata.SiteInfo.Party) > 0:
                     self.persons = rsdata.SiteInfo.Party
@@ -852,7 +887,7 @@ class Measurement(object):
 
         # Process Loop test
         if file.lower().startswith("loop"):
-            self.mb_tests.append(MovingBedTests())
+            self.mb_tests.append(MovingBedTests(tr=self.tr))
             self.mb_tests[-1].populate_data(
                 source="SonTek",
                 file=os.path.join(pathname, file),
@@ -861,13 +896,288 @@ class Measurement(object):
             )
         # Process Stationary test
         elif file.lower().startswith("smba"):
-            self.mb_tests.append(MovingBedTests())
+            self.mb_tests.append(MovingBedTests(tr=self.tr))
             self.mb_tests[-1].populate_data(
                 source="SonTek",
                 file=os.path.join(pathname, file),
                 test_type="Stationary",
                 snr_3beam_comp=snr_3beam_comp,
             )
+
+    def load_rsq(self, filename, snr_3beam_comp):
+        temp_path = os.path.join(os.getenv("APPDATA"), "QRev_Data")
+        shutil.unpack_archive(filename[0], temp_path, "zip")
+
+        sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
+
+        # DataSessionProperties (Probably not needed)
+        with open(os.path.join(temp_path, "DataSessionProperties.json")) as json_file:
+            sontek_data["data_properties"] = json.load(json_file)
+
+        # TransectSetupTemplate (Site Info, Inst. Info, Systest, Compcal)
+        with open(os.path.join(temp_path, "TransectSetupTemplate.json")) as json_file:
+            sontek_data["transect_setup"] = json.load(json_file)
+
+        # Create path to transects
+        data_path = os.path.join(temp_path, "AdcpData")
+
+        # Load data to dictionary
+        for folder in os.listdir(data_path):
+            if "Transect" in  folder:
+                # Read transect data
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["transects"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Smba" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+            elif "Loop" in folder:
+                transect_folder = os.path.join(data_path, folder)
+                sontek_data["mb_tests"].append(self.rsq_read_transect(transect_folder))
+
+        # Remove temporary files
+        shutil.rmtree(temp_path)
+
+        # Assign data to QRev data structure
+        self.rsq_2_qrev(sontek_data, snr_3beam_comp)
+
+        # Identify checked transects
+        self.checked_transect_idx = self.checked_transects(self)
+
+        for transect in self.transects:
+            transect.change_coord_sys(new_coord_sys="Earth")
+            transect.change_nav_reference(
+                update=False,
+                new_nav_ref=self.transects[
+                    self.checked_transect_idx[0]
+                ].boat_vel.selected,
+            )
+            transect.boat_interpolations(update=False, target="BT", method="Hold9")
+            transect.boat_interpolations(update=False, target="GPS", method="None")
+            transect.apply_averaging_method(setting="Simple")
+            transect.process_depths(update=False, interpolation_method="HoldLast")
+            transect.update_water()
+
+            # Filter water data
+            transect.w_vel.apply_filter(transect=transect, wt_depth=True)
+
+            # Interpolate water data
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="None"
+            )
+            transect.w_vel.apply_interpolation(
+                transect=transect, ens_interp="None", cells_interp="TRDI"
+            )
+
+            if transect.sensors.speed_of_sound_mps.selected == "user":
+                transect.sensors.speed_of_sound_mps.selected = "internal"
+                transect.change_sos(
+                    parameter="sosSrc",
+                    selected="user",
+                    speed=transect.sensors.speed_of_sound_mps.user.data,
+                )
+            elif transect.sensors.salinity_ppt.selected == "user":
+                transect.change_sos(
+                    parameter="salinity",
+                    selected="user",
+                    salinity=transect.sensors.salinity_ppt.user.data,
+                )
+            elif transect.sensors.temperature_deg_c.selected == "user":
+                transect.change_sos(
+                    parameter="temperature",
+                    selected="user",
+                    temperature=transect.sensors.temperature_deg_c.user.data[0],
+                )
+
+
+    @staticmethod
+    def rsq_read_transect(transect_folder):
+        """Reads the files for a single transect and returns a dictionary of the data.
+
+        Parameters
+        ----------
+        transect_folder: str
+            Path to containing the transect files
+
+        Returns
+        -------
+        transect: dict
+            Dictionary of the transect data and configuration
+
+        """
+        # Define transect dictionary
+        transect = {"config_json": None, "config_jsonlog": None, "data": []}
+
+        # Read configuration
+        try:
+            with open(os.path.join(transect_folder, "Configuration_Updated.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+        except BaseException:
+            with open(os.path.join(transect_folder, "Configuration.json")) as json_file:
+                transect["config_json"] = json.load(json_file)
+
+        # Read raw data file to string
+        with open(os.path.join(transect_folder, "RawData.jsonlog")) as json_file:
+            json_log = json_file.read()
+
+        # Find start index for all samples
+        samples_idx = [m.start() for m in re.finditer("RiverSample", json_log)]
+
+        # Read InstrumentRawSessionConfiguration
+        inst_idx = json_log.find("InstrumentRawSessionConfiguration")
+        end_json = samples_idx[0] - 1
+        substring = json_log[inst_idx: end_json]
+        start_json = substring.find("{")
+        transect["config_jsonlog"] = json.loads(substring[start_json::])
+
+        # Loop through samples to create json substring and read json data
+        for n in range(len(samples_idx) - 1):
+            end_json = samples_idx[n + 1] - 1
+            substring = json_log[samples_idx[n]:end_json]
+            start_json = substring.find("{")
+            transect["data"].append(json.loads(substring[start_json::]))
+
+        # Read last sample
+        substring = json_log[samples_idx[-1]::]
+        start_json = substring.find("{")
+        transect["data"].append(json.loads(substring[start_json::]))
+
+        return transect
+
+    def rsq_2_qrev(self, sontek_data, snr_3beam_comp):
+
+        # Site information pulled from last file
+        if len(sontek_data["transects"]) > 0:
+            # Find valid transect
+            for transect in sontek_data["transects"]:
+                if transect["config_json"]["IsEnabledInSessionSummary"]:
+                    break
+
+            if "SiteInformation" in transect["config_json"]["Setup"]:
+                if "SiteName" in transect["config_json"]["Setup"]["SiteInformation"]:
+                    site_name = transect["config_json"]["Setup"]["SiteInformation"]["SiteName"]
+                    if site_name is not None and len(site_name) > 0:
+                        self.station_name = site_name
+
+            if "StationNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                station_number = transect["config_json"]["Setup"]["SiteInformation"]["StationNumber"]
+                if station_number is not None and len(station_number) > 0:
+                    self.station_number = station_number
+
+            if "MeasurementNumber" in transect["config_json"]["Setup"]["SiteInformation"]:
+                meas_no = transect["config_json"]["Setup"]["SiteInformation"]["MeasurementNumber"]
+                if meas_no is not None and len(meas_no) > 0:
+                    self.meas_number = meas_no
+
+            if "Operator" in transect["config_json"]["Setup"]["SiteInformation"]:
+                operator = transect["config_json"]["Setup"]["SiteInformation"]["Operator"]
+                if operator is not None and len(operator) > 0:
+                    self.persons = operator
+
+            if "Comments" in transect["config_json"]["Setup"]["SiteInformation"]:
+                comments = transect["config_json"]["Setup"]["SiteInformation"]["Comments"]
+                if comments is not None and len(comments) > 0:
+                    self.comments.append("RSQ Comments: " + comments)
+                else:
+                    self.comments.append("RSQ Comments:")
+
+            # Gauge height information stored as string
+            if "GaugeHeightInformation" in transect["config_json"]["Setup"]["SiteInformation"]:
+                try:
+                    self.stage_meas_m = float(transect["config_json"]["Setup"]["SiteInformation"]["GaugeHeightInformation"])
+                except (TypeError, ValueError):
+                    pass
+            # Get local time offset
+            utc_time_offset = sontek_data["data_properties"]["DataCollectionLocalTimeUtcOffset"]
+
+            hour = int(utc_time_offset.split(":")[0])
+            if hour > 0:
+                self.time_zone = "UTC" + "+" + str(hour)
+            elif hour < 0:
+                self.time_zone = "UTC" + str(hour)
+            else:
+                self.time_zone = "UTC"
+
+            # System tests
+            #TODO Not sure what to do for multiple tests or calibrations
+            self.rsq_add_systest(transect, utc_time_offset)
+
+            # Compass calibration
+            self.rsq_add_compass_cal(transect, utc_time_offset)
+
+            # Transects
+            for transect_data in sontek_data["transects"]:
+                self.transects.append(TransectData())
+                self.transects[-1].rsq(transect_data=transect_data, utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+
+            # Moving-bed tests
+            self.rsq_add_mb_test(tests=sontek_data["mb_tests"], utc_time_offset=utc_time_offset, snr_3beam_comp=snr_3beam_comp)
+
+    def rsq_add_systest(self, transect, utc_time_offset):
+        """Adds a system test to the measurement system test list.
+
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+
+        # Check for presence of system test
+        if "SystemTest" in transect["config_json"]["Setup"]:
+            # Create premeasurement object of system test
+            sys_test = PreMeasurement()
+            data = transect["config_json"]["Setup"]["SystemTest"]
+            time_stamp = local_time_from_iso(data["TestTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc test time
+            data.pop("TestTime", None)
+            # Populate sys_test
+            sys_test.populate_data(time_stamp=time_stamp, data_in=data,
+                                   data_type="RSQST")
+            # Append system test to measurement system test list
+            self.system_tst.append(sys_test)
+
+    def rsq_add_compass_cal(self, transect, utc_time_offset):
+        """Adds a compass calibration to the measurement compass calibration list.
+
+        Parameters
+        ----------
+        transect: dict
+            Dictionary of rsq transect data
+        utc_time_offset: str
+            Offset time from utc to local time
+        """
+
+        # Check for presence of compass calibration
+        if "CompassCalibration" in transect["config_json"]["Setup"]:
+            # Create premeasurment object of compass calibration
+            compass_cal = PreMeasurement()
+            data = transect["config_json"]["Setup"]["CompassCalibration"]
+            time_stamp = local_time_from_iso(data["CalibrationTime"][0:-2],
+                                             utc_time_offset).strftime(
+                self.date_format + " %H:%M:%S")
+            # Remove utc calibration time
+            data.pop("CalibrationTime", None)
+            # Populate compass_cal
+            compass_cal.populate_data(time_stamp=time_stamp, data_in=data, data_type="RSQCC")
+            # Append compass calibration to measurement compass calibration list
+            self.compass_cal.append(compass_cal)
+
+    def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
+
+        for test in tests:
+            #Process Loop test
+            if "Loop" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Loop", utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
+            if "Smba" in test["config_json"]["AdcpMeasurementId"]:
+                self.mb_tests.append(MovingBedTests(tr=self.tr))
+                self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Stationary",
+                                                utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
 
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
@@ -892,6 +1202,16 @@ class Measurement(object):
                 self.meas_number = ""
             else:
                 self.meas_number = meas_struct.meas_number
+        if hasattr(meas_struct, "time_zone_required"):
+            self.time_zone_required = bool(meas_struct.time_zone_required)
+            if len(meas_struct.time_zone) == 0:
+                self.time_zone = ""
+            else:
+                self.time_zone = meas_struct.time_zone
+        else:
+            self.time_zone_required = False
+            self.time_zone = ""
+
         if hasattr(meas_struct, "persons"):
             if len(meas_struct.persons) == 0:
                 self.persons = ""
@@ -1010,8 +1330,13 @@ class Measurement(object):
         except AttributeError:
             self.compass_eval = []
 
-        self.transects = TransectData.qrev_mat_in(meas_struct)
-        self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct)
+        if len(self.time_zone) > 1:
+            tz = self.time_zone
+        else:
+            tz = None
+
+        self.transects = TransectData.qrev_mat_in(meas_struct, time_zone=tz)
+        self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct, tr=self.tr)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
 
@@ -1047,7 +1372,7 @@ class Measurement(object):
 
         self.uncertainty = Uncertainty()
         self.uncertainty.populate_from_qrev_mat(meas_struct)
-        self.qa = QAData(self, mat_struct=meas_struct, compute=False)
+        self.qa = QAData(self, mat_struct=meas_struct, compute=False, tr=self.tr)
         if hasattr(meas_struct, "run_oursin"):
             self.run_oursin = meas_struct.run_oursin
         else:
@@ -1364,9 +1689,6 @@ class Measurement(object):
             transects.
         """
 
-        # Get current settings
-        s = self.current_settings()
-
         # Initialize variables
         n_transects = len(self.transects)
         recompute = False
@@ -1395,7 +1717,8 @@ class Measurement(object):
 
         # Recompute is specified
         if recompute:
-            self.apply_settings(s)
+            self.compute_discharge()
+            self.compute_uncertainty()
         else:
             self.qa.compass_qa(self)
             self.qa.check_compass_settings(self)
@@ -1515,6 +1838,18 @@ class Measurement(object):
             self.transects[transect_idx].change_draft(draft)
 
         self.apply_settings(s)
+
+    def change_timezone (self, text):
+        self.time_zone = text
+
+        for transect in self.transects:
+            if len(text) > 1:
+                offset = int(text[3:])
+            else:
+                offset = None
+            transect.date_time.utc_time_offset = offset
+
+        self.qa = QAData(self, tr=self.tr)
 
     @staticmethod
     def h_external_valid(meas):
@@ -2281,7 +2616,7 @@ class Measurement(object):
         return settings
 
     def update_qa(self):
-        self.qa = QAData(self)
+        self.qa = QAData(self, tr=self.tr)
 
     @staticmethod
     def no_filter_interp_settings(self):
@@ -2367,13 +2702,15 @@ class Measurement(object):
 
         return settings
 
-    def selected_transects_changed(self, selected_transects_idx):
+    def selected_transects_changed(self, selected_transects_idx, review=False):
         """Handle changes in the transects selected for computing discharge.
 
         Parameters
         ----------
-        selected_transects_idx: list
-            List of indices of the transects used to compute discharge
+        selected_transects_idx: lst
+            Indices of the transects used to compute discharge
+        review: bool
+            Indicates if reviewing data or processing.
         """
 
         # Update transect settings
@@ -2384,6 +2721,10 @@ class Measurement(object):
                 self.checked_transect_idx.append(n)
             else:
                 self.transects[n].checked = False
+
+        # clear user comments
+        if not review:
+            self.comments = []
 
         # Update computations
         self.create_filter_composites()
@@ -2404,7 +2745,7 @@ class Measurement(object):
 
         self.uncertainty = Uncertainty()
         self.uncertainty.compute_uncertainty(self)
-        self.qa = QAData(self)
+        self.qa = QAData(self, tr=self.tr)
 
         if self.run_oursin:
             if self.oursin is None:
@@ -2767,7 +3108,7 @@ class Measurement(object):
             width_cov: float
                 coefficient of variation of width in percent
             area: float
-                cross sectional area in m**2
+                cross-sectional area in m**2
             area_cov: float
                 coefficient of variation of are in percent
             wetted_perimeter: float
@@ -2812,6 +3153,8 @@ class Measurement(object):
 
         # Process each transect
         for n, transect in enumerate(self.transects):
+            # Todo Break the function in this loop into smaller static
+            #  methods that could be wrapped in Numba.
             # Compute boat track properties
             boat_track = BoatStructure.compute_boat_track(transect)
 
@@ -2863,54 +3206,64 @@ class Measurement(object):
                 # Get selected depth object
                 depth = getattr(transect.depths, transect.depths.selected)
                 depth_a = np.copy(depth.depth_processed_m)
+                valid_idx = np.logical_not(np.isnan(depth_a))
+                valid_data_idx = in_transect_idx[valid_idx]
+
                 depth_a[np.isnan(depth_a)] = 0
                 # Compute area of the moving-boat portion of the cross section
                 # using trapezoidal integration. This method is consistent with
                 # AreaComp but is different from QRev in Matlab
                 area_moving_boat = np.abs(
-                    np.trapz(depth_a[in_transect_idx], station[in_transect_idx])
-                )
-
+                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx]))
                 # Compute area of left edge
                 edge_type = transect.edges.left.type
+                edge_idx = QComp.edge_ensembles("left", transect)
+                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+                # Wetted perimeter computed as triangular edge unless rectangular specified
+                wp_left = np.sqrt(edge_depth ** 2 + transect.edges.left.distance_m ** 2)
                 coef = 1
                 if edge_type == "Triangular":
                     coef = 0.5
                 elif edge_type == "Rectangular":
                     coef = 1.0
+                    wp_left = edge_depth + transect.edges.left.distance_m
                 elif edge_type == "Custom":
                     coef = 0.5 + (transect.edges.left.cust_coef - 0.3535)
                 elif edge_type == "User Q":
                     coef = 0.5
-                edge_idx = QComp.edge_ensembles("left", transect)
-                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+
                 area_left = edge_depth * transect.edges.left.distance_m * coef
+
 
                 # Compute area of right edge
                 edge_type = transect.edges.right.type
+                edge_idx = QComp.edge_ensembles("right", transect)
+                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+                # Wetted perimeter computed as triangular edge unless rectangular specified
+                wp_right = np.sqrt(edge_depth ** 2 + transect.edges.left.distance_m ** 2)
                 if edge_type == "Triangular":
                     coef = 0.5
                 elif edge_type == "Rectangular":
                     coef = 1.0
+                    wp_right = edge_depth + transect.edges.left.distance_m
                 elif edge_type == "Custom":
                     coef = 0.5 + (transect.edges.right.cust_coef - 0.3535)
                 elif edge_type == "User Q":
                     coef = 0.5
-                edge_idx = QComp.edge_ensembles("right", transect)
-                edge_depth = np.nanmean(depth.depth_processed_m[edge_idx])
+
                 area_right = edge_depth * transect.edges.right.distance_m * coef
 
-                # Compute total cross sectional area
+                # Compute total cross-sectional area
                 trans_prop["area"][n] = np.nansum(
                     [area_left, area_moving_boat, area_right]
                 )
 
                 # Compute wetted perimeter
                 wp = 0
-                for i in range(1, len(depth_a[in_transect_idx])):
+                for i in range(1, len(depth_a[valid_data_idx])):
                     if (
-                        depth_a[in_transect_idx][i - 1] == 0
-                        or depth_a[in_transect_idx][i] == 0
+                        depth_a[valid_data_idx][i - 1] == 0
+                        or depth_a[valid_data_idx][i] == 0
                     ):
                         continue
                     wp += np.sqrt(
@@ -2922,6 +3275,9 @@ class Measurement(object):
                         )
                         ** 2
                     )
+
+                # Add wetted perimeter for the banks
+                wp = wp + wp_left + wp_right
                 trans_prop["wetted_perimeter"][n] = wp
 
                 # Compute hydraulic radius
@@ -5163,6 +5519,92 @@ class Measurement(object):
 
         kml.save(path)
 
+    def drop_transects(self, transect_idx):
+        """Remove transects from Measurement object.
+
+        Parameters:
+            transect_idx: lst
+                index of transects to remove.
+
+        """
+
+        # flip the list
+        keep_idx = list(range(len(self.transects)))
+        for item in transect_idx:
+            del keep_idx[item]
+
+        # reset check transect list
+        old_checked = copy.deepcopy(self.checked_transect_idx)
+        self.checked_transect_idx = []
+
+        # copy transect objects to keep
+        keep_transects = []
+        for idx in keep_idx:
+            keep_transects.append(self.transects[idx])
+            # if transect was previously checked add new index to updated
+            # checked transect list.
+            if idx in old_checked:
+                self.checked_transect_idx.append(len(keep_transects) - 1)
+
+        self.transects = copy.deepcopy(keep_transects)
+
+        # Update computations
+        self.create_filter_composites()
+        settings = self.current_settings()
+        self.apply_settings(settings=settings)
+
+    def export_depth_averaged_velocity(self, units):
+
+        # Initialize arrays
+        vel_e = np.array([])
+        vel_n = np.array([])
+        vel_up = np.array([])
+        mag = np.array([])
+        az = np.array([])
+        lat = np.array([])
+        lon = np.array([])
+
+        for transect in self.transects:
+            if transect.checked:
+                valid_cells = np.logical_not(np.isnan(transect.w_vel.u_processed_mps))
+                sum_weights = np.nansum(transect.depths.bt_depths.depth_cell_size_m * valid_cells, axis=0)
+                u = np.nansum(transect.w_vel.u_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                v = np.nansum(transect.w_vel.v_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                w = np.nansum(transect.w_vel.w_processed_mps * transect.depths.bt_depths.depth_cell_size_m, axis=0) / sum_weights
+                dir_temp, mag_temp = cart2pol(u, v)
+                az_temp = rad2azdeg(dir_temp)
+
+                vel_e = np.hstack((vel_e, u))
+                vel_n = np.hstack((vel_n, v))
+                vel_up = np.hstack((vel_up, w))
+                mag = np.hstack((mag, mag_temp))
+                az = np.hstack((az, az_temp))
+                lat = np.hstack((lat, transect.gps.gga_lat_ens_deg))
+                lon = np.hstack((lon, transect.gps.gga_lon_ens_deg))
+
+        data = {
+            "vel_east": vel_e * units["V"],
+            "vel_north": vel_n * units["V"],
+            "vel_up": vel_up * units["V"],
+            "magnitude": mag * units["V"],
+            "azimuth": az,
+            "lat": lat,
+            "lon": lon
+        }
+        df = pd.DataFrame(data)
+        df.rename(columns={
+            "vel_east": "vel_east " + units["label_V"],
+            "vel_north": "vel_north" + units["label_V"],
+            "vel_up": "vel_up" + units["label_V"],
+            "magnitude": "magnitude" + units["label_V"],
+            "azimuth": "azimuth (deg)",
+            "lat": "lat (deg)",
+            "lon": "lon (deg)"
+        }, inplace=True)
+
+        return df
+
+        # final_array = np.vstack((vel_e, vel_n, vel_up, mag, az, lat, lon)).T
 
 if __name__ == "__main__":
     pass

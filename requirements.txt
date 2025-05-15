@@ -44,3 +44,5 @@ sphinx-markdown-builder
 sphinx
 myst-parser
 sphinx_book_theme
+
+surfveltools @ git+https://code.usgs.gov/hydrologic-remote-sensing-branch/surface-velocity-tools.git@main

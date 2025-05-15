@@ -1,5 +1,5 @@
 import numpy as np
-
+# Todo time zone not init when loading Qrev .mat files.
 
 class DateTime(object):
     """This stores the date and time data in Python compatible format.
@@ -28,8 +28,10 @@ class DateTime(object):
         self.end_serial_time = None
         self.transect_duration_sec = None
         self.ens_duration_sec = None
+        self.utc_time_offset = None
 
-    def populate_data(self, date_in, start_in, end_in, ens_dur_in):
+
+    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):
         """Populate data in object.
 
         Parameters
@@ -42,6 +44,8 @@ class DateTime(object):
             Python serial time for end of transect.
         ens_dur_in: np.array(float)
             Duration of each ensemble, in seconds.
+        utc_time_offset=str
+            String containing utc time offset to achieve local time
         """
 
         self.date = date_in
@@ -49,8 +53,9 @@ class DateTime(object):
         self.end_serial_time = end_in
         self.transect_duration_sec = float(end_in - start_in)
         self.ens_duration_sec = ens_dur_in.astype(float)
+        self.utc_time_offset = utc_time_offset
 
-    def populate_from_qrev_mat(self, transect):
+    def populate_from_qrev_mat(self, transect, time_zone=None):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -58,6 +63,8 @@ class DateTime(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
+        time_zone: str
+            user specified time zone.
         """
 
         if hasattr(transect, "dateTime"):
@@ -76,3 +83,7 @@ class DateTime(object):
                 self.ens_duration_sec = transect.dateTime.ensDuration_sec.astype(float)
             except AttributeError:
                 self.ens_duration_sec = np.array([np.nan])
+
+            if time_zone is not None:
+                if len(time_zone) > 1:
+                    self.utc_time_offset = time_zone

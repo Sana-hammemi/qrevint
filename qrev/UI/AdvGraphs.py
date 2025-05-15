@@ -119,13 +119,15 @@ class AdvGraphs(object):
             "C": "Coherent",
             "S": "Surface",
             "1I": "1 MHz Inc",
-            "1C": "1 MHz Coh",
+            "1C": "1 MHz HD",
             "3I": "3 MHz Inc",
-            "3C": "3 MHz Coh",
-            "BB": "BB",
-            "PC": "PC",
-            "PC/BB": "PC/BB",
-            "PCBB": "PC/BB",
+            "3C": "3 MHz HD",
+            "3P": "3 MHz PC",
+            "3B": "3 MHz BB",
+            "BB": "3 MHz BB",
+            "PC": "3 MHz PC",
+            "PC/BB": "3 MHz PC/BB",
+            "PCBB": "3 MHz PC/BB",
             "U": "N/A",
             "1": "N/A",
             "Other": "N/A",
@@ -138,8 +140,10 @@ class AdvGraphs(object):
             "1C": "#009933",
             "3I": "#ffbf00",
             "3C": "#ff33cc",
+            "3P":"#ff33cc",
             "BB": "b",
-            "PC": "#009933",
+            "3B": "b",
+            "PC": "#ff33cc",
             "PC/BB": "#ffbf00",
             "PCBB": "#ffbf00",
             "U": "b",
@@ -155,6 +159,8 @@ class AdvGraphs(object):
             "1C": "*",
             "3I": "+",
             "3C": "x",
+            "3P": "+",
+            "3B": ".",
             "BB": ".",
             "PC": "+",
             "PC/BB": "x",
@@ -168,14 +174,16 @@ class AdvGraphs(object):
             "I": "Incoherent",
             "C": "Coherent",
             "S": "Surface Cell",
-            "1I": "1MHz Incoherent",
+            "1I": "1MHz Inc",
             "1C": "1 MHz HD",
-            "3I": "3 MHz Incoherent",
+            "3I": "3 MHz Inc",
             "3C": "3 MHz HD",
-            "BB": "BB",
-            "PC": "PC",
-            "PC/BB": "PC/BB",
-            "PCBB": "PC/BB",
+            "3P": "3 MHz PC",
+            "3B": "3 MHz BB",
+            "BB": "3 MHz BB",
+            "PC": "3 MHz PC",
+            "PC/BB": "3 MHz PC/BB",
+            "PCBB": "3 MHz PC/BB",
             "U": "N/A",
         }
         self.bt_legend_dict = {
@@ -285,8 +293,8 @@ class AdvGraphs(object):
             Discharge data
         units: dict
             Units selected
-        selected_types: list
-            List of selected plot types
+        selected_types: lst
+            Selected plot types
         flow_direction: float
             Flow direction to be used for projected speed plots
         color_map: str
@@ -353,7 +361,7 @@ class AdvGraphs(object):
                     share_y = True
 
                 # Create additional subplots as specified, sharing x axis for
-                # all plots and  y axis for contour plots
+                # all plots and  y-axis for contour plots
                 if len(selected_types) > 1:
                     for n in range(1, len(selected_types)):
                         # Figure number increased by two to account for the
@@ -816,7 +824,7 @@ class AdvGraphs(object):
         color_map="viridis",
         discharge=None,
     ):
-        """Creates the plots for the bottom track tab.
+        """Creates the plots for the water track tab.
         This approach allows zoom and pan to work together for both plots.
 
         Parameters
@@ -3062,7 +3070,8 @@ class AdvGraphs(object):
             beam_depths = depth_selected.depth_processed_m
             if np.alltrue(np.isnan(beam_depths)):
                 return
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if self.x_axis_type == "L":
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             # Plot processed depth
             fmt = [{"color": "k", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
@@ -3072,8 +3081,11 @@ class AdvGraphs(object):
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [{"color": "r", "linestyle": "-", "marker": "o", "markersize": 4}]
             self.plt_timeseries(
                 data=beam_depths, data_units=data_units, ax=self.ax[-1], fmt=fmt
@@ -3082,8 +3094,11 @@ class AdvGraphs(object):
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#aa00ff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
@@ -3093,8 +3108,11 @@ class AdvGraphs(object):
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
-            # Include edge bathymetry
-            self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
+            if np.alltrue(np.isnan(beam_depths)):
+                return
+            if self.x_axis_type == "L":
+                # Include edge bathymetry
+                self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
             fmt = [
                 {"color": "#00aaff", "linestyle": "-", "marker": "o", "markersize": 4}
             ]
@@ -3225,10 +3243,10 @@ class AdvGraphs(object):
         data_plt: np.array
             Data in meshgrid format used to determine colors in plot
         ensembles: np.array
-            Ensemble numbers used as the x variable to plot the cross section
+            Ensemble numbers used as the x variable to plot the cross-section
              bottom
         depth: np.array
-            Depth data used to plot the cross section bottom
+            Depth data used to plot the cross-section bottom
         """
 
         in_transect_idx = transect.in_transect_idx
@@ -3363,7 +3381,7 @@ class AdvGraphs(object):
         data_plt: np.array
             Data in meshgrid format used to determine colors in plot
         x_data: np.array
-           x variable to plot the cross section
+           x variable to plot the cross-section
         data_units: tuple
             Contains conversion and data_type
         """
@@ -3445,7 +3463,7 @@ class AdvGraphs(object):
         depth: np.ndarray()
             Depth data
         data_units: tuple
-            Tuple of data multiplier and label
+            Data multiplier and label
         data_limits: list
             Optional list of min max data limits
         cmap_in: str
@@ -3472,7 +3490,7 @@ class AdvGraphs(object):
 
         # Create plot variables for input
         if self.x_axis_type == "T":
-            # If x axis is time, create x_plt
+            # If x-axis is time, create x_plt
             x_plt = np.zeros(x_plt_in.shape, dtype="object")
             for r in range(x_plt_in.shape[0]):
                 for c in range(x_plt_in.shape[1]):
@@ -3503,9 +3521,9 @@ class AdvGraphs(object):
 
         # Create color map
         if cmap_in is None:
-            cmap = cm.get_cmap(self.color_map)
+            cmap = copy.copy(cm.get_cmap(self.color_map))
         else:
-            cmap = cm.get_cmap(cmap_in)
+            cmap = copy.copy(cm.get_cmap(cmap_in))
 
         cmap.set_under("white")
 
@@ -3574,10 +3592,16 @@ class AdvGraphs(object):
                 color="k",
                 zorder=3,
             )
+        elif self.x_axis_type == "T":
+            x_datetime = []
+            for timestamp in x:
+                x_datetime.append(datetime.utcfromtimestamp(timestamp))
+            x = np.array(x_datetime)
+            self.expanded_x = x
+            ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
         else:
             self.expanded_x = x
-            ax.plot(x, depth * self.units["L"], color="k")
-
+            ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
         if self.transect is not None:
             depth_obj = getattr(self.transect.depths, self.transect.depths.selected)
 
@@ -3605,7 +3629,7 @@ class AdvGraphs(object):
                         linewidth=0.5,
                     )
                 else:
-                    ax.plot(x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
+                    ax.plot(self.expanded_x, y_plt_sl * self.units["L"], color="r", linewidth=0.5)
 
             # Upper bound of measured depth cells
             y_plt_top = depth_obj.depth_cell_depth_m[0, :] - (
@@ -3673,8 +3697,9 @@ class AdvGraphs(object):
                     color="w",
                     linestyle="dotted",
                 )
-                # Plot edge contours
-                self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
+                if self.x_axis_type == "L":
+                    # Plot edge contours
+                    self.add_edge_contours(min_limit, max_limit, cmap, ax, depth)
 
         else:
             axis_buffer = np.nanmax(x_plt[0, :]) - np.nanmin(x_plt[0, :])
@@ -3693,20 +3718,30 @@ class AdvGraphs(object):
             )
             depth_fill = np.insert(depth, 0, depth[0])
             depth_fill = np.append(depth_fill, depth[-1])
-            ax.fill_between(
-                x_fill,
-                1.15 * np.ceil(np.nanmax(cell_plt)),
-                depth_fill * self.units["L"],
-                color="w",
-                zorder=0,
-            )
+
+            if self.x_axis_type == "L":
+                ax.fill_between(
+                    x_fill * self.units["L"],
+                    1.15 * np.ceil(np.nanmax(cell_plt)),
+                    depth_fill * self.units["L"],
+                    color="w",
+                    zorder=0,
+                )
+            else:
+                ax.fill_between(
+                    x_fill,
+                    1.15 * np.ceil(np.nanmax(cell_plt)),
+                    depth_fill,
+                    color="w",
+                    zorder=0,
+                )
 
         # Data quiver
         if data_quiver:
             if data_quiver["scale"] is not None:
                 self.add_quiver(ax, data_quiver, self.units)
 
-        # Label and limits for y axis
+        # Label and limits for y-axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(
@@ -3776,6 +3811,10 @@ class AdvGraphs(object):
         d: np.array(float)
             Array of depths along transect with edge shapes in m
         """
+
+        if self.transect is None:
+            return x, depth
+
         valid_idx = np.where(np.logical_not(np.isnan(depth)))[0]
         # Left edge
         if self.transect.start_edge == "Left":
@@ -4251,6 +4290,7 @@ class AdvGraphs(object):
 
         self.units = units
         self.color_map = color_map
+        self.x_axis_type = "L"
 
         (
             x_plt,
@@ -4267,10 +4307,10 @@ class AdvGraphs(object):
 
         # populate the figure with MAP contour data
         self.plt_contour(
-            x_plt_in=x_plt * self.units["L"],
+            x_plt_in=x_plt,
             cell_plt_in=cell_plt,
             data_plt_in=data_plt,
-            x=x_data * self.units["L"],
+            x=x_data,
             depth=depths,
             data_units=data_units,
             data_quiver=data_quiver,
@@ -4304,7 +4344,7 @@ class AdvGraphs(object):
         """
 
         with self.wait_cursor():
-            # Set x axis type and units
+            # Set x-axis type and units
             self.x_axis_type = "L"
             self.units = units
 

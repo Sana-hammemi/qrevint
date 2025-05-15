@@ -1,8 +1,64 @@
 # QRev Change Log
 
-## [**Version 4.38**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.38)
+## [**Version 4.40.0**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.0)
 
-**Status**: *Testing*
+Versioning changed to Major, minor, patch format starting with version 4.40.0
+
+**Added:**
+- Added Alpha and Phi computations to backend.
+- Added tab (currently hidden) for Alpha and Phi computations.
+- Added additional MAP CSV export options and updated UI to show additional 
+  buttons to trigger exports.
+
+**Changed:**
+- Optimized some of the MAP computations to increase processing speeds.
+
+**Fixed:**
+- Fixed crash due GPS data containing Lat/Longs outside valid range.
+- Fixed MAP contour plot crash
+- Fixed erroneous MAP contour plots
+- Fixed crash caused by new time zone feature.
+- Fixed UTC offset crashes.
+- Added phase 1 translation files.
+- Fixed ADCP Frequency for M9s in PDF export to show Multi instead of 3000.
+
+*Merges in QRevInt changes since last version:
+- Fixed bug identifying invalid edge ensembles
+- Add processing of vertical velocity
+- Fixed reporting of end time in pdf file
+- Fixed crash when using automatic scaling from Set Axis Limits context menu
+- Fixed bug in SNR filter for non-SonTek data
+- Fixed graphing of data with unspecified ping type
+- Fixed bug not reading SNR range for QRev.mat files
+- Fixed issues with side lobe cutoff data in QRev.mat files
+- Fixed bug computing 3-beam solutions for SNR filtered SonTek data
+- Modified some legend names and colors for ping types
+- Fixed issue with SNR filter when 3-beam computations for SNR are used
+- Fixed bug in bottom track velocity guidance
+- Fixed bug display extrapolation on Main tab when velocity is selected
+- Added support for rsqmb data files without the need to export to Matlab
+- Ping type for rsqmb data files read from files rather than empirically determined for some Matlab files
+- Sidelobe cutoff for rsqmb data computed using data not available in Matlab output
+- Added correct hpr matrix for Sontek ADCPs
+- Added code to identify and filter 3-beam solutions in SonTek Matlab files
+- Fixed error velocity scaling for bottom track for SonTek Matlab files
+- The number of ensembles in an edge is changed by clicking the Left or Right # Ens. column rather than the # Valid column
+- Changed "Max MovBed" to "Avg MovBed" in pdf summary report.
+
+## [**Version 4.39**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.39)
+
+**Added:**
+- MAP shiptrack CSV export.
+
+**Changed:**
+- 
+
+**Fixed:**
+- Fixed MAP contour CSV export vertical velocity column which was values 
+  for primary velocity.
+- Fixed missing stations in MAP CSV export.
+
+## [**Version 4.38**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.38)
 
 **Added:**
 - EDI PDF Export.
@@ -21,8 +77,6 @@
 - Added rounding to the magnetic variation in the PDF summary.
 
 ## [**Version 4.37**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.37)
-
-**Status**: *Recommended*
 
 **Added:**
 - MAP: Added radio buttons to plot SNR/RSSI and Number of transects used.
@@ -46,8 +100,6 @@
 
 
 ## [**Version 4.36**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.36)
-
-**Status**: *Allowed*
 
 **Changes:**
 - Updated Export Mean Cross-Option signal
@@ -79,8 +131,6 @@
 
 ## [**Version 4.34**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.34)
 
-**Status**: *Allowed*
-
 **Changes:**
 - Fixed RS5 frequency display.
 - Fixed reading of SonTek files with long directories.
@@ -91,8 +141,6 @@ ___
 
 ## [**Version 4.33**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.33)
 
-**Status**: *Allowed*
-
 **Changes:**
 - Fixed auto application of MBT correction when no bed is detected.
 - Fix crash resulting from RS5 .mat files containing ping types labeled as 
@@ -100,8 +148,6 @@ ___
 ___
  
 ## [**Version 4.32**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.32)
-
-**Status**: *Allowed*
 
 **Changes:**
 - Fix plotting of error and vertical velocity time series data on WT tab.
@@ -112,16 +158,12 @@ ___
 
 ## [**Version 4.31**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.31)
 
-**Status**: *Allowed*
-
 **Changes:**
 - Fix plotting of error and vertical velocity time series data on the BT tab.
 ___
 
 
 ## [**Version 4.30**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.30) 
-
-**Status**: *Allowed*
 
 **Changes:**
 - Upgraded Python to 3.8 2. Fixed crash on main tab due to lollipop plot if 
@@ -161,7 +203,6 @@ ___
 ___
 
 ## [**Version 4.29**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.29) 
-**Status**: *Allowed*
 
 **Changes:**
 - Fix crash associated with auto beam filters for TRDI data.
@@ -180,7 +221,6 @@ ___
 ___
 
 ## [**Version 4.27**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.27) 
-**Status**: *Allowed*
 
 **Changes:**
 - Changed composite depths to interpolate for invalid depths using the 
@@ -211,7 +251,6 @@ ___
 ___
 
 ## [**Version 4.26**](https://code.usgs.gov/QRev/QRevPy/-/releases/V4.26) 
-**Status**: *Allowed*
 
 **Changes:**
 - Fix crash resulting from NaN values in BT data for GPS class.
@@ -221,7 +260,6 @@ ___
 ___
 
 ## **Version 4.25**
-**Status**: *Allowed*
 
 **Changes:**
 - Fixed bug in EDI associated with GPS data.
@@ -241,7 +279,6 @@ ___
 ___
 
 ## **Version 4.24**
-**Status**: *Allowed*
 
 **Changes:**
 - Added user option to prompt for rating on save
@@ -253,7 +290,6 @@ ___
 ___
 
 ## **Version 4.23**
-**Status**: *Allowed*
 
 **Changes:**
 - New TRDI raw data reader that is 3+ times faster
@@ -269,7 +305,6 @@ ___
 ___
 
 ## **Version 4.22**
-**Status**: *Allowed*
 
 **Changes:**
 - Added code to identify and notify of user changes to original values
@@ -300,7 +335,6 @@ ___
 ___
 
 ## **Version 4.21**
-**Status**: *Allowed*
 
 **Changes:**
 - Fixed incomplete system test for TRDI causing crash when saving
@@ -321,16 +355,12 @@ ___
 
 ## **Version 4.20**
 
-**Status**: *Allowed*
-
 **Changes:**
 - Fixed issue with shiptrack when all GPS data are invalid
 - Fixed bug when applying stationary moving-bed correction
 ___
 
 ## **Version 4.19**
-
-**Status**: *Allowed*
 
 **Changes:**
 - Fixed issue with applying a loop test when preceded by a stationary test.
@@ -339,8 +369,6 @@ ___
 ___
 
 ## **Version 4.13**
-
-**Status**: *Allowed*
 
 **Changes:**
 - Ported code from Matlab to Python
@@ -359,36 +387,3 @@ ___
 - Statistics and interpolation methods in Python may result in small 
   differences from Matlab
  ___
-
-## Software/Firmware Status Definitions
-**Required Minimum**: Minimum version required. This version has proven 
-stable and may contain enhancements that are significant over previous 
-required versions
-
-**Recommended**: Shown to have been reliable and contains features that 
-result in a recommended upgrade over the required version. There could be a 
-few specific use cases where this version may have issues that would result 
-in some users not using this version. If so, those cases will be noted.
-
-**Allowed**: Deemed reliable during initial testing. Any issues will be 
-noted along with improvements available over prior versions. Use of allowed 
-versions may be desired in cases when the changes benefit a significant 
-number of the user's conditions or equipment. For example: a new version of 
-software is released that adds support for new hardware. If the user has 
-this hardware, they would need to upgrade to the newer software before it 
-becomes recommended or required. Use of these versions by experienced users 
-will also help OSW identify any unknown issues.
-
-**Testing**: OSW is currently testing; any known issues or advantages over 
-prior release will be noted. The use of a version that is in testing should 
-usually be limited to advanced users that can trouble shoot potential 
-issues and provide feedback on any irregularities or problems observed.
-
-**Do Not Use**: A version either prior to the required minimum or that 
-contains issues that significantly affect operations.
-
-
-**Note**: A version may remain in **Allowed** or **Testing** indefinitely. 
-Example: A new version is released while the prior version is still in 
-Testing. In this case the prior version may remain in Testing, while future 
-testing efforts are placed on the newer version.

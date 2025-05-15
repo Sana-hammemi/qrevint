@@ -65,6 +65,9 @@ class InstrumentData(object):
         elif manufacturer == "Nortek":
             self.manufacturer = manufacturer
             self.nortek(rs=raw_data)
+        elif manufacturer == "rsq":
+            self.manufacturer = "SonTek"
+            self.rsq(adcp_data=raw_data)
 
     def trdi(self, pd0, mmt_transect, mmt):
         """Populates the variables with data from TRDI ADCPs.
@@ -272,6 +275,64 @@ class InstrumentData(object):
         self.t_matrix.populate_data("SonTek", data_in=rs.Transformation_Matrices.Matrix)
         self.configuration_commands = None
 
+    def rsq(self, adcp_data):
+        """Populates the variables with stationary data from SonTek RSQ.
+
+        Parameters
+        ----------
+        adcp_data: dict
+            Dictionary containing RSQ data
+        """
+
+        try:
+            self.serial_num = adcp_data["InstrumentInfo"]["SerialNumber"]
+        except KeyError:
+            self.serial_num = ""
+
+        self.frequency_khz = []
+        beam_azimuth = []
+        beam_elev = []
+        for n in range(adcp_data["SensorConfiguration"]["Info"]["beamSetCount"]):
+            freq = (
+                adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                    "systemFrequency (Hz)"
+                ]
+                / 1000
+            )
+            self.frequency_khz.append(freq)
+
+            beam_azimuth.append(
+                list(
+                    adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                        "beamAzimuth"
+                    ].values()
+                )
+            )
+            beam_elev.append(
+                list(
+                    adcp_data["SensorConfiguration"]["Info"]["beamSetInfo"][str(n)][
+                        "beamElevation"
+                    ].values()
+                )
+            )
+
+        if len(self.frequency_khz) > 2:
+            if self.frequency_khz[2] > 0:
+                self.model = "M9"
+            else:
+                self.model = "S5"
+        else:
+            self.model = "RS5"
+
+        self.firmware = adcp_data["InstrumentInfo"]["InstrumentVersion"] / 100.0
+
+        self.frequency_khz = np.array(self.frequency_khz)
+        self.beam_angle_deg = 25
+        self.beam_pattern = "Convex"
+        self.t_matrix = TransformationMatrix()
+        self.t_matrix.populate_data("rsqst", data_in=(beam_elev, beam_azimuth))
+        self.configuration_commands = None
+
     def nortek(self, rs):
         """Populates the variables with data from Nortek ADCPs.
 
@@ -344,3 +405,154 @@ class InstrumentData(object):
 
         else:
             self.configuration_commands = None
+
+    @staticmethod
+    def create_hpr_matrix(manufacturer, heading, pitch, roll):
+        """Creates hpr_matrix for transforming instrument coordinates to earth coordinates.
+
+        Parameters
+        ----------
+        manufacturer: str
+            Name of manufacturer SonTek, TRDI, Nortek
+        heading: float
+            Heading including magnetic variation in degrees
+        pitch: float
+            Pitch in degrees
+        roll: float
+            Roll in degrees
+
+        """
+
+        ch = np.cos(np.deg2rad(heading))
+        sh = np.sin(np.deg2rad(heading))
+        cp = np.cos(np.deg2rad(pitch))
+        sp = np.sin(np.deg2rad(pitch))
+        cr = np.cos(np.deg2rad(roll))
+        sr = np.sin(np.deg2rad(roll))
+
+        if manufacturer == "SonTek":
+            hpr_matrix = np.array(
+                [
+                    [
+                        sh * cp + (ch * sp * sr),
+                        -1 * ch * cr,
+                        -1 * sh * sp + (ch * cp * sr),
+                    ],
+                    [
+                        ch * cp + -1 * (sh * sp * sr),
+                        sh * cr,
+                        -1 * ch * sp + (-1 * sh * cp * sr),
+                    ],
+                    [sp * cr, sr, cp * cr],
+                ]
+            )
+        else:
+            hpr_matrix = np.array(
+                [
+                    [
+                        ((ch * cr) + (sh * sp * sr)),
+                        (sh * cp),
+                        ((ch * sr) - sh * sp * cr),
+                    ],
+                    [
+                        (-1 * sh * cr) + (ch * sp * sr),
+                        ch * cp,
+                        (-1 * sh * sr) - (ch * sp * cr),
+                    ],
+                    [(-1.0 * cp * sr), sp, cp * cr],
+                ]
+            )
+
+        return hpr_matrix
+
+    def get_transformation_matrix(self, frequency):
+        # Determine frequency index for transformation matrix
+        if len(self.t_matrix.matrix.shape) > 2:
+            idx_freq = np.where(self.frequency_khz == frequency)
+            if self.t_matrix.matrix.shape[0] == 4:
+                matrix = np.copy(self.t_matrix.matrix[:, :, idx_freq[0][0]])
+            else:
+                matrix = np.copy(self.t_matrix.matrix[idx_freq[0][0], :, :])
+        else:
+            matrix = np.copy(self.t_matrix.matrix)
+        return matrix
+
+    @staticmethod
+    def get_coordinate_system_code(coord_sys):
+        """Returns the coordinate system code based on the coordinate system.
+
+        Parameters
+        ----------
+        coord_sys: str
+            Coordinate system (Beam, Inst, Ship, Earth)
+
+        Returns
+        -------
+        coord_sys_code: int
+            Integer representing the coordinate system
+        """
+        if coord_sys == "Beam":
+            coord_sys_code = 1
+        elif coord_sys == "Inst":
+            coord_sys_code = 2
+        elif coord_sys == "Ship":
+            coord_sys_code = 3
+        elif coord_sys == "Earth":
+            coord_sys_code = 4
+        return coord_sys_code
+
+    @staticmethod
+    def compute_inst_coordinates(transformation_matrix, beam_velocities):
+        return transformation_matrix.dot(beam_velocities)
+
+    @staticmethod
+    def adjust_for_3_beam_solution(transformation_matrix, beam_velocities, idx_3_beam):
+        vel_3_beam_zero = beam_velocities
+        vel_3_beam_zero[np.isnan(beam_velocities)] = 0
+        vel_error = np.matmul(transformation_matrix[3, :], vel_3_beam_zero)
+        beam_velocities[idx_3_beam] = (
+            -1 * vel_error / np.squeeze(transformation_matrix[3, idx_3_beam])
+        )
+
+    @staticmethod
+    def compute_new_coordinates(hpr_matrix, current_coordinates):
+        new_coordinates = hpr_matrix.dot(current_coordinates[:3])
+        return (
+            new_coordinates[0],
+            new_coordinates[1],
+            new_coordinates[2],
+            current_coordinates[3],
+        )
+
+    @staticmethod
+    def transform_instrument_coordinates(manufacturer, inst_coordinates, h, p, r, new_coord_sys):
+        if new_coord_sys == "Earth":
+            # Generate matrix to compute earth coordinates
+            hpr_matrix = InstrumentData.create_hpr_matrix(
+                manufacturer=manufacturer,
+                heading=h,
+                pitch=p,
+                roll=r,
+            )
+
+        elif new_coord_sys == "Ship":
+            # Generate matrix to compute ship coordinates
+            hpr_matrix = InstrumentData.create_hpr_matrix(
+                manufacturer=manufacturer,
+                heading=0,
+                pitch=p,
+                roll=r,
+            )
+
+        elif new_coord_sys == "Inst":
+            # Identity matrix for instrument coordinates
+            hpr_matrix = np.eye(3)
+
+        return InstrumentData.compute_new_coordinates(hpr_matrix, inst_coordinates)
+        # new_coordinates = hpr_matrix.dot(current_coordinates[:3])
+        # return (
+        #     new_coordinates[0],
+        #     new_coordinates[1],
+        #     new_coordinates[2],
+        #     current_coordinates[3],
+        # )

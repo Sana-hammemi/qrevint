@@ -337,6 +337,7 @@ class Report:
             ],
             [self.tr("Navigation Ref.") + ":", nav_reference],
             [self.tr("Total Duration") + " (s):", duration],
+            [self.tr("Time Zone") + ":", meas.time_zone],
             [self.tr("Start Time") + ":", start_time],
             [self.tr("End Time") + ":", end_time],
             [self.tr("Stage Start") + ":", stage_start],
@@ -373,6 +374,8 @@ class Report:
                 ("SPAN", (0, 0), (1, 0)),
                 ("LINEBELOW", (0, 0), (1, 0), 1, colors.black),
                 ("LINEBELOW", (0, 12), (1, 12), 1, colors.black),
+                ("VAlIGN", (0, 0), (-1, 1), "TOP")
+                
             ]
         )
 
@@ -393,7 +396,7 @@ class Report:
         freq = meas.transects[first_id].adcp.frequency_khz
         if isinstance(freq, float) or isinstance(freq, int):
             freq = freq
-        elif freq is list:
+        elif isinstance(freq, np.ndarray):
             freq = self.tr("Multi")
         else:
             freq = freq[0]
@@ -405,7 +408,17 @@ class Report:
 
         adcp_temp = meas.ext_temp_chk["adcp"]
         if np.isnan(adcp_temp):
-            adcp_temp = ""
+            adcp_temperature = np.array([])
+            for idx in meas.checked_transect_idx:
+                adcp_temperature = np.append(adcp_temperature, meas.transects[
+                    idx].sensors.temperature_deg_c.internal.data)
+            adcp_temp = "{:.1f}".format(np.nanmean(adcp_temperature))
+
+        if meas.qa.depths["draft"]:
+            draft = "Varies"
+        else:
+            depth_selected = getattr(meas.transects[first_id].depths, meas.transects[first_id].depths.selected)
+            draft = "{:.3f}".format(depth_selected.draft_use_m * self.parent.units["L"])
 
         if len(meas.system_tst) == 0:
             system_test = self.tr("None")
@@ -489,7 +502,7 @@ class Report:
 
         # Build table data
         data = [
-            [self.tr("Field Crew") + ":", meas.persons],
+            [self.tr("Field Crew") + ":", Paragraph(meas.persons, self.styles["BodyText"])],
             [self.tr("Processed By") + ":", getpass.getuser()],
             [self.tr("Software") + ":", self.parent.version.split(" ")[0]],
             [self.tr("Version") + ":", self.parent.version.split(" ")[1]],
@@ -502,6 +515,7 @@ class Report:
             [self.tr("Premeasurement"), ""],
             [self.tr("W. Temp.") + " (C):", user_temp],
             [self.tr("W. Temp. ADCP") + " (C):", adcp_temp],
+            [self.tr("ADCP Draft") + "{}:".format(self.parent.units["label_L"]), draft],
             [self.tr("System Test") + ":", system_test],
             [self.tr("Compass Cal/Eval") + ":", compass],
             [
@@ -512,7 +526,7 @@ class Report:
             [self.tr("MovBed Test Type") + ":", mb_test_type],
             [self.tr("MovBed Test Quality") + ":", quality],
             [self.tr("MovBed Test Dur.") + "(s):", "{:.1f}".format(mb_duration)],
-            [self.tr("Max MovBed") + " (%):", max_mb_per],
+            [self.tr("Avg MovBed") + " (%):", max_mb_per],
             [self.tr("Q Correction") + " (%):", per_correction],
         ]
 
@@ -533,6 +547,7 @@ class Report:
                 ("LINEBELOW", (0, 10), (1, 10), 1, colors.black),
                 ("FONT", (0, 10), (0, 10), "Helvetica-Bold", 10),
                 ("SPAN", (0, 10), (1, 10)),
+                ("VAlIGN", (0, 0), (-1, 1), "TOP")
             ]
         )
 
@@ -735,7 +750,10 @@ class Report:
         """
         data = [["Automated QA Messages:"]]
 
-        messages = self.parent.combine_qa_messages()
+        qa_check_keys = ["bt_vel", "compass", "depths", "edges", "extrapolation",
+            "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
+            "vtg_vel", "w_vel", ]
+        messages = self.parent.combine_selected_qa_messages(qa_check_keys)
 
         # Create each message as a list appended to data
         if len(messages) > 0:
