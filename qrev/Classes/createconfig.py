@@ -58,6 +58,7 @@ class Config:
             "Units": {"show": True, "default": "SI"},
             "ColorMap": {"show": True, "default": "viridis"},
             "RatingPrompt": {"show": True, "default": False},
+            "SaveStyleSheet": {"show": True, "default": True},
             "ExtrapWeighting": {"show": True, "default": True},
             "FilterUsingMeasurement": {"show": True, "default": False},
             "Uncertainty": {"show": True, "default": "Oursin"},

@@ -3507,9 +3507,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         )
         self.main_discharge_canvas.draw()
 
-    def messages_tab(self):
-        """Update messages tab."""
-
+    def combine_qa_messages(self):
+        # Initialize local variables
+        qa = self.meas.qa
         qa_check_keys = [
             "bt_vel",
             "compass",
@@ -4569,9 +4569,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.ed_site_name.setText(self.meas.station_name)
         if self.meas.qa.user["sta_name"]:
             self.label_site_name.setStyleSheet("background-color: #ffcc00;")
+            self.label_site_name.setStyleSheet("background: #ffcc00")
+            self.label_site_name.setStyleSheet("QToolTip{font: 12pt}")
             self.label_site_name.setToolTip(self.tr("Missing site name."))
         else:
             self.label_site_name.setStyleSheet("background-color: white")
+            self.label_site_name.setStyleSheet("background: white")
             self.label_site_name.setToolTip("")
         try:
             self.ed_site_number.setText(self.meas.station_number)
@@ -4579,9 +4582,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.ed_site_number.setText("")
         if self.meas.qa.user["sta_number"]:
             self.label_site_number.setStyleSheet("background-color: #ffcc00")
+            self.label_site_number.setStyleSheet("background: #ffcc00")
+            self.label_site_number.setStyleSheet("QToolTip{font: 12pt}")
             self.label_site_number.setToolTip(self.tr("Missing site name."))
         else:
             self.label_site_number.setStyleSheet("background-color: white")
+            self.label_site_number.setStyleSheet("background: white")
             self.label_site_number.setToolTip("")
 
         self.ed_persons.setText(self.meas.persons)
@@ -5333,7 +5339,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.setWordWrap(True)
 
     def main_messages(self):
-        """Displays messages associated with the transects in Messages tab."""
+        """Displays messages associated with the transects in Messages tab.
+        """
 
         if self.meas is not None:
             qa_check_keys = ["transects", "user"]
@@ -13593,9 +13600,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         # Determine where to apply change and apply change
                         if ens_dialog.rb_all.isChecked():
                             for idx in self.checked_transects_idx:
-                                self.meas.transects[idx].edges.left.number_ensembles = (
-                                    num_ens
-                                )
+                                self.meas.transects[
+                                    idx
+                                ].edges.left.number_ensembles = num_ens
                         else:
                             self.meas.transects[
                                 self.checked_transects_idx[row]
@@ -15023,17 +15030,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Identify uncertainty variable that was edited.
             row_index = self.table_uncertainty_settings.selectedItems()[0].row()
             if row_index == 0:
-                self.meas.oursin.user_advanced_settings["draft_error_m_user"] = (
-                    new_value
-                )
+                self.meas.oursin.user_advanced_settings[
+                    "draft_error_m_user"
+                ] = new_value
             elif row_index == 1:
-                self.meas.oursin.user_advanced_settings["left_edge_dist_prct_user"] = (
-                    new_value
-                )
+                self.meas.oursin.user_advanced_settings[
+                    "left_edge_dist_prct_user"
+                ] = new_value
             elif row_index == 2:
-                self.meas.oursin.user_advanced_settings["right_edge_dist_prct_user"] = (
-                    new_value
-                )
+                self.meas.oursin.user_advanced_settings[
+                    "right_edge_dist_prct_user"
+                ] = new_value
             elif row_index == 3:
                 self.meas.oursin.user_advanced_settings["dzi_prct_user"] = new_value
             elif row_index == 4:
@@ -15049,9 +15056,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif row_index == 9:
                 self.meas.oursin.user_advanced_settings["vtg_boat_mps_user"] = new_value
             elif row_index == 10:
-                self.meas.oursin.user_advanced_settings["compass_error_deg_user"] = (
-                    new_value
-                )
+                self.meas.oursin.user_advanced_settings[
+                    "compass_error_deg_user"
+                ] = new_value
             elif row_index == 11:
                 self.meas.oursin.user_advanced_settings["cov_prior_user"] = new_value
             elif row_index == 12:
@@ -15696,6 +15703,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Configure dictionary of plot options
             self.adv_graph_types = [
+                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
+                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
+                ("cb_projected_cc", self.cb_adv_graph_projected),
+                ("cb_vertical_cc", self.cb_adv_graph_vertical),
+                ("cb_error_cc", self.cb_adv_graph_error),
+                ("cb_direction_cc", self.cb_adv_graph_direction),
+                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
+                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
+                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
+                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
+                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
                 ("cb_discharge_ts", self.cb_adv_graph_discharge),
                 ("cb_discharge_percent_ts", self.cb_adv_graph_discharge_percent),
                 ("cb_avg_speed_ts", self.cb_adv_graph_avg_speed),
@@ -15728,17 +15746,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
                 ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage),
-                ("cb_speed_filtered_cc", self.cb_adv_graph_speed_filtered),
-                ("cb_speed_final_cc", self.cb_adv_graph_speed_final),
-                ("cb_projected_cc", self.cb_adv_graph_projected),
-                ("cb_vertical_cc", self.cb_adv_graph_vertical),
-                ("cb_error_cc", self.cb_adv_graph_error),
-                ("cb_direction_cc", self.cb_adv_graph_direction),
-                ("cb_avg_corr_cc", self.cb_adv_graph_avg_corr),
-                ("cb_corr_beam_cc", self.cb_adv_graph_corr_beam),
-                ("cb_avg_rssi_cc", self.cb_adv_graph_avg_rssi),
-                ("cb_rssi_beam_cc", self.cb_adv_graph_rssi_beam),
-                ("cb_ping_type_cc", self.cb_adv_graph_ping_type),
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)

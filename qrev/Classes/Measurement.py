@@ -1,3 +1,4 @@
+import copy
 import ctypes
 import datetime
 import os
@@ -1849,7 +1850,7 @@ class Measurement(object):
             transect.date_time.utc_time_offset = offset
 
         self.qa = QAData(self, tr=self.tr)
-        
+
     @staticmethod
     def h_external_valid(meas):
         """Determine if valid external heading data is included in the
