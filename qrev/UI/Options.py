@@ -25,3 +25,4 @@ class Options(QtWidgets.QDialog, wOptions.Ui_Options):
         self.rb_checked.setFont(font)
         self.rb_english.setFont(font)
         self.rb_si.setFont(font)
+        self.cb_stylesheet.setFont(font)

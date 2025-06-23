@@ -18,7 +18,14 @@ def utc_offset_to_tz(utc_time_offset):
     if utc_time_offset is not None:
         offset = utc_time_offset
         if utc_time_offset[0] != "+" and utc_time_offset[0] != "-":
-            offset = "+" + utc_time_offset
+            if len(utc_time_offset) > 3:
+                tz_strip = utc_time_offset[3:]
+                if len(tz_strip) <= 2:
+                    offset = tz_strip[0] + '0' + tz_strip[1] + '00'
+                else:
+                    offset = utc_time_offset[3:] + '00'
+            else:
+                offset = "+" + utc_time_offset
         tz = datetime.strptime(offset, "%z").tzinfo
     return tz
 

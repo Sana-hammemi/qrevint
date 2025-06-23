@@ -63,7 +63,7 @@ class QAData(object):
             Object of class Measurement
         """
 
-        
+
         self.tr = tr
 
         # Set default thresholds
@@ -124,7 +124,7 @@ class QAData(object):
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
 
-    
+
 
     def populate_from_qrev_mat(self, meas, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
@@ -2614,7 +2614,7 @@ class QAData(object):
                 boat["messages"].append(
                     [
                         dt_value["warning"]
-                        + self.tr("Int. Q for invalid ensembles in a transect exceeds ") 
+                        + self.tr("Int. Q for invalid ensembles in a transect exceeds ")
                         + "%3.1f" % self.q_total_threshold_warning + "%;",
                         1,
                         module_code,
@@ -2901,7 +2901,7 @@ class QAData(object):
             elif np.any(self.w_vel["q_max_run_caution"]):
                 self.w_vel["messages"].append(
                     [
-                        self.tr("wt: Int. Q for consecutive invalid ensembles exceeds ") 
+                        self.tr("wt: Int. Q for consecutive invalid ensembles exceeds ")
                         + "%3.0f" % self.q_run_threshold_caution + "%;",
                         2,
                         11,

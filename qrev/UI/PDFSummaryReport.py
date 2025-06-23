@@ -396,7 +396,7 @@ class Report:
         freq = meas.transects[first_id].adcp.frequency_khz
         if isinstance(freq, float) or isinstance(freq, int):
             freq = freq
-        elif freq is list:
+        elif isinstance(freq, np.ndarray):
             freq = self.tr("Multi")
         else:
             freq = freq[0]

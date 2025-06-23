@@ -741,7 +741,12 @@ class GPSData(object):
             )
         )
         for ind in idx[0]:
-            y[ind], x[ind], _, _ = utm.from_latlon(lat2[ind], lon2[ind])
+            try:
+                y[ind], x[ind], _, _ = utm.from_latlon(lat2[ind], lon2[ind])
+            except:
+                # handle out of range error
+                y[ind] = np.nan
+                x[ind] = np.nan
         x_utm = x.reshape(lon_in.shape)
         y_utm = y.reshape(lat_in.shape)
 

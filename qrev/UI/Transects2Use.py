@@ -1,5 +1,5 @@
 from datetime import datetime
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import Qt, QtWidgets, QtCore
 from qrev.UI import wTransects2Use
 
 

@@ -4,6 +4,8 @@ import numpy as np
 from datetime import datetime
 from datetime import timezone
 from scipy import signal, fftpack
+
+from qrev.Classes.Pd0TRDI_2 import Pd0TRDI
 from qrev.Classes.DepthStructure import DepthStructure
 from qrev.Classes.WaterData import WaterData
 from qrev.Classes.BoatStructure import BoatStructure
@@ -2472,7 +2474,7 @@ class TransectData(object):
         self.extrap.populate_data(top=method[top], bot=method[bot], exp=exp)
         
     @staticmethod
-    def qrev_mat_in(meas_struct):
+    def qrev_mat_in(meas_struct, time_zone=None):
         """Processes the Matlab data structure to obtain a list of
          TransectData objects containing transect
             data from the Matlab data structure.
@@ -2481,6 +2483,8 @@ class TransectData(object):
         ----------
         meas_struct: mat_struct
             Matlab data structure obtained from sio.loadmat
+        time_zone: str
+            user specified time zone.
 
         Returns
         -------
@@ -2489,23 +2493,26 @@ class TransectData(object):
         """
 
         transects = []
+
         if hasattr(meas_struct, "transects"):
             # If only one transect the data are not a list or array of
             # transects
-            try:
-                if len(meas_struct.transects) > 0:
-                    for transect in meas_struct.transects:
-                        trans = TransectData()
-                        trans.populate_from_qrev_mat(transect, meas_struct)
-                        transects.append(trans)
-            except TypeError:
-                trans = TransectData()
-                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct)
-                transects.append(trans)
+
+            if len(meas_struct.transects) > 0:
+                for transect in meas_struct.transects:
+                    trans = TransectData()
+                    trans.populate_from_qrev_mat(transect, meas_struct,
+                                                 time_zone=time_zone)
+                    transects.append(trans)
+            # except TypeError:
+            #     trans = TransectData()
+            #     trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
+            #                                          time_zone=time_zone)
+            #     transects.append(trans)
 
         return transects
 
-    def populate_from_qrev_mat(self, transect, meas_struct):
+    def populate_from_qrev_mat(self, transect, meas_struct, time_zone=None):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -2513,6 +2520,8 @@ class TransectData(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
+        time_zone: str
+            user specified time zone
         """
 
         self.adcp = InstrumentData()
@@ -2538,7 +2547,7 @@ class TransectData(object):
         else:
             self.orig_start_edge = transect.startEdge
         self.date_time = DateTime()
-        self.date_time.populate_from_qrev_mat(transect)
+        self.date_time.populate_from_qrev_mat(transect, time_zone=time_zone)
         self.checked = bool(transect.checked)
         if type(transect.inTransectIdx) is int:
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])

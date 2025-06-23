@@ -19,15 +19,11 @@ class Ui_threshold(object):
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        spacerItem = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        spacerItem1 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem1)
         self.threshold_label = QtWidgets.QLabel(threshold)
         font = QtGui.QFont()
@@ -37,16 +33,12 @@ class Ui_threshold(object):
         self.threshold_label.setFont(font)
         self.threshold_label.setObjectName("threshold_label")
         self.horizontalLayout_2.addWidget(self.threshold_label)
-        spacerItem2 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem2)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        spacerItem3 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem3)
         self.ed_threshold = QtWidgets.QLineEdit(threshold)
         font = QtGui.QFont()
@@ -57,17 +49,13 @@ class Ui_threshold(object):
         self.threshold_units = QtWidgets.QLabel(threshold)
         self.threshold_units.setObjectName("threshold_units")
         self.horizontalLayout.addWidget(self.threshold_units)
-        spacerItem4 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem4)
         self.horizontalLayout.setStretch(0, 2)
         self.horizontalLayout.setStretch(1, 1)
         self.horizontalLayout.setStretch(3, 2)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        spacerItem5 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem5)
         self.horizontalLayout_3.addLayout(self.verticalLayout_2)
         self.gb_hoffset = QtWidgets.QGroupBox(threshold)
@@ -103,23 +91,19 @@ class Ui_threshold(object):
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
         self.buttonBox = QtWidgets.QDialogButtonBox(threshold)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
-        )
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
         self.retranslateUi(threshold)
-        self.buttonBox.accepted.connect(threshold.accept)
-        self.buttonBox.rejected.connect(threshold.reject)
+        self.buttonBox.accepted.connect(threshold.accept) # type: ignore
+        self.buttonBox.rejected.connect(threshold.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(threshold)
 
     def retranslateUi(self, threshold):
         _translate = QtCore.QCoreApplication.translate
         threshold.setWindowTitle(_translate("threshold", "Extrap Threshold"))
-        self.threshold_label.setText(
-            _translate("threshold", "Percentage of Points Threshold")
-        )
+        self.threshold_label.setText(_translate("threshold", "Percentage of Points Threshold"))
         self.threshold_units.setText(_translate("threshold", "%"))
         self.gb_hoffset.setTitle(_translate("threshold", "Apply To:"))
         self.rb_new.setText(_translate("threshold", "Apply"))
@@ -128,7 +112,6 @@ class Ui_threshold(object):
 
 if __name__ == "__main__":
     import sys
-
     app = QtWidgets.QApplication(sys.argv)
     threshold = QtWidgets.QDialog()
     ui = Ui_threshold()

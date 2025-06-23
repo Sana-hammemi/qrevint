@@ -13,7 +13,7 @@ from datetime import datetime
 import numpy as np
 import scipy.io as sio
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QRegExp, pyqtSignal
+from PyQt5.QtCore import QRegExp, pyqtSignal, QTranslator
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
@@ -133,6 +133,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     units: dict
         Dictionary containing units coversions and labels for length, area,
         velocity, and discharge
+    save_stylesheet: bool
+        Indicates whether to save a stylesheet with the measurement
     icon_caution: QtGui.QIcon
         Caution icon
     icon_warning: QtGui.QIcon
@@ -416,6 +418,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         super(QRev, self).__init__(parent)
         self.setupUi(self)
 
+        # Todo: unhide SurfVel tab once backend code is finished.
+        self.tab_all.setTabVisible(15, False)
+
         # Set window title
         self.setWindowTitle(__qrev_version__)
 
@@ -429,6 +434,26 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.set_qrevint_ui()
 
         show_disclaimer = False
+
+        # Setting file for settings to carry over from one session to the next
+        self.check_legacy()
+        self.settingsFile = "QRev/QRev_Settings"
+        # Create settings object which contains the default values from
+        # previous use
+        self.sticky_settings = SSet(self.settingsFile)
+
+        self._translate = QtCore.QCoreApplication.translate
+        self.translator = QTranslator(self)
+
+        # set display language
+        try:
+            lang = self.sticky_settings.get("DisplayLanguage")
+            self.display_language = lang
+        except KeyError:
+            self.sticky_settings.new("DisplayLanguage", "English")
+            self.display_language = "English"
+
+        self.update_language()
 
         # Disable ability to hide toolbar
         self.toolBar.toggleViewAction().setEnabled(False)
@@ -473,13 +498,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             with open(options_file, "r") as f:
                 self.agency_options = json.load(f)
-
-        # Setting file for settings to carry over from one session to the next
-        self.check_legacy()
-        self.settingsFile = "QRev/QRev_Settings"
-        # Create settings object which contains the default values from
-        # previous use
-        self.sticky_settings = SSet(self.settingsFile)
 
         if "XAxis" in self.sticky_settings.settings:
             self.x_axis_type = self.sticky_settings.get("XAxis")
@@ -574,6 +592,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.use_measurement_thresholds = self.agency_options[
                 "FilterUsingMeasurement"
             ]["default"]
+
+        # Stylesheet setting
+        if "SaveStyleSheet" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: SaveStyleSheet parameter not found."))
+            sys.exit()
+        if "show" not in self.agency_options["SaveStyleSheet"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg SaveStyleSheet: show parameter not found.")
+            )
+            sys.exit()
+        if "default" not in self.agency_options["SaveStyleSheet"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg SaveStyleSheet: default parameter not found.")
+            )
+            sys.exit()
+        try:
+            if self.agency_options["SaveStyleSheet"]["show"]:
+                ss = self.sticky_settings.get("StyleSheet")
+                self.save_stylesheet = ss
+            else:
+                self.save_stylesheet = self.agency_options["SaveStyleSheet"]["default"]
+        except KeyError:
+            self.sticky_settings.new(
+                "StyleSheet", self.agency_options["SaveStyleSheet"]["default"]
+            )
+            self.save_stylesheet = self.agency_options["SaveStyleSheet"]["default"]
 
         # Prompt for user rating
         if "RatingPrompt" not in self.agency_options.keys():
@@ -696,33 +740,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Discharge display digits
         if "QDigits" not in self.agency_options.keys():
-            self.popup_message(
-                self.tr(
-                    "QRev.cfg: QDigits "
-                    "parameter not found. Setting to 3 significant figures"
-                )
-            )
+            self.popup_message(self.tr("QRev.cfg: QDigits " "parameter not found. Setting to 3 significant figures"))
             self.q_digits_method = "sigfig"
             self.q_digits_digits = 3
 
         if "method" not in self.agency_options["QDigits"].keys():
             self.popup_message(
-                self.tr(
-                    "QRev.cfg QDigits: "
-                    "method parameter not found. Setting to significant figures"
-                )
-            )
+                self.tr("QRev.cfg QDigits: " "method parameter not found. Setting to significant figures"))
             self.q_digits_method = "sigfig"
         else:
             self.q_digits_method = self.agency_options["QDigits"]["method"]
 
         if "digits" not in self.agency_options["QDigits"].keys():
             self.popup_message(
-                self.tr(
-                    "QRev.cfg QDigits: "
-                    "digits parameter not found. Setting to default of 3"
-                )
-            )
+                self.tr("QRev.cfg QDigits: " "digits parameter not found. Setting to default of 3"))
             self.q_digits_digits = 3
         else:
             self.q_digits_method = self.agency_options["QDigits"]["digits"]
@@ -731,18 +762,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             ss = self.sticky_settings.get("QDigitsMethod")
             self.q_digits_method = ss
         except KeyError:
-            self.sticky_settings.new(
-                "QDigitsMethod", self.agency_options["QDigits"]["method"]
-            )
+            self.sticky_settings.new("QDigitsMethod",
+                self.agency_options["QDigits"]["method"])
             self.q_digits_method = self.agency_options["QDigits"]["method"]
 
         try:
             ss = self.sticky_settings.get("QDigitsDigits")
             self.q_digits_digits = ss
         except KeyError:
-            self.sticky_settings.new(
-                "QDigitsDigits", self.agency_options["QDigits"]["digits"]
-            )
+            self.sticky_settings.new("QDigitsDigits",
+                self.agency_options["QDigits"]["digits"])
             self.q_digits_digits = self.agency_options["QDigits"]["digits"]
 
         # Uncertainty model
@@ -922,21 +951,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ss = self.sticky_settings.get("PDFSummary")
                 self.pdf_setting = ss
             else:
-                self.pdf_setting = self.agency_options["PDFSummary"]["default"]
-
+                self.pdf_setting = dateformat(
+                    self.agency_options["PDFSummary"]["default"]
+                )
         except KeyError:
             self.sticky_settings.new(
                 "PDFSummary", self.agency_options["PDFSummary"]["default"]
             )
+            self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
             self.pdf_setting = self.agency_options["PDFSummary"]["default"]
 
         # Time zone
         if "TimeZone" not in self.agency_options.keys():
-            self.popup_message(
-                self.tr(
-                    "QRev.cfg: TimeZone parameter not found. Time zone not required."
-                )
-            )
+            self.popup_message(self.tr("QRev.cfg: TimeZone parameter not found. Time zone not required."))
             self.time_zone_required = False
         elif "required" in self.agency_options["TimeZone"].keys():
             self.time_zone_required = self.agency_options["TimeZone"]["required"]
@@ -945,11 +972,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Percent measured
         if "PercentMeasured" not in self.agency_options.keys():
-            self.popup_message(
-                self.tr(
-                    "QRev.cfg: PercentMeasured parameter not found. PercentMeasured set to default."
-                )
-            )
+            self.popup_message(self.tr(
+                "QRev.cfg: PercentMeasured parameter not found. PercentMeasured set to default."))
             self.percent_measured_show = False
         elif "show" in self.agency_options["PercentMeasured"].keys():
             self.percent_measured_show = self.agency_options["PercentMeasured"]["show"]
@@ -1649,9 +1673,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     gps_quality_threshold=self.gps_quality_threshold,
                     snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                     excluded=self.agency_options["Excluded"],
-                    water_dir_diff_threshold=self.agency_options[
-                        "LeftRightFlowDirDiff"
-                    ]["threshold"],
+                    water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
+                        "threshold"],
                     date_format=self.date_format,
                     time_zone_required=self.time_zone_required,
                     qt_tr=self.tr,
@@ -1816,6 +1839,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                     # Save xml file
                     self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
+
+
+                    # Save stylesheet in measurement folder
+                    if self.save_stylesheet:
+                        meas_folder, _ = os.path.split(save_file.full_Name)
+                        dest = os.path.join(meas_folder, "QRevStylesheet.xsl")
+
+                        if self.units["ID"] == "SI":
+                            stylesheet = "QRevStylesheet_si.xsl"
+                        else:
+                            stylesheet = "QRevStylesheet_english.xsl"
+
+                        self.export_stylesheet(stylesheet, dest)
 
                 # Notify user save is complete
                 QtWidgets.QMessageBox.about(
@@ -2044,6 +2080,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def qrev_options(self):
         """Change options triggered by actionOptions"""
 
+        # Todo: add code to only update the settings that were changed
         # Initialize options dialog
         options = Options()
 
@@ -2055,10 +2092,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.rb_english.setChecked(True)
 
+        options.cb_language.setCurrentText(self.display_language)
+
         if self.save_all:
             options.rb_All.setChecked(True)
         else:
             options.rb_checked.setChecked(True)
+
+        if not self.agency_options["SaveStyleSheet"]["show"]:
+            options.cb_stylesheet.hide()
+        if self.save_stylesheet:
+            options.cb_stylesheet.setChecked(True)
+        else:
+            options.cb_stylesheet.setChecked(False)
 
         if not self.agency_options["ExportCrossSection"]["show"]:
             options.cb_xs_export.hide()
@@ -2179,6 +2225,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.change = True
                             self.map_change = True
 
+                # update display language
+                self.display_language = options.cb_language.currentText()
+                self.update_language()
+                self.sticky_settings.set("DisplayLanguage",
+                                         self.display_language)
                 # Discharge display units options
                 if options.rb_sigfig.isChecked() and self.q_digits_method != "sigfig":
                     self.q_digits_method = "sigfig"
@@ -2246,6 +2297,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.save_all = True
                 else:
                     self.save_all = False
+
+                # Stylesheet option
+                if options.cb_stylesheet.isChecked():
+                    self.save_stylesheet = True
+                    self.sticky_settings.set("StyleSheet", True)
+                else:
+                    self.save_stylesheet = False
+                    self.sticky_settings.set("StyleSheet", False)
 
                 # Prompt for user rating
                 if options.cb_rating.isChecked():
@@ -2492,6 +2551,44 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if os.path.exists(landing_page):
                 webbrowser.open("file://" + landing_page)
 
+    @staticmethod
+    def export_stylesheet(stylesheet, destination):
+        """Exports stylesheet on save.
+
+        Parameters:
+            stylesheet: str
+                stylesheet to use
+            destination: str
+                path to copy stylesheet to
+        """
+
+        # Code to call sphinx documentation adopted from SurfVelTool
+
+        # Use development-specific settings. Using __file__ path, so it
+        # will work when called by other projects using QRev.
+        path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../..",
+                "docs",
+                "source",
+                "assets",
+                "files",
+                stylesheet,
+            )
+        )
+
+        if os.path.exists(path):
+            shutil.copy2(path, destination)
+
+        else:
+            # Use production-specific settings
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+            path = os.path.join(base_path, "qrev_files", stylesheet)
+            if os.path.exists(path):
+                shutil.copy2(path, destination)
+
     def set_use_weighted(self):
         """Called by shortcut key cntrl+w toggle between use weighted and
         unweighted cells for extrapolation.
@@ -2532,9 +2629,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.ed_stage_start.editingFinished.connect(self.update_stage_start)
                     self.ed_stage_end.editingFinished.connect(self.update_stage_end)
                     self.ed_stage_meas.editingFinished.connect(self.update_stage_meas)
-                    self.combo_timezone.currentIndexChanged[str].connect(
-                        self.update_time_zone
-                    )
+                    self.combo_timezone.currentIndexChanged[str].connect(self.update_time_zone)
                     self.table_settings.cellClicked.connect(
                         self.settings_table_row_adjust
                     )
@@ -2545,34 +2640,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.table_premeas.cellClicked.connect(self.refocus)
                     self.cb_user_rating.currentIndexChanged.connect(self.rating_change)
 
-                    self.timezone_list = [
-                        "",
-                        "UTC",
-                        "UTC-1",
-                        "UTC-2",
-                        "UTC-3",
-                        "UTC-4",
-                        "UTC-5",
-                        "UTC-6",
-                        "UTC-7",
-                        "UTC-8",
-                        "UTC-9",
-                        "UTC-10",
-                        "UTC-11",
-                        "UTC-12",
-                        "UTC+1",
-                        "UTC+2",
-                        "UTC+3",
-                        "UTC+4",
-                        "UTC+5",
-                        "UTC+6",
-                        "UTC+7",
-                        "UTC+8",
-                        "UTC+9",
-                        "UTC+10",
-                        "UTC+11",
-                        "UTC+12",
-                    ]
+                    self.timezone_list = ["", "UTC", "UTC-1", "UTC-2", "UTC-3", "UTC-4",
+                                          "UTC-5", "UTC-6", "UTC-7", "UTC-8", "UTC-9",
+                                          "UTC-10", "UTC-11", "UTC-12", "UTC+1", "UTC+2",
+                                          "UTC+3", "UTC+4", "UTC+5", "UTC+6", "UTC+7",
+                                          "UTC+8", "UTC+9", "UTC+10", "UTC+11",
+                                          "UTC+12", ]
 
                     # Main tab has been initialized
                     self.main_initialized = True
@@ -3452,7 +3525,72 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "vtg_vel",
             "w_vel",
         ]
+
+        # For each qa check retrieve messages and set tab icon based on the
+        # status
+        messages = []
+        for key in qa_check_keys:
+            qa_type = getattr(qa, key)
+            if qa_type["messages"]:
+                for message in qa_type["messages"]:
+                    if type(message) == np.ndarray:
+                        message = message.tolist()
+                    if type(message) is str:
+                        if message[:3].isupper():
+                            messages.append([message, 1])
+                        else:
+                            messages.append([message, 2])
+                    else:
+                        message[1] = int(message[1])
+                        messages.append(message)
+            self.set_icon(key, qa_type["status"])
+
+        # Sort messages with warning at top
+        messages.sort(key=lambda x: x[1])
+
+        return messages
+
+    def messages_tab(self):
+        """Update messages tab."""
+
+        qa_check_keys = ["bt_vel", "compass", "depths", "edges", "extrapolation",
+            "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
+            "vtg_vel", "w_vel", ]
         self.messages_table(self.main_message_table, qa_check_keys)
+        messages = self.combine_qa_messages()
+        # Setup table
+        tbl = self.main_message_table
+        tbl.clear()
+        main_message_header = [self.tr("Status"), self.tr("Message")]
+        ncols = len(main_message_header)
+        nrows = len(messages)
+        tbl.setRowCount(nrows + 1)
+        tbl.setColumnCount(ncols)
+        tbl.setHorizontalHeaderLabels(main_message_header)
+        tbl.horizontalHeader().setFont(self.font_bold)
+        tbl.verticalHeader().hide()
+        tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+
+        # Populate table
+        for row, message in enumerate(messages):
+            # Handle messages from old QRev that did not have integer codes
+            if type(message) is str:
+                warn = message[:3].isupper()
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
+            # Handle newer style messages
+            else:
+                warn = int(message[1]) == 1
+                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
+            if warn:
+                tbl.item(row, 1).setFont(self.font_bold)
+                item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
+                tbl.setItem(row, 0, item_warning)
+            else:
+                item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
+                tbl.setItem(row, 0, item_caution)
+
+        tbl.resizeColumnsToContents()
+        tbl.resizeRowsToContents()
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis."""
@@ -3714,23 +3852,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Transect start time
                 col += 1
-                try:
-                    item = tz_formatted_string(
-                        self.meas.transects[transect_id].date_time.start_serial_time,
-                        self.meas.transects[transect_id].date_time.utc_time_offset,
-                        "%H:%M:%S",
-                    )
-                except AttributeError:
-                    item = tz_formatted_string(
-                        self.meas.transects[transect_id].date_time.start_serial_time,
-                        None,
-                        "%H:%M:%S",
-                    )
+                item = tz_formatted_string(
+                    self.meas.transects[transect_id].date_time.start_serial_time,
+                    self.meas.transects[transect_id].date_time.utc_time_offset,
+                    "%H:%M:%S")
                 tbl.setItem(
                     row + 1,
                     col,
-                    QtWidgets.QTableWidgetItem(item),
-                )
+                    QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect start edge
@@ -16034,9 +16163,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # self.cb_map_interpolation.clicked.connect(self.update_map)
         self.cb_map_bed_profiles.clicked.connect(self.update_map)
 
-        self.pb_map_save.clicked.connect(self.map_save_data)
+        self.pb_map_contour.clicked.connect(lambda: self.map_save_data(
+            file_type='contour'))
+        self.pb_map_shiptrack.clicked.connect(lambda: self.map_save_data(
+            file_type='shiptrack'))
         self.pb_map_open_earth.clicked.connect(self.plot_map_google_earth)
-        self.pb_map_bathy.clicked.connect(lambda: self.map_save_data(verticals=True))
+        self.pb_map_bathy.clicked.connect(lambda: self.map_save_data(
+            file_type='bathy'))
 
         # Limit edit to two decimals float
         rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
@@ -16528,9 +16661,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Draw canvas
         self.map_canvas.draw()
 
-    def map_save_data(self, verticals=False):
-        """Save MAP data as csv or txt."""
+    def map_save_data(self, file_type):
+        """Save MAP data as csv or txt.
+
+        Parameters:
+            file_type: str
+                contour, shiptrack, or bathy"""
         if self.meas.map is not None and self.meas.map.total_discharge is not None:
+
+            if file_type == 'bathy':
+                verticals = True
+            else:
+                verticals = False
+
             # ascii file delimiter
             try:
                 ss = self.sticky_settings.get("Delimiter")
@@ -16548,16 +16691,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     except KeyError:
                         self.sticky_settings.new("Delimiter", save_map.delimiter)
 
-                    manufacturer = self.meas.transects[
-                        self.checked_transects_idx[0]
-                    ].adcp.manufacturer
-                    self.meas.map.export_csv(
-                        save_map.full_Name,
-                        units=self.units,
-                        delimiter=save_map.delimiter,
-                        manufacturer=manufacturer,
-                        verticals=verticals,
-                    )
+                    if file_type == 'contour' or file_type == 'bathy':
+                        manufacturer = self.meas.transects[
+                            self.checked_transects_idx[0]
+                        ].adcp.manufacturer
+                        self.meas.map.export_csv(
+                            save_map.full_Name,
+                            units=self.units,
+                            delimiter=save_map.delimiter,
+                            manufacturer=manufacturer,
+                            verticals=verticals
+                        )
+                    elif file_type == 'shiptrack':
+                        self.meas.map.export_shiptrack_csv(
+                            save_map.full_Name,
+                            units=self.units,
+                            delimiter=save_map.delimiter)
+
                 except Exception:
                     self.popup_message(self.tr("Failed to save MAP data."))
 
@@ -16913,7 +17063,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     # Split functions
     # ==============
-    def split_initialization(self, groupings=None, data=None):
+    def split_initialization(self, groupings=None, data=None, review=False):
         """Sets the GUI components to support semi-automatic processing of pairings
         that split a single measurement into multiple measurements.
         Loads the first pairing.
@@ -16926,6 +17076,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         data: Measurement
             Object of class Measurement which contains all of the transects to be
             grouped into multiple measurements
+        review: bool
+            Indicates if reviewing data or processing. Defaults to False.
         """
 
         if groupings is not None:
@@ -16955,19 +17107,23 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Process first pairing
             self.group_idx = 0
             self.checked_transects_idx = self.groupings[self.group_idx]
-            self.split_processing(self.checked_transects_idx)
+            self.split_processing(self.checked_transects_idx, review=False)
 
-    def split_processing(self, group):
+    def split_processing(self, group, review=False):
         """Creates the measurement based on the transect indices defined in
         group and updates the main tab with this new measurement data.
 
         Parameters
         ==========
-        group: list
-            List of transect indices that comprise a single measurement.
+        group: lst
+            transect indices that comprise a single measurement.
+        review: bool
+            indicates if reviewing data or processing.
         """
 
-        Measurement.selected_transects_changed(self.meas, selected_transects_idx=group)
+        Measurement.selected_transects_changed(self.meas,
+                                               selected_transects_idx=group,
+                                               review=False)
 
         if self.group_idx > 0:
             # Activate main, Summary, and Messages tabs
@@ -17091,11 +17247,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # If all pairings have been processed return control to the
                 # function initiating QRev.
+
+                # Todo: remove setting of caller's object and let the caller
+                #  just grab the object from QRev.
+
                 if self.group_idx > len(self.groupings) - 1:
                     self.caller.processed_meas = self.processed_data
                     self.caller.processed_transects = self.processed_transects
                     self.caller.Show_RIVRS()
-                    self.close()
 
                 else:
                     self.checked_transects_idx = self.groupings[self.group_idx]
@@ -17778,6 +17937,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             folder = self.sticky_settings.get("Folder")
         return folder
 
+    def update_language(self):
+        """Update language based on change from options."""
+
+        if self.display_language != "English":
+            self.translator.load(os.path.join(
+                r'C:\Users\tknight\PycharmProjects\QRevPy\translation',
+                self.display_language + ".qm"))
+            QtWidgets.QApplication.instance().installTranslator(self.translator)
+        else:
+            QtWidgets.QApplication.instance().removeTranslator(self.translator)
+
     def closeEvent(self, event):
         """Warns user when closing QRev.
 
@@ -17786,28 +17956,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         event: QCloseEvent
             Object of QCloseEvent
         """
-        if event:
-            if self.groupings is None and self.meas is not None:
-                close = QtWidgets.QMessageBox()
-                close.setIcon(QtWidgets.QMessageBox.Warning)
-                close.setWindowTitle("Close")
-                close.setText(
-                    self.tr(
-                        "If you haven't saved your data, "
-                        "changes will be lost. \n Are you sure you want to Close? "
-                    )
-                )
-                close.setStandardButtons(
-                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel
-                )
-                close = close.exec()
 
+        if event:
+            close = QtWidgets.QMessageBox()
+            close.setIcon(QtWidgets.QMessageBox.Warning)
+            close.setWindowTitle("Close")
+            close.setText(
+                self.tr(
+                    "If you haven't saved your data, "
+                    "changes will be lost. \n Are you sure you want to Close? "
+                )
+            )
+            close.setStandardButtons(
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel
+            )
+
+            if self.groupings is None and self.meas is not None:
+
+                close = close.exec()
                 if close == QtWidgets.QMessageBox.Yes:
                     if self.caller is not None:
                         self.caller.Show_RIVRS()
-                    event.accept()
                 else:
                     event.ignore()
+            elif self.caller is not None:
+                close = close.exec()
+                if close == QtWidgets.QMessageBox.Yes:
+                    if self.caller is not None:
+                        self.caller.Show_RIVRS()
+                else:
+                    event.ignore()
+
             else:
                 event.accept()
         else:

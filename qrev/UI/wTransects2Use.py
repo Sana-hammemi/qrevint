@@ -15,7 +15,7 @@ class Ui_Transects2Use(object):
     def setupUi(self, Transects2Use):
         Transects2Use.setObjectName("Transects2Use")
         Transects2Use.setWindowModality(QtCore.Qt.ApplicationModal)
-        Transects2Use.resize(864, 270)
+        Transects2Use.resize(864, 674)
         self.gridLayout = QtWidgets.QGridLayout(Transects2Use)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()

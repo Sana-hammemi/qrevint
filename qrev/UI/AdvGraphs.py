@@ -226,6 +226,17 @@ class AdvGraphs(object):
             "255": ".",
         }
         self.wt_advanced_type_methods = {
+            "cb_speed_filtered_cc": self.wt_speed_filtered_contour,
+            "cb_speed_final_cc": self.wt_speed_final_contour,
+            "cb_projected_cc": self.wt_projected_contour,
+            "cb_vertical_cc": self.wt_vertical_contour,
+            "cb_error_cc": self.wt_error_contour,
+            "cb_direction_cc": self.wt_direction_contour,
+            "cb_avg_corr_cc": self.wt_avg_corr_contour,
+            "cb_corr_beam_cc": self.wt_corr_beam_contour,
+            "cb_avg_rssi_cc": self.wt_avg_rssi_contour,
+            "cb_rssi_beam_cc": self.wt_rssi_beam_contour,
+            "cb_ping_type_cc": self.wt_ping_type,
             "cb_discharge_ts": self.discharge_ts,
             "cb_discharge_percent_ts": self.discharge_percent_ts,
             "cb_avg_speed_ts": self.wt_avg_speed_ts,
@@ -258,17 +269,6 @@ class AdvGraphs(object):
             "cb_final_depths_ts": self.depths_final_ts,
             "cb_depths_source_ts": self.depths_source_ts,
             "cb_battery_voltage_ts": self.battery_voltage_ts,
-            "cb_speed_filtered_cc": self.wt_speed_filtered_contour,
-            "cb_speed_final_cc": self.wt_speed_final_contour,
-            "cb_projected_cc": self.wt_projected_contour,
-            "cb_vertical_cc": self.wt_vertical_contour,
-            "cb_error_cc": self.wt_error_contour,
-            "cb_direction_cc": self.wt_direction_contour,
-            "cb_avg_corr_cc": self.wt_avg_corr_contour,
-            "cb_corr_beam_cc": self.wt_corr_beam_contour,
-            "cb_avg_rssi_cc": self.wt_avg_rssi_contour,
-            "cb_rssi_beam_cc": self.wt_rssi_beam_contour,
-            "cb_ping_type_cc": self.wt_ping_type,
         }
 
     def create(
@@ -361,7 +361,7 @@ class AdvGraphs(object):
                     share_y = True
 
                 # Create additional subplots as specified, sharing x axis for
-                # all plots and  y axis for contour plots
+                # all plots and  y-axis for contour plots
                 if len(selected_types) > 1:
                     for n in range(1, len(selected_types)):
                         # Figure number increased by two to account for the
@@ -1596,7 +1596,7 @@ class AdvGraphs(object):
                 x_1d = np.copy(self.x)
 
             # If discharge data are provided, expanded data with extrapolated values
-            if self.show_unmeasured:
+            if self.show_unmeasured and self.x_axis_type == "L":
                 (
                     expanded_cell_size,
                     expanded_cell_depth,
@@ -3243,10 +3243,10 @@ class AdvGraphs(object):
         data_plt: np.array
             Data in meshgrid format used to determine colors in plot
         ensembles: np.array
-            Ensemble numbers used as the x variable to plot the cross section
+            Ensemble numbers used as the x variable to plot the cross-section
              bottom
         depth: np.array
-            Depth data used to plot the cross section bottom
+            Depth data used to plot the cross-section bottom
         """
 
         in_transect_idx = transect.in_transect_idx
@@ -3381,7 +3381,7 @@ class AdvGraphs(object):
         data_plt: np.array
             Data in meshgrid format used to determine colors in plot
         x_data: np.array
-           x variable to plot the cross section
+           x variable to plot the cross-section
         data_units: tuple
             Contains conversion and data_type
         """
@@ -3463,7 +3463,7 @@ class AdvGraphs(object):
         depth: np.ndarray()
             Depth data
         data_units: tuple
-            Tuple of data multiplier and label
+            Data multiplier and label
         data_limits: list
             Optional list of min max data limits
         cmap_in: str
@@ -3490,7 +3490,7 @@ class AdvGraphs(object):
 
         # Create plot variables for input
         if self.x_axis_type == "T":
-            # If x axis is time, create x_plt
+            # If x-axis is time, create x_plt
             x_plt = np.zeros(x_plt_in.shape, dtype="object")
             for r in range(x_plt_in.shape[0]):
                 for c in range(x_plt_in.shape[1]):
@@ -3651,7 +3651,7 @@ class AdvGraphs(object):
                 ax.plot(x, y_plt_top * self.units["L"], color="r", linewidth=0.5)
 
             # Extrapolated data plotting additions
-            if show_edge_speed:
+            if show_edge_speed and self.x_axis_type == "L":
                 top_valid = []
                 bottom_valid = []
 
@@ -3718,20 +3718,30 @@ class AdvGraphs(object):
             )
             depth_fill = np.insert(depth, 0, depth[0])
             depth_fill = np.append(depth_fill, depth[-1])
-            ax.fill_between(
-                x_fill,
-                1.15 * np.ceil(np.nanmax(cell_plt)),
-                depth_fill * self.units["L"],
-                color="w",
-                zorder=0,
-            )
+
+            if self.x_axis_type == "L":
+                ax.fill_between(
+                    x_fill * self.units["L"],
+                    1.15 * np.ceil(np.nanmax(cell_plt)),
+                    depth_fill * self.units["L"],
+                    color="w",
+                    zorder=0,
+                )
+            else:
+                ax.fill_between(
+                    x_fill,
+                    1.15 * np.ceil(np.nanmax(cell_plt)),
+                    depth_fill,
+                    color="w",
+                    zorder=0,
+                )
 
         # Data quiver
         if data_quiver:
             if data_quiver["scale"] is not None:
                 self.add_quiver(ax, data_quiver, self.units)
 
-        # Label and limits for y axis
+        # Label and limits for y-axis
         ax.set_ylabel(self.canvas.tr("Depth ") + self.units["label_L"])
         ax.yaxis.label.set_fontsize(12)
         ax.tick_params(
@@ -4297,10 +4307,10 @@ class AdvGraphs(object):
 
         # populate the figure with MAP contour data
         self.plt_contour(
-            x_plt_in=x_plt * self.units["L"],
+            x_plt_in=x_plt,
             cell_plt_in=cell_plt,
             data_plt_in=data_plt,
-            x=x_data * self.units["L"],
+            x=x_data,
             depth=depths,
             data_units=data_units,
             data_quiver=data_quiver,
@@ -4334,7 +4344,7 @@ class AdvGraphs(object):
         """
 
         with self.wait_cursor():
-            # Set x axis type and units
+            # Set x-axis type and units
             self.x_axis_type = "L"
             self.units = units
 

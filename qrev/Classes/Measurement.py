@@ -96,6 +96,16 @@ class Measurement(object):
         Stage at end of measurement
     stage_meas_m: float
         Stage assigned to measurement
+    use_weighted: bool
+        Indicates the setting for use_weighted to be used for reprocessing
+    use_ping_type: bool
+        Indicates if ping types should be used in BT and WT filters
+    stage_start_m: float
+        Stage at start of measurement
+    stage_end_m: float
+        Stage at end of measurement
+    stage_meas_m: float
+        Stage assigned to measurement
     gps_quality_threshold: int
         Sets the threshold for which the GPS quality must equal to or greater than
     export_xs: bool
@@ -175,7 +185,7 @@ class Measurement(object):
             self.tr = self.no_tr
         else:
             self.tr = qt_tr
-        
+
         self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
@@ -705,7 +715,7 @@ class Measurement(object):
             if hasattr(rsdata.SiteInfo, "Meas_Number"):
                 if len(rsdata.SiteInfo.Meas_Number) > 0:
                     self.meas_number = rsdata.SiteInfo.Meas_Number
-                    
+
             if hasattr(rsdata.SiteInfo, "Party"):
                 if len(rsdata.SiteInfo.Party) > 0:
                     self.persons = rsdata.SiteInfo.Party
@@ -979,21 +989,21 @@ class Measurement(object):
                     temperature=transect.sensors.temperature_deg_c.user.data[0],
                 )
 
-        
+
     @staticmethod
     def rsq_read_transect(transect_folder):
         """Reads the files for a single transect and returns a dictionary of the data.
-        
+
         Parameters
         ----------
         transect_folder: str
             Path to containing the transect files
-            
+
         Returns
         -------
         transect: dict
             Dictionary of the transect data and configuration
-        
+
         """
         # Define transect dictionary
         transect = {"config_json": None, "config_jsonlog": None, "data": []}
@@ -1026,12 +1036,12 @@ class Measurement(object):
             substring = json_log[samples_idx[n]:end_json]
             start_json = substring.find("{")
             transect["data"].append(json.loads(substring[start_json::]))
-        
+
         # Read last sample
         substring = json_log[samples_idx[-1]::]
         start_json = substring.find("{")
         transect["data"].append(json.loads(substring[start_json::]))
-        
+
         return transect
 
     def rsq_2_qrev(self, sontek_data, snr_3beam_comp):
@@ -1058,12 +1068,12 @@ class Measurement(object):
                 meas_no = transect["config_json"]["Setup"]["SiteInformation"]["MeasurementNumber"]
                 if meas_no is not None and len(meas_no) > 0:
                     self.meas_number = meas_no
- 
+
             if "Operator" in transect["config_json"]["Setup"]["SiteInformation"]:
                 operator = transect["config_json"]["Setup"]["SiteInformation"]["Operator"]
                 if operator is not None and len(operator) > 0:
                     self.persons = operator
-                    
+
             if "Comments" in transect["config_json"]["Setup"]["SiteInformation"]:
                 comments = transect["config_json"]["Setup"]["SiteInformation"]["Comments"]
                 if comments is not None and len(comments) > 0:
@@ -1102,10 +1112,10 @@ class Measurement(object):
 
             # Moving-bed tests
             self.rsq_add_mb_test(tests=sontek_data["mb_tests"], utc_time_offset=utc_time_offset, snr_3beam_comp=snr_3beam_comp)
-            
+
     def rsq_add_systest(self, transect, utc_time_offset):
         """Adds a system test to the measurement system test list.
-        
+
         Parameters
         ----------
         transect: dict
@@ -1113,7 +1123,7 @@ class Measurement(object):
         utc_time_offset: str
             Offset time from utc to local time
         """
-        
+
         # Check for presence of system test
         if "SystemTest" in transect["config_json"]["Setup"]:
             # Create premeasurement object of system test
@@ -1140,7 +1150,7 @@ class Measurement(object):
         utc_time_offset: str
             Offset time from utc to local time
         """
-        
+
         # Check for presence of compass calibration
         if "CompassCalibration" in transect["config_json"]["Setup"]:
             # Create premeasurment object of compass calibration
@@ -1155,7 +1165,7 @@ class Measurement(object):
             compass_cal.populate_data(time_stamp=time_stamp, data_in=data, data_type="RSQCC")
             # Append compass calibration to measurement compass calibration list
             self.compass_cal.append(compass_cal)
-    
+
     def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
 
         for test in tests:
@@ -1167,7 +1177,7 @@ class Measurement(object):
                 self.mb_tests.append(MovingBedTests(tr=self.tr))
                 self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Stationary",
                                                 utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
-      
+
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
         into Python instance variables.
@@ -1200,7 +1210,7 @@ class Measurement(object):
         else:
             self.time_zone_required = False
             self.time_zone = ""
-            
+
         if hasattr(meas_struct, "persons"):
             if len(meas_struct.persons) == 0:
                 self.persons = ""
@@ -1319,7 +1329,12 @@ class Measurement(object):
         except AttributeError:
             self.compass_eval = []
 
-        self.transects = TransectData.qrev_mat_in(meas_struct)
+        if len(self.time_zone) > 1:
+            tz = self.time_zone
+        else:
+            tz = None
+
+        self.transects = TransectData.qrev_mat_in(meas_struct, time_zone=tz)
         self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct, tr=self.tr)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
@@ -1825,6 +1840,14 @@ class Measurement(object):
 
     def change_timezone (self, text):
         self.time_zone = text
+
+        for transect in self.transects:
+            if len(text) > 1:
+                offset = int(text[3:])
+            else:
+                offset = None
+            transect.date_time.utc_time_offset = offset
+
         self.qa = QAData(self, tr=self.tr)
         
     @staticmethod
@@ -2678,13 +2701,15 @@ class Measurement(object):
 
         return settings
 
-    def selected_transects_changed(self, selected_transects_idx):
+    def selected_transects_changed(self, selected_transects_idx, review=False):
         """Handle changes in the transects selected for computing discharge.
 
         Parameters
         ----------
-        selected_transects_idx: list
-            List of indices of the transects used to compute discharge
+        selected_transects_idx: lst
+            Indices of the transects used to compute discharge
+        review: bool
+            Indicates if reviewing data or processing.
         """
 
         # Update transect settings
@@ -2695,6 +2720,10 @@ class Measurement(object):
                 self.checked_transect_idx.append(n)
             else:
                 self.transects[n].checked = False
+
+        # clear user comments
+        if not review:
+            self.comments = []
 
         # Update computations
         self.create_filter_composites()
@@ -3078,7 +3107,7 @@ class Measurement(object):
             width_cov: float
                 coefficient of variation of width in percent
             area: float
-                cross sectional area in m**2
+                cross-sectional area in m**2
             area_cov: float
                 coefficient of variation of are in percent
             wetted_perimeter: float
@@ -3123,6 +3152,8 @@ class Measurement(object):
 
         # Process each transect
         for n, transect in enumerate(self.transects):
+            # Todo Break the function in this loop into smaller static
+            #  methods that could be wrapped in Numba.
             # Compute boat track properties
             boat_track = BoatStructure.compute_boat_track(transect)
 
@@ -3177,6 +3208,7 @@ class Measurement(object):
                 valid_idx = np.logical_not(np.isnan(depth_a))
                 valid_data_idx = in_transect_idx[valid_idx]
 
+                depth_a[np.isnan(depth_a)] = 0
                 # Compute area of the moving-boat portion of the cross section
                 # using trapezoidal integration. This method is consistent with
                 # AreaComp but is different from QRev in Matlab
@@ -3220,7 +3252,7 @@ class Measurement(object):
 
                 area_right = edge_depth * transect.edges.right.distance_m * coef
 
-                # Compute total cross sectional area
+                # Compute total cross-sectional area
                 trans_prop["area"][n] = np.nansum(
                     [area_left, area_moving_boat, area_right]
                 )
@@ -3234,11 +3266,11 @@ class Measurement(object):
                     ):
                         continue
                     wp += np.sqrt(
-                        (station[valid_data_idx][i] - station[valid_data_idx][i - 1])
+                        (station[in_transect_idx][i] - station[in_transect_idx][i - 1])
                         ** 2
                         + (
-                            depth_a[valid_data_idx][i]
-                            - depth_a[valid_data_idx][i - 1]
+                            depth_a[in_transect_idx][i]
+                            - depth_a[in_transect_idx][i - 1]
                         )
                         ** 2
                     )
@@ -5485,6 +5517,40 @@ class Measurement(object):
                 _ = kml.newlinestring(name=line_name, coords=lon_lat)
 
         kml.save(path)
+
+    def drop_transects(self, transect_idx):
+        """Remove transects from Measurement object.
+
+        Parameters:
+            transect_idx: lst
+                index of transects to remove.
+
+        """
+
+        # flip the list
+        keep_idx = list(range(len(self.transects)))
+        for item in transect_idx:
+            del keep_idx[item]
+
+        # reset check transect list
+        old_checked = copy.deepcopy(self.checked_transect_idx)
+        self.checked_transect_idx = []
+
+        # copy transect objects to keep
+        keep_transects = []
+        for idx in keep_idx:
+            keep_transects.append(self.transects[idx])
+            # if transect was previously checked add new index to updated
+            # checked transect list.
+            if idx in old_checked:
+                self.checked_transect_idx.append(len(keep_transects) - 1)
+
+        self.transects = copy.deepcopy(keep_transects)
+
+        # Update computations
+        self.create_filter_composites()
+        settings = self.current_settings()
+        self.apply_settings(settings=settings)
 
     def export_depth_averaged_velocity(self, units):
 
