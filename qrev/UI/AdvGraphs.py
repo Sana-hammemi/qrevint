@@ -12,6 +12,7 @@ from matplotlib.patches import Polygon
 
 from qrev.MiscLibs.common_functions import sind, cosd
 from qrev.MiscLibs.compute_edge_cd import compute_edge_cd
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
 
 class AdvGraphs(object):
@@ -1112,19 +1113,20 @@ class AdvGraphs(object):
 
         # x-axis is time
         elif self.x_axis_type == "T":
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
                 self.ax[idx].set_xlim(
-                    right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                    left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer),
+                    right=datetime.fromtimestamp(self.x_timestamp[0] - axis_buffer, tz=tz),
+                    left=datetime.fromtimestamp(self.x_timestamp[-1] + axis_buffer, tz=tz),
                 )
             else:
                 self.ax[idx].set_xlim(
-                    left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                    right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer),
+                    left=datetime.fromtimestamp(self.x_timestamp[0] - axis_buffer, tz=tz),
+                    right=datetime.fromtimestamp(self.x_timestamp[-1] + axis_buffer, tz=tz),
                 )
-            date_form = DateFormatter("%H:%M:%S")
+            date_form = DateFormatter("%H:%M:%S", tz=tz)
             self.ax[idx].xaxis.set_major_formatter(date_form)
             self.ax[idx].set_xlabel(self.canvas.tr("Time"))
 
@@ -1354,6 +1356,7 @@ class AdvGraphs(object):
         # Plot data
         data_units = (self.units["Q"], "Discharge " + self.units["label_Q"])
         self.plt_timeseries(data=q_ts, data_units=data_units, ax=self.ax[-1])
+        self.set_x_axis(-1)
 
     def discharge_percent_ts(self):
         """Create plot of cumulative percent discharge by ensemble."""
@@ -1384,6 +1387,7 @@ class AdvGraphs(object):
         # Plot data
         data_units = (1, "Discharge (%)")
         self.plt_timeseries(data=q_ts_per, data_units=data_units, ax=self.ax[-1])
+        self.set_x_axis(-1)
 
     def wt_error_contour(self):
         """Create contour plot of error velocities."""
@@ -3199,8 +3203,9 @@ class AdvGraphs(object):
             self.x_timestamp = x[self.transect.in_transect_idx]
             x = []
             # datetime is needed to plot timeseries and x-axis labels
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             for stamp in timestamp:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz))
             x = np.array(x)
             self.x = x[self.transect.in_transect_idx]
 
@@ -3491,10 +3496,11 @@ class AdvGraphs(object):
         # Create plot variables for input
         if self.x_axis_type == "T":
             # If x-axis is time, create x_plt
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             x_plt = np.zeros(x_plt_in.shape, dtype="object")
             for r in range(x_plt_in.shape[0]):
                 for c in range(x_plt_in.shape[1]):
-                    x_plt[r, c] = datetime.utcfromtimestamp(x_plt_in[r, c])
+                    x_plt[r, c] = datetime.fromtimestamp(x_plt_in[r, c], tz=tz)
         else:
             x_plt = x_plt_in
 
@@ -3594,8 +3600,9 @@ class AdvGraphs(object):
             )
         elif self.x_axis_type == "T":
             x_datetime = []
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             for timestamp in x:
-                x_datetime.append(datetime.utcfromtimestamp(timestamp))
+                x_datetime.append(datetime.fromtimestamp(timestamp, tz=tz))
             x = np.array(x_datetime)
             self.expanded_x = x
             ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)

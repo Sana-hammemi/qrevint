@@ -3875,20 +3875,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Transect end time
                 col += 1
+                item = tz_formatted_string(
+                    self.meas.transects[transect_id].date_time.end_serial_time,
+                    self.meas.transects[transect_id].date_time.utc_time_offset,
+                    "%H:%M:%S")
                 tbl.setItem(
                     row + 1,
                     col,
-                    QtWidgets.QTableWidgetItem(
-                        datetime.strftime(
-                            datetime.utcfromtimestamp(
-                                self.meas.transects[
-                                    transect_id
-                                ].date_time.end_serial_time
-                            ),
-                            "%H:%M:%S",
-                        )
-                    ),
-                )
+                    QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect duration
@@ -4021,7 +4015,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col = 0
 
             meas_date = datetime.strftime(
-                datetime.utcfromtimestamp(
+                datetime.fromtimestamp(
                     self.meas.transects[
                         self.checked_transects_idx[0]
                     ].date_time.start_serial_time

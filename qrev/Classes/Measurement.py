@@ -36,7 +36,7 @@ from qrev.MiscLibs.common_functions import (
     azdeg2rad,
     units_conversion,
 )
-from qrev.MiscLibs.local_time_utilities import local_time_from_iso
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso, tz_formatted_string
 
 # from profilehooks import profile
 
@@ -241,6 +241,34 @@ class Measurement(object):
             }
         self.time_zone_required = time_zone_required
         self.time_zone = ""
+        self.timezone_dict = {
+            "": "00:00:00",
+            "UTC": "00:00:00",
+            "UTC-1": "-01:00:00",
+            "UTC-2": "-02:00:00",
+            "UTC-3": "-03:00:00",
+            "UTC-4": "-04:00:00",
+            "UTC-5": "-05:00:00",
+            "UTC-6": "-06:00:00",
+            "UTC-7": "-07:00:00",
+            "UTC-8": "-08:00:00",
+            "UTC-9": "-09:00:00",
+            "UTC-10": "-10:00:00",
+            "UTC-11": "-11:00:00",
+            "UTC-12": "-12:00:00",
+            "UTC+1": "+01:00:00",
+            "UTC+2": "+02:00:00",
+            "UTC+3": "+03:00:00",
+            "UTC+4": "+04:00:00",
+            "UTC+5": "+05:00:00",
+            "UTC+6": "+06:00:00",
+            "UTC+7": "+07:00:00",
+            "UTC+8": "+08:00:00",
+            "UTC+9": "+09:00:00",
+            "UTC+10": "+10:00:00",
+            "UTC+11": "+11:00:00",
+            "UTC+12": "+12:00:00",
+        }
 
 
         # Load data from selected source
@@ -1844,10 +1872,10 @@ class Measurement(object):
 
         for transect in self.transects:
             if len(text) > 1:
-                offset = int(text[3:])
+                transect.date_time.utc_time_offset  = self.timezone_dict[text]
+
             else:
-                offset = None
-            transect.date_time.utc_time_offset = offset
+                transect.date_time.utc_time_offset  = None
 
         self.qa = QAData(self, tr=self.tr)
 
@@ -4244,17 +4272,17 @@ class Measurement(object):
                 ETree.SubElement(transect, "Filename", type="char").text = temp
 
                 # (3) StartDateTime Node
-                temp = int(self.transects[n].date_time.start_serial_time)
-                temp = datetime.datetime.utcfromtimestamp(temp).strftime(
-                    "%m/%d/%Y %H:%M:%S"
-                )
+                temp = tz_formatted_string(
+                    self.transects[n].date_time.start_serial_time,
+                    self.transects[n].date_time.utc_time_offset,
+                    "%m/%d/%Y %H:%M:%S")
                 ETree.SubElement(transect, "StartDateTime", type="char").text = temp
 
                 # (3) EndDateTime Node
-                temp = int(self.transects[n].date_time.end_serial_time)
-                temp = datetime.datetime.utcfromtimestamp(temp).strftime(
-                    "%m/%d/%Y %H:%M:%S"
-                )
+                temp = tz_formatted_string(
+                    self.transects[n].date_time.end_serial_time,
+                    self.transects[n].date_time.utc_time_offset,
+                    "%m/%d/%Y %H:%M:%S")
                 ETree.SubElement(transect, "EndDateTime", type="char").text = temp
 
                 # (3) Discharge Node

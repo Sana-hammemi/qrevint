@@ -269,8 +269,8 @@ class Python2Matlab(object):
             Array of comments
 
         """
-        struct = np.zeros((len(comments),), dtype=np.object)
-        cell = np.zeros((1,), dtype=np.object)
+        struct = np.zeros((len(comments),), dtype=object)
+        cell = np.zeros((1,), dtype=object)
         for n, line in enumerate(comments):
             cell[0] = line
             struct[n] = np.copy(cell)
@@ -715,7 +715,7 @@ class Python2Matlab(object):
             if len(meas_mat.mb_tests.messages) > 0:
                 meas_mat.mb_tests.messages = np.array(
                     meas_mat.mb_tests.messages
-                ).astype(np.object)
+                ).astype(object)
 
         # Fix user and adcp temperature for QRev Matlab
         if np.isnan(meas_mat.ext_temp_chk["user"]):

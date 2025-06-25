@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime
 import matplotlib.dates as mdates
-
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
 class DischargeTS(object):
     """Class to generate discharge time series plot.
@@ -99,7 +99,8 @@ class DischargeTS(object):
             )
 
         # Customize axis
-        time_fmt = mdates.DateFormatter("%H:%M:%S")
+        tz = utc_offset_to_tz(meas.transects[transect_idx].date_time.utc_time_offset)
+        time_fmt = mdates.DateFormatter("%H:%M:%S", tz=tz)
         self.fig.ax.xaxis.set_major_formatter(time_fmt)
         self.fig.autofmt_xdate()
         self.fig.ax.set_xlabel(self.canvas.tr("Time "))
