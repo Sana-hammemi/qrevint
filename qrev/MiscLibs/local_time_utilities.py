@@ -36,7 +36,7 @@ def utc_offset_to_tz(utc_time_offset):
 def tz_formatted_string(serial_time, utc_time_offset, format):
     tz = utc_offset_to_tz(utc_time_offset)
     if tz is None:
-        formatted_string = datetime.fromtimestamp(serial_time).strftime(format)
-    else:
-        formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(format)
+        tz = utc_offset_to_tz("00:00:00")  # Default to UTC if no offset provided
+
+    formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(format)
     return formatted_string

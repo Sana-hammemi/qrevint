@@ -1875,7 +1875,7 @@ class Measurement(object):
                 transect.date_time.utc_time_offset  = self.timezone_dict[text]
 
             else:
-                transect.date_time.utc_time_offset  = None
+                transect.date_time.utc_time_offset  = "00:00:00"
 
         self.qa = QAData(self, tr=self.tr)
 

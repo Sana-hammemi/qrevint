@@ -15192,6 +15192,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Add transect data
         for row in range(nrows):
+
+            # Transect
             col = 0
             transect_id = self.checked_transects_idx[row]
 
@@ -15201,20 +15203,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             checked.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             checked.setCheckState(QtCore.Qt.Unchecked)
             tbl.setItem(row, col, checked)
+
+            # Start Time
             col += 1
+            item = tz_formatted_string(
+                self.meas.transects[transect_id].date_time.start_serial_time,
+                self.meas.transects[transect_id].date_time.utc_time_offset,
+                "%H:%M:%S")
             tbl.setItem(
                 row,
                 col,
-                QtWidgets.QTableWidgetItem(
-                    datetime.strftime(
-                        datetime.utcfromtimestamp(
-                            self.meas.transects[transect_id].date_time.start_serial_time
-                        ),
-                        "%H:%M:%S",
-                    )
-                ),
-            )
+                QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Start bank
             col += 1
             tbl.setItem(
                 row,
@@ -15224,20 +15226,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # End
             col += 1
+            item = tz_formatted_string(
+                self.meas.transects[transect_id].date_time.end_serial_time,
+                self.meas.transects[transect_id].date_time.utc_time_offset,
+                "%H:%M:%S")
             tbl.setItem(
                 row,
                 col,
-                QtWidgets.QTableWidgetItem(
-                    datetime.strftime(
-                        datetime.utcfromtimestamp(
-                            self.meas.transects[transect_id].date_time.end_serial_time
-                        ),
-                        "%H:%M:%S",
-                    )
-                ),
-            )
+                QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Duration
             col += 1
             tbl.setItem(
                 row,
@@ -15249,6 +15251,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Total Q
             col += 1
             tbl.setItem(
                 row,
@@ -15262,6 +15266,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Top Q
             col += 1
             tbl.setItem(
                 row,
@@ -15273,6 +15279,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Meas Q
             col += 1
             tbl.setItem(
                 row,
@@ -15286,6 +15294,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Bottom Q
             col += 1
             tbl.setItem(
                 row,
@@ -15299,6 +15309,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Left Q
             col += 1
             tbl.setItem(
                 row,
@@ -15312,6 +15324,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Right Q
             col += 1
             tbl.setItem(
                 row,
@@ -15439,6 +15453,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Add data to table
         for row in range(len(self.edi_results["percent"])):
+
+            # Percent Q
             col = 0
             tbl.setItem(
                 row,
@@ -15448,6 +15464,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
 
+            # Target Q
             col += 1
             tbl.setItem(
                 row,
@@ -15460,6 +15477,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Actual Q
             col += 1
             tbl.setItem(
                 row,
@@ -15472,6 +15490,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Distance
             col += 1
             # Code to handle either blank or user supplied data
             try:
@@ -15489,6 +15508,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Depth
             col += 1
             tbl.setItem(
                 row,
@@ -15499,6 +15519,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Velocity
             col += 1
             tbl.setItem(
                 row,
@@ -15518,6 +15539,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 latm = np.abs((self.edi_results["lat"][row] - latd) * 60)
                 lond = int(self.edi_results["lon"][row])
                 lonm = np.abs((self.edi_results["lon"][row] - lond) * 60)
+
+                # Latitude
                 col += 1
                 tbl.setItem(
                     row,
@@ -15525,6 +15548,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     QtWidgets.QTableWidgetItem("{:3.0f} {:3.7f}".format(latd, latm)),
                 )
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Longitude
                 col += 1
                 tbl.setItem(
                     row,
@@ -17858,7 +17883,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.actionShow_Extrapolated.setVisible(False)
 
         # Set tab text and icons to default
-        for tab_idx in range(self.tab_all.count() - 4):
+        for tab_idx in range(11):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
             self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
 

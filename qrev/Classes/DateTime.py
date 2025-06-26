@@ -28,10 +28,10 @@ class DateTime(object):
         self.end_serial_time = None
         self.transect_duration_sec = None
         self.ens_duration_sec = None
-        self.utc_time_offset = None
+        self.utc_time_offset = "00:00:00"
 
 
-    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):
+    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset="00:00:00"):
         """Populate data in object.
 
         Parameters
