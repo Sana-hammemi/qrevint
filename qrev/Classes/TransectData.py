@@ -1329,6 +1329,8 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
+        blanking_distance = rsdata.Summary.Blank_Distance
+
         if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
             ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
 
@@ -1355,7 +1357,7 @@ class TransectData(object):
             sl_lag_effect_in=sl_lag_effect_m,
             sl_cutoff_m=sl_cutoff_m,
             wm_in=wm,
-            blank_in=excluded_distance,
+            blank_in=blanking_distance,
             corr_in=corr,
             ping_type=ping_type,
             snr_3beam_comp=snr_3beam_comp,
@@ -2211,6 +2213,24 @@ class TransectData(object):
         self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in="internal")
         self.sensors.roll_deg.selected = "internal"
 
+        # External heading
+        if "HdtHeading (deg)" in adcp_data["data"][0]["Gps"]:
+            ext_heading = np.array([
+                x["Gps"]["HdtHeading (deg)"] if "HdtHeading (deg)" in x["Gps"] and x["Gps"]["HdtHeading (deg)"] is not None else np.nan
+                for x in adcp_data["data"]
+            ])
+
+
+            if np.any(np.logical_not(np.isnan(ext_heading))):
+                ext_heading[ext_heading < 0] = 360 + ext_heading
+                self.sensors.heading_deg.external = HeadingData()
+                self.sensors.heading_deg.external.populate_data(
+                    data_in=ext_heading,
+                    source_in="external",
+                    magvar=0,
+                    align=system_configuration["GpsCompassHeadingAlignment (deg)"],
+                )
+                self.sensors.heading_deg.selected = "external"
         # Temperature
         temperature = np.array(sensors_ens["temperature"]).astype(float)
         self.sensors.temperature_deg_c.internal = SensorData()
@@ -2370,7 +2390,7 @@ class TransectData(object):
             sl_lag_effect_in=sl_lag_effect_m,
             sl_cutoff_m=sl_cutoff_m,
             wm_in=wt["mode"],
-            blank_in=np.nanmean(wt["blanking_dist"]),
+            blank_in=wt["blanking_dist"],
             corr_in=wt["corr"],
             ping_type=np.array(ping_type),
             snr_3beam_comp=snr_3beam_comp,

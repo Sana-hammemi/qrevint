@@ -3872,7 +3872,7 @@ class Measurement(object):
             for each in self.transects[
                 self.checked_transect_idx[0]
             ].adcp.configuration_commands:
-                if type(each) is str:
+                if isinstance(each, np.str_):
                     commands += each + "  "
             ETree.SubElement(
                 instrument, "InstrumentConfiguration", type="char"

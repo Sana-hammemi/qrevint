@@ -5695,6 +5695,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 is not None
             ):
                 self.cb_ext_compass.setEnabled(True)
+                self.cb_ext_compass.setChecked(True)
                 break
             else:
                 self.cb_ext_compass.setChecked(False)
@@ -5868,7 +5869,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Populate each row
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
-
+                heading_data_selected = getattr(self.meas.transects[transect_id].sensors.heading_deg, self.meas.transects[transect_id].sensors.heading_deg.selected)
                 # File/Transect name
                 col = 0
                 checked = QtWidgets.QTableWidgetItem(
@@ -5893,10 +5894,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.mag_var_deg
+                        "{:3.2f}".format(heading_data_selected.mag_var_deg
                         )
                     ),
                 )
@@ -5920,7 +5918,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                     tbl.item(row, col).setToolTip(
                         self.tr(
-                            "Difference in left and right water direction threshold exeeded"
+                            "Difference in left and right water direction threshold exceeded."
                         )
                     )
 
@@ -5946,10 +5944,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.align_correction_deg
+                        "{:3.2f}".format(heading_data_selected.align_correction_deg
                         )
                     ),
                 )
@@ -5964,7 +5959,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                     tbl.item(row, col).setToolTip(
                         self.tr(
-                            "Difference in left and right water direction threshold exeeded"
+                            "Difference in left and right water direction threshold exceeded."
                         )
                     )
                 else:
@@ -6158,6 +6153,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.blockSignals(True)
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
+                heading_data_selected = getattr(self.meas.transects[transect_id].sensors.heading_deg, self.meas.transects[transect_id].sensors.heading_deg.selected)
 
                 # File/Transect name
                 col = 0
@@ -6167,10 +6163,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.mag_var_deg
+                        "{:3.2f}".format(heading_data_selected.mag_var_deg
                         )
                     ),
                 )
@@ -6182,10 +6175,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.align_correction_deg
+                        "{:3.2f}".format(heading_data_selected.align_correction_deg
                         )
                     ),
                 )
