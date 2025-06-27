@@ -2370,7 +2370,7 @@ class TransectData(object):
             sl_lag_effect_in=sl_lag_effect_m,
             sl_cutoff_m=sl_cutoff_m,
             wm_in=wt["mode"],
-            blank_in=wt["blanking_dist"],
+            blank_in=np.nanmean(wt["blanking_dist"]),
             corr_in=wt["corr"],
             ping_type=np.array(ping_type),
             snr_3beam_comp=snr_3beam_comp,

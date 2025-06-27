@@ -1870,12 +1870,12 @@ class Measurement(object):
     def change_timezone (self, text):
         self.time_zone = text
 
-        for transect in self.transects:
-            if len(text) > 1:
-                transect.date_time.utc_time_offset  = self.timezone_dict[text]
-
-            else:
-                transect.date_time.utc_time_offset  = "00:00:00"
+        # for transect in self.transects:
+        #     if len(text) > 1:
+        #         transect.date_time.utc_time_offset  = self.timezone_dict[text]
+        #
+        #     else:
+        #         transect.date_time.utc_time_offset  = "00:00:00"
 
         self.qa = QAData(self, tr=self.tr)
 

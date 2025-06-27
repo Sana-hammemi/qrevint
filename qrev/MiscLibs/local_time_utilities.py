@@ -14,29 +14,27 @@ def local_time_from_iso(time_str, utc_offset):
 
 def utc_offset_to_tz(utc_time_offset):
 
-    tz = None
-    if utc_time_offset is not None:
-        offset = utc_time_offset
-        if utc_time_offset[0] != "+" and utc_time_offset[0] != "-":
-            if len(utc_time_offset) == 8:
-                offset = "+" + utc_time_offset
-            else:
-                # DSM 20250625 Not sure what this code was intended to trap
-                if len(utc_time_offset) > 3:
-                    tz_strip = utc_time_offset[3:]
-                    if len(tz_strip) <= 2:
-                        offset = tz_strip[0] + '0' + tz_strip[1] + '00'
-                    else:
-                        offset = utc_time_offset[3:] + '00'
+    tz = None  # Default to UTC if no offset provided
+    if utc_time_offset is None:
+        utc_time_offset = "00:00:00"
+    offset = utc_time_offset
+    if utc_time_offset[0] != "+" and utc_time_offset[0] != "-":
+        if len(utc_time_offset) == 8:
+            offset = "+" + utc_time_offset
+        else:
+            # DSM 20250625 Not sure what this code was intended to trap
+            if len(utc_time_offset) > 3:
+                tz_strip = utc_time_offset[3:]
+                if len(tz_strip) <= 2:
+                    offset = tz_strip[0] + '0' + tz_strip[1] + '00'
                 else:
-                    offset = "+" + utc_time_offset
-        tz = datetime.strptime(offset, "%z").tzinfo
+                    offset = utc_time_offset[3:] + '00'
+            else:
+                offset = "+" + utc_time_offset
+    tz = datetime.strptime(offset, "%z").tzinfo
     return tz
 
 def tz_formatted_string(serial_time, utc_time_offset, format):
     tz = utc_offset_to_tz(utc_time_offset)
-    if tz is None:
-        tz = utc_offset_to_tz("00:00:00")  # Default to UTC if no offset provided
-
     formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(format)
     return formatted_string

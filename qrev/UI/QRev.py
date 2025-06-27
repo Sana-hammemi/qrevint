@@ -4600,6 +4600,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "{:3.4f}".format(self.meas.stage_meas_m * self.units["L"])
         )
 
+        self.combo_timezone.blockSignals(True)
         try:
             tz_idx = self.timezone_list.index(self.meas.time_zone)
             self.combo_timezone.setCurrentIndex(tz_idx)
@@ -4613,6 +4614,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.combo_timezone.setCurrentIndex(0)
             self.label_time_zone.setStyleSheet("background-color: white")
             self.label_time_zone.setToolTip("")
+
+        if self.meas.transects[self.checked_transects_idx[0]].date_time.utc_time_offset is None:
+            self.combo_timezone.setEnabled(True)
+        else:
+            self.combo_timezone.setEnabled(False)
+        self.combo_timezone.blockSignals(False)
 
         # Setup table
         tbl = self.table_premeas
@@ -4870,8 +4877,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_premeasurement_table()
 
     def update_time_zone(self, text):
-        """Records the time zone entered by the user. Value not used in any compuations"""
+        """Records the time zone entered by the user. Value not used in any computations"""
 
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.setText("Information")
+        msg.setInformativeText(
+            "Changing the time zone is for reference only. It does not change the times associated with the measurement."
+        )
+        msg.setWindowTitle("Information")
+        msg.exec_()
         self.meas.change_timezone(text)
         self.messages_tab()
         self.main_premeasurement_table()

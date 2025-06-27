@@ -49,10 +49,11 @@ class DischargeTS(object):
             Dictionary of units conversion factors
         """
 
+        self.fig.clear()
         # Configure axis
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
 
-        self.fig.ax.clear()
+        # self.fig.ax.clear()
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(
@@ -99,7 +100,7 @@ class DischargeTS(object):
             )
 
         # Customize axis
-        tz = utc_offset_to_tz(meas.transects[transect_idx].date_time.utc_time_offset)
+        tz = utc_offset_to_tz(meas.transects[idx].date_time.utc_time_offset)
         time_fmt = mdates.DateFormatter("%H:%M:%S", tz=tz)
         self.fig.ax.xaxis.set_major_formatter(time_fmt)
         self.fig.autofmt_xdate()

@@ -310,6 +310,7 @@ class WaterData(object):
         self.orig_nav_ref = nav_ref_in
         self.nav_ref = nav_ref_in
         self.water_mode = wm_in
+        self.blanking_distance_m = blank_in
         self.excluded_dist_m = excluded_dist_in
         self.rssi_units = rssi_units_in
         max_cells = cells_above_sl_in.shape[0]
