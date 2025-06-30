@@ -1145,47 +1145,47 @@ class QAData(object):
         self.compass["roll_std_caution_idx"] = []
 
         # Check calibration and evaluation of compass
-        magvar_required = self.compass_qa_calibration(meas)
+        magvar_required, internal_source = self.compass_qa_calibration(meas)
 
         # Compute data to check heading, pitch, and roll
         hpr = self.compass_qa_hpr(meas)
 
-        # Check magvar consistency
-        if len(np.unique(hpr["magvar"])) > 1:
-            self.compass["status2"] = "caution"
-            self.compass["messages"].append(
-                [self.tr("Compass: Magnetic variation is not consistent among transects") + ";", 2, 4]
-            )
-            self.compass["magvar"] = 1
-            guidance_text = self.tr("The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site.")
-            self.compass["guidance"].append(
-                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
-            )
-
-        # Check heading offset consistency
-        if len(np.unique(hpr["align"])) > 1:
-            self.compass["status2"] = "caution"
-            self.compass["messages"].append(
-                [self.tr("Compass: Heading offset is not consistent among transects") + ";", 2, 4]
-            )
-            self.compass["align"] = 1
-            guidance_text = self.tr("The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC.")
-            self.compass["guidance"].append(
-                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
-            )
-
-        # Check that magvar was set if GPS data are available
-        if magvar_required:
-            if 0 in hpr["magvar"]:
-                self.compass["status2"] = "warning"
+        if internal_source:
+            # Check magvar consistency
+            if len(np.unique(hpr["magvar"])) > 1:
+                self.compass["status2"] = "caution"
                 self.compass["messages"].append(
-                    [self.tr("COMPASS: Magnetic variation is 0 and GPS data are present") + ";", 1, 4]
+                    [self.tr("Compass: Magnetic variation is not consistent among transects") + ";", 2, 4]
                 )
-                self.compass["magvar"] = 2
-                self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
-                    0
-                ].tolist()
-                guidance_text = self.tr("A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.")
+                self.compass["magvar"] = 1
+                guidance_text = self.tr("The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+                )
+            # Check that magvar was set if GPS data are available
+            if magvar_required:
+                if 0 in hpr["magvar"]:
+                    self.compass["status2"] = "warning"
+                    self.compass["messages"].append(
+                        [self.tr("COMPASS: Magnetic variation is 0 and GPS data are present") + ";", 1, 4]
+                    )
+                    self.compass["magvar"] = 2
+                    self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
+                        0
+                    ].tolist()
+                    guidance_text = self.tr("A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.")
+                    self.compass["guidance"].append(
+                        self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+                    )
+        else:
+            # Check heading offset consistency
+            if len(np.unique(hpr["align"])) > 1:
+                self.compass["status2"] = "caution"
+                self.compass["messages"].append(
+                    [self.tr("Compass: Heading offset is not consistent among transects") + ";", 2, 4]
+                )
+                self.compass["align"] = 1
+                guidance_text = self.tr("The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC.")
                 self.compass["guidance"].append(
                     self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
@@ -1422,23 +1422,27 @@ class QAData(object):
         """
 
         # Check for loop test
-        loop = False
+        cal_required = False
         for test in meas.mb_tests:
             if test.type == "Loop":
-                loop = True
+                cal_required = True
                 break
 
         # Check for GPS data
-        gps = False
+        cal_required = False
         for idx in meas.checked_transect_idx:
             if (
                 meas.transects[idx].boat_vel.gga_vel is not None
                 or meas.transects[idx].boat_vel.vtg_vel is not None
             ):
-                gps = True
+                cal_required = True
                 break
-
-        if gps or loop:
+        internal = False
+        for idx in meas.checked_transect_idx:
+            if meas.transects[idx].sensors.heading_deg.selected == "internal":
+                internal = True
+                break
+        if cal_required and internal:
             # Calibration required
             if (
                 meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer
@@ -1460,7 +1464,7 @@ class QAData(object):
                 # Compass was calibrated and evaluated
                 self.compass["status1"] = "good"
 
-        return gps
+        return cal_required, internal
 
     def compass_qa_sontek_cal(self, meas):
         """Evaluate compass calibration for SonTek ADCP.

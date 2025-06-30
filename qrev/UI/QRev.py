@@ -6336,7 +6336,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             )
 
                         # Update compass tab
-                        self.change_table_data(
+                        # self.change_table_data(
+                        #     tbl=tbl,
+                        #     old_discharge=old_discharge,
+                        #     new_discharge=self.meas.discharge,
+                        # )
+                        self.update_compass_tab(
                             tbl=tbl,
                             old_discharge=old_discharge,
                             new_discharge=self.meas.discharge,
@@ -16783,7 +16788,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     arrow_scale = float(scale.ed_arrow_scale.text()) / self.units["L"]
                     v_min = float(scale.ed_v_min.text()) / self.units["V"]
                     v_max = float(scale.ed_v_max.text()) / self.units["V"]
-                    self.meas.map.export_kml(
+                    self.meas.map.export_kml_sana(
                         self.meas,
                         fullname,
                         arrow_scale=arrow_scale,
