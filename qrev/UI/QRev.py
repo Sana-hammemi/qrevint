@@ -6302,8 +6302,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_compass_pr
         # Change transects plotted
         if column == 0:
-            for nrow in range(tbl.rowCount()):
-                tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked)
+            python
+            [tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked) for nrow in range(tbl.rowCount())]
+            # for nrow in range(tbl.rowCount()):
+            #     tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked)
             self.transect_row = row
             tbl.item(row, 0).setCheckState(QtCore.Qt.Checked)
             tbl.scrollToItem(tbl.item(self.transect_row, 0))
@@ -16791,6 +16793,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.map.export_kml_sana(
                         self.meas,
                         fullname,
+                        self.units,
                         arrow_scale=arrow_scale,
                         v_min=v_min,
                         v_max=v_max,

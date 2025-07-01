@@ -9,6 +9,7 @@ import sys
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
 import simplekml
@@ -2132,8 +2133,7 @@ class MAP(object):
         # write dataframe to file
         df.to_csv(path, sep=sep, index=False, mode="a", header=True)
 
-    def export_kml_sana(self, meas, path, palette="jet", arrow_scale=None, v_min=None, v_max=None,
-                   overlay_image_path=None):
+    def export_kml_sana(self, meas, path, units, palette="jet", arrow_scale=None, v_min=None, v_max=None,):
         """Create KML file for MAP.
 
         Parameters
@@ -2142,6 +2142,8 @@ class MAP(object):
             Object of Measurement class
         path: str
             Path to save kml file
+        units: dict
+            Dictionary of unit labels and conversions
         palette: str
             Cmap palette to use for arrows color bar
         arrow_scale: float
@@ -2150,8 +2152,6 @@ class MAP(object):
             Min velocity of the gradient cbar
         v_max: float
             Max velocity of the gradient cbar
-        overlay_image_path: str
-            Path to PNG image to use as ground overlay (optional)
         """
         print(f"Starting KML export to: {path}")
 
@@ -2269,14 +2269,14 @@ class MAP(object):
 
         # Get color map
         cmap = plt.get_cmap(palette)
-        norm = mcolors.Normalize(vmin=v_min, vmax=v_max)
+        norm = mcolors.Normalize(vmin=v_min * units["V"], vmax=v_max * units["V"])
 
         # Check if velocity data is valid
         if vel_norm is None or len(vel_norm) == 0 or np.isnan(vel_norm).all():
             print("Warning: No valid velocity data for coloring arrows.")
         else:
             # Calculate colors for each arrow
-            colors = np.round(cmap(norm(vel_norm)) * 255).astype(int)
+            colors = np.round(cmap(norm(vel_norm * units["V"])) * 255).astype(int)
 
             # Replace NaN values with zeros for plotting
             u_mean = np.where(np.isnan(u_mean), 0, u_mean)
@@ -2304,82 +2304,94 @@ class MAP(object):
             print(f"Successfully created {arrows_created} arrows")
 
         # ===== Handle overlay image =====
+        # Create colorbar image
+        fig, ax = plt.subplots(figsize=(10, 1))
+        cb_label = 'Velocity Vector Color Scale' + f" ({units['label_V']})"
+        fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap),
+                     cax=ax, orientation='horizontal', label=cb_label)
+        # cb = mcolors.ColorbarBase(ax, cmap=cmap, norm=norm * units["V"], orientation='horizontal')
+        # cb.set_label('Velocity Vector Color Scale' + f" ({units['label_V']})")
+        overlay_image_path = path[:-4] + "_color_bar.png"
+        fig.savefig(
+            overlay_image_path, dpi=300, bbox_inches="tight"
+        )
+
         # Determine path to colorbar image
-        if overlay_image_path is None:
-            # Get the current module's directory and build paths relative to it
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            parent_dir = os.path.dirname(current_dir)  # qrev directory
+        # if overlay_image_path is None:
+        #     # Get the current module's directory and build paths relative to it
+        #     current_dir = os.path.dirname(os.path.abspath(__file__))
+        #     parent_dir = os.path.dirname(current_dir)  # qrev directory
+        #
+        #     # Try multiple paths for the overlay image using relative paths first
+        #     possible_paths = [
+        #         # Relative paths within package structure
+        #         os.path.join(parent_dir, "UI", "images", f"color_bar_{palette}_QRevInt.png"),
+        #         os.path.join(parent_dir, "UI", f"color_bar_{palette}_QRevInt.png"),
+        #
+        #         # Fallback to original absolute paths only if needed
+        #         r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\images\color_bar_{}_QRevInt.png'.format(palette),
+        #         r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\color_bar_{}_QRevInt.png'.format(palette)
+        #     ]
+        #
+        #     # Find first existing path
+        #     for img_path in possible_paths:
+        #         print(f"Checking for image at: {img_path}")
+        #         if os.path.exists(img_path):
+        #             overlay_image_path = img_path
+        #             print(f"Found overlay image at: {overlay_image_path}")
+        #             break
+        #     else:
+        #         print("Could not find colorbar image in any location")
+        #
+        # # ==== Add overlay image to KML ====
+        # if overlay_image_path is not None and os.path.exists(overlay_image_path):
+        #     try:
+        #         print(f"Adding colorbar overlay from: {overlay_image_path}")
+        #
+        #         # Get directory where KML will be saved
+        #         kml_dir = os.path.dirname(os.path.abspath(path))
+        #         os.makedirs(kml_dir, exist_ok=True)
+        #
+        #         # Copy the image file to the same directory as the KML
+        #         image_filename = os.path.basename(overlay_image_path)
+        #         target_image_path = os.path.join(kml_dir, image_filename)
+        #
+        #         # Copy image file if needed
+        #         if os.path.normpath(overlay_image_path) != os.path.normpath(target_image_path):
+        #             try:
+        #                 print(f"Copying from {overlay_image_path} to {target_image_path}")
+        #                 shutil.copy2(overlay_image_path, target_image_path)
+        #                 print("Image copied successfully")
+        #             except Exception as e:
+        #                 print(f"Error copying image: {e}")
+        #                 try:
+        #                     # Try alternate copy method
+        #                     with open(overlay_image_path, 'rb') as src, open(target_image_path, 'wb') as dst:
+        #                         dst.write(src.read())
+        #                     print("Image copied using direct file I/O")
+        #                 except Exception as e2:
+        #                     print(f"Fatal: Could not copy image: {e2}")
 
-            # Try multiple paths for the overlay image using relative paths first
-            possible_paths = [
-                # Relative paths within package structure
-                os.path.join(parent_dir, "UI", "images", f"color_bar_{palette}_QRevInt.png"),
-                os.path.join(parent_dir, "UI", f"color_bar_{palette}_QRevInt.png"),
+        # ==== Add as screen overlay (always visible) ====
+        screen = kml.newscreenoverlay(name="Velocity Scale")
+        screen.icon.href = overlay_image_path
 
-                # Fallback to original absolute paths only if needed
-                r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\images\color_bar_{}_QRevInt.png'.format(palette),
-                r'C:\Users\shammemi\OneDrive\Desktop\bitbuckett\qrevint\qrev\UI\color_bar_{}_QRevInt.png'.format(palette)
-            ]
+        # Position in top-right corner
+        screen.overlayxy = simplekml.OverlayXY(x=1, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+        screen.screenxy = simplekml.ScreenXY(x=0.8, y=0.95, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
 
-            # Find first existing path
-            for img_path in possible_paths:
-                print(f"Checking for image at: {img_path}")
-                if os.path.exists(img_path):
-                    overlay_image_path = img_path
-                    print(f"Found overlay image at: {overlay_image_path}")
-                    break
-            else:
-                print("Could not find colorbar image in any location")
+        # Set fixed size for consistent appearance regardless of original image dimensions
+        screen.size.x = 0.6  # Width is 80% of screen width
+        screen.size.y = 0.10   # Height is 12% of screen height
+        screen.size.xunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
+        screen.size.yunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
 
-        # ==== Add overlay image to KML ====
-        if overlay_image_path is not None and os.path.exists(overlay_image_path):
-            try:
-                print(f"Adding colorbar overlay from: {overlay_image_path}")
+        print("Added screen overlay with standardized size")
 
-                # Get directory where KML will be saved
-                kml_dir = os.path.dirname(os.path.abspath(path))
-                os.makedirs(kml_dir, exist_ok=True)
-
-                # Copy the image file to the same directory as the KML
-                image_filename = os.path.basename(overlay_image_path)
-                target_image_path = os.path.join(kml_dir, image_filename)
-
-                # Copy image file if needed
-                if os.path.normpath(overlay_image_path) != os.path.normpath(target_image_path):
-                    try:
-                        print(f"Copying from {overlay_image_path} to {target_image_path}")
-                        shutil.copy2(overlay_image_path, target_image_path)
-                        print("Image copied successfully")
-                    except Exception as e:
-                        print(f"Error copying image: {e}")
-                        try:
-                            # Try alternate copy method
-                            with open(overlay_image_path, 'rb') as src, open(target_image_path, 'wb') as dst:
-                                dst.write(src.read())
-                            print("Image copied using direct file I/O")
-                        except Exception as e2:
-                            print(f"Fatal: Could not copy image: {e2}")
-
-                # ==== Add as screen overlay (always visible) ====
-                screen = kml.newscreenoverlay(name="Velocity Scale")
-                screen.icon.href = image_filename
-
-                # Position in top-right corner
-                screen.overlayxy = simplekml.OverlayXY(x=1, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
-                screen.screenxy = simplekml.ScreenXY(x=0.98, y=0.9, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
-
-                # Set fixed size for consistent appearance regardless of original image dimensions
-                screen.size.x = 0.80  # Width is 80% of screen width
-                screen.size.y = 0.10   # Height is 12% of screen height
-                screen.size.xunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
-                screen.size.yunits = simplekml.Units.fraction  # Use screen fraction instead of pixels
-
-                print("Added screen overlay with standardized size")
-
-            except Exception as e:
-                print(f"Error adding overlay: {e}")
-        else:
-            print("No valid overlay image available")
+        #     except Exception as e:
+        #         print(f"Error adding overlay: {e}")
+        # else:
+        #     print("No valid overlay image available")
 
         # Save the KML file
         print(f"Saving KML file to: {path}")
