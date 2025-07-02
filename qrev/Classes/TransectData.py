@@ -165,7 +165,7 @@ class TransectData(object):
             )
             start_serial_time = start_dt.timestamp()
             start_date = datetime.strftime(
-                datetime.utcfromtimestamp(start_serial_time), "%m/%d/%Y"
+                datetime.fromtimestamp(start_serial_time, tz=timezone.utc), "%m/%d/%Y"
             )
 
             # End data and time

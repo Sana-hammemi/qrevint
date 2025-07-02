@@ -5,6 +5,7 @@ from qrev.Classes.QComp import QComp
 from qrev.Classes.MovingBedTests import MovingBedTests
 from qrev.Classes.TransectData import TransectData
 from qrev.MiscLibs.common_functions import cosd
+from datetime import datetime, tzinfo, timezone
 
 
 class QAData(object):
@@ -1429,7 +1430,6 @@ class QAData(object):
                 break
 
         # Check for GPS data
-        cal_required = False
         for idx in meas.checked_transect_idx:
             if (
                 meas.transects[idx].boat_vel.gga_vel is not None
@@ -1899,6 +1899,43 @@ class QAData(object):
                         use_2_correct.append(test.use_2_correct)
                 else:
                     user_valid_test.append(False)
+
+            # Check compass cal prior to loop test
+            if mb_test_type[0] == "Loop":
+                # Determine serial time for compass calibration/evaluation
+                eval_times = []
+                cal_times = []
+                if len(meas.compass_eval) > 0:
+                    eval_times = [
+                        eval.time_stamp for eval in meas.compass_eval
+                    ]
+
+                if len(meas.compass_cal) > 0:
+                    cal_times = [
+                        cal.time_stamp for cal in meas.compass_cal
+                    ]
+                times = eval_times + cal_times
+                if len(times) > 0:
+                    time_format = "%Y.%m.%d %H:%M:%S"
+                    compass_time = np.nanmin([datetime.strptime(t, time_format).replace(tzinfo=timezone.utc).timestamp() for t in times])
+
+                    # Time of moving-bed loop test
+                    mb_test_time = mb_tests[0].transect.date_time.start_serial_time
+
+                    if mb_test_time < compass_time:
+                        # Loop test was before compass calibration
+                        self.movingbed["messages"].append(
+                            [
+                                self.tr("MOVING-BED TEST: Loop test was before compass calibration") + ";",
+                                1,
+                                6,
+                            ]
+                        )
+                        guidance_text = self.tr("A loop moving-bed test requires a calibrated compass. The loop test was conducted before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration")
+                        self.movingbed["guidance"].append(
+                            self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
+                        self.movingbed["status"] = "warning"
+                        self.movingbed["code"] = 3
 
             if not any(user_valid_test):
                 # No valid test according to user

@@ -2306,7 +2306,7 @@ class MAP(object):
         # ===== Handle overlay image =====
         # Create colorbar image
         fig, ax = plt.subplots(figsize=(10, 1))
-        cb_label = 'Velocity Vector Color Scale' + f" ({units['label_V']})"
+        cb_label = 'Velocity Vector Color Scale' + units['label_V']
         fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap),
                      cax=ax, orientation='horizontal', label=cb_label)
         # cb = mcolors.ColorbarBase(ax, cmap=cmap, norm=norm * units["V"], orientation='horizontal')

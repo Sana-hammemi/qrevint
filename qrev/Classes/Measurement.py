@@ -859,7 +859,7 @@ class Measurement(object):
             with open(os.path.join(path, file)) as f:
                 test_data = f.read()
             test_data = test_data.replace("\x00", "")
-            time_stamp = file[10:24]
+            time_stamp = file[10:14] + "." + file[14:16] + "." + file[16:18] + " " + file[18:20] + ":" + file[20:22] + ":" + file[22:24]
             sys_test = PreMeasurement()
             sys_test.populate_data(
                 time_stamp=time_stamp, data_in=test_data, data_type="SST"

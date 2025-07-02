@@ -37,8 +37,7 @@ class PreMeasurement(object):
             Type of data, C-compass, TST-TRDI test, SST-SonTek test
         """
 
-        # Store time stamp and data
-        self.time_stamp = time_stamp
+        self.time_stamp = self.standardize_time_stamp(time_stamp)
         self.data = data_in
 
         # Process data depending on data type and store result
@@ -137,7 +136,7 @@ class PreMeasurement(object):
             mat_struct_object containing compass cal/eval data
         """
         self.data = data_in.data
-        self.time_stamp = data_in.timeStamp
+        self.time_stamp = self.standardize_time_stamp(data_in.timeStamp)
         if hasattr(data_in, "result"):
             self.result = {"compass": {"error": data_in.result.compass.error}}
         else:
@@ -221,7 +220,7 @@ class PreMeasurement(object):
         """
         try:
             self.data = test_in.data
-            self.time_stamp = test_in.timeStamp
+            self.time_stamp = self.standardize_time_stamp(test_in.timeStamp)
             self.result = {"sysTest": {"n_failed": test_in.result.sysTest.nFailed}}
             self.result["sysTest"]["n_tests"] = test_in.result.sysTest.nTests
 
@@ -626,3 +625,35 @@ class PreMeasurement(object):
             self.result["pt3"] = pt3
         except Exception:
             pass
+
+    @staticmethod
+    def standardize_time_stamp(time_stamp):
+        """Standardizes the time stamp to a consistent format.
+
+        Parameters
+        ----------
+        time_stamp: str
+            time and data in string format
+
+        Returns
+        -------
+        str
+            Standardized time stamp in the format YYYY.MM.DD HH:MM:SS
+        """
+
+        # Standardize the time stamp format to YYYY.MM.DD HH:MM:SS
+        time_stamp = time_stamp.strip()
+        if time_stamp.isdigit():
+            time_stamp = time_stamp[0:4] + "." + time_stamp[4:6] + "." + time_stamp[6:8] + " " + time_stamp[8:10] + ":" + time_stamp[10:12] + ":" + time_stamp[12:14]
+        else:
+            time_stamp = time_stamp.replace("/", ".")
+            time_stamp = time_stamp.replace("_", " ")
+            time_list = time_stamp.split(" ")
+            time_list[1] = time_list[1].replace(".", ":")
+            time_stamp = " ".join(time_list)
+            year_correction = int(time_stamp.split(".")[0])
+            if year_correction < 90:
+                time_stamp = "20" + time_stamp
+            elif year_correction < 100:
+                time_stamp = "19" + time_stamp
+        return time_stamp
