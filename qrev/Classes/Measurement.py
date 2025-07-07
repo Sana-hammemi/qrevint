@@ -3722,7 +3722,7 @@ class Measurement(object):
                 if len(each.messages) > 0:
                     str_out = ""
                     for message in each.messages:
-                        str_out = str_out + message + "; "
+                        str_out = str_out + message
                     ETree.SubElement(mbt, "Message", type="char").text = str_out
 
         # (3) TemperatureCheck Node
@@ -3845,23 +3845,32 @@ class Measurement(object):
         w_vel = []
         for each in self.transects:
             w_vel.append(each.w_vel)
-        blank = []
+        blank = np.array([])
         for each in w_vel:
-            blank.append(each.blanking_distance_m)
-        if isinstance(blank[0], float):
-            temp = np.mean(blank)
-            if (
-                self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m
-                > temp
-            ):
-                temp = self.transects[
-                    self.checked_transect_idx[0]
-                ].w_vel.excluded_dist_m
-        else:
+            blank = np.hstack([blank, each.blanking_distance_m])
+
+        blanking_dist = np.unique(blank)
+        # For the RSQ the blanking distance is variable and may be negative
+        if len(blanking_dist) > 10 or np.any(blanking_dist < 0):
+            ETree.SubElement(
+                instrument, "BlankingDistance", type="char", unitsCode="m"
+            ).text = "Variable"
+        # If excluded distance is greater than the blanking distance report excluded distance
+        elif np.any(blanking_dist < self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m):
             temp = self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m
-        ETree.SubElement(
-            instrument, "BlankingDistance", type="double", unitsCode="m"
-        ).text = "{:.4f}".format(temp)
+            ETree.SubElement(
+                instrument, "BlankingDistance", type="double", unitsCode="m"
+            ).text = "{:.4f}".format(temp)
+        # For the M9 the blanking distance may vary based on frequency used
+        elif len(blanking_dist) > 1:
+            ETree.SubElement(
+                instrument, "BlankingDistance", type="char", unitsCode="m"
+            ).text = str(blanking_dist)
+        else:
+            ETree.SubElement(
+                instrument, "BlankingDistance", type="double", unitsCode="m"
+            ).text = "{:.4f}".format(blanking_dist[0])
+
 
         # (3) InstrumentConfiguration Node
         commands = ""
