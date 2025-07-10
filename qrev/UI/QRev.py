@@ -17,6 +17,9 @@ from PyQt5.QtCore import QRegExp, pyqtSignal
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
+#sys.path.append('C:\\Users\\shammemi\\OneDrive\\Desktop\\bitbuckett\\qrevint')
+
+
 import qrev.UI.QRev_gui as QRev_gui
 from qrev import __qrev_version__, __company__, myappid
 from qrev.Classes.CoordError import CoordError
@@ -5497,7 +5500,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             new_discharge=self.meas.discharge,
             initial=self.transect_row,
         )
-
+             
         # Setup list for use by graphics controls
         self.canvases = [self.heading_canvas, self.pr_canvas]
         self.figs = [self.heading_fig, self.pr_fig]

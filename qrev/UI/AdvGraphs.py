@@ -3740,8 +3740,8 @@ class AdvGraphs(object):
         if len(depth) > 0:
             ax.set_ylim(top=0, bottom=(np.nanmax(depth * self.units["L"]) * 1.02))
 
-    @staticmethod
-    def add_quiver(ax, data_quiver, units):
+    
+    def add_quiver(self, ax, data_quiver, units):
         """Adds quiver plot of secondary or transverse velocity to color contour plot.
 
         Parameters
@@ -3752,18 +3752,48 @@ class AdvGraphs(object):
             Dictionary containing data and settings used to create quiver plot
         units: dict
             Dictionary of units conversions and labels
-
         """
+        # Calculate aspect ratio from the current axis dimensions
+        bbox = ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+        width, height = bbox.width, bbox.height
+        x_range = np.abs(ax.get_xlim()[1] - ax.get_xlim()[0])
+        y_range = np.abs(ax.get_ylim()[1] - ax.get_ylim()[0])
+        aspect_ratio = (y_range/height) / (x_range/width)  # Lz/Lx
+        
+        # Apply distortion and renormalization
+        vx = data_quiver["vy"] * units["V"]
+        vz = data_quiver["vz"] * units["V"]
+        
+        # Distort components
+        vx_prime = vx
+        vz_prime = vz / aspect_ratio
+        
+        # Renormalize to maintain original magnitude
+        magnitude = np.sqrt(vx**2 + vz**2)
+        magnitude_prime = np.sqrt(vx_prime**2 + vz_prime**2)
+        
+        # Avoid division by zero
+        mask = magnitude_prime > 0
+        vx_adjusted = np.copy(vx_prime)
+        vz_adjusted = np.copy(vz_prime)
+        vx_adjusted[mask] = vx_prime[mask] / magnitude_prime[mask] * magnitude[mask]
+        vz_adjusted[mask] = vz_prime[mask] / magnitude_prime[mask] * magnitude[mask]
+        
         q = ax.quiver(
             data_quiver["x"] * units["L"],
             data_quiver["z"] * units["L"],
-            data_quiver["vy"] * units["V"],
-            data_quiver["vz"] * units["V"],
+            vx_adjusted,
+            vz_adjusted,
             units="inches",
             scale=data_quiver["scale"],
-            pivot="tail",
+            pivot="mid",  # Changed from "tail" to "mid"
+            angles="xy",  # Added this parameter
             zorder=4,
         )
+        
+        # Store reference to the quiver object for updates
+        self.quiver_object = q
+        self.data_quiver = data_quiver
 
         ax.quiverkey(
             q,
@@ -4571,13 +4601,22 @@ class AdvGraphs(object):
             Boolean to specify whether the connection for the mouse event is
             active or not.
         """
-        if setting and self.hover_connection is None:
-            self.hover_connection = self.canvas.mpl_connect(
-                "button_press_event", self.hover
-            )
-        elif not setting:
-            self.canvas.mpl_disconnect(self.hover_connection)
-            self.hover_connection = None
+        if setting:
+            if self.hover_connection is None:
+                self.hover_connection = self.canvas.mpl_connect(
+                    "button_press_event", self.hover
+                )
+            if self.resize_connection is None:
+                self.resize_connection = self.canvas.mpl_connect(
+                    "resize_event", self.handle_resize
+                )
+        else:
+            if self.hover_connection is not None:
+                self.canvas.mpl_disconnect(self.hover_connection)
+                self.hover_connection = None
+            if self.resize_connection is not None:
+                self.canvas.mpl_disconnect(self.resize_connection)
+                self.resize_connection = None
             for item in self.annot:
                 if type(item) != str:
                     item.set_visible(False)
@@ -4683,6 +4722,42 @@ class AdvGraphs(object):
                 text = "x: {:.2f}, y: {:.2f}".format(x, y)
 
         annot_ref.set_text(text)
+    def handle_resize(self, event):
+        """Handle resize events to update vector orientations."""
+        if self.data_quiver is not None and self.quiver_object is not None:
+            # Get the current axis that has the quiver plot
+            ax = None
+            for axis in self.ax:
+                if self.quiver_object in axis.collections:
+                    ax = axis
+                    break
+            
+            if ax is None:
+                return
+                
+            # Recalculate aspect ratio
+            bbox = ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            width, height = bbox.width, bbox.height
+            x_range = np.abs(ax.get_xlim()[1] - ax.get_xlim()[0])
+            y_range = np.abs(ax.get_ylim()[1] - ax.get_ylim()[0])
+            aspect_ratio = (y_range/height) / (x_range/width)
+            
+            # Recalculate adjusted vectors
+            vx = self.data_quiver["vy"] * self.units["V"]
+            vz = self.data_quiver["vz"] * self.units["V"]
+            vx_prime = vx
+            vz_prime = vz / aspect_ratio
+            magnitude = np.sqrt(vx**2 + vz**2)
+            magnitude_prime = np.sqrt(vx_prime**2 + vz_prime**2)
+            mask = magnitude_prime > 0
+            vx_adjusted = np.copy(vx_prime)
+            vz_adjusted = np.copy(vz_prime)
+            vx_adjusted[mask] = vx_prime[mask] / magnitude_prime[mask] * magnitude[mask]
+            vz_adjusted[mask] = vz_prime[mask] / magnitude_prime[mask] * magnitude[mask]
+            
+            # Update quiver data
+            self.quiver_object.set_UVC(vx_adjusted, vz_adjusted)
+            self.canvas.draw_idle()  
 
     @contextmanager
     def wait_cursor(self):
