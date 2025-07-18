@@ -49,8 +49,6 @@ class WTContour(object):
         self.speed_plt = None
         self.data_quiver = None
         self.x_axis_type = "E"
-        self.resize_connection = None
-        self.quiver_object = None
 
     def create(
         self,
@@ -262,39 +260,18 @@ class WTContour(object):
             # Plot quiver if available
             if data_quiver is not None:
                 if data_quiver["scale"] is not None:
-                    #calculate aspect ratio from the current axis dimensions
-                    bbox = self.fig.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                    width, height = bbox.width, bbox.height
-                    x_range = np.abs(self.fig.ax.get_xlim()[1] - self.fig.ax.get_xlim()[0])
-                    y_range = np.abs(self.fig.ax.get_ylim()[1] - self.fig.ax.get_ylim()[0])
-                    aspect_ratio = (y_range / x_range) * (height / width) #Lz/Lx
-                    #apply distortion and renormalization
-                    vx = data_quiver["vy"] * units["V"] 
-                    vz = data_quiver["vz"] * units["V"] 
-                    #distort components
-                    vx_prime = vx
-                    vz_prime = vz / aspect_ratio
-                    # Renormalize to maintain original magnitude
-                    magnitude = np.sqrt(vx**2 + vz**2)
-                    magnitude_prime = np.sqrt(vx_prime**2 + vz_prime**2)
-                    # Avoid division by zero
-                    mask = magnitude_prime > 0
-                    vx_adjusted = np.copy(vx_prime)
-                    vz_adjusted = np.copy(vz_prime)
-                    vx_adjusted[mask] = vx_prime[mask] / magnitude_prime[mask] * magnitude[mask]
-                    vz_adjusted[mask] = vz_prime[mask] / magnitude_prime[mask] * magnitude[mask]                   
                     q = self.fig.ax.quiver(
                         data_quiver["x"] * units["L"],
                         data_quiver["z"] * units["L"],
-                        vx_adjusted,
-                        vz_adjusted,
+                        data_quiver["vy"] * units["V"],
+                        data_quiver["vz"] * units["V"],
                         units="inches",
                         scale=data_quiver["scale"],
-                        pivot="mid",
-                        angles="xy",
-                    )
-                    self.quiver_object = q  # Store reference to the quiver object for updates
+                        pivot="mid",         # Centers vectors
+                        color = "white",
 
+
+                    )
                     self.fig.ax.quiverkey(
                         q,
                         X=0.95,
@@ -720,24 +697,16 @@ class WTContour(object):
             Boolean to specify whether the connection for the mouse event is
             active or not.
         """
-        if setting:
-            if self.hover_connection is None:
-                self.hover_connection = self.canvas.mpl_connect(
-                    "button_press_event", self.hover
-                )
-            if self.resize_connection is None:
-                self.resize_connection = self.canvas.mpl_connect(
-                    "resize_event", self.handle_resize
-                )
-        else:
-            if self.hover_connection is not None:
-                self.canvas.mpl_disconnect(self.hover_connection)
-                self.hover_connection = None
-            if self.resize_connection is not None:
-                self.canvas.mpl_disconnect(self.resize_connection)
-                self.resize_connection = None
+        if setting and self.hover_connection is None:
+            self.hover_connection = self.canvas.mpl_connect(
+                "button_press_event", self.hover
+            )
+        elif not setting:
+            self.canvas.mpl_disconnect(self.hover_connection)
+            self.hover_connection = None
             self.annot.set_visible(False)
             self.canvas.draw_idle()
+
     def update_annot(self, x, y, v, vy=None, vz=None):
         """Updates the location and text and makes visible the previously initialized and hidden annotation.
 
@@ -822,30 +791,3 @@ class WTContour(object):
                 text = "x: {:.2f}, y: {:.2f}".format(x, y)
 
         self.annot.set_text(text)
-
-    def handle_resize(self, event):
-        """Handle resize events to update vector orientations."""
-        if self.data_quiver is not None and self.quiver_object is not None:
-            # Recalculate aspect ratio
-            bbox = self.fig.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-            width, height = bbox.width, bbox.height
-            x_range = np.abs(self.fig.ax.get_xlim()[1] - self.fig.ax.get_xlim()[0])
-            y_range = np.abs(self.fig.ax.get_ylim()[1] - self.fig.ax.get_ylim()[0])
-            aspect_ratio = (y_range/height) / (x_range/width)
-            
-            # Recalculate adjusted vectors
-            vx = self.data_quiver["vy"] * self.units["V"]
-            vz = self.data_quiver["vz"] * self.units["V"]
-            vx_prime = vx
-            vz_prime = vz * aspect_ratio
-            magnitude = np.sqrt(vx**2 + vz**2)
-            magnitude_prime = np.sqrt(vx_prime**2 + vz_prime**2)
-            mask = magnitude_prime > 0
-            vx_adjusted = np.copy(vx_prime)
-            vz_adjusted = np.copy(vz_prime)
-            vx_adjusted[mask] = vx_prime[mask] / magnitude_prime[mask] * magnitude[mask]
-            vz_adjusted[mask] = vz_prime[mask] / magnitude_prime[mask] * magnitude[mask]
-            
-            # Update quiver data
-            self.quiver_object.set_UVC(vx_adjusted, vz_adjusted)
-            self.canvas.draw_idle()
