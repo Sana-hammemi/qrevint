@@ -267,9 +267,11 @@ class WTContour(object):
                         data_quiver["vz"] * units["V"],
                         units="inches",
                         scale=data_quiver["scale"],
-                        pivot="tail",
-                    )
+                        pivot="mid",         # Centers vectors
+                        color = "white",
 
+
+                    )
                     self.fig.ax.quiverkey(
                         q,
                         X=0.95,

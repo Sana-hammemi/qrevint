@@ -49,8 +49,21 @@ pyinstaller_versionfile.create_versionfile(
     translations=[1033, 1200],
 )
 
-print("Running pyinstaller...")
-PyInstaller.__main__.run(["app.spec"])
+# print("Running pyinstaller...")
+# PyInstaller.__main__.run(["app.spec"])
+print("Running pyinstaller, please be patient...")
+try:
+    cur_path = os.getcwd()
+    with subprocess.Popen(['pyinstaller', 'app.spec'], cwd=cur_path,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          text=True) as proc:
+        for line in proc.stderr:
+            print(line)
+        stdout, stderr = proc.communicate()
+except BaseException:
+    print("Pyinstaller crashed.")
+    sys.exit()
+
 
 print("Verifying QRev.EXE was created.")
 path = os.path.join(os.getcwd(), "dist", __app__ + ".exe")

@@ -17981,10 +17981,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Update language based on change from options."""
 
         if self.display_language != "English":
-            self.translator.load(os.path.join(
-                r'C:\Users\tknight\PycharmProjects\QRevPy\translation',
-                self.display_language + ".qm"))
-            QtWidgets.QApplication.instance().installTranslator(self.translator)
+            lang_file = self.display_language + ".qm"
+            base_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../..",
+                    "translation"
+                )
+            )
+            if os.path.exists(base_path):
+                lang_path = os.path.join(base_path, lang_file)
+            else:
+                # Use production-specific settings
+                # PyInstaller creates a temp folder and stores path in _MEIPASS
+                base_path = sys._MEIPASS
+                lang_path = os.path.join(base_path, "translation_files",
+                                         lang_file)
+            try:
+                self.translator.load(lang_path)
+                QtWidgets.QApplication.instance().installTranslator(
+                    self.translator)
+            except BaseException:
+                self.popup_message(self.tr("Failed to load translation."))
+                QtWidgets.QApplication.instance().removeTranslator(
+                    self.translator)
+
         else:
             QtWidgets.QApplication.instance().removeTranslator(self.translator)
 

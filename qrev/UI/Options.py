@@ -26,3 +26,4 @@ class Options(QtWidgets.QDialog, wOptions.Ui_Options):
         self.rb_english.setFont(font)
         self.rb_si.setFont(font)
         self.cb_stylesheet.setFont(font)
+        self.gb_language.hide()

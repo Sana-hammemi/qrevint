@@ -3778,8 +3778,9 @@ class AdvGraphs(object):
             data_quiver["vz"] * units["V"],
             units="inches",
             scale=data_quiver["scale"],
-            pivot="tail",
-            zorder=4,
+            pivot="mid", # centers vectors
+            color="white",
+
         )
 
         ax.quiverkey(
