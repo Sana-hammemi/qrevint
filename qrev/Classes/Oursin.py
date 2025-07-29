@@ -426,6 +426,7 @@ class Oursin(object):
         self.sim_draft_max = pd.DataFrame(
             columns=["q_total", "q_top", "q_left", "q_right"]
         )
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.sim_cells_trdi = pd.DataFrame(columns=["q_total", "q_middle"])
         self.sim_cells_above = pd.DataFrame(columns=["q_total", "q_middle"])
         self.sim_cells_below = pd.DataFrame(columns=["q_total", "q_middle"])
@@ -826,6 +827,7 @@ class Oursin(object):
             self.checkshape(meas_struct.oursin.sim_cells_after),
             columns=["q_total", "q_middle"],
         )
+        # TODO ADD DATA FRAMES FOR NEW SIMULATIONS
         self.sim_shallow = pd.DataFrame(
             self.checkshape(meas_struct.oursin.sim_shallow),
             columns=["q_total", "q_middle"],
@@ -2011,6 +2013,7 @@ class Oursin(object):
         """
 
         # Uncertainty due to invalid cells and ensembles
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.u_invalid_water_list = list(
             Oursin.apply_u_rect(
                 list_sims=[
@@ -2426,6 +2429,7 @@ class Oursin(object):
         """
 
         # Reset data frames
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.sim_cells_trdi = pd.DataFrame(columns=self.sim_cells_trdi.columns)
         self.sim_cells_above = pd.DataFrame(columns=self.sim_cells_above.columns)
         self.sim_cells_below = pd.DataFrame(columns=self.sim_cells_below.columns)
@@ -2497,8 +2501,38 @@ class Oursin(object):
                 meas_temp.discharge[trans_id].total,
                 meas_temp.discharge[trans_id].middle,
             ]
+        # TODO ADD ADDITIONAL SIMULATIONS
+            # Compute mean cross section for transect
+            cross_section_x, cs_cell_width = compute_mean_cross_section(transect=meas_temp.transects[trans_id])
+            iso_ini = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp= 1 / 7, normalize=False)
+            iso_star = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp=1 / 7, normalize=True)
 
-    def sim_shallow_ens(self, meas):
+def compute_mean_cross_section(transect):
+    """Computes a mean cross section projected on a line from the first to the last shiptrack points.
+
+    Parameters
+    ----------
+    transect: TransectData
+        Transect object
+
+    Returns
+    -------
+    cross_section_rng: np.array(float)
+        Array of the range along the mean cross section for each ensemble
+    cs_cell_width: np.array(float)
+        Array of the projected cell widths for each ensemble
+    """
+    boat_track = transect.boat_vel.compute_boat_track(transect=transect, ref=None)
+    unit_x = boat_track["track_x_m"][-1] / boat_track["dmg_m"][-1]
+    unit_y = boat_track["track_y_m"][-1] / boat_track["dmg_m"][-1]
+    track_x_cum_sum = np.nancumsum(boat_track["track_x_m"])
+    track_y_cum_sum = np.nancumsum(boat_track["track_y_m"])
+    cross_section_rng = unit_x * track_x_cum_sum + unit_y * track_y_cum_sum
+    cs_cell_width = np.diff(cross_section)
+    cs_cell_width = np.hstack(0, cell_width)
+    return cross_section_rng, cs_cell_width
+
+def sim_shallow_ens(self, meas):
         """Computes simulations assuming no interpolation of discharge for
         ensembles where depths are too shallow for any valid cells.
 
