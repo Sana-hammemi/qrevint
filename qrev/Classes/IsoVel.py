@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class IsoVel(object):
 
     def __init__(transect, ensemble_widths, exp, normalize):
@@ -61,6 +60,18 @@ class IsoVel(object):
             Whether to normalize the isovel field
         """
 
+        # Set start and end edge characteristics
+        if start_edge == "Left":
+            start_edge_distance = left_edge_distance
+            start_edge_shape = left_edge_shape
+            end_edge_distance = right_edge_distance
+            end_edge_shape = right_edge_shape
+        else:
+            start_edge_distance = right_edge_distance
+            start_edge_shape = right_edge_shape
+            end_edge_distance = left_edge_distance
+            end_edge_shape = left_edge_shape
+
         # update data geometry adding edges and top cells
         (
             depth_cell_depth_iso,
@@ -75,54 +86,72 @@ class IsoVel(object):
             depth_cell_depth,
             depth_cell_size,
             ensemble_widths,
-            right_edge_distance,
-            left_edge_distance,
-            right_edge_shape,
-            left_edge_shape,
-            start_edge,
+            start_edge_distance,
+            start_edge_shape,
+            end_edge_distance,
+            end_edge_shape,
             normalize,
         )
-        [dcd_iso, dcs_iso] = depth_data_iso
-        # initialisation
-        n_i, n_j = len(dcd_iso), len(dcd_iso[0])
-        uem = nan * np.zeros((n_i, n_j))
-        Ue = 0
-        A = 0
-        xd = np.cumsum(w_iso)
-        L = xd[-1]
-        for i in range(n_i):
-            for j in range(n_j):
-                u = 0
-                xm = xd[j]
-                ym = dcd_iso[i][j]
-                dy = dcs_iso[:, j][0]
-                if dcd_iso[i, j] < yd[j]:
-                    # bottom
-                    for k in range(len(yd) - 1):
-                        rb = sqrt((xd[k] - xm) ** 2 + (yd[k] - ym) ** 2)
-                        if rb != 0:
-                            ub = (rb ** (m - 1)) * (yd[k] - ym) * (xd[k + 1] - xd[k])
-                            u = u + ub
-                    # left
-                    if geom == "Square":
-                        for k in range(int(yd[0] / dy)):
-                            rl = sqrt(xm**2 + (k * dy - ym) ** 2)
-                            if rl != 0:
-                                u = u + (rl ** (m - 1)) * xm * dy
-                    # right
-                    if geom == "Square":
-                        for k in range(int(yd[-1] / dy)):
-                            rr = sqrt((L - xm) ** 2 + (k * dy - ym) ** 2)
-                            if rr != 0:
-                                u = u + (rr ** (m - 1)) * (L - xm) * dy
-                    uem[i, j] = u
-                    Ue = Ue + u * dy * w_iso[j]
-                    A = A + dy * w_iso[j]
-        Ue = Ue / A
-        isovel_field = uem / Ue  # isovel field
-        # reshape the isovel field (remove added top and edges areas)
-        isovel_field = isovel_field[n_top:]
-        isovel_field = isovel_field[:, n_left:-n_right]
+
+        # Initialisation
+        cross_section_rng = np.nancumsum(ensemble_widths_iso)
+        velocity_field = nan * np.zeros((depth_cell_depth_iso.shape))
+        q = 0
+        area = 0
+        for cell_idx in range(depth_cell_depth_iso.shape[0]): # n cells
+            for ens_idx in range(depth_cell_depth_iso.shape[1]): # n ensembles
+                # Compute for depths above ensemble depth
+                if depth_cell_depth_iso[cell_idx, ens_idx] < depth_iso[ens_idx]:
+                    # Contribution for streambed
+                    x = cross_section_rng[0:-1] - cross_section_rng[ens_idx]
+                    y = depth_iso[0:-1] - depth_cell_depth_iso[cell_idx, ens_idx]
+                    radial_dist_b = np.sqrt(x**2 + y**2)
+                    cell_vel = np.nansum(
+                        (radial_dist_b[radial_dist_b > 0] ** (exp - 1))
+                        * y
+                        * ensemble_widths_iso[1:]
+                    )
+
+                    # Contribution from a rectangular edge at the start bank
+                    if start_edge_shape == "Rectangular":
+                        x = cross_section_rng[ens_idx]
+                        y = (
+                            np.arange(int(depth_iso[0] / depth_cell_size_iso[cell_idx, ens_idx]))
+                            * depth_cell_size_iso[cell_idx, ens_idx]
+                            - depth_cell_depth_iso[cell_idx, ens_idx]
+                        )
+                        radial_dist_s = np.sqrt(x**2 + y**2)
+                        cell_vel = cell_vel + np.nansum(
+                            (radial_dist_s[radial_dist_s > 0] ** (exp - 1))
+                            * x
+                            * depth_cell_size_iso[cell_idx, ens_idx]
+                        )
+
+                    # Contribution from a rectangular edge at the end bank
+                    if end_edge_shape == "Rectangular":
+                        x = cross_section_rng[-1] - cross_section_rng[ens_idx]
+                        y = (
+                            np.arange(int(depth_iso[-1] / depth_cell_size_iso[cell_idx, ens_idx]))
+                            * depth_cell_size_iso[cell_idx, ens_idx]
+                            - depth_cell_depth_iso[cell_idx, ens_idx]
+                        )
+                        radial_dist_e = np.sqrt(x**2 + y**2)
+                        cell_vel = cell_vel + np.nansum(
+                            (radial_dist_e[radial_dist_e > 0] ** (exp - 1))
+                            * x
+                            * depth_cell_size_iso[cell_idx, ens_idx]
+                        )
+                    # Compute cross-sectional value
+                    velocity_field[cell_idx, ens_idx] = cell_vel
+                    cell_area = depth_cell_size_iso[cell_idx, ens_idx] * ensemble_widths_iso[ens_idx]
+                    q = q + cell_vel * cell_area
+                    area = area + cell_area
+        # Normalize velocity field
+        mean_vel = q / area
+        isovel_field = velocity_field / mean_vel  # isovel field
+        # Remove added top and edge areas
+        isovel_field = isovel_field[n_top:, n_left:-n_right]
+
         return isovel_field
 
     @staticmethod
@@ -131,11 +160,10 @@ class IsoVel(object):
         depth_cell_depth,
         depth_cell_size,
         ensemble_widths,
-        right_edge_distance,
-        left_edge_distance,
-        right_edge_shape,
-        left_edge_shape,
-        start_edge,
+        start_edge_distance,
+        start_edge_shape,
+        end_edge_distance,
+        end_edge_shape,
         normalize,
     ):
         """
@@ -151,16 +179,14 @@ class IsoVel(object):
             Vertical size of each cell
         ensemble_widths: np.array(float)
             Width of each cell
-        left_edge_shape: str
-            Shape of left edge
-        left_edge_distance: float
-            Distance to left edge
-        right_edge_shape: str
-            Shape of right edge
-        right_edge_distance: float
-            Distance to right edge
-        start_edge: str
-            Edge that transect started
+        start_edge_shape: str
+            Shape of start edge
+        start_edge_shape: str
+            Shape of start edge
+        end_edge_distance: float
+            Distance to end edge
+        end_edge_distance: float
+            Distance to end edge
         normalize: bool
             Whether to normalize the isovel field
 
@@ -192,42 +218,23 @@ class IsoVel(object):
         )
 
         # Add edges
-        if start_edge == "Left":
-            (
-                depth_iso,
-                ensemble_widths_iso,
-                depth_cell_depth_iso,
-                depth_cell_size_iso,
-                n_left,
-                n_right,
-            ) = add_edges(
-                start_edge_distance=left_edge_distance,
-                start_edge_shape=left_edge_shape,
-                end_edge_distance=right_edge_distance,
-                end_edge_shape=right_edge_shape,
-                depth=depth,
-                ensemble_widths=ensemble_widths,
-                depth_cell_depth=depth_cell_depth_iso,
-                depth_cell_size_iso=depth_cell_size_iso,
-            )
-        else:
-            (
-                depth_iso,
-                ensemble_widths_iso,
-                depth_cell_depth_iso,
-                depth_cell_size_iso,
-                n_right,
-                n_left,
-            ) = add_edges(
-                start_edge_distance=left_edge_distance,
-                start_edge_shape=left_edge_shape,
-                end_edge_distance=right_edge_distance,
-                end_edge_shape=right_edge_shape,
-                depth=depth,
-                ensemble_widths=ensemble_widths,
-                depth_cell_depth=depth_cell_depth_iso,
-                depth_cell_size_iso=depth_cell_size_iso,
-            )
+        (
+            depth_iso,
+            ensemble_widths_iso,
+            depth_cell_depth_iso,
+            depth_cell_size_iso,
+            n_left,
+            n_right,
+        ) = add_edges(
+            start_edge_distance=start_edge_distance,
+            start_edge_shape=start_edge_shape,
+            end_edge_distance=end_edge_distance,
+            end_edge_shape=end_edge_shape,
+            depth=depth,
+            ensemble_widths=ensemble_widths,
+            depth_cell_depth=depth_cell_depth_iso,
+            depth_cell_size_iso=depth_cell_size_iso,
+        )
 
         # normalization or not
         if normalize == 1:
