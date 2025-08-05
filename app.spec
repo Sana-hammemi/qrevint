@@ -1,11 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-from qrev import __app__
-icon = "docs\\source\\assets\\files\\" + __app__ + '.ico'
+import os
+from qrev import __app__, __doc_path__, __icon_path__, __translation_files__
 
-added_files = [('docs\\_build\\html', 'qrev_documentation'),
-               ("docs\\source\\assets\\files\\*", "qrev_files")]
+
+icon = os.path.join(__icon_path__, '..', __app__ + '.ico')
+translation_files = os.path.join(__translation_files__, '*.qm')
+
+added_files = [(__doc_path__, 'qrev_documentation'),
+               (__icon_path__, "qrev_files"),
+               (__translation_files__, "translation_files")]
+
 
 a = Analysis(['app.py'],
              binaries=[],

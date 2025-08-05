@@ -1691,7 +1691,7 @@ class TransectData(object):
                 
         # Define dictionaries
         bt = {
-            "ping_type": np.full([n_ensembles], "    "),
+            "ping_type": np.full([n_ensembles], "     "),
             "ping_count": np.full([n_ensembles], 0),
             "good_ping_count": np.full([n_ensembles], 0),
             "beam_set_id": np.full([n_ensembles], 0),
@@ -2497,18 +2497,18 @@ class TransectData(object):
         if hasattr(meas_struct, "transects"):
             # If only one transect the data are not a list or array of
             # transects
-            if 1==1:
+            try:
                 if len(meas_struct.transects) > 0:
                     for transect in meas_struct.transects:
                         trans = TransectData()
                         trans.populate_from_qrev_mat(transect, meas_struct,
                                                      time_zone=time_zone)
                         transects.append(trans)
-            # except TypeError:
-            #     trans = TransectData()
-            #     trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
-            #                                          time_zone=time_zone)
-            #     transects.append(trans)
+            except TypeError:
+                trans = TransectData()
+                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
+                                                     time_zone=time_zone)
+                transects.append(trans)
 
         return transects
 

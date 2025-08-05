@@ -1555,6 +1555,9 @@ class MAP(object):
                 [np.nan], (len(edge_size_raw) - 1, nb_nodes)
             )
 
+            depth = (border_depths[1:] + border_depths[:-1]) / 2
+            edge_layers = np.tile(self.main_depth_layers[:, np.newaxis], depth.shape)
+
         else:
             # Primary velocity : Power-power extrapolation from first ensemble
             # Mean velocity on the first valid ensemble

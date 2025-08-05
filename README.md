@@ -15,7 +15,7 @@ tracking ADCPs. QRev improves the consistency and efficiency of processing strea
 * An estimated uncertainty to help guide the user in rating the measurement
 
 
-A history of changes with links to various releases can be found **[here](./docs/source/changelog.md)**.
+A history of changes with links to various releases can be found **[here](qrev_docs/source/changelog.md)**.
 
 **IMPORTANT NOTES ON DISCHARGE COMPUTATION:**
 
@@ -55,6 +55,17 @@ the U.S. Government.
 - Select or create a folder for QRev and unzip the file into that folder.
 - Run the program by double-clicking on QRev.exe in Windows Explorer or My Computer. You may wish to create a 
 shortcut in a convenient location in the Start Menu or on the Desktop.
+
+# Installing from source code
+- Clone the repository using `git clone https://code.usgs.gov/QRev/QRevPy.git`
+- Create a new virtual environment using `python -m venv venv`
+- Activate the virtual environment using `venv\Scripts\activate`
+- Install QRev using `pip install .`
+- In your python console with the virtual environment activated, run 
+  `import qrev.complete_setup'
+  - Enter 'complete_setup.run_all()' to build the numba binaries and 
+    documentation.
+
 ---
 
 # Integration with Site Visit Mobile Aquarius (SVMAQ) and Aquarius (AQ)
