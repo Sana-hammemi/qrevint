@@ -2,22 +2,20 @@ import os
 import sys
 import click
 import pyinstaller_versionfile
-import PyInstaller.__main__
 import shutil
 import subprocess
 
-from qrev import __version__, __app__, __company__
+from qrev import __version__, __app__, __company__, __sphinx_path__
 
 # Build Sphinx documentation
 print("Building Sphinx documentation...")
-docs_dir = os.path.join(os.getcwd(), 'docs')
 
 if os.name == 'nt':
-    make_cmd = os.path.join(docs_dir, "make.bat")
+    make_cmd = os.path.join(__sphinx_path__, "make.bat")
 else:
     make_cmd = "make"
 
-subprocess.run([make_cmd, "html"], cwd=docs_dir, check=True)
+subprocess.run([make_cmd, "html"], cwd=__sphinx_path__, check=True)
 
 print("Sphinx documentation built successfully.")
 print("Checking if package exits...")
@@ -34,6 +32,9 @@ if os.path.exists(qrev_dir):
             print("Something went wrong, exiting build.")
             sys.exit()
 
+if os.path.exists(os.path.join(os.getcwd(), "dist")) is False:
+    os.mkdir(os.path.join(os.getcwd(), "dist"))
+
 os.mkdir(qrev_dir)
 
 print("Updating version information")
@@ -49,8 +50,18 @@ pyinstaller_versionfile.create_versionfile(
     translations=[1033, 1200],
 )
 
-print("Running pyinstaller...")
-PyInstaller.__main__.run(["app.spec"])
+print("Running pyinstaller, please be patient...")
+try:
+    cur_path = os.getcwd()
+    with subprocess.Popen(['pyinstaller', 'app.spec'], cwd=cur_path,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          text=True) as proc:
+        for line in proc.stderr:
+            print(line)
+        stdout, stderr = proc.communicate()
+except BaseException:
+    print("Pyinstaller crashed.")
+    sys.exit()
 
 print("Verifying QRev.EXE was created.")
 path = os.path.join(os.getcwd(), "dist", __app__ + ".exe")

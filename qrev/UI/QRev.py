@@ -18,7 +18,8 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.ticker import AutoLocator
 
 import qrev.UI.QRev_gui as QRev_gui
-from qrev import __qrev_version__, __company__, myappid
+from qrev import (__qrev_version__, myappid, __company__, __icon_path__,
+                  __doc_path__, __translation_files__)
 from qrev.Classes.CoordError import CoordError
 from qrev.Classes.MMT_TRDI import MMTtrdi
 from qrev.Classes.Measurement import Measurement
@@ -1385,17 +1386,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         icon_path = ""
 
-        path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../..",
-                "docs",
-                "source",
-                "assets",
-                "files",
-                icon,
-            )
-        )
+        path = os.path.abspath(os.path.join(__icon_path__, "..", icon,))
 
         if os.path.exists(path):
             icon_path = path
@@ -2519,15 +2510,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # will work when called by other projects using AC3.
         if __company__ == "USGS":
             landing_page = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "../..",
-                    "docs",
-                    "_build",
-                    "html",
-                    "index.html",
-                )
-            )
+                os.path.join(__doc_path__, "index.html",))
         else:
             landing_page = os.path.abspath(
                 os.path.join(
@@ -2567,16 +2550,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Use development-specific settings. Using __file__ path, so it
         # will work when called by other projects using QRev.
         path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../..",
-                "docs",
-                "source",
-                "assets",
-                "files",
-                stylesheet,
-            )
-        )
+            os.path.join(__icon_path__, '..', stylesheet))
 
         if os.path.exists(path):
             shutil.copy2(path, destination)
@@ -17943,10 +17917,28 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Update language based on change from options."""
 
         if self.display_language != "English":
-            self.translator.load(os.path.join(
-                r'C:\Users\tknight\PycharmProjects\QRevPy\translation',
-                self.display_language + ".qm"))
-            QtWidgets.QApplication.instance().installTranslator(self.translator)
+            lang_file = self.display_language + ".qm"
+            base_path = __translation_files__
+
+            if os.path.exists(base_path):
+                lang_path = os.path.join(base_path, lang_file)
+
+            else:
+                # Use production-specific settings
+                # PyInstaller creates a temp folder and stores path in _MEIPASS
+                base_path = sys._MEIPASS
+                lang_path = os.path.join(base_path, "translation_files",
+                                         lang_file)
+            try:
+                self.translator.load(lang_path)
+                QtWidgets.QApplication.instance().installTranslator(
+                 self.translator)
+            except BaseException:
+
+                self.popup_message(self.tr("Failed to load translation."))
+
+                QtWidgets.QApplication.instance().removeTranslator(
+                    self.translator)
         else:
             QtWidgets.QApplication.instance().removeTranslator(self.translator)
 
