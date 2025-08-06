@@ -132,6 +132,7 @@ class AdvGraphs(object):
             "U": "N/A",
             "1": "N/A",
             "Other": "N/A",
+            "Inva": "N/A",
         }
         self.p_type_color = {
             "I": "b",
@@ -151,6 +152,7 @@ class AdvGraphs(object):
             "1": "b",
             "Other": "b",
             "255": "b",
+            "Inva": "b"
         }
         self.p_type_marker = {
             "I": ".",
@@ -170,6 +172,7 @@ class AdvGraphs(object):
             "1": ".",
             "Other": ".",
             "255": ".",
+            "Inva": "."
         }
         self.wt_legend_dict = {
             "I": "Incoherent",
@@ -186,6 +189,7 @@ class AdvGraphs(object):
             "PC/BB": "3 MHz PC/BB",
             "PCBB": "3 MHz PC/BB",
             "U": "N/A",
+            "Inva": "N/A",
         }
         self.bt_legend_dict = {
             "500": "500 kHz",
@@ -204,6 +208,7 @@ class AdvGraphs(object):
             "1": "U",
             "Other": "U",
             "255": "3 MHz",
+            "Inva": "U"
         }
         self.freq_color = {
             "0": "b",

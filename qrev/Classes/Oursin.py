@@ -2503,36 +2503,37 @@ class Oursin(object):
             ]
         # TODO ADD ADDITIONAL SIMULATIONS
             # Compute mean cross section for transect
-            cross_section_x, cs_cell_width = compute_mean_cross_section(transect=meas_temp.transects[trans_id])
-            iso_ini = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp= 1 / 7, normalize=False)
-            iso_star = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp=1 / 7, normalize=True)
+            # cross_section_x, cs_cell_width = compute_mean_cross_section(transect=meas_temp.transects[trans_id])
+            # iso_ini = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp= 1 / 7, normalize=False)
+            # iso_ini.update_iso_point()
+            # iso_star = iso_vel(transect=meas_temp.transects[trans_id], cs_cell_width, exp=1 / 7, normalize=True)
 
-def compute_mean_cross_section(transect):
-    """Computes a mean cross section projected on a line from the first to the last shiptrack points.
+    def compute_mean_cross_section(transect):
+        """Computes a mean cross section projected on a line from the first to the last shiptrack points.
 
-    Parameters
-    ----------
-    transect: TransectData
-        Transect object
+        Parameters
+        ----------
+        transect: TransectData
+            Transect object
 
-    Returns
-    -------
-    cross_section_rng: np.array(float)
-        Array of the range along the mean cross section for each ensemble
-    cs_cell_width: np.array(float)
-        Array of the projected cell widths for each ensemble
-    """
-    boat_track = transect.boat_vel.compute_boat_track(transect=transect, ref=None)
-    unit_x = boat_track["track_x_m"][-1] / boat_track["dmg_m"][-1]
-    unit_y = boat_track["track_y_m"][-1] / boat_track["dmg_m"][-1]
-    track_x_cum_sum = np.nancumsum(boat_track["track_x_m"])
-    track_y_cum_sum = np.nancumsum(boat_track["track_y_m"])
-    cross_section_rng = unit_x * track_x_cum_sum + unit_y * track_y_cum_sum
-    cs_cell_width = np.diff(cross_section)
-    cs_cell_width = np.hstack(0, cell_width)
-    return cross_section_rng, cs_cell_width
+        Returns
+        -------
+        cross_section_rng: np.array(float)
+            Array of the range along the mean cross section for each ensemble
+        cs_cell_width: np.array(float)
+            Array of the projected cell widths for each ensemble
+        """
+        boat_track = transect.boat_vel.compute_boat_track(transect=transect, ref=None)
+        unit_x = boat_track["track_x_m"][-1] / boat_track["dmg_m"][-1]
+        unit_y = boat_track["track_y_m"][-1] / boat_track["dmg_m"][-1]
+        track_x_cum_sum = np.nancumsum(boat_track["track_x_m"])
+        track_y_cum_sum = np.nancumsum(boat_track["track_y_m"])
+        cross_section_rng = unit_x * track_x_cum_sum + unit_y * track_y_cum_sum
+        cs_cell_width = np.diff(cross_section)
+        cs_cell_width = np.hstack(0, cell_width)
+        return cross_section_rng, cs_cell_width
 
-def sim_shallow_ens(self, meas):
+    def sim_shallow_ens(self, meas):
         """Computes simulations assuming no interpolation of discharge for
         ensembles where depths are too shallow for any valid cells.
 
