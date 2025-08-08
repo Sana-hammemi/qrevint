@@ -1,62 +1,111 @@
 import numpy as np
+from qrev.MiscLibs.common_functions import weighted_mean
 
-class IsoVel(object):
 
-    def __init__(self, transect, exponent, normalize, invalid_ensembles):
-
+class FlowFieldInterpolation(object):
+    def __init__(self, transect, exponent, normalize):
+        # Store input data
         self.exponent = exponent
         self.normalize = normalize
-        self.field = None
+
+        # Initialize isovel flow fields
+        self.isovel_field = None
+        self.u_isovel_field = None
+        self.v_isovel_field = None
 
         # Compute mean cross section ranges and ensemble widths
+        self.cross_section_rng = None
+        self.ensemble_width = None
         self.compute_mean_cross_section(transect=transect)
 
+        # Store depth data from transect
         depth_data = getattr(transect.depths, transect.depths.selected)
         self.depth_cell_depth = depth_data.depth_cell_depth_m
         self.depth_cell_size = depth_data.depth_cell_size_m
-        self.depths=depth_data.depths_processed_m,
+        self.depths = depth_data.depth_processed_m
 
+        # Store boat data from transect
         boat_data = getattr(transect.boat_vel, transect.boat_vel.selected)
         self.boat_u = boat_data.u_processed_mps
         self.boat_v = boat_data.v_processed_mps
 
+        # Store water data from transect
         self.u = transect.w_vel.u_processed_mps
         self.v = transect.w_vel.v_processed_mps
 
-        self.start_edge = transect.start_edge
-        self.dt = transect.date_time.ens_duration_sec
-        self.cells_above_sl=transect.w_vel.cells_above_sl
-        self.invalid_ensembles = invalid_ensembles
+        # Cells above side lobe
+        self.cells_above_sl = transect.w_vel.cells_above_sl
+        self.cells_to_use = self.cells_above_sl.astype(float)
+        self.cells_to_use[self.cells_to_use == 0] = np.nan
 
-        # Create initial isovel field
-        self.contour(
-            left_edge_shape=transect.edges.left.type,
-            left_edge_distance=transect.edges.left.distance_m,
-            right_edge_shape=transect.edges.right.type,
-            right_edge_distance=transect.edges.right.distance_m,
+        # Store edge data from transect
+        self.start_edge = transect.start_edge
+        self.left_edge_type = transect.edges.left.type
+        self.right_edge_type = transect.edges.right.type
+        self.left_edge_distance = transect.edges.left.distance_m
+        self.right_edge_distance = transect.edges.right.distance_m
+
+        # Store ensemble duration
+        self.dt = transect.date_time.ens_duration_sec
+
+        # Indentify invalid ensembles
+        invalid_ens = np.nansum(transect.w_vel.valid_data[0, :, :], axis=0)
+        self.invalid_ensembles = np.where(invalid_ens < 1)[0]
+
+        # Compute top and bottom cell depths
+        self.top_depth_cell_depth = depth_data.depth_cell_depth_m[0, :]
+        bottom_cell_number = np.nansum(self.cells_above_sl, axis=0)
+        self.bottom_depth_cell_depth = np.array(
+            [
+                depth_data.depth_cell_depth_m[bottom_cell_number[ens], ens]
+                for ens in range(depth_data.depth_cell_depth_m.shape[1])
+            ]
         )
 
-        top_depth_cell_depth = depth_data.depth_cell_depth_m[0, :]
-        bottom_cell_number = np.nansum(cells_above_sl, axis=0)
-        bottom_depth_cell_depth = np.array([dcdini[bottom_cell_number[ens], ens] for ens in range(dcdini.shape[1])])
+        # Compute ensembles used to compute seed values
+        self.seed_ensembles = self.select_seed_ensembles()
+
+    # isovel interpolation
+    # ====================
+
+    def isovel_interpolation(self):
+        """Compute the discharge using isovel interpolation for invalid
+        ensembles.
+
+        Returns
+        -------
+        q: float
+            Middle discharge
+        """
+
+        # Create initial isovel field
+        self.isovel_contour(
+            left_edge_shape=self.left_edge_type,
+            left_edge_distance=self.left_edge_distance,
+            right_edge_shape=self.right_edge_type,
+            right_edge_distance=self.right_edge_distance,
+        )
 
         # Compute seed values
-        u_seed, v_seed, seed_ensemble_idx, depth_cell_depth_idx = self.compute_seed_values(
-            top_cell_depth=top_depth_cell_depth,
-            bottom_cell_depth=bottom_depth_cell_depth,
+        u_seed, v_seed, seed_ensemble_idx, depth_cell_depth_idx = self.isovel_seed(
+            top_cell_depth=self.top_depth_cell_depth,
+            bottom_cell_depth=self.bottom_depth_cell_depth,
+            seed_ensembles=self.seed_ensembles,
         )
 
         # Compute velocity field based on seed values
-        self.compute_velocity_fields(
+        self.isovel_compute_velocity_fields(
             u_seed=u_seed,
             v_seed=v_seed,
             ensemble_idx=seed_ensemble_idx,
             depth_cell_depth_idx=depth_cell_depth_idx,
         )
 
-        self.compute_isovel_discharge()
+        q = self.isovel_compute_discharge()
 
-    def contour(
+        return q
+
+    def isovel_contour(
         self,
         left_edge_shape,
         left_edge_distance,
@@ -98,7 +147,7 @@ class IsoVel(object):
             n_start,
             n_end,
             n_top,
-        ) = self.update_geometry_isovel(
+        ) = self.isovel_update_geometry(
             start_edge_distance,
             start_edge_shape,
             end_edge_distance,
@@ -127,7 +176,12 @@ class IsoVel(object):
                     if start_edge_shape == "Rectangular":
                         x = self.cross_section_rng[ens_idx]
                         y = (
-                            np.arange(int(depth_iso[0] / depth_cell_size_iso[cell_idx, ens_idx]))
+                            np.arange(
+                                int(
+                                    depth_iso[0]
+                                    / depth_cell_size_iso[cell_idx, ens_idx]
+                                )
+                            )
                             * depth_cell_size_iso[cell_idx, ens_idx]
                             - depth_cell_depth_iso[cell_idx, ens_idx]
                         )
@@ -142,7 +196,12 @@ class IsoVel(object):
                     if end_edge_shape == "Rectangular":
                         x = self.cross_section_rng[-1] - self.cross_section_rng[ens_idx]
                         y = (
-                            np.arange(int(depth_iso[-1] / depth_cell_size_iso[cell_idx, ens_idx]))
+                            np.arange(
+                                int(
+                                    depth_iso[-1]
+                                    / depth_cell_size_iso[cell_idx, ens_idx]
+                                )
+                            )
                             * depth_cell_size_iso[cell_idx, ens_idx]
                             - depth_cell_depth_iso[cell_idx, ens_idx]
                         )
@@ -154,24 +213,24 @@ class IsoVel(object):
                         )
                     # Compute cross-sectional value
                     velocity_field[cell_idx, ens_idx] = cell_vel
-                    cell_area = depth_cell_size_iso[cell_idx, ens_idx] * ensemble_widths_iso[ens_idx]
+                    cell_area = (
+                        depth_cell_size_iso[cell_idx, ens_idx]
+                        * ensemble_widths_iso[ens_idx]
+                    )
                     q = q + cell_vel * cell_area
                     area = area + cell_area
         # Normalize velocity field
         mean_vel = q / area
-        self.field = velocity_field / mean_vel  # isovel field
+        self.isovel_field = velocity_field / mean_vel  # isovel field
 
         # Remove added top and edge areas
-        self.field = self.field[n_top:, n_left:-n_right]
-        self.field = self.field * cells_above_sl
+        self.isovel_field = self.isovel_field[n_top:, n_left:-n_right]
+        self.isovel_field = self.isovel_field * cells_above_sl
 
         # Restrict isovel_field to only the cells above sidelobe
-        cells_to_use = self.cells_above_sl.astype(float)
-        cells_to_use[cells_to_use == 0] = np.nan
-        self.field = self.field * cells_to_use
+        self.isovel_field = self.isovel_field * self.cells_to_use
 
-    @staticmethod
-    def update_geometry_isovel(
+    def isovel_update_geometry(
         self,
         start_edge_distance,
         start_edge_shape,
@@ -369,20 +428,21 @@ class IsoVel(object):
             n_end,
         )
 
-    def compute_seed_values(
-            self,
-            top_cell_depth,
-            bottom_cell_depth,
-            ):
-        """Compute the seed values using center of mass and the center
-        of the measured area.
+    @staticmethod
+    def isovel_seed(top_cell_depth, bottom_cell_depth, seed_ensembles):
+        """
+        Return seed value and location for the velocity field computation
+        The seed value will be the mean over the 25% middle area over the amount
+        of ensemble defined by the parameter method.
 
         Parameters
         ----------
         top_cell_depth: np.array(float)
-            Depth of top cell in each ensemble
+            Array of depth cell depths for the top depth cell
         bottom_cell_depth: np.array(float)
-            Depth of bottom cell in each ensemble
+            Array of depth cell depths for the bottom depth cell
+        seed_ensembles: np.array(int)
+            Array of ensembles numbers used to compute the seed value for isovel
 
         Returns
         -------
@@ -396,19 +456,48 @@ class IsoVel(object):
             Depth cell index for seed
         """
 
-        # Compute seed values
-        seed_ensembles = select_seed_ensembles()
-
-        u_seed, v_seed, ensemble_idx, depth_cell_depth_idx = isovel_seed(
-            top_cell_depth=top_cell_depth,
-            bottom_cell_depth=bottom_cell_depth,
-            seed_ensembles=seed_ensembles,
-            seed_ensemble_idx=seed_ensemble_idx,
+        bottom_cell_depth_mean = np.nanmean(bottom_cell_depth[seed_ensembles])
+        top_cell_depth_mean = np.nanmean(top_cell_depth[seed_ensembles])
+        d_min, d_max = (
+            top_cell_depth_mean
+            + 0.375 * (bottom_cell_depth_mean - top_cell_depth_mean),
+            bottom_cell_depth_mean
+            - 0.375 * (bottom_cell_depth_mean - top_cell_depth_mean),
         )
 
-        return u_seed, v_seed, ensemble_idx, depth_cell_depth_idx
+        # Create array of depth cells from selected ensembles that represent 25% of the measured area
+        depth_cells_selected_depth = self.depth_cell_depth[:, seed_ensembles]
+        depth_cells_selected_depth[d_min > depth_cells_selected_depth] = np.nan
+        depth_cells_selected_depth[d_max < depth_cells_selected_depth] = np.nan
 
-    def compute_velocity_fields(
+        # Create array to identify selected depth cells
+        selected_data = np.copy(depth_cells_selected_depth)
+        selected_data[np.logical_not(np.isnan(selected_data))] = 1
+
+        # Compute mean velocity
+        u_mean = np.nanmean(
+            np.nanmean(self.u[:, seed_ensembles] * selected_data, axis=0)
+        )
+        v_mean = np.nanmean(
+            np.nanmean(self.v[:, seed_ensembles] * selected_data, axis=0)
+        )
+
+        # Compute depth location
+        depth_cell_idx = np.nanargmin(
+            np.abs(
+                depth_cells_selected_depth[:, 2]
+                - np.nanmean(depth_cells_selected_depth)
+            )
+        )
+
+        # Compute ensemble location
+        ensemble_idx = np.argmin(
+            self.cross_section_rng - np.nanmean(self.cross_section_rng[seed_ensembles])
+        )
+
+        return u_mean, v_mean, ensemble_idx, depth_cell_idx
+
+    def isovel_compute_velocity_fields(
         self,
         u_seed,
         v_seed,
@@ -438,8 +527,14 @@ class IsoVel(object):
         v_iso = v_seed * self.field / self.field[depth_cell_depth_idx, ensemble_idx]
 
         # Identify ensembles in the center 40% of the cross section
-        rng_30, rng_70 = 0.3 * np.nanmax(self.cross_section_rng), 0.7 * np.nanmax(self.cross_section_rng)
-        i_start, i_max = np.argmax(self.cross_section_rng > rng_30), np.argmin(self.cross_section_rng < rng_70)
+        rng_30, rng_70 = (
+            0.3 * np.nanmax(self.cross_section_rng),
+            0.7 * np.nanmax(self.cross_section_rng),
+        )
+        i_start, i_max = (
+            np.argmax(self.cross_section_rng > rng_30),
+            np.argmin(self.cross_section_rng < rng_70),
+        )
         idx = [i for i in range(i_start, i_max) if i not in self.invalid_ensembles]
 
         # Compute the discharge using the measured data
@@ -450,7 +545,7 @@ class IsoVel(object):
             boat_v=self.boat_v[idx],
             depth_cell_size=self.depth_cell_size[:, idx],
             dt=self.dt[idx],
-            start_edge=self.start_edge
+            start_edge=self.start_edge,
         )
 
         # Compute the difference in discharge using the isovel field
@@ -473,8 +568,12 @@ class IsoVel(object):
             n = n + 1
             u_seed = (1 - q_ratio) * u_seed
             v_seed = (1 - q_ratio) * v_seed
-            u_iso = u_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
-            v_iso = v_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
+            u_iso = (
+                u_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
+            )
+            v_iso = (
+                v_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
+            )
             u_diff = u_iso - u
             v_diff = v_iso - v
             dq = compute_inter_discharge(
@@ -487,11 +586,232 @@ class IsoVel(object):
                 start_edge=self.start_edge,
             )
             q_ratio = dq / q
-        self.u_field = u_iso
-        self.v_field = v_iso
+        self.u_isovel_field = u_iso
+        self.v_isovel_field = v_iso
 
-    @staticmethod
-    def select_seed_ensembles():
+    def isovel_compute_discharge(self):
+        """Compute discharge field from isovel method."""
+        u_interpolated, v_interpolated = self.inter_replace(
+            u_field=self.u_isovel_field,
+            v_field=self.v_isovel_field,
+        )
+        q = self.compute_discharge(
+            u=u_interpolated,
+            v=v_interpolated,
+            boat_u=self.boat_u,
+            boat_v=self.boat_v,
+            depth_cell_size=self.depth_cell_size,
+            dt=self.dt,
+            start_edge=self.start_edge,
+        )
+
+        return q
+
+    # Froude number interpolation
+    # ===========================
+
+    def froude_interpolation(self):
+        """Compute the discharge using froude number interpolation."""
+
+        u_froude, v_froude, ensemble_idx = self.froude_interpolation_initialization()
+        q_constant = self.froude_constant_interpolation(u_froude[1], v_froude[1])
+        q_linear = self.froude_linear_interpolation(u_froude, v_froude, ensemble_idx)
+        return q_constant, q_linear
+
+    def froude_interpolation_initialization(self):
+        """Compute froude numbers to allow interpolation."""
+
+        # Initialize
+        u_froude = np.tile(np.nan, 3)
+        v_froude = np.tile(np.nan, 3)
+        ensemble_idx = np.tile(-1, 3)
+
+        # Compute froude number at center of mass
+        u_froude[1], v_froude[1], ensemble_idx[1] = self.froude_compute_reference(
+            ensembles=self.seed_ensembles
+        )
+
+        # Compute froude number near start bank using 5% valid ensembles
+        n_ensembles_5_per = 0.05 * self.u.shape[1]
+        valid_start_ensembles = []
+        for n in range(self.u.shape[1]):
+            if n not in self.invalid_ensembles:
+                valid_start_ensembles.append(n)
+                if len(valid_start_ensembles) >= n_ensembles_5_per:
+                    break
+        u_froude[0], v_froude[0], _ = self.froude_compute_reference(
+            ensembles=valid_start_ensembles
+        )
+        ensemble_idx[0] = valid_start_ensembles[0]
+
+        # Compute fround number near end bank
+        valid_end_ensembles = []
+        for n in range(self.u.shape[1] - 1, -1, -1):
+            if n not in self.invalid_ensembles:
+                valid_end_ensembles.append(n)
+                if len(valid_end_ensembles) >= n_ensembles_5_per:
+                    break
+        u_froude[2], v_froude[2], _ = self.froude_compute_reference(
+            ensembles=valid_end_ensembles
+        )
+        ensemble_idx[2] = valid_end_ensembles[-1]
+
+        return u_froude, v_froude, ensemble_idx
+
+    def froude_compute_reference(self, ensembles):
+        """Compute the mean froude number for each velocity component using the
+        specified ensembles.
+
+        Parameters
+        ----------
+        ensembles: list or np.array(int)
+            List or array of ensemble ids.
+
+        Returns
+        -------
+        u_froude_number: float
+            Mean froude number for u velocity component.
+        v_fround_number: float
+            Mean froude number for v velocity component.
+        ensemble_idx: int
+            Ensemble id for froude numbers.
+        """
+
+        # Compute mean velocity for each ensemble
+        u_mean_ens = weighted_mean(
+            data=self.u[:, ensembles],
+            axis=0,
+            weights=self.depth_cell_size[:, ensembles],
+        )
+        v_mean_ens = weighted_mean(
+            data=self.v[:, ensembles],
+            axis=0,
+            weights=self.depth_cell_size[:, ensembles],
+        )
+
+        # Compute the mean froude number for the velocity components
+        u_froude_number = np.nanmean(
+            u_mean_ens / np.sqrt(self.depths[ensembles] * 9.81)
+        )
+        v_fround_number = np.nanmean(
+            v_mean_ens / np.sqrt(self.depths[ensembles] * 9.81)
+        )
+
+        # Compute ensemble location
+        ensemble_idx = np.argmin(
+            np.abs(
+                self.cross_section_rng - np.nanmean(self.cross_section_rng[ensembles])
+            )
+        )
+
+        return u_froude_number, v_fround_number, ensemble_idx
+
+    def froude_linear_interpolation(self, u_froude, v_froude, ensemble_idx):
+        """Linear interpolation using multiple froude numbers with associated
+        ensemble indices.
+
+        Parameter
+        ---------
+        u_froude: np.array(float)
+            Array of froude numbers for the u velocity component
+        v_froude: np.array(float)
+            Array of froude numbers for the v velocity component
+        ensemble_idx: np.array(int)
+            Array of ensemble ids associated with froude numbers
+
+        Returns
+        -------
+        q: float
+            Middle discharge computed using interpolated velocities
+        """
+
+        # Interpolate u
+        data = np.vstack((self.cross_section_rng[ensemble_idx], u_froude)).T
+        data_sorted = np.sort(data, axis=0)
+        u_invalid_ens = np.interp(
+            self.cross_section_rng[self.invalid_ensembles],
+            data_sorted[:, 0],
+            data_sorted[:, 1],
+        ) * np.sqrt(self.depths[self.invalid_ensembles] * 9.81)
+        u_interpolated = np.copy(self.u)
+        u_interpolated[:, self.invalid_ensembles] = (
+            u_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        )
+
+        # Interpolate v
+        data = np.vstack((self.cross_section_rng[ensemble_idx], v_froude)).T
+        data_sorted = np.sort(data, axis=0)
+        v_invalid_ens = np.interp(
+            self.cross_section_rng[self.invalid_ensembles],
+            data_sorted[:, 0],
+            data_sorted[:, 1],
+        ) * np.sqrt(self.depths[self.invalid_ensembles] * 9.81)
+        v_interpolated = np.copy(self.v)
+        v_interpolated[:, self.invalid_ensembles] = (
+            v_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        )
+        # Compute discharge
+        q = compute_discharge(
+            u=u_interpolated,
+            v=v_interpolated,
+            boat_u=self.boat_u,
+            boat_v=self.boat_u,
+            depth_cell_size=self.depth_cell_size,
+            dt=self.dt,
+            start_edge=self.start_edge,
+        )
+
+        return q
+
+    def froude_constant_interpolation(self, u_froude, v_froude):
+        """Compute the discharge using a constant froude number to interpolate
+        velocity for invalid ensembles.
+
+        Parameter
+        --------
+        u_froude: float
+            Froude number for u velocity component.
+        v_froude: float
+            Froude number for v velocity component.
+
+        Returns
+        -------
+        q: float
+            Middel discharge computed using interpolated values
+        """
+
+        u_invalid_ens = u_froude[1] * np.sqrt(
+            self.depths[self.invalid_ensembles] * 9.81
+        )
+        v_invalid_ens = v_froude[1] * np.sqrt(
+            self.depths[self.invalid_ensembles] * 9.81
+        )
+
+        u_interpolated = np.copy(self.u)
+        u_interpolated[:, self.invalid_ensembles] = (
+            u_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        )
+        v_interpolated = np.copy(self.v)
+        v_interpolated[:, self.invalid_ensembles] = (
+            v_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        )
+
+        q = compute_discharge(
+            u=u_interpolated,
+            v=v_interpolated,
+            boat_u=self.boat_u,
+            boat_v=self.boat_u,
+            depth_cell_size=self.depth_cell_size,
+            dt=self.dt,
+            start_edge=self.start_edge,
+        )
+
+        return q
+
+    # Supporting methods
+    # ==================
+
+    def select_seed_ensembles(self):
         """Compute the starting ensemble using the center of mass method.
 
         Returns
@@ -512,9 +832,9 @@ class IsoVel(object):
         new_idx = starting_idx
 
         while before_count < 5 and new_idx > 0:
-            new_idx += - 1
+            new_idx += -1
             if new_idx not in self.invalid_ensembles:
-                before.apppend(new_idx)
+                before.append(new_idx)
                 before_count += 1
         after = []
         after_count = 0
@@ -522,7 +842,7 @@ class IsoVel(object):
         while after_count < 5 and new_idx < self.u.shape[1] - 1:
             new_idx += 1
             if new_idx not in self.invalid_ensembles:
-                after.apppend(new_idx)
+                after.append(new_idx)
                 after_count += 1
 
         selected_ensembles = np.sort(np.hstack((starting_idx, before, after)))
@@ -530,67 +850,7 @@ class IsoVel(object):
         return selected_ensembles
 
     @staticmethod
-    def isovel_seed(
-            top_cell_depth, bottom_cell_depth, seed_ensembles,
-    ):
-        """
-        Return seed value and location for the velocity field computation
-        The seed value will be the mean over the 25% middle area over the amount
-        of ensemble defined by the parameter method.
-
-        Parameters
-        ----------
-        top_cell_depth: np.array(float)
-            Array of depth cell depths for the top depth cell
-        bottom_cell_depth: np.array(float)
-            Array of depth cell depths for the bottom depth cell
-        seed_ensembles: np.array(int)
-            Array of ensembles numbers used to compute the seed value for isovel
-
-        Returns
-        -------
-        u_mean: float
-            Seed value of u velocity component
-        v_mean: float
-            Seed value of v velocity component
-        ensemble_idx: int
-            Ensemble index for seed
-        depth_cell_idx: int
-            Depth cell index for seed
-        """
-
-        bottom_cell_depth_mean = np.nanmean(bottom_cell_depth[seed_ensembles])
-        top_cell_depth_mean = np.nanmean(top_cell_depth[seed_ensembles])
-        d_min, d_max = top_cell_depth_mean + 0.375 * (
-            bottom_cell_depth_mean - top_cell_depth_mean
-        ), bottom_cell_depth_mean - 0.375 * (bottom_cell_depth_mean - top_cell_depth_mean)
-
-        # Create array of depth cells from selected ensembles that represent 25% of the measured area
-        depth_cells_selected_depth = self.depth_cell_depth[:, seed_ensembles]
-        depth_cells_selected_depth[d_min > depth_cells_selected_depth] = np.nan
-        depth_cells_selected_depth[d_max < depth_cells_selected_depth] = np.nan
-
-        # Create array to identify selected depth cells
-        selected_data = np.copy(depth_cells_selected_depth)
-        selected_data[np.logical_not(np.isnan(selected_data))] = 1
-
-        # Compute mean velocity
-        u_mean = np.nanmean(np.nanmean(self.u[:, seed_ensembles] * selected_data, axis=0))
-        v_mean = np.nanmean(np.nanmean(self.v[:, seed_ensembles] * selected_data, axis=0))
-
-        # Compute depth location
-        depth_cell_idx = np.nanargmin(
-            np.abs(depth_cells_selected_depth[:, 2] - np.nanmean(depth_cells_selected_depth))
-        )
-
-        # Compute ensemble location
-        ensemble_idx = np.argmin(self.cross_section_rng - np.nanmean(self.cross_section_rng[seed_ensembles]))
-
-        return u_mean, v_mean, ensemble_idx, depth_cell_idx
-
-    @staticmethod
     def compute_discharge(u, v, boat_u, boat_v, depth_cell_size, dt, start_edge):
-
         x_prod = u * boat_v - v * boat_u
         if start_edge == "Left":
             x_prod = -x_prod
@@ -598,28 +858,32 @@ class IsoVel(object):
 
         return q
 
-    def compute_isovel_discharge(self):
-
-        self.inter_replace()
-        self.q_isovel = self.compute_discharge(
-            u=self.u_interpolated,
-            v=self.v_interpolated,
-            boat_u=self.boat_u,
-            boat_v=self.boat_v,
-            depth_cell_size=self.depth_cell_size,
-            dt=self.dt,
-            start_edge=self.start_edge,
-        )
-
-    def inter_replace(self):
+    def inter_replace(self, u_field, v_field):
         """
-        Replace velocities of unprocessed fields by the interpolated values
+        Replace velocities of unprocessed fields by the interpolated values.
 
+        u_field: np.array(float)
+            Array containing fit u velocities
+        v_field: np.array(float)
+            Array containing fit v velocities
+
+        Returns
+        -------
+        u_interpolated: np.array(float)
+            Water velocity u-component with interpolated values
+        v_interpolated: np.array(float)
+            Water velocity v-component with interpolated values
         """
-        self.u_interpolated = np.copy(self.u)
-        self.v_interpolated = np.copy(self.v)
-        self.u_interpolated[:, self.invalid_ensembles] = self.u_field[:, self.invalid_ensembles]
-        self.v_interpolated[:, self.invalid_ensembles] = self.v_field[:, self.invalid_ensembles]
+        u_interpolated = np.copy(self.u)
+        v_interpolated = np.copy(self.v)
+        u_interpolated[:, self.invalid_ensembles] = u_field[
+            :, self.invalid_ensembles
+        ]
+        v_interpolated[:, self.invalid_ensembles] = v_field[
+            :, self.invalid_ensembles
+        ]
+
+        return u_interpolated, v_interpolated
 
     def compute_mean_cross_section(self, transect):
         """Computes a mean cross section projected on a line from the first to the last shiptrack points.
@@ -636,5 +900,4 @@ class IsoVel(object):
         track_x_cum_sum = np.nancumsum(boat_track["track_x_m"])
         track_y_cum_sum = np.nancumsum(boat_track["track_y_m"])
         self.cross_section_rng = unit_x * track_x_cum_sum + unit_y * track_y_cum_sum
-        self.ensemble_width = np.diff(cross_section)
-        self.ensemble_width = np.hstack((0, self.ensemble_width))
+        self.ensemble_width = np.hstack((0, np.diff(self.cross_section_rng)))
