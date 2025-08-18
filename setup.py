@@ -26,7 +26,7 @@ setup(
                                   ],
                    'qrev.translation': ['*.qm']},
     include_package_data=True,
-    install_requires=['PyInstaller==5.12.0',
+    install_requires=['PyInstaller==6.15.0',
                       'pyinstaller-hooks-contrib',
                       'pyinstaller-versionfile',
                       'PyQt5',

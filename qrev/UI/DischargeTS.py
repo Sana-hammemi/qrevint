@@ -49,10 +49,10 @@ class DischargeTS(object):
             Dictionary of units conversion factors
         """
 
+        self.fig.clear()
+
         # Configure axis
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
-
-        self.fig.ax.clear()
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(

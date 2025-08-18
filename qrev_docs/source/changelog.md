@@ -1,18 +1,22 @@
 # QRev Change Log
 
-## [**Version 4.40.1**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.1)
+## [**Version 4.40.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.1)
 
 **Added:**
 - NA
 
 **Changed:**
 - Upgraded python to version 3.11 and impacted dependencies.
+- Changed packaging structure to one directory to speed up load time.
 - Changed docs folder name to qrev_docs and converted to python package.
 - Added "complete_setup" class to be run so QRev can be installed 
   programmatically.
 
 **Fixed:**
 - Fixed crash when loading QRev files with a single transect.
+- Fix duplication of axis labels on Discharge Time Series plot after 
+  loading additional measurement files without closing the UI.
+- Fixed sticky setting crash due to "date_format" call for PDFSummary
 
 ## [**Version 4.40.0**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.0)
 
