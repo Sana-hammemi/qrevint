@@ -64,7 +64,7 @@ except BaseException:
     sys.exit()
 
 print("Verifying QRev.EXE was created.")
-path = os.path.join(os.getcwd(), "dist", __app__ + ".exe")
+path = os.path.join(os.getcwd(), "dist", __app__)
 
 if os.path.exists(path):
     print("QRev was packaged, creating distribution package.")
@@ -72,7 +72,7 @@ if os.path.exists(path):
     # copy QRev exe
     shutil.copy(
         os.path.join(path),
-        os.path.join(qrev_dir, __app__ + ".exe"),
+        os.path.join(qrev_dir, __app__),
     )
 
     # remove copied QRev exe from source directory
