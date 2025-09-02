@@ -1,12 +1,13 @@
 import numpy as np
 from qrev.MiscLibs.common_functions import weighted_mean
+from scipy.interpolate import Rbf
+import skgstat as skg
 
 
 class FlowFieldInterpolation(object):
-    def __init__(self, transect, exponent, normalize):
+    def __init__(self, transect, exponent):
         # Store input data
         self.exponent = exponent
-        self.normalize = normalize
 
         # Initialize isovel flow fields
         self.isovel_field = None
@@ -48,10 +49,16 @@ class FlowFieldInterpolation(object):
         # Store ensemble duration
         self.dt = transect.date_time.ens_duration_sec
 
-        # Indentify invalid ensembles
+        # Indentify invalid ensembles between the first and last valid ensemble
         invalid_ens = np.nansum(transect.w_vel.valid_data[0, :, :], axis=0)
         self.invalid_ensembles = np.where(invalid_ens < 1)[0]
-
+        valid_ens = np.where(invalid_ens > 0)[0]
+        self.invalid_ensembles = self.invalid_ensembles[
+            valid_ens[0] < self.invalid_ensembles
+        ]
+        self.invalid_ensembles = self.invalid_ensembles[
+            self.invalid_ensembles < valid_ens[-1]
+        ]
         # Compute top and bottom cell depths
         self.top_depth_cell_depth = depth_data.depth_cell_depth_m[0, :]
         bottom_cell_number = np.nansum(self.cells_above_sl, axis=0)
@@ -68,7 +75,7 @@ class FlowFieldInterpolation(object):
     # isovel interpolation
     # ====================
 
-    def isovel_interpolation(self):
+    def isovel_interpolation(self, normalize=False):
         """Compute the discharge using isovel interpolation for invalid
         ensembles.
 
@@ -84,6 +91,7 @@ class FlowFieldInterpolation(object):
             left_edge_distance=self.left_edge_distance,
             right_edge_shape=self.right_edge_type,
             right_edge_distance=self.right_edge_distance,
+            normalize=normalize
         )
 
         # Compute seed values
@@ -111,6 +119,7 @@ class FlowFieldInterpolation(object):
         left_edge_distance,
         right_edge_shape,
         right_edge_distance,
+        normalize
     ):
         """Compute isovel field
 
@@ -146,16 +155,17 @@ class FlowFieldInterpolation(object):
             ensemble_widths_iso,
             n_start,
             n_end,
-            n_top,
+            n_top
         ) = self.isovel_update_geometry(
             start_edge_distance,
             start_edge_shape,
             end_edge_distance,
             end_edge_shape,
+            normalize
         )
-
+        rng_iso = np.nancumsum(ensemble_widths_iso)
         # Initialisation
-        velocity_field = nan * np.zeros(depth_cell_depth_iso.shape)
+        velocity_field = np.nan * np.zeros(depth_cell_depth_iso.shape)
         q = 0
         area = 0
         for cell_idx in range(depth_cell_depth_iso.shape[0]):
@@ -163,13 +173,13 @@ class FlowFieldInterpolation(object):
                 # Compute for depths above ensemble depth
                 if depth_cell_depth_iso[cell_idx, ens_idx] < depth_iso[ens_idx]:
                     # Contribution for streambed
-                    x = self.cross_section_rng[0:-1] - self.cross_section_rng[ens_idx]
-                    y = depth_iso[0:-1] - depth_cell_depth_iso[cell_idx, ens_idx]
+                    x = rng_iso - rng_iso[ens_idx]
+                    y = depth_iso - depth_cell_depth_iso[cell_idx, ens_idx]
                     radial_dist_b = np.sqrt(x**2 + y**2)
                     cell_vel = np.nansum(
                         (radial_dist_b[radial_dist_b > 0] ** (self.exponent - 1))
-                        * y
-                        * ensemble_widths_iso[1:]
+                        * y[radial_dist_b > 0]
+                        * ensemble_widths_iso[radial_dist_b > 0]
                     )
 
                     # Contribution from a rectangular edge at the start bank
@@ -224,8 +234,8 @@ class FlowFieldInterpolation(object):
         self.isovel_field = velocity_field / mean_vel  # isovel field
 
         # Remove added top and edge areas
-        self.isovel_field = self.isovel_field[n_top:, n_left:-n_right]
-        self.isovel_field = self.isovel_field * cells_above_sl
+        self.isovel_field = self.isovel_field[n_top::, n_start:-n_end]
+        self.isovel_field = self.isovel_field * self.cells_above_sl
 
         # Restrict isovel_field to only the cells above sidelobe
         self.isovel_field = self.isovel_field * self.cells_to_use
@@ -236,6 +246,8 @@ class FlowFieldInterpolation(object):
         start_edge_shape,
         end_edge_distance,
         end_edge_shape,
+        normalize,
+        n_top=4
     ):
         """
         Update velocity and geometry data adding edges and top areas
@@ -265,11 +277,13 @@ class FlowFieldInterpolation(object):
             Number of right edge ensembles
         n_left_edge: int
             Number of left edge ensembles
+        n_top: int
+            Number of top depth cells
         """
 
         # Add depth cells between water surface and first cell
-        top_cell_size = self.depth_cell_depth[0, :] / 4
-        depth_cell_size_top = np.tile(top_cell_size, (4, 1))
+        top_cell_size = self.depth_cell_depth[0, :] / n_top
+        depth_cell_size_top = np.tile(top_cell_size, (n_top, 1))
         depth_cell_depth_top = np.nancumsum(depth_cell_size_top, axis=0) - top_cell_size
         depth_cell_size_iso = np.concatenate(
             (depth_cell_size_top, self.depth_cell_size), axis=0
@@ -284,21 +298,21 @@ class FlowFieldInterpolation(object):
             ensemble_widths_iso,
             depth_cell_depth_iso,
             depth_cell_size_iso,
-            n_left,
-            n_right,
-        ) = add_edges(
+            n_start,
+            n_end,
+        ) = self.add_edges(
             start_edge_distance=start_edge_distance,
             start_edge_shape=start_edge_shape,
             end_edge_distance=end_edge_distance,
             end_edge_shape=end_edge_shape,
-            depth=self.depth,
-            ensemble_widths=self.ensemble_widths,
+            depth=self.depths,
+            ensemble_widths=self.ensemble_width,
             depth_cell_depth=depth_cell_depth_iso,
-            depth_cell_size_iso=depth_cell_size_iso,
+            depth_cell_size=depth_cell_size_iso,
         )
 
         # normalization or not
-        if self.normalize == 1:
+        if normalize:
             depth_cell_depth_iso = depth_cell_depth_iso / depth_iso
             depth_cell_size_iso = depth_cell_size_iso / depth_iso
 
@@ -309,7 +323,7 @@ class FlowFieldInterpolation(object):
             ensemble_widths_iso,
             n_start,
             n_end,
-            n_top,
+            n_top
         )
 
     @staticmethod
@@ -363,12 +377,28 @@ class FlowFieldInterpolation(object):
 
         # Compute number of edge ensembles to be added
         mean_ensemble_width = np.nanmean(ensemble_widths)
-        n_start = round(start_edge_distance / mean_ensemble_width)
-        n_end = round(end_edge_distance / mean_ensemble_width)
+        if start_edge_distance > 0:
+            if start_edge_distance > mean_ensemble_width:
+                n_start = round(start_edge_distance / mean_ensemble_width)
+            else:
+                n_start = 1
+                start_ensemble_width = start_edge_distance
+        else:
+            n_start = 0
+            start_ensemble_width = start_edge_distance
+        if end_edge_distance > 0:
+            if end_edge_distance > mean_ensemble_width:
+                n_end = round(end_edge_distance / mean_ensemble_width)
+            else:
+                n_end = 1
+                end_ensemble_width = end_edge_distance
+        else:
+            n_end = 0
+            end_ensemble_width = end_edge_distance
 
         # Add cell widths
-        start_ensemble_widths = np.tile(ensemble_widths, (1, n_start))[0]
-        end_ensemble_widths = np.tile(ensemble_widths, (1, n_end))[0]
+        start_ensemble_widths = np.tile(start_ensemble_width, (1, n_start))[0]
+        end_ensemble_widths = np.tile(end_ensemble_width, (1, n_end))[0]
         ensemble_widths_iso = np.concatenate(
             (start_ensemble_widths, ensemble_widths[1:])
         )
@@ -381,7 +411,7 @@ class FlowFieldInterpolation(object):
         else:
             start_edge_depths = np.array(
                 [
-                    depth[0] * ((mean_cell_width * i) / start_edge_distance)
+                    depth[0] * ((mean_ensemble_width * i) / start_edge_distance)
                     for i in range(n_start)
                 ]
             )
@@ -391,7 +421,7 @@ class FlowFieldInterpolation(object):
         else:
             end_edge_depths = np.array(
                 [
-                    depth[-1] / start_edge_distance * mean_cell_width * (n_end - i - 1)
+                    depth[-1] / start_edge_distance * mean_ensemble_width * (n_end - i - 1)
                     for i in range(n_end)
                 ]
             )
@@ -401,7 +431,7 @@ class FlowFieldInterpolation(object):
 
         # Add depth cell depths
         start_cell_depths = np.tile(depth_cell_depth[:, 0], (n_start, 1))
-        end_cell_depths = np.tile(depth_cell_depth[:, -1], (n_right, 1))
+        end_cell_depths = np.tile(depth_cell_depth[:, -1], (n_end, 1))
         depth_cell_depth_iso = np.hstack(
             (np.transpose(start_cell_depths), depth_cell_depth)
         )
@@ -411,7 +441,7 @@ class FlowFieldInterpolation(object):
 
         # Add depth cell size
         start_cell_size = np.tile(depth_cell_size[:, 0], (n_start, 1))
-        end_cell_size = np.tile(depth_cell_size[:, -1], (n_right, 1))
+        end_cell_size = np.tile(depth_cell_size[:, -1], (n_end, 1))
         depth_cell_size_iso = np.hstack(
             (np.transpose(start_cell_size), depth_cell_size)
         )
@@ -428,8 +458,7 @@ class FlowFieldInterpolation(object):
             n_end,
         )
 
-    @staticmethod
-    def isovel_seed(top_cell_depth, bottom_cell_depth, seed_ensembles):
+    def isovel_seed(self, top_cell_depth, bottom_cell_depth, seed_ensembles):
         """
         Return seed value and location for the velocity field computation
         The seed value will be the mean over the 25% middle area over the amount
@@ -492,7 +521,7 @@ class FlowFieldInterpolation(object):
 
         # Compute ensemble location
         ensemble_idx = np.argmin(
-            self.cross_section_rng - np.nanmean(self.cross_section_rng[seed_ensembles])
+            np.abs(self.cross_section_rng - np.nanmean(self.cross_section_rng[seed_ensembles]))
         )
 
         return u_mean, v_mean, ensemble_idx, depth_cell_idx
@@ -523,8 +552,8 @@ class FlowFieldInterpolation(object):
         # Compute seed values
 
         # Adjust iso field to seed values
-        u_iso = u_seed * self.field / self.field[depth_cell_depth_idx, ensemble_idx]
-        v_iso = v_seed * self.field / self.field[depth_cell_depth_idx, ensemble_idx]
+        u_iso = u_seed * self.isovel_field / self.isovel_field[depth_cell_depth_idx, ensemble_idx]
+        v_iso = v_seed * self.isovel_field / self.isovel_field[depth_cell_depth_idx, ensemble_idx]
 
         # Identify ensembles in the center 40% of the cross section
         rng_30, rng_70 = (
@@ -549,8 +578,8 @@ class FlowFieldInterpolation(object):
         )
 
         # Compute the difference in discharge using the isovel field
-        u_diff = u_iso - u
-        v_diff = v_iso - v
+        u_diff = u_iso - self.u
+        v_diff = v_iso - self.v
         dq = self.compute_discharge(
             u=u_diff[:, idx],
             v=v_diff[:, idx],
@@ -569,14 +598,14 @@ class FlowFieldInterpolation(object):
             u_seed = (1 - q_ratio) * u_seed
             v_seed = (1 - q_ratio) * v_seed
             u_iso = (
-                u_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
+                u_seed * self.isovel_field / self.isovel_field[depth_cell_depth_idx, ensemble_idx]
             )
             v_iso = (
-                v_seed * isovel_field / self.field[depth_cell_depth_idx, ensemble_idx]
+                v_seed * self.isovel_field / self.isovel_field[depth_cell_depth_idx, ensemble_idx]
             )
-            u_diff = u_iso - u
-            v_diff = v_iso - v
-            dq = compute_inter_discharge(
+            u_diff = u_iso - self.u
+            v_diff = v_iso - self.v
+            dq = self.compute_discharge(
                 u=u_diff[:, idx],
                 v=v_diff[:, idx],
                 boat_u=self.boat_u[idx],
@@ -591,13 +620,13 @@ class FlowFieldInterpolation(object):
 
     def isovel_compute_discharge(self):
         """Compute discharge field from isovel method."""
-        u_interpolated, v_interpolated = self.inter_replace(
+        u_combined, v_combined = self.iso_combine_data(
             u_field=self.u_isovel_field,
             v_field=self.v_isovel_field,
         )
         q = self.compute_discharge(
-            u=u_interpolated,
-            v=v_interpolated,
+            u=u_combined,
+            v=v_combined,
             boat_u=self.boat_u,
             boat_v=self.boat_v,
             depth_cell_size=self.depth_cell_size,
@@ -606,6 +635,33 @@ class FlowFieldInterpolation(object):
         )
 
         return q
+
+    def iso_combine_data(self, u_field, v_field):
+        """
+        Combines the valid and interpolated velocity data.
+
+        Parameters
+        ----------
+        u_field: np.array(float)
+            Array containing fit u velocities
+        v_field: np.array(float)
+            Array containing fit v velocities
+
+        Returns
+        -------
+        u_combined: np.array(float)
+            Water velocity u-component with interpolated values
+        v_combined: np.array(float)
+            Water velocity v-component with interpolated values
+        """
+        u_combined = np.copy(self.u)
+        v_combined = np.copy(self.v)
+        u_combined[:, self.invalid_ensembles] = u_field[:, self.invalid_ensembles]
+        v_combined[:, self.invalid_ensembles] = v_field[
+                                                :, self.invalid_ensembles
+                                                ]
+
+        return u_combined, v_combined
 
     # Froude number interpolation
     # ===========================
@@ -728,34 +784,34 @@ class FlowFieldInterpolation(object):
         # Interpolate u
         data = np.vstack((self.cross_section_rng[ensemble_idx], u_froude)).T
         data_sorted = np.sort(data, axis=0)
-        u_invalid_ens = np.interp(
+        u_interpolated = np.interp(
             self.cross_section_rng[self.invalid_ensembles],
             data_sorted[:, 0],
             data_sorted[:, 1],
         ) * np.sqrt(self.depths[self.invalid_ensembles] * 9.81)
-        u_interpolated = np.copy(self.u)
-        u_interpolated[:, self.invalid_ensembles] = (
-            u_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        u_combined = np.copy(self.u)
+        u_combined[:, self.invalid_ensembles] = (
+            u_interpolated * self.cells_to_use[:, self.invalid_ensembles]
         )
 
         # Interpolate v
         data = np.vstack((self.cross_section_rng[ensemble_idx], v_froude)).T
         data_sorted = np.sort(data, axis=0)
-        v_invalid_ens = np.interp(
+        v_interpolated = np.interp(
             self.cross_section_rng[self.invalid_ensembles],
             data_sorted[:, 0],
             data_sorted[:, 1],
         ) * np.sqrt(self.depths[self.invalid_ensembles] * 9.81)
-        v_interpolated = np.copy(self.v)
-        v_interpolated[:, self.invalid_ensembles] = (
-            v_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        v_combined = np.copy(self.v)
+        v_combined[:, self.invalid_ensembles] = (
+            v_interpolated * self.cells_to_use[:, self.invalid_ensembles]
         )
         # Compute discharge
-        q = compute_discharge(
-            u=u_interpolated,
-            v=v_interpolated,
+        q = self.compute_discharge(
+            u=u_combined,
+            v=v_combined,
             boat_u=self.boat_u,
-            boat_v=self.boat_u,
+            boat_v=self.boat_v,
             depth_cell_size=self.depth_cell_size,
             dt=self.dt,
             start_edge=self.start_edge,
@@ -780,27 +836,27 @@ class FlowFieldInterpolation(object):
             Middel discharge computed using interpolated values
         """
 
-        u_invalid_ens = u_froude[1] * np.sqrt(
+        u_interpolated = u_froude * np.sqrt(
             self.depths[self.invalid_ensembles] * 9.81
         )
-        v_invalid_ens = v_froude[1] * np.sqrt(
+        v_interpolated = v_froude * np.sqrt(
             self.depths[self.invalid_ensembles] * 9.81
         )
 
-        u_interpolated = np.copy(self.u)
-        u_interpolated[:, self.invalid_ensembles] = (
-            u_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        u_combined = np.copy(self.u)
+        u_combined[:, self.invalid_ensembles] = (
+            u_interpolated * self.cells_to_use[:, self.invalid_ensembles]
         )
-        v_interpolated = np.copy(self.v)
-        v_interpolated[:, self.invalid_ensembles] = (
-            v_invalid_ens * self.cells_to_use[:, self.invalid_ensembles]
+        v_combined = np.copy(self.v)
+        v_combined[:, self.invalid_ensembles] = (
+            v_interpolated * self.cells_to_use[:, self.invalid_ensembles]
         )
 
-        q = compute_discharge(
-            u=u_interpolated,
-            v=v_interpolated,
+        q = self.compute_discharge(
+            u=u_combined,
+            v=v_combined,
             boat_u=self.boat_u,
-            boat_v=self.boat_u,
+            boat_v=self.boat_v,
             depth_cell_size=self.depth_cell_size,
             dt=self.dt,
             start_edge=self.start_edge,
@@ -808,6 +864,121 @@ class FlowFieldInterpolation(object):
 
         return q
 
+    # Thin plate spline
+    # =================
+    def tps_interpolation(self):
+
+        # Compute 1d arrays for use in Rdf
+        u_1d, v_1d, x_1d, y_1d, z_1d = self.no_slip_coordinates(
+            u=self.u,
+            v=self.v,
+            depths=self.depths,
+            depth_cell_depth=self.depth_cell_depth,
+            rng=self.cross_section_rng
+        )
+
+        x_invalid, y_invalid, z_invalid, invalid_indices = self.invalid_data_coordinates(
+            depths=self.depths,
+            depth_cell_depth=self.depth_cell_depth,
+            top_cell_depth=self.top_depth_cell_depth,
+            bottom_cell_depth=self.bottom_depth_cell_depth,
+            rng=self.cross_section_rng
+        )
+
+        # Create Rdf models for u and v
+        tps_u = Rbf(x_1d, y_1d, z_1d, u_1d, function='thin_plate')
+        tps_v = Rbf(x_1d, y_1d, z_1d, v_1d, function='thin_plate')
+
+        # Interpolate u and v for invalid ensemblescccccbggncvenlcvuguiniicfinhjnruugiiguttvbhf
+
+        u_interpolated = tps_u(x_invalid, y_invalid, z_invalid)
+        v_interpolated = tps_v(x_invalid, y_invalid, z_invalid)
+
+        # Combine valid and interpolated data
+        u_combined, v_combined = self.combine_data(u_interpolated, v_interpolated, invalid_indices)
+
+        # Compute discharge
+        q = self.compute_discharge(
+            u=u_combined,
+            v=v_combined,
+            boat_u=self.boat_u,
+            boat_v=self.boat_v,
+            depth_cell_size=self.depth_cell_size,
+            dt=self.dt,
+            start_edge=self.start_edge,
+        )
+
+        return q
+
+    # Kriging
+    # =======
+    def kriging_interpolation(self):
+        depth_cell_depth_normalized = self.depth_cell_depth / self.depths
+        rng_normalized = self.cross_section_rng / np.nanmax(self.cross_section_rng)
+        depths_normalized = self.depths / self.depths
+        top_cell_depth_normalized = self.top_depth_cell_depth / self.depths
+        bottom_cell_depth_normalized = self.bottom_depth_cell_depth / self.depths
+
+        u_1d, v_1d, x_1d, y_1d, z_1d = self.no_slip_coordinates(
+            u=self.u,
+            v=self.v,
+            depths=depths_normalized,
+            depth_cell_depth=depth_cell_depth_normalized,
+            rng=rng_normalized,
+        )
+        coordinates = np.vstack((x_1d, y_1d)).T
+        # Compute spherical variogram
+        variogram_u = skg.Variogram(
+            coordinates,
+            u_1d,
+            model="spherical",
+            maxlag=0.6,
+            n_lags=25,
+            normalize=False,
+            use_nugget=True,
+        )
+        variogram_v = skg.Variogram(
+            coordinates,
+            v_1d,
+            model="spherical",
+            maxlag=0.6,
+            n_lags=25,
+            normalize=False,
+            use_nugget=True,
+        )
+
+        # Compute kriging model
+        kriging_u = skg.OrdinaryKriging(variogram_u, max_points=10, mode='exact')
+        kriging_v = skg.OrdinaryKriging(variogram_v, max_points=10, mode="exact")
+
+        # Compute interpolated values for invalid ensembles
+        x_invalid, y_invalid, _, invalid_indices = self.invalid_data_coordinates(
+            depths=depths_normalized,
+            depth_cell_depth=depth_cell_depth_normalized,
+            top_cell_depth=top_cell_depth_normalized,
+            bottom_cell_depth=bottom_cell_depth_normalized,
+            rng=rng_normalized,
+        )
+        u_interpolated = kriging_u.transform(x_invalid, y_invalid)
+        v_interpolated = kriging_v.transform(x_invalid, y_invalid)
+
+        u_combined, v_combined = self.combine_data(
+            u_interpolated=u_interpolated,
+            v_interpolated=v_interpolated,
+            invalid_indices=invalid_indices,
+        )
+
+        q = self.compute_discharge(
+            u=u_combined,
+            v=v_combined,
+            boat_u=self.boat_u,
+            boat_v=self.boat_v,
+            depth_cell_size=self.depth_cell_size,
+            dt=self.dt,
+            start_edge=self.start_edge,
+        )
+
+        return q
     # Supporting methods
     # ==================
 
@@ -858,32 +1029,138 @@ class FlowFieldInterpolation(object):
 
         return q
 
-    def inter_replace(self, u_field, v_field):
-        """
-        Replace velocities of unprocessed fields by the interpolated values.
-
-        u_field: np.array(float)
-            Array containing fit u velocities
-        v_field: np.array(float)
-            Array containing fit v velocities
+    def combine_data (self, u_interpolated, v_interpolated, invalid_indices):
+        """ Combine the valid and invalid data.
+        Parameters
+        ----------
+        u_interpolated: np.array(float)
+            Array containing interpolated u velocities
+        v_interpolated: np.array(float)
+            Array containing interpolated v velocities
+        invalid_indices: np.array(tuple)
+            Array of index pairs of interpolated data
 
         Returns
         -------
-        u_interpolated: np.array(float)
+        u_combined: np.array(float)
             Water velocity u-component with interpolated values
-        v_interpolated: np.array(float)
+        v_combined: np.array(float)
             Water velocity v-component with interpolated values
         """
-        u_interpolated = np.copy(self.u)
-        v_interpolated = np.copy(self.v)
-        u_interpolated[:, self.invalid_ensembles] = u_field[
-            :, self.invalid_ensembles
-        ]
-        v_interpolated[:, self.invalid_ensembles] = v_field[
-            :, self.invalid_ensembles
-        ]
+        u_combined = np.copy(self.u)
+        v_combined = np.copy(self.v)
+        for n, coord in enumerate(invalid_indices):
+            u_combined[coord] = u_interpolated[n]
+            v_combined[coord] = v_interpolated[n]
 
-        return u_interpolated, v_interpolated
+        return u_combined, v_combined
+
+    def no_slip_coordinates(self, u, v, depths, depth_cell_depth, rng):
+        """Create 1D arrays with no slip velocity condition at the
+        streambed for data used in tsp.
+
+        Parameters
+        ----------
+        u: np.array(float)
+            Array containing u velocities
+        v: np.array(float)
+            Array containing v velocities
+        depths: np.array(float)
+            Array containing streambed depths
+        depth_cell_depth: np.array(float)
+            Array containing depth cell depths
+        rng: np.array(float)
+            Array containing cross section ranges to each ensemble
+
+        Returns
+        -------
+        u_1d: np.array(float)
+            1D array of u velocity component
+        v_1d: np.array(float)
+            1D array of v velocity component
+        x_1d: np.array(float)
+            1D array of range along cross section
+        y_1d: np.array(float)
+            1D array of depth cell depths
+        z_1d: np.array(float)
+            1D array of streambed depths
+        """
+        # Construct u velocity 1d array
+        u_1d = u.flatten(order="F")
+        u_1d = u_1d[np.logical_not(np.isnan(u_1d))]
+        u_1d = np.hstack((u_1d, np.zeros((u.shape[1]))))
+
+        # Construct v velocity 1d array
+        v_1d = v.flatten(order="F")
+        v_1d = v_1d[np.logical_not(np.isnan(v_1d))]
+        v_1d = np.hstack((v_1d, np.zeros((v.shape[1]))))
+
+        # Construct x 1d array
+        x_1d = self.cells_to_use * rng
+        x_1d[np.isnan(u)] = np.nan
+        x_1d = x_1d.flatten(order="F")
+        x_1d = x_1d[np.logical_not(np.isnan(x_1d))]
+        x_1d = np.hstack((x_1d, rng))
+
+        # Construct y 1d array
+        y_1d = np.copy(depth_cell_depth)
+        y_1d[np.isnan(u)] = np.nan
+        y_1d = y_1d.flatten(order="F")
+        y_1d = y_1d[np.logical_not(np.isnan(y_1d))]
+        y_1d = np.hstack((y_1d, depths))
+
+        # Construct z 1d array
+        z_1d= self.cells_to_use * depths
+        z_1d[np.isnan(u)] = np.nan
+        z_1d = z_1d.flatten(order="F")
+        z_1d = z_1d[np.logical_not(np.isnan(z_1d))]
+        z_1d = np.hstack((z_1d, depths))
+
+        u_1d = u_1d[np.logical_not(np.isnan(z_1d))]
+        v_1d = v_1d[np.logical_not(np.isnan(z_1d))]
+        x_1d = x_1d[np.logical_not(np.isnan(z_1d))]
+        y_1d = y_1d[np.logical_not(np.isnan(z_1d))]
+        z_1d = z_1d[np.logical_not(np.isnan(z_1d))]
+
+        return u_1d, v_1d, x_1d, y_1d, z_1d
+
+    def invalid_data_coordinates(self, depths, depth_cell_depth, top_cell_depth, bottom_cell_depth, rng):
+        """Compute 1D array of coordinates for invalid ensembles.
+
+        Parameters
+        ----------
+        depths: np.array(float)
+            Array containing streambed depths
+        depth_cell_depth: np.array(float)
+            Array containing depth cell depths
+        top_cell_depth: np.array(float)
+            Array containing top cell depths
+        bottom_cell_depth: np.array(float)
+            Array containing bottom cell depths
+        rng: np.array(float)
+            Array containing cross section ranges to each ensemble
+        Returns
+        -------
+        x: np.array(float)
+            1D array of cross section range for invalid ensembles
+        y: np.array(float)
+            1D array of depth cell depths for invalid ensembles
+        z: np.array(float)
+            1D array of streambed depths for invalid ensembles
+        invalid_indices: np.array(tuple)
+            1D array of indices of depth cells of invalid ensembles
+        """
+        x, y, z = [], [] ,[]
+        invalid_indices = []
+        for ens in self.invalid_ensembles:
+            for cell in range (len(depth_cell_depth[:, ens])):
+                if top_cell_depth[ens]<depth_cell_depth[cell, ens]<bottom_cell_depth[ens]:
+                    x.append(rng[ens])
+                    y.append(depth_cell_depth[cell, ens])
+                    z.append(depths[ens])
+                    invalid_indices.append((cell , ens))
+        x, y, z = np.array(x), np.array(y), np.array(z)
+        return x, y, z, invalid_indices
 
     def compute_mean_cross_section(self, transect):
         """Computes a mean cross section projected on a line from the first to the last shiptrack points.

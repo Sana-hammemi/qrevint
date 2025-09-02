@@ -1901,7 +1901,7 @@ class QAData(object):
                     user_valid_test.append(False)
 
             # Check compass cal prior to loop test
-            if mb_test_type[0] == "Loop":
+            if len(mb_test_type) > 0 and mb_test_type[0] == "Loop":
                 # Determine serial time for compass calibration/evaluation
                 eval_times = []
                 cal_times = []
