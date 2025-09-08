@@ -1329,7 +1329,10 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
-        blanking_distance = rsdata.Summary.Blank_Distance
+        try:
+            blanking_distance = rsdata.Summary.Blank_Distance
+        except AttributeError:
+            blanking_distance = np.nan
 
         if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
             ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
