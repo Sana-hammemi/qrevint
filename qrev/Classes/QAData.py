@@ -2336,7 +2336,7 @@ class QAData(object):
                     self.depths["all_invalid"][n] = True
 
                 # Compute QA characteristics
-                q_total, q_max_run, number_invalid_ensembles = QAData.invalid_qa(
+                q_total, q_max_run, number_invalid_ensembles, q_max_run_ens = QAData.invalid_qa(
                     depth_valid, meas.discharge[n]
                 )
                 self.depths["q_total"][n] = q_total
@@ -2531,6 +2531,7 @@ class QAData(object):
             boat["q_max_run_caution"] = np.tile(False, (n_transects, 6))
             boat["q_total_warning"] = np.tile(False, (n_transects, 6))
             boat["q_max_run_warning"] = np.tile(False, (n_transects, 6))
+            boat["q_max_run_ens"] = np.tile(None, n_transects)
             boat["all_invalid"] = np.tile(False, n_transects)
             boat["q_total"] = np.tile(np.nan, (n_transects, 6))
             boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
@@ -2567,6 +2568,7 @@ class QAData(object):
                                     q_total,
                                     q_max_run,
                                     number_invalid_ens,
+                                    q_max_run_ens
                                 ) = QAData.invalid_qa(valid, meas.discharge[n])
                                 boat["q_total"][n, dt_filter[1]] = q_total
                                 boat["q_max_run"][n, dt_filter[1]] = q_max_run
@@ -2592,6 +2594,7 @@ class QAData(object):
                                 # Apply interpolated discharge run thresholds
                                 if q_max_run_percent > self.q_run_threshold_warning:
                                     boat["q_max_run_warning"][n, dt_filter[1]] = True
+                                    boat["q_max_run_ens"][n] = q_max_run_ens
                                 elif q_max_run_percent > self.q_run_threshold_caution:
                                     boat["q_max_run_caution"][n, dt_filter[1]] = True
 
@@ -2809,6 +2812,7 @@ class QAData(object):
         self.w_vel["q_max_run_caution"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_total_warning"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_max_run_warning"] = np.tile(False, (n_transects, n_filters))
+        self.w_vel["q_max_run_ens"] = np.tile(None, n_transects)
         self.w_vel["all_invalid"] = np.tile(False, n_transects)
         self.w_vel["q_total"] = np.tile(np.nan, (n_transects, n_filters))
         self.w_vel["q_max_run"] = np.tile(np.nan, (n_transects, n_filters))
@@ -2854,7 +2858,7 @@ class QAData(object):
                         #  else of all invalid or multiple messages generated.
 
                         # Compute characteristics
-                        q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
+                        q_total, q_max_run, number_invalid_ens, q_max_run_ens = QAData.invalid_qa(
                             valid, meas.discharge[n]
                         )
                         self.w_vel["q_total"][n, filter_idx] = q_total
@@ -2880,6 +2884,7 @@ class QAData(object):
                         # Apply run or cluster thresholds
                         if q_max_run_percent > self.q_run_threshold_warning:
                             self.w_vel["q_max_run_warning"][n, filter_idx] = True
+                            self.w_vel["q_max_run_ens"][n] = q_max_run_ens
                         elif q_max_run_percent > self.q_run_threshold_caution:
                             self.w_vel["q_max_run_caution"][n, filter_idx] = True
 
@@ -3354,6 +3359,7 @@ class QAData(object):
         if n_runs > 0:
             m = 0
             q_invalid_run = []
+            q_invalid_run_ens = []
             for n in range(n_start, n_end, 2):
                 m += 1
                 idx_start = valid_run[n]
@@ -3363,14 +3369,16 @@ class QAData(object):
                     + np.nansum(discharge.top_ens[idx_start:idx_end])
                     + np.nansum(discharge.bottom_ens[idx_start:idx_end])
                 )
+                q_invalid_run_ens.append((idx_start, idx_end))
 
             # Determine the maximum discharge in a single run
             q_invalid_max_run = np.nanmax(np.abs(q_invalid_run))
+            q_invalid_max_run_ens = q_invalid_run_ens[np.argmax(np.abs(q_invalid_run))]
 
         else:
             q_invalid_max_run = 0.0
 
-        return q_invalid_total, q_invalid_max_run, ens_invalid
+        return q_invalid_total, q_invalid_max_run, ens_invalid, q_invalid_max_run_ens
 
     @staticmethod
     def edge_distance_moved(transect):

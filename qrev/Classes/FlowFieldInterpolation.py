@@ -5,7 +5,7 @@ import skgstat as skg
 
 
 class FlowFieldInterpolation(object):
-    def __init__(self, transect, exponent):
+    def __init__(self, transect, invalid_run_ens, exponent):
         # Store input data
         self.exponent = exponent
 
@@ -50,15 +50,19 @@ class FlowFieldInterpolation(object):
         self.dt = transect.date_time.ens_duration_sec
 
         # Indentify invalid ensembles between the first and last valid ensemble
-        invalid_ens = np.nansum(transect.w_vel.valid_data[0, :, :], axis=0)
-        self.invalid_ensembles = np.where(invalid_ens < 1)[0]
-        valid_ens = np.where(invalid_ens > 0)[0]
-        self.invalid_ensembles = self.invalid_ensembles[
-            valid_ens[0] < self.invalid_ensembles
-        ]
-        self.invalid_ensembles = self.invalid_ensembles[
-            self.invalid_ensembles < valid_ens[-1]
-        ]
+        # invalid_ens = np.nansum(transect.w_vel.valid_data[0, :, :], axis=0)
+        # self.invalid_ensembles = np.where(invalid_ens < 1)[0]
+        # valid_ens = np.where(invalid_ens > 0)[0]
+        # self.invalid_ensembles = self.invalid_ensembles[
+        #     valid_ens[0] < self.invalid_ensembles
+        # ]
+        # self.invalid_ensembles = self.invalid_ensembles[
+        #     self.invalid_ensembles < valid_ens[-1]
+        # ]
+        invalid_ens = []
+        for ens in invalid_run_ens:
+            invalid_ens.extend(list(range(ens[0], ens[1]+1)))
+        self.invalid_ensembles = np.unique(invalid_ens)
 
         # Map invalid ensembles onto projected cross section
         self.cs_invalid_ensembles_idx = np.where(
