@@ -139,6 +139,7 @@ class Measurement(object):
         date_format="%Y.%m.%d",
         time_zone_required=False,
         qt_tr=None,
+        area_projection="ParallAC"
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -179,6 +180,9 @@ class Measurement(object):
             Dictionary containting the excluded distances for the RioPro and M9
         date_format: str
             Format string for date
+        area_projection: str
+            Defines how the width and area are computed, ParallAC is parallel to
+            average course, PerpenMF is perpendicular to mean flow direction
         """
 
         # Check for use of qt_tr for translation
@@ -187,6 +191,7 @@ class Measurement(object):
         else:
             self.tr = qt_tr
 
+        self.area_projection = area_projection
         self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
@@ -269,7 +274,6 @@ class Measurement(object):
             "UTC+11": "+11:00:00",
             "UTC+12": "+12:00:00",
         }
-
 
         # Load data from selected source
         if source == "QRev":
@@ -1018,7 +1022,6 @@ class Measurement(object):
                     temperature=transect.sensors.temperature_deg_c.user.data[0],
                 )
 
-
     @staticmethod
     def rsq_read_transect(transect_folder):
         """Reads the files for a single transect and returns a dictionary of the data.
@@ -1128,7 +1131,7 @@ class Measurement(object):
                 self.time_zone = "UTC"
 
             # System tests
-            #TODO Not sure what to do for multiple tests or calibrations
+            # TODO Not sure what to do for multiple tests or calibrations
             self.rsq_add_systest(transect, utc_time_offset)
 
             # Compass calibration
@@ -1198,7 +1201,7 @@ class Measurement(object):
     def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
 
         for test in tests:
-            #Process Loop test
+            # Process Loop test
             if "Loop" in test["config_json"]["AdcpMeasurementId"]:
                 self.mb_tests.append(MovingBedTests(tr=self.tr))
                 self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Loop", utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
@@ -3213,10 +3216,35 @@ class Measurement(object):
                     np.sqrt(u_boat**2 + v_boat**2)
                 )
 
+                # Compute flow direction using discharge weighting
+                u_water = transect.w_vel.u_processed_mps[:, in_transect_idx]
+                v_water = transect.w_vel.v_processed_mps[:, in_transect_idx]
+                weight = np.abs(self.discharge[n].middle_cells)
+                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(
+                    np.nansum(weight)
+                )
+                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(
+                    np.nansum(weight)
+                )
+                trans_prop["avg_water_dir"][n] = np.arctan2(u, v) * 180 / np.pi
+                if trans_prop["avg_water_dir"][n] < 0:
+                    trans_prop["avg_water_dir"][n] = (
+                        trans_prop["avg_water_dir"][n] + 360
+                    )
+
+                area_width_correction = 1
+                if self.area_projection == "PerpenMF":
+                    diff = np.abs(trans_prop["avg_boat_course"] - transprop["avg_water_dir"])
+                    if diff > 180:
+                        diff = diff - 180
+                    area_width_correction = cosd(diff - 90)
+
+
+
                 # Compute width
                 trans_prop["width"][n] = np.nansum(
                     [
-                        dmg,
+                        dmg * area_width_correction,
                         transect.edges.left.distance_m,
                         transect.edges.right.distance_m,
                     ]
@@ -3242,7 +3270,7 @@ class Measurement(object):
                 # using trapezoidal integration. This method is consistent with
                 # AreaComp but is different from QRev in Matlab
                 area_moving_boat = np.abs(
-                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx]))
+                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx])) * area_width_correction
                 # Compute area of left edge
                 edge_type = transect.edges.left.type
                 edge_idx = QComp.edge_ensembles("left", transect)
@@ -3261,7 +3289,6 @@ class Measurement(object):
                     coef = 0.5
 
                 area_left = edge_depth * transect.edges.left.distance_m * coef
-
 
                 # Compute area of right edge
                 edge_type = transect.edges.right.type
@@ -3321,22 +3348,6 @@ class Measurement(object):
                     self.discharge[n].total / trans_prop["area"][n]
                 )
 
-                # Compute flow direction using discharge weighting
-                u_water = transect.w_vel.u_processed_mps[:, in_transect_idx]
-                v_water = transect.w_vel.v_processed_mps[:, in_transect_idx]
-                weight = np.abs(self.discharge[n].middle_cells)
-                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(
-                    np.nansum(weight)
-                )
-                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(
-                    np.nansum(weight)
-                )
-                trans_prop["avg_water_dir"][n] = np.arctan2(u, v) * 180 / np.pi
-                if trans_prop["avg_water_dir"][n] < 0:
-                    trans_prop["avg_water_dir"][n] = (
-                        trans_prop["avg_water_dir"][n] + 360
-                    )
-
                 # Compute average and max depth
                 # This is a deviation from QRev in Matlab which simply
                 # averaged all the depths
@@ -3348,7 +3359,7 @@ class Measurement(object):
                 )
 
                 # Compute max water speed using the 99th percentile
-                water_speed = np.sqrt(u_water**2 + v_water**2)
+                water_speed = np.sqrt(u_water**2 + v_water**2) * self.discharge[0].correction_factor
                 trans_prop["max_water_speed"][n] = np.nanpercentile(water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)
@@ -3870,7 +3881,6 @@ class Measurement(object):
             ETree.SubElement(
                 instrument, "BlankingDistance", type="double", unitsCode="m"
             ).text = "{:.4f}".format(blanking_dist[0])
-
 
         # (3) InstrumentConfiguration Node
         commands = ""

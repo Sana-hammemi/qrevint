@@ -986,6 +986,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "use_weighted": self.use_weighted,
         }
 
+        # Area projection
+        if "Area" not in self.agency_options.keys():
+            self.popup_message(self.tr("QRev.cfg: Area parameter not found. Setting to parallel to average course"))
+            self.agency_options["Area"] = {"projection": "ParallAC"}
+
+        if "projection" not in self.agency_options["Area"].keys():
+            self.popup_message(
+                self.tr("QRev.cfg Area: projection parameter not found. Setting to parallel to average course"))
+            self.agency_options["Area"] = {"projection": "ParallAC"}
+
+        try:
+            ss = self.sticky_settings.get("AreaProjection")
+        except KeyError:
+            self.sticky_settings.new("AreaProjection",
+                                     self.agency_options["Area"]["projection"])
+
         # Set initial change switch to false
         self.change = False
         self.map_change = False
@@ -1516,6 +1532,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
                             qt_tr=self.tr,
+                            area_projection=self.agency_options["Area"]["projection"]
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1543,6 +1560,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
                         qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"]
                     )
 
             # Load and process TRDI data
@@ -1570,6 +1588,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
                         qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"]
                     )
 
             # Load QRev data
@@ -1641,6 +1660,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
                             qt_tr=self.tr,
+                            area_projection=self.agency_options["Area"]["projection"]
                         )
 
                 # Settings based on measurement settings
@@ -1674,11 +1694,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         gps_quality_threshold=self.gps_quality_threshold,
                         snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                         excluded=self.agency_options["Excluded"],
-                        water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
-                            "threshold"],
+                        water_dir_diff_threshold=self.agency_options[
+                            "LeftRightFlowDirDiff"
+                        ]["threshold"],
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
                         qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"],
                     )
             if self.meas is not None:
                 # Identify transects to be used in discharge computation
@@ -1840,7 +1862,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                     # Save xml file
                     self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
-
 
                     # Save stylesheet in measurement folder
                     if self.save_stylesheet:
@@ -2200,6 +2221,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.ed_dateformat.setText(self.date_format.replace("%", "").lower())
 
+        if self.agency_options["Area"]["projection"] == "ParallAC":
+            options.rb_pac.setChecked(True)
+        else:
+            options.rb_pmf.setChecked(True)
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -2480,6 +2506,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if len(options.ed_dateformat.text()) > 0:
                     self.date_format = dateformat(options.ed_dateformat.text())
                     self.sticky_settings.set("DateFormat", self.date_format)
+
+                if options.rb_pac.isChecked():
+                    if self.agency_options["Area"]["projection"] != "parallAC":
+                        self.agency_options["Area"]["projection"] = "parallAC"
+                        self.change = True
+                else:
+                    if self.agency_options["Area"]["projection"] != "perpenMF":
+                        self.agency_options["Area"]["projection"] = "perpenMF"
+                        self.change = True
+                self.sticky_settings.set("AreaProjection", self.agency_options["Area"]["projection"])
+
 
                 # Update tabs
                 if self.meas is not None:

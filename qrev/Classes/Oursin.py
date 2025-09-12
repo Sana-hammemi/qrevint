@@ -2506,35 +2506,36 @@ class Oursin(object):
             ]
             # TODO ADD ADDITIONAL SIMULATIONS
             invalid_run_ens = []
-            if meas.qa.depths["q_max_run_ens"][trans_n] is not None:
+            if meas.qa.depths["q_max_run_ens"][trans_n] != 0:
                 invalid_run_ens.append(meas.qa.depths["q_max_run_ens"][trans_n])
-            if meas.qa.boat["q_max_run_ens"][trans_n] is not None:
-                invalid_run_ens.append(meas.qa.boat["q_max_run_ens"][trans_n])
-            if meas.qa.w_vel["q_max_run_ens"][trans_n] is not None:
+            boat_qa = getattr(meas.qa, meas.transects[trans_id].boat_vel.selected)
+            if boat_qa["q_max_run_ens"][trans_n] != 0:
+                invalid_run_ens.append(boat_qa["q_max_run_ens"][trans_n])
+            if meas.qa.w_vel["q_max_run_ens"][trans_n] != 0:
                 invalid_run_ens.append(meas.qa.w_vel["q_max_run_ens"][trans_n])
-            if len(invalid_run_ens) > 0:
-                t0 = time.time()
-                t00 = time.time()
-                ens_sims = FlowFieldInterpolation(meas_temp.transects[trans_id], invalid_run_ens, exponent=1/7.)
-                total["initial"] = total["initial"] + time.time() - t0
-                t0 = time.time()
-                q_isovel = ens_sims.isovel_interpolation()
-                total["isovel"] = total["isovel"] + time.time() - t0
-                t0 = time.time()
-                q_isovel_normalized = ens_sims.isovel_interpolation(normalize=True)
-                total["isoveln"] = total["isoveln"] + time.time() - t0
-                t0 = time.time()
-                q_froude_constant, q_froude_linear = ens_sims.froude_interpolation()
-                total["froude"] = total["froude"] + time.time() - t0
-                t0 = time.time()
-                q_tps = ens_sims.tps_interpolation()
-                total["tps"] = total["tps"] + time.time() - t0
-                t0 = time.time()
-                q_kriging = ens_sims.kriging_interpolation()
-                total["kriging"] = total["kriging"] + time.time() - t0
-                total["total"] = total["total"] + time.time() - t00
-
-            print(total)
+            # if len(invalid_run_ens) > 0:
+            #     t0 = time.time()
+            #     t00 = time.time()
+            #     ens_sims = FlowFieldInterpolation(meas_temp.transects[trans_id], invalid_run_ens, exponent=1/7.)
+            #     total["initial"] = total["initial"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_isovel = ens_sims.isovel_interpolation()
+            #     total["isovel"] = total["isovel"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_isovel_normalized = ens_sims.isovel_interpolation(normalize=True)
+            #     total["isoveln"] = total["isoveln"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_froude_constant, q_froude_linear = ens_sims.froude_interpolation()
+            #     total["froude"] = total["froude"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_tps = ens_sims.tps_interpolation()
+            #     total["tps"] = total["tps"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_kriging = ens_sims.kriging_interpolation()
+            #     total["kriging"] = total["kriging"] + time.time() - t0
+            #     total["total"] = total["total"] + time.time() - t00
+            #
+            # print(total)
 
     def sim_shallow_ens(self, meas):
         """Computes simulations assuming no interpolation of discharge for

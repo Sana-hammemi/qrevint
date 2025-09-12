@@ -35,7 +35,8 @@ class Config:
             "PDFSummary": {"show": True, "default": False},
             "DateFormat": {"show": True, "default": "y.m.d"},
             "TimeZone": {"required": False},
-            "PercentMeasured": {"show": True}
+            "PercentMeasured": {"show": True},
+            "Area": {"projection": "ParallAC"}
         }
 
     def export_config(self, output_path=None):
@@ -75,7 +76,8 @@ class Config:
             "PDFSummary": {"show": True, "default": "Prompt"},
             "DateFormat": {"show": True, "default": "y.m.d"},
             "TimeZone": {"required": False},
-            "PercentMeasured": {"show": False}
+            "PercentMeasured": {"show": False},
+            "Area": {"projection": "ParallAC"}
         }
         path = os.path.join(os.getcwd(), "QRev.cfg")
 

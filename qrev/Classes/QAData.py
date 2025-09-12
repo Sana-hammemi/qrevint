@@ -64,7 +64,6 @@ class QAData(object):
             Object of class Measurement
         """
 
-
         self.tr = tr
 
         # Set default thresholds
@@ -124,8 +123,6 @@ class QAData(object):
                 self.check_oursin(meas)
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
-
-
 
     def populate_from_qrev_mat(self, meas, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
@@ -2305,6 +2302,7 @@ class QAData(object):
         self.depths["q_max_run_caution"] = np.tile(False, n_transects)
         self.depths["q_total_warning"] = np.tile(False, n_transects)
         self.depths["q_max_run_warning"] = np.tile(False, n_transects)
+        self.depths["q_max_run_ens"] = np.tile(0, n_transects)
         self.depths["all_invalid"] = np.tile(False, n_transects)
         self.depths["messages"] = []
         self.depths["guidance"] = []
@@ -2361,6 +2359,7 @@ class QAData(object):
                 # Apply interpolated discharge run thresholds
                 if q_max_run_percent > self.q_run_threshold_warning:
                     self.depths["q_max_run_warning"][n] = True
+                    self.depths["q_max_run_ens"][n] = q_max_run_ens
                 elif q_max_run_percent > self.q_run_threshold_caution:
                     self.depths["q_max_run_caution"][n] = True
 
@@ -2531,7 +2530,7 @@ class QAData(object):
             boat["q_max_run_caution"] = np.tile(False, (n_transects, 6))
             boat["q_total_warning"] = np.tile(False, (n_transects, 6))
             boat["q_max_run_warning"] = np.tile(False, (n_transects, 6))
-            boat["q_max_run_ens"] = np.tile(None, n_transects)
+            boat["q_max_run_ens"] = np.tile(0, n_transects)
             boat["all_invalid"] = np.tile(False, n_transects)
             boat["q_total"] = np.tile(np.nan, (n_transects, 6))
             boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
@@ -2812,10 +2811,11 @@ class QAData(object):
         self.w_vel["q_max_run_caution"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_total_warning"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_max_run_warning"] = np.tile(False, (n_transects, n_filters))
-        self.w_vel["q_max_run_ens"] = np.tile(None, n_transects)
+        self.w_vel["q_max_run_ens"] = np.tile(0, n_transects)
         self.w_vel["all_invalid"] = np.tile(False, n_transects)
         self.w_vel["q_total"] = np.tile(np.nan, (n_transects, n_filters))
         self.w_vel["q_max_run"] = np.tile(np.nan, (n_transects, n_filters))
+        self.w_vel["profile_to_bottom"] = np.tile(True, n_transects)
         self.w_vel["messages"] = []
         self.w_vel["guidance"] = []
         status_switch = 0
@@ -2880,6 +2880,7 @@ class QAData(object):
                         # warning
                         if q_total_percent > self.q_total_threshold_warning:
                             self.w_vel["q_total_warning"][n, filter_idx] = True
+                            self.w_vel["q_max_run_ens"][n] = q_max_run_ens
 
                         # Apply run or cluster thresholds
                         if q_max_run_percent > self.q_run_threshold_warning:
@@ -2913,6 +2914,36 @@ class QAData(object):
 
                         if q_invalid_total_percent > self.q_total_threshold_caution:
                             self.w_vel["q_total_caution"][n, filter_idx] = True
+
+                    # Check for profiling to bottom
+                    depth_selected = getattr(transect.depths, transect.depths.selected)
+                    depth_cell_depth = np.copy(depth_selected.depth_cell_depth_m)
+                    max_depth_cell_depth = depth_cell_depth[-1, :]
+                    depths = np.copy(depth_selected.depth_processed_m)
+                    sl_depth = depths * cosd(transect.adcp.beam_angle_deg)
+                    diff = sl_depth - max_depth_cell_depth
+                    if np.any(diff > 0):
+                        self.w_vel["profile_to_bottom"][n] = False
+
+            # Generate messages
+            # =================
+
+            # Generate messages for profiling to bottom
+            if np.any(self.w_vel["profile_to_bottom"]):
+                self.w_vel["messages"].append(
+                    [
+                        self.tr("WT: Maximum depth of water data is less than the streambed depth."),
+                        1,
+                        11,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "The depth of the stream is deeper than the maximum depth of the water data. If in the field, reconfigure the ADCP to profile all the way to the bottom and/or use an ADCP that allows profiling all the way to the bottom. If in the office, determine if the bottom extrapolation is sufficient to estimate the unmeasured area near the bottom and provide a comment."
+                )
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text)
+                )
+                status_switch = 2
 
             # Generate messages for ensemble run or clusters
             if np.any(self.w_vel["q_max_run_warning"]):
@@ -3377,6 +3408,7 @@ class QAData(object):
 
         else:
             q_invalid_max_run = 0.0
+            q_invalid_max_run_ens = None
 
         return q_invalid_total, q_invalid_max_run, ens_invalid, q_invalid_max_run_ens
 
