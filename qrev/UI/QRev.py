@@ -464,7 +464,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if os.path.exists(options_file) is False:
             config = Config()
             if __company__ == "USGS":
-                config.export_config()
+                config.export_config(config.config)
             else:
                 config.export_international_config()
 
@@ -492,7 +492,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             if __company__ == "USGS":
-                config.export_config()
+                config.export_config(self.config)
             else:
                 config.export_international_config()
 
@@ -987,17 +987,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         }
 
         # Area projection
+        update_cfg = False
         if "Area" not in self.agency_options.keys():
-            self.popup_message(self.tr("QRev.cfg: Area parameter not found. Setting to parallel to average course"))
+            update_cfg = True
+            if  "AreaProjection" not in self.sticky_settings.settings.keys():
+                self.popup_message(self.tr("QRev.cfg: Area parameter not found. Setting to parallel to average course"))
             self.agency_options["Area"] = {"projection": "ParallAC"}
 
         if "projection" not in self.agency_options["Area"].keys():
-            self.popup_message(
-                self.tr("QRev.cfg Area: projection parameter not found. Setting to parallel to average course"))
+            update_cfg = True
+            if  "AreaProjection" not in self.sticky_settings.settings.keys():
+                self.popup_message(
+                    self.tr("QRev.cfg Area: projection parameter not found. Setting to parallel to average course"))
             self.agency_options["Area"] = {"projection": "ParallAC"}
 
         try:
-            ss = self.sticky_settings.get("AreaProjection")
+            self.agency_options["Area"]["projection"] = self.sticky_settings.get("AreaProjection")
+            if update_cfg:
+                Config.export_config(self.agency_options)
         except KeyError:
             self.sticky_settings.new("AreaProjection",
                                      self.agency_options["Area"]["projection"])
@@ -2508,14 +2515,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.sticky_settings.set("DateFormat", self.date_format)
 
                 if options.rb_pac.isChecked():
-                    if self.agency_options["Area"]["projection"] != "parallAC":
-                        self.agency_options["Area"]["projection"] = "parallAC"
-                        self.change = True
+                    if self.agency_options["Area"]["projection"] != "ParallAC":
+                        self.agency_options["Area"]["projection"] = "ParallAC"
+                        if self.meas is not None:
+                            self.meas.area_projection = "Parallac"
+                            self.change = True
+                    self.sticky_settings.set("AreaProjection","Parallac")
                 else:
-                    if self.agency_options["Area"]["projection"] != "perpenMF":
-                        self.agency_options["Area"]["projection"] = "perpenMF"
-                        self.change = True
-                self.sticky_settings.set("AreaProjection", self.agency_options["Area"]["projection"])
+                    if self.agency_options["Area"]["projection"] != "PerpenMF":
+                        self.agency_options["Area"]["projection"] = "PerpenMF"
+                        if self.meas is not None:
+                            self.meas.area_projection = "PerpenMF"
+                            self.change = True
+                    self.sticky_settings.set("AreaProjection","PerpenMF")
 
 
                 # Update tabs
@@ -15815,6 +15827,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
                 ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage),
+                ("cb_temperature_ts", self.cb_adv_graph_temperature),
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)
@@ -16005,6 +16018,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_adv_graph_battery_voltage.setEnabled(False)
         else:
             self.cb_adv_graph_battery_voltage.setEnabled(True)
+
+        # Temperature
+        if (
+                self.meas.transects[
+                    self.checked_transects_idx[self.transect_row]
+                ].sensors.temperature_deg_c.internal
+                is None
+        ):
+            self.cb_adv_graph_temperature.setEnabled(False)
+        else:
+            self.cb_adv_graph_temperature.setEnabled(True)
 
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect."""

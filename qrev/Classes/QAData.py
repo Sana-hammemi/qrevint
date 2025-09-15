@@ -2359,7 +2359,7 @@ class QAData(object):
                 # Apply interpolated discharge run thresholds
                 if q_max_run_percent > self.q_run_threshold_warning:
                     self.depths["q_max_run_warning"][n] = True
-                    self.depths["q_max_run_ens"][n] = q_max_run_ens
+                    # self.depths["q_max_run_ens"][n] = q_max_run_ens
                 elif q_max_run_percent > self.q_run_threshold_caution:
                     self.depths["q_max_run_caution"][n] = True
 
@@ -2593,7 +2593,7 @@ class QAData(object):
                                 # Apply interpolated discharge run thresholds
                                 if q_max_run_percent > self.q_run_threshold_warning:
                                     boat["q_max_run_warning"][n, dt_filter[1]] = True
-                                    boat["q_max_run_ens"][n] = q_max_run_ens
+                                    # boat["q_max_run_ens"][n] = q_max_run_ens
                                 elif q_max_run_percent > self.q_run_threshold_caution:
                                     boat["q_max_run_caution"][n, dt_filter[1]] = True
 
@@ -2880,12 +2880,12 @@ class QAData(object):
                         # warning
                         if q_total_percent > self.q_total_threshold_warning:
                             self.w_vel["q_total_warning"][n, filter_idx] = True
-                            self.w_vel["q_max_run_ens"][n] = q_max_run_ens
+                            # self.w_vel["q_max_run_ens"][n] = q_max_run_ens
 
                         # Apply run or cluster thresholds
                         if q_max_run_percent > self.q_run_threshold_warning:
                             self.w_vel["q_max_run_warning"][n, filter_idx] = True
-                            self.w_vel["q_max_run_ens"][n] = q_max_run_ens
+                            # self.w_vel["q_max_run_ens"][n] = q_max_run_ens
                         elif q_max_run_percent > self.q_run_threshold_caution:
                             self.w_vel["q_max_run_caution"][n, filter_idx] = True
 

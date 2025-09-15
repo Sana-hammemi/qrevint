@@ -8133,6 +8133,18 @@
                       </property>
                      </widget>
                     </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_temperature">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Temperature</string>
+                      </property>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -9268,7 +9280,7 @@
   </action>
   <action name="actionCheck">
    <property name="icon">
-    <iconset>
+    <iconset resource="dsm.qrc">
      <normaloff>:/images/24x24/check-mark-green.png</normaloff>:/images/24x24/check-mark-green.png</iconset>
    </property>
    <property name="text">
@@ -9463,8 +9475,8 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

@@ -275,6 +275,7 @@ class AdvGraphs(object):
             "cb_final_depths_ts": self.depths_final_ts,
             "cb_depths_source_ts": self.depths_source_ts,
             "cb_battery_voltage_ts": self.battery_voltage_ts,
+            "cb_temperature_ts": self.temperature_ts,
         }
 
     def create(
@@ -2809,6 +2810,14 @@ class AdvGraphs(object):
         data = self.transect.sensors.battery_voltage.internal.data
         fmt = [{"color": "b", "linestyle": "-"}]
         data_units = (1, "Battery (Volts DC)")
+        self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
+
+    def temperature_ts(self):
+        """Plot roll data."""
+
+        data = self.transect.sensors.temperature_deg_c.internal.data
+        fmt = [{"color": "b", "linestyle": "-"}]
+        data_units = (1, "Temperature (C)")
         self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
 
     def depths_beam_ts(

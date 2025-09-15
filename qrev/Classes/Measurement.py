@@ -35,6 +35,7 @@ from qrev.MiscLibs.common_functions import (
     nans,
     azdeg2rad,
     units_conversion,
+    cosd
 )
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso, tz_formatted_string
 
@@ -3234,7 +3235,7 @@ class Measurement(object):
 
                 area_width_correction = 1
                 if self.area_projection == "PerpenMF":
-                    diff = np.abs(trans_prop["avg_boat_course"] - transprop["avg_water_dir"])
+                    diff = np.abs(trans_prop["avg_boat_course"][n] - trans_prop["avg_water_dir"][n])
                     if diff > 180:
                         diff = diff - 180
                     area_width_correction = cosd(diff - 90)
