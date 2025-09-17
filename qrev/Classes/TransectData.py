@@ -77,6 +77,7 @@ class TransectData(object):
         self.w_vel = None
         self.boat_vel = None
         self.gps = None
+        self.georef = None
         self.sensors = None
         self.depths = None
         self.edges = None
@@ -344,6 +345,25 @@ class TransectData(object):
                         coord_sys_in="Earth",
                         nav_ref_in="VTG",
                     )
+
+            # GeoRef data if available
+            if hasattr(pd0_data, "GeoRef"):
+                # Determine correct sign for latitude
+                lat_deg = pd0_data.GeoRef.lat_deg
+                for n, lat_ref in enumerate(pd0_data.GeoRef.lat_ref):
+                    if lat_ref == "S":
+                        lat_deg[n] = lat_deg[n]  * -1
+
+                # Determine correct sign for longitude
+                lon_deg = pd0_data.GeoRef.lon_deg
+                for n, lon_ref in enumerate(pd0_data.GeoRef.lon_ref):
+                    if lon_ref == "W":
+                        lon_deg[n] = lon_deg[n] * -1
+
+                self.georef = {
+                    "lat_deg": lat_deg,
+                    "lon_deg": lon_deg
+                }
 
             # Get and compute ensemble beam depths
             temp_depth_bt = np.array(pd0_data.Bt.depth_m)
@@ -1661,7 +1681,7 @@ class TransectData(object):
         self.rsqmb_extrap(transect_data["config_json"]["Setup"]["ExtrapolationConfiguration"])
 
         self.in_transect_idx = np.arange(self.w_vel.cells_above_sl.shape[1])
-        
+
     @staticmethod
     def rsqmb_extract_samples(adcp_data):
         """Extracts samples from raw data for a transect.
@@ -1693,7 +1713,7 @@ class TransectData(object):
 
         ens_time = []
         n_ensembles = len(adcp_data["data"])
-                
+
         # Define dictionaries
         bt = {
             "ping_type": np.full([n_ensembles], "     "),
@@ -1752,7 +1772,6 @@ class TransectData(object):
         compass = {"heading": [], "pitch": [], "roll": [], "heading_std": [],
             "pitch_std": [], "roll_std": [], "mag_error": [], }
 
-    
         wt = {
             "snr": np.full([4, 128, n_ensembles], np.nan),
             "vel": np.full([4, 128, n_ensembles], np.nan),
@@ -1807,7 +1826,6 @@ class TransectData(object):
                             raw_vtg_list.append(item)
 
                     for record_n, record in enumerate(sample["GpsRecords"]):
-
 
                         raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
                         raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
@@ -1896,7 +1914,7 @@ class TransectData(object):
             compass["roll_std"].append(sample["Compass"]["RollStdDev (deg)"])
             compass["mag_error"].append(sample["Compass"]["MagneticError"])
 
-            # Water Track  
+            # Water Track
             for beam_n, beam in enumerate(sample["ProfileBeams"]):
                 n_cells = len(beam["CellVelocity (m/s)"])
                 if n_cells > 0:
@@ -2111,8 +2129,8 @@ class TransectData(object):
             depth_in=depth,
             source_in="BT",
             freq_in=freq,
-            draft_in=draft, 
-            cell_depth_in=cell_depth, 
+            draft_in=draft,
+            cell_depth_in=cell_depth,
             cell_size_in=cell_size,
         )
         # Prepare vertical beam depth variable
@@ -2222,7 +2240,6 @@ class TransectData(object):
                 x["Gps"]["HdtHeading (deg)"] if "HdtHeading (deg)" in x["Gps"] and x["Gps"]["HdtHeading (deg)"] is not None else np.nan
                 for x in adcp_data["data"]
             ])
-
 
             if np.any(np.logical_not(np.isnan(ext_heading))):
                 ext_heading[ext_heading < 0] = 360 + ext_heading
@@ -2399,7 +2416,7 @@ class TransectData(object):
             snr_3beam_comp=snr_3beam_comp,
             excluded_dist_in=excluded_top,
             source="rsq"
-            
+
         )
 
     def rsqmb_edges(self, setup):
@@ -2495,7 +2512,7 @@ class TransectData(object):
         # Create extrap object
         self.extrap = ExtrapData()
         self.extrap.populate_data(top=method[top], bot=method[bot], exp=exp)
-        
+
     @staticmethod
     def qrev_mat_in(meas_struct, time_zone=None):
         """Processes the Matlab data structure to obtain a list of

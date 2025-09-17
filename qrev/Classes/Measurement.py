@@ -10,6 +10,7 @@ from xml.dom.minidom import parseString
 import pandas as pd
 import numpy as np
 import simplekml
+import utm
 
 from qrev import __qrev_version__, myappid
 from qrev.Classes.BoatData import BoatData
@@ -3240,8 +3241,6 @@ class Measurement(object):
                         diff = diff - 180
                     area_width_correction = cosd(diff - 90)
 
-
-
                 # Compute width
                 trans_prop["width"][n] = np.nansum(
                     [
@@ -5554,6 +5553,7 @@ class Measurement(object):
         """
 
         kml = simplekml.Kml(open=1)
+        kml_created = False
         # Create a shiptrack for each checked transect
         for transect_idx in self.checked_transect_idx:
             if self.transects[transect_idx].gps is not None:
@@ -5564,8 +5564,48 @@ class Measurement(object):
                 line_name = self.transects[transect_idx].file_name[:-4]
                 lon_lat = tuple(zip(lon, lat))
                 _ = kml.newlinestring(name=line_name, coords=lon_lat)
+                kml_created = True
+            elif self.transects[transect_idx].georef is not None:
 
+                # Find valid start ensemble
+                valid_ens = np.nansum(np.squeeze(self.transects[transect_idx].w_vel.valid_data[0, :, :]), axis=0)
+                first_ens_idx = np.where(valid_ens > 0)[0][0]
+
+                # Find valid georef coordinates
+                start_lat = self.transects[transect_idx].georef["lat_deg"][first_ens_idx]
+                start_lon = self.transects[transect_idx].georef["lon_deg"][first_ens_idx]
+
+                if start_lat == 0 or start_lon == 0:
+                    for n in range(first_ens_idx, self.transects[transect_idx].georef["lat_deg"].shape[0]):
+                        if self.transects[transect_idx].georef["lat_deg"][n] != 0 and self.transects[transect_idx].georef["lon_deg"][n] != 0:
+                            start_lat = self.transects[transect_idx].georef["lat_deg"][n]
+                            start_lon = self.transects[transect_idx].georef["lon_deg"][n]
+                            first_ens_idx = n
+                            break
+
+                # Convert start lat and lon to UTM
+                if np.any(start_lat) != 0 and np.any(start_lon) != 0:
+                    start_x_utm, start_y_utm, zone_number, zone_letter = utm.from_latlon(start_lat, start_lon)
+
+                    # Compute shiptrack
+                    boat_track = BoatStructure.compute_boat_track(self.transects[transect_idx])
+
+                    # Shiptrack in UTM
+                    x_adjust = start_x_utm - boat_track["track_x_m"][first_ens_idx]
+                    y_adjust = start_y_utm - boat_track["track_y_m"][first_ens_idx]
+                    track_x_utm = boat_track["track_x_m"] + x_adjust
+                    track_y_utm = boat_track["track_y_m"] + y_adjust
+
+                    # Shiptrack to latlon
+                    track_lat, track_lon = utm.to_latlon(track_x_utm, track_y_utm, zone_number, zone_letter)
+
+                    # Create kml
+                    line_name = self.transects[transect_idx].file_name[:-4]
+                    lon_lat = tuple(zip(track_lon, track_lat))
+                    _ = kml.newlinestring(name=line_name, coords=lon_lat)
+                    kml_created = True
         kml.save(path)
+        return kml_created
 
     def drop_transects(self, transect_idx):
         """Remove transects from Measurement object.

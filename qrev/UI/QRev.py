@@ -2529,7 +2529,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.change = True
                     self.sticky_settings.set("AreaProjection","PerpenMF")
 
-
                 # Update tabs
                 if self.meas is not None:
                     if old_discharge is None:
@@ -2547,15 +2546,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             datetime.today().strftime("%Y%m%d_%H%M%S_QRev.kml"),
         )
 
-        self.meas.export_kml(fullname)
+        for transect in self.meas.transects:
+            if transect.checked:
+                if transect.gps is None:
+                    if transect.georef is not None:
+                        self.popup_message(self.tr("The Google Earth locations are based on bottom track with the first valid ensemble assigned a latitude and longitude from the TRDI internal GeoReference data. These locations are approximate only."), self.tr("Information"))
+                        break
+                else:
+                    break
+        if self.meas.export_kml(fullname):
 
-        try:
-            os.startfile(fullname)
-        except os.error:
-            self.popup_message(
-                text="Google Earth is not installed or is not associated "
-                "with kml files."
-            )
+            try:
+                os.startfile(fullname)
+            except os.error:
+                self.popup_message(
+                    text="Google Earth is not installed or is not associated "
+                    "with kml files."
+                )
+        else:
+            self.popup_message(self.tr("The kml file for Google Earth could not be created."))
 
     def help(self):
         """Opens pdf help file user's default pdf viewer."""
@@ -17534,7 +17543,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.resizeRowsToContents()
 
     @staticmethod
-    def popup_message(text):
+    def popup_message(text, type="Error"):
         """Display a message box with messages specified in text.
 
         Parameters
@@ -17545,9 +17554,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Critical)
-        msg.setText("Error")
+        msg.setText(type)
         msg.setInformativeText(text)
-        msg.setWindowTitle("Error")
+        msg.setWindowTitle(type)
         msg.exec_()
         return
 
@@ -17981,6 +17990,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         QtGui.QKeySequence("Ctrl+G"), self
                     )
                     self.sc_gga.activated.connect(self.set_ref_gga)
+            if self.meas.transects[idx].georef is not None:
+                self.actionGoogle_Earth.setEnabled(True)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
                 self.actionVTG.setEnabled(True)
