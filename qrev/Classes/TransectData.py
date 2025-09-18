@@ -347,7 +347,7 @@ class TransectData(object):
                     )
 
             # GeoRef data if available
-            if hasattr(pd0_data, "GeoRef"):
+            if np.any(pd0_data.GeoRef.lat_deg) != 0 or np.any(pd0_data.GeoRef.lon_deg) != 0:
                 # Determine correct sign for latitude
                 lat_deg = pd0_data.GeoRef.lat_deg
                 for n, lat_ref in enumerate(pd0_data.GeoRef.lat_ref):
@@ -2571,8 +2571,10 @@ class TransectData(object):
         self.w_vel.populate_from_qrev_mat(transect)
         self.boat_vel = BoatStructure()
         self.boat_vel.populate_from_qrev_mat(transect)
-        self.gps = GPSData()
-        self.gps.populate_from_qrev_mat(transect)
+        if hasattr(transect, "gps"):
+            if hasattr(transect.gps, "diffQualEns"):
+                self.gps = GPSData()
+                self.gps.populate_from_qrev_mat(transect)
         self.sensors = Sensors()
         self.sensors.populate_from_qrev_mat(transect)
         self.depths = DepthStructure()
@@ -2593,6 +2595,9 @@ class TransectData(object):
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])
         else:
             self.in_transect_idx = transect.inTransectIdx.astype(int) - 1
+        if hasattr(transect, "georef"):
+            self.georef = {"lat_deg": transect.georef.lat_deg, "lon_deg": transect.georef.lon_deg}
+
 
     @staticmethod
     def valid_frequencies(frequency_in):

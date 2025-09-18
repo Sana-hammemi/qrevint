@@ -2550,7 +2550,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if transect.checked:
                 if transect.gps is None:
                     if transect.georef is not None:
-                        self.popup_message(self.tr("The Google Earth locations are based on bottom track with the first valid ensemble assigned a latitude and longitude from the TRDI internal GeoReference data. These locations are approximate only."), self.tr("Information"))
+                        self.popup_message(self.tr("The Google Earth locations are based on bottom track with the first valid ensemble assigned a latitude and longitude from the TRDI internal GeoReference data. These locations are approximate."), self.tr("Information"))
                         break
                 else:
                     break
