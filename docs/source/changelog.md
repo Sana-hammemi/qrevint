@@ -1,4 +1,77 @@
 # QRevInt Change Log
+### Changes QRevInt 1.37 to 1.40
+1. Python version upgraded to version 3.11.9
+2. Modified processing of composite tracks to interpolate using the composite tracks results when on other source is valid
+2. Fixed issues with displayed time and associated time zone
+3. Fixed issues with some previously saved QRev.mat files
+3. Fixed issues with reading some RSQ files
+4. Fixed bug preventing configuration commands from being reported in the XML file
+5. The Compass/P/R table now displays the magenetic variation and heading offset associated with the selected heading source
+6. The Compass/P/R graph now  shows the external heading automatically, if available
+7. Added support for external heading to RSQ data
+7. Modified how blanking distance is reported in the XML file for data with multiple blanking distances
+9. Added code to check that compass calibration precedes loop moving-bed test
+10. Modifications from USGS and Groupe Doppler Hydrometrie:  
+    a) Added additional MAP CSV export options and updated UI to show additional
+    buttons to trigger exports   
+    b) Optimized some of the MAP computations to increase processing speeds  
+    c) Fixed issues causing MAP to crash  
+    d) Added color scale to Google Earth plots
+11. Added option to compute width and area perpendicular to mean flow direction
+12. Maximum water speed includes correction for moving-bed condition
+13. Temperature time series added to Advanced Graphics options
+14. TRDI internal GPS can be used to georeference bottom track for display in Google Earth
+
+### Changes QRevInt 1.36 to 1.37
+1. Fixed bug computing 3-beam solutions for SNR filtered SonTek data
+
+### Changes QRevInt 1.34 to 1.36
+**Some of these changes will affect the computed discharge for SonTek data**
+1. Fixed issue with SNR filter when 3-beam computations for SNR are used
+2. Fixed bug in bottom track velocity guidance
+3. Fixed bug display extrapolation on Main tab when velocity is selected
+4. Added support for rsqmb data files without the need to export to Matlab
+5. Ping type for rsqmb data files read from files rather than empirically 
+   determined for some Matlab files
+6. Added correct hpr matrix for Sontek ADCPs
+7. Added code to identify and filter 3-beam solutions in SonTek Matlab files
+8. Fixed error velocity scaling for bottom track for SonTek Matlab files
+9. The number of ensembles in an edge is changed by clicking the Left or 
+   Right # Ens. column rather than the # Valid column
+10. Changed "Max MovBed" to "Avg MovBed" in pdf summary report.
+
+### Changes QRevInt 1.33 to 1.34
+1. Fixed bug introduced in 1.33 preventing saving moving-bed tests
+
+### Changes QRevInt 1.32 to 1.33
+1. Fixed bug preventing saving a measurement that did not have a moving-bed 
+   test
+
+### Changes QRevInt 1.31 to 1.32
+1. Restructured code to facilitate easier use by other packages
+2. Added a tooltip to all messages explaining the 
+message and providing guidance on the impact on the measurement and suggest 
+ways to resolve the issue.
+3. Added wetted perimeter and hydraulic radius computations
+4. Fixed bug when opening a saved QRev.mat with missing SNR range.
+5. Display of edge units in exported PDF now honor unit system setting.
+6. Fixed storing of measurement where qTotalThresholdWarning and 
+   qTotalThresholdCaution were reversed.
+7. Added code to recognize saved measurements where qTotalThresholdWarning and 
+   qTotalThresholdCaution were reversed.
+8. Added error logging with prevention for code crashing.
+9. Fixed bugs in plots when an axis type of than length is selected
+10. Modified code for pdf report to wrap field crew text
+11. Added ADCP depth to pdf report
+12. Mean ADCP temperature now displayed in pdf report if the user 
+    does not manually enter an ADCP temperature.
+13. Removed support for stylesheet.
+14. Added time zone combo box to Premeasurement tab and option to make it 
+    required.
+15. Added option to show percent measured in details tab.
+16. Added discharge display digits to options menu.
+17. Add translation tags to all automated messages and guidance.
+18. MAP added bathymetry export
 
 ### Changes QRevInt 1.30 to 1.31
 1. Fixed bug identifying invalid edge ensembles
@@ -60,7 +133,7 @@
 ### Changes QRevInt 1.23 to 1.25
 1. Updated Export Mean Cross-Option signal
 2. Fixed XML export fail related to Mean XS comp fail due to invalid data in 
-  the XY data during the projection.
+    the XY data during the projection.
 3. Fixed saving XML file with manual HDOP set
 4. Fix crash resulting from SonTek data with good GGA but no VTG data.
 5. Message displayed if no cfg file and one automatically created
@@ -80,9 +153,9 @@
 19. Fixed crash when using Nortek Sig500 ADCP.
 20. Added option to import compass calibrations and moving bed tests from other measurements
 21. Added additional row in main details' table to display difference between 
-  left and right transects
+    left and right transects
 22. Added additional QA check using the difference in flow direction between 
-  Left and Right transects.
+    Left and Right transects.
 23. Added boat speed to speed plot on WT tab.
 24. Fix unit conversion on X-axis of BT Other plot with English is selected.
 
@@ -198,7 +271,7 @@ files
 5.	An option for the jet color map has been added to the Options dialog. 
 6.	Added points to plots in Depth tab 
 7.	Fixed several bugs related to reading RS5 and older QRev files. 
- 
+
 ### Changes QRevInt 4.26 Beta to QRevInt 1.00 
 1.	New versioning implemented. 
 2.	Added disclaimer and license that must be agreed to prior to running the first time. 
@@ -252,7 +325,7 @@ files
 17.	Fixed issue in EDI if no GPS data are available 
 18.	Fixed QA check for missing samples 
 19.	Fixed issue with invalid stationary moving-bed tests used for correction 
- 
+
 ### Changes 4.15 to 4.16 
 1.	Fixed incomplete system test for TRDI causing crash when saving 
 2.	Fixed issue with PT3 test status not displayed properly 
@@ -348,7 +421,7 @@ files
 12.	Added code to handle files processed with QBatch. 
 13.	Fixed bug with variable names for mean and max depth and max water speed. 
 14.	Fixed bug with order of warnings and cautions for system test checks. 
- 
+
 ### Changes to QRev from 3.24 to 3.28
 1.	Messages are now in a table, sorted with warnings on top, and identified with a symbol and font. 
 2.	Clicking on a message will open the associated window, same as clicking on associated button. 

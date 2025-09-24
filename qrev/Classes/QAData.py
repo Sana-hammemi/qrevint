@@ -1928,7 +1928,7 @@ class QAData(object):
                                 6,
                             ]
                         )
-                        guidance_text = self.tr("A loop moving-bed test requires a calibrated compass. The loop test was conducted before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration")
+                        guidance_text = self.tr("A loop moving-bed test requires a calibrated compass. The loop test was conducted before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration.")
                         self.movingbed["guidance"].append(
                             self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
                         self.movingbed["status"] = "warning"

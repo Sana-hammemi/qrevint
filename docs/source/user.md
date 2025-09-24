@@ -140,19 +140,37 @@ Clicking on the open icon in the toolbar opens a measurement selection dialog.
 
 ![](./assets/user_guide/opendialog.png)
 
-QRev can load data from the following three sources:
+QRev can load data from the following four sources:
 
 1. SonTek RiverSurveyor Live (RSL) Matlab output (*.mat),
-2. TRDI WinRiver II (WR2) mmt (*.mmt), which automatically access the pd0 (*.pd0) raw data files, and
-3. Previously save *QRev.mat files.
+2. SonTek RSQ raw data (*.rsqmb)
+3. TRDI WinRiver II (WR2) mmt (*.mmt), which automatically access the pd0 (*.pd0) raw data files, and
+4. Previously save *QRev.mat files.
 
-Select the appropriate file (*_QRev.mat or *.mmt) or files (*.mat) and QRev will determine the data type selected automatically. If a QRev or mmt file is included in a multifile selection a dialog will notify the user that only one QRev or mmt file can be loaded. Details on loading each file type are discussed in the following sections.
+Select the appropriate file (*_QRev.mat, *.mmt, or *.rsqmb) or files (*.mat) and 
+QRev will determine the data type selected automatically. If a QRev or mmt file is included in a multifile selection a dialog will notify the user that only one QRev or mmt file can be loaded. Details on loading each file type are discussed in the following sections.
 
 ![](./assets/user_guide/opendialog_sontek.png)
 
 #### 2.3.1.1 Load SonTek Data
+##### 2.3.1.1.1 RiverSurveyor Live
+For RSL measurements, moving-bed tests and transects must be exported from RSL 
+using the MATLAB export feature. These files must be output using east, north, 
+up (ENU) coordinates and BT, GGA, or VTG track reference. The files selected by
+the user from the Open File window should include the *.mat files for all 
+transects in the measurement (Windows commonly does not display the file 
+extension and considers *.mat files to be Microsoft Access Table Shortcuts.). 
+QRev will automatically load associated moving-bed tests, system tests, 
+and compass evaluations provided they follow the standard RSL naming and 
+file storage conventions. Moving-bed tests filenames must begin with 
+“Smba_” or “Loop_” and be exported to the MATLAB format (*.mat). 
+The system tests and compass calibration must be stored in subfolders of the
+measurement folder and be named System Test and CompassCal, respectively.
 
-For RSL measurements, moving-bed tests and transects must be exported from RSL using the MATLAB export feature. These files must be output using east, north, up (ENU) coordinates and BT, GGA, or VTG track reference. The files selected by the user from the Open File window should include the *.mat files for all transects in the measurement (Windows commonly does not display the file extension and considers *.mat files to be Microsoft Access Table Shortcuts.). QRev will automatically load associated moving-bed tests, system tests, and compass evaluations provided they follow the standard RSL naming and file storage conventions. Moving-bed tests filenames must begin with “Smba_” or “Loop_” and be exported to the MATLAB format (*.mat). The system tests and compass calibration must be stored in subfolders of the measurement folder and be named System Test and CompassCal, respectively.
+##### 2.3.1.1.2 RSQ
+QRev supports both the raw data file (*.rsqmb) and the Matlab output from 
+RSQ. It is recommended the the raw data file be used as it contains some 
+useful data not included in the Matlab output.
 
 #### 2.3.1.2 Load TRDI Data
 
@@ -180,7 +198,7 @@ In the Options window (discussed in section 2.5) the user can select to be promp
 
 ### 2.3.3 Options
 
-![](./assets/user_guide/options_dialog.png)
+![](./assets/user_guide/options_dialog_20250919.png)
 
 The Options button opens a window that allows the user to select from various options that affect units, display, and computations. Not all options may be available to the user based on agency policy and configuration. It may also be necessary to use the scrollbar on the right to see all options. However, all options are defined herein.
 
@@ -201,39 +219,49 @@ However, this comes at a very high price: jet literally shows things that do not
 
 This option is retained between session, so the user only has to make the choice one time.
 
-#### 2.3.3.4 Save Options
+#### 2.3.3.4 Discharge Display Digits
+The discharge is always computed using floating point math but the user can 
+choose to change the display of the discharge in the user interface and in 
+the PDF Summary Report by selecting Significant Figures or Fixed Decimal. 
+The number of digits will determing the number of significant figures or 
+the number of places after the decimal poing for fixed decimal.
+
+#### 2.3.3.5 Save Options
 
 The Save Options can also be changed at any time.
 
-##### 2.3.3.4.1 All Transects
+##### 2.3.3.5.1 All Transects
 
 Save All Transects is the default and will save information for all transects loaded whether they are checked to be used in the discharge computation or not.
 
-##### 2.3.3.4.2 Only Checked Transects
+##### 2.3.3.5.2 Only Checked Transects
 
 Saving only the checked transects will only save information from those transects that are checked to be included in the final discharge and will include all supporting information, such as, system and moving-bed tests. This setting will only be retained until changed or QRev is closed.
 
-#### 2.3.3.5 Prompt for rating on save
+#### 2.3.3.6 Prompt for rating on save
 
 Checking the “Prompt for rating on save” will present the user with a dialog that allows the user to select a rating for the measurement during the save process. See section 2.4 for details on the rating dialog. This setting is persistent and will be retained when QRev is closed and reopened.
 
-#### 2.3.3.6 Style Sheet
+#### 2.3.3.7 Style Sheet
 
 Checking the "Save style sheet with data" option will save a stylesheet called QRevStylesheet.xsl in the folder with the *_QRev.xml file so that the xml file can be viewed using the style sheet. Simply double-click the *_QRev.xml file. The QRevStylesheet is only an example. Users are encouraged to modify the style sheet to meet their needs, but the modified style sheet must be stored in the QRev folder and be named QRevStylesheet.xsl. This setting is persistent and will be retained when QRev is closed and reopened.
 
-#### 2.3.3.7 Export Mean Cross-Section
+#### 2.3.3.8 Export Mean Cross-Section
 
 If checked, a mean cross section based on the transects used to compute discharge is computed and the coordinates saved in the xml file.
 
-#### 2.3.3.8 Extrapolation
+#### 2.3.3.9 Save PDF Summary Report
+If PDFSummary.show is set to True in the QRev.cfg file, the Options Dialog will have a group box for Save PDF Summary Report with three options: No, Prompt on Save, and Always. Selecting No will result in no summary report being created when the measurement is saved in QRev. Selecting Prompt on Save will cause a dialog box to appear when saving a measurement giving the user the option to save or not save a PDF Summary Report. Selecting Always will save a PDF Summary Report everytime the measurement is saved. 
+
+#### 2.3.3.10 Extrapolation
 
 Checking the “Discharge weighted” option will cause the extrapolation algorithms to use and display median values that have been discharge weighted. The default is to use unweighted medians which was the only method in QRev version 4.23 and earlier. This setting is persistent and will be retained when QRev is closed and reopened.
 
-#### 2.3.3.9 WT, BT Filters
+#### 2.3.3.11 WT, BT Filters
 
 The automatically computed error and vertical velocity filters for water track (WT) and bottom track (BT) have previously been computed in QRev using data for each individual transect. The result is potentially a different threshold for each transect. Conversely, if a manual setting were applied that setting was applied to all transects uniformly. This option provides the ability to have QRev automatically compute the error and vertical velocity thresholds for WT and BT using all the data in the measurement, resulting in a single set of thresholds that are applied to all the transects.
 
-#### 2.3.3.10 Uncertainty
+#### 2.3.3.12 Uncertainty
 
 QRev has two options for estimating the measurement uncertainty. QRev Original is a simplified approach that was introduced with the first version of QRev and is based on experienced user estimates of typical uncertainties. Oursin is a more comprehensive uncertainty model based on principles presented in the Guide to the expression of Uncertainty in Measurement (GUM, JCGM 2008). Details of the Oursin model are documented in Despax et al. (2021). If the QRev option is chosen, the uncertainty will be displayed in a table.
 
@@ -245,20 +273,20 @@ If the Oursin option is chosen, the uncertainty is displayed in a lollipop plot 
 
 ![](./assets/user_guide/oursin_tab.png)
 
-#### 2.3.3.11 Moving Bed
+#### 2.3.3.14 Date Format
+If DateFormat.show is set to True in teh QRev.cfg file, the Options Dialog will have a group box for Date Format. The currently set format will be displayed in the edit box. The user can change the format by using "y" for year, "m" for month, and "d" for day. Examples include y.m.d, d/m/y, m/d/y or other user defined formats.
+
+#### 2.3.3.15 Moving Bed
 
 This option when checked will show a checkbox in the MovBedTst tab that allows the user to certify that they have visually observed the streambed and that there is no moving-bed condition.
 
 ![](./assets/user_guide/mb_cb.png)
 
-#### 2.3.3.12 MAP Tab
+#### 2.3.3.16 MAP Tab
 This option indicates whether the MAP tab is displayed and accessable to the user.
 
-#### 2.3.3.13 Save PDF Summary Report
-If PDFSummary.show is set to True in the QRev.cfg file, the Options Dialog will have a group box for Save PDF Summary Report with three options: No, Prompt on Save, and Always. Selecting No will result in no summary report being created when the measurement is saved in QRev. Selecting Prompt on Save will cause a dialog box to appear when saving a measurement giving the user the option to save or not save a PDF Summary Report. Selecting Always will save a PDF Summary Report everytime the measurement is saved. 
-
-#### 2.3.3.14 Date Format
-If DateFormat.show is set to True in teh QRev.cfg file, the Options Dialog will have a group box for Date Format. The currently set format will be displayed in the edit box. The user can change the format by using "y" for year, "m" for month, and "d" for day. Examples include y.m.d, d/m/y, m/d/y or other user defined formats.
+#### 2.3.3.17 Area Projection
+This option allows the user to choose how the area and width should be computed. Parallel to the Average Course computes the width and area parallel to the average course, a line extending from the starting point of the transect to the ending point. Perpendicular to Mean Flow Direction computes the width and area along a straight line constructed at 90 degrees (perpendicular) to the mean flow direction.
 
 ### 2.3.4 Comment
 
@@ -343,7 +371,7 @@ The variable plotted on the x-axis defaults to the ensemble number. However, the
 
 ![](./assets/user_guide/ge_icon.png)
 
-Allows the user to plot the transect’s shiptracks based on GGA data to Google Earth. A kml file is created and opened in Google Earth, if Google Earth has been installed on the computer running QRev. If Google Earth is not installed, nothing will happen.
+Allows the user to plot the transect’s shiptracks based on GGA data to Google Earth. If external GGA data are not available and the data were collected using bottom track with a TRDI ADCP equiped with an internal GPS (RiverPro, RiverRay) the bottom track shiptracks can be plotted in Google Earth using the internal GPS to georeference the starting ensemble of each transect. If this option is used, a message indicating the locations are approximate will be displayed. A kml file is created and opened in Google Earth, if Google Earth has been installed on the computer running QRev. If Google Earth is not installed, nothing will happen.
 
 ### 2.3.8.8 Help
 
@@ -433,15 +461,25 @@ The transect selected for display in the color contour and ship track graphs is 
 
 ![](./assets/user_guide/details_tab.png)
 
-The Details tab provides additional information about the measurement cross-section, boat operation, and water velocity. The table contains the following data:
-Transect: File name of the transect.
-
+The Details tab provides additional information about the measurement cross-section, 
+boat operation, and water velocity. The table contains the following columns:
+- **Transect:** File name of the transect.
 - **Width:** Width of the cross-section in the user specified units. The width is computed as the straight-line distance from the first ensemble to the last ensemble (using the specified navigation reference) plus the left and right edge distances.
 - **Area:** The cross-sectional area of the cross-section in user specified units. The cross-sectional area using trapezoidal integration. To compute the cross-sectional area, the ensembles are project onto a line from the first ensemble to the last ensemble using the specified navigation reference. Trapezoidal integration is then used with the straight-line distance between the ensembles and the processed depth to obtain the cross-sectional area of the measured portion of the cross section. The areas for the left and right edges are computed using a coefficient of 0.5 for triangular, 1.0 for rectangular, 0.5 + (custom coefficient – 0.3535) for custom coefficients, and 0.5 for user specified discharge. The edge areas are then added to the measured portion to obtain the total cross-sectional area.
+- **Wetted Perimeter:** The length of the cross-sectional area that is in 
+  contact with the water. 
+- **Hydraulic Radius:** A length parameter that represents the ratio of a 
+  flow's cross-sectional area to its wetted perimeter.
+- **Percent Measured:** The percentage of discharge contained in the 
+  measured cells. (Optional, dispaly option set in QRev.cfg)
 - **Avg Boat Speed:** The average boat speed in user specified units. The average boat speed is computed as the mean of the boat speed (magnitude) for each ensemble.
 - **Course Made Good:** The course made good is the straight-line direction from the first ensemble to the last ensemble in azimuth degrees.
 - **Q/A:** The mean water velocity in user specified units. The mean water velocity is computed as the discharge divided by the total cross-sectional area.
 - **Avg Water Direction:** Average water direction in azimuth degrees. The average water direction is computed as a discharge weighted average of the u and v water velocity components of each depth cell. The unmeasured top, bottom, and left and right edges are not considered. It is possible in some bi-directional flow conditions that this average may result in an inaccurate estimate of the average water direction.
+
+Rows above the transects provide the average of each column and the 
+difference of the average of the left to right transects and the right to 
+left transects.  
 
 The transect selected for display in the color contour and ship track graphs is identified by a bold typeface. Other transects can be displayed by either clicking on the transect name in the table or by using the up and down arrow keys to select the desired transect. If all the data is not visible in the table scrollbars will be automatically provided and can be used to scroll up or down or left or right as necessary. The column widths can also be changed by placing the cursor in the column labels and dragging the column divider.
 
@@ -620,7 +658,7 @@ The Compass/P/R tab presents the ADCP heading, pitch, and roll data and results 
 
 The Data tab consists of a table, two graphs, and checkbox controls for the two graphs.
 
-The table at the top provides a summary of settings and heading, pitch, and roll data and highlights areas where the ADAQ found potential issues. Clicking the magnetic variation, heading offset, and heading source columns opens a dialog that allows each of these settings to be changed for that transect or for all transects. The Heading Offset and Heading Source columns are only active if external heading data, such as, from a GPS Compass is included in the measurement.
+The table at the top provides a summary of settings and heading, pitch, and roll data and highlights areas where the ADAQ found potential issues. The display of the magnetic variation and heading offset and the application of the ADAQ is only valid for the heading source selected. Clicking the magnetic variation, heading offset, and heading source columns opens a dialog that allows each of these settings to be changed for that transect or for all transects. The Heading Offset and Heading Source columns are only active if external heading data, such as, from a GPS Compass is included in the measurement.
 
 If a cell of the table is colored orange or red by the automated data quality assessment, placing the cursor on that cell will display a tooltip indicating the quality issue.
 
@@ -1596,7 +1634,8 @@ Clicking on a row under the Left or Right Edge Dist. columns will open a dialog 
 
 ![](./assets/user_guide/edges_ens.png)
 
-Clicking on the row under the Left or Right # Valid opens a dialog window that allows the user to change the number of valid ensembles used to compute the average velocity and depth for that edge. The user can apply this value to only that transect or all transects. The default is to apply to only that transect.
+Clicking on the row under the Left or Right # Valid opens a dialog window 
+that allows the user to change the number of valid ensembles used to compute the average velocity and depth for that edge. The user can apply this value to only that transect or all transects. The default is to apply to only that transect.
 
 #### 13.1.6 Graphics
 
@@ -1628,12 +1667,15 @@ EDI computations can only use a single transect. The user selects which transect
 
 Enter the appropriate Zero Distance Offset. If the distance reference is from the edge of water then the Zero Distance Offset is set to zero. However, if referencing from a target on the bank then the distance from the target to edge of water should be entered.
 
-### 14.3 CREATE TOPOQUAD FILE
+### 14.3 EXPORT PDF REPORT
+If checked will create a pdf report when clicking the Compute Stations button.
+
+### 14.4 CREATE TOPOQUAD FILE
 
 If you collected GPS data along with the ADCP data, and you use DeLorme 
 TopoQuads to assist in navigating to the sample locations, clicking the Create TopoQuads check box will create a TopoQuad compatible file that when loaded into TopoQuads will mark each computed sample location. You will be prompted to name this file after you click on Compute Stations. The file will be located in the same directory as the input file you processed.
 
-### 14.4 EDI TABLE
+### 14.5 EDI TABLE
 
 The standard set of discharge percentages are available by default, but 
 they can be edited and changed by the user. If additional percentages are 
@@ -1641,7 +1683,7 @@ needed the user can click on the Add Row button and a row will be added to
 the EDI Table. The user can then enter the desire percentage in the Percent 
 Q column of the new row. 
 
-### 14.5 COMPUTE STATIONS
+### 14.6 COMPUTE STATIONS
 
 Once a transect has been selected the Compute Stations button will be 
 activated. When the user has completed entering data in the tab clicking 
@@ -1662,7 +1704,7 @@ sampling location.
 
 ## 15. ADV GRAPH TAB
 
-![](./assets/user_guide/adv_graphs_tab.png)
+![](./assets/user_guide/adv_graphs_tab_20250919.png)
 
 The Adv Graph Tab allows experienced users to further analyze a measurement by plotting and comparing various characteristics of the measurement. The Plot Control allows the user to select which plots they would like. The plots are generated by clicking the Create Plot button. Depending on the measurement, not all plots may be available. If a plot variable is not available, the option will be inactive (gray) and cannot be selected. Although any number of plots are possible, the physical space of the screen practically limits the number of plots to 4 to 6.
 
@@ -1714,13 +1756,13 @@ on WT Tab.
 - **SNR:** Time series plot of SonTek SNR range between beams.
 - **Beams Used:** Time series plot of beams used in WT solution.
 
-### 15.3 PROJECTION ANGLE
+### 15.2.3 PROJECTION ANGLE
 
 ![](./assets/user_guide/adv_graphs_proj_angle.png)
 
 The projection angle is used in the Speed Projected Contour and Projected Speed time series plots. The angle is computed automatically by QRev, but any angle can be entered by the user. Clicking the Auto button will compute and set the automatically computed projection angle. The automatically computed projection angle is computed from the u and v components of the average water speed using a discharge weighted average of the measured data. The top and bottom extrapolated areas are not included.
 
-### 15.4 BOTTOM TRACK
+### 15.2.4 BOTTOM TRACK
 
 - **Boat Speed (BT):** Time series of the boat speed based on bottom track for each ensemble. Same as BT Tab.
 - **3 Beam Solutions:** Time series showing the number of beams used in the velocity solution of each ensemble. Same as BT Tab.
@@ -1729,7 +1771,7 @@ The projection angle is used in the Speed Projected Contour and Projected Speed 
 - **Correlation:** Time series of the bottom track ping correlation. Only available for TRDI ADCPs.
 - **RSSI:** Time series of the return signal strength indicator in counts for the bottom track ping. Only available for TRDI ADCPs.
 
-### 15.5 GPS
+### 15.2.5 GPS
 
 - **Boat Speed (GGA):** Time series of boat speed based on GGA data. Same as GPS Tab.
 - **Boat Speed (VTG):** Time series of boat speed based on VTG data. Same as GPS Tab.
@@ -1740,14 +1782,14 @@ The projection angle is used in the Speed Projected Contour and Projected Speed 
 - **Source (GGA):** Time series of boat speed source if GGA were selected as the reference.
 - **Source (VTG):** Time series of boat speed source if VTG were selected as the reference.
 
-### 15.6 DISCHARGE
+### 15.2.6 DISCHARGE
 
 - **Discharge Time Series:** Time series of cumulative ensemble discharges 
   for the selected transect from the starting bank to the ending bank.
 - **Discharge % of Total:** Time series of the cumulative ensemble 
   discharge as a percentage of the total transect discharge for the selected transect from the starting bank to the ending bank.
 
-### 15.7 COMPASS/P/R
+### 15.2.7 COMPASS/P/R
 
 - **Heading (ADCP):** Time series of heading from the ADCP’s internal compass. Same as Compass/P/R Tab.
 - **Heading (External):** Time series of heading from an external source like a GPS compass. Same as Compass/P/R Tab.
@@ -1755,13 +1797,17 @@ The projection angle is used in the Speed Projected Contour and Projected Speed 
 - **Pitch:** Time series of the pitch data. Same as Compass/P/R Tab.
 - **Roll:** Time series of the roll data. Same as Compass/P/R Tab.
 
-### 15.8 DEPTH
+### 15.2.8 DEPTH
 
 - **Beam Depths:** Time series of the depth from each beam. Same as Depth Tab.
 - **Final Depths:** Times series of the final depths for the transect used to compute discharge. Same as Depth Tab.
 - **Depth Source:** Time series showing the depth source used to compute the final depths. Same as Depth Tab.
 
-### 15.9 SELECT X-AXIS
+### 15.2.9 Sensors
+- **Battery Voltage:** Time series of the battery voltage.
+- **Temperature:** Time series of the temperature in degrees C.
+
+### 15.2.10 SELECT X-AXIS
 
 - **Ensemble:** Ensemble number starting at 1 as the start edge is used for the x-axis.
 - **Time:** The time of day for each ensemble is used for the x-axis.
@@ -1920,12 +1966,12 @@ shows all the comments associated with the measurement.
 
 ## 17. MAP
 
-![](./assets/user_guide/map_tab_20240826.png)
+![](./assets/user_guide/map_tab_20250919.png)
 
 The Multitransect Average Profile (MAP) tab allows the user to view the 
 measurement data projected and averaged. The data displayed on the plot can 
 be toggled using the radio buttons above the plot. The current options are 
-contour, bathymetry, temperature, and stick ship.
+Primary Velocity, Streamwise Velocity, RSSI/SNR, Transects Used, Bathymetry, Temperature, and Stick Ship.
 
 ### 17.1 Options
 
@@ -1934,13 +1980,11 @@ contour, bathymetry, temperature, and stick ship.
 The data displayed can be further customized by changing the settings in 
 the options section of tab. 
 
-![](./assets/user_guide/map_velocitytype.png)
-
 If the user wishes to view the Secondary velocities plotted on the contour 
 plot, values for the Secondary Velocity Scale can be entered. The scale is 
-used to relate the velocities to a quiver length in inches. 
+used to relate the velocities to a quiver length, smaller scale equals larger quivers. 
 
-![](./assets/user_guide/map_quiverscale.png)
+![](./assets/user_guide/map_quiverscale_20250919.png)
 
 The cell size for the mesh grid can be modified by unchecking the 
 Auto checkbox and entering values in the Width and Height fields. Click out 
@@ -1956,9 +2000,9 @@ The Top/Bottom Extrap and Edges Extrap buttons enable the display and use of
 the estimated zones of the cross-section. The Interpolation check box 
 enables the interpolation of missing data.
 
-Data can be exported to a csv file that will contain all the velocity data, 
-or export only the bathymetry data or create a kml file for viewing in 
-Google Earth.
+Clicking the Contour buttom will export data to a csv file that will contain all the velocity data. Clicking the Bathymetry
+button will export only the bathymetry data. If GGA is selected as the velocity reference, clicking on the KML button will create a kml file for viewing in 
+Google Earth. Clicking the Shiptrack button will provide the shiptrack coordinates along with the horizontal velocities.
 
 ## 18. REFERENCES
 
@@ -1969,7 +2013,7 @@ Despax, A., Le Coz, J., Mueller, D.S., Naudet, G., Pierrefeu, G., Delamarre, K.,
 
 Huang, H., 2018, Estimating uncertainty of streamflow measurements with moving boat acoustic Doppler current profilers. Hydrological Sciences Journal , 63 ,353-368. 
 
-ISO. (2009). ISO 748:2009 - Hydrometry - measurement of liquid ow in open channels using current-meters or floats. (58 p.)
+ISO. (2009). ISO 748:2009 - Hydrometry - measurement of liquid flow in open channels using current-meters or floats. (58 p.)
 
 JCGM, 2008, Evaluation of measurement data - Guide to the expression of uncertainty in measurement. Guide 100, BIPM. 
 
@@ -1999,30 +2043,88 @@ as well as, set the minimum number of transects and duration for a measurement.
 
 QRev.cfg is a json format file, having the following format and definitions:
 
-{  
-    "Units": {"show": True, "default": "SI"},  
-    "ColorMap": {"show": True, "default": "viridis"},  
-    "RatingPrompt": {"show": True, "default": False},  
-    "SaveStyleSheet": {"show": True, "default": True},  
-    "ExtrapWeighting": {"show": True, "default": True},  
-    "FilterUsingMeasurement": {"show": True, "default": False},  
-    "Uncertainty": {"show": True, "default": "Oursin"},  
-    "MovingBedObservation": {"show": False, "default": False},  
-    "ExportCrossSection": {"show": True, "default": True},  
-    "MAP": {"show": True},  
-    "AutonomousGPS": {"allow": False},  
-    "QDigits": {"method": "sigfig", "digits": 3},  
-    "SNR": {"Use3Beam": False},  
-    "ExtrapolatedSpeed": {"ShowIcon": True},  
-    "Excluded": {"RioPro": 0.25, "M9": 0.16},  
-    "QA": {"MinTransects": 2, "MinDuration": 720},  
-    "LeftRightFlowDirDiff": {"threshold": 8.1},  
-    "PDFSummary": {"show": True, "default": "Prompt"},  
-    "DateFormat": {"show": True, "default": "y.m.d"},  
-    "TimeZone": {"required": false},
-    "PercentMeasured": {"show": false},
+{
+    "Units": {
+        "show": true,
+        "default": "SI"
+    },
+    "ColorMap": {
+        "show": true,
+        "default": "viridis"
+    },
+    "RatingPrompt": {
+        "show": true,
+        "default": false
+    },
+    "SaveStyleSheet": {
+        "show": false,
+        "default": false
+    },
+    "ExtrapWeighting": {
+        "show": true,
+        "default": true
+    },
+    "FilterUsingMeasurement": {
+        "show": true,
+        "default": false
+    },
+    "Uncertainty": {
+        "show": true,
+        "default": "Oursin"
+    },
+    "MovingBedObservation": {
+        "show": false,
+        "default": false
+    },
+    "ExportCrossSection": {
+        "show": true,
+        "default": true
+    },
+    "MAP": {
+        "show": true
+    },
+    "AutonomousGPS": {
+        "allow": false
+    },
+    "QDigits": {
+        "method": "sigfig",
+        "digits": 3
+    },
+    "SNR": {
+        "Use3Beam": false
+    },
+    "ExtrapolatedSpeed": {
+        "ShowIcon": true
+    },
+    "Excluded": {
+        "RioPro": 0.25,
+        "M9": 0.16
+    },
+    "QA": {
+        "MinTransects": 2,
+        "MinDuration": 720
+    },
+    "LeftRightFlowDirDiff": {
+        "threshold": 8.1
+    },
+    "PDFSummary": {
+        "show": true,
+        "default": "Prompt"
+    },
+    "DateFormat": {
+        "show": true,
+        "default": "y.m.d"
+    },
+    "TimeZone": {
+        "required": false
+    },
+    "PercentMeasured": {
+        "show": true
+    },
+    "Area": {
+        "projection": "PerpenMF"
+    }
 }
-
 *(Default settings for QRev.cfg are in bold.)*
 
 *Units*
@@ -2073,8 +2175,8 @@ QRev.cfg is a json format file, having the following format and definitions:
 - **default:** default setting to be used and/or shown in the options dialog. 
   QRev specifies that the displayed uncertainty is based on the original 
   simplified QRev uncertainty analysis. Oursin specifies that the displayed 
-  uncertainty will be based on the more comprehensive Oursin model. (**QRev** 
-  or Oursin)
+  uncertainty will be based on the more comprehensive Oursin model. (QRev 
+  or **Oursin**)
 
 *MovingBedObservation*
 - **show:** specifies if the option should be shown in the options dialog 
@@ -2129,7 +2231,7 @@ QRev.cfg is a json format file, having the following format and definitions:
 
 *PDFSummary*
 - **show:** indicates if the Save PDF Summary Report options should be displayed in the options dialog (**true** or false).
-- **default:** default setting for the saving the PDF Summary Report (No, Prompt, Always).
+- **default:** default setting for the saving the PDF Summary Report (No, **Prompt**, Always).
 
 *DateFormat*
 - **show:** indicates if the Date Format option should be displayed in the options dialog (**true** or false).
@@ -2143,3 +2245,6 @@ QRev.cfg is a json format file, having the following format and definitions:
 - **show:** option to show percent of total discharge for the 
 middle or measured portion of the cross section in the Details table (true 
 or **False**).
+
+**Area:**
+- **projection:** the projection used for width and area (**ParallAC** or PerpenMF)
