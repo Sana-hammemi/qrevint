@@ -2,25 +2,26 @@
 ### Changes QRevInt 1.37 to 1.40
 1. Python version upgraded to version 3.11.9
 2. Modified processing of composite tracks to interpolate using the composite tracks results when on other source is valid
-2. Fixed issues with displayed time and associated time zone
-3. Fixed issues with some previously saved QRev.mat files
-3. Fixed issues with reading some RSQ files
-4. Fixed bug preventing configuration commands from being reported in the XML file
-5. The Compass/P/R table now displays the magenetic variation and heading offset associated with the selected heading source
-6. The Compass/P/R graph now  shows the external heading automatically, if available
-7. Added support for external heading to RSQ data
-7. Modified how blanking distance is reported in the XML file for data with multiple blanking distances
-9. Added code to check that compass calibration precedes loop moving-bed test
-10. Modifications from USGS and Groupe Doppler Hydrometrie:  
+3. Fixed issues with displayed time and associated time zone
+4. Fixed issues with some previously saved QRev.mat files
+5. Fixed issues with reading some RSQ files
+6. Fixed bug preventing configuration commands from being reported in the XML file
+7. The Compass/P/R table now displays the magenetic variation and heading offset associated with the selected heading source
+8. The Compass/P/R graph now  shows the external heading automatically, if available
+9. Added support for external heading to RSQ data
+10. Modified how blanking distance is reported in the XML file for data with multiple blanking distances
+11. Added code to check that compass calibration precedes loop moving-bed test
+12. Added code to check that compass calibration precedes data collection when GPS is present
+13. Modifications from USGS and Groupe Doppler Hydrometrie:  
     a) Added additional MAP CSV export options and updated UI to show additional
     buttons to trigger exports   
     b) Optimized some of the MAP computations to increase processing speeds  
     c) Fixed issues causing MAP to crash  
     d) Added color scale to Google Earth plots
-11. Added option to compute width and area perpendicular to mean flow direction
-12. Maximum water speed includes correction for moving-bed condition
-13. Temperature time series added to Advanced Graphics options
-14. TRDI internal GPS can be used to georeference bottom track for display in Google Earth
+14. Added option to compute width and area perpendicular to mean flow direction
+15. Maximum water speed includes correction for moving-bed condition
+16. Temperature time series added to Advanced Graphics options
+17. TRDI internal GPS can be used to georeference bottom track for display in Google Earth
 
 ### Changes QRevInt 1.36 to 1.37
 1. Fixed bug computing 3-beam solutions for SNR filtered SonTek data

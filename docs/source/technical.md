@@ -550,12 +550,13 @@ unmeasured areas in each profile (from Simpson, 2002).
 
 The distance from the streambed potentially affected by the side lobe is computed in
 equation 14; however, to determine the last valid depth cell in a profile requires the depth cell
-size, transmit length, and lag between transmit pulses to be accounted for. TRDI determines the
-last valid depth cell for standard modes (Teledyne RD Instruments, 2014) as follows:
+size, transmit length, and lag between transmit pulses to be accounted for. 
+QRev determines the last valid depth cell for Broadband modes (Teledyne RD 
+Instruments, 2014) as follows:
 
 ![](./assets/tech_manual/last_valid_cell_depth.png)
 
-For TRDI pulse coherent modes, the lag is equal to the depth and, thus, is not considered
+For  pulse coherent modes, the lag is equal to the depth and, thus, is not considered
 in the cutoff computation and equation 15 becomes,
 
 ![](./assets/tech_manual/equation_16.png)
@@ -564,7 +565,9 @@ For TRDI ADCPs with a vertical beam, if the vertical beam is selected as the pri
 reference or used in composite depths the Dmin is the minimum depth of all five beams.
 SonTek’s algorithms for handling the side lobe cutoff for RiverSurveyor ADCPs (Lyn
 Harris, SonTek, written commun., 2014) can be restated in the form of equation 16. SonTek also
-replaces the cos( ) with a user defined percentage that defaults to 10 percent.
+replaces the cos( ) with a user defined percentage that defaults to 10 
+percent. Processing of RSQ raw data uses the same approach as for TRDI 
+Broadband and pulse coherent modes.
 
 ![](./assets/tech_manual/equation_17.png)
 
@@ -600,7 +603,7 @@ options for dealing with three- and four-beam solutions:
 1) accept only four-beam solutions
 2) allow three-beam solutions
 3) automatic mode (default) 
- 
+
 In the automatic mode, QRev identifies all three-beam solutions. The u and 
 v components of the velocities associated with the three-beam solutions are 
 estimated from interpolation using adjacent or nearby u and v components of 
@@ -826,7 +829,7 @@ following extrapolation methods:
 
 The approach used in the automatic fit algorithm is that the data follow the power law with an exponent of 0.1667 unless the measured data are sufficient to prove otherwise. The following is a list of steps that are used to automatically select the appropriate extrapolation method.
 1. Although the exponent for a power fit could be computed from a 
-least-squares fit of all the data, visually assessing the appropriateness 
+   least-squares fit of all the data, visually assessing the appropriateness 
    of the fit would be difficult and the fit could be influenced by 
    outliers in the data. To provide a visual reference and to improve the 
    method’s robustness to outliers, the profile is subdivided into 5 
@@ -895,7 +898,7 @@ least-squares fit of all the data, visually assessing the appropriateness
     - The profile is C-shaped if
         - the sign of the top and bottom difference from the best selected power fit is different than the sign of the middle difference from the best selected power fit and
     - the combined difference of the top and bottom difference from the best selected
-power fit is greater than 10%.
+    power fit is greater than 10%.
 9. If the r2 from the linear regression in step 5 is greater than 0.8, the no slip exponent
 computed from the regression is selected; if the r2 is not greater than 0.8, the no slip
 exponent defaults to 0.1667.
@@ -1267,7 +1270,7 @@ Direction L/R Difference should be less than a few degrees if the compass is
 calibrated, the magnetic variation is correct, and there is no magnetic 
 interference in the cross section.
 
-**Quality Check:** SonTek: Compass calibration error > 0.2 and either GPS data or a loop test     	   
+**Quality Check:** SonTek: Compass calibration error > 0.2 and either GPS data or a loop test
 **Status:** Caution	     
 **Message:** Compass: Calibration result > 0.2 deg     
 **Guidance:** Experience has demonstrated that a calibration result greater 
@@ -1286,7 +1289,6 @@ correct. The angle should always be in the upstream direction if there is a
 moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
 should be less than a few degrees if the compass is calibrated, the magnetic 
 variation is correct, and there is no magnetic interference in the cross section.
-
 
 **Quality Check:** TRDI: No compass calibration or evaluation and either GPS data or a loop test  
 **Status:** Warning	  
@@ -1334,6 +1336,16 @@ correct. The angle should always be in the upstream direction if there is a
 moving bed. Using the Main.Details tab, the Avg Water Direction L/R Difference 
 should be less than a few degrees if the compass is calibrated, the magnetic 
 variation is correct, and there is no magnetic interference in the cross section.
+
+**Quality Check:** Loop test recorded prior to compass calibration  
+**Status:** Warning  
+**Message:** COMPASS: Loop test was recorded before compass calibration  
+**Guidance:** A loop moving-bed test requires a calibrated compass. The loop test was recorded before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration.
+
+**Quality Check:** GPS data are present and data collection began before compass calibration
+**Status:** Warning
+**Message:** COMPASS: GPS data are present and data recording began before the compass calibration
+**Guidance:** Use of GPS data requires a calibrated compass. The first transect was recorded before the compass was calibrated. This could result in an inaccurate and biased discharge values. If in the field, calibrate the compass, recollect a moving-bed test, and then start your transects. If in the office, carefully evaluate the measurement for substantial differences when using GPS as the reference and document why the compass calibration was not conducted prior to collecting data.
 
 **Quality Check:** TRDI: Compass evaluation has an error > 1 and either GPS data or a loop test  	   
 **Status:** Caution	  
@@ -1518,12 +1530,12 @@ user in the main QRev window.
 The evaluation for loop tests uses the same criteria and algorithms used in 
 the computer program LC (Mueller and others, 2013) and gives the loop 
 moving-bed test a quality rating of good, warnings, or errors. The specific 
-quality checks and messages (Table 10) related to each loop moving-bed test 
+quality checks and messages (section titled Loop test quality checks, messages and guidance)related to each loop moving-bed test 
 are displayed in the moving-bed messages but not in the main tab. If an 
 error exists, the loop test is not valid, and the moving-bed condition 
 remains unknown. After the loop moving-bed test is evaluated, the status of 
 a moving-bed is determined based on the checks that resulting messages 
-shown in Table 11.
+shown in section Loop moving-bed results.
 
 If GPS data are available, the user will be provided the option to use GPS 
 as the reference against which the bottom track will be compared instead of 
@@ -1576,6 +1588,11 @@ effect may be small. However, it is recommended to collect a stationary test.
 **Message:** ERROR - Loop has no valid bottom track data. REPEAT OR USE A 
 STATIONARY MOVING-BED TEST 
 **Guidance:** Bottom track data are required for a moving-bed test. If all bottom track data are invalid the ADCP will be unable to bottom track during discharge transects. If GPS is available, a discharge measurement may be made provided valid depths are obtained. Use of the mid-section method may be appropriate.
+
+**Quality Check:** Boat speed exceeds recommended speed.  
+**Status:** Warning  
+**Message:** WARNING: The boat speed (actual speed) is greater than the recommended maximum speed (max speed) based on the estimated compass error for this test.  
+**Guidance:** A boat speed of the maximum threshold would result in a potential error in the moving-bed velocity of greater 0.012 m/s or 0.04 ft/s which is the detection threshold for a moving-bed test. A higher boat speed would result in greater error. If the moving-bed velocity is well beyond the threshold value and GPS will be used, continue with measurement. However, if this test is used to correct for moving-bed conditions the results of this test may not be accurate. If in the field repeat the test at a lower boat velocity. If in the office be aware the results may not be accurate and a comment should be provided.
 
 #### Loop moving-bed results   
 
@@ -1899,7 +1916,7 @@ justification for any changes made.
 **Status:** Caution	  
 **Message:** GPS: User modified default smooth filter.  
 **Guidance:** The smooth filter is not used by default. It can be used when the other filters fail to mark obvious spikes in the boat velocity invalid. Provide documentation on the logic for changing the default filter setting.   
- 
+
 
 #### Depth quality checks, messages, and guidance
 
@@ -2183,7 +2200,7 @@ been further extended (Despax, 2021) and implement as an option in QRev.
 The OURSIN method follows the main steps proposed by the GUM (JCGM, 2008). The list of error sources are summarized in Table 20.
 
 **Table 20.** List of error sources in ADCP discharge measurements covered by 
-the OURSIN method, with their nature (type A or B, Bias, Random or Both) and the method used for their quantification).
+the OURSIN method, with their nature (type A or B, Bias, Random or Both) and the method used for their quantification.
 
 ![](./assets/tech_manual/table_20.png)
 
@@ -2344,10 +2361,10 @@ The QRev allows the user to directly specify any of the uncertainties for the me
 ## Data File Formats
 QRev imports data from TRDI WinRiver II and SonTek RiverSurveyor Live. QRev 
 can read the raw data files (*.mmt and *.pd0) produced by WinRiver II for 
-all TRDI ADCPs. The raw data format for SonTek *.riv and *.rivr files is 
+all TRDI ADCPs. The raw data format for SonTek RiverSurveyor Live *.riv and *.rivr files is 
 not available; therefore, QRev can only use the *.mat files produced by 
-RiverSurveyor Live and RSQ. Versions of RiverSurveyor Live prior to version 
-3.81 produced *.mat files that cannot be read by Matlab versions 2014 or later.
+RiverSurveyor Live. Versions of RiverSurveyor Live prior to version 
+3.81 produced *.mat files that cannot be read by Matlab versions 2014 or later. Data collected with SonTek RSQ can be imported directly from the *.rsqmb files. Conversion to *.mat files for RSQ data is no longer required or recommended.
 
 QRev’s internal data storage format is documented in the source code. The 
 data can be saved in a Matlab file, which QRev can read for future review 
@@ -2499,15 +2516,7 @@ Overview of the top two levels of Matlab data format used by QRev
         - units: temperature units
     - initialSettings: data structure with the settings as originally loaded from the manufacturer
     - comments: comments provided by the user
-    - use_weighted: indicates the setting if discharge weighting should be used for extrapolation
-    - use_ping_type: indicates if ping types should be used in BT and WT filters
-    - use_measurement_thresholds: indicates if the entire measurement should be used to set filter thresholds
-observed_no_moving_bed: indicates if a no moving bed condition was observed
     - run_oursin: indicates if the OURSIN uncertainty model is used
-    - export_xs: indicates if average cross-section should be computed and exported
-    - gps_quality_threshold: sets the threshold for which the GPS quality must be equal to or greater than
-    - run_map: indicates if the MAP computation should be run
-    - snr_3beam_comp: indicates the use of 3-beam velocity computations when invalid SNR is found
     - transects: structure; contains structures and variables associated 
       with each transect and associated methods
     - mbTests: structure; contains moving-bed test data and results
@@ -2523,6 +2532,9 @@ observed_no_moving_bed: indicates if a no moving bed condition was observed
     - qa: structure; contains the results of the quality assurance checks
     - oursin: structure; contains the results of simulations and uncertainty 
       analysis, if oursin uncertainty model is used
+    - time_zone: string; time zone for collected data, as UTC+/-x
+    - time_zone_requires: boolean; if time zone information is required
+    - tr: object; translation object when using UI
 
 ### Full details of each structure
 - transects: structure
@@ -2532,17 +2544,19 @@ observed_no_moving_bed: indicates if a no moving bed condition was observed
     - startEdge: starting edge of transect looking downstream (Left or Right)
     - orig_start_edge: original start edge
     - adcp: structure; 
-contains specific information about the ADCP used to collect the transect
+      contains specific information about the ADCP used to collect the transect
     - wVel: structure; 
-contains all the water velocity data
+      contains all the water velocity data
     - boatVel: structure; 
-contains all the boat velocity data
+      contains all the boat velocity data
     - gps: structure; 
-contains all the GPS data
+      contains all the GPS data
+    - georef: structure  
+      contains the latitude and longituded from the TRDI ADCP internal compass, if available
     - sensors: structure
-contains structures for the various sensors and speed of sound
+      contains structures for the various sensors and speed of sound
     - depths: structure; 
-contains all the depth data
+      contains all the depth data
     - edges: structure; contains the data for edge discharge estimates
     - extrap: structure; contains the extrapolation method and exponent for computing top and bottom extrapolation
     - dateTime: structure; contains all time associated data for the transect
@@ -2563,6 +2577,7 @@ contains all the depth data
    - use2Correct: use this test to correct discharge
    - selected: selected as valid moving-bed test to use for correction or determining moving-bed condition
    - messages: cell array of warning and error messages based on data processing
+   - guidance: character array of guidance associated with messages
    - nearBedSpeed_mps: mean near-bed water speed for test in mps
    - stationaryUSTrack: upstream component of the bottom track referenced ship track
    - stationaryCSTrack: cross-stream component of the bottom track referenced ship track
@@ -2580,6 +2595,7 @@ contains all the depth data
    - gps_flow_spd_mps: magnitude of water velocity in mps computed using BT and GPS
    - bt_percent_mb: potential error caused by a moving bed in percent computed using BT and GPS
    - transect: structure
+   - tr: object; translation object when using UI
 - sysTest: structure
    - timestamp: time stamp of test
    - data: data from test, typically all text
@@ -2777,6 +2793,7 @@ contains all the depth data
    - settings_dict: indicates if a user has changed something on the tab
    - transects: data structure for quality assurance checks of transects
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - uncertainty: code for only two transects (0-good, 1-caution)
       - duration: code for check that duration is > 720 sec (0-good, 1-caution)
@@ -2787,12 +2804,15 @@ contains all the depth data
       - batt_voltage: caution for low battery voltage
    - systemTest: data structure for quality assurance checks of system tests
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
    - compass: data structure for quality assurance checks of compass tests and evaluations
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - status1: status of compass calibration and evaluation
       - status2: status of magnetic variation and pitch and roll sensors
+      - lr_water_dir: difference in left and right water direction
       - magvar: 0-magvar consistent, 1-magvar inconsistent, 2-magvar=0
       - magvarIdx: indices of transects with magvar=0
       - magErrorIdx: indices of transects with a magnetic error exceeding threshold (SonTek G3 only)
@@ -2804,18 +2824,23 @@ contains all the depth data
       - rollStdCautionIdx: indices of transects with roll standard deviations exceeding threshold
    - temperature: data structure for quality assurance checks of temperature comparisons and change
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
    - movingbed: data structure for quality assurance checks of moving-bed tests and conditions
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - code: quality code, 1-Good, 2-Caution, 3-Warning
       - status: overall status, good, caution, or warning
    - user: data structure for quality assurance checks of user input data
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - staName: checks for a station name (0-good, 1-caution)
       - staNumber: checks for a station number (0-good, 1-caution)
+      - time_zone: checks if time zone is entered, if required
    - depths: data structure for quality assurance checks of depth data
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - draft: draft consistency and zero value check (0-good, 1-caution, 2-warning)
       - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
@@ -2827,6 +2852,7 @@ contains all the depth data
       - allInvalid: logical array indication what transects contain all invalid data
    - btVel: data structure for quality assurance checks of bottom track velocities
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
       - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
@@ -2837,6 +2863,7 @@ contains all the depth data
       - allInvalid: logical array indication what transects contain all invalid data
    - ggaVel: data structure for quality assurance checks of GGA boat velocities
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - lag_status: status of lag check, good, caution, or warning
       - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
@@ -2848,6 +2875,7 @@ contains all the depth data
       - allInvalid: logical array indication what transects contain all invalid data
    - vtgVel: data structure for quality assurance checks of VTG boat velocities
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - lag_status: status of lag check, good, caution, or warning
       - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
@@ -2859,6 +2887,7 @@ contains all the depth data
       - allInvalid: logical array indication what transects contain all invalid data
    - wVel: data structure for quality assurance checks of water track velocities
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - qTotal: total interpolated discharge in invalid ensembles, cubic meters per second
       - qMaxRun: maximum interpolated discharge in a continuous run of invalid ensembles, cubic meters per second
@@ -2869,9 +2898,11 @@ contains all the depth data
       - allInvalid: logical array indication what transects contain all invalid data
    - extrapolation: data structure for quality assurance checks of extrapolations
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
    - edges: data structure for quality assurance checks of edge discharge estimates
       - messages: quality assessment messages to the user
+      - guidance: character array of guidance associated with messages
       - status: overall status, good, caution, or warning
       - rightSign: discharge sign of right edge not consistent, caution (1)
       - leftSign: discharge sign of left edge not consistent, caution (1)
@@ -2889,6 +2920,19 @@ contains all the depth data
       - rightDistMovedIdx: indices of transects exceeding boat movement threshold
       - invalidTransLeftIdx: indices of transects with invalid left edge ensembles
       - invalidTransRightIdx: indices of transects with invalid right edge ensembles
+   - settings_dict
+     - tab_compass: indicates user changes
+     - tab_tempsal: indicates user changes
+     - tab_mbt: indicates user changes
+     - tab_bt: indicates user changes
+     - tab_gps: indicates user changes
+     - tab_depth: indicates user changes
+     - tab_wt: indicates user changes 
+     - tab_extrap: indicates user changes
+     - tab_edges: indicates user changes
+     - tab_systst: indicates user changes
+     - tab_uncertainty_2_advanced: indicates user changes
+     - tab_uncertainty_advanced: indicates user changes
 - oursin: structure
    - bot_meth: the method proposed by Extrap for each transect
    - exp_95ic_min: the min range of 95% interval if power-power method is used for transect
@@ -3029,6 +3073,7 @@ contains all the depth data
    - v_mps: horizontal velocity in y-direction, in meters per second
    - uProcessed_mps: horizontal velocity in x-direction filtered and interpolated
    - vProcessed_mps: horizontal velocity in y-direction filtered and interpolated
+   - wProcessed_mps: vertical velocity filtered adn interpolated
    - w_mps: vertical velocity (+ up), in meters per second
    - d_mps: difference in vertical velocities compute from opposing beam pairs, in meters per second
    - invalidIndex: index of ensembles with no valid raw velocity data
@@ -3049,6 +3094,7 @@ contains all the depth data
    - wFilter: vertical velocity filter "Auto", “Manual”, "Off"
    - wFilterThreshold: threshold for vertical velocity filter
    - excludedDist: distance below transducer above which data are marked invalid
+   - orig_excluded_dist_ms: original value for excludedDist
    - smoothFilter: filter based on smoothing function “Auto”, “Off”
    - smoothSpeed: smoothed boat speed
    - smoothUpperLimit: smooth function upper limit of window
@@ -3468,9 +3514,10 @@ contains all the depth data
      - topMethod: extrapolation method for top of profile: “Power”, “Constant”, “3-Point”
      - botMethod: extrapolation method for bottom of profile: “Power”, “No Slip”
      - exponent: exponent for power of no slip methods
-     - dateTime: structure
-       - date: measurement date
-       - startSerialTime: Matlab serial time for start time
-       - endSerialTime: Matlab serial time for end time
-       - transectDuration_sec: duration of transect in seconds
-       - ensDuration_sec: duration of each ensemble in seconds
+   - dateTime: structure
+     - date: measurement date
+     - startSerialTime: Matlab serial time for start time
+     - endSerialTime: Matlab serial time for end time
+     - transectDuration_sec: duration of transect in seconds
+     - ensDuration_sec: duration of each ensemble in seconds
+     - utc_time_offset: offset from UTC to local time

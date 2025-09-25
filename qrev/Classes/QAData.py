@@ -1143,7 +1143,7 @@ class QAData(object):
         self.compass["roll_std_caution_idx"] = []
 
         # Check calibration and evaluation of compass
-        magvar_required, internal_source = self.compass_qa_calibration(meas)
+        magvar_required, internal_source, mb_test_time, transect_time, compass_time = self.compass_qa_calibration(meas)
 
         # Compute data to check heading, pitch, and roll
         hpr = self.compass_qa_hpr(meas)
@@ -1175,6 +1175,45 @@ class QAData(object):
                     self.compass["guidance"].append(
                         self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                     )
+            # Check for calibration prior to loop test
+            if mb_test_time is not None and compass_time is not None and mb_test_time < compass_time:
+                # Loop test was before compass calibration
+                self.compass["messages"].append(
+                    [
+                        self.tr(
+                            "COMPASS: Loop test was recorded before compass calibration") + ";",
+                        1,
+                        6,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "A loop moving-bed test requires a calibrated compass. The loop test was recorded before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(
+                        self.compass["messages"][-1][0],
+                        guidance_text))
+                self.compass["status1"] = "warning"
+                self.compass["code"] = 3
+            # Check for calibration prior to transects if GPS data are present
+            if transect_time is not None and compass_time is not None and transect_time < compass_time:
+                # Data collection began before compass calibration
+                self.compass["messages"].append(
+                    [
+                        self.tr(
+                            "COMPASS: GPS data are present and data recording began before the compass calibration") + ";",
+                        1,
+                        6,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "Use of GPS data requires a calibrated compass. The first transect was recorded before the compass was calibrated. This could result in an inaccurate and biased discharge values. If in the field, calibrate the compass, recollect a moving-bed test, and then start your transects. If in the office, carefully evaluate the measurement for substantial differences when using GPS as the reference and document why the compass calibration was not conducted prior to collecting data.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(
+                        self.compass["messages"][-1][0],
+                        guidance_text))
+                self.compass["status1"] = "warning"
+                self.compass["code"] = 3
+
         else:
             # Check heading offset consistency
             if len(np.unique(hpr["align"])) > 1:
@@ -1418,12 +1457,17 @@ class QAData(object):
         gps: bool
             Indicates that gps is used and magvar is required.
         """
+        mb_test_time = None
+        transect_time = None
+        compass_time = None
 
         # Check for loop test
         cal_required = False
         for test in meas.mb_tests:
             if test.type == "Loop":
                 cal_required = True
+                # Time of moving-bed loop test
+                mb_test_time = test.transect.date_time.start_serial_time
                 break
 
         # Check for GPS data
@@ -1432,6 +1476,8 @@ class QAData(object):
                 meas.transects[idx].boat_vel.gga_vel is not None
                 or meas.transects[idx].boat_vel.vtg_vel is not None
             ):
+                # Time of first transect
+                transect_time = meas.transects[idx].date_time.start_serial_time
                 cal_required = True
                 break
         internal = False
@@ -1452,6 +1498,24 @@ class QAData(object):
             ):
                 self.compass_qa_trdi_caleval(meas)
 
+            # Determine serial time for compass calibration/evaluation
+            eval_times = []
+            cal_times = []
+            if len(meas.compass_eval) > 0:
+                eval_times = [
+                    eval.time_stamp for eval in meas.compass_eval
+                ]
+
+            if len(meas.compass_cal) > 0:
+                cal_times = [
+                    cal.time_stamp for cal in meas.compass_cal
+                ]
+            times = eval_times + cal_times
+            if len(times) > 0:
+                time_format = "%Y.%m.%d %H:%M:%S"
+                compass_time = np.nanmin([datetime.strptime(t,
+                                                            time_format).replace(
+                    tzinfo=timezone.utc).timestamp() for t in times])
         else:
             # Compass not required
             if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
@@ -1461,7 +1525,7 @@ class QAData(object):
                 # Compass was calibrated and evaluated
                 self.compass["status1"] = "good"
 
-        return cal_required, internal
+        return cal_required, internal, mb_test_time, transect_time, compass_time
 
     def compass_qa_sontek_cal(self, meas):
         """Evaluate compass calibration for SonTek ADCP.
@@ -1897,42 +1961,6 @@ class QAData(object):
                 else:
                     user_valid_test.append(False)
 
-            # Check compass cal prior to loop test
-            if len(mb_test_type) > 0 and mb_test_type[0] == "Loop":
-                # Determine serial time for compass calibration/evaluation
-                eval_times = []
-                cal_times = []
-                if len(meas.compass_eval) > 0:
-                    eval_times = [
-                        eval.time_stamp for eval in meas.compass_eval
-                    ]
-
-                if len(meas.compass_cal) > 0:
-                    cal_times = [
-                        cal.time_stamp for cal in meas.compass_cal
-                    ]
-                times = eval_times + cal_times
-                if len(times) > 0:
-                    time_format = "%Y.%m.%d %H:%M:%S"
-                    compass_time = np.nanmin([datetime.strptime(t, time_format).replace(tzinfo=timezone.utc).timestamp() for t in times])
-
-                    # Time of moving-bed loop test
-                    mb_test_time = mb_tests[0].transect.date_time.start_serial_time
-
-                    if mb_test_time < compass_time:
-                        # Loop test was before compass calibration
-                        self.movingbed["messages"].append(
-                            [
-                                self.tr("MOVING-BED TEST: Loop test was before compass calibration") + ";",
-                                1,
-                                6,
-                            ]
-                        )
-                        guidance_text = self.tr("A loop moving-bed test requires a calibrated compass. The loop test was conducted before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration.")
-                        self.movingbed["guidance"].append(
-                            self.guidance_prep(self.movingbed["messages"][-1][0], guidance_text))
-                        self.movingbed["status"] = "warning"
-                        self.movingbed["code"] = 3
 
             if not any(user_valid_test):
                 # No valid test according to user
