@@ -47,49 +47,6 @@ If you would like to contribute your expertise to this project you are encourage
 
 If you would like to contribute to this project finacially please contact dave@genesishydrotech.com.
 
-## Requirements and Dependencies
-QRev is currently being developed using Python 3.8 and makes use of the following packages:
-
-PyQt5~=5.15.6  
-PyQt5-sip  
-PyQt5-stubs  
-altgraph==0.16.1  
-atomicwrites==1.3.0  
-attrs==19.1.0  
-click==7.1.2  
-colorama==0.4.1  
-cycler==0.10.0  
-future==0.17.1  
-importlib-metadata==0.23  
-kiwisolver==1.4.2  
-macholib==1.11  
-matplotlib==3.3.3  
-more-itertools==7.2.0  
-numpy==1.22.1  
-numba~=0.53.0  
-packaging==19.2  
-pandas==1.4.0  
-patsy==0.5.1  
-pefile==2019.4.18  
-pluggy==0.13.0  
-py==1.8.0  
-pyparsing==2.4.2  
-pytest==5.1.3  
-python-dateutil  
-python-dotenv==0.10.3  
-pytz  
-pywin32-ctypes==0.2.0  
-scipy==1.7.3  
-setuptools==41.2.0  
-simplekml~=1.3.6  
-sip  
-six==1.12.0  
-statsmodels==0.10.1  
-utm~=0.7.0  
-wcwidth==0.1.7  
-xmltodict==0.12.0  
-zipp==0.6.0
-
 # Disclaimer
 This software (QRevInt) is a fork of QRev, which was originally approved for release by the U.S. Geological Survey (USGS), IP-118174. Genesis HydroTech LLC through funding from various international agencies is working to improve and expand the capabilities and features available in QRevInt. While Genesis HydroTech LLC makes every effort to deliver high quality products, Genesis HydroTech LLC does not guarantee that the product is free from defects. QRevInt is provided “as is," and you use the software at your own risk. Genesis HydroTech LLC and contributing agencies make no warranties as to performance, merchantability, fitness for a particular purpose, or any other warranties whether expressed or implied. No oral or written communication from or information provided by Genesis HydroTech LLC or contributing agencies shall create a warranty. Under no circumstances shall Genesis HydroTech LLC or the contributing agencies be liable for direct, indirect, special, incidental, or consequential damages resulting from the use, misuse, or inability to use this software, even if Genesis HydroTech LLC or the contributing agencies have been advised of the possibility of such damages. 
 
