@@ -2859,8 +2859,10 @@ class QAData(object):
             # Loop through filters
             for prefix_idx, filter_idx in enumerate(filter_index):
                 # Loop through transects
+                idx_checked = -1
                 for n, transect in enumerate(meas.transects):
                     if transect.checked:
+                        idx_checked += 1
                         valid_original = np.any(
                             transect.w_vel.valid_data[1, :, transect.in_transect_idx].T,
                             0,
@@ -2943,21 +2945,27 @@ class QAData(object):
                         if q_invalid_total_percent > self.q_total_threshold_caution:
                             self.w_vel["q_total_caution"][n, filter_idx] = True
 
-                    # Check for profiling to bottom
-                    depth_selected = getattr(transect.depths, transect.depths.selected)
-                    depth_cell_depth = np.copy(depth_selected.depth_cell_depth_m)
-                    max_depth_cell_depth = depth_cell_depth[-1, :]
-                    depths = np.copy(depth_selected.depth_processed_m)
-                    sl_depth = depths * cosd(transect.adcp.beam_angle_deg)
-                    diff = sl_depth - max_depth_cell_depth
-                    if np.any(diff > 0):
-                        self.w_vel["profile_to_bottom"][n] = False
+                        # Only execute this check 1 time
+                        if prefix_idx == 0:
+                            # Check for profiling to bottom
+                            depth_selected = getattr(transect.depths, transect.depths.selected)
+                            max_depth_cell_depth = depth_selected.depth_cell_depth_m[-1, :]
+                            depth_cell_size = depth_selected.depth_cell_size_m[-1, :]
+                            sl_depth = depth_selected.depth_processed_m * cosd(transect.adcp.beam_angle_deg)
+                            diff_positive = np.where(np.greater(sl_depth, max_depth_cell_depth))[0]
+                            q_test_percent = (np.nansum(
+                                meas.discharge[idx_checked].bottom_ens[
+                                    diff_positive])) / meas.discharge[
+                                                 idx_checked].total_uncorrected
+
+                            if q_test_percent > 0.01:
+                                self.w_vel["profile_to_bottom"][n] = False
 
             # Generate messages
             # =================
 
             # Generate messages for profiling to bottom
-            if np.any(self.w_vel["profile_to_bottom"]):
+            if np.any(self.w_vel["profile_to_bottom"] == False):
                 self.w_vel["messages"].append(
                     [
                         self.tr("WT: Maximum depth of water data is less than the streambed depth."),
