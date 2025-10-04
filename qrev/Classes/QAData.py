@@ -1460,9 +1460,10 @@ class QAData(object):
         mb_test_time = None
         transect_time = None
         compass_time = None
-
-        # Check for loop test
         cal_required = False
+        magvar_required = False
+        # Check for loop test
+        
         for test in meas.mb_tests:
             if test.type == "Loop":
                 cal_required = True
@@ -1478,6 +1479,7 @@ class QAData(object):
             ):
                 # Time of first transect
                 transect_time = meas.transects[idx].date_time.start_serial_time
+                magvar_required = True
                 cal_required = True
                 break
         internal = False
@@ -1525,7 +1527,7 @@ class QAData(object):
                 # Compass was calibrated and evaluated
                 self.compass["status1"] = "good"
 
-        return cal_required, internal, mb_test_time, transect_time, compass_time
+        return magvar_required, internal, mb_test_time, transect_time, compass_time
 
     def compass_qa_sontek_cal(self, meas):
         """Evaluate compass calibration for SonTek ADCP.
