@@ -975,6 +975,7 @@ class TransectData(object):
                     temperature = rsdata.Setup.userTemperature
                 else:
                     temperature = (5.0 / 9.0) * (rsdata.Setup.userTemperature - 32)
+                temperature = np.tile(temperature, ensemble_delta_time.shape[0])
                 self.sensors.temperature_deg_c.user = SensorData()
                 self.sensors.temperature_deg_c.user.populate_data(
                     data_in=temperature, source_in="Manual"
@@ -2596,7 +2597,10 @@ class TransectData(object):
         else:
             self.in_transect_idx = transect.inTransectIdx.astype(int) - 1
         if hasattr(transect, "georef"):
-            self.georef = {"lat_deg": transect.georef.lat_deg, "lon_deg": transect.georef.lon_deg}
+            try:
+                self.georef = {"lat_deg": transect.georef.lat_deg, "lon_deg": transect.georef.lon_deg}
+            except AttributeError:
+                pass    
 
 
     @staticmethod
