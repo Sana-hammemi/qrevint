@@ -894,6 +894,7 @@ class Measurement(object):
         elif file.endswith(".txt"):
             prefix, _ = os.path.splitext(file)
             time_stamp = prefix.split("l")[1]
+            time_stamp = time_stamp.split("_s")[0]
             valid_file = True
 
         if valid_file:
