@@ -1355,14 +1355,14 @@ class TransectData(object):
         except AttributeError:
             blanking_distance = np.nan
 
-        if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
-            ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
-
-        else:
-            # M9 or S5
-            ping_type = self.sontek_ping_type(
-                corr=corr, freq=rsdata.WaterTrack.WT_Frequency
-            )
+        # if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
+        #     ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
+        # 
+        # else:
+        # M9 or S5
+        ping_type = self.sontek_ping_type(
+            corr=corr, freq=rsdata.WaterTrack.WT_Frequency
+        )
 
         # Create water velocity object
         self.w_vel = WaterData()

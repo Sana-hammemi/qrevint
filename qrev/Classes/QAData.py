@@ -1779,10 +1779,10 @@ class QAData(object):
                     transect.sensors.temperature_deg_c,
                     transect.sensors.temperature_deg_c.selected,
                 )
-                if len(temp) == 0:
-                    temp = temp_selected.data
-                else:
-                    temp = np.hstack((temp, temp_selected.data))
+                # if len(temp) == 0:
+                #     temp = temp_selected.data
+                # else:
+                temp = np.hstack((temp, temp_selected.data))
 
         # Check temperature range
         if np.any(checked):
