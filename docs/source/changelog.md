@@ -1,5 +1,5 @@
 # QRevInt Change Log
-### Changes QRevInt 1.37 to 1.40
+### Changes QRevInt 1.37 to 1.41
 1. Python version upgraded to version 3.11.9
 2. Modified processing of composite tracks to interpolate using the composite tracks results when on other source is valid
 3. Fixed issues with displayed time and associated time zone

@@ -464,8 +464,8 @@ designed angle of the beams from the vertical. SonTek also corrects the
 depths measured by the slant beams and vertical beam for pitch and roll, 
 but TRDI does not (SonTek, 2015; Teledyne RD Instruments, 2007). QRev uses 
 the vertical depths provided by the manufacturers. Implementing pitch and 
-roll compensation for the measured depths is a future version is being 
-considered. A preliminary assessment indicated about a 0.4 percent change 
+roll compensation for the measured depths is being considered for future
+versions. A preliminary assessment indicated about a 0.4 percent change 
 in average depth for a mean pitch or roll of 5 degrees.
 
 The method used to compute the BT depth from the four slant beams is also 

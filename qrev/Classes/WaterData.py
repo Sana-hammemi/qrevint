@@ -609,7 +609,7 @@ class WaterData(object):
                     self.sl_cutoff_m = transect.wVel.slCutoff_m
                     if len(self.sl_cutoff_m) == 0:
                         self.sl_cutoff_m = None
-                except AttributeError:
+                except (AttributeError, TypeError):
                     self.sl_cutoff_m = None
                 # Ping type
                 if hasattr(transect.wVel, "ping_type"):
@@ -730,7 +730,7 @@ class WaterData(object):
             self.sl_cutoff_m = transect.wVel.slCutoff_m
             if len(self.sl_cutoff_m) == 0:
                 self.sl_cutoff_m = None
-        except AttributeError:
+        except (AttributeError, TypeError):
             self.sl_cutoff_m = None
 
         # Use measurement for filter

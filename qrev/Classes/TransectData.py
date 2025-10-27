@@ -2538,18 +2538,21 @@ class TransectData(object):
         if hasattr(meas_struct, "transects"):
             # If only one transect the data are not a list or array of
             # transects
-
-            if len(meas_struct.transects) > 0:
+            try:
+                n_transects =  len(meas_struct.transects)
+            except TypeError:
+                n_transects = 0
+            if n_transects > 0:
                 for transect in meas_struct.transects:
                     trans = TransectData()
                     trans.populate_from_qrev_mat(transect, meas_struct,
                                                  time_zone=time_zone)
                     transects.append(trans)
-            # except TypeError:
-            #     trans = TransectData()
-            #     trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
-            #                                          time_zone=time_zone)
-            #     transects.append(trans)
+            else:
+                trans = TransectData()
+                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
+                                                     time_zone=time_zone)
+                transects.append(trans)
 
         return transects
 
@@ -3195,7 +3198,10 @@ class TransectData(object):
             if selected == "user":
                 if self.sensors.temperature_deg_c.user is None:
                     self.sensors.temperature_deg_c.user = SensorData()
-                ens_temperature = np.tile(temperature, temperature_internal.data.shape)
+                if type(temperature) is float:
+                    ens_temperature = np.tile(temperature, temperature_internal.data.shape)
+                else:
+                    ens_temperature = temperature
 
                 self.sensors.temperature_deg_c.user.change_data(data_in=ens_temperature)
                 self.sensors.temperature_deg_c.user.set_source(source_in="Manual Input")
@@ -3207,7 +3213,10 @@ class TransectData(object):
 
         elif parameter == "temperature":
             adcp_temp = self.sensors.temperature_deg_c.internal.data
-            new_user_temperature = np.tile(temperature, adcp_temp.shape)
+            if type(temperature) is float:
+               new_user_temperature = np.tile(temperature, adcp_temp.shape)
+            else:
+               new_user_temperature = temperature
             self.sensors.temperature_deg_c.user.change_data(
                 data_in=new_user_temperature
             )

@@ -643,36 +643,37 @@ class PreMeasurement(object):
 
         # Standardize the time stamp format to YYYY.MM.DD HH:MM:SS
         time_stamp = time_stamp.strip()
-        try:
-            if time_stamp.isdigit():
-                time_stamp = time_stamp[0:4] + "." + time_stamp[4:6] + "." + time_stamp[6:8] + " " + time_stamp[8:10] + ":" + time_stamp[10:12] + ":" + time_stamp[12:14]
-            else:
-                time_stamp = time_stamp.replace("/", ".")
-                time_stamp = time_stamp.replace("_", " ")
-                time_list = time_stamp.split(" ")
-                if "." in time_list[0]:
-                    time_list[1] = time_list[1].replace(".", ":")
-                    time_stamp = " ".join(time_list)
+        if not any(char.isalpha() for char in time_stamp):
+            try:
+                if time_stamp.isdigit():
+                    time_stamp = time_stamp[0:4] + "." + time_stamp[4:6] + "." + time_stamp[6:8] + " " + time_stamp[8:10] + ":" + time_stamp[10:12] + ":" + time_stamp[12:14]
                 else:
-                    time_stamp = (
-                        time_stamp[0:4]
-                        + "."
-                        + time_stamp[4:6]
-                        + "."
-                        + time_stamp[6:8]
-                        + " "
-                        + time_stamp[9:11]
-                        + ":"
-                        + time_stamp[11:13]
-                        + ":"
-                        + time_stamp[13:15]
-                    )
-
-                year_correction = int(time_stamp.split(".")[0])
-                if year_correction < 90:
-                    time_stamp = "20" + time_stamp
-                elif year_correction < 100:
-                    time_stamp = "19" + time_stamp
-        except:
-            pass
+                    time_stamp = time_stamp.replace("/", ".")
+                    time_stamp = time_stamp.replace("_", " ")
+                    time_list = time_stamp.split(" ")
+                    if "." in time_list[0]:
+                        time_list[1] = time_list[1].replace(".", ":")
+                        time_stamp = " ".join(time_list)
+                    else:
+                        time_stamp = (
+                            time_stamp[0:4]
+                            + "."
+                            + time_stamp[4:6]
+                            + "."
+                            + time_stamp[6:8]
+                            + " "
+                            + time_stamp[9:11]
+                            + ":"
+                            + time_stamp[11:13]
+                            + ":"
+                            + time_stamp[13:15]
+                        )
+    
+                    year_correction = int(time_stamp.split(".")[0])
+                    if year_correction < 90:
+                        time_stamp = "20" + time_stamp
+                    elif year_correction < 100:
+                        time_stamp = "19" + time_stamp
+            except:
+                pass
         return time_stamp
