@@ -6362,7 +6362,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_compass_pr
         # Change transects plotted
         if column == 0:
-            python
             [tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked) for nrow in range(tbl.rowCount())]
             # for nrow in range(tbl.rowCount()):
             #     tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked)

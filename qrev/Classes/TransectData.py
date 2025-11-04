@@ -1828,59 +1828,62 @@ class TransectData(object):
 
                     for record_n, record in enumerate(sample["GpsRecords"]):
 
-                        raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
-                        raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
-                        raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
-                        raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
-                        raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
-
                         try:
-                            raw_gga = raw_gga_list[record_n].split(",")
-                            raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
-                            raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
-                        except (ValueError, IndexError):
-                            pass
-
-                        raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
-                        # speed actually in kph
-                        raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
-                        raw_gps["vtg_mode"] = record["VtgFaaMode"]
-
-                        # Store raw gga data
-                        if record_n <= len(raw_gga_list):
+                            raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
+                            raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
+                            raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
+                            raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
+                            raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
+    
                             try:
                                 raw_gga = raw_gga_list[record_n].split(",")
-                                raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
-                                raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
-                                # Determine correct sign for latitude
-                                if raw_gga[3] == "S":
-                                    raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
-                                raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
-                                # Determing correct sign for longitude
-                                if raw_gga[5] == "W":
-                                    raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
-                                raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
-                                raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
-                                raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
-                                raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
-                            except:
+                                raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                            except (ValueError, IndexError):
                                 pass
-
-                        # Store raw vtg data
-                        if record_n <= len(raw_vtg_list):
-                            try:
-                                raw_vtg = raw_vtg_list[record_n].split(",")
-                                raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
-                                # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
-                                # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
-                                # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
-                                # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
-                                # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
-                                raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
-                                # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
-                                raw_gps2["vtg_mode"] = raw_vtg[9]
-                            except:
-                                pass
+    
+                            raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
+                            # speed actually in kph
+                            raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
+                            raw_gps["vtg_mode"] = record["VtgFaaMode"]
+    
+                            # Store raw gga data
+                            if record_n <= len(raw_gga_list):
+                                try:
+                                    raw_gga = raw_gga_list[record_n].split(",")
+                                    raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
+                                    raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
+                                    # Determine correct sign for latitude
+                                    if raw_gga[3] == "S":
+                                        raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
+                                    raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
+                                    # Determing correct sign for longitude
+                                    if raw_gga[5] == "W":
+                                        raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
+                                    raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
+                                    raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
+                                    raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                    raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                                except:
+                                    pass
+    
+                            # Store raw vtg data
+                            if record_n <= len(raw_vtg_list):
+                                try:
+                                    raw_vtg = raw_vtg_list[record_n].split(",")
+                                    raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
+                                    # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
+                                    # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
+                                    # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
+                                    # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
+                                    # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
+                                    raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
+                                    # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
+                                    raw_gps2["vtg_mode"] = raw_vtg[9]
+                                except:
+                                    pass
+                        except IndexError:
+                            pass
 
             # Ext GPS
             ext_gps["gga_utc_time"][sample_n] = float(sample["Gga"]["SatelliteTime"].replace(":", ""))
