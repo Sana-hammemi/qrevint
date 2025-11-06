@@ -3617,40 +3617,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
             "vtg_vel", "w_vel", ]
         self.messages_table(self.main_message_table, qa_check_keys)
-        messages = self.combine_qa_messages()
-        # Setup table
-        tbl = self.main_message_table
-        tbl.clear()
-        main_message_header = [self.tr("Status"), self.tr("Message")]
-        ncols = len(main_message_header)
-        nrows = len(messages)
-        tbl.setRowCount(nrows + 1)
-        tbl.setColumnCount(ncols)
-        tbl.setHorizontalHeaderLabels(main_message_header)
-        tbl.horizontalHeader().setFont(self.font_bold)
-        tbl.verticalHeader().hide()
-        tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-
-        # Populate table
-        for row, message in enumerate(messages):
-            # Handle messages from old QRev that did not have integer codes
-            if type(message) is str:
-                warn = message[:3].isupper()
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
-            # Handle newer style messages
-            else:
-                warn = int(message[1]) == 1
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
-            if warn:
-                tbl.item(row, 1).setFont(self.font_bold)
-                item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
-                tbl.setItem(row, 0, item_warning)
-            else:
-                item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
-                tbl.setItem(row, 0, item_caution)
-
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis."""
