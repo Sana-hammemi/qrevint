@@ -862,7 +862,7 @@ class Measurement(object):
         """
 
         if file.startswith("SystemTest"):
-            with open(os.path.join(path, file)) as f:
+            with open(os.path.join(path, file), encoding="utf-8") as f:
                 test_data = f.read()
             test_data = test_data.replace("\x00", "")
             time_stamp = file[10:14] + "." + file[14:16] + "." + file[16:18] + " " + file[18:20] + ":" + file[20:22] + ":" + file[22:24]
@@ -898,7 +898,7 @@ class Measurement(object):
             valid_file = True
 
         if valid_file:
-            with open(os.path.join(path, file)) as f:
+            with open(os.path.join(path, file), encoding="utf-8") as f:
                 cal_data = f.read()
                 cal = PreMeasurement()
                 cal.populate_data(time_stamp, cal_data, "SCC")
@@ -946,11 +946,11 @@ class Measurement(object):
         sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
 
         # DataSessionProperties (Probably not needed)
-        with open(os.path.join(temp_path, "DataSessionProperties.json")) as json_file:
+        with open(os.path.join(temp_path, "DataSessionProperties.json"), encoding="utf-8") as json_file:
             sontek_data["data_properties"] = json.load(json_file)
 
         # TransectSetupTemplate (Site Info, Inst. Info, Systest, Compcal)
-        with open(os.path.join(temp_path, "TransectSetupTemplate.json")) as json_file:
+        with open(os.path.join(temp_path, "TransectSetupTemplate.json"), encoding="utf-8") as json_file:
             sontek_data["transect_setup"] = json.load(json_file)
 
         # Create path to transects
@@ -1045,14 +1045,14 @@ class Measurement(object):
 
         # Read configuration
         try:
-            with open(os.path.join(transect_folder, "Configuration_Updated.json")) as json_file:
+            with open(os.path.join(transect_folder, "Configuration_Updated.json"), encoding="utf-8") as json_file:
                 transect["config_json"] = json.load(json_file)
         except BaseException:
-            with open(os.path.join(transect_folder, "Configuration.json")) as json_file:
+            with open(os.path.join(transect_folder, "Configuration.json"), encoding="utf-8") as json_file:
                 transect["config_json"] = json.load(json_file)
 
         # Read raw data file to string
-        with open(os.path.join(transect_folder, "RawData.jsonlog")) as json_file:
+        with open(os.path.join(transect_folder, "RawData.jsonlog"), encoding="utf-8") as json_file:
             json_log = json_file.read()
 
         # Find start index for all samples
