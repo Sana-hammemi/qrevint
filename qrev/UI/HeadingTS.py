@@ -216,6 +216,8 @@ class HeadingTS(object):
                     self.merror.append(
                         self.fig.axm.plot([x[0], x[-1]], [2, 2], "k--")[0]
                     )
+                    self.fig.axm.tick_params(axis="y", left=False)
+                    self.fig.axh.tick_params(axis="y", right=False)
                 else:
                     self.merror = None
 

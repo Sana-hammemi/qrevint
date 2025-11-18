@@ -898,7 +898,7 @@ class Measurement(object):
             valid_file = True
 
         if valid_file:
-            with open(os.path.join(path, file), encoding="utf-8") as f:
+            with open(os.path.join(path, file)) as f:
                 cal_data = f.read()
                 cal = PreMeasurement()
                 cal.populate_data(time_stamp, cal_data, "SCC")
