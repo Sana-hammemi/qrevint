@@ -1955,7 +1955,7 @@ class MAP(object):
         east_velocity = u * -1 * self._unit
         north_velocity = v * -1 * self._unit
 
-        magnitude = np.sqrt(north_velocity**2 + east_velocity**2) * units["V"]
+        magnitude = np.sqrt(north_velocity**2 + east_velocity**2)
 
         if not verticals:
             data = {
