@@ -3290,7 +3290,7 @@ class AdvGraphs(object):
         else:
             # Use only edge ensembles from transect
             n_ensembles = int(n_ensembles)
-            if transect.start_edge == edge:
+            if transect.start_edge == edge and n_ensembles > 0:
                 # Start on left bank
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[:n_ensembles]
@@ -3301,7 +3301,7 @@ class AdvGraphs(object):
                 ensembles = in_transect_idx[:n_ensembles]
                 x_data = x_1d[:n_ensembles]
 
-            else:
+            elif n_ensembles > 0:
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
                 if cell_depth is None:

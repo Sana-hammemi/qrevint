@@ -1676,7 +1676,7 @@ class TransectData(object):
         self.rsqmb_wt(wt, transect_data, system_configuration, snr_3beam_comp)
 
         # Edges
-        self.rsqmb_edges(transect_data["config_json"]["Setup"]["EdgeConfiguration"])
+        self.rsqmb_edges(transect_data["config_json"]["Setup"]["EdgeConfiguration"], transect_data["config_json"]["SampleConfigurations"])
 
         # Extrapolation
         self.rsqmb_extrap(transect_data["config_json"]["Setup"]["ExtrapolationConfiguration"])
@@ -2423,7 +2423,7 @@ class TransectData(object):
 
         )
 
-    def rsqmb_edges(self, setup):
+    def rsqmb_edges(self, setup, sample_cfg):
 
         # Edges
         # -----
@@ -2431,13 +2431,26 @@ class TransectData(object):
         self.edges = Edges()
         self.edges.populate_data(rec_edge_method="Variable", vel_method="VectorProf")
 
+        n_start = 0
+        n_end = 0
+        for sample in sample_cfg:
+            if sample["SampleType"] == "StartEdge":
+                n_start += 1
+            elif sample["SampleType"] == "EndEdge":
+                n_end += 1
+
+
         # Determine number of ensembles for each edge
         if "Right" in setup["StartEdge"]:
             self.start_edge = "Right"
             self.orig_start_edge = "Right"
+            n_right = n_start
+            n_left = n_end
         else:
             self.start_edge = "Left"
             self.orig_start_edge = "Left"
+            n_right = n_end
+            n_left = n_start
 
         # Create left edge object
         edge_type = None
@@ -2457,7 +2470,7 @@ class TransectData(object):
         self.edges.left.populate_data(
             edge_type=edge_type,
             distance=setup["LeftBank"]["DistanceToBank (m)"],
-            number_ensembles=setup["LeftBank"]["NumberOfEdgeProfiles"],
+            number_ensembles=n_left,
             coefficient=coefficient,
             user_discharge=user_discharge, )
 
@@ -2477,7 +2490,7 @@ class TransectData(object):
         user_discharge = setup["RightBank"]["EstimatedFlow (m3/s)"]
         self.edges.right.populate_data(edge_type=edge_type,
             distance=setup["RightBank"]["DistanceToBank (m)"],
-            number_ensembles=setup["RightBank"]["NumberOfEdgeProfiles"],
+            number_ensembles=n_right,
             coefficient=coefficient, user_discharge=user_discharge, )
 
     def rsqmb_extrap(self, setup):
