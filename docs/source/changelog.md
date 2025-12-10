@@ -1,4 +1,15 @@
 # QRevInt Change Log
+### Changes QRevInt 1.41 to 1.42
+1. Fixed crash if RSQ GPSRecords exceed 20
+2. Fixed code in messages tab preventing tooltips from working
+3. Implemented utf-8 encoding for SonTek json and most ASCII files
+4. Fixed bug associated with blanking distance when creating xml file
+5. Modified heading time series graph so right ticks don't show of left axis
+6. Fixed English units conversion on contour csv output in MAP
+7. Fixed bug in edge contour plot if there were 0 edge ensembles
+8. Fixed reading of RSQ edge samples when auto edge not used
+9. Fixed time zone bug when comparing timing of compass calibration to measurement start
+10. Fixed bug when changing plotted transect in Compass/P/R table
 ### Changes QRevInt 1.37 to 1.41
 1. Python version upgraded to version 3.11.9
 2. Modified processing of composite tracks to interpolate using the composite tracks results when on other source is valid
