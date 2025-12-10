@@ -6,6 +6,7 @@ from qrev.Classes.MovingBedTests import MovingBedTests
 from qrev.Classes.TransectData import TransectData
 from qrev.MiscLibs.common_functions import cosd
 from datetime import datetime, tzinfo, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz, tz_formatted_string
 
 
 class QAData(object):
@@ -1479,6 +1480,8 @@ class QAData(object):
             ):
                 # Time of first transect
                 transect_time = meas.transects[idx].date_time.start_serial_time
+                utc_time_offset = meas.transects[idx].date_time.utc_time_offset
+                tz = utc_offset_to_tz(utc_time_offset)
                 magvar_required = True
                 cal_required = True
                 break
@@ -1518,7 +1521,7 @@ class QAData(object):
                     time_format = "%Y.%m.%d %H:%M:%S"
                     compass_time = np.nanmin([datetime.strptime(t,
                                                                 time_format).replace(
-                        tzinfo=timezone.utc).timestamp() for t in times])
+                        tzinfo=tz).timestamp() for t in times])
                 except ValueError:
                     compass_time = None
         else:
