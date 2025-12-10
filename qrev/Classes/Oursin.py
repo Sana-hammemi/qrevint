@@ -11,7 +11,7 @@ import scipy.stats
 # from profilehooks import profile
 from qrev.MiscLibs.common_functions import cosd, sind
 from qrev.MiscLibs.bayes_cov_compiled import bayes_cov
-from qrev.Classes.FlowFieldInterpolation import FlowFieldInterpolation
+# from qrev.Classes.FlowFieldInterpolation import FlowFieldInterpolation
 
 
 class Oursin(object):

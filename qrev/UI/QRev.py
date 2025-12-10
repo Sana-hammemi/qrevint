@@ -16827,7 +16827,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     arrow_scale = float(scale.ed_arrow_scale.text()) / self.units["L"]
                     v_min = float(scale.ed_v_min.text()) / self.units["V"]
                     v_max = float(scale.ed_v_max.text()) / self.units["V"]
-                    self.meas.map.export_kml_sana(
+                    self.meas.map.export_kml(
                         self.meas,
                         fullname,
                         self.units,
