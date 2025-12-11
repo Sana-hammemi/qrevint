@@ -1,6 +1,17 @@
 # QRev Change Log
 
-## [**Version 4.40.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.1)
+## [**Version 4.40.3**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.3)
+
+**Added:**
+- NA
+
+**Changed:**
+-
+
+**Fixed:**
+- 
+
+## [**Version 4.40.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.2)
 
 **Added:**
 - NA

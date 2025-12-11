@@ -61,3 +61,13 @@ Thumbs.db
 /qrev_docs/_build/
 /qrev_docs/_static/
 /qrev_docs/_templates/
+
+/Classes/__pycache__
+
+/qrev/Classes/__pycache__
+/docs/_build/
+/docs/_static/
+/docs/_templates/
+/docs/_build/
+/docs/_static/
+/docs/_templates/

@@ -11,6 +11,7 @@ import pandas as pd
 
 import numpy as np
 import simplekml
+import utm
 
 from qrev import __qrev_version__, myappid
 from qrev.Classes.BoatData import BoatData
@@ -36,8 +37,9 @@ from qrev.MiscLibs.common_functions import (
     nans,
     azdeg2rad,
     units_conversion,
+    cosd
 )
-from qrev.MiscLibs.local_time_utilities import local_time_from_iso
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso, tz_formatted_string
 
 # from profilehooks import profile
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -139,6 +141,7 @@ class Measurement(object):
         date_format="%Y.%m.%d",
         time_zone_required=False,
         qt_tr=None,
+        area_projection="ParallAC"
     ):
         """Initialize instance variables and initiate processing of measurement
         data.
@@ -179,6 +182,9 @@ class Measurement(object):
             Dictionary containting the excluded distances for the RioPro and M9
         date_format: str
             Format string for date
+        area_projection: str
+            Defines how the width and area are computed, ParallAC is parallel to
+            average course, PerpenMF is perpendicular to mean flow direction
         """
 
         # Check for use of qt_tr for translation
@@ -187,6 +193,7 @@ class Measurement(object):
         else:
             self.tr = qt_tr
 
+        self.area_projection = area_projection
         self.date_format = date_format
         self.water_dir_diff_threshold = water_dir_diff_threshold
         self.use_ping_type = use_ping_type
@@ -241,7 +248,34 @@ class Measurement(object):
             }
         self.time_zone_required = time_zone_required
         self.time_zone = ""
-
+        self.timezone_dict = {
+            "": "00:00:00",
+            "UTC": "00:00:00",
+            "UTC-1": "-01:00:00",
+            "UTC-2": "-02:00:00",
+            "UTC-3": "-03:00:00",
+            "UTC-4": "-04:00:00",
+            "UTC-5": "-05:00:00",
+            "UTC-6": "-06:00:00",
+            "UTC-7": "-07:00:00",
+            "UTC-8": "-08:00:00",
+            "UTC-9": "-09:00:00",
+            "UTC-10": "-10:00:00",
+            "UTC-11": "-11:00:00",
+            "UTC-12": "-12:00:00",
+            "UTC+1": "+01:00:00",
+            "UTC+2": "+02:00:00",
+            "UTC+3": "+03:00:00",
+            "UTC+4": "+04:00:00",
+            "UTC+5": "+05:00:00",
+            "UTC+6": "+06:00:00",
+            "UTC+7": "+07:00:00",
+            "UTC+8": "+08:00:00",
+            "UTC+9": "+09:00:00",
+            "UTC+10": "+10:00:00",
+            "UTC+11": "+11:00:00",
+            "UTC+12": "+12:00:00",
+        }
 
         # Load data from selected source
         if source == "QRev":
@@ -828,10 +862,10 @@ class Measurement(object):
         """
 
         if file.startswith("SystemTest"):
-            with open(os.path.join(path, file)) as f:
+            with open(os.path.join(path, file), encoding="utf-8") as f:
                 test_data = f.read()
             test_data = test_data.replace("\x00", "")
-            time_stamp = file[10:24]
+            time_stamp = file[10:14] + "." + file[14:16] + "." + file[16:18] + " " + file[18:20] + ":" + file[20:22] + ":" + file[22:24]
             sys_test = PreMeasurement()
             sys_test.populate_data(
                 time_stamp=time_stamp, data_in=test_data, data_type="SST"
@@ -860,6 +894,7 @@ class Measurement(object):
         elif file.endswith(".txt"):
             prefix, _ = os.path.splitext(file)
             time_stamp = prefix.split("l")[1]
+            time_stamp = time_stamp.split("_s")[0]
             valid_file = True
 
         if valid_file:
@@ -911,11 +946,11 @@ class Measurement(object):
         sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
 
         # DataSessionProperties (Probably not needed)
-        with open(os.path.join(temp_path, "DataSessionProperties.json")) as json_file:
+        with open(os.path.join(temp_path, "DataSessionProperties.json"), encoding="utf-8") as json_file:
             sontek_data["data_properties"] = json.load(json_file)
 
         # TransectSetupTemplate (Site Info, Inst. Info, Systest, Compcal)
-        with open(os.path.join(temp_path, "TransectSetupTemplate.json")) as json_file:
+        with open(os.path.join(temp_path, "TransectSetupTemplate.json"), encoding="utf-8") as json_file:
             sontek_data["transect_setup"] = json.load(json_file)
 
         # Create path to transects
@@ -990,7 +1025,6 @@ class Measurement(object):
                     temperature=transect.sensors.temperature_deg_c.user.data[0],
                 )
 
-
     @staticmethod
     def rsq_read_transect(transect_folder):
         """Reads the files for a single transect and returns a dictionary of the data.
@@ -1011,14 +1045,14 @@ class Measurement(object):
 
         # Read configuration
         try:
-            with open(os.path.join(transect_folder, "Configuration_Updated.json")) as json_file:
+            with open(os.path.join(transect_folder, "Configuration_Updated.json"), encoding="utf-8") as json_file:
                 transect["config_json"] = json.load(json_file)
         except BaseException:
-            with open(os.path.join(transect_folder, "Configuration.json")) as json_file:
+            with open(os.path.join(transect_folder, "Configuration.json"), encoding="utf-8") as json_file:
                 transect["config_json"] = json.load(json_file)
 
         # Read raw data file to string
-        with open(os.path.join(transect_folder, "RawData.jsonlog")) as json_file:
+        with open(os.path.join(transect_folder, "RawData.jsonlog"), encoding="utf-8") as json_file:
             json_log = json_file.read()
 
         # Find start index for all samples
@@ -1100,7 +1134,7 @@ class Measurement(object):
                 self.time_zone = "UTC"
 
             # System tests
-            #TODO Not sure what to do for multiple tests or calibrations
+            # TODO Not sure what to do for multiple tests or calibrations
             self.rsq_add_systest(transect, utc_time_offset)
 
             # Compass calibration
@@ -1170,7 +1204,7 @@ class Measurement(object):
     def rsq_add_mb_test(self, tests, utc_time_offset, snr_3beam_comp):
 
         for test in tests:
-            #Process Loop test
+            # Process Loop test
             if "Loop" in test["config_json"]["AdcpMeasurementId"]:
                 self.mb_tests.append(MovingBedTests(tr=self.tr))
                 self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Loop", utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
@@ -1842,12 +1876,12 @@ class Measurement(object):
     def change_timezone (self, text):
         self.time_zone = text
 
-        for transect in self.transects:
-            if len(text) > 1:
-                offset = int(text[3:])
-            else:
-                offset = None
-            transect.date_time.utc_time_offset = offset
+        # for transect in self.transects:
+        #     if len(text) > 1:
+        #         transect.date_time.utc_time_offset  = self.timezone_dict[text]
+        #
+        #     else:
+        #         transect.date_time.utc_time_offset  = "00:00:00"
 
         self.qa = QAData(self, tr=self.tr)
 
@@ -3185,10 +3219,33 @@ class Measurement(object):
                     np.sqrt(u_boat**2 + v_boat**2)
                 )
 
+                # Compute flow direction using discharge weighting
+                u_water = transect.w_vel.u_processed_mps[:, in_transect_idx]
+                v_water = transect.w_vel.v_processed_mps[:, in_transect_idx]
+                weight = np.abs(self.discharge[n].middle_cells)
+                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(
+                    np.nansum(weight)
+                )
+                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(
+                    np.nansum(weight)
+                )
+                trans_prop["avg_water_dir"][n] = np.arctan2(u, v) * 180 / np.pi
+                if trans_prop["avg_water_dir"][n] < 0:
+                    trans_prop["avg_water_dir"][n] = (
+                        trans_prop["avg_water_dir"][n] + 360
+                    )
+
+                area_width_correction = 1
+                if self.area_projection == "PerpenMF":
+                    diff = np.abs(trans_prop["avg_boat_course"][n] - trans_prop["avg_water_dir"][n])
+                    if diff > 180:
+                        diff = diff - 180
+                    area_width_correction = cosd(diff - 90)
+
                 # Compute width
                 trans_prop["width"][n] = np.nansum(
                     [
-                        dmg,
+                        dmg * area_width_correction,
                         transect.edges.left.distance_m,
                         transect.edges.right.distance_m,
                     ]
@@ -3214,7 +3271,7 @@ class Measurement(object):
                 # using trapezoidal integration. This method is consistent with
                 # AreaComp but is different from QRev in Matlab
                 area_moving_boat = np.abs(
-                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx]))
+                    np.trapz(depth_a[valid_data_idx], station[valid_data_idx])) * area_width_correction
                 # Compute area of left edge
                 edge_type = transect.edges.left.type
                 edge_idx = QComp.edge_ensembles("left", transect)
@@ -3233,7 +3290,6 @@ class Measurement(object):
                     coef = 0.5
 
                 area_left = edge_depth * transect.edges.left.distance_m * coef
-
 
                 # Compute area of right edge
                 edge_type = transect.edges.right.type
@@ -3293,22 +3349,6 @@ class Measurement(object):
                     self.discharge[n].total / trans_prop["area"][n]
                 )
 
-                # Compute flow direction using discharge weighting
-                u_water = transect.w_vel.u_processed_mps[:, in_transect_idx]
-                v_water = transect.w_vel.v_processed_mps[:, in_transect_idx]
-                weight = np.abs(self.discharge[n].middle_cells)
-                u = np.nansum(np.nansum(u_water * weight)) / np.nansum(
-                    np.nansum(weight)
-                )
-                v = np.nansum(np.nansum(v_water * weight)) / np.nansum(
-                    np.nansum(weight)
-                )
-                trans_prop["avg_water_dir"][n] = np.arctan2(u, v) * 180 / np.pi
-                if trans_prop["avg_water_dir"][n] < 0:
-                    trans_prop["avg_water_dir"][n] = (
-                        trans_prop["avg_water_dir"][n] + 360
-                    )
-
                 # Compute average and max depth
                 # This is a deviation from QRev in Matlab which simply
                 # averaged all the depths
@@ -3320,7 +3360,7 @@ class Measurement(object):
                 )
 
                 # Compute max water speed using the 99th percentile
-                water_speed = np.sqrt(u_water**2 + v_water**2)
+                water_speed = np.sqrt(u_water**2 + v_water**2) * self.discharge[0].correction_factor
                 trans_prop["max_water_speed"][n] = np.nanpercentile(water_speed, 99)
                 if transect.checked:
                     checked_idx = np.append(checked_idx, n)
@@ -3694,7 +3734,7 @@ class Measurement(object):
                 if len(each.messages) > 0:
                     str_out = ""
                     for message in each.messages:
-                        str_out = str_out + message + "; "
+                        str_out = str_out + message
                     ETree.SubElement(mbt, "Message", type="char").text = str_out
 
         # (3) TemperatureCheck Node
@@ -3817,23 +3857,32 @@ class Measurement(object):
         w_vel = []
         for each in self.transects:
             w_vel.append(each.w_vel)
-        blank = []
+        blank = np.array([])
         for each in w_vel:
-            blank.append(each.blanking_distance_m)
-        if isinstance(blank[0], float):
-            temp = np.mean(blank)
-            if (
-                self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m
-                > temp
-            ):
-                temp = self.transects[
-                    self.checked_transect_idx[0]
-                ].w_vel.excluded_dist_m
-        else:
-            temp = self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m
-        ETree.SubElement(
-            instrument, "BlankingDistance", type="double", unitsCode="m"
-        ).text = "{:.4f}".format(temp)
+            blank = np.hstack([blank, each.blanking_distance_m])
+
+        blanking_dist = np.unique(blank)
+        if len(blanking_dist) > 0:
+            # For the RSQ the blanking distance is variable and may be negative
+            if len(blanking_dist) > 10 or np.any(blanking_dist < 0):
+                ETree.SubElement(
+                    instrument, "BlankingDistance", type="char", unitsCode="m"
+                ).text = "Variable"
+            # If excluded distance is greater than the blanking distance report excluded distance
+            elif np.any(blanking_dist < self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m):
+                temp = self.transects[self.checked_transect_idx[0]].w_vel.excluded_dist_m
+                ETree.SubElement(
+                    instrument, "BlankingDistance", type="double", unitsCode="m"
+                ).text = "{:.4f}".format(temp)
+            # For the M9 the blanking distance may vary based on frequency used
+            elif len(blanking_dist) > 1:
+                ETree.SubElement(
+                    instrument, "BlankingDistance", type="char", unitsCode="m"
+                ).text = str(blanking_dist)
+            else:
+                ETree.SubElement(
+                    instrument, "BlankingDistance", type="double", unitsCode="m"
+                ).text = "{:.4f}".format(blanking_dist[0])
 
         # (3) InstrumentConfiguration Node
         commands = ""
@@ -3844,7 +3893,7 @@ class Measurement(object):
             for each in self.transects[
                 self.checked_transect_idx[0]
             ].adcp.configuration_commands:
-                if type(each) is str:
+                if isinstance(each, np.str_):
                     commands += each + "  "
             ETree.SubElement(
                 instrument, "InstrumentConfiguration", type="char"
@@ -4244,17 +4293,17 @@ class Measurement(object):
                 ETree.SubElement(transect, "Filename", type="char").text = temp
 
                 # (3) StartDateTime Node
-                temp = int(self.transects[n].date_time.start_serial_time)
-                temp = datetime.datetime.utcfromtimestamp(temp).strftime(
-                    "%m/%d/%Y %H:%M:%S"
-                )
+                temp = tz_formatted_string(
+                    self.transects[n].date_time.start_serial_time,
+                    self.transects[n].date_time.utc_time_offset,
+                    "%m/%d/%Y %H:%M:%S")
                 ETree.SubElement(transect, "StartDateTime", type="char").text = temp
 
                 # (3) EndDateTime Node
-                temp = int(self.transects[n].date_time.end_serial_time)
-                temp = datetime.datetime.utcfromtimestamp(temp).strftime(
-                    "%m/%d/%Y %H:%M:%S"
-                )
+                temp = tz_formatted_string(
+                    self.transects[n].date_time.end_serial_time,
+                    self.transects[n].date_time.utc_time_offset,
+                    "%m/%d/%Y %H:%M:%S")
                 ETree.SubElement(transect, "EndDateTime", type="char").text = temp
 
                 # (3) Discharge Node
@@ -5506,6 +5555,7 @@ class Measurement(object):
         """
 
         kml = simplekml.Kml(open=1)
+        kml_created = False
         # Create a shiptrack for each checked transect
         for transect_idx in self.checked_transect_idx:
             if self.transects[transect_idx].gps is not None:
@@ -5516,8 +5566,48 @@ class Measurement(object):
                 line_name = self.transects[transect_idx].file_name[:-4]
                 lon_lat = tuple(zip(lon, lat))
                 _ = kml.newlinestring(name=line_name, coords=lon_lat)
+                kml_created = True
+            elif self.transects[transect_idx].georef is not None:
 
+                # Find valid start ensemble
+                valid_ens = np.nansum(np.squeeze(self.transects[transect_idx].w_vel.valid_data[0, :, :]), axis=0)
+                first_ens_idx = np.where(valid_ens > 0)[0][0]
+
+                # Find valid georef coordinates
+                start_lat = self.transects[transect_idx].georef["lat_deg"][first_ens_idx]
+                start_lon = self.transects[transect_idx].georef["lon_deg"][first_ens_idx]
+
+                if start_lat == 0 or start_lon == 0:
+                    for n in range(first_ens_idx, self.transects[transect_idx].georef["lat_deg"].shape[0]):
+                        if self.transects[transect_idx].georef["lat_deg"][n] != 0 and self.transects[transect_idx].georef["lon_deg"][n] != 0:
+                            start_lat = self.transects[transect_idx].georef["lat_deg"][n]
+                            start_lon = self.transects[transect_idx].georef["lon_deg"][n]
+                            first_ens_idx = n
+                            break
+
+                # Convert start lat and lon to UTM
+                if np.any(start_lat) != 0 and np.any(start_lon) != 0:
+                    start_x_utm, start_y_utm, zone_number, zone_letter = utm.from_latlon(start_lat, start_lon)
+
+                    # Compute shiptrack
+                    boat_track = BoatStructure.compute_boat_track(self.transects[transect_idx])
+
+                    # Shiptrack in UTM
+                    x_adjust = start_x_utm - boat_track["track_x_m"][first_ens_idx]
+                    y_adjust = start_y_utm - boat_track["track_y_m"][first_ens_idx]
+                    track_x_utm = boat_track["track_x_m"] + x_adjust
+                    track_y_utm = boat_track["track_y_m"] + y_adjust
+
+                    # Shiptrack to latlon
+                    track_lat, track_lon = utm.to_latlon(track_x_utm, track_y_utm, zone_number, zone_letter)
+
+                    # Create kml
+                    line_name = self.transects[transect_idx].file_name[:-4]
+                    lon_lat = tuple(zip(track_lon, track_lat))
+                    _ = kml.newlinestring(name=line_name, coords=lon_lat)
+                    kml_created = True
         kml.save(path)
+        return kml_created
 
     def drop_transects(self, transect_idx):
         """Remove transects from Measurement object.

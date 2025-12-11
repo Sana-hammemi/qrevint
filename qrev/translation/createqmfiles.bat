@@ -1,2 +1,3 @@
-pyside6-lrelease qrev_sp.ts -qm qrev_sp.qm
-pyside6-lrelease qrev_de.ts -qm qrev_de.qm
+pyside6-lrelease qrev_sp.ts -qm Spanish.qm
+pyside6-lrelease qrev_de.ts -qm German.qm
+pyside6-lrelease qrev_fr.ts -qm French.qm

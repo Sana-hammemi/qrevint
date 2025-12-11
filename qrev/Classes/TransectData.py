@@ -77,6 +77,7 @@ class TransectData(object):
         self.w_vel = None
         self.boat_vel = None
         self.gps = None
+        self.georef = None
         self.sensors = None
         self.depths = None
         self.edges = None
@@ -165,7 +166,7 @@ class TransectData(object):
             )
             start_serial_time = start_dt.timestamp()
             start_date = datetime.strftime(
-                datetime.utcfromtimestamp(start_serial_time), "%m/%d/%Y"
+                datetime.fromtimestamp(start_serial_time, tz=timezone.utc), "%m/%d/%Y"
             )
 
             # End data and time
@@ -344,6 +345,25 @@ class TransectData(object):
                         coord_sys_in="Earth",
                         nav_ref_in="VTG",
                     )
+
+            # GeoRef data if available
+            if np.any(pd0_data.GeoRef.lat_deg) != 0 or np.any(pd0_data.GeoRef.lon_deg) != 0:
+                # Determine correct sign for latitude
+                lat_deg = pd0_data.GeoRef.lat_deg
+                for n, lat_ref in enumerate(pd0_data.GeoRef.lat_ref):
+                    if lat_ref == "S":
+                        lat_deg[n] = lat_deg[n]  * -1
+
+                # Determine correct sign for longitude
+                lon_deg = pd0_data.GeoRef.lon_deg
+                for n, lon_ref in enumerate(pd0_data.GeoRef.lon_ref):
+                    if lon_ref == "W":
+                        lon_deg[n] = lon_deg[n] * -1
+
+                self.georef = {
+                    "lat_deg": lat_deg,
+                    "lon_deg": lon_deg
+                }
 
             # Get and compute ensemble beam depths
             temp_depth_bt = np.array(pd0_data.Bt.depth_m)
@@ -955,6 +975,7 @@ class TransectData(object):
                     temperature = rsdata.Setup.userTemperature
                 else:
                     temperature = (5.0 / 9.0) * (rsdata.Setup.userTemperature - 32)
+                temperature = np.tile(temperature, ensemble_delta_time.shape[0])
                 self.sensors.temperature_deg_c.user = SensorData()
                 self.sensors.temperature_deg_c.user.populate_data(
                     data_in=temperature, source_in="Manual"
@@ -1329,14 +1350,19 @@ class TransectData(object):
         if excluded_distance < 0:
             excluded_distance = 0
 
-        if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
-            ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
+        try:
+            blanking_distance = rsdata.Summary.Blank_Distance
+        except AttributeError:
+            blanking_distance = np.nan
 
-        else:
-            # M9 or S5
-            ping_type = self.sontek_ping_type(
-                corr=corr, freq=rsdata.WaterTrack.WT_Frequency
-            )
+        # if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
+        #     ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
+        #
+        # else:
+        # M9 or S5
+        ping_type = self.sontek_ping_type(
+            corr=corr, freq=rsdata.WaterTrack.WT_Frequency
+        )
 
         # Create water velocity object
         self.w_vel = WaterData()
@@ -1355,7 +1381,7 @@ class TransectData(object):
             sl_lag_effect_in=sl_lag_effect_m,
             sl_cutoff_m=sl_cutoff_m,
             wm_in=wm,
-            blank_in=excluded_distance,
+            blank_in=blanking_distance,
             corr_in=corr,
             ping_type=ping_type,
             snr_3beam_comp=snr_3beam_comp,
@@ -1650,13 +1676,13 @@ class TransectData(object):
         self.rsqmb_wt(wt, transect_data, system_configuration, snr_3beam_comp)
 
         # Edges
-        self.rsqmb_edges(transect_data["config_json"]["Setup"]["EdgeConfiguration"])
+        self.rsqmb_edges(transect_data["config_json"]["Setup"]["EdgeConfiguration"], transect_data["config_json"]["SampleConfigurations"])
 
         # Extrapolation
         self.rsqmb_extrap(transect_data["config_json"]["Setup"]["ExtrapolationConfiguration"])
 
         self.in_transect_idx = np.arange(self.w_vel.cells_above_sl.shape[1])
-        
+
     @staticmethod
     def rsqmb_extract_samples(adcp_data):
         """Extracts samples from raw data for a transect.
@@ -1688,7 +1714,7 @@ class TransectData(object):
 
         ens_time = []
         n_ensembles = len(adcp_data["data"])
-                
+
         # Define dictionaries
         bt = {
             "ping_type": np.full([n_ensembles], "     "),
@@ -1747,7 +1773,7 @@ class TransectData(object):
         compass = {"heading": [], "pitch": [], "roll": [], "heading_std": [],
             "pitch_std": [], "roll_std": [], "mag_error": [], }
 
-    
+
         wt = {
             "snr": np.full([4, 128, n_ensembles], np.nan),
             "vel": np.full([4, 128, n_ensembles], np.nan),
@@ -1803,60 +1829,62 @@ class TransectData(object):
 
                     for record_n, record in enumerate(sample["GpsRecords"]):
 
-
-                        raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
-                        raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
-                        raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
-                        raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
-                        raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
-
                         try:
-                            raw_gga = raw_gga_list[record_n].split(",")
-                            raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
-                            raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
-                        except (ValueError, IndexError):
-                            pass
+                            raw_gps["gga_utc_time"][sample_n, record_n] = float(record["GgaSatelliteTime"].replace(":", ""))
+                            raw_gps["gga_latitude"][sample_n, record_n] = record["GgaLatitude"]
+                            raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
+                            raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
+                            raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
 
-                        raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
-                        # speed actually in kph
-                        raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
-                        raw_gps["vtg_mode"] = record["VtgFaaMode"]
-
-                        # Store raw gga data
-                        if record_n <= len(raw_gga_list):
                             try:
                                 raw_gga = raw_gga_list[record_n].split(",")
-                                raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
-                                raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
-                                # Determine correct sign for latitude
-                                if raw_gga[3] == "S":
-                                    raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
-                                raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
-                                # Determing correct sign for longitude
-                                if raw_gga[5] == "W":
-                                    raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
-                                raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
-                                raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
-                                raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
-                                raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
-                            except:
+                                raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                            except (ValueError, IndexError):
                                 pass
 
-                        # Store raw vtg data
-                        if record_n <= len(raw_vtg_list):
-                            try:
-                                raw_vtg = raw_vtg_list[record_n].split(",")
-                                raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
-                                # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
-                                # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
-                                # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
-                                # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
-                                # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
-                                raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
-                                # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
-                                raw_gps2["vtg_mode"] = raw_vtg[9]
-                            except:
-                                pass
+                            raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
+                            # speed actually in kph
+                            raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
+                            raw_gps["vtg_mode"] = record["VtgFaaMode"]
+
+                            # Store raw gga data
+                            if record_n <= len(raw_gga_list):
+                                try:
+                                    raw_gga = raw_gga_list[record_n].split(",")
+                                    raw_gps2["gga_utc_time"][sample_n, record_n] = float(raw_gga[1])
+                                    raw_gps2["gga_latitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[2]))
+                                    # Determine correct sign for latitude
+                                    if raw_gga[3] == "S":
+                                        raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
+                                    raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
+                                    # Determing correct sign for longitude
+                                    if raw_gga[5] == "W":
+                                        raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
+                                    raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
+                                    raw_gps2["gga_altitude"][sample_n, record_n] = float(raw_gga[9])
+                                    raw_gps2["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
+                                    raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
+                                except:
+                                    pass
+
+                            # Store raw vtg data
+                            if record_n <= len(raw_vtg_list):
+                                try:
+                                    raw_vtg = raw_vtg_list[record_n].split(",")
+                                    raw_gps2["vtg_true_course"][sample_n, record_n] = float(raw_vtg[1])
+                                    # raw_gps["vtg_true_indicator"][sample_n, record_n] = raw_vtg[2]
+                                    # raw_gps["vtg_mag_course"][sample_n, record_n] = float(raw_vtg[3])
+                                    # raw_gps["vtg_mag_indicator"][sampl_n, record_n] = raw_vtg[4]
+                                    # raw_gps["vtg_speed_knots"][sample_n, record_n] = float(raw_vtg[5])
+                                    # raw_gps["vtg_knots_indicator"][sample_n, record_n] = raw_vtg[6]
+                                    raw_gps2["vtg_speed_kph"][sample_n, record_n] = float(raw_vtg[7])
+                                    # raw_gps["vtg_kph_indicator"][sample_n, record_n] = raw_vtg[8]
+                                    raw_gps2["vtg_mode"] = raw_vtg[9]
+                                except:
+                                    pass
+                        except IndexError:
+                            pass
 
             # Ext GPS
             ext_gps["gga_utc_time"][sample_n] = float(sample["Gga"]["SatelliteTime"].replace(":", ""))
@@ -1891,7 +1919,7 @@ class TransectData(object):
             compass["roll_std"].append(sample["Compass"]["RollStdDev (deg)"])
             compass["mag_error"].append(sample["Compass"]["MagneticError"])
 
-            # Water Track  
+            # Water Track
             for beam_n, beam in enumerate(sample["ProfileBeams"]):
                 n_cells = len(beam["CellVelocity (m/s)"])
                 if n_cells > 0:
@@ -2106,8 +2134,8 @@ class TransectData(object):
             depth_in=depth,
             source_in="BT",
             freq_in=freq,
-            draft_in=draft, 
-            cell_depth_in=cell_depth, 
+            draft_in=draft,
+            cell_depth_in=cell_depth,
             cell_size_in=cell_size,
         )
         # Prepare vertical beam depth variable
@@ -2211,6 +2239,23 @@ class TransectData(object):
         self.sensors.roll_deg.internal.populate_data(data_in=roll, source_in="internal")
         self.sensors.roll_deg.selected = "internal"
 
+        # External heading
+        if "HdtHeading (deg)" in adcp_data["data"][0]["Gps"]:
+            ext_heading = np.array([
+                x["Gps"]["HdtHeading (deg)"] if "HdtHeading (deg)" in x["Gps"] and x["Gps"]["HdtHeading (deg)"] is not None else np.nan
+                for x in adcp_data["data"]
+            ])
+
+            if np.any(np.logical_not(np.isnan(ext_heading))):
+                ext_heading[ext_heading < 0] = 360 + ext_heading
+                self.sensors.heading_deg.external = HeadingData()
+                self.sensors.heading_deg.external.populate_data(
+                    data_in=ext_heading,
+                    source_in="external",
+                    magvar=0,
+                    align=system_configuration["GpsCompassHeadingAlignment (deg)"],
+                )
+                self.sensors.heading_deg.selected = "external"
         # Temperature
         temperature = np.array(sensors_ens["temperature"]).astype(float)
         self.sensors.temperature_deg_c.internal = SensorData()
@@ -2376,10 +2421,10 @@ class TransectData(object):
             snr_3beam_comp=snr_3beam_comp,
             excluded_dist_in=excluded_top,
             source="rsq"
-            
+
         )
 
-    def rsqmb_edges(self, setup):
+    def rsqmb_edges(self, setup, sample_cfg):
 
         # Edges
         # -----
@@ -2387,13 +2432,26 @@ class TransectData(object):
         self.edges = Edges()
         self.edges.populate_data(rec_edge_method="Variable", vel_method="VectorProf")
 
+        n_start = 0
+        n_end = 0
+        for sample in sample_cfg:
+            if sample["SampleType"] == "StartEdge":
+                n_start += 1
+            elif sample["SampleType"] == "EndEdge":
+                n_end += 1
+
+
         # Determine number of ensembles for each edge
         if "Right" in setup["StartEdge"]:
             self.start_edge = "Right"
             self.orig_start_edge = "Right"
+            n_right = n_start
+            n_left = n_end
         else:
             self.start_edge = "Left"
             self.orig_start_edge = "Left"
+            n_right = n_end
+            n_left = n_start
 
         # Create left edge object
         edge_type = None
@@ -2413,7 +2471,7 @@ class TransectData(object):
         self.edges.left.populate_data(
             edge_type=edge_type,
             distance=setup["LeftBank"]["DistanceToBank (m)"],
-            number_ensembles=setup["LeftBank"]["NumberOfEdgeProfiles"],
+            number_ensembles=n_left,
             coefficient=coefficient,
             user_discharge=user_discharge, )
 
@@ -2433,7 +2491,7 @@ class TransectData(object):
         user_discharge = setup["RightBank"]["EstimatedFlow (m3/s)"]
         self.edges.right.populate_data(edge_type=edge_type,
             distance=setup["RightBank"]["DistanceToBank (m)"],
-            number_ensembles=setup["RightBank"]["NumberOfEdgeProfiles"],
+            number_ensembles=n_right,
             coefficient=coefficient, user_discharge=user_discharge, )
 
     def rsqmb_extrap(self, setup):
@@ -2498,13 +2556,16 @@ class TransectData(object):
             # If only one transect the data are not a list or array of
             # transects
             try:
-                if len(meas_struct.transects) > 0:
-                    for transect in meas_struct.transects:
-                        trans = TransectData()
-                        trans.populate_from_qrev_mat(transect, meas_struct,
-                                                     time_zone=time_zone)
-                        transects.append(trans)
+                n_transects =  len(meas_struct.transects)
             except TypeError:
+                n_transects = 0
+            if n_transects > 0:
+                for transect in meas_struct.transects:
+                    trans = TransectData()
+                    trans.populate_from_qrev_mat(transect, meas_struct,
+                                                 time_zone=time_zone)
+                    transects.append(trans)
+            else:
                 trans = TransectData()
                 trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
                                                      time_zone=time_zone)
@@ -2531,8 +2592,10 @@ class TransectData(object):
         self.w_vel.populate_from_qrev_mat(transect)
         self.boat_vel = BoatStructure()
         self.boat_vel.populate_from_qrev_mat(transect)
-        self.gps = GPSData()
-        self.gps.populate_from_qrev_mat(transect)
+        if hasattr(transect, "gps"):
+            if hasattr(transect.gps, "diffQualEns"):
+                self.gps = GPSData()
+                self.gps.populate_from_qrev_mat(transect)
         self.sensors = Sensors()
         self.sensors.populate_from_qrev_mat(transect)
         self.depths = DepthStructure()
@@ -2553,6 +2616,12 @@ class TransectData(object):
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])
         else:
             self.in_transect_idx = transect.inTransectIdx.astype(int) - 1
+        if hasattr(transect, "georef"):
+            try:
+                self.georef = {"lat_deg": transect.georef.lat_deg, "lon_deg": transect.georef.lon_deg}
+            except AttributeError:
+                pass
+
 
     @staticmethod
     def valid_frequencies(frequency_in):
@@ -3146,7 +3215,10 @@ class TransectData(object):
             if selected == "user":
                 if self.sensors.temperature_deg_c.user is None:
                     self.sensors.temperature_deg_c.user = SensorData()
-                ens_temperature = np.tile(temperature, temperature_internal.data.shape)
+                if type(temperature) is float:
+                    ens_temperature = np.tile(temperature, temperature_internal.data.shape)
+                else:
+                    ens_temperature = temperature
 
                 self.sensors.temperature_deg_c.user.change_data(data_in=ens_temperature)
                 self.sensors.temperature_deg_c.user.set_source(source_in="Manual Input")
@@ -3158,7 +3230,10 @@ class TransectData(object):
 
         elif parameter == "temperature":
             adcp_temp = self.sensors.temperature_deg_c.internal.data
-            new_user_temperature = np.tile(temperature, adcp_temp.shape)
+            if type(temperature) is float:
+               new_user_temperature = np.tile(temperature, adcp_temp.shape)
+            else:
+               new_user_temperature = temperature
             self.sensors.temperature_deg_c.user.change_data(
                 data_in=new_user_temperature
             )

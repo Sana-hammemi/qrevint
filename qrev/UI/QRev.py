@@ -465,7 +465,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if os.path.exists(options_file) is False:
             config = Config()
             if __company__ == "USGS":
-                config.export_config()
+                config.export_config(config.config)
             else:
                 config.export_international_config()
 
@@ -493,7 +493,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             if __company__ == "USGS":
-                config.export_config()
+                config.export_config(self.config)
             else:
                 config.export_international_config()
 
@@ -952,12 +952,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ss = self.sticky_settings.get("PDFSummary")
                 self.pdf_setting = ss
             else:
-                self.pdf_setting = self.agency_options["PDFSummary"]["default"]
+                self.pdf_setting = dateformat(
+                    self.agency_options["PDFSummary"]["default"]
+                )
         except KeyError:
             self.sticky_settings.new(
                 "PDFSummary", self.agency_options["PDFSummary"]["default"]
             )
-            self.pdf_setting = self.agency_options["PDFSummary"]["default"]
+            self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
             self.pdf_setting = self.agency_options["PDFSummary"]["default"]
 
         # Time zone
@@ -984,6 +986,29 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "use_measurement_thresholds": self.use_measurement_thresholds,
             "use_weighted": self.use_weighted,
         }
+
+        # Area projection
+        update_cfg = False
+        if "Area" not in self.agency_options.keys():
+            update_cfg = True
+            if  "AreaProjection" not in self.sticky_settings.settings.keys():
+                self.popup_message(self.tr("QRev.cfg: Area parameter not found. Setting to parallel to average course"))
+            self.agency_options["Area"] = {"projection": "ParallAC"}
+
+        if "projection" not in self.agency_options["Area"].keys():
+            update_cfg = True
+            if  "AreaProjection" not in self.sticky_settings.settings.keys():
+                self.popup_message(
+                    self.tr("QRev.cfg Area: projection parameter not found. Setting to parallel to average course"))
+            self.agency_options["Area"] = {"projection": "ParallAC"}
+
+        try:
+            self.agency_options["Area"]["projection"] = self.sticky_settings.get("AreaProjection")
+            if update_cfg:
+                Config.export_config(self.agency_options)
+        except KeyError:
+            self.sticky_settings.new("AreaProjection",
+                                     self.agency_options["Area"]["projection"])
 
         # Set initial change switch to false
         self.change = False
@@ -1505,6 +1530,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
                             qt_tr=self.tr,
+                            area_projection=self.agency_options["Area"]["projection"]
                         )
                     except CoordError as error:
                         self.popup_message(error.text)
@@ -1532,6 +1558,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
                         qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"]
                     )
 
             # Load and process TRDI data
@@ -1559,6 +1586,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         date_format=self.date_format,
                         time_zone_required=self.time_zone_required,
                         qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"]
                     )
 
             # Load QRev data
@@ -1622,6 +1650,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             use_measurement_thresholds=self.use_measurement_thresholds,
                             min_transects=self.agency_options["QA"]["MinTransects"],
                             min_duration=self.agency_options["QA"]["MinDuration"],
+                            snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
                             export_xs=self.xs_export,
                             gps_quality_threshold=self.gps_quality_threshold,
                             water_dir_diff_threshold=self.agency_options[
@@ -1629,7 +1658,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             ]["threshold"],
                             date_format=self.date_format,
                             time_zone_required=self.time_zone_required,
-                            qt_tr=self.tr
+                            qt_tr=self.tr,
+                            area_projection=self.agency_options["Area"]["projection"],
                         )
 
                 # Settings based on measurement settings
@@ -1647,27 +1677,30 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
             elif select.type == "RSQ":
-                # Show folder name in GUI header
-                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
-                self.meas = Measurement(
-                    in_file=select.fullName,
-                    source="RSQ",
-                    proc_type="QRev",
-                    run_oursin=self.run_oursin,
-                    use_weighted=self.use_weighted,
-                    use_measurement_thresholds=self.use_measurement_thresholds,
-                    min_transects=self.agency_options["QA"]["MinTransects"],
-                    min_duration=self.agency_options["QA"]["MinDuration"],
-                    export_xs=self.xs_export,
-                    gps_quality_threshold=self.gps_quality_threshold,
-                    snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
-                    excluded=self.agency_options["Excluded"],
-                    water_dir_diff_threshold=self.agency_options["LeftRightFlowDirDiff"][
-                        "threshold"],
-                    date_format=self.date_format,
-                    time_zone_required=self.time_zone_required,
-                    qt_tr=self.tr,
-                )
+                with self.wait_cursor():
+                    # Show folder name in GUI header
+                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                    self.meas = Measurement(
+                        in_file=select.fullName,
+                        source="RSQ",
+                        proc_type="QRev",
+                        run_oursin=self.run_oursin,
+                        use_weighted=self.use_weighted,
+                        use_measurement_thresholds=self.use_measurement_thresholds,
+                        min_transects=self.agency_options["QA"]["MinTransects"],
+                        min_duration=self.agency_options["QA"]["MinDuration"],
+                        export_xs=self.xs_export,
+                        gps_quality_threshold=self.gps_quality_threshold,
+                        snr_3beam_comp=self.agency_options["SNR"]["Use3Beam"],
+                        excluded=self.agency_options["Excluded"],
+                        water_dir_diff_threshold=self.agency_options[
+                            "LeftRightFlowDirDiff"
+                        ]["threshold"],
+                        date_format=self.date_format,
+                        time_zone_required=self.time_zone_required,
+                        qt_tr=self.tr,
+                        area_projection=self.agency_options["Area"]["projection"],
+                    )
             if self.meas is not None:
                 # Identify transects to be used in discharge computation
                 self.checked_transects_idx = Measurement.checked_transects(self.meas)
@@ -1828,7 +1861,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                     # Save xml file
                     self.meas.xml_output(save_file.full_Name[:-4] + ".xml")
-
 
                     # Save stylesheet in measurement folder
                     if self.save_stylesheet:
@@ -2188,6 +2220,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             options.ed_dateformat.setText(self.date_format.replace("%", "").lower())
 
+        if self.agency_options["Area"]["projection"] == "ParallAC":
+            options.rb_pac.setChecked(True)
+        else:
+            options.rb_pmf.setChecked(True)
+
         # Execute the options window
         rsp = options.exec_()
         old_discharge = None
@@ -2469,6 +2506,21 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.date_format = dateformat(options.ed_dateformat.text())
                     self.sticky_settings.set("DateFormat", self.date_format)
 
+                if options.rb_pac.isChecked():
+                    if self.agency_options["Area"]["projection"] != "ParallAC":
+                        self.agency_options["Area"]["projection"] = "ParallAC"
+                        if self.meas is not None:
+                            self.meas.area_projection = "Parallac"
+                            self.change = True
+                    self.sticky_settings.set("AreaProjection","Parallac")
+                else:
+                    if self.agency_options["Area"]["projection"] != "PerpenMF":
+                        self.agency_options["Area"]["projection"] = "PerpenMF"
+                        if self.meas is not None:
+                            self.meas.area_projection = "PerpenMF"
+                            self.change = True
+                    self.sticky_settings.set("AreaProjection","PerpenMF")
+
                 # Update tabs
                 if self.meas is not None:
                     if old_discharge is None:
@@ -2486,15 +2538,25 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             datetime.today().strftime("%Y%m%d_%H%M%S_QRev.kml"),
         )
 
-        self.meas.export_kml(fullname)
+        for transect in self.meas.transects:
+            if transect.checked:
+                if transect.gps is None:
+                    if transect.georef is not None:
+                        self.popup_message(self.tr("The Google Earth locations are based on bottom track with the first valid ensemble assigned a latitude and longitude from the TRDI internal GeoReference data. These locations are approximate."), self.tr("Information"))
+                        break
+                else:
+                    break
+        if self.meas.export_kml(fullname):
 
-        try:
-            os.startfile(fullname)
-        except os.error:
-            self.popup_message(
-                text="Google Earth is not installed or is not associated "
-                "with kml files."
-            )
+            try:
+                os.startfile(fullname)
+            except os.error:
+                self.popup_message(
+                    text="Google Earth is not installed or is not associated "
+                    "with kml files."
+                )
+        else:
+            self.popup_message(self.tr("The kml file for Google Earth could not be created."))
 
     def help(self):
         """Opens pdf help file user's default pdf viewer."""
@@ -3529,40 +3591,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
             "vtg_vel", "w_vel", ]
         self.messages_table(self.main_message_table, qa_check_keys)
-        messages = self.combine_qa_messages()
-        # Setup table
-        tbl = self.main_message_table
-        tbl.clear()
-        main_message_header = [self.tr("Status"), self.tr("Message")]
-        ncols = len(main_message_header)
-        nrows = len(messages)
-        tbl.setRowCount(nrows + 1)
-        tbl.setColumnCount(ncols)
-        tbl.setHorizontalHeaderLabels(main_message_header)
-        tbl.horizontalHeader().setFont(self.font_bold)
-        tbl.verticalHeader().hide()
-        tbl.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-
-        # Populate table
-        for row, message in enumerate(messages):
-            # Handle messages from old QRev that did not have integer codes
-            if type(message) is str:
-                warn = message[:3].isupper()
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message))
-            # Handle newer style messages
-            else:
-                warn = int(message[1]) == 1
-                tbl.setItem(row, 1, QtWidgets.QTableWidgetItem(message[0]))
-            if warn:
-                tbl.item(row, 1).setFont(self.font_bold)
-                item_warning = QtWidgets.QTableWidgetItem(self.icon_warning, "")
-                tbl.setItem(row, 0, item_warning)
-            else:
-                item_caution = QtWidgets.QTableWidgetItem(self.icon_caution, "")
-                tbl.setItem(row, 0, item_caution)
-
-        tbl.resizeColumnsToContents()
-        tbl.resizeRowsToContents()
 
     def update_tab_icons(self):
         """Update tab icons base on results of QA analysis."""
@@ -3847,20 +3875,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Transect end time
                 col += 1
+                item = tz_formatted_string(
+                    self.meas.transects[transect_id].date_time.end_serial_time,
+                    self.meas.transects[transect_id].date_time.utc_time_offset,
+                    "%H:%M:%S")
                 tbl.setItem(
                     row + 1,
                     col,
-                    QtWidgets.QTableWidgetItem(
-                        datetime.strftime(
-                            datetime.utcfromtimestamp(
-                                self.meas.transects[
-                                    transect_id
-                                ].date_time.end_serial_time
-                            ),
-                            "%H:%M:%S",
-                        )
-                    ),
-                )
+                    QtWidgets.QTableWidgetItem(item))
                 tbl.item(row + 1, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
                 # Transect duration
@@ -3993,7 +4015,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             col = 0
 
             meas_date = datetime.strftime(
-                datetime.utcfromtimestamp(
+                datetime.fromtimestamp(
                     self.meas.transects[
                         self.checked_transects_idx[0]
                     ].date_time.start_serial_time
@@ -4127,7 +4149,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Setup table
         tbl = self.main_table_details
         if self.percent_measured_show:
-            summary_header = [self.tr("Transect"),
+            summary_header = [
+                self.tr("Transect"),
                 self.tr("Width" + "\n " + self.units["label_L"]),
                 self.tr("Area" + "\n " + self.units["label_A"]),
                 self.tr("Wetted \n Perimeter " + self.units["label_L"]),
@@ -4136,7 +4159,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tr("Avg Boat \n Speed" + " " + self.units["label_V"]),
                 self.tr("Course Made \n Good" + " (deg)"),
                 self.tr("Q/A" + " " + self.units["label_V"]),
-                self.tr("Avg Water \n Direction" + " (deg)"), ]
+                self.tr("Avg Water \n Direction" + " (deg)"),
+            ]
 
         else:
             summary_header = [
@@ -4184,8 +4208,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             for row in range(nrows):
                 col = 0
                 transect_id = self.checked_transects_idx[row]
-                percent = (self.meas.discharge[transect_id].middle / self.meas.discharge[
-                    transect_id].total_uncorrected) * 100.
+                percent = (
+                    self.meas.discharge[transect_id].middle
+                    / self.meas.discharge[transect_id].total_uncorrected
+                ) * 100.0
                 if trans_prop["start_bank"][transect_id] == "Left":
                     left_width.append(trans_prop["width"][transect_id])
                     left_area.append(trans_prop["area"][transect_id])
@@ -4410,9 +4436,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # LR difference hydraulic radius
                 if len(left_percent_measured) > 0 and len(right_percent_measured) > 0:
-                    item = "{:10.1f}".format(np.abs(
-                        np.nanmean(left_percent_measured) - np.nanmean(
-                            right_percent_measured)))
+                    item = "{:10.1f}".format(
+                        np.abs(
+                            np.nanmean(left_percent_measured)
+                            - np.nanmean(right_percent_measured)
+                        )
+                    )
                 else:
                     item = ""
                 tbl.setItem(1, col, QtWidgets.QTableWidgetItem(item))
@@ -4571,6 +4600,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             "{:3.4f}".format(self.meas.stage_meas_m * self.units["L"])
         )
 
+        self.combo_timezone.blockSignals(True)
         try:
             tz_idx = self.timezone_list.index(self.meas.time_zone)
             self.combo_timezone.setCurrentIndex(tz_idx)
@@ -4584,6 +4614,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.combo_timezone.setCurrentIndex(0)
             self.label_time_zone.setStyleSheet("background-color: white")
             self.label_time_zone.setToolTip("")
+
+        if self.meas.transects[self.checked_transects_idx[0]].date_time.utc_time_offset is None:
+            self.combo_timezone.setEnabled(True)
+        else:
+            self.combo_timezone.setEnabled(False)
+        self.combo_timezone.blockSignals(False)
 
         # Setup table
         tbl = self.table_premeas
@@ -4841,8 +4877,16 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.main_premeasurement_table()
 
     def update_time_zone(self, text):
-        """Records the time zone entered by the user. Value not used in any compuations"""
+        """Records the time zone entered by the user. Value not used in any computations"""
 
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.setText("Information")
+        msg.setInformativeText(
+            "Changing the time zone is for reference only. It does not change the times associated with the measurement."
+        )
+        msg.setWindowTitle("Information")
+        msg.exec_()
         self.meas.change_timezone(text)
         self.messages_tab()
         self.main_premeasurement_table()
@@ -5651,6 +5695,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 is not None
             ):
                 self.cb_ext_compass.setEnabled(True)
+                self.cb_ext_compass.setChecked(True)
                 break
             else:
                 self.cb_ext_compass.setChecked(False)
@@ -5824,7 +5869,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Populate each row
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
-
+                heading_data_selected = getattr(self.meas.transects[transect_id].sensors.heading_deg, self.meas.transects[transect_id].sensors.heading_deg.selected)
                 # File/Transect name
                 col = 0
                 checked = QtWidgets.QTableWidgetItem(
@@ -5849,10 +5894,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.mag_var_deg
+                        "{:3.2f}".format(heading_data_selected.mag_var_deg
                         )
                     ),
                 )
@@ -5876,7 +5918,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                     tbl.item(row, col).setToolTip(
                         self.tr(
-                            "Difference in left and right water direction threshold exeeded"
+                            "Difference in left and right water direction threshold exceeded."
                         )
                     )
 
@@ -5902,10 +5944,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.align_correction_deg
+                        "{:3.2f}".format(heading_data_selected.align_correction_deg
                         )
                     ),
                 )
@@ -5920,7 +5959,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     tbl.item(row, col).setBackground(QtGui.QColor(255, 204, 0))
                     tbl.item(row, col).setToolTip(
                         self.tr(
-                            "Difference in left and right water direction threshold exeeded"
+                            "Difference in left and right water direction threshold exceeded."
                         )
                     )
                 else:
@@ -6114,6 +6153,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tbl.blockSignals(True)
             for row in range(tbl.rowCount()):
                 transect_id = self.checked_transects_idx[row]
+                heading_data_selected = getattr(self.meas.transects[transect_id].sensors.heading_deg, self.meas.transects[transect_id].sensors.heading_deg.selected)
 
                 # File/Transect name
                 col = 0
@@ -6123,10 +6163,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.mag_var_deg
+                        "{:3.2f}".format(heading_data_selected.mag_var_deg
                         )
                     ),
                 )
@@ -6138,10 +6175,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     row,
                     col,
                     QtWidgets.QTableWidgetItem(
-                        "{:3.2f}".format(
-                            self.meas.transects[
-                                transect_id
-                            ].sensors.heading_deg.internal.align_correction_deg
+                        "{:3.2f}".format(heading_data_selected.align_correction_deg
                         )
                     ),
                 )
@@ -6268,8 +6302,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl = self.table_compass_pr
         # Change transects plotted
         if column == 0:
-            for nrow in range(tbl.rowCount()):
-                tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked)
+            [tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked) for nrow in range(tbl.rowCount())]
+            # for nrow in range(tbl.rowCount()):
+            #     tbl.item(nrow, 0).setCheckState(QtCore.Qt.Unchecked)
             self.transect_row = row
             tbl.item(row, 0).setCheckState(QtCore.Qt.Checked)
             tbl.scrollToItem(tbl.item(self.transect_row, 0))
@@ -6302,7 +6337,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             )
 
                         # Update compass tab
-                        self.change_table_data(
+                        # self.change_table_data(
+                        #     tbl=tbl,
+                        #     old_discharge=old_discharge,
+                        #     new_discharge=self.meas.discharge,
+                        # )
+                        self.update_compass_tab(
                             tbl=tbl,
                             old_discharge=old_discharge,
                             new_discharge=self.meas.discharge,
@@ -7913,7 +7953,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.display_mb_comments.textCursor().insertText(comment)
                 self.display_mb_comments.moveCursor(QtGui.QTextCursor.End)
                 self.display_mb_comments.textCursor().insertBlock()
-
 
             # QAData messages
             qa_messages = self.combine_selected_qa_messages(["movingbed"])
@@ -15164,6 +15203,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Add transect data
         for row in range(nrows):
+
+            # Transect
             col = 0
             transect_id = self.checked_transects_idx[row]
 
@@ -15173,20 +15214,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             checked.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             checked.setCheckState(QtCore.Qt.Unchecked)
             tbl.setItem(row, col, checked)
+
+            # Start Time
             col += 1
+            item = tz_formatted_string(
+                self.meas.transects[transect_id].date_time.start_serial_time,
+                self.meas.transects[transect_id].date_time.utc_time_offset,
+                "%H:%M:%S")
             tbl.setItem(
                 row,
                 col,
-                QtWidgets.QTableWidgetItem(
-                    datetime.strftime(
-                        datetime.utcfromtimestamp(
-                            self.meas.transects[transect_id].date_time.start_serial_time
-                        ),
-                        "%H:%M:%S",
-                    )
-                ),
-            )
+                QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Start bank
             col += 1
             tbl.setItem(
                 row,
@@ -15196,20 +15237,20 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # End
             col += 1
+            item = tz_formatted_string(
+                self.meas.transects[transect_id].date_time.end_serial_time,
+                self.meas.transects[transect_id].date_time.utc_time_offset,
+                "%H:%M:%S")
             tbl.setItem(
                 row,
                 col,
-                QtWidgets.QTableWidgetItem(
-                    datetime.strftime(
-                        datetime.utcfromtimestamp(
-                            self.meas.transects[transect_id].date_time.end_serial_time
-                        ),
-                        "%H:%M:%S",
-                    )
-                ),
-            )
+                QtWidgets.QTableWidgetItem(item))
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Duration
             col += 1
             tbl.setItem(
                 row,
@@ -15221,6 +15262,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Total Q
             col += 1
             tbl.setItem(
                 row,
@@ -15234,6 +15277,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Top Q
             col += 1
             tbl.setItem(
                 row,
@@ -15245,6 +15290,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Meas Q
             col += 1
             tbl.setItem(
                 row,
@@ -15258,6 +15305,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Bottom Q
             col += 1
             tbl.setItem(
                 row,
@@ -15271,6 +15320,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Left Q
             col += 1
             tbl.setItem(
                 row,
@@ -15284,6 +15335,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+            # Right Q
             col += 1
             tbl.setItem(
                 row,
@@ -15411,6 +15464,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Add data to table
         for row in range(len(self.edi_results["percent"])):
+
+            # Percent Q
             col = 0
             tbl.setItem(
                 row,
@@ -15420,6 +15475,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ),
             )
 
+            # Target Q
             col += 1
             tbl.setItem(
                 row,
@@ -15432,6 +15488,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Actual Q
             col += 1
             tbl.setItem(
                 row,
@@ -15444,6 +15501,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Distance
             col += 1
             # Code to handle either blank or user supplied data
             try:
@@ -15461,6 +15519,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Depth
             col += 1
             tbl.setItem(
                 row,
@@ -15471,6 +15530,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             )
             tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
 
+            # Velocity
             col += 1
             tbl.setItem(
                 row,
@@ -15490,6 +15550,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 latm = np.abs((self.edi_results["lat"][row] - latd) * 60)
                 lond = int(self.edi_results["lon"][row])
                 lonm = np.abs((self.edi_results["lon"][row] - lond) * 60)
+
+                # Latitude
                 col += 1
                 tbl.setItem(
                     row,
@@ -15497,6 +15559,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     QtWidgets.QTableWidgetItem("{:3.0f} {:3.7f}".format(latd, latm)),
                 )
                 tbl.item(row, col).setFlags(QtCore.Qt.ItemIsEnabled)
+
+                # Longitude
                 col += 1
                 tbl.setItem(
                     row,
@@ -15712,6 +15776,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_final_depths_ts", self.cb_adv_graph_final_depths),
                 ("cb_depths_source_ts", self.cb_adv_graph_depth_source),
                 ("cb_battery_voltage_ts", self.cb_adv_graph_battery_voltage),
+                ("cb_temperature_ts", self.cb_adv_graph_temperature),
             ]
 
             trans_prop = Measurement.compute_measurement_properties(self.meas)
@@ -15902,6 +15967,17 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.cb_adv_graph_battery_voltage.setEnabled(False)
         else:
             self.cb_adv_graph_battery_voltage.setEnabled(True)
+
+        # Temperature
+        if (
+                self.meas.transects[
+                    self.checked_transects_idx[self.transect_row]
+                ].sensors.temperature_deg_c.internal
+                is None
+        ):
+            self.cb_adv_graph_temperature.setEnabled(False)
+        else:
+            self.cb_adv_graph_temperature.setEnabled(True)
 
     def adv_graph_plots(self):
         """Creates advanced plots for data in transect."""
@@ -16728,6 +16804,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.meas.map.export_kml(
                         self.meas,
                         fullname,
+                        self.units,
                         arrow_scale=arrow_scale,
                         v_min=v_min,
                         v_max=v_max,
@@ -17321,7 +17398,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Initialize local variables
         qa = self.meas.qa
 
-
         # For each qa check retrieve messages and set tab icon based on the
         # status
         messages = []
@@ -17407,7 +17483,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.resizeRowsToContents()
 
     @staticmethod
-    def popup_message(text):
+    def popup_message(text, type="Error"):
         """Display a message box with messages specified in text.
 
         Parameters
@@ -17418,9 +17494,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Critical)
-        msg.setText("Error")
+        msg.setText(type)
         msg.setInformativeText(text)
-        msg.setWindowTitle("Error")
+        msg.setWindowTitle(type)
         msg.exec_()
         return
 
@@ -17831,7 +17907,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.actionShow_Extrapolated.setVisible(False)
 
         # Set tab text and icons to default
-        for tab_idx in range(self.tab_all.count() - 4):
+        for tab_idx in range(11):
             self.tab_all.setTabIcon(tab_idx, QtGui.QIcon())
             self.tab_all.tabBar().setTabTextColor(tab_idx, QtGui.QColor(191, 191, 191))
 
@@ -17854,6 +17930,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         QtGui.QKeySequence("Ctrl+G"), self
                     )
                     self.sc_gga.activated.connect(self.set_ref_gga)
+            if self.meas.transects[idx].georef is not None:
+                self.actionGoogle_Earth.setEnabled(True)
             if self.meas.transects[idx].boat_vel.vtg_vel is not None:
                 self.tab_all.setTabEnabled(6, True)
                 self.actionVTG.setEnabled(True)
@@ -17920,7 +17998,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             if os.path.exists(base_path):
                 lang_path = os.path.join(base_path, lang_file)
-
             else:
                 # Use production-specific settings
                 # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -17930,13 +18007,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             try:
                 self.translator.load(lang_path)
                 QtWidgets.QApplication.instance().installTranslator(
-                 self.translator)
+                    self.translator)
             except BaseException:
 
                 self.popup_message(self.tr("Failed to load translation."))
 
                 QtWidgets.QApplication.instance().removeTranslator(
                     self.translator)
+
         else:
             QtWidgets.QApplication.instance().removeTranslator(self.translator)
 

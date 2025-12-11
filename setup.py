@@ -36,7 +36,7 @@ setup(
                       'atomicwrites==1.3.0',
                       'attrs==19.1.0',
                       'click>=7.1.2',
-                      'colorama==0.4.1',
+                      'colorama~=0.4.1',
                       'cycler==0.10.0',
                       'future==0.17.1',
                       'importlib-metadata',

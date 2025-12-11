@@ -23,6 +23,7 @@ from qrev.UI.DischargeTS import DischargeTS
 from qrev.UI.ExtrapPlot import ExtrapPlot
 from qrev.UI.MplCanvas import MplCanvas
 from qrev.UI.ULollipopPlot import ULollipopPlot
+from qrev.MiscLibs.local_time_utilities import tz_formatted_string
 
 
 class Report:
@@ -116,7 +117,11 @@ class Report:
         start = self.parent.meas.transects[
             self.parent.meas.checked_transect_idx[0]
         ].date_time.start_serial_time
-        date = datetime.utcfromtimestamp(start).strftime(self.parent.date_format)
+        utc_time_offset = self.parent.meas.transects[
+            self.parent.meas.checked_transect_idx[0]
+        ].date_time.utc_time_offset
+        date = tz_formatted_string(start, utc_time_offset, self.parent.date_format)
+
         ptext = (
             "<font size = 10> <b>"
             + self.tr("Measurement Date")
@@ -300,20 +305,15 @@ class Report:
             invalid_ens = "{:5.2f}".format(value)
 
         transect_id = meas.checked_transect_idx[0]
-        start_time = datetime.strftime(
-            datetime.utcfromtimestamp(
-                meas.transects[transect_id].date_time.start_serial_time
-            ),
-            "%H:%M:%S",
-        )
+        start = meas.transects[transect_id].date_time.start_serial_time
+        utc_time_offset = meas.transects[transect_id].date_time.utc_time_offset
+        start_time = tz_formatted_string(start, utc_time_offset, "%H:%M:%S")
+
 
         transect_id = meas.checked_transect_idx[-1]
-        end_time = datetime.strftime(
-            datetime.utcfromtimestamp(
-                meas.transects[transect_id].date_time.end_serial_time
-            ),
-            "%H:%M:%S",
-        )
+        end = meas.transects[transect_id].date_time.end_serial_time
+        utc_time_offset = meas.transects[transect_id].date_time.utc_time_offset
+        end_time = tz_formatted_string(end, utc_time_offset, "%H:%M:%S")
 
         duration = "{:.1f}".format(meas.measurement_duration(self.parent.meas))
 
@@ -905,14 +905,14 @@ class Report:
 
             filename = idx
             start_edge = transect.start_edge
-            start_time = datetime.strftime(
-                datetime.utcfromtimestamp(transect.date_time.start_serial_time),
-                "%H:%M:%S",
-            )
-            end_time = datetime.strftime(
-                datetime.utcfromtimestamp(transect.date_time.end_serial_time),
-                "%H:%M:%S",
-            )
+            start = transect.date_time.start_serial_time
+            utc_time_offset = transect.date_time.utc_time_offset
+            start_time = tz_formatted_string(start, utc_time_offset, "%H:%M:%S")
+
+            end = transect.date_time.end_serial_time
+            utc_time_offset = transect.date_time.utc_time_offset
+            end_time = tz_formatted_string(end, utc_time_offset, "%H:%M:%S")
+
             duration = "{:5.1f}".format(transect.date_time.transect_duration_sec)
 
             top_q = "{:8}".format(self.parent.q_digits(q.top * self.parent.units["Q"]))

@@ -250,6 +250,10 @@ class InstrumentData(object):
         """
 
         self.serial_num = rs.System.SerialNumber
+        if type(self.serial_num) == float:
+            self.serial_num = str(int(self.serial_num))
+        elif type(self.serial_num) == int:
+            self.serial_num = str(self.serial_num)
         self.frequency_khz = rs.Transformation_Matrices.Frequency
         if self.frequency_khz[2] > 0:
             self.model = "M9"

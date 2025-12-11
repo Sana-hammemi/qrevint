@@ -14,8 +14,6 @@ class Config:
     def __init__(self):
         """Initiate attributes"""
 
-        # Todo: update config for new additions.
-
         self.config = {
             "Units": {"show": True, "default": "English"},
             "ColorMap": {"show": True, "default": "viridis"},
@@ -37,10 +35,12 @@ class Config:
             "PDFSummary": {"show": True, "default": False},
             "DateFormat": {"show": True, "default": "y.m.d"},
             "TimeZone": {"required": False},
-            "PercentMeasured": {"show": True}
+            "PercentMeasured": {"show": True},
+            "Area": {"projection": "ParallAC"}
         }
 
-    def export_config(self, output_path=None):
+    @staticmethod
+    def export_config(config, output_path=None):
         """Export default configuration files.
 
         Parameters:
@@ -53,7 +53,7 @@ class Config:
             path = os.path.join(output_path, "QRev.cfg")
 
         with open(path, "w") as file:
-            json.dump(self.config, file, indent=4)
+            json.dump(config, file, indent=4)
 
     def export_international_config(self):
         int_config = {
@@ -77,9 +77,11 @@ class Config:
             "PDFSummary": {"show": True, "default": "Prompt"},
             "DateFormat": {"show": True, "default": "y.m.d"},
             "TimeZone": {"required": False},
-            "PercentMeasured": {"show": False}
+            "PercentMeasured": {"show": False},
+            "Area": {"projection": "ParallAC"}
         }
-        path = os.path.join(os.getcwd(), "QRev.cfg")
-
-        with open(path, "w") as file:
-            json.dump(int_config, file, indent=4)
+        # path = os.path.join(os.getcwd(), "QRev.cfg")
+        #
+        # with open(path, "w") as file:
+        #     json.dump(int_config, file, indent=4)
+        self.export_config(int_config, None)

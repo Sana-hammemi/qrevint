@@ -105,7 +105,8 @@ class StickySettings(object):
             with open(self.settings_file, "w") as f:
                 json.dump(self.settings, f)
         else:
-            raise KeyError("Key does not exist in settings")
+            self.new(key, value)
+            # raise KeyError("Key does not exist in settings")
 
     def get(self, item):
         """Get value of item for settings.
