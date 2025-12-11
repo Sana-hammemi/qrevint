@@ -28,6 +28,8 @@ class Pd0TRDI(object):
         Object of Gps to hold GPS data from previous versions of WR
     Gps2: Gps2
         Object of Gps2 to hold GPS data from WR2
+    GeoRef: GeoRef
+        Object of GeoRef to hold GeoRef data
     Surface: Surface
         Object of Surface to hold surface cell data
     AutoMode: AutoMode
@@ -54,6 +56,7 @@ class Pd0TRDI(object):
         self.Bt = None
         self.Gps = None
         self.Gps2 = None
+        self.GeoRef = None
         self.Surface = None
         self.AutoMode = None
         self.Nmea = None
@@ -84,6 +87,8 @@ class Pd0TRDI(object):
         }
 
         self.nmea_decoders = {
+            4: ("gga_int", self.decode_gga_int),
+            5: ("vtg_int", self.decode_vtg_int),
             100: ("gga", self.decode_gga_100),
             101: ("vtg", self.decode_vtg_101),
             102: ("ds", self.decode_ds_102),
@@ -132,6 +137,7 @@ class Pd0TRDI(object):
         self.Bt = Bt(n_ensembles, n_velocities)
         self.Gps = Gps(n_ensembles)
         self.Gps2 = Gps2(n_ensembles, wr2)
+        self.GeoRef = GeoRef(n_ensembles)
         self.Surface = Surface(n_ensembles, n_velocities, max_surface_bins)
         self.AutoMode = AutoMode(n_ensembles)
         self.Nmea = Nmea(n_ensembles)
@@ -276,6 +282,7 @@ class Pd0TRDI(object):
                     self.Bt.populate_data(n, data)
                     # self.Gps.populate_data(n, data)
                     self.Gps2.populate_data(n, data)
+                    self.GeoRef.populate_data(n, data)
                     self.Surface.populate_data(n, data, self)
                     self.AutoMode.populate_data(n, data)
                     self.Nmea.populate_data(n, data)
@@ -1481,6 +1488,128 @@ class Pd0TRDI(object):
         return decoded_data
 
     @staticmethod
+    def decode_gga_int(pd0_bytes, offset, data):
+        # Initialize dictionary
+        decoded_data = {
+            "header": "",
+            "utc": np.nan,
+            "lat_deg": np.nan,
+            "lat_ref": "",
+            "lon_deg": np.nan,
+            "lon_ref": "",
+            "corr_qual": np.nan,
+            "num_sats": np.nan,
+            "hdop": np.nan,
+            "alt": np.nan,
+            "alt_unit": "",
+            "geoid": "",
+            "geoid_unit": "",
+            "d_gps_age": np.nan,
+            "ref_stat_id": np.nan,
+            "delta_time": np.nan,
+        }
+
+        # Decode NMEA sentence and split into an array
+        fmt = str(data["msg_size"]) + "c"
+        sentence = Pd0TRDI.bin2str(
+            b"".join(
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
+            )
+        )
+        temp_array = np.array(sentence.split(","))
+        temp_array[temp_array == "999.9"] = ""
+
+        # Assign parts of array to dictionary
+        try:
+            decoded_data["header"] = temp_array[0]
+            decoded_data["utc"] = valid_number(temp_array[1])
+            lat_str = temp_array[2]
+            lat_deg = valid_number(lat_str[0:2])
+            decoded_data["lat_deg"] = lat_deg + valid_number(lat_str[2:]) / 60
+            decoded_data["lat_ref"] = temp_array[3]
+            lon_str = temp_array[4]
+            lon_num = valid_number(lon_str)
+            lon_deg = np.floor(lon_num / 100.0)
+            decoded_data["lon_deg"] = (
+                lon_deg + (((lon_num / 100.0) - lon_deg) * 100.0) / 60.0
+            )
+            decoded_data["lon_ref"] = temp_array[5]
+            decoded_data["corr_qual"] = valid_number(temp_array[6])
+            decoded_data["num_sats"] = valid_number(temp_array[7])
+            decoded_data["hdop"] = valid_number(temp_array[8])
+            decoded_data["alt"] = valid_number(temp_array[9])
+            decoded_data["alt_unit"] = temp_array[10]
+            decoded_data["geoid"] = temp_array[11]
+            decoded_data["geoid_unit"] = temp_array[12]
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+        return decoded_data
+
+    @staticmethod
+    def decode_vtg_int(pd0_bytes, offset, data):
+        """Decodes vtg data for ADCP's with integrated NMEA data
+
+        Parameters
+        ----------
+        pd0_bytes: bytearray
+            Bytearray of all pd0 data
+        offset: int
+            Pointer into pd0_bytes
+        data: dict
+            Dictionary containing previously decoded data
+
+        Returns
+        -------
+        decoded_data:dict
+            Dictionary of decoded data
+        """
+
+        # Initialize dictionary
+        decoded_data = {
+            "header": "",
+            "course_true": np.nan,
+            "true_indicator": "",
+            "course_mag": np.nan,
+            "mag_indicator": "",
+            "speed_knots": np.nan,
+            "knots_indicator": "",
+            "speed_kph": np.nan,
+            "kph_indicator": "",
+            "mode_indicator": "",
+        }
+
+        # Decode NMEA sentence and split into an array
+        fmt = str(data["msg_size"]) + "c"
+        sentence = Pd0TRDI.bin2str(
+            b"".join(
+                list(struct.unpack(fmt, pd0_bytes[offset : offset + data["msg_size"]]))
+            )
+        )
+        temp_array = np.array(sentence.split(","))
+        temp_array[temp_array == "999.9"] = ""
+
+        # Assign parts of array to dictionary
+        try:
+            decoded_data["header"] = temp_array[0]
+            decoded_data["course_true"] = valid_number(temp_array[1])
+            decoded_data["true_indicator"] = temp_array[2]
+            decoded_data["course_mag"] = valid_number(temp_array[3])
+            decoded_data["mag_indicator"] = temp_array[4]
+            decoded_data["speed_knots"] = valid_number(temp_array[5])
+            decoded_data["knots_indicator"] = temp_array[6]
+            decoded_data["speed_kph"] = valid_number(temp_array[7])
+            decoded_data["kph_indicator"] = temp_array[8]
+            idx_star = temp_array[9].find("*")
+            decoded_data["mode_indicator"] = temp_array[9][:idx_star]
+
+        except (ValueError, EOFError, IndexError):
+            pass
+
+        return decoded_data
+
+    @staticmethod
     def decode_vtg_205(pd0_bytes, offset, data):
         """Decodes vtg data for ADCP's with integrated NMEA data
 
@@ -1526,7 +1655,7 @@ class Pd0TRDI(object):
 
         # Assign parts of array to dictionary
         try:
-            decoded_data["vtg_header"] = temp_array[0]
+            decoded_data["header"] = temp_array[0]
             decoded_data["course_true"] = valid_number(temp_array[1])
             decoded_data["true_indicator"] = temp_array[2]
             decoded_data["course_mag"] = valid_number(temp_array[3])
@@ -3295,6 +3424,271 @@ class Gps2(object):
         )
         self.hdt_header = np.concatenate(
             (self.hdt_header, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+
+
+class GeoRef(object):
+    """Class to hold GPS data for WinRiver II.
+
+    Attributes
+    ----------
+    gga_delta_time: np.array(float)
+        Time between ping and gga data
+    gga_header: list
+        GGA header
+    gga_sentence: list
+        GGA sentence
+    utc: np.array(float)
+        UTC time
+    lat_deg: np.array(float)
+        Latitude in degrees
+    lat_ref: list
+        Latitude reference
+    lon_deg: np.array(float)
+        Longitude in degrees
+    lon_ref: list
+        Longitude reference
+    corr_qual: np.array(float)
+        Differential quality indicator
+    num_sats: np.array(int)
+        Number of satellites
+    hdop: np.array(float)
+        Horizontal dilution of precision
+    alt: np.array(float)
+        Altitude
+    alt_unit: list
+        Units for altitude
+    geoid: np.array(float)
+        Geoid height
+    geoid_unit: list
+        Units for geoid height
+    vtg_delta_time: np.array(float)
+        Time between ping and VTG data
+    vtg_header: list
+        VTG header
+    vtg_sentence: list
+        VTG sentence
+    course_true: np.array(float)
+        Course relative to true north
+    true_indicator: list
+        True north indicator
+    course_mag: np.array(float)
+        Course relative to magnetic north
+    mag_indicator: list
+        Magnetic north indicator
+    speed_knots: np.array(float)
+        Speed in knots
+    knots_indicator: list
+        Knots indicator
+    speed_kph: np.array(float)
+        Speed in kilometers per hour
+    kph_indicator: list
+        Kilometers per hour indicator
+    mode_indicator: list
+        Mode indicator
+    """
+
+    def __init__(self, n_ensembles):
+        """Initialize instance variables.
+
+        Parameters
+        ----------
+        n_ensembles: int
+            Number of ensembles
+        wr2: bool
+            Setting of whether data is from WR or WR2
+        """
+
+        self.gga_header = np.tile("      ", [n_ensembles])
+        self.utc = np.full([n_ensembles], np.nan)
+        self.lat_deg = np.zeros([n_ensembles])
+        self.lat_ref = np.tile("", [n_ensembles])
+        self.lon_deg = np.zeros([n_ensembles])
+        self.lon_ref = np.tile("", [n_ensembles])
+        self.corr_qual = np.full([n_ensembles], np.nan)
+        self.num_sats = np.full([n_ensembles], np.nan)
+        self.hdop = np.full([n_ensembles], np.nan)
+        self.alt = np.full([n_ensembles], np.nan)
+        self.alt_unit = np.tile("", [n_ensembles])
+        self.geoid = np.full([n_ensembles], np.nan)
+        self.geoid_unit = np.tile("", [n_ensembles])
+        self.vtg_header = np.tile("      ", [n_ensembles])
+        self.course_true = np.full([n_ensembles], np.nan)
+        self.true_indicator = np.tile("", [n_ensembles])
+        self.course_mag = np.full([n_ensembles], np.nan)
+        self.mag_indicator = np.tile("", [n_ensembles])
+        self.speed_knots = np.full([n_ensembles], np.nan)
+        self.knots_indicator = np.tile("", [n_ensembles])
+        self.speed_kph = np.zeros([n_ensembles])
+        self.kph_indicator = np.tile("", [n_ensembles])
+        self.mode_indicator = np.tile("", [n_ensembles])
+
+    def populate_data(self, i_ens, data):
+        """Populates the class with data for an ensemble.
+
+        Parameters
+        ----------
+        i_ens: int
+            Ensemble index
+        data: dict
+            Dictionary of all data for this ensemble
+        """
+
+        if "gga_int" in data:
+            # Check size and expand if needed
+            # if len(data["gga_int"]) > self.gga_delta_time.shape[1]:
+            #     self.gga_expand(len(data["gga"]))
+
+            gga_data = data["gga_int"][0]
+            # Try implemented because of occasional garbage in data stream.
+            # This prevents a crash and data after garbage are not used,
+            # but any data before garbage is saved
+            try:
+                self.gga_header[i_ens] = gga_data["header"]
+                self.utc[i_ens] = gga_data["utc"]
+                self.lat_deg[i_ens] = gga_data["lat_deg"]
+                self.lat_ref[i_ens] = gga_data["lat_ref"]
+                self.lon_deg[i_ens] = gga_data["lon_deg"]
+                self.lon_ref[i_ens] = gga_data["lon_ref"]
+                self.corr_qual[i_ens] = gga_data["corr_qual"]
+                self.num_sats[i_ens] = gga_data["num_sats"]
+                self.hdop[i_ens] = gga_data["hdop"]
+                self.alt[i_ens] = gga_data["alt"]
+                self.alt_unit[i_ens] = gga_data["alt_unit"]
+                self.geoid[i_ens] = gga_data["geoid"]
+                self.geoid_unit[i_ens] = gga_data["geoid_unit"]
+            except:
+                pass
+
+        if "vtg_int" in data:
+        #     # Check size and expand if needed
+        #     if len(data["vtg"]) > self.vtg_delta_time.shape[1]:
+        #         self.vtg_expand(len(data["vtg"]))
+
+            vtg_data = data["vtg_int"][0]
+            # Try implemented because of occasional garbage in data stream.
+            # This prevents a crash and data after garbage are not used,
+            # but any data before garbage is saved
+            try:
+                self.vtg_header[i_ens] = vtg_data["header"]
+                self.course_true[i_ens] = vtg_data["course_true"]
+                self.true_indicator[i_ens] = vtg_data["true_indicator"]
+                self.course_mag[i_ens] = vtg_data["course_mag"]
+                self.mag_indicator[i_ens] = vtg_data["mag_indicator"]
+                self.speed_knots[i_ens] = vtg_data["speed_knots"]
+                self.knots_indicator[i_ens] = vtg_data["knots_indicator"]
+                self.speed_kph[i_ens] = vtg_data["speed_kph"]
+                self.kph_indicator[i_ens] = vtg_data["kph_indicator"]
+                self.mode_indicator[i_ens] = vtg_data["mode_indicator"]
+            except:
+                pass
+
+
+    def gga_expand(self, n_samples):
+        """Expand arrays.
+
+        Parameters
+        ----------
+        n_samples: int
+            Desired size of array
+        """
+
+        # Determine amount of required expansion
+        n_expansion = n_samples - self.gga_delta_time.shape[1]
+        n_ensembles = self.gga_delta_time.shape[0]
+
+        # Expand arrays
+        self.gga_delta_time = np.concatenate(
+            (self.gga_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.utc = np.concatenate(
+            (self.utc, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.lat_deg = np.concatenate(
+            (self.lat_deg, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.lon_deg = np.concatenate(
+            (self.lon_deg, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.corr_qual = np.concatenate(
+            (self.corr_qual, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.num_sats = np.concatenate(
+            (self.num_sats, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.hdop = np.concatenate(
+            (self.hdop, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.alt = np.concatenate(
+            (self.alt, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.geoid = np.concatenate(
+            (self.geoid, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+
+        self.gga_header = np.concatenate(
+            (self.gga_header, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.geoid_unit = np.concatenate(
+            (self.geoid_unit, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.alt_unit = np.concatenate(
+            (self.alt_unit, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.lon_ref = np.concatenate(
+            (self.lon_ref, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.lat_ref = np.concatenate(
+            (self.lat_ref, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+
+    def vtg_expand(self, n_samples):
+        """Expand arrays.
+
+        Parameters
+        ----------
+        n_samples: int
+            Desired size of array
+        """
+
+        # Determine amount of required expansion
+        n_expansion = n_samples - self.vtg_delta_time.shape[1]
+        n_ensembles = self.vtg_delta_time.shape[0]
+
+        # Expand arrays
+        self.vtg_delta_time = np.concatenate(
+            (self.vtg_delta_time, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.course_true = np.concatenate(
+            (self.course_true, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.course_mag = np.concatenate(
+            (self.course_mag, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.speed_knots = np.concatenate(
+            (self.speed_knots, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+        self.speed_kph = np.concatenate(
+            (self.speed_kph, np.tile(np.nan, (n_ensembles, n_expansion))), axis=1
+        )
+
+        self.kph_indicator = np.concatenate(
+            (self.kph_indicator, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.mode_indicator = np.concatenate(
+            (self.mode_indicator, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.vtg_header = np.concatenate(
+            (self.vtg_header, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.true_indicator = np.concatenate(
+            (self.true_indicator, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.mag_indicator = np.concatenate(
+            (self.mag_indicator, np.tile("", (n_ensembles, n_expansion))), axis=1
+        )
+        self.knots_indicator = np.concatenate(
+            (self.knots_indicator, np.tile("", (n_ensembles, n_expansion))), axis=1
         )
 
 

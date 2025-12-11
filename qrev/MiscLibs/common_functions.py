@@ -553,5 +553,13 @@ def deg_min_2_deg(angle_deg_min):
 
     deg_min = np.divmod(angle_deg_min, 100)
     angle_deg = deg_min[0] + deg_min[1] / 60
-    
+
     return angle_deg
+
+def weighted_mean(data, weights, axis=None):
+
+
+    weights[np.isnan(data)] = np.nan
+    wm = np.nansum(data * weights, axis=axis) / np.nansum(weights, axis)
+
+    return wm

@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import copy
 from qrev.Classes.QComp import QComp
@@ -9,6 +11,7 @@ import scipy.stats
 # from profilehooks import profile
 from qrev.MiscLibs.common_functions import cosd, sind
 from qrev.MiscLibs.bayes_cov_compiled import bayes_cov
+# from qrev.Classes.FlowFieldInterpolation import FlowFieldInterpolation
 
 
 class Oursin(object):
@@ -426,6 +429,7 @@ class Oursin(object):
         self.sim_draft_max = pd.DataFrame(
             columns=["q_total", "q_top", "q_left", "q_right"]
         )
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.sim_cells_trdi = pd.DataFrame(columns=["q_total", "q_middle"])
         self.sim_cells_above = pd.DataFrame(columns=["q_total", "q_middle"])
         self.sim_cells_below = pd.DataFrame(columns=["q_total", "q_middle"])
@@ -826,6 +830,7 @@ class Oursin(object):
             self.checkshape(meas_struct.oursin.sim_cells_after),
             columns=["q_total", "q_middle"],
         )
+        # TODO ADD DATA FRAMES FOR NEW SIMULATIONS
         self.sim_shallow = pd.DataFrame(
             self.checkshape(meas_struct.oursin.sim_shallow),
             columns=["q_total", "q_middle"],
@@ -2011,6 +2016,7 @@ class Oursin(object):
         """
 
         # Uncertainty due to invalid cells and ensembles
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.u_invalid_water_list = list(
             Oursin.apply_u_rect(
                 list_sims=[
@@ -2426,6 +2432,7 @@ class Oursin(object):
         """
 
         # Reset data frames
+        # TODO ADD ADDITIONAL SIMULATIONS
         self.sim_cells_trdi = pd.DataFrame(columns=self.sim_cells_trdi.columns)
         self.sim_cells_above = pd.DataFrame(columns=self.sim_cells_above.columns)
         self.sim_cells_below = pd.DataFrame(columns=self.sim_cells_below.columns)
@@ -2434,8 +2441,8 @@ class Oursin(object):
 
         # Simulations for invalid cells and ensembles
         meas_temp = copy.deepcopy(meas)
-
-        for trans_id in self.checked_idx:
+        total = {"initial": 0, "isovel": 0, "isoveln": 0, "froude":0, "tps": 0, "kriging": 0 , "total": 0}
+        for trans_n, trans_id in enumerate(self.checked_idx):
             # TRDI method
             meas_temp.transects[trans_id].w_vel.interpolate_cells_trdi(
                 meas_temp.transects[trans_id]
@@ -2497,6 +2504,38 @@ class Oursin(object):
                 meas_temp.discharge[trans_id].total,
                 meas_temp.discharge[trans_id].middle,
             ]
+            # TODO ADD ADDITIONAL SIMULATIONS
+            invalid_run_ens = []
+            if meas.qa.depths["q_max_run_ens"][trans_n] != 0:
+                invalid_run_ens.append(meas.qa.depths["q_max_run_ens"][trans_n])
+            boat_qa = getattr(meas.qa, meas.transects[trans_id].boat_vel.selected)
+            if boat_qa["q_max_run_ens"][trans_n] != 0:
+                invalid_run_ens.append(boat_qa["q_max_run_ens"][trans_n])
+            if meas.qa.w_vel["q_max_run_ens"][trans_n] != 0:
+                invalid_run_ens.append(meas.qa.w_vel["q_max_run_ens"][trans_n])
+            # if len(invalid_run_ens) > 0:
+            #     t0 = time.time()
+            #     t00 = time.time()
+            #     ens_sims = FlowFieldInterpolation(meas_temp.transects[trans_id], invalid_run_ens, exponent=1/7.)
+            #     total["initial"] = total["initial"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_isovel = ens_sims.isovel_interpolation()
+            #     total["isovel"] = total["isovel"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_isovel_normalized = ens_sims.isovel_interpolation(normalize=True)
+            #     total["isoveln"] = total["isoveln"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_froude_constant, q_froude_linear = ens_sims.froude_interpolation()
+            #     total["froude"] = total["froude"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_tps = ens_sims.tps_interpolation()
+            #     total["tps"] = total["tps"] + time.time() - t0
+            #     t0 = time.time()
+            #     q_kriging = ens_sims.kriging_interpolation()
+            #     total["kriging"] = total["kriging"] + time.time() - t0
+            #     total["total"] = total["total"] + time.time() - t00
+            #
+            # print(total)
 
     def sim_shallow_ens(self, meas):
         """Computes simulations assuming no interpolation of discharge for
@@ -2591,7 +2630,7 @@ class Oursin(object):
         self.sim_boat_next = pd.DataFrame(columns=self.sim_boat_next.columns)
 
         # Simulations for invalid boat velocity
-        
+
         meas_temp = copy.deepcopy(meas)
 
         for trans_id in self.checked_idx:

@@ -12,6 +12,7 @@ from matplotlib.patches import Polygon
 
 from qrev.MiscLibs.common_functions import sind, cosd
 from qrev.MiscLibs.compute_edge_cd import compute_edge_cd
+from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
 
 class AdvGraphs(object):
@@ -131,6 +132,7 @@ class AdvGraphs(object):
             "U": "N/A",
             "1": "N/A",
             "Other": "N/A",
+            "Inva": "N/A",
         }
         self.p_type_color = {
             "I": "b",
@@ -150,6 +152,7 @@ class AdvGraphs(object):
             "1": "b",
             "Other": "b",
             "255": "b",
+            "Inva": "b"
         }
         self.p_type_marker = {
             "I": ".",
@@ -169,6 +172,7 @@ class AdvGraphs(object):
             "1": ".",
             "Other": ".",
             "255": ".",
+            "Inva": "."
         }
         self.wt_legend_dict = {
             "I": "Incoherent",
@@ -185,6 +189,7 @@ class AdvGraphs(object):
             "PC/BB": "3 MHz PC/BB",
             "PCBB": "3 MHz PC/BB",
             "U": "N/A",
+            "Inva": "N/A",
         }
         self.bt_legend_dict = {
             "500": "500 kHz",
@@ -203,6 +208,7 @@ class AdvGraphs(object):
             "1": "U",
             "Other": "U",
             "255": "3 MHz",
+            "Inva": "U"
         }
         self.freq_color = {
             "0": "b",
@@ -269,6 +275,7 @@ class AdvGraphs(object):
             "cb_final_depths_ts": self.depths_final_ts,
             "cb_depths_source_ts": self.depths_source_ts,
             "cb_battery_voltage_ts": self.battery_voltage_ts,
+            "cb_temperature_ts": self.temperature_ts,
         }
 
     def create(
@@ -1112,19 +1119,20 @@ class AdvGraphs(object):
 
         # x-axis is time
         elif self.x_axis_type == "T":
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             axis_buffer = (self.x_timestamp[-1] - self.x_timestamp[0]) * 0.02
             if self.transect.start_edge == "Right":
                 self.ax[idx].invert_xaxis()
                 self.ax[idx].set_xlim(
-                    right=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                    left=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer),
+                    right=datetime.fromtimestamp(self.x_timestamp[0] - axis_buffer, tz=tz),
+                    left=datetime.fromtimestamp(self.x_timestamp[-1] + axis_buffer, tz=tz),
                 )
             else:
                 self.ax[idx].set_xlim(
-                    left=datetime.utcfromtimestamp(self.x_timestamp[0] - axis_buffer),
-                    right=datetime.utcfromtimestamp(self.x_timestamp[-1] + axis_buffer),
+                    left=datetime.fromtimestamp(self.x_timestamp[0] - axis_buffer, tz=tz),
+                    right=datetime.fromtimestamp(self.x_timestamp[-1] + axis_buffer, tz=tz),
                 )
-            date_form = DateFormatter("%H:%M:%S")
+            date_form = DateFormatter("%H:%M:%S", tz=tz)
             self.ax[idx].xaxis.set_major_formatter(date_form)
             self.ax[idx].set_xlabel(self.canvas.tr("Time"))
 
@@ -1354,6 +1362,7 @@ class AdvGraphs(object):
         # Plot data
         data_units = (self.units["Q"], "Discharge " + self.units["label_Q"])
         self.plt_timeseries(data=q_ts, data_units=data_units, ax=self.ax[-1])
+        self.set_x_axis(-1)
 
     def discharge_percent_ts(self):
         """Create plot of cumulative percent discharge by ensemble."""
@@ -1384,6 +1393,7 @@ class AdvGraphs(object):
         # Plot data
         data_units = (1, "Discharge (%)")
         self.plt_timeseries(data=q_ts_per, data_units=data_units, ax=self.ax[-1])
+        self.set_x_axis(-1)
 
     def wt_error_contour(self):
         """Create contour plot of error velocities."""
@@ -2802,6 +2812,14 @@ class AdvGraphs(object):
         data_units = (1, "Battery (Volts DC)")
         self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
 
+    def temperature_ts(self):
+        """Plot roll data."""
+
+        data = self.transect.sensors.temperature_deg_c.internal.data
+        fmt = [{"color": "b", "linestyle": "-"}]
+        data_units = (1, "Temperature (C)")
+        self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
+
     def depths_beam_ts(
         self, b1=True, b2=True, b3=True, b4=True, vb=True, ds=True, leg=True
     ):
@@ -3199,8 +3217,9 @@ class AdvGraphs(object):
             self.x_timestamp = x[self.transect.in_transect_idx]
             x = []
             # datetime is needed to plot timeseries and x-axis labels
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             for stamp in timestamp:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz))
             x = np.array(x)
             self.x = x[self.transect.in_transect_idx]
 
@@ -3271,7 +3290,7 @@ class AdvGraphs(object):
         else:
             # Use only edge ensembles from transect
             n_ensembles = int(n_ensembles)
-            if transect.start_edge == edge:
+            if transect.start_edge == edge and n_ensembles > 0:
                 # Start on left bank
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[:n_ensembles]
@@ -3282,7 +3301,7 @@ class AdvGraphs(object):
                 ensembles = in_transect_idx[:n_ensembles]
                 x_data = x_1d[:n_ensembles]
 
-            else:
+            elif n_ensembles > 0:
                 depth_selected = getattr(transect.depths, transect.depths.selected)
                 depth = depth_selected.depth_processed_m[-n_ensembles:]
                 if cell_depth is None:
@@ -3491,10 +3510,11 @@ class AdvGraphs(object):
         # Create plot variables for input
         if self.x_axis_type == "T":
             # If x-axis is time, create x_plt
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             x_plt = np.zeros(x_plt_in.shape, dtype="object")
             for r in range(x_plt_in.shape[0]):
                 for c in range(x_plt_in.shape[1]):
-                    x_plt[r, c] = datetime.utcfromtimestamp(x_plt_in[r, c])
+                    x_plt[r, c] = datetime.fromtimestamp(x_plt_in[r, c], tz=tz)
         else:
             x_plt = x_plt_in
 
@@ -3594,8 +3614,9 @@ class AdvGraphs(object):
             )
         elif self.x_axis_type == "T":
             x_datetime = []
+            tz = utc_offset_to_tz(self.transect.date_time.utc_time_offset)
             for timestamp in x:
-                x_datetime.append(datetime.utcfromtimestamp(timestamp))
+                x_datetime.append(datetime.fromtimestamp(timestamp, tz=tz))
             x = np.array(x_datetime)
             self.expanded_x = x
             ax.plot(self.expanded_x, depth * self.units["L"], color="k", zorder=3)
@@ -3771,8 +3792,9 @@ class AdvGraphs(object):
             data_quiver["vz"] * units["V"],
             units="inches",
             scale=data_quiver["scale"],
-            pivot="tail",
-            zorder=4,
+            pivot="mid", # centers vectors
+            color="white",
+
         )
 
         ax.quiverkey(

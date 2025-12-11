@@ -5,6 +5,8 @@ from qrev.Classes.QComp import QComp
 from qrev.Classes.MovingBedTests import MovingBedTests
 from qrev.Classes.TransectData import TransectData
 from qrev.MiscLibs.common_functions import cosd
+from datetime import datetime, tzinfo, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz, tz_formatted_string
 
 
 class QAData(object):
@@ -62,7 +64,6 @@ class QAData(object):
         meas: Measurement
             Object of class Measurement
         """
-
 
         self.tr = tr
 
@@ -123,8 +124,6 @@ class QAData(object):
                 self.check_oursin(meas)
         else:
             self.populate_from_qrev_mat(meas, mat_struct)
-
-
 
     def populate_from_qrev_mat(self, meas, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
@@ -1145,47 +1144,86 @@ class QAData(object):
         self.compass["roll_std_caution_idx"] = []
 
         # Check calibration and evaluation of compass
-        magvar_required = self.compass_qa_calibration(meas)
+        magvar_required, internal_source, mb_test_time, transect_time, compass_time = self.compass_qa_calibration(meas)
 
         # Compute data to check heading, pitch, and roll
         hpr = self.compass_qa_hpr(meas)
 
-        # Check magvar consistency
-        if len(np.unique(hpr["magvar"])) > 1:
-            self.compass["status2"] = "caution"
-            self.compass["messages"].append(
-                [self.tr("Compass: Magnetic variation is not consistent among transects") + ";", 2, 4]
-            )
-            self.compass["magvar"] = 1
-            guidance_text = self.tr("The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site.")
-            self.compass["guidance"].append(
-                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
-            )
-
-        # Check heading offset consistency
-        if len(np.unique(hpr["align"])) > 1:
-            self.compass["status2"] = "caution"
-            self.compass["messages"].append(
-                [self.tr("Compass: Heading offset is not consistent among transects") + ";", 2, 4]
-            )
-            self.compass["align"] = 1
-            guidance_text = self.tr("The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC.")
-            self.compass["guidance"].append(
-                self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
-            )
-
-        # Check that magvar was set if GPS data are available
-        if magvar_required:
-            if 0 in hpr["magvar"]:
-                self.compass["status2"] = "warning"
+        if internal_source:
+            # Check magvar consistency
+            if len(np.unique(hpr["magvar"])) > 1:
+                self.compass["status2"] = "caution"
                 self.compass["messages"].append(
-                    [self.tr("COMPASS: Magnetic variation is 0 and GPS data are present") + ";", 1, 4]
+                    [self.tr("Compass: Magnetic variation is not consistent among transects") + ";", 2, 4]
                 )
-                self.compass["magvar"] = 2
-                self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
-                    0
-                ].tolist()
-                guidance_text = self.tr("A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.")
+                self.compass["magvar"] = 1
+                guidance_text = self.tr("The magnetic variation is site dependent and should be the same for all transects in a measurement. The magnetic variation should not be changed to account for compass errors. Using an app on your phone, site information, and/or an internet search enter and appropriate magnetic variation for this site.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+                )
+            # Check that magvar was set if GPS data are available
+            if magvar_required:
+                if 0 in hpr["magvar"]:
+                    self.compass["status2"] = "warning"
+                    self.compass["messages"].append(
+                        [self.tr("COMPASS: Magnetic variation is 0 and GPS data are present") + ";", 1, 4]
+                    )
+                    self.compass["magvar"] = 2
+                    self.compass["magvar_idx"] = np.where(np.array(hpr["magvar"]) == 0)[
+                        0
+                    ].tolist()
+                    guidance_text = self.tr("A magnetic variation is required when GPS is used as the navigation reference. There are some locations where a zero value for magnetic variation is valid but those are very rare. The magnetic variation can be obtained for your site using a phone app or the internet. If zero is the correct value, simple enter a small value like 0.001 to avoid this message.")
+                    self.compass["guidance"].append(
+                        self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
+                    )
+            # Check for calibration prior to loop test
+            if mb_test_time is not None and compass_time is not None and mb_test_time < compass_time:
+                # Loop test was before compass calibration
+                self.compass["messages"].append(
+                    [
+                        self.tr(
+                            "COMPASS: Loop test was recorded before compass calibration") + ";",
+                        1,
+                        6,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "A loop moving-bed test requires a calibrated compass. The loop test was recorded before the compass was calibrated. This could result in an inaccurate moving-bed test result. If in the field, recalibrate the compass and recollect the loop test. If in the office, carefully evaluate the measurement and document why the loop test was collected before the compass calibration.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(
+                        self.compass["messages"][-1][0],
+                        guidance_text))
+                self.compass["status1"] = "warning"
+                self.compass["code"] = 3
+            # Check for calibration prior to transects if GPS data are present
+            if transect_time is not None and compass_time is not None and transect_time < compass_time:
+                # Data collection began before compass calibration
+                self.compass["messages"].append(
+                    [
+                        self.tr(
+                            "COMPASS: GPS data are present and data recording began before the compass calibration") + ";",
+                        1,
+                        6,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "Use of GPS data requires a calibrated compass. The first transect was recorded before the compass was calibrated. This could result in an inaccurate and biased discharge values. If in the field, calibrate the compass, recollect a moving-bed test, and then start your transects. If in the office, carefully evaluate the measurement for substantial differences when using GPS as the reference and document why the compass calibration was not conducted prior to collecting data.")
+                self.compass["guidance"].append(
+                    self.guidance_prep(
+                        self.compass["messages"][-1][0],
+                        guidance_text))
+                self.compass["status1"] = "warning"
+                self.compass["code"] = 3
+
+        else:
+            # Check heading offset consistency
+            if len(np.unique(hpr["align"])) > 1:
+                self.compass["status2"] = "caution"
+                self.compass["messages"].append(
+                    [self.tr("Compass: Heading offset is not consistent among transects") + ";", 2, 4]
+                )
+                self.compass["align"] = 1
+                guidance_text = self.tr("The heading offset is the offset in degrees between an external compass and the ADCP heading reference point. This should be consistent for the measurement unless the external compass orientation was changed during the measurement. The heading offset is normally obtained by collecting transects in the upstream and downstream directions and evaluating the GC-BC.")
                 self.compass["guidance"].append(
                     self.guidance_prep(self.compass["messages"][-1][0], guidance_text)
                 )
@@ -1420,25 +1458,39 @@ class QAData(object):
         gps: bool
             Indicates that gps is used and magvar is required.
         """
-
+        mb_test_time = None
+        transect_time = None
+        compass_time = None
+        cal_required = False
+        magvar_required = False
         # Check for loop test
-        loop = False
+
         for test in meas.mb_tests:
             if test.type == "Loop":
-                loop = True
+                cal_required = True
+                # Time of moving-bed loop test
+                mb_test_time = test.transect.date_time.start_serial_time
                 break
 
         # Check for GPS data
-        gps = False
         for idx in meas.checked_transect_idx:
             if (
                 meas.transects[idx].boat_vel.gga_vel is not None
                 or meas.transects[idx].boat_vel.vtg_vel is not None
             ):
-                gps = True
+                # Time of first transect
+                transect_time = meas.transects[idx].date_time.start_serial_time
+                utc_time_offset = meas.transects[idx].date_time.utc_time_offset
+                tz = utc_offset_to_tz(utc_time_offset)
+                magvar_required = True
+                cal_required = True
                 break
-
-        if gps or loop:
+        internal = False
+        for idx in meas.checked_transect_idx:
+            if meas.transects[idx].sensors.heading_deg.selected == "internal":
+                internal = True
+                break
+        if cal_required and internal:
             # Calibration required
             if (
                 meas.transects[meas.checked_transect_idx[0]].adcp.manufacturer
@@ -1451,6 +1503,27 @@ class QAData(object):
             ):
                 self.compass_qa_trdi_caleval(meas)
 
+            # Determine serial time for compass calibration/evaluation
+            eval_times = []
+            cal_times = []
+            if len(meas.compass_eval) > 0:
+                eval_times = [
+                    eval.time_stamp for eval in meas.compass_eval
+                ]
+
+            if len(meas.compass_cal) > 0:
+                cal_times = [
+                    cal.time_stamp for cal in meas.compass_cal
+                ]
+            times = eval_times + cal_times
+            if len(times) > 0:
+                try:
+                    time_format = "%Y.%m.%d %H:%M:%S"
+                    compass_time = np.nanmin([datetime.strptime(t,
+                                                                time_format).replace(
+                        tzinfo=tz).timestamp() for t in times])
+                except ValueError:
+                    compass_time = None
         else:
             # Compass not required
             if len(meas.compass_cal) == 0 and len(meas.compass_eval) == 0:
@@ -1460,7 +1533,7 @@ class QAData(object):
                 # Compass was calibrated and evaluated
                 self.compass["status1"] = "good"
 
-        return gps
+        return magvar_required, internal, mb_test_time, transect_time, compass_time
 
     def compass_qa_sontek_cal(self, meas):
         """Evaluate compass calibration for SonTek ADCP.
@@ -1712,10 +1785,10 @@ class QAData(object):
                     transect.sensors.temperature_deg_c,
                     transect.sensors.temperature_deg_c.selected,
                 )
-                if len(temp) == 0:
-                    temp = temp_selected.data
-                else:
-                    temp = np.hstack((temp, temp_selected.data))
+                # if len(temp) == 0:
+                #     temp = temp_selected.data
+                # else:
+                temp = np.hstack((temp, temp_selected.data))
 
         # Check temperature range
         if np.any(checked):
@@ -2264,6 +2337,7 @@ class QAData(object):
         self.depths["q_max_run_caution"] = np.tile(False, n_transects)
         self.depths["q_total_warning"] = np.tile(False, n_transects)
         self.depths["q_max_run_warning"] = np.tile(False, n_transects)
+        self.depths["q_max_run_ens"] = np.tile(0, n_transects)
         self.depths["all_invalid"] = np.tile(False, n_transects)
         self.depths["messages"] = []
         self.depths["guidance"] = []
@@ -2295,7 +2369,7 @@ class QAData(object):
                     self.depths["all_invalid"][n] = True
 
                 # Compute QA characteristics
-                q_total, q_max_run, number_invalid_ensembles = QAData.invalid_qa(
+                q_total, q_max_run, number_invalid_ensembles, q_max_run_ens = QAData.invalid_qa(
                     depth_valid, meas.discharge[n]
                 )
                 self.depths["q_total"][n] = q_total
@@ -2320,6 +2394,7 @@ class QAData(object):
                 # Apply interpolated discharge run thresholds
                 if q_max_run_percent > self.q_run_threshold_warning:
                     self.depths["q_max_run_warning"][n] = True
+                    # self.depths["q_max_run_ens"][n] = q_max_run_ens
                 elif q_max_run_percent > self.q_run_threshold_caution:
                     self.depths["q_max_run_caution"][n] = True
 
@@ -2490,6 +2565,7 @@ class QAData(object):
             boat["q_max_run_caution"] = np.tile(False, (n_transects, 6))
             boat["q_total_warning"] = np.tile(False, (n_transects, 6))
             boat["q_max_run_warning"] = np.tile(False, (n_transects, 6))
+            boat["q_max_run_ens"] = np.tile(0, n_transects)
             boat["all_invalid"] = np.tile(False, n_transects)
             boat["q_total"] = np.tile(np.nan, (n_transects, 6))
             boat["q_max_run"] = np.tile(np.nan, (n_transects, 6))
@@ -2526,6 +2602,7 @@ class QAData(object):
                                     q_total,
                                     q_max_run,
                                     number_invalid_ens,
+                                    q_max_run_ens
                                 ) = QAData.invalid_qa(valid, meas.discharge[n])
                                 boat["q_total"][n, dt_filter[1]] = q_total
                                 boat["q_max_run"][n, dt_filter[1]] = q_max_run
@@ -2551,6 +2628,7 @@ class QAData(object):
                                 # Apply interpolated discharge run thresholds
                                 if q_max_run_percent > self.q_run_threshold_warning:
                                     boat["q_max_run_warning"][n, dt_filter[1]] = True
+                                    # boat["q_max_run_ens"][n] = q_max_run_ens
                                 elif q_max_run_percent > self.q_run_threshold_caution:
                                     boat["q_max_run_caution"][n, dt_filter[1]] = True
 
@@ -2768,9 +2846,11 @@ class QAData(object):
         self.w_vel["q_max_run_caution"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_total_warning"] = np.tile(False, (n_transects, n_filters))
         self.w_vel["q_max_run_warning"] = np.tile(False, (n_transects, n_filters))
+        self.w_vel["q_max_run_ens"] = np.tile(0, n_transects)
         self.w_vel["all_invalid"] = np.tile(False, n_transects)
         self.w_vel["q_total"] = np.tile(np.nan, (n_transects, n_filters))
         self.w_vel["q_max_run"] = np.tile(np.nan, (n_transects, n_filters))
+        self.w_vel["profile_to_bottom"] = np.tile(True, n_transects)
         self.w_vel["messages"] = []
         self.w_vel["guidance"] = []
         status_switch = 0
@@ -2813,7 +2893,7 @@ class QAData(object):
                         #  else of all invalid or multiple messages generated.
 
                         # Compute characteristics
-                        q_total, q_max_run, number_invalid_ens = QAData.invalid_qa(
+                        q_total, q_max_run, number_invalid_ens, q_max_run_ens = QAData.invalid_qa(
                             valid, meas.discharge[n]
                         )
                         self.w_vel["q_total"][n, filter_idx] = q_total
@@ -2835,10 +2915,12 @@ class QAData(object):
                         # warning
                         if q_total_percent > self.q_total_threshold_warning:
                             self.w_vel["q_total_warning"][n, filter_idx] = True
+                            # self.w_vel["q_max_run_ens"][n] = q_max_run_ens
 
                         # Apply run or cluster thresholds
                         if q_max_run_percent > self.q_run_threshold_warning:
                             self.w_vel["q_max_run_warning"][n, filter_idx] = True
+                            # self.w_vel["q_max_run_ens"][n] = q_max_run_ens
                         elif q_max_run_percent > self.q_run_threshold_caution:
                             self.w_vel["q_max_run_caution"][n, filter_idx] = True
 
@@ -2867,6 +2949,41 @@ class QAData(object):
 
                         if q_invalid_total_percent > self.q_total_threshold_caution:
                             self.w_vel["q_total_caution"][n, filter_idx] = True
+
+                        # Only execute this check 1 time
+                        if prefix_idx == 0:
+                            # Check for profiling to bottom
+                            depth_selected = getattr(transect.depths, transect.depths.selected)
+                            max_depth_cell_depth = depth_selected.depth_cell_depth_m[-1, :]
+                            depth_cell_size = depth_selected.depth_cell_size_m[-1, :]
+                            sl_depth = depth_selected.depth_processed_m * cosd(transect.adcp.beam_angle_deg)
+                            diff_positive = np.where(np.greater(sl_depth, max_depth_cell_depth))[0]
+                            q_test_percent = (np.nansum(
+                                meas.discharge[n].bottom_ens[
+                                    diff_positive])) / meas.discharge[n].total_uncorrected
+
+                            if q_test_percent > 0.01:
+                                self.w_vel["profile_to_bottom"][n] = False
+
+            # Generate messages
+            # =================
+
+            # Generate messages for profiling to bottom
+            if np.any(self.w_vel["profile_to_bottom"] == False):
+                self.w_vel["messages"].append(
+                    [
+                        self.tr("WT: Maximum depth of water data is less than the streambed depth."),
+                        1,
+                        11,
+                    ]
+                )
+                guidance_text = self.tr(
+                    "The depth of the stream is deeper than the maximum depth of the water data. If in the field, reconfigure the ADCP to profile all the way to the bottom and/or use an ADCP that allows profiling all the way to the bottom. If in the office, determine if the bottom extrapolation is sufficient to estimate the unmeasured area near the bottom and provide a comment."
+                )
+                self.w_vel["guidance"].append(
+                    self.guidance_prep(self.w_vel["messages"][-1][0], guidance_text)
+                )
+                status_switch = 2
 
             # Generate messages for ensemble run or clusters
             if np.any(self.w_vel["q_max_run_warning"]):
@@ -3313,6 +3430,7 @@ class QAData(object):
         if n_runs > 0:
             m = 0
             q_invalid_run = []
+            q_invalid_run_ens = []
             for n in range(n_start, n_end, 2):
                 m += 1
                 idx_start = valid_run[n]
@@ -3322,14 +3440,17 @@ class QAData(object):
                     + np.nansum(discharge.top_ens[idx_start:idx_end])
                     + np.nansum(discharge.bottom_ens[idx_start:idx_end])
                 )
+                q_invalid_run_ens.append((idx_start, idx_end))
 
             # Determine the maximum discharge in a single run
             q_invalid_max_run = np.nanmax(np.abs(q_invalid_run))
+            q_invalid_max_run_ens = q_invalid_run_ens[np.argmax(np.abs(q_invalid_run))]
 
         else:
             q_invalid_max_run = 0.0
+            q_invalid_max_run_ens = None
 
-        return q_invalid_total, q_invalid_max_run, ens_invalid
+        return q_invalid_total, q_invalid_max_run, ens_invalid, q_invalid_max_run_ens
 
     @staticmethod
     def edge_distance_moved(transect):

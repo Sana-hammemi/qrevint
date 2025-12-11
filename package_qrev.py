@@ -4,6 +4,7 @@ import click
 import pyinstaller_versionfile
 import shutil
 import subprocess
+from qrev.Classes.createconfig import Config
 
 from qrev import __version__, __app__, __company__, __sphinx_path__
 
@@ -34,8 +35,6 @@ if os.path.exists(qrev_dir):
 
 if os.path.exists(os.path.join(os.getcwd(), "dist")) is False:
     os.mkdir(os.path.join(os.getcwd(), "dist"))
-
-os.mkdir(qrev_dir)
 
 print("Updating version information")
 pyinstaller_versionfile.create_versionfile(
@@ -70,17 +69,16 @@ if os.path.exists(path):
     print("QRev was packaged, creating distribution package.")
 
     # copy QRev exe
-    shutil.copy(
-        os.path.join(path),
-        os.path.join(qrev_dir, __app__),
-    )
+    # shutil.copy(
+    #     os.path.join(path),
+    #     os.path.join(qrev_dir, __app__),
+    # )
 
-    # remove copied QRev exe from source directory
-    os.remove(path)
+    # create cfg file
+    new_config = Config()
+    new_config.export_config(new_config.config, output_path=path)
 
-    # Copy cfg file
-    shutil.copy(
-        os.path.join(os.getcwd(), "QRev.cfg"), os.path.join(qrev_dir, "QRev.cfg")
-    )
+    # add version to folder name
+    os.rename(path, qrev_dir)
 
     print("Please sign QRev.EXE before zipping the directory. Packaging Complete")

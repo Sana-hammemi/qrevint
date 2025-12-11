@@ -7,6 +7,7 @@ from qrev.Classes.MatSonTek import MatSonTek
 from qrev.MiscLibs.common_functions import (
     cart2pol,
     sind,
+    tand,
     pol2cart,
     rad2azdeg,
     nan_less,
@@ -356,7 +357,7 @@ class MovingBedTests(object):
         self.transect.sontek(rsdata, file_name, snr_3beam_comp=snr_3beam_comp)
 
     def mb_rsq(self, test, test_type, utc_time_offset, date_format, snr_3beam_comp):
-        
+
         self.type = test_type
         self.transect = TransectData()
         self.transect.rsq(test, utc_time_offset, date_format, snr_3beam_comp)
@@ -585,6 +586,13 @@ class MovingBedTests(object):
                 self.duration_sec * self.flow_spd_mps
             )
 
+            # Compute mean boat speed
+            boat_track = trans_data.boat_vel.compute_boat_track(transect=trans_data, ref="bt_vel")
+            boat_speed = boat_track["distance_m"][-1] / self.duration_sec
+
+            # Generate messages
+            # =================
+
             # Initialize message counter
             self.test_quality = "Good"
 
@@ -598,6 +606,15 @@ class MovingBedTests(object):
                     self.guidance_prep(self.messages[-1], guidance_text))
                 self.test_quality = "Warnings"
 
+            # Boat speed
+            boat_speed_max = 0.012 / tand(self.compass_diff_deg)
+            if boat_speed > boat_speed_max:
+                self.messages.append(self.tr("WARNING: The boat speed ({:.2f} m/s or {:.2f} ft/s) is greater than the recommended maximum speed ({:.2f} m/s or {:.2f} ft/s) based on the estimated compass error for this test.".format(boat_speed, boat_speed / 0.3048,  boat_speed_max, boat_speed_max / 0.3048)))
+                guidance_text = self.tr("A boat speed of the maximum threshold would result in a potential error in the moving-bed velocity of greater 0.012 m/s or 0.04 ft/s which is the detection threshold for a moving-bed test. A higher boat speed would result in greater error. If the moving-bed velocity is well beyond the threshold value and GPS will be used, continue with measurement. However, if this test is used to correct for moving-bed conditions the results of this test may not be accurate. If in the field repeat the test at a lower boat velocity. If in the office be aware the results may not be accurate and a comment should be provided.")
+                self.guidance.append(
+                    self.guidance_prep(self.messages[-1], guidance_text)
+                )
+                self.test_quality = "Warnings"
             # Percent invalid bottom track
             if self.percent_invalid_bt > 20:
                 self.messages.append(
