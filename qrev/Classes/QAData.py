@@ -2957,7 +2957,7 @@ class QAData(object):
                             depth_selected = getattr(transect.depths, transect.depths.selected)
                             max_depth_cell_depth = depth_selected.depth_cell_depth_m[-1, :]
                             depth_cell_size = depth_selected.depth_cell_size_m[-1, :]
-                            sl_depth = depth_selected.depth_processed_m * cosd(transect.adcp.beam_angle_deg)
+                            sl_depth = transect.w_vel.sl_cutoff_m
                             diff_positive = np.where(np.greater(sl_depth, max_depth_cell_depth))[0]
                             q_test_percent = (np.nansum(
                                 meas.discharge[n].bottom_ens[
@@ -2973,7 +2973,7 @@ class QAData(object):
             if np.any(self.w_vel["profile_to_bottom"] == False):
                 self.w_vel["messages"].append(
                     [
-                        self.tr("WT: Maximum depth of water data is less than the streambed depth."),
+                        self.tr("WT: Maximum depth of water data is less than the side lobe cutoff depth."),
                         1,
                         11,
                     ]
