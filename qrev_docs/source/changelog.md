@@ -1,15 +1,27 @@
 # QRev Change Log
 
-## [**Version 4.40.3**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.3)
+## [**Version 4.41.0**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.0)
 
 **Added:**
-- NA
+- Added partial French translation option.
 
 **Changed:**
--
+- Upgraded Python to version 3.13 and impacted dependencies.
+- Refactored MAP's use of scikitlearn to use Scipy to avoid Python conflicts.
+- 
 
 **Fixed:**
-- 
+- Fixed crash if RSQ GPSRecords exceed 20
+- Fixed code in messages tab preventing tooltips from working
+- Implemented utf-8 encoding for SonTek json and most ASCII files
+- Fixed bug associated with blanking distance when creating xml file
+- Modified heading time series graph so right ticks don't show of left axis
+- Fixed English units conversion on contour csv output in MAP
+- Fixed bug in edge contour plot if there were 0 edge ensembles
+- Fixed reading of RSQ edge samples when auto edge not used
+- Fixed time zone bug when comparing timing of compass calibration to measurement start
+- Fixed bug when changing plotted transect in Compass/P/R table
+- Fixed Area Projection setting in Options dialog not being saved.
 
 ## [**Version 4.40.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.2)
 

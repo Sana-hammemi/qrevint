@@ -493,7 +493,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             if __company__ == "USGS":
-                config.export_config(self.config)
+                config.export_config(config.config)
             else:
                 config.export_international_config()
 
@@ -2510,9 +2510,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if self.agency_options["Area"]["projection"] != "ParallAC":
                         self.agency_options["Area"]["projection"] = "ParallAC"
                         if self.meas is not None:
-                            self.meas.area_projection = "Parallac"
+                            self.meas.area_projection = "ParallAC"
                             self.change = True
-                    self.sticky_settings.set("AreaProjection","Parallac")
+                    self.sticky_settings.set("AreaProjection","ParallAC")
                 else:
                     if self.agency_options["Area"]["projection"] != "PerpenMF":
                         self.agency_options["Area"]["projection"] = "PerpenMF"
