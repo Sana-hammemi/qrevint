@@ -14,9 +14,9 @@ import pandas as pd
 import simplekml
 import utm
 # from profilehooks import profile
+from scipy.stats import linregress
 from scipy.interpolate import griddata
 from scipy.optimize.minpack import curve_fit
-from sklearn.linear_model import LinearRegression
 
 from qrev import __qrev_version__
 from qrev.MiscLibs.abba_2d_interpolation import abba_idw_interpolation
@@ -1150,11 +1150,11 @@ class MAP(object):
                     top_depth = depth_cells_center[: idx_top[n], n]
                     top_3_depth = depth_cells_center[idx_top_3[0:3, n], n]
                     top_3_vel = w_vel_prim_extrap[idx_top_3[0:3, n], n]
-                    wls = LinearRegression()
-                    wls.fit(top_3_depth.reshape(-1, 1), top_3_vel.reshape(-1, 1))
-                    w_vel_prim_extrap[: idx_top[n], n] = (
-                        wls.coef_ * top_depth + wls.intercept_
-                    )
+
+                    slope, intercept, _, _, _ = linregress(top_3_depth,
+                                                           top_3_vel)
+                    w_vel_prim_extrap[: idx_top[n],
+                    n] = slope * top_depth + intercept
 
         # Extrap top for second and vertical velocities
         for n in range(len(idx_top)):
