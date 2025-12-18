@@ -1,6 +1,6 @@
 # QRev Change Log
 
-## [**Version 4.41.0**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.0)
+## [**Version 4.41.1**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.1)
 
 **Added:**
 - Added partial French translation option.
@@ -22,6 +22,8 @@
 - Fixed time zone bug when comparing timing of compass calibration to measurement start
 - Fixed bug when changing plotted transect in Compass/P/R table
 - Fixed Area Projection setting in Options dialog not being saved.
+- Fixed crash when running on a system where QRev has never created a 
+  sticky settings file.
 
 ## [**Version 4.40.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.40.2)
 
