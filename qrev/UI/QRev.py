@@ -6681,12 +6681,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rb_f.toggled.connect(self.change_temp_units)
 
             # Setup input validator for independent and adcp user temperature
-            reg_ex = QtCore.QRegularExpression(r"^[0-9]*(\.\d*)")
-            input_validator = QtGui.QRegExpValidator(reg_ex, self)
+            reg_ex = QtCore.QRegularExpression(r"^-?\d*(?:\.\d+)?$")
+            validator = QtGui.QRegularExpressionValidator(reg_ex, self)
 
             # Connect independent and adcp input option
-            self.ed_user_temp.setValidator(input_validator)
-            self.ed_adcp_temp.setValidator(input_validator)
+            self.ed_user_temp.setValidator(validator)
+            self.ed_adcp_temp.setValidator(validator)
             self.pb_ind_temp_apply.clicked.connect(self.apply_user_temp)
             self.pb_adcp_temp_apply.clicked.connect(self.apply_adcp_temp)
             self.ed_user_temp.textChanged.connect(self.user_temp_changed)
