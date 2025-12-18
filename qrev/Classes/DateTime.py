@@ -55,7 +55,7 @@ class DateTime(object):
         self.ens_duration_sec = ens_dur_in.astype(float)
         self.utc_time_offset = utc_time_offset
 
-    def populate_from_qrev_mat(self, transect, time_zone=None):
+    def populate_from_qrev_mat(self, transect):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -63,8 +63,6 @@ class DateTime(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
-        time_zone: str
-            user specified time zone.
         """
 
         if hasattr(transect, "dateTime"):
@@ -84,6 +82,7 @@ class DateTime(object):
             except AttributeError:
                 self.ens_duration_sec = np.array([np.nan])
 
-            if time_zone is not None:
-                if len(time_zone) > 1:
-                    self.utc_time_offset = time_zone
+            if hasattr(transect.dateTime, "utc_time_offset") and len(transect.dateTime.utc_time_offset) > 0:
+                self.utc_time_offset = transect.dateTime.utc_time_offset
+
+ 
