@@ -959,7 +959,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.sticky_settings.new(
                 "PDFSummary", self.agency_options["PDFSummary"]["default"]
             )
-            self.pdf_setting = dateformat(self.agency_options["PDFSummary"]["default"])
+
             self.pdf_setting = self.agency_options["PDFSummary"]["default"]
 
         # Time zone
