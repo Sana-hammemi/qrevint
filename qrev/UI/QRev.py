@@ -13,7 +13,7 @@ from datetime import datetime
 import numpy as np
 import scipy.io as sio
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QRegExp, pyqtSignal, QTranslator
+from PyQt5.QtCore import pyqtSignal, QTranslator
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
@@ -6681,7 +6681,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rb_f.toggled.connect(self.change_temp_units)
 
             # Setup input validator for independent and adcp user temperature
-            reg_ex = QRegExp("^[0-9]*(\.\d*)")
+            reg_ex = QtCore.QRegularExpression(r"^[0-9]*(\.\d*)")
             input_validator = QtGui.QRegExpValidator(reg_ex, self)
 
             # Connect independent and adcp input option
@@ -16221,7 +16221,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             file_type='bathy'))
 
         # Limit edit to two decimals float
-        rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
+        rx = QtCore.QRegularExpression(r"^-?\d*\.?\d{0,2}$")
         validator = QtGui.QRegExpValidator(rx, self)
         self.ed_map_cell_width.setValidator(validator)
         self.ed_map_cell_height.setValidator(validator)
