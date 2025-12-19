@@ -3086,7 +3086,7 @@ class AdvGraphs(object):
                 self.transect.depths, self.transect.depths.selected
             )
             beam_depths = depth_selected.depth_processed_m
-            if np.alltrue(np.isnan(beam_depths)):
+            if np.all(np.isnan(beam_depths)):
                 return
             if self.x_axis_type == "L":
                 self.x, beam_depths = self.add_edge_bathymetry(x, beam_depths)
@@ -3099,7 +3099,7 @@ class AdvGraphs(object):
         # 4 beam avg cross section
         if avg4_final:
             beam_depths = self.transect.depths.bt_depths.depth_processed_m
-            if np.alltrue(np.isnan(beam_depths)):
+            if np.all(np.isnan(beam_depths)):
                 return
             if self.x_axis_type == "L":
                 # Include edge bathymetry
@@ -3112,7 +3112,7 @@ class AdvGraphs(object):
         # Vertical beam cross section
         if vb_final:
             beam_depths = self.transect.depths.vb_depths.depth_processed_m
-            if np.alltrue(np.isnan(beam_depths)):
+            if np.all(np.isnan(beam_depths)):
                 return
             if self.x_axis_type == "L":
                 # Include edge bathymetry
@@ -3126,7 +3126,7 @@ class AdvGraphs(object):
         # Depth sounder cross section
         if ds_final:
             beam_depths = self.transect.depths.ds_depths.depth_processed_m
-            if np.alltrue(np.isnan(beam_depths)):
+            if np.all(np.isnan(beam_depths)):
                 return
             if self.x_axis_type == "L":
                 # Include edge bathymetry
@@ -3184,7 +3184,7 @@ class AdvGraphs(object):
             boat_track = self.transect.boat_vel.compute_boat_track(
                 transect=self.transect
             )
-            if not np.alltrue(np.isnan(boat_track["track_x_m"])):
+            if not np.all(np.isnan(boat_track["track_x_m"])):
                 x = boat_track["distance_m"]
                 self.x = x[self.transect.in_transect_idx]
 
@@ -3501,7 +3501,7 @@ class AdvGraphs(object):
             Dictionary containing data and settings to plot quiver
         """
 
-        if np.alltrue(data_plt_in == -999):
+        if np.all(data_plt_in == -999):
             return
 
         # Use last subplot
