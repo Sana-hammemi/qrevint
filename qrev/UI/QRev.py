@@ -16222,7 +16222,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Limit edit to two decimals float
         rx = QtCore.QRegularExpression(r"^-?\d*\.?\d{0,2}$")
-        validator = QtGui.QRegExpValidator(rx, self)
+        validator = QtGui.QRegularExpressionValidator(rx, self)
         self.ed_map_cell_width.setValidator(validator)
         self.ed_map_cell_height.setValidator(validator)
 
