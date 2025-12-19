@@ -4134,9 +4134,12 @@ class AdvGraphs(object):
         )
 
         # Create data plotted for annotation use
-        self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right]) * self.units["L"]
-        self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right]) * self.units["L"]
-        self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right]) * self.units["V"]
+        self.data_plotted[-2]["edge_x"] = np.array([x_left, x_right],  dtype=object
+                                                   ) * self.units["L"]
+        self.data_plotted[-2]["edge_y"] = np.array([y_left, y_right],  dtype=object
+                                                   ) * self.units["L"]
+        self.data_plotted[-2]["edge_z"] = np.array([v_left, v_right],  dtype=object
+                                                   ) * self.units["V"]
 
     def plt_timeseries(
         self,
