@@ -423,7 +423,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_all.setTabVisible(15, False)
 
         # Set window title
-        self.setWindowTitle(__qrev_version__)
+        self.window_title = __qrev_version__
 
         qrev_icon = self.get_icon()
 
@@ -444,7 +444,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sticky_settings = SSet(self.settingsFile)
 
         self._translate = QtCore.QCoreApplication.translate
-        self.translator = QTranslator(self)
+        self.translator = None
 
         # set display language
         try:
@@ -1015,7 +1015,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_change = False
 
         # Set the initial tab to the main tab
-        self.current_tab = "Main"
+        self.current_tab = "tab_main"
         self.transect_row = 0
 
         # Initialize emtpy tab setting dict
@@ -1373,6 +1373,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
+        self.config_gui()
+
     @staticmethod
     def check_legacy():
         """Check to see if settings file is present in appdata
@@ -1505,9 +1507,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Load and process Sontek data
             if select.type == "SonTek":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.pathName)
 
                     # Create measurement object
                     try:
@@ -1539,7 +1542,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
+                    self.window_title = __qrev_version__ + ": " + select.pathName
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName,
@@ -1563,9 +1566,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Load and process TRDI data
             elif select.type == "TRDI":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.fullName[0])
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName[0],
@@ -1592,7 +1596,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Load QRev data
             elif select.type == "QRev":
                 # Show QRev filename in GUI header
-                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                self.window_title = (__qrev_version__ + ": " +
+                                    select.fullName[0])
                 mat_data = sio.loadmat(
                     select.fullName[0], struct_as_record=False, squeeze_me=True
                 )
@@ -1677,9 +1682,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
             elif select.type == "RSQ":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.fullName[0])
                     self.meas = Measurement(
                         in_file=select.fullName,
                         source="RSQ",
@@ -2251,11 +2257,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.change = True
                             self.map_change = True
 
-                # update display language
-                self.display_language = options.cb_language.currentText()
-                self.update_language()
-                self.sticky_settings.set("DisplayLanguage",
-                                         self.display_language)
                 # Discharge display units options
                 if options.rb_sigfig.isChecked() and self.q_digits_method != "sigfig":
                     self.q_digits_method = "sigfig"
@@ -2528,6 +2529,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     else:
                         self.tab_manager(old_discharge=old_discharge)
 
+                # update display language
+                if self.display_language != options.cb_language.currentText():
+                    self.display_language = options.cb_language.currentText()
+                    self.sticky_settings.set("DisplayLanguage",
+                                             self.display_language)
+                    self.update_language()
+
+                    # reinitialize GUI
+                    self.config_gui()
+                    self.change = True
+                    self.map_change = True
+                    self.tab_manager()
+
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA
         coordinates.
@@ -2750,7 +2764,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs_menu_connection()
 
     def update_fig_list(self):
-        if self.current_tab == "Main":
+        if self.current_tab == "tab_main":
             # Setup list for use by graphics controls
             if self.run_oursin:
                 self.canvases = [
@@ -16966,11 +16980,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tab_idx = self.current_tab
 
             # Main tab
-            if tab_idx == "Main":
+            if tab_idx == "tab_main":
                 self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
 
             # Compass/PR tab
-            elif tab_idx == "Compass/P/R":
+            elif tab_idx == "tab_compass":
                 self.compass_plot()
                 self.pr_plot()
 
@@ -16979,27 +16993,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.mb_plots(idx=self.mb_row)
 
             # Bottom track tab
-            elif tab_idx == "BT":
+            elif tab_idx == "tab_bt":
                 self.bt_plots()
 
             # GPS tab
-            elif tab_idx == "GPS":
+            elif tab_idx == "tab_gps":
                 self.gps_plots()
 
             # Depth tab
-            elif tab_idx == "Depth":
+            elif tab_idx == "tab_depth":
                 self.depth_plots()
 
             # Water track tab
-            elif tab_idx == "WT":
+            elif tab_idx == "tab_wt":
                 self.wt_plots()
 
             # Edges tab
-            elif tab_idx == "Edges":
+            elif tab_idx == "tab_edges":
                 self.edges_graphics()
 
             # Adv. Graph
-            elif tab_idx == "Adv. Graph":
+            elif tab_idx == "tab_adv_graph":
                 self.adv_graph_tab()
 
     def set_axes(self):
@@ -17053,14 +17067,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def x_axis_time(self):
         """Changes the x-axis type to time"""
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "T"
         self.x_axis_type = "T"
         self.change_x_axis()
 
     def x_axis_ensemble(self):
         """Changes the x-axis type to ensembles"""
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "E"
         self.x_axis_type = "E"
         self.change_x_axis()
@@ -17068,7 +17082,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def x_axis_length(self):
         """Changes the x-axis type to length"""
 
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "L"
         self.x_axis_type = "L"
         self.change_x_axis()
@@ -17100,13 +17114,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tab_idx = self.current_tab
 
                 # Main tab
-                if tab_idx == "Main":
+                if tab_idx == "tab_main":
                     self.main_wt_contour(
                         transect_id=self.checked_transects_idx[self.transect_row]
                     )
-                elif tab_idx == "WT":
+                elif tab_idx == "tab_wt":
                     self.wt_plots()
-                elif tab_idx == "Adv. Graph":
+                elif tab_idx == "tab_adv_graph":
                     self.adv_graph_tab()
         else:
             self.actionShow_Extrapolated.setChecked(False)
@@ -17514,7 +17528,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.help()
 
         # Change displayed transect
-        if self.current_tab != "MovBedTst" and self.current_tab != "SysTest":
+        if self.current_tab != "tab_mbt" and self.current_tab != "tab_systest":
             # Select transect above in table or wrap to bottom
             if e.key() == QtCore.Qt.Key_Up:
                 if self.transect_row - 1 < 0:
@@ -17554,7 +17568,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_table_clicked(self.mb_row, 3)
 
         # Turn on or off display of alternate method medians to allow comparison
-        if self.current_tab == "Extrap":
+        if self.current_tab == "tab_extrap":
             # Turn on comparison medians
             if e.key() == QtCore.Qt.Key_F8:
                 self.compare_medians()
@@ -17571,31 +17585,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         col = 0
 
         # Main tab
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             self.select_transect(self.transect_row + 1, col)
 
         # Compass/PR tab
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_table_clicked(self.transect_row, col)
 
         # Bottom track tab
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_table_clicked(self.transect_row, col)
 
         # GPS tab
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_table_clicked(self.transect_row, col)
 
         # Depth tab
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_table_clicked(self.transect_row, col)
 
         # Water track tab
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_table_clicked(self.transect_row, col)
 
         # Edges tab
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_table_clicked(self.transect_row, col)
 
     @staticmethod
@@ -17674,15 +17688,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if tab_idx is None:
             tab_idx = self.current_tab
         else:
-            tab_idx = self.tab_all.tabText(tab_idx)
-
-        self.current_tab = tab_idx
+            tab_idx = self.tab_all.currentWidget().objectName()
+            self.current_tab = tab_idx
 
         if self.change:
             self.meas.map = None
 
         # Main tab
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             if subtab_idx is not None:
                 self.tab_summary.setCurrentIndex(0)
 
@@ -17749,60 +17762,60 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tab_main.show()
 
         # System tab
-        elif tab_idx == "SysTest":
+        elif tab_idx == "tab_systest":
             self.system_tab()
 
         # Compass/PR tab
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_tab(old_discharge=old_discharge)
 
         # Temp/Sal tab
-        elif tab_idx == "Temp/Sal":
+        elif tab_idx == "tab_tempsal":
             self.tempsal_tab(old_discharge=old_discharge)
 
         # Moving-bed test tab
-        elif tab_idx == "MovBedTst":
+        elif tab_idx == "tab_mbt":
             self.movbedtst_tab()
 
         # Bottom track tab
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_tab(old_discharge=old_discharge)
 
         # GPS tab
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_tab(old_discharge=old_discharge)
 
         # Depth tab
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_tab(old_discharge=old_discharge)
 
         # Water track tab
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_tab(old_discharge=old_discharge)
 
         # Extrapolation tab
-        elif tab_idx == "Extrap":
+        elif tab_idx == "tab_extrap":
             self.extrap_tab()
 
         # Edges tab
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_axis_type = "E"
             self.edges_tab()
 
         # Uncertainty tab
-        elif tab_idx == "Uncertainty":
+        elif tab_idx == "tab_uncertainty":
             self.uncertainty_tab()
 
         # EDI tab
-        elif tab_idx == "EDI":
+        elif tab_idx == "tab_edi":
             self.edi_tab()
 
         # Adv. Graph tab
-        elif tab_idx == "Adv. Graph":
+        elif tab_idx == "tab_adv_graph":
             self.adv_graph_tab()
 
         # MAP tab
-        elif tab_idx == "MAP":
+        elif tab_idx == "tab_map":
             self.map_tab()
 
         self.set_tab_color()
@@ -17830,19 +17843,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.current_tab = tab_idx
 
         # Main
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             self.comments_tab()
 
         # System Test
-        elif tab_idx == "SysTest":
+        elif tab_idx == "tab_systest":
             self.systest_comments_messages()
 
         # Compass/PR
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_comments_messages()
 
         # Temp/Sal
-        elif tab_idx == "Temp/Sal":
+        elif tab_idx == "tab_tempsal":
             self.tempsal_comments_messages()
 
         # Moving-bed test
@@ -17850,35 +17863,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_comments_messages()
 
         # Bottom track
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_comments_messages()
 
         # GPS
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_comments_messages()
 
         # Depth
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_comments_messages()
 
         # WT
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_comments_messages()
 
         # Extrapolation
-        elif tab_idx == "Extrap":
+        elif tab_idx == "tab_extrap":
             self.extrap_comments_messages()
 
         # Edges
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_comments_messages()
 
         # Uncertainty
-        elif tab_idx == "Uncertainty":
+        elif tab_idx == "tab_uncertainty":
             self.uncertainty_comments_messages()
 
     def config_gui(self):
         """Configure the user interface based on the available data."""
+
+        self.setWindowTitle(self.window_title)
 
         # After data is loaded enable GUI and buttons on toolbar
         self.tab_all.setEnabled(True)
@@ -18004,18 +18019,33 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 base_path = sys._MEIPASS
                 lang_path = os.path.join(base_path, "translation_files",
                                          lang_file)
-            try:
+            if 1==1:
+
+                # If there is a current translator, remove it to avoid
+                # stacking.
+
+                if self.translator:
+                    QtWidgets.QApplication.instance().removeTranslator(
+                        self.translator)
+
+                # Initiate and load language file.
+                self.translator = QTranslator(self)
                 self.translator.load(lang_path)
+
+                # Install new translator
                 QtWidgets.QApplication.instance().installTranslator(
                     self.translator)
 
+                # Update UI with new langua
                 self.retranslateUi(self)
-            except BaseException:
 
-                self.popup_message(self.tr("Failed to load translation."))
 
-                QtWidgets.QApplication.instance().removeTranslator(
-                    self.translator)
+            # except BaseException:
+            #
+            #     self.popup_message(self.tr("Failed to load translation."))
+            #
+            #     QtWidgets.QApplication.instance().removeTranslator(
+            #         self.translator)
 
         else:
             QtWidgets.QApplication.instance().removeTranslator(self.translator)
