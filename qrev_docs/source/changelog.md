@@ -1,5 +1,17 @@
 # QRev Change Log
 
+## [**Version 4.41.2**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.2)
+
+**Added:**
+
+**Changed:**
+
+**Fixed:**
+- Fixed crash when opening toggling the MAP tab.
+- Fixed crash loading some TRDI ADCP data due to Compass QA and backend 
+  time zones. 
+- Fixed crash viewing edges on contour plots due to mixed length arrays.
+
 ## [**Version 4.41.1**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.1)
 
 **Added:**
@@ -8,7 +20,6 @@
 **Changed:**
 - Upgraded Python to version 3.13 and impacted dependencies.
 - Refactored MAP's use of scikitlearn to use Scipy to avoid Python conflicts.
-- 
 
 **Fixed:**
 - Fixed crash if RSQ GPSRecords exceed 20
