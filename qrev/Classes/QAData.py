@@ -1473,6 +1473,7 @@ class QAData(object):
                 break
 
         # Check for GPS data
+        tz = timezone.utc
         for idx in meas.checked_transect_idx:
             if (
                 meas.transects[idx].boat_vel.gga_vel is not None
@@ -1522,6 +1523,7 @@ class QAData(object):
                     compass_time = np.nanmin([datetime.strptime(t,
                                                                 time_format).replace(
                         tzinfo=tz).timestamp() for t in times])
+
                 except ValueError:
                     compass_time = None
         else:

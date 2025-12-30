@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name='qrev',
-    version='4.41.1',
+    version='4.41.2',
     description='QRev port to python',
     author='David S. Mueller',
     author_email='dmueller@usgs.gov',
