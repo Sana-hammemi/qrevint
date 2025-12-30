@@ -18,8 +18,13 @@ class ArrowsScale(QtWidgets.QDialog, Arrows_Scale.Ui_ArrowsScaling):
         self.setupUi(self)
 
         # Enter numerical values
-        rx = QtCore.QRegExp("-?\d*(\.\d{2})")
-        validator = QtGui.QRegExpValidator(rx, self)
+        validator = QtGui.QDoubleValidator(self)
+        validator.setBottom(
+            -float('inf'))  # or set a specific range like -100.0
+        validator.setTop(float('inf'))
+        validator.setDecimals(2)
+        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+
         self.ed_arrow_scale.setValidator(validator)
         self.ed_v_max.setValidator(validator)
         self.ed_v_min.setValidator(validator)
