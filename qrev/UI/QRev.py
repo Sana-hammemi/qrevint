@@ -18008,6 +18008,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.translator.load(lang_path)
                 QtWidgets.QApplication.instance().installTranslator(
                     self.translator)
+
+                self.retranslateUi(self)
             except BaseException:
 
                 self.popup_message(self.tr("Failed to load translation."))
