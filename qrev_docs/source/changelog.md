@@ -11,6 +11,7 @@
 - Fixed crash loading some TRDI ADCP data due to Compass QA and backend 
   time zones. 
 - Fixed crash viewing edges on contour plots due to mixed length arrays.
+- Fixed tab text not updating when language changed in settings.
 
 ## [**Version 4.41.1**](https://code.usgs.gov/QRev/QRevPy/-/releases/4.41.1)
 
