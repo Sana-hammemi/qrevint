@@ -31,7 +31,7 @@ class DateTime(object):
         self.utc_time_offset = None
 
 
-    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):
+    def populate_data(self, date_in, start_in, end_in, ens_dur_in):
         """Populate data in object.
 
         Parameters
@@ -44,8 +44,6 @@ class DateTime(object):
             Python serial time for end of transect.
         ens_dur_in: np.array(float)
             Duration of each ensemble, in seconds.
-        utc_time_offset=str
-            String containing utc time offset to achieve local time
         """
 
         self.date = date_in
@@ -85,4 +83,4 @@ class DateTime(object):
             if hasattr(transect.dateTime, "utc_time_offset") and len(transect.dateTime.utc_time_offset) > 0:
                 self.utc_time_offset = transect.dateTime.utc_time_offset
 
- 
+
