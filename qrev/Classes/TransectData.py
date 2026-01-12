@@ -2561,18 +2561,16 @@ class TransectData(object):
             if n_transects > 0:
                 for transect in meas_struct.transects:
                     trans = TransectData()
-                    trans.populate_from_qrev_mat(transect, meas_struct,
-                                                 time_zone=time_zone)
+                    trans.populate_from_qrev_mat(transect, meas_struct)
                     transects.append(trans)
             else:
                 trans = TransectData()
-                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct,
-                                                     time_zone=time_zone)
+                trans.populate_from_qrev_mat(meas_struct.transects, meas_struct)
                 transects.append(trans)
 
         return transects
 
-    def populate_from_qrev_mat(self, transect, meas_struct, time_zone=None):
+    def populate_from_qrev_mat(self, transect, meas_struct):
         """Populates the object using data from previously saved QRev Matlab
         file.
 
@@ -2580,8 +2578,6 @@ class TransectData(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
-        time_zone: str
-            user specified time zone
         """
 
         self.adcp = InstrumentData()
@@ -2609,7 +2605,7 @@ class TransectData(object):
         else:
             self.orig_start_edge = transect.startEdge
         self.date_time = DateTime()
-        self.date_time.populate_from_qrev_mat(transect, time_zone=time_zone)
+        self.date_time.populate_from_qrev_mat(transect)
         self.checked = bool(transect.checked)
         if type(transect.inTransectIdx) is int:
             self.in_transect_idx = np.array([transect.inTransectIdx - 1])

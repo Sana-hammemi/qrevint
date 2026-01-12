@@ -1364,12 +1364,7 @@ class Measurement(object):
         except AttributeError:
             self.compass_eval = []
 
-        if len(self.time_zone) > 1:
-            tz = self.time_zone
-        else:
-            tz = None
-
-        self.transects = TransectData.qrev_mat_in(meas_struct, time_zone=tz)
+        self.transects = TransectData.qrev_mat_in(meas_struct)
         self.mb_tests = MovingBedTests.qrev_mat_in(meas_struct, tr=self.tr)
         self.extrap_fit = ComputeExtrap()
         self.extrap_fit.populate_from_qrev_mat(meas_struct)
