@@ -272,6 +272,7 @@ class WTContour(object):
 
 
                     )
+
                     self.fig.ax.quiverkey(
                         q,
                         X=0.95,

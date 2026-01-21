@@ -18,7 +18,7 @@ class AxesScale(QtWidgets.QDialog, Axes_Scale.Ui_Axes_Scale):
     Parameters
     ----------
     Axes_Scale.Ui_Axes_Scale : QDialog
-        Dialog window to allow users to change axes scaline
+        Dialog window to allow users to change axes scaling
     """
 
     def __init__(self, parent=None):

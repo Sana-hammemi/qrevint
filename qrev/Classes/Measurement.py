@@ -41,7 +41,6 @@ from qrev.MiscLibs.common_functions import (
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso, tz_formatted_string
 
 # from profilehooks import profile
-
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 

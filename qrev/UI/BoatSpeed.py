@@ -1,7 +1,8 @@
 import numpy as np
 from PyQt5 import QtCore
 from matplotlib.dates import DateFormatter, num2date
-from datetime import datetime
+from datetime import datetime, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 
 class BoatSpeed(object):
@@ -35,7 +36,7 @@ class BoatSpeed(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -134,6 +135,8 @@ class BoatSpeed(object):
 
         # Compute x axis data
         x = None
+        tz_local = timezone.utc
+        timestamp = None
         if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
@@ -154,8 +157,9 @@ class BoatSpeed(object):
                 + transect.date_time.start_serial_time
             )
             x = []
+            tz_local = utc_offset_to_tz(transect.date_time.utc_time_offset)
             for stamp in timestamp[transect.in_transect_idx]:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz_local))
             x = np.array(x)
 
         if x is not None:
@@ -371,54 +375,58 @@ class BoatSpeed(object):
                     for item in self.gga:
                         item.set_visible(False)
 
-                    # Set axis limits
-                    max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
-                    self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
-                    x = x[transect.in_transect_idx - transect.in_transect_idx[0]]
-                    if x_axis_type == "L":
-                        if transect.start_edge == "Right":
-                            self.fig.ax.invert_xaxis()
-                            self.fig.ax.set_xlim(
-                                right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02
-                            )
-                        else:
-                            self.fig.ax.set_xlim(
-                                left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02
-                            )
-                        self.fig.ax.set_xlabel(
-                            self.canvas.tr("Length" + units["label_L"])
-                        )
-                    elif x_axis_type == "E":
-                        if transect.start_edge == "Right":
-                            self.fig.ax.invert_xaxis()
-                            self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
-                        else:
-                            self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
-                        self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
-                    elif x_axis_type == "T":
-                        axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
-                        if transect.start_edge == "Right":
-                            self.fig.ax.invert_xaxis()
-                            self.fig.ax.set_xlim(
-                                right=datetime.utcfromtimestamp(
-                                    timestamp[0] - axis_buffer
-                                ),
-                                left=datetime.utcfromtimestamp(
-                                    timestamp[-1] + axis_buffer
-                                ),
-                            )
-                        else:
-                            self.fig.ax.set_xlim(
-                                left=datetime.utcfromtimestamp(
-                                    timestamp[0] - axis_buffer
-                                ),
-                                right=datetime.utcfromtimestamp(
-                                    timestamp[-1] + axis_buffer
-                                ),
-                            )
-                        date_form = DateFormatter("%H:%M:%S")
-                        self.fig.ax.xaxis.set_major_formatter(date_form)
-                        self.fig.ax.set_xlabel(self.canvas.tr("Time"))
+            # Set axis limits
+            max_y = np.nanmax([max_bt, max_gga, max_vtg]) * 1.1
+            self.fig.ax.set_ylim(top=np.ceil(max_y * units["L"]), bottom=-0.5)
+            x = x[transect.in_transect_idx - transect.in_transect_idx[0]]
+            if x_axis_type == "L":
+                if transect.start_edge == "Right":
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(
+                        right=-1 * x[-1] * 0.02 * units["L"], left=x[-1] * 1.02
+                    )
+                else:
+                    self.fig.ax.set_xlim(
+                        left=-1 * x[-1] * 0.02 * units["L"], right=x[-1] * 1.02
+                    )
+                self.fig.ax.set_xlabel(
+                    self.canvas.tr("Length" + units["label_L"])
+                )
+            elif x_axis_type == "E":
+                if transect.start_edge == "Right":
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(right=0, left=x[-1] + 1)
+                else:
+                    self.fig.ax.set_xlim(left=0, right=x[-1] + 1)
+                self.fig.ax.set_xlabel(self.canvas.tr("Ensembles"))
+            elif x_axis_type == "T":
+                axis_buffer = (timestamp[-1] - timestamp[0]) * 0.02
+                if transect.start_edge == "Right":
+                    self.fig.ax.invert_xaxis()
+                    self.fig.ax.set_xlim(
+                        right=datetime.fromtimestamp(
+                            timestamp[0] - axis_buffer,
+                            tz=tz_local
+                        ),
+                        left=datetime.fromtimestamp(
+                            timestamp[-1] + axis_buffer,
+                            tz=tz_local
+                        ),
+                    )
+                else:
+                    self.fig.ax.set_xlim(
+                        left=datetime.fromtimestamp(
+                            timestamp[0] - axis_buffer,
+                            tz=tz_local
+                        ),
+                        right=datetime.fromtimestamp(
+                            timestamp[-1] + axis_buffer,
+                            tz=tz_local
+                        ),
+                    )
+                date_form = DateFormatter("%H:%M:%S")
+                self.fig.ax.xaxis.set_major_formatter(date_form)
+                self.fig.ax.set_xlabel(self.canvas.tr("Time"))
 
         # Initialize annotation for data cursor
         self.annot = self.fig.ax.annotate(

@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib.dates import DateFormatter, num2date
-from datetime import datetime
+from datetime import datetime, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 
 class GPSFilters(object):
@@ -29,7 +30,7 @@ class GPSFilters(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -72,6 +73,9 @@ class GPSFilters(object):
             Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
 
+        tz_local = timezone.utc
+        timestamp = None
+
         # Set default axis
         if x_axis_type is None:
             x_axis_type = "E"
@@ -110,9 +114,10 @@ class GPSFilters(object):
                 np.nancumsum(transect.date_time.ens_duration_sec)
                 + transect.date_time.start_serial_time
             )
+            tz_local = utc_offset_to_tz(transect.date_time.utc_time_offset)
             x = []
             for stamp in timestamp:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz_local))
             x = np.array(x)
 
         if (
@@ -277,7 +282,7 @@ class GPSFilters(object):
             else:
                 source = boat_selected.processed_source
 
-            # Plot dummy data to establish consistent order of y axis
+            # Plot dummy data to establish consistent order of y-axis
             self.source = self.fig.ax.plot(
                 [-10, -10, -10, -10, -10], ["INV", "INT", "BT", "GGA", "VTG"], "w-"
             )
@@ -308,13 +313,13 @@ class GPSFilters(object):
             if transect.start_edge == "Right":
                 self.fig.ax.invert_xaxis()
                 self.fig.ax.set_xlim(
-                    right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                    left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                    right=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                    left=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                 )
             else:
                 self.fig.ax.set_xlim(
-                    left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                    right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                    left=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                    right=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                 )
             date_form = DateFormatter("%H:%M:%S")
             self.fig.ax.xaxis.set_major_formatter(date_form)

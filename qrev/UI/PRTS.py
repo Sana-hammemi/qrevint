@@ -14,11 +14,11 @@ class PRTS(object):
     roll: list
         Reference to roll time series plot
     row_index: list
-        List of rows from the table that are plotted
+        Rows from the table that are plotted
     hover_connection: bool
         Switch to allow user to use the data cursor
     annot: Annotation
-        Annotation for data cursor
+        Object of data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -50,7 +50,7 @@ class PRTS(object):
         meas: Measurement
             Object of class Measurement
         checked: list
-            List of transect indices to be included in discharge computation
+            Transect indices to be included in discharge computation
         tbl: QTableWidget
             Table containing heading, pitch, and roll information
         cb_pitch: QCheckBox

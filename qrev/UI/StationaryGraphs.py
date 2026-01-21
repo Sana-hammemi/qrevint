@@ -14,15 +14,15 @@ class StationaryGraphs(object):
     fig: Object
         Figure object of the canvas
     mb: list
-        List of plot objects
+        Plot objects
     stud: list
-        List of plot objects
+        Plot objects
     hover_connection: int
         Index to data cursor connection
     annot_mb: Annotation
-        Annotation object for moving-bed time series data cursor
+        Object for moving-bed time series data cursor
     annot_stud: Annotation
-        Annotation object for upstream/downstream shiptrack data cursor
+        Object for upstream/downstream shiptrack data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -208,7 +208,7 @@ class StationaryGraphs(object):
 
     def change(self):
         """Function to all call to change, but there is nothing to change for
-        this class. Mirrors BoatSpeed class to allow interchangable use.
+        this class. Mirrors BoatSpeed class to allow interchangeable use.
         """
 
         pass
@@ -225,7 +225,7 @@ class StationaryGraphs(object):
         plt_ref: Line2D
             Reference containing plotted data
         annot: Annotation
-            Annotation associated with figure clicked
+            Associated with figure clicked
         """
 
         pos = plt_ref._xy[ind["ind"][0]]

@@ -13,7 +13,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 class PDFEdiReport:
     """Generate a PDF report for EDI tab."""
@@ -78,12 +78,13 @@ class PDFEdiReport:
         Returns
         -------
         table : Table
-            Table with site info
+            Site info table
         """
         start = self.parent.meas.transects[
             self.parent.meas.checked_transect_idx[0]
         ].date_time.start_serial_time
-        date = datetime.utcfromtimestamp(start).strftime(self.parent.date_format)
+        tz_local = utc_offset_to_tz(self.parent.meas.checked_transect_idx[0].date_time.utc_time_offset)
+        date = datetime.fromtimestamp(start, tz=tz_local).strftime(self.parent.date_format)
 
         data = [
             [self.tr("Station Name"), self.parent.meas.station_name],
@@ -108,7 +109,7 @@ class PDFEdiReport:
         Returns
         -------
         table : Table
-            Table with info from top table on EDI tab
+            Info from top table on EDI tab
         """
         tbl_edi_transect = self.parent.tbl_edi_transect
 
@@ -178,7 +179,7 @@ class PDFEdiReport:
         Returns
         -------
         table : Table
-            Table with info from bottom table on EDI tab
+            Info from bottom table on EDI tab
         """
         tbl_edi_results = self.parent.tbl_edi_results
 

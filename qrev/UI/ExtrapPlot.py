@@ -14,11 +14,11 @@ class ExtrapPlot(object):
     meas: Measurement
         Object of class Measurement
     checked: list
-        List of transect indices of transects used to compute discharge
+        Transect indices of transects used to compute discharge
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     """
 
     def __init__(self, canvas):
@@ -59,7 +59,7 @@ class ExtrapPlot(object):
         meas: Measurement
             Object of class Measurement
         checked: list
-            List of indices of transects used to compute discharge
+            Indices of transects used to compute discharge
         idx: int
             Index of data to plot
         cb_data: bool
@@ -75,7 +75,7 @@ class ExtrapPlot(object):
         cb_meas_fit: bool
             Plot extrapolation fit for entire measurement (True or False)
         auto: bool
-            Indicator that the auto fit should be shown in addition to the selected fit.
+            Indicator that auto-fit should be shown in addition to the selected fit.
         """
 
         # Initialize variables
@@ -213,7 +213,7 @@ class ExtrapPlot(object):
             Index to data to be plotted
         """
 
-        # If norm_data is a list is contains data from multiple transects
+        # If norm_data is a list it contains data from multiple transects
         if type(norm_data) is list:
             # Plot all transects
             for idx in self.checked:
@@ -331,7 +331,7 @@ class ExtrapPlot(object):
         idx: int
             Index of data to be plotted
         auto: bool
-            Indicator that the auto fit should be shown in addition to the selected fit.
+            Indicator that auto-fit should be shown in addition to the selected fit.
         """
 
         # If sel_fit is a list plot data from all checked transects

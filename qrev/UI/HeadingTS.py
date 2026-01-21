@@ -16,13 +16,13 @@ class HeadingTS(object):
     merror: list
         Reference to magnetic error time series plot
     row_index: list
-        List of rows from the table that are plotted
+        Rows from the table that are plotted
     hover_connection: bool
         Switch to allow user to use the data cursor
     annot: Annotation
-        Annotation object for heading
+        Object for heading
     annot2: Annotation
-        Annotation object for percent change in magnetic field
+        Object for percent change in magnetic field
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -66,14 +66,14 @@ class HeadingTS(object):
         meas: Measurement
             Object of Measurement class
         checked: list
-            List of bool indicating which transects are included in the
+            Bools indicating which transects are included in the
             discharge computation
         tbl: QTableWidget
             Heading, pitch, and roll table
         cb_internal: QCheckBox
             Indicates if the internal heading data is visible
         cb_external: QCheckBox
-            Inidcates if the external heading data is visible
+            Indicates if the external heading data is visible
         cb_merror: QCheckBox
             Indicates if the percent change in magnetic field is visible
         units: dict
@@ -309,7 +309,7 @@ class HeadingTS(object):
         Parameters
         ----------
         annot: Annotation
-            Annotation for data cursor
+            Object of data cursor
         ind: dict
             Contains data selected.
         plt_ref: Line2D

@@ -1,12 +1,13 @@
 import numpy as np
 from PyQt5 import QtCore
 from matplotlib.dates import DateFormatter, num2date
-from datetime import datetime
+from datetime import datetime, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 
 class CrossSection(object):
-    """Class to generate final cross sections using the user settings.
-    What cross sections are plotted are controlled by the user through checkboxes.
+    """Class to generate final cross-sections using the user settings.
+    What cross-sections are plotted are controlled by the user through checkboxes.
 
     Attributes
     ----------
@@ -17,25 +18,25 @@ class CrossSection(object):
     units: dict
         Dictionary of units conversions
     cb_beam_cs: QCheckBox
-        Checkbox to plot cross section based on 4 beam average
+        Checkbox to plot cross-section based on 4 beam average
     cb_vert_cs: QCheckBox
-        Checkbox to plot cross section based on vertical beam
+        Checkbox to plot cross-section based on vertical beam
     cb_ds_cs: QCheckBox
-        Checkbox to plot cross section based on depth sounder
+        Checkbox to plot cross-section based on depth sounder
     cb_final_cs: QCheckBox
-        Checkbox to plot final cross section based on user selections
+        Checkbox to plot final cross-section based on user selections
     beam_cs: list
-        Plot reference for 4 beam average cross section
+        Plot reference for 4 beam average cross-section
     vb_cs: list
-        Plot reference for vertical beam cross section
+        Plot reference for vertical beam cross-section
     ds_cs: list
-        Plot reference for depth sounder cross section
+        Plot reference for depth sounder cross-section
     final_cs: list
-        Plot reference for final cross section
+        Plot reference for final cross-section
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     x_axis_type: str
         Identifies x-axis type (L-length, E-ensemble, T-time)
     """
@@ -84,13 +85,13 @@ class CrossSection(object):
         units: dict
             Dictionary of units conversions
         cb_beam_cs: QCheckBox
-            Checkbox to plot cross section based on 4 beam average
+            Checkbox to plot cross-section based on 4 beam average
         cb_vert_cs: QCheckBox
-            Checkbox to plot cross section based on vertical beam
+            Checkbox to plot cross-section based on vertical beam
         cb_ds_cs: QCheckBox
-            Checkbox to plot cross section based on depth sounder
+            Checkbox to plot cross-section based on depth sounder
         cb_final_cs: QCheckBox
-            Checkbox to plot final cross section based on user selections
+            Checkbox to plot final cross-section based on user selections
         x_axis_type: str
             Identifies x-axis type (L-lenght, E-ensemble, T-time)
         """
@@ -99,6 +100,9 @@ class CrossSection(object):
         if x_axis_type is None:
             x_axis_type = "L"
         self.x_axis_type = x_axis_type
+
+        tz_local = timezone.utc
+        timestamp = None
 
         # Assign and save parameters
         self.cb_beam_cs = cb_beam_cs
@@ -142,8 +146,9 @@ class CrossSection(object):
                 + transect.date_time.start_serial_time
             )
             x = []
+            tz_local = utc_offset_to_tz(transect.date_time.utc_time_offset)
             for stamp in timestamp:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz_local))
             x = np.array(x)
 
         # Check to make sure there is valid boat track data
@@ -201,7 +206,7 @@ class CrossSection(object):
                 )
                 max_ds = np.nanmax(beam_depths)
 
-            # Based on checkbox control make cross sections visible or not
+            # Based on checkbox control make cross-sections visible or not
             if cb_beam_cs.checkState() == QtCore.Qt.Checked:
                 for item in self.beam_cs:
                     item.set_visible(True)
@@ -255,13 +260,13 @@ class CrossSection(object):
                 if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(
-                        right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                        left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                        right=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                        left=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                     )
                 else:
                     self.fig.ax.set_xlim(
-                        left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                        right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                        left=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                        right=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                     )
                 date_form = DateFormatter("%H:%M:%S")
                 self.fig.ax.xaxis.set_major_formatter(date_form)

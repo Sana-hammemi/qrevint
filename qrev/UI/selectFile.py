@@ -21,7 +21,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog, wSelectFile.Ui_selectFile):
     fullName: list
         Full name of files including path.
     fileName: list
-        List of one or more fileNames to be processed.
+        One or more fileNames to be processed.
     pathName: str
         Path to folder containing files.
     type: str
@@ -201,7 +201,7 @@ class SaveDialog(QtWidgets.QDialog):
         save_type: str
             Indicates type of save
         delimiter: str
-            default delimiter for acsii output
+            default delimiter for ascii output
         """
         super(SaveDialog, self).__init__(parent)
         # self.setupUi(self)

@@ -911,7 +911,7 @@ class TransectData(object):
         start_serial_time = rsdata.System.Time[0] + ((30 * 365) + 7) * 24 * 60 * 60
         end_serial_time = rsdata.System.Time[-1] + ((30 * 365) + 7) * 24 * 60 * 60
         meas_date = datetime.strftime(
-            datetime.fromtimestamp(start_serial_time), "%m/%d/%Y"
+            datetime.fromtimestamp(start_serial_time, tz=timezone.utc), "%m/%d/%Y"
         )
         self.date_time = DateTime()
         self.date_time.populate_data(
@@ -1357,7 +1357,7 @@ class TransectData(object):
 
         # if hasattr(rsdata.WaterTrack, "Water_Profiling_Text"):
         #     ping_type = self.rsq_mat_ping_type(rsdata.WaterTrack.Water_Profiling_Text)
-        # 
+        #
         # else:
         # M9 or S5
         ping_type = self.sontek_ping_type(
@@ -1834,19 +1834,19 @@ class TransectData(object):
                             raw_gps["gga_longitude"][sample_n, record_n] = record["GgaLongitude"]
                             raw_gps["gga_quality"][sample_n, record_n] = record["GgaFixQuality"]
                             raw_gps["gga_altitude"][sample_n, record_n] = record["GgaAltitude (m)"]
-    
+
                             try:
                                 raw_gga = raw_gga_list[record_n].split(",")
                                 raw_gps["gga_hdop"][sample_n, record_n] = float(raw_gga[8])
                                 raw_gps["gga_sats"][sample_n, record_n] = int(raw_gga[7])
                             except (ValueError, IndexError):
                                 pass
-    
+
                             raw_gps["vtg_true_course"][sample_n, record_n] = record["VtgTmgTrue (deg)"]
                             # speed actually in kph
                             raw_gps["vtg_speed_kph"][sample_n, record_n] = record["VtgSpeed (m/s)"]
                             raw_gps["vtg_mode"] = record["VtgFaaMode"]
-    
+
                             # Store raw gga data
                             if record_n <= len(raw_gga_list):
                                 try:
@@ -1866,7 +1866,7 @@ class TransectData(object):
                                     raw_gps2["gga_sats"][sample_n, record_n] = int(raw_gga[7])
                                 except:
                                     pass
-    
+
                             # Store raw vtg data
                             if record_n <= len(raw_vtg_list):
                                 try:
@@ -2546,7 +2546,7 @@ class TransectData(object):
         Returns
         -------
         transects: list
-            List of TransectData objects
+            TransectData objects
         """
 
         transects = []

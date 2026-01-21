@@ -38,7 +38,7 @@ class Shiptrack(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     """
 
     def __init__(self, canvas):
@@ -526,6 +526,8 @@ class Shiptrack(object):
 
         u = u[:, transect.in_transect_idx]
         v = v[:, transect.in_transect_idx]
+        u_mean = None
+        v_mean = None
 
         if edge_start is not None and n_ensembles is not None:
             valid_data = transect.w_vel.valid_data[0, :, :]
@@ -802,7 +804,7 @@ class Shiptrack(object):
         plt_ref: Line2D
             Reference containing plotted data
         vector_ref: Quiver
-            Refernece containing plotted data
+            Reference containing plotted data
         ref_label: str
             Label used to ID data type in annotation
         """

@@ -1,5 +1,4 @@
 import numpy as np
-import copy
 
 
 class Maptrack(object):
@@ -16,7 +15,7 @@ class Maptrack(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     """
 
     def __init__(self, canvas):

@@ -13,7 +13,7 @@ class MplCanvas(FigureCanvas):
     """
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        """Intializes the figure canvas and fig attribute.
+        """Initializes the figure canvas and fig attribute.
 
         Parameters
         ----------

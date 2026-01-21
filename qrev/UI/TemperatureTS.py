@@ -2,6 +2,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.dates as mdates
 from qrev.MiscLibs.common_functions import convert_temperature
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 
 class TemperatureTS(object):
@@ -16,7 +17,7 @@ class TemperatureTS(object):
     hover_connection: bool
         Switch to allow user to use the data cursor
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     """
 
     def __init__(self, canvas):
@@ -60,8 +61,9 @@ class TemperatureTS(object):
 
         # Create list from time stamps
         time_stamp = []
+        tz_local = utc_offset_to_tz(meas.transects[meas.checked[0]].date_time.utc_time_offset)
         for t in serial_time:
-            time_stamp.append(datetime.utcfromtimestamp(t))
+            time_stamp.append(datetime.fromtimestamp(t, tz=tz_local))
 
         # Set label to display correct units
         y_label = self.canvas.tr("Degrees C")

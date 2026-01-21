@@ -1,7 +1,8 @@
 import numpy as np
 from PyQt5 import QtCore
 from matplotlib.dates import DateFormatter, num2date
-from datetime import datetime
+from datetime import datetime, timezone
+from qrev.MiscLibs.local_time_utilities import utc_offset_to_tz
 
 
 class BeamDepths(object):
@@ -43,7 +44,7 @@ class BeamDepths(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation for data cursor
+        Text for data cursor
     x_axis_type: str
         Identifies x-axis type (L-lenght, E-ensemble, T-time)
     """
@@ -118,6 +119,7 @@ class BeamDepths(object):
             x_axis_type = "L"
         self.x_axis_type = x_axis_type
 
+        tz_local = timezone.utc
         # Assign and save parameters
         self.cb_beam1 = cb_beam1
         self.cb_beam2 = cb_beam2
@@ -152,6 +154,7 @@ class BeamDepths(object):
 
         # Compute x axis data
         x = None
+        timestamp = None
         if x_axis_type == "L":
             boat_track = transect.boat_vel.compute_boat_track(transect=transect)
             if not np.alltrue(np.isnan(boat_track["track_x_m"])):
@@ -164,8 +167,10 @@ class BeamDepths(object):
                 + transect.date_time.start_serial_time
             )
             x = []
+            tz_local = utc_offset_to_tz(transect.date_time.utc_time_offset)
+
             for stamp in timestamp:
-                x.append(datetime.utcfromtimestamp(stamp))
+                x.append(datetime.fromtimestamp(stamp, tz=tz_local))
             x = np.array(x)
 
         # Check to make sure there is valid boat track data
@@ -382,13 +387,13 @@ class BeamDepths(object):
                 if transect.start_edge == "Right":
                     self.fig.ax.invert_xaxis()
                     self.fig.ax.set_xlim(
-                        right=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                        left=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                        right=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                        left=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                     )
                 else:
                     self.fig.ax.set_xlim(
-                        left=datetime.utcfromtimestamp(timestamp[0] - axis_buffer),
-                        right=datetime.utcfromtimestamp(timestamp[-1] + axis_buffer),
+                        left=datetime.fromtimestamp(timestamp[0] - axis_buffer, tz=tz_local),
+                        right=datetime.fromtimestamp(timestamp[-1] + axis_buffer, tz=tz_local),
                     )
                 date_form = DateFormatter("%H:%M:%S")
                 self.fig.ax.xaxis.set_major_formatter(date_form)

@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui
 from qrev.UI import Arrows_Scale
 from qrev.UI.MplCanvas import MplCanvas
 from matplotlib import cm
@@ -10,7 +10,7 @@ class ArrowsScale(QtWidgets.QDialog, Arrows_Scale.Ui_ArrowsScaling):
     Parameters
     ----------
     Axes_Scale.Ui_Axes_Scale : QDialog
-        Dialog window to allow users to change axes scaline
+        Dialog window to allow users to change axes scaling
     """
 
     def __init__(self, parent):
@@ -18,8 +18,13 @@ class ArrowsScale(QtWidgets.QDialog, Arrows_Scale.Ui_ArrowsScaling):
         self.setupUi(self)
 
         # Enter numerical values
-        rx = QtCore.QRegExp("-?\d*(\.\d{2})")
-        validator = QtGui.QRegExpValidator(rx, self)
+        validator = QtGui.QDoubleValidator(self)
+        validator.setBottom(
+            -float('inf'))  # or set a specific range like -100.0
+        validator.setTop(float('inf'))
+        validator.setDecimals(2)
+        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+
         self.ed_arrow_scale.setValidator(validator)
         self.ed_v_max.setValidator(validator)
         self.ed_v_min.setValidator(validator)
@@ -28,7 +33,7 @@ class ArrowsScale(QtWidgets.QDialog, Arrows_Scale.Ui_ArrowsScaling):
         self.canvas = MplCanvas(
             parent=self.graphics_color_bar, width=1, height=3, dpi=80
         )
-        # Assign layout to widget to allow auto scaling
+        # Assign layout to widget to allow auto-scaling
         layout = QtWidgets.QVBoxLayout(self.graphics_color_bar)
         # Adjust margins of layout to maximize graphic area
         layout.setContentsMargins(1, 1, 1, 1)

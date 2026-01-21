@@ -4187,6 +4187,8 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_temperature = QtWidgets.QCheckBox(self.gb_sensors)
         font = QtGui.QFont()
         font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
         self.cb_adv_graph_temperature.setFont(font)
         self.cb_adv_graph_temperature.setObjectName("cb_adv_graph_temperature")
         self.verticalLayout_75.addWidget(self.cb_adv_graph_temperature)

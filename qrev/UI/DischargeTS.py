@@ -1,5 +1,5 @@
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 import matplotlib.dates as mdates
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
@@ -17,7 +17,7 @@ class DischargeTS(object):
     hover_connection: int
         Index to data cursor connection
     annot: Annotation
-        Annotation object for data cursor
+        Object for data cursor
     """
 
     def __init__(self, canvas):
@@ -47,13 +47,16 @@ class DischargeTS(object):
             Indices of transects used for discharge
         units: dict
             Dictionary of units conversion factors
+        transect_idx: int
+            Index of selected transect
         """
 
+        tz_local = timezone.utc
+
         self.fig.clear()
+
         # Configure axis
         self.fig.ax = self.fig.add_subplot(1, 1, 1)
-
-        # self.fig.ax.clear()
 
         # Set margins and padding for figure
         self.fig.subplots_adjust(
@@ -66,13 +69,14 @@ class DischargeTS(object):
         for idx in checked:
             x = []
             y = []
+            tz_local = utc_offset_to_tz( meas.transects[idx].date_time.utc_time_offset)
             x.append(
-                datetime.utcfromtimestamp(
-                    meas.transects[idx].date_time.start_serial_time
+                datetime.fromtimestamp(
+                    meas.transects[idx].date_time.start_serial_time, tz=tz_local
                 )
             )
             x.append(
-                datetime.utcfromtimestamp(meas.transects[idx].date_time.end_serial_time)
+                datetime.fromtimestamp(meas.transects[idx].date_time.end_serial_time, tz=tz_local)
             )
             y.append(meas.discharge[idx].total * units["Q"])
             y.append(meas.discharge[idx].total * units["Q"])
@@ -100,8 +104,8 @@ class DischargeTS(object):
             )
 
         # Customize axis
-        tz = utc_offset_to_tz(meas.transects[idx].date_time.utc_time_offset)
-        time_fmt = mdates.DateFormatter("%H:%M:%S", tz=tz)
+        time_fmt = mdates.DateFormatter("%H:%M:%S", tz=tz_local)
+
         self.fig.ax.xaxis.set_major_formatter(time_fmt)
         self.fig.autofmt_xdate()
         self.fig.ax.set_xlabel(self.canvas.tr("Time "))

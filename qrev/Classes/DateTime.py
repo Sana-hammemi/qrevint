@@ -31,7 +31,7 @@ class DateTime(object):
         self.utc_time_offset = None
 
 
-    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):):
+    def populate_data(self, date_in, start_in, end_in, ens_dur_in, utc_time_offset=None):
         """Populate data in object.
 
         Parameters

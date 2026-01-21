@@ -22,7 +22,7 @@ class Ui_Options(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, -822, 426, 1615))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 426, 1353))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
@@ -510,7 +510,7 @@ class Ui_Options(object):
         self.cb_allow_manual_no_mb.setText(_translate("Options", "Allow observed no moving-bed"))
         self.gb_map.setTitle(_translate("Options", "MAP Tab"))
         self.cb_map.setText(_translate("Options", "Show"))
-        self.gb_area_projection.setTitle(_translate("Options", "Area Projection"))
+        self.gb_area_projection.setTitle(_translate("Options", "Area and Width Projection"))
         self.rb_pac.setText(_translate("Options", "Parallel to Average Course"))
         self.rb_pmf.setText(_translate("Options", "Perpendicular to Mean Flow Direction"))
 

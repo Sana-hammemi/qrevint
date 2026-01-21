@@ -13,12 +13,13 @@ from datetime import datetime
 import numpy as np
 import scipy.io as sio
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QRegExp, pyqtSignal, QTranslator
+from PyQt5.QtCore import pyqtSignal, QTranslator
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.ticker import AutoLocator
 
 import qrev.UI.QRev_gui as QRev_gui
-from qrev import __qrev_version__, __company__, myappid
+from qrev import (__qrev_version__, myappid, __company__, __icon_path__,
+                  __doc_path__, __translation_files__)
 from qrev.Classes.CoordError import CoordError
 from qrev.Classes.MMT_TRDI import MMTtrdi
 from qrev.Classes.Measurement import Measurement
@@ -131,7 +132,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     sticky_settings: SSet
         Object of StickySettings class
     units: dict
-        Dictionary containing units coversions and labels for length, area,
+        Dictionary containing units conversions and labels for length, area,
         velocity, and discharge
     save_stylesheet: bool
         Indicates whether to save a stylesheet with the measurement
@@ -232,7 +233,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     tts_canvas: MplCanvas
         Temperature time series canvas
     tts_toolbar: NavigationToolbar
-        Temperature time seriex toolbar
+        Temperature time series toolbar
     tts_fig: TemperatureTS
         Temperature time series figure
     mb_shiptrack_canvas: MplCanvas
@@ -408,7 +409,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         parent: QWidget
             Parent object
         groupings: list
-            List of lists containing the transect indices that make up
+            Contains lists containing the transect indices that make up
             individual measurements
         data: Measurement
             Object of Measurement class
@@ -422,7 +423,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_all.setTabVisible(15, False)
 
         # Set window title
-        self.setWindowTitle(__qrev_version__)
+        self.window_title = __qrev_version__
 
         qrev_icon = self.get_icon()
 
@@ -443,7 +444,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.sticky_settings = SSet(self.settingsFile)
 
         self._translate = QtCore.QCoreApplication.translate
-        self.translator = QTranslator(self)
+        self.translator = None
 
         # set display language
         try:
@@ -461,7 +462,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Get agency optional settings
         options_file = os.path.join(os.getcwd(), "QRev.cfg")
 
-        if os.path.exists(options_file) is False:
+        if not os.path.exists(options_file):
             config = Config()
             if __company__ == "USGS":
                 config.export_config(config.config)
@@ -492,7 +493,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             config = Config()
             if __company__ == "USGS":
-                config.export_config(self.config)
+                config.export_config(config.config)
             else:
                 config.export_international_config()
 
@@ -1014,7 +1015,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.map_change = False
 
         # Set the initial tab to the main tab
-        self.current_tab = "Main"
+        self.current_tab = "tab_main"
         self.transect_row = 0
 
         # Initialize emtpy tab setting dict
@@ -1145,7 +1146,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             QtGui.QIcon.Off,
         )
 
-        # Intialize attributes
+        # Initialize attributes
         self.path = ""
         self.checked_transects_idx = []
         self.meas = None
@@ -1278,6 +1279,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         self.setMouseTracking(True)
 
+        self.timezone_list = ["", "UTC", "UTC-1", "UTC-2", "UTC-3", "UTC-4",
+                              "UTC-5", "UTC-6", "UTC-7", "UTC-8", "UTC-9",
+                              "UTC-10", "UTC-11", "UTC-12", "UTC+1", "UTC+2",
+                              "UTC+3", "UTC+4", "UTC+5", "UTC+6", "UTC+7",
+                              "UTC+8", "UTC+9", "UTC+10", "UTC+11",
+                              "UTC+12", ]
+
         # Special commands to ensure proper operation on Windows 10
         if QtCore.QSysInfo.windowsVersion() == QtCore.QSysInfo.WV_WINDOWS10:
             self.setStyleSheet(
@@ -1372,6 +1380,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
+        self.config_gui()
+
     @staticmethod
     def check_legacy():
         """Check to see if settings file is present in appdata
@@ -1408,17 +1418,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         icon_path = ""
 
-        path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../..",
-                "docs",
-                "source",
-                "assets",
-                "files",
-                icon,
-            )
-        )
+        path = os.path.abspath(os.path.join(__icon_path__, "..", icon,))
 
         if os.path.exists(path):
             icon_path = path
@@ -1436,7 +1436,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def set_qrevint_ui(self):
         """If QRevInt set background of UI to blue."""
 
-        # set main window pallete
+        # set main window palette
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 175))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -1514,9 +1514,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Load and process Sontek data
             if select.type == "SonTek":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.pathName)
 
                     # Create measurement object
                     try:
@@ -1548,7 +1549,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             elif select.type == "Nortek":
                 with self.wait_cursor():
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.pathName)
+                    self.window_title = __qrev_version__ + ": " + select.pathName
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName,
@@ -1572,9 +1573,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
             # Load and process TRDI data
             elif select.type == "TRDI":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show mmt filename in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.fullName[0])
                     # Create measurement object
                     self.meas = Measurement(
                         in_file=select.fullName[0],
@@ -1601,7 +1603,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             # Load QRev data
             elif select.type == "QRev":
                 # Show QRev filename in GUI header
-                self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                self.window_title = (__qrev_version__ + ": " +
+                                    select.fullName[0])
                 mat_data = sio.loadmat(
                     select.fullName[0], struct_as_record=False, squeeze_me=True
                 )
@@ -1613,7 +1616,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     "applied. </I><br><br>" + "<b>Reprocess</b> the measurement "
                     "using all the <br>"
                     + "current settings (extrapolation, filters,<br>"
-                    + "uncertianty model, and the latest "
+                    + "uncertainty model, and the latest "
                     "algorithms).<br><br>" + "NOTE: Any changes will reprocess "
                     "the file  <br> " + "using the latest QRev algorithms, "
                     "however,  <br>" + "identifying ping type from older "
@@ -1686,9 +1689,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         )
                     )
             elif select.type == "RSQ":
-                with self.wait_cursor():
+                with (self.wait_cursor()):
                     # Show folder name in GUI header
-                    self.setWindowTitle(__qrev_version__ + ": " + select.fullName[0])
+                    self.window_title = (__qrev_version__ + ": " +
+                    select.fullName[0])
                     self.meas = Measurement(
                         in_file=select.fullName,
                         source="RSQ",
@@ -1744,7 +1748,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         """Save measurement in Matlab format."""
         if len(self.checked_transects_idx) > 0:
             if self.rating_prompt:
-                # Intialize dialog
+                # Initialize dialog
                 rating_dialog = Rating(self)
                 if self.run_oursin:
                     uncertainty = self.meas.oursin.u_measurement_user["total_95"][0]
@@ -1849,8 +1853,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 with self.wait_cursor():
                     if create_pdf:
                         try:
-                            pdf_fullName = save_file.full_Name[:-4] + ".pdf"
-                            pdf = Report(pdf_fullName, self)
+                            pdf_fullname = save_file.full_Name[:-4] + ".pdf"
+                            pdf = Report(pdf_fullname, self)
                             pdf.create()
                         except:
                             self.popup_message(self.tr("Error saving PDF file."))
@@ -2260,11 +2264,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                             self.change = True
                             self.map_change = True
 
-                # update display language
-                self.display_language = options.cb_language.currentText()
-                self.update_language()
-                self.sticky_settings.set("DisplayLanguage",
-                                         self.display_language)
                 # Discharge display units options
                 if options.rb_sigfig.isChecked() and self.q_digits_method != "sigfig":
                     self.q_digits_method = "sigfig"
@@ -2364,7 +2363,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 else:
                     use_weighted = False
 
-                # Check for change in extraplation weighting
+                # Check for change in extrapolation weighting
                 if self.use_weighted != use_weighted:
                     self.change = True
                     self.map_change = True
@@ -2519,9 +2518,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if self.agency_options["Area"]["projection"] != "ParallAC":
                         self.agency_options["Area"]["projection"] = "ParallAC"
                         if self.meas is not None:
-                            self.meas.area_projection = "Parallac"
+                            self.meas.area_projection = "ParallAC"
                             self.change = True
-                    self.sticky_settings.set("AreaProjection","Parallac")
+                    self.sticky_settings.set("AreaProjection","ParallAC")
                 else:
                     if self.agency_options["Area"]["projection"] != "PerpenMF":
                         self.agency_options["Area"]["projection"] = "PerpenMF"
@@ -2536,6 +2535,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         self.tab_manager()
                     else:
                         self.tab_manager(old_discharge=old_discharge)
+
+                # update display language
+                if self.display_language != options.cb_language.currentText():
+                    self.display_language = options.cb_language.currentText()
+                    self.sticky_settings.set("DisplayLanguage",
+                                             self.display_language)
+                    self.update_language()
+
+                    # reinitialize GUI
+                    self.config_gui()
+                    self.change = True
+                    self.map_change = True
+                    self.tab_manager()
 
     def plot_google_earth(self):
         """Creates line plots of transects in Google Earth using GGA
@@ -2579,15 +2591,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # will work when called by other projects using AC3.
         if __company__ == "USGS":
             landing_page = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "../..",
-                    "docs",
-                    "_build",
-                    "html",
-                    "index.html",
-                )
-            )
+                os.path.join(__doc_path__, "index.html",))
         else:
             landing_page = os.path.abspath(
                 os.path.join(
@@ -2627,16 +2631,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Use development-specific settings. Using __file__ path, so it
         # will work when called by other projects using QRev.
         path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../..",
-                "docs",
-                "source",
-                "assets",
-                "files",
-                stylesheet,
-            )
-        )
+            os.path.join(__icon_path__, '..', stylesheet))
 
         if os.path.exists(path):
             shutil.copy2(path, destination)
@@ -2650,7 +2645,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 shutil.copy2(path, destination)
 
     def set_use_weighted(self):
-        """Called by shortcut key cntrl+w toggle between use weighted and
+        """Called by shortcut key CNTL+w toggle between use weighted and
         unweighted cells for extrapolation.
         """
 
@@ -2699,13 +2694,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     self.table_adcp.cellClicked.connect(self.refocus)
                     self.table_premeas.cellClicked.connect(self.refocus)
                     self.cb_user_rating.currentIndexChanged.connect(self.rating_change)
-
-                    self.timezone_list = ["", "UTC", "UTC-1", "UTC-2", "UTC-3", "UTC-4",
-                                          "UTC-5", "UTC-6", "UTC-7", "UTC-8", "UTC-9",
-                                          "UTC-10", "UTC-11", "UTC-12", "UTC+1", "UTC+2",
-                                          "UTC+3", "UTC+4", "UTC+5", "UTC+6", "UTC+7",
-                                          "UTC+8", "UTC+9", "UTC+10", "UTC+11",
-                                          "UTC+12", ]
 
                     # Main tab has been initialized
                     self.main_initialized = True
@@ -2776,7 +2764,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.figs_menu_connection()
 
     def update_fig_list(self):
-        if self.current_tab == "Main":
+        if self.current_tab == "tab_main":
             # Setup list for use by graphics controls
             if self.run_oursin:
                 self.canvases = [
@@ -3382,7 +3370,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.main_shiptrack_canvas = MplCanvas(
                 parent=self.graphics_shiptrack, width=4, height=3, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_shiptrack)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -3417,7 +3405,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.main_wt_contour_canvas = MplCanvas(
                 parent=self.graphics_wt_contour, width=12, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_wt_contour)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -3466,7 +3454,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.main_extrap_canvas = MplCanvas(
                 parent=self.graphics_main_extrap, width=1, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_main_extrap)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -3495,7 +3483,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_lollipop_canvas = MplCanvas(
                 parent=self.uncertainty_lollipop, width=1, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.uncertainty_lollipop)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -3544,7 +3532,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.main_discharge_canvas = MplCanvas(
                 parent=self.graphics_main_timeseries, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_main_timeseries)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -3725,7 +3713,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             status: str
                 Quality status
             tab_base: object
-                Object of tab interface
+                Tab object
         """
 
         if tab_base is None:
@@ -5882,10 +5870,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl: QTableWidget
             Reference to the QTableWidget
         old_discharge: list
-            List of class QComp with discharge from previous settings,
+            Objects of QComp with discharge from previous settings,
             same as new if not changes
         new_discharge: list
-            List of class QComp with discharge from current settings
+            Objects of QComp with discharge from current settings
         initial: int
             Identifies row that should be checked and displayed in the
             graphs. Used for initial display of data.
@@ -6168,10 +6156,10 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl: QTableWidget
             Reference to the QTableWidget
         old_discharge: list
-            List class QComp with discharge from previous settings,
+            Objects of QComp with discharge from previous settings,
             same as new if not changes
         new_discharge: list
-            List of class QComp with discharge from current settings
+            Objects of QComp with discharge from current settings
         """
 
         with self.wait_cursor():
@@ -6287,7 +6275,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @QtCore.pyqtSlot(QtCore.QPoint)
     def compass_table_right_click(self, pos):
-        """Manages actions caused by the user right clicking in selected
+        """Manages actions caused by the user right-clicking in selected
         columns of the table.
 
         Parameters
@@ -6507,7 +6495,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
                 # Update
                 self.display_compass_result.clear()
-                # SonTek has no separate evalutations so the calibration is
+                # SonTek has no separate evaluations so the calibration is
                 # displayed
                 if (
                     self.meas.transects[self.checked_transects_idx[0]].adcp.manufacturer
@@ -6529,7 +6517,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.heading_canvas = MplCanvas(
                 self.graph_heading, width=6, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_heading)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -6568,7 +6556,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if self.pr_canvas is None:
             # Create the canvas
             self.pr_canvas = MplCanvas(self.graph_pr, width=6, height=2, dpi=80)
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_pr)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -6599,7 +6587,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.tab_compass_2_data.setFocus()
 
     def add_compass_cal_eval(self):
-        """Allows user to associate a compass calibration and/or evalution
+        """Allows user to associate a compass calibration and/or evaluation
         with this measurement that was collected as part of another measurement.
         """
 
@@ -6664,7 +6652,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp before changes are made
+            Objects of QComp before changes are made
         """
 
         # Setup data table
@@ -6707,12 +6695,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.rb_f.toggled.connect(self.change_temp_units)
 
             # Setup input validator for independent and adcp user temperature
-            reg_ex = QRegExp("^[0-9]*(\.\d*)")
-            input_validator = QtGui.QRegExpValidator(reg_ex, self)
+            reg_ex = QtCore.QRegularExpression(r"^-?\d*(?:\.\d+)?$")
+            validator = QtGui.QRegularExpressionValidator(reg_ex, self)
 
             # Connect independent and adcp input option
-            self.ed_user_temp.setValidator(input_validator)
-            self.ed_adcp_temp.setValidator(input_validator)
+            self.ed_user_temp.setValidator(validator)
+            self.ed_adcp_temp.setValidator(validator)
             self.pb_ind_temp_apply.clicked.connect(self.apply_user_temp)
             self.pb_adcp_temp_apply.clicked.connect(self.apply_adcp_temp)
             self.ed_user_temp.textChanged.connect(self.user_temp_changed)
@@ -6734,12 +6722,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl: QWidget
             Reference to QTableWidget
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         new_discharge: list
-            List of objects of QComp  after change applied
+            Objects of QComp  after change applied
         """
 
-        # Initialize array to accumalate all temperature data
+        # Initialize array to accumulate all temperature data
         temp_all = np.array([])
 
         for row in range(tbl.rowCount()):
@@ -6967,7 +6955,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if column == 1:
             user_temp = None
 
-            # Intialize dialog for user input
+            # Initialize dialog for user input
             t_source_dialog = TempSource(self)
             if (
                 self.meas.transects[transect_id].sensors.temperature_deg_c.selected
@@ -7054,7 +7042,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Change salinity
         elif column == 3:
-            # Intialize dialog for user input
+            # Initialize dialog for user input
             salinity_dialog = Salinity(self)
             salinity_entered = salinity_dialog.exec_()
 
@@ -7178,7 +7166,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.tts_canvas = MplCanvas(
                 self.graph_temperature, width=4, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_temperature)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -7216,7 +7204,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         the automatic QA/QC messages.
         """
 
-        # Set cursor focus onto the table to avoid multiple calls the the
+        # Set cursor focus onto the table to avoid multiple calls the
         # adcp_temp_changed function
         self.table_tempsal.setFocus()
 
@@ -7275,8 +7263,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         automatic QA/QC messages.
         """
 
-        # Set cursor focus onto the table to avoid multiple calls the the
-        # adcp_temp_changed funtion
+        # Set cursor focus onto the table to avoid multiple calls the
+        # adcp_temp_changed function
         self.table_tempsal.setFocus()
 
         # If data has been entered, convert the data to Celsius if necessary
@@ -7828,7 +7816,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_shiptrack_canvas = MplCanvas(
                 parent=self.graph_mb_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_mb_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -7873,7 +7861,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_ts_canvas = MplCanvas(
                 parent=self.graph_mb_ts, width=8, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_mb_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -7915,7 +7903,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_ts_canvas = MplCanvas(
                 parent=self.graph_mb_ts, width=8, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_mb_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -8071,7 +8059,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         """
 
         # Setup data table
@@ -8104,7 +8092,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.resizeColumnsToContents()
         tbl.resizeRowsToContents()
 
-        # Intialize connections
+        # Initialize connections
         if not self.bt_initialized:
             tbl.cellClicked.connect(self.bt_table_clicked)
 
@@ -8237,9 +8225,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         new_discharge: list
-            List of objects of QComp with new settings
+            Objects of QComp with new settings
         """
 
         with self.wait_cursor():
@@ -8588,7 +8576,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.bt_shiptrack_canvas = MplCanvas(
                 parent=self.graph_bt_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_bt_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -8626,7 +8614,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.bt_ts_canvas = MplCanvas(
                 parent=self.graph_bt_ts, width=8, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_bt_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(0, 0, 0, 0)
@@ -8949,7 +8937,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         """
 
         # Setup data table
@@ -9158,9 +9146,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         new_discharge: list
-            List of objects of QComp with new settings
+            Objects of QComp with new settings
         """
 
         with self.wait_cursor():
@@ -9689,7 +9677,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.gps_shiptrack_canvas = MplCanvas(
                 parent=self.graph_gps_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_gps_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -9742,7 +9730,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.gps_ts_canvas = MplCanvas(
                 parent=self.graph_gps_ts, width=8, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_gps_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(0, 0, 0, 0)
@@ -9841,7 +9829,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     @QtCore.pyqtSlot(str)
     def change_quality(self, text):
-        """Coordinates user initiated change to the minumum GPS quality.
+        """Coordinates user initiated change to the minimum GPS quality.
 
         Parameters
         ----------
@@ -10091,13 +10079,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if self.meas.qa.gga_vel["lag_status"] == "warning":
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
                         tbl.item(row + 2, col).setToolTip(
-                            "GGA: BT and GGA do not appear to be sychronized"
+                            "GGA: BT and GGA do not appear to be synchronized"
                         )
 
                     elif self.meas.qa.gga_vel["lag_status"] == "caution":
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
                         tbl.item(row + 2, col).setToolTip(
-                            "gga: BT and GGA do not appear to be sychronized"
+                            "gga: BT and GGA do not appear to be synchronized"
                         )
 
                     else:
@@ -10167,13 +10155,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     if self.meas.qa.vtg_vel["lag_status"] == "warning":
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 77, 77))
                         tbl.item(row + 2, col).setToolTip(
-                            "VTG: BT and VTG do not appear to be sychronized"
+                            "VTG: BT and VTG do not appear to be synchronized"
                         )
 
                     elif self.meas.qa.vtg_vel["lag_status"] == "caution":
                         tbl.item(row + 2, col).setBackground(QtGui.QColor(255, 204, 0))
                         tbl.item(row + 2, col).setToolTip(
-                            "vtg: BT and VTG do not appear to be sychronized"
+                            "vtg: BT and VTG do not appear to be synchronized"
                         )
 
                     else:
@@ -10348,7 +10336,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.gps_bt_shiptrack_canvas = MplCanvas(
                 parent=self.graph_gps_st_2, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_gps_st_2)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -10391,7 +10379,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.gps_bt_speed_canvas = MplCanvas(
                 parent=self.graph_gps_bt_ts, width=8, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_gps_bt_ts)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -10464,7 +10452,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         """
 
         # Setup data table
@@ -10667,9 +10655,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         new_discharge: list
-            List of objects of QComp with new settings
+            Objects of QComp with new settings
         """
 
         with self.wait_cursor():
@@ -10908,7 +10896,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.depth_canvas = MplCanvas(
                     parent=self.graph_depth, width=8, height=2, dpi=80
                 )
-                # Assign layout to widget to allow auto scaling
+                # Assign layout to widget to allow auto-scaling
                 layout = QtWidgets.QVBoxLayout(self.graph_depth)
                 # Adjust margins of layout to maximize graphic area
                 layout.setContentsMargins(0, 0, 0, 0)
@@ -10973,7 +10961,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         # Change draft
         if column == 1:
-            # Intialize dialog
+            # Initialize dialog
             draft_dialog = Draft(self)
             draft_dialog.draft_units.setText(self.units["label_L"])
             draft_entered = draft_dialog.exec_()
@@ -11168,7 +11156,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         """
 
         # Setup data table
@@ -11361,9 +11349,9 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         old_discharge: list
-            List of objects of QComp with previous settings
+            Objects of QComp with previous settings
         new_discharge: list
-            List of objects of QComp with new settings
+            Objects of QComp with new settings
         """
 
         with self.wait_cursor():
@@ -11743,7 +11731,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.wt_shiptrack_canvas = MplCanvas(
                 parent=self.graph_wt_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_wt_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -11791,7 +11779,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.wt_filter_canvas = MplCanvas(
                 parent=self.graph_wt, width=10, height=2, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_wt)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(0, 0, 0, 0)
@@ -12178,7 +12166,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # Extrap Tab
     # ==========
     def extrap_tab(self):
-        """Initializes all of the features on the extrap_tab."""
+        """Initializes all the features on the extrap_tab."""
 
         # Make copy to allow resting to original if changes are made
         self.extrap_meas = copy.deepcopy(self.meas)
@@ -12646,7 +12634,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.extrap_canvas = MplCanvas(
                 parent=self.graph_extrap, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_extrap)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -13047,7 +13035,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # Edges tab
     # =========
     def edges_tab(self):
-        """Initializes all of the features of the edges tab."""
+        """Initializes all the features of the edges tab."""
 
         # Setup data table
         tbl = self.table_edges
@@ -13846,7 +13834,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_contour_canvas = MplCanvas(
                 parent=self.graph_left_contour, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_left_contour)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -13889,7 +13877,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.right_edge_contour_canvas = MplCanvas(
                 parent=self.graph_right_contour, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_right_contour)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -13941,7 +13929,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.left_edge_st_canvas = MplCanvas(
                 parent=self.graph_left_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_left_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -14009,7 +13997,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.right_edge_st_canvas = MplCanvas(
                 parent=self.graph_right_st, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_right_st)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -15115,7 +15103,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_measurement_canvas = MplCanvas(
                 parent=self.graph_u_measurement, width=20, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_u_measurement)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -15151,7 +15139,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.uncertainty_meas_q_canvas = MplCanvas(
                 parent=self.graph_u_meas, width=4, height=4, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graph_u_meas)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -15741,7 +15729,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     # Adv. Graph tab
     # ==============
     def adv_graph_tab(self):
-        """Initializes all of the features of the advanced graphics tab."""
+        """Initializes all the features of the advanced graphics tab."""
 
         if not self.adv_graph_initialized:
             # Advanced tab setup
@@ -16247,8 +16235,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             file_type='bathy'))
 
         # Limit edit to two decimals float
-        rx = QtCore.QRegExp("^-?\\d*\\.?\\d{0,2}$")
-        validator = QtGui.QRegExpValidator(rx, self)
+        rx = QtCore.QRegularExpression(r"^-?\d*\.?\d{0,2}$")
+        validator = QtGui.QRegularExpressionValidator(rx, self)
         self.ed_map_cell_width.setValidator(validator)
         self.ed_map_cell_height.setValidator(validator)
 
@@ -16598,7 +16586,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.map_canvas = MplCanvas(
                 parent=self.graphics_map_wt_contour, width=12, height=6, dpi=80
             )
-            # Assign layout to widget to allow auto scaling
+            # Assign layout to widget to allow auto-scaling
             layout = QtWidgets.QVBoxLayout(self.graphics_map_wt_contour)
             # Adjust margins of layout to maximize graphic area
             layout.setContentsMargins(1, 1, 1, 1)
@@ -16690,7 +16678,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 "label": "Transverse velocity",
             }
 
-        data_type = None
         if self.rb_map_primary.isChecked():
             data_type = "Primary velocity"
         elif self.rb_map_streamwise.isChecked():
@@ -16892,7 +16879,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             if source in self.ui_parents:
                 self.current_fig = self.figs[self.ui_parents.index(source)]
 
-                # Determine axes of graph in which the click occured and save
+                # Determine axes of graph in which the click occurred and save
                 # for use by change axes limits
                 extents = []
                 for ax in self.current_fig.fig.axes:
@@ -16982,7 +16969,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         self.data_cursor()
 
     def change_x_axis(self):
-        """Manages the changing of the x axis type."""
+        """Manages the changing of the x-axis type."""
 
         with self.wait_cursor():
             # Clear zoom, pan, home, data_cursor
@@ -16992,11 +16979,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             tab_idx = self.current_tab
 
             # Main tab
-            if tab_idx == "Main":
+            if tab_idx == "tab_main":
                 self.contour_shiptrack(self.checked_transects_idx[self.transect_row])
 
             # Compass/PR tab
-            elif tab_idx == "Compass/P/R":
+            elif tab_idx == "tab_compass":
                 self.compass_plot()
                 self.pr_plot()
 
@@ -17005,27 +16992,27 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.mb_plots(idx=self.mb_row)
 
             # Bottom track tab
-            elif tab_idx == "BT":
+            elif tab_idx == "tab_bt":
                 self.bt_plots()
 
             # GPS tab
-            elif tab_idx == "GPS":
+            elif tab_idx == "tab_gps":
                 self.gps_plots()
 
             # Depth tab
-            elif tab_idx == "Depth":
+            elif tab_idx == "tab_depth":
                 self.depth_plots()
 
             # Water track tab
-            elif tab_idx == "WT":
+            elif tab_idx == "tab_wt":
                 self.wt_plots()
 
             # Edges tab
-            elif tab_idx == "Edges":
+            elif tab_idx == "tab_edges":
                 self.edges_graphics()
 
             # Adv. Graph
-            elif tab_idx == "Adv. Graph":
+            elif tab_idx == "tab_adv_graph":
                 self.adv_graph_tab()
 
     def set_axes(self):
@@ -17053,7 +17040,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 if scale.cb_axes_auto.isChecked():
                     # If automatic is selected the original method that created the graph
                     # is identified and called. However, if that method cannot be
-                    # identified or it requires extra arguments then the plot is
+                    # identified, or it requires extra arguments then the plot is
                     # rescaled using the data available from the plot axes. The
                     # reason the original plot method has priority is that for some
                     # graphs the tick scaling is customized.
@@ -17079,14 +17066,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def x_axis_time(self):
         """Changes the x-axis type to time"""
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "T"
         self.x_axis_type = "T"
         self.change_x_axis()
 
     def x_axis_ensemble(self):
         """Changes the x-axis type to ensembles"""
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "E"
         self.x_axis_type = "E"
         self.change_x_axis()
@@ -17094,7 +17081,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def x_axis_length(self):
         """Changes the x-axis type to length"""
 
-        if self.current_tab == "Edges":
+        if self.current_tab == "tab_edges":
             self.edges_axis_type = "L"
         self.x_axis_type = "L"
         self.change_x_axis()
@@ -17126,13 +17113,13 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 tab_idx = self.current_tab
 
                 # Main tab
-                if tab_idx == "Main":
+                if tab_idx == "tab_main":
                     self.main_wt_contour(
                         transect_id=self.checked_transects_idx[self.transect_row]
                     )
-                elif tab_idx == "WT":
+                elif tab_idx == "tab_wt":
                     self.wt_plots()
-                elif tab_idx == "Adv. Graph":
+                elif tab_idx == "tab_adv_graph":
                     self.adv_graph_tab()
         else:
             self.actionShow_Extrapolated.setChecked(False)
@@ -17150,7 +17137,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             This a list of lists of transect indices splitting a single measurement
             into multiple measurements Example groupings = [[0, 1], [2, 3, 4, 5], [8, 9]]
         data: Measurement
-            Object of class Measurement which contains all of the transects to be
+            Object of class Measurement which contains all the transects to be
             grouped into multiple measurements
         review: bool
             Indicates if reviewing data or processing. Defaults to False.
@@ -17414,12 +17401,12 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         qa_check_keys: list
-            List of qa attributes
+            qa attributes
 
         Returns
         -------
         messages: list
-            List of messages, codes, and guidance
+            Messages, codes, and guidance
         """
         # Initialize local variables
         qa = self.meas.qa
@@ -17460,7 +17447,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl: QTableWidget
             Object of QTableWidget to be populated
         qa_check_keys: list
-            List of qa attributes to be included in the table
+            qa attributes to be included in the table
         """
         if messages is None:
             messages = self.combine_selected_qa_messages(qa_check_keys)
@@ -17509,20 +17496,22 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tbl.resizeRowsToContents()
 
     @staticmethod
-    def popup_message(text, type="Error"):
+    def popup_message(text, msg_type="Error"):
         """Display a message box with messages specified in text.
 
         Parameters
         ----------
         text: str
             Message to be displayed.
+        msg_type: str
+            Type of message identifier
         """
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Critical)
-        msg.setText(type)
+        msg.setText(mgs_type)
         msg.setInformativeText(text)
-        msg.setWindowTitle(type)
+        msg.setWindowTitle(msg_type)
         msg.exec_()
         return
 
@@ -17532,7 +17521,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         e: event
-            Event generated by key pressed by user
+            Generated by key pressed by user
         """
 
         # Help
@@ -17540,7 +17529,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.help()
 
         # Change displayed transect
-        if self.current_tab != "MovBedTst" and self.current_tab != "SysTest":
+        if self.current_tab != "tab_mbt" and self.current_tab != "tab_systest":
             # Select transect above in table or wrap to bottom
             if e.key() == QtCore.Qt.Key_Up:
                 if self.transect_row - 1 < 0:
@@ -17580,7 +17569,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_table_clicked(self.mb_row, 3)
 
         # Turn on or off display of alternate method medians to allow comparison
-        if self.current_tab == "Extrap":
+        if self.current_tab == "tab_extrap":
             # Turn on comparison medians
             if e.key() == QtCore.Qt.Key_F8:
                 self.compare_medians()
@@ -17597,31 +17586,31 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         col = 0
 
         # Main tab
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             self.select_transect(self.transect_row + 1, col)
 
         # Compass/PR tab
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_table_clicked(self.transect_row, col)
 
         # Bottom track tab
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_table_clicked(self.transect_row, col)
 
         # GPS tab
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_table_clicked(self.transect_row, col)
 
         # Depth tab
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_table_clicked(self.transect_row, col)
 
         # Water track tab
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_table_clicked(self.transect_row, col)
 
         # Edges tab
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_table_clicked(self.transect_row, col)
 
     @staticmethod
@@ -17631,7 +17620,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         Parameters
         ----------
         obj: QtWidget
-            QtWidget user edit box.
+            User edit box.
         block: bool
             Block signals
 
@@ -17684,7 +17673,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         tab_idx: int
             Index of tab clicked by user
         old_discharge: list
-            List of QComp objects contain the discharge prior to most recent
+            Objects of QComp contain the discharge prior to most recent
             change
         subtab_idx: int
             Index of subtab of tab_summary, used to force tab_idx to main,
@@ -17700,15 +17689,14 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         if tab_idx is None:
             tab_idx = self.current_tab
         else:
-            tab_idx = self.tab_all.tabText(tab_idx)
-
-        self.current_tab = tab_idx
+            tab_idx = self.tab_all.currentWidget().objectName()
+            self.current_tab = tab_idx
 
         if self.change:
             self.meas.map = None
 
         # Main tab
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             if subtab_idx is not None:
                 self.tab_summary.setCurrentIndex(0)
 
@@ -17775,60 +17763,60 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 self.tab_main.show()
 
         # System tab
-        elif tab_idx == "SysTest":
+        elif tab_idx == "tab_systest":
             self.system_tab()
 
         # Compass/PR tab
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_tab(old_discharge=old_discharge)
 
         # Temp/Sal tab
-        elif tab_idx == "Temp/Sal":
+        elif tab_idx == "tab_tempsal":
             self.tempsal_tab(old_discharge=old_discharge)
 
         # Moving-bed test tab
-        elif tab_idx == "MovBedTst":
+        elif tab_idx == "tab_mbt":
             self.movbedtst_tab()
 
         # Bottom track tab
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_tab(old_discharge=old_discharge)
 
         # GPS tab
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_tab(old_discharge=old_discharge)
 
         # Depth tab
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_tab(old_discharge=old_discharge)
 
         # Water track tab
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_tab(old_discharge=old_discharge)
 
         # Extrapolation tab
-        elif tab_idx == "Extrap":
+        elif tab_idx == "tab_extrap":
             self.extrap_tab()
 
         # Edges tab
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_axis_type = "E"
             self.edges_tab()
 
         # Uncertainty tab
-        elif tab_idx == "Uncertainty":
+        elif tab_idx == "tab_uncertainty":
             self.uncertainty_tab()
 
         # EDI tab
-        elif tab_idx == "EDI":
+        elif tab_idx == "tab_edi":
             self.edi_tab()
 
         # Adv. Graph tab
-        elif tab_idx == "Adv. Graph":
+        elif tab_idx == "tab_adv_graph":
             self.adv_graph_tab()
 
         # MAP tab
-        elif tab_idx == "MAP":
+        elif tab_idx == "tab_map":
             self.map_tab()
 
         self.set_tab_color()
@@ -17856,19 +17844,19 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.current_tab = tab_idx
 
         # Main
-        if tab_idx == "Main":
+        if tab_idx == "tab_main":
             self.comments_tab()
 
         # System Test
-        elif tab_idx == "SysTest":
+        elif tab_idx == "tab_systest":
             self.systest_comments_messages()
 
         # Compass/PR
-        elif tab_idx == "Compass/P/R":
+        elif tab_idx == "tab_compass":
             self.compass_comments_messages()
 
         # Temp/Sal
-        elif tab_idx == "Temp/Sal":
+        elif tab_idx == "tab_tempsal":
             self.tempsal_comments_messages()
 
         # Moving-bed test
@@ -17876,35 +17864,37 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.mb_comments_messages()
 
         # Bottom track
-        elif tab_idx == "BT":
+        elif tab_idx == "tab_bt":
             self.bt_comments_messages()
 
         # GPS
-        elif tab_idx == "GPS":
+        elif tab_idx == "tab_gps":
             self.gps_comments_messages()
 
         # Depth
-        elif tab_idx == "Depth":
+        elif tab_idx == "tab_depth":
             self.depth_comments_messages()
 
         # WT
-        elif tab_idx == "WT":
+        elif tab_idx == "tab_wt":
             self.wt_comments_messages()
 
         # Extrapolation
-        elif tab_idx == "Extrap":
+        elif tab_idx == "tab_extrap":
             self.extrap_comments_messages()
 
         # Edges
-        elif tab_idx == "Edges":
+        elif tab_idx == "tab_edges":
             self.edges_comments_messages()
 
         # Uncertainty
-        elif tab_idx == "Uncertainty":
+        elif tab_idx == "tab_uncertainty":
             self.uncertainty_comments_messages()
 
     def config_gui(self):
         """Configure the user interface based on the available data."""
+
+        self.setWindowTitle(self.window_title)
 
         # After data is loaded enable GUI and buttons on toolbar
         self.tab_all.setEnabled(True)
@@ -18020,13 +18010,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         if self.display_language != "English":
             lang_file = self.display_language + ".qm"
-            base_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    "../..",
-                    "translation"
-                )
-            )
+            base_path = __translation_files__
+
             if os.path.exists(base_path):
                 lang_path = os.path.join(base_path, lang_file)
             else:
@@ -18035,14 +18020,32 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 base_path = sys._MEIPASS
                 lang_path = os.path.join(base_path, "translation_files",
                                          lang_file)
-            try:
-                self.translator.load(lang_path)
-                QtWidgets.QApplication.instance().installTranslator(
-                    self.translator)
-            except BaseException:
-                self.popup_message(self.tr("Failed to load translation."))
+
+            # If there is a current translator, remove it to avoid
+            # stacking.
+
+            if self.translator:
                 QtWidgets.QApplication.instance().removeTranslator(
                     self.translator)
+
+            # Initiate and load language file.
+            self.translator = QTranslator(self)
+            self.translator.load(lang_path)
+
+            # Install new translator
+            QtWidgets.QApplication.instance().installTranslator(
+                self.translator)
+
+            # Update UI with new langua
+            self.retranslateUi(self)
+
+
+            # except BaseException:
+            #
+            #     self.popup_message(self.tr("Failed to load translation."))
+            #
+            #     QtWidgets.QApplication.instance().removeTranslator(
+            #         self.translator)
 
         else:
             QtWidgets.QApplication.instance().removeTranslator(self.translator)
@@ -18092,7 +18095,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             event.accept()
 
 
-# Adjust scaling based on users resolution.
+# Adjust scaling based on user's resolution.
 if hasattr(QtCore.Qt, "AA_UseHighDpiPixmaps"):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 

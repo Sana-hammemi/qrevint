@@ -351,7 +351,7 @@ class Report:
             [self.tr("Top Extrap") + ":", top_extrap],
             [self.tr("Bottom Extrap") + ":", bottom_extrap],
             [self.tr("Extrap Exponent") + ":", exponent],
-            [self.tr("Discharg COV") + " (%): ", q_cov],
+            [self.tr("Discharge COV") + " (%): ", q_cov],
             [self.tr("Top Q") + " (%): ", top_q],
             ["Measured Q (%): ", measured_q],
             [self.tr("Left Q") + " (%): ", left_q],
@@ -519,7 +519,7 @@ class Report:
             [self.tr("System Test") + ":", system_test],
             [self.tr("Compass Cal/Eval") + ":", compass],
             [
-                self.tr("Magnetic Variaton") + ":",
+                self.tr("Magnetic Variation") + ":",
                 "{:.2f}".format(meas.transects[
                                     first_id].sensors.heading_deg.internal.mag_var_deg),
             ],
@@ -748,7 +748,7 @@ class Report:
         messages_table: Table
             Object of Table
         """
-        data = [["Automated QA Messages:"]]
+        data = [[Paragraph("Automated QA Messages:")]]
 
         qa_check_keys = ["bt_vel", "compass", "depths", "edges", "extrapolation",
             "gga_vel", "movingbed", "system_tst", "temperature", "transects", "user",
@@ -794,14 +794,14 @@ class Report:
             Object of Table
         """
 
-        data = [["Comments:"]]
+        data = [[Paragraph("Comments:")]]
 
         # Create each comment as a list appended to data
         if len(self.parent.meas.comments) > 0:
             for line in self.parent.meas.comments:
                 data.append([Paragraph("<bullet>&bull;</bullet>" + line)])
         else:
-            data.append("")
+            data.append([Paragraph("")])
 
         # Create and style table
         comments_table = Table(

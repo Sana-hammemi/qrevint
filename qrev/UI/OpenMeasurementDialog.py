@@ -14,7 +14,7 @@ class OpenMeasurementDialog(QtWidgets.QDialog):
     fullName: list
         Full name of files including path.
     fileName: list
-        List of one or more fileNames to be processed.
+        One or more fileNames to be processed.
     pathName: str
         Path to folder containing files.
     type: str

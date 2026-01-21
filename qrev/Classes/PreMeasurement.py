@@ -62,7 +62,7 @@ class PreMeasurement(object):
             "(Total error:|Double Cycle Errors:|Error from calibration:)", self.data
         )
         if len(splits) > 1:
-            error = float(re.search("\d+\.*\d*", splits[-1])[0])
+            error = float(re.search(r"\d+\.*\d*", splits[-1])[0])
         else:
             error = "N/A"
         self.result["compass"] = {"error": error}
@@ -145,7 +145,7 @@ class PreMeasurement(object):
                 "(Total error:|Double Cycle Errors:|Error from calibration:)", self.data
             )
             if len(splits) > 1:
-                error = float(re.search("\d+\.*\d*", splits[-1])[0])
+                error = float(re.search(r"\d+\.*\d*", splits[-1])[0])
             else:
                 error = "N/A"
             self.result["compass"] = {"error": error}
@@ -366,30 +366,34 @@ class PreMeasurement(object):
                 correl_count += len(bm1_matches)
 
             # Correlation table match
-            lag_matches = re.findall("Lag.*?^\s*$", self.data, re.MULTILINE | re.DOTALL)
+            lag_matches = re.findall(r"Lag.*?^\s*$", self.data, re.MULTILINE
+                                     | re.DOTALL)
 
             # Sin match
             sin_match = re.findall(
-                "((Sin|SIN).*?^\s*$)", self.data, re.MULTILINE | re.DOTALL
+                r"((Sin|SIN).*?^\s*$)", self.data, re.MULTILINE | re.DOTALL
             )[0][0]
-            sin_array = np.array(re.findall("\d+\.*\d*", sin_match), dtype=int)
+            sin_array = np.array(re.findall(r"\d+\.*\d*", sin_match),
+                                 dtype=int)
 
             # Cos match
             cos_match = re.findall(
-                "((Cos|COS).*?^\s*$)", self.data, re.MULTILINE | re.DOTALL
+                r"((Cos|COS).*?^\s*$)", self.data, re.MULTILINE | re.DOTALL
             )[0][0]
-            cos_array = np.array(re.findall("\d+\.*\d*", cos_match), dtype=int)
+            cos_array = np.array(re.findall(r"\d+\.*\d*", cos_match),
+                                 dtype=int)
 
             # RSSI match
             rssi_array = np.array([])
             rssi_matches = re.findall(
-                "RSSI.*?^\s*$", self.data, re.MULTILINE | re.DOTALL
+                r"RSSI.*?^\s*$", self.data, re.MULTILINE | re.DOTALL
             )
             for rssi_match in rssi_matches:
                 rssi_array = np.hstack(
                     (
                         rssi_array,
-                        np.array(re.findall("\d+\.*\d*", rssi_match), dtype=int),
+                        np.array(re.findall(r"\d+\.*\d*", rssi_match),
+                                 dtype=int),
                     )
                 )
 
@@ -399,7 +403,7 @@ class PreMeasurement(object):
                 bm_count = len(re.findall("Bm1", lag_match))
 
                 # Extract the table into list
-                numbers = re.findall("\d+\.*\d*", lag_match)
+                numbers = re.findall(r"\d+\.*\d*", lag_match)
 
                 # Create array from data in table
                 corr_data = np.array(
@@ -668,7 +672,7 @@ class PreMeasurement(object):
                             + ":"
                             + time_stamp[13:15]
                         )
-    
+
                     year_correction = int(time_stamp.split(".")[0])
                     if year_correction < 90:
                         time_stamp = "20" + time_stamp

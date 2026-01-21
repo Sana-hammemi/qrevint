@@ -1084,7 +1084,7 @@ class Pd0TRDI(object):
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         try:
             decoded_data["utc"] = float(
-                re.findall(b"^\d+\.\d+|\d+", decoded_data["utc"])[0]
+                re.findall(br"^\d+\.\d+|\d+", decoded_data["utc"])[0]
             )
         except BaseException:
             decoded_data["utc"] = np.nan
@@ -1262,7 +1262,7 @@ class Pd0TRDI(object):
         decoded_data["header"] = Pd0TRDI.bin2str(decoded_data["header"]).rstrip("\x00")
         try:
             decoded_data["utc"] = float(
-                re.findall(b"^\d+\.\d+|\d+", decoded_data["utc"])[0]
+                re.findall(br"^\d+\.\d+|\d+", decoded_data["utc"])[0]
             )
         except BaseException:
             decoded_data["utc"] = np.nan

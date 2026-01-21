@@ -1,4 +1,6 @@
 import os
+import qrev_docs
+from qrev import translation
 
 __author__ = "David S Mueller"
 __company__ = "Genesis HydroTech LLC"
@@ -14,6 +16,9 @@ __icon_path__ = os.path.abspath(
         os.path.dirname(__file__), "..", "docs", "source", "assets", "files", "*"
     )
 )
+
+__translation_files__ = os.path.abspath(os.path.join(os.path.dirname(
+    translation.__file__)))
 
 
 # Fix for Windows users to propagate the UI icon to the Taskbar. This is

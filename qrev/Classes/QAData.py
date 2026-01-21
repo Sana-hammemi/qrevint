@@ -1464,7 +1464,7 @@ class QAData(object):
         cal_required = False
         magvar_required = False
         # Check for loop test
-        
+
         for test in meas.mb_tests:
             if test.type == "Loop":
                 cal_required = True
@@ -1968,7 +1968,6 @@ class QAData(object):
                         use_2_correct.append(test.use_2_correct)
                 else:
                     user_valid_test.append(False)
-
 
             if not any(user_valid_test):
                 # No valid test according to user
@@ -2956,15 +2955,20 @@ class QAData(object):
                             # Check for profiling to bottom
                             depth_selected = getattr(transect.depths, transect.depths.selected)
                             max_depth_cell_depth = depth_selected.depth_cell_depth_m[-1, :]
-                            depth_cell_size = depth_selected.depth_cell_size_m[-1, :]
                             sl_depth = transect.w_vel.sl_cutoff_m
-                            diff_positive = np.where(np.greater(sl_depth, max_depth_cell_depth))[0]
-                            q_test_percent = (np.nansum(
-                                meas.discharge[n].bottom_ens[
-                                    diff_positive])) / meas.discharge[n].total_uncorrected
+                            if sl_depth is not None:
+                                diff_positive = np.where(np.greater(sl_depth,
+                                                                    max_depth_cell_depth))[
+                                    0]
+                                q_test_percent = (np.nansum(
+                                    meas.discharge[n].bottom_ens[
+                                        diff_positive])) / meas.discharge[
+                                                     n].total_uncorrected
 
-                            if q_test_percent > 0.01:
-                                self.w_vel["profile_to_bottom"][n] = False
+                                if q_test_percent > 0.01:
+                                    self.w_vel["profile_to_bottom"][n] = False
+                            else:
+                                self.w_vel["profile_to_bottom"][n] = True
 
             # Generate messages
             # =================
