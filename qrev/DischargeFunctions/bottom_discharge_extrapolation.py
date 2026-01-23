@@ -104,7 +104,7 @@ def extrapolate_bot(
     valid_data = np.logical_not(np.isnan(xprod))
     for row in range(valid_data.shape[0]):
         for col in range(valid_data.shape[1]):
-            if valid_data[row, col] == False:
+            if not valid_data[row, col]:
                 z[row, col] = np.nan
                 cell_size[row, col] = np.nan
                 cell_depth[row, col] = np.nan
@@ -263,7 +263,7 @@ def discharge_bot(
                                     denominator_valid = True
                                     denominator = denominator + denominator_temp
 
-                # If there are not cells below the cutoff, use the last valid depth cell
+                # If there are no cells below the cutoff, use the last valid depth cell
                 if np.logical_not(cells_below_cutoff):
                     if np.logical_not(np.isnan(last_cell_depth)):
                         # Compute numerator

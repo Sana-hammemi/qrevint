@@ -29,6 +29,7 @@ class MatSonTek(object):
                 mat_data["RawGPSData"].VtgMode[
                     np.isnan(mat_data["RawGPSData"].VtgMode)
                 ] = 0
+                # noinspection PyPep8Naming
                 mat_data["RawGPSData"].VtgMode = np.array([chr(x) for x in range(127)])[
                     mat_data["RawGPSData"].VtgMode.astype(int)
                 ]

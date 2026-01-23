@@ -17,7 +17,7 @@ class CrossSectionComp(object):
     Attributes
     ----------
         cross_section: list
-            list of transect cross-sections stored as np.arrays.
+            Transect cross-sections stored as np.arrays.
         checked_idx: np.array
             Array of checked transect indices
         gps: bool
@@ -159,7 +159,7 @@ class CrossSectionComp(object):
                     unprojected_xs = np.array([lon, lat, unit_x, unit_y, depth_a]).T
                     self.unproj_xs.append(unprojected_xs)
 
-        if self.gps is True:
+        if self.gps:
             (
                 lon_list,
                 lat_list,
@@ -218,9 +218,11 @@ class CrossSectionComp(object):
         y_list: lst of np.arrays
             arrays are either lat or y data.
 
-        :return projected_x_list: lst of np.arrays
+        Returns
+        -------
+        projected_x_list: lst of np.arrays
             arrays are either long or x data.
-            projected_y_list: lst of np.arrays
+        projected_y_list: lst of np.arrays
             arrays are either lat or y data.
 
         """
@@ -246,7 +248,7 @@ class CrossSectionComp(object):
         x_rng = x_e - x_w
         y_rng = y_n - y_s
 
-        # use Least squares polynomial fit
+        # Use the Least squares polynomial fit
         if x_rng >= y_rng:
             model = np.polyfit(x_array, y_array, 1)
             # predict_function = np.poly1d(model)
@@ -292,11 +294,13 @@ class CrossSectionComp(object):
         slope: float
             slope of projection
         start_edge: list
-            list of start edges and distances
+            Start edges and distances
 
-        :return projected_x_list: lst of np.arrays
+        Returns
+        -------
+        projected_x_list: lst of np.arrays
                     arrays are either long or x data.
-                projected_y_list: lst of np.arrays
+        projected_y_list: lst of np.arrays
                     arrays are either lat or y data.
         """
 
@@ -332,18 +336,18 @@ class CrossSectionComp(object):
         stations: np.arrays
             mean cross-section.
         x_start: float
-            starting point of transect on x axis
+            starting point of transect on x-axis
         y_start: float
-            starting point of transect on y axis
+            starting point of transect on y-axis
         slope: float
             slope of projection
-        start: float
-            list of start edges and distances
 
-        :return x_array: np.arrays
-                    mean cross-section x values
-                y_array: np.arrays
-                    mean cross-section y values
+        Returns
+        -------
+        x_array: np.arrays
+            mean cross-section x values
+        y_array: np.arrays
+            mean cross-section y values
         """
 
         # compute the geographic angle of the mean cross-section
@@ -365,7 +369,10 @@ class CrossSectionComp(object):
         hor_spacing: 'Auto' or float
             spacing for stationing. Defaults to 'Auto'
 
-        :return average_cs
+        Returns
+        -------
+        average_cs: np.array
+            Coordinates of average cross-section
 
         """
 
@@ -487,7 +494,7 @@ class CrossSectionComp(object):
         return average_cs
 
     def compute_auto_spacing(self, station_list):
-        """Compute recomended horizontal spacing.
+        """Compute recommended horizontal spacing.
 
         Parameters
         ----------

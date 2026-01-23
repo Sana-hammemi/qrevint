@@ -44,7 +44,7 @@ class DateTime(object):
             Python serial time for end of transect.
         ens_dur_in: np.array(float)
             Duration of each ensemble, in seconds.
-        utc_time_offset=str
+        utc_time_offset: str
             String containing utc time offset to achieve local time
         """
 

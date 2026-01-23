@@ -190,7 +190,7 @@ class HeadingData(object):
     def interp_heading(self):
         """Interpolate invalid headings. Use linear interpolation if there are
         valid values on either side of the invalid heading. If the invalid
-        heading occurs at the beginning of the time series, back fill using the 1st
+        heading occurs at the beginning of the time series, backfill using the 1st
         valid. If the invalid heading occurs at the end of the time series, forward
         fill with the last valid self.data.
         """
@@ -208,7 +208,7 @@ class HeadingData(object):
                 )[0]
                 after_idx = np.where(np.isnan(self.data[idx_invalid[n] :]) == False)[0]
 
-                # If invalid self.data is beginning back fill
+                # If invalid self.data is beginning backfill
                 if len(before_idx) < 1:
                     self.data[idx_invalid[n]] = self.data[first_valid_idx]
 

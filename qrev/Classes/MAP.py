@@ -2,9 +2,6 @@
 import copy
 import math
 from datetime import datetime
-import os
-import shutil
-import sys
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -28,7 +25,7 @@ from qrev.MiscLibs.common_functions import cart2pol, pol2cart, nan_greater, \
 
 
 class MAP(object):
-    """Multitransect Averaged Profile (MAP) generates an average profile of selected transects.
+    """Multi-transect Averaged Profile (MAP) generates an average profile of selected transects.
 
     Attributes
     ----------
@@ -48,6 +45,10 @@ class MAP(object):
         East distance after projection on average cross-section
     y_projected: np.list(np.array(float))
         North distance after projection on average cross-section
+    _x_left: float or nd.array(float)
+        Edge x-coordinates
+    _y_left: float or nd.array(float)
+        Edge y-coordinates
     acs_distance: np.list(np.array(float))
         Distance from the left bank on average cross-section
     primary_velocity: np.array(float)
@@ -145,8 +146,8 @@ class MAP(object):
             None  # Borders of each MAP vertical (distance from left bank)
         )
         self._unit = 1
-        self._x_left = 0  # Default x position in m
-        self._y_left = 0  # Default y position in m
+        self._x_left = 0.0  # Default x position in m
+        self._y_left = 0.0  # Default y position in m
         self.x = None  # x coordinates
         self.y = None  # y coordinates
         self.main_depth_layers = (
@@ -189,7 +190,6 @@ class MAP(object):
         node_vertical_user=None,
         extrap_option=True,
         edges_option=True,
-        interp_option=True,
         n_burn=None,
     ):
         """
@@ -206,8 +206,6 @@ class MAP(object):
             Indicates if top/bottom extrapolation should be applied
         edges_option: bool
             Indicates if edge extrapolation should be applied
-        interp_option: bool
-            Indicates if velocities interpolation should be applied
         n_burn: int
             Number of transects which need to detect an information to make it valid
         """
@@ -233,7 +231,6 @@ class MAP(object):
         self.compute_node_size(
             node_horizontal_user,
             node_vertical_user,
-            extrap_option,
         )
 
         param = {
@@ -342,7 +339,7 @@ class MAP(object):
                     )
 
                     # Compute the x and y coordinate adjustment based on the first valid gps data
-                    # This accounts for potential valid BT data prior to the firt valid
+                    # This accounts for potential valid BT data prior to the first valid
                     # gps data.
                     x_coord = (
                         coords[0][gps_valid_idx[0]]
@@ -446,11 +443,11 @@ class MAP(object):
         y_left = [arr["y_raw_coordinates"][0] for arr in self.data_transects]
         y_right = [arr["y_raw_coordinates"][-1] for arr in self.data_transects]
 
-        self._x_left = np.nanmedian(x_left)
-        self._y_left = np.nanmedian(y_left)
+        self._x_left = float(np.nanmedian(x_left))
+        self._y_left = float(np.nanmedian(y_left))
 
-        self.slope = (np.nanmedian(y_right) - self._y_left) / (
-            np.nanmedian(x_right) - self._x_left
+        self.slope = (float(np.nanmedian(y_right)) - self._y_left) / (
+            float(np.nanmedian(x_right)) - self._x_left
         )
         self.intercept = self._y_left - self.slope * self._x_left
 
@@ -499,8 +496,8 @@ class MAP(object):
         x_boundaries = [np.nanmin(x_min), np.nanmax(x_max)]
         y_boundaries = [np.nanmin(y_min), np.nanmax(y_max)]
 
-        x_offset = min(x_boundaries, key=lambda x: abs(x - left_x))
-        y_offset = min(y_boundaries, key=lambda x: abs(x - left_y))
+        x_offset = min(x_boundaries, key=lambda x: abs(x - float(left_x)))
+        y_offset = min(y_boundaries, key=lambda x: abs(x - float(left_y)))
 
         # Compute the distance on the average cross-section
         for transect in self.data_transects:
@@ -523,7 +520,6 @@ class MAP(object):
         """Compare bathymetry and translate transects on average cross-section if needed."""
 
         # Use the transect with the maximum acs_distance as the reference.
-        transect_length = []
         max_tr, min_tr = self.compute_max_min_distance(self.data_transects)
         transect_length = [x - y for x, y in zip(max_tr, min_tr)]
 
@@ -609,7 +605,6 @@ class MAP(object):
         self,
         node_horizontal_user,
         node_vertical_user,
-        extrap_option,
     ):
         """Define horizontal and vertical mesh
 
@@ -618,8 +613,6 @@ class MAP(object):
             Horizontal size of the mesh define by the user
         node_vertical_user: float
             Vertical size of the mesh define by the user
-        extrap_option: bool
-            Indicates if top/bottom extrapolation should be applied
         """
 
         # Mesh width
@@ -636,16 +629,6 @@ class MAP(object):
             node_horz = self.auto_node_horz
         elif node_horizontal_user >= self.auto_node_horz:
             node_horz = node_horizontal_user
-
-        # # Divise total length in same size meshs
-        # # TODO see logspace and normalized depth layer
-        # if not extrap_option:
-        #     top_cell = (
-        #         np.nanmedian(transect.depths.bt_depths.depth_cell_depth_m[0, :])
-        #         - np.nanmedian(transect.depths.bt_depths.depth_cell_size_m[0, :]) / 2
-        #     )
-        # else:
-        #     top_cell = 0
 
         self.borders_ens = np.linspace(
             min_acs_distance,
@@ -702,14 +685,19 @@ class MAP(object):
                 len_key_cell += 1
                 # data_bin_transects is created using empty so that later it is converted
                 # to lists to contain all the data for a specified cell
-                data_bin_transects[key] = np.tile(
-                    np.empty,
-                    (
+                # data_bin_transects[key] = np.tile(
+                #     np.empty,
+                #     (
+                #         self.n_transects,
+                #         len(self.main_depth_layers) - 1,
+                #         len(self.borders_ens) - 1,
+                #     ),
+                # )
+                data_bin_transects[key] = np.empty(shape=(
                         self.n_transects,
                         len(self.main_depth_layers) - 1,
                         len(self.borders_ens) - 1,
-                    ),
-                )
+                    ), dtype=object)
                 # data_bin_transects_save will save the median values computed from the
                 # lists in data_bin_transects
                 data_bin_transects_save[key] = np.tile(
@@ -729,9 +717,10 @@ class MAP(object):
                 len_ens_cells += 1
                 # data_bin_transects is created using empty so that later it is converted
                 # to lists to contain all the data for a specified projected ensemble
-                data_bin_transects[key] = np.tile(
-                    np.empty, (self.n_transects, len(self.borders_ens) - 1)
-                )
+                # data_bin_transects[key] = np.tile(
+                #     np.array([np.nan]), (self.n_transects, len(self.borders_ens) - 1)
+                # )
+                data_bin_transects[key] = np.empty(shape=(self.n_transects, len(self.borders_ens) - 1), dtype=object)
                 # data_bin_transects_save will save the median values computed from the
                 # lists in data_bin_transects
                 data_bin_transects_save[key] = np.tile(
@@ -926,8 +915,8 @@ class MAP(object):
         last_column_idx = data_bin_map["count"].shape[1] - 1
 
         if len(index_non_nan) < len(invalid_ens):
-            first_column_idx = np.nanmin(index_non_nan)
-            last_column_idx = np.nanmax(index_non_nan)
+            first_column_idx = int(np.nanmin(index_non_nan))
+            last_column_idx = int(np.nanmax(index_non_nan))
 
             for key in key_cell:
                 data_bin_map[key] = data_bin_map[key][
@@ -1032,8 +1021,6 @@ class MAP(object):
         valid_data = np.logical_not(np.isnan(w_vel_prim_extrap))
         valid_cell_centers = depth_cells_center * valid_data
         valid_cell_centers[valid_cell_centers == 0] = np.nan
-        # idx_top = np.nanargmin(valid_cell_centers, axis=0)
-        # idx_bot = np.nanargmax(valid_cell_centers, axis=0)
 
         idx_top = np.argmin(np.nan_to_num(valid_cell_centers, nan=float("inf")), axis=0)
         idx_bot = np.argmax(
@@ -1258,8 +1245,8 @@ class MAP(object):
                     for ens in range(x[0], x[1] + 1):
                         cells_above_sl[:, ens] = False
                 else:
-                    top = min(idx_top[x[0] - 1], idx_top[x[1] + 1])
-                    bot = max(idx_bot[x[0] - 1], idx_bot[x[1] + 1])
+                    top = np.nanmin([idx_top[x[0] - 1], idx_top[x[1] + 1]])
+                    bot = np.nanmax([idx_bot[x[0] - 1], idx_bot[x[1] + 1]])
 
                     for ens in range(x[0], x[1] + 1):
                         cells_above_sl[:top, ens] = False
@@ -1415,8 +1402,8 @@ class MAP(object):
             for i in range(len(border_depths) - 1):
                 sub_index = next(
                     x[0]
-                    for x in enumerate(cells_borders_depths_1[:, i])
-                    if x[1] >= int(1000 * border_depths[i + 1]) / 1000
+                    for x in cells_borders_depths_1[:, i]
+                    if x[1] >= int(1000 * border_depths[i + 1]) / 1000.
                 )
                 cells_borders_depths_1[sub_index, i] = border_depths[i + 1]
                 cells_borders_depths_1[sub_index + 1 :, i] = np.nan
@@ -1438,7 +1425,7 @@ class MAP(object):
             invalid_data = np.isnan(cells_borders_depths_2)
             x_left[invalid_data] = np.nan
 
-            # Define the 5 points of the pentagone
+            # Define the 5 points of the pentagon
             a_coordinates_x = copy.deepcopy(x_left[:-1, :-1])
             a_coordinates_y = copy.deepcopy(cells_borders_depths_1[:-1, :])
             b_coordinates_x = copy.deepcopy(x_left[:-1, 1:])
@@ -1623,7 +1610,7 @@ class MAP(object):
             edge_secondary_velocity[is_nan] = np.nan
             edge_vertical_velocity[is_nan] = np.nan
 
-            # Get depth layers on the center of the ensemble
+            # Get depth layers at the center of the ensemble
             depth = (border_depths[1:] + border_depths[:-1]) / 2
             edge_layers = np.tile(self.main_depth_layers[:, np.newaxis], depth.shape)
             for i in range(edge_layers.shape[1]):
@@ -1900,9 +1887,9 @@ class MAP(object):
 
         Parameters:
             distance: array
-                Array of distance from the left bank for each vertical
+                Distances from the left bank for each vertical
             depths: array
-                 Array of depth for each vertical
+                 Depths for each vertical
 
         Return:
             perimeter: float
@@ -1912,7 +1899,7 @@ class MAP(object):
         points = np.vstack((distance, depths)).T
         perimeter = 0
         for i in range(len(points)):
-            x1, y1 = points[i]  # x : abscisse, y : hauteur d’eau
+            x1, y1 = points[i]
             x2, y2 = points[(i + 1) % len(points)]
             d = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
             perimeter += d
@@ -1922,14 +1909,19 @@ class MAP(object):
     def create_map_df(self, units, manufacturer=None, verticals=False):
         """Create a pandas dataframe of data computed by MAP.
 
-        Parameters:
-            units: dict
-            manufacturer: str
-                Identifies manufacturer
+        Parameters
+        ----------
+        units: dict
+            Specified unit labels and conversion
+        manufacturer: str
+            Identifies manufacturer
+        verticals: bool
+            Use only vertical data
 
-        Returns:
-            df: pd.DataFrame
-
+        Returns
+        -------
+        df: pd.DataFrame
+            Requested map data
         """
 
         distance_x, distance_y = self.utm_2_distance()
@@ -2030,14 +2022,16 @@ class MAP(object):
 
         Parameters
         ----------
-            path: str
-                path to exported file
-            units: dict
-                dictionary of unit labels and conversions
-            delimiter: str
-                type of delimiter to use
-            manufacturer: str
-                name of instrument manufacturer
+        path: str
+            path to exported file
+        units: dict
+            dictionary of unit labels and conversions
+        delimiter: str
+            type of delimiter to use
+        manufacturer: str
+            name of instrument manufacturer
+        verticals: bool
+            Indicates if only vertical data is used
         """
         date = datetime.today().strftime("%d-%b-%Y")
         header = ["# " + __qrev_version__ + "\n", "# Exported " + date + "\n"]
@@ -2341,6 +2335,10 @@ class MAP(object):
             Path to save kml file
         meas: Measurement
             Objet of Measurement class
+        zone_number: int
+            UTM zone number
+        zone_letter: str
+            UTM zone letter
 
         Returns
         ----------
@@ -2429,6 +2427,8 @@ class MAP(object):
             North velocity component
         name: string
             Name of the arrow
+        arrow_scale: float
+            Scales arrow size
         color: string
             Kml Hex color of the arrow
         """

@@ -1474,14 +1474,15 @@ class QAData(object):
 
         # Check for GPS data
         for idx in meas.checked_transect_idx:
+            utc_time_offset = meas.transects[idx].date_time.utc_time_offset
+            tz = utc_offset_to_tz(utc_time_offset)
             if (
                 meas.transects[idx].boat_vel.gga_vel is not None
                 or meas.transects[idx].boat_vel.vtg_vel is not None
             ):
                 # Time of first transect
                 transect_time = meas.transects[idx].date_time.start_serial_time
-                utc_time_offset = meas.transects[idx].date_time.utc_time_offset
-                tz = utc_offset_to_tz(utc_time_offset)
+
                 magvar_required = True
                 cal_required = True
                 break
@@ -3421,7 +3422,7 @@ class QAData(object):
         valid_int = np.append(valid_int, -1)
         valid_run = np.where(np.diff(valid_int) != 0)[0]
         run_length = np.diff(valid_run)
-        run_length0 = run_length[(valid[0] == 1) :: 2]
+        run_length0 = run_length[int(valid[0] == 1) :: 2]
 
         n_runs = len(run_length0)
 

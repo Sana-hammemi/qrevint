@@ -1,6 +1,5 @@
 import utm
 import numpy as np
-from datetime import datetime
 from qrev.MiscLibs.common_functions import azdeg2rad, pol2cart, nans, nan_less
 
 
@@ -12,7 +11,7 @@ class GPSData(object):
     ----------
     # Raw properties:
         raw_gga_lat_deg: np.array(float)
-            Raw latitude in degress, [ensemble,n]
+            Raw latitude in degrees, [ensemble,n]
         raw_gga_lon_deg: np.array(float)
             Raw longitude in degrees, [ensemble,n]
         raw_gga_altitude_m: np.array(float)
@@ -28,7 +27,7 @@ class GPSData(object):
         raw_gga_num_sats: np.array(float)
             Raw number of satellites reported in gga sentence, [ensemble,n]
         raw_vtg_course_deg:np.array(float)
-            Raw course in degress, [ensemble,n]
+            Raw course in degrees, [ensemble,n]
         raw_vtg_speed_mps: np.array(float)
             Raw speed in m/s, [ensemble,n]
         raw_vtg_delta_time: np.array(float)
@@ -183,7 +182,7 @@ class GPSData(object):
         raw_gga_utc: np.array(float)
             Raw UTC time, hhmmss.ss, [ensemble,n]
         raw_gga_lat: np.array(float)
-            Raw latitude in degress, [ensemble,n]
+            Raw latitude in degrees, [ensemble,n]
         raw_gga_lon: np.array(float)
             Raw longitude in degrees, [ensemble,n]
         raw_gga_alt: np.array(float)
@@ -197,7 +196,7 @@ class GPSData(object):
         raw_gga_delta_time: np.array(float)
             Raw gga delta time (sec), [ensemble,n]
         raw_vtg_course:np.array(float)
-            Raw course in degress, [ensemble,n]
+            Raw course in degrees, [ensemble,n]
         raw_vtg_speed: np.array(float)
             Raw speed in m/s, [ensemble,n]
         raw_vtg_delta_time: np.array(float)

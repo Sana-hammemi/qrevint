@@ -183,11 +183,13 @@ class MovingBedTests(object):
         ----------
         meas_struct: mat_struct
             Matlab data structure obtained from sio.loadmat
+        tr: method
+            PYQT translator
 
         Returns
         -------
         mb_tests: list
-            List of MovingBedTests objects
+            MovingBedTests objects
         """
 
         mb_tests = []
@@ -217,6 +219,8 @@ class MovingBedTests(object):
         ----------
         mat_data: mat_struct
            Matlab data structure obtained from sio.loadmat
+        meas_struct: mat_struct
+            Matlab data structure
         """
 
         self.type = mat_data.type
@@ -303,7 +307,7 @@ class MovingBedTests(object):
         Parameters
         ----------
         array_in: np.array
-            Input that needs to be convert to a list
+            Input that needs to be converted to a list
         """
 
         # This traps messages with the associated codes
@@ -1150,14 +1154,14 @@ class MovingBedTests(object):
         Parameters
         ----------
         moving_bed_tests: list
-            List of MovingBedTests objects.
+            MovingBedTests objects.
         boat_ref: str
             Boat velocity reference.
 
         Returns
         -------
         moving_bed_tests: list
-            List of MovingBedTests objects.
+            MovingBedTests objects.
         """
 
         if len(moving_bed_tests) != 0:
@@ -1224,7 +1228,7 @@ class MovingBedTests(object):
                         if lidx_valid_stationary[n]:
                             test.use_2_correct = True
 
-            # If the flow speed is too low but there are not valid stationary
+            # If the flow speed is too low but there are no valid stationary
             # tests use the last loop test.
             elif np.any(lidx_valid_loop):
                 # Select last loop

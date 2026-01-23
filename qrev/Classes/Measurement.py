@@ -1,6 +1,5 @@
 import copy
 import ctypes
-import datetime
 import os
 import shutil
 import json
@@ -178,7 +177,7 @@ class Measurement(object):
         snr_3beam_comp: bool
             Indicates if 3 beam solutions should be used for ensembles with invalid SNR
         excluded: dict
-            Dictionary containting the excluded distances for the RioPro and M9
+            Dictionary containing the excluded distances for the RioPro and M9
         date_format: str
             Format string for date
         area_projection: str
@@ -344,7 +343,7 @@ class Measurement(object):
 
     @staticmethod
     def no_tr(text):
-        """This method replaces the pyqt tr method when this code is not run from a pyqt
+        """This method replaces the pyqt translator method when this code is not run from a pyqt
         user interface. It simply returns the string provided.
 
         Parameters
@@ -551,7 +550,7 @@ class Measurement(object):
         Parameters
         ----------
         mmt: MMTtrdi
-            Object of MMT_TRDI
+            Object of MMTtrdi
         """
 
         # ADCP Test
@@ -572,7 +571,7 @@ class Measurement(object):
         Parameters
         ----------
         mmt: MMTtrdi
-            Object of MMT_TRDI
+            Object of MMTtrdi
         """
 
         # ADCP Test
@@ -590,7 +589,7 @@ class Measurement(object):
         Parameters
         ----------
         mmt: MMTtrdi
-            Object of MMT_TRDI
+            Object of MMTtrdi
         """
 
         # Compass calibration
@@ -610,7 +609,7 @@ class Measurement(object):
         Parameters
         ----------
         mmt: MMTtrdi
-            Object of MMT_TRDI
+            Object of MMTtrdi
         """
 
         if "Compass_Evaluation" in mmt.qaqc:
@@ -629,7 +628,7 @@ class Measurement(object):
         Parameters
         ----------
         mmt: MMTtrdi
-            Object of MMT_TRDI
+            Object of MMTtrdi
         """
 
         # Check for moving-bed tests
@@ -829,7 +828,6 @@ class Measurement(object):
 
         # Compass Calibration
         compass_cal_folder = os.path.join(pathname, "CompassCal")
-        time_stamp = None
         if os.path.isdir(compass_cal_folder):
             for file in os.listdir(compass_cal_folder):
                 self.sontek_add_compass_cal(compass_cal_folder, file)
@@ -855,7 +853,7 @@ class Measurement(object):
         Parameters
         ----------
         path: str
-            Path to file
+            File path
         file: str
             File name containing test data
         """
@@ -883,6 +881,7 @@ class Measurement(object):
         """
 
         valid_file = False
+        time_stamp = None
         # G3 compasses
         if file.endswith(".ccal"):
             time_stamp = file.split("_")
@@ -1083,6 +1082,7 @@ class Measurement(object):
         # Site information pulled from last file
         if len(sontek_data["transects"]) > 0:
             # Find valid transect
+            transect = None
             for transect in sontek_data["transects"]:
                 if transect["config_json"]["IsEnabledInSessionSummary"]:
                     break
@@ -1793,7 +1793,7 @@ class Measurement(object):
         else:
             self.transects[transect_idx].change_offset(h_offset)
 
-        # Rcompute is specified
+        # Recompute is specified
         if recompute:
             self.apply_settings(s)
         else:
@@ -2807,9 +2807,9 @@ class Measurement(object):
         node_vertical_user: float
             Height of MAP cell (in m)
         extrap_option: bool
-            Boolean indicating if top/bottom extrapolation should be apply
+            Boolean indicating if top/bottom extrapolation should be applied
         edges_option: bool
-            Boolean indicating if edges extrapolation should be apply
+            Boolean indicating if edges extrapolation should be applied
         interp_option: bool
             Boolean indicating if interpolated data should be used
         """
@@ -2852,7 +2852,7 @@ class Measurement(object):
         selected_idx: int
             Index of selected transect
         percents: list
-            List of selected flow percents
+            Selected flow percents
         """
 
         # Get transect and discharge data
@@ -3985,7 +3985,7 @@ class Measurement(object):
         temp = nav_data.gps_altitude_filter
         if temp:
             if temp == "Manual":
-                nav_data.gps_altitude_filter_change
+                temp = nav_data.gps_altitude_filter_change
             ETree.SubElement(
                 navigation, "GPSAltitudeFilter", type="char", unitsCode="m"
             ).text = str(temp)
@@ -4503,7 +4503,7 @@ class Measurement(object):
                     t_other, "MeanBoatSpeed", type="double", unitsCode="mps"
                 ).text = "{:.4f}".format(temp)
 
-                # (4) QoverA
+                # (4) Q over A
                 temp = other_prop["avg_water_speed"][n]
                 ETree.SubElement(
                     t_other, "QoverA", type="double", unitsCode="mps"
@@ -4521,7 +4521,7 @@ class Measurement(object):
                     t_other, "MeanFlowDirection", type="double", unitsCode="deg"
                 ).text = "{:.2f}".format(temp)
 
-                # (4) NumberofEnsembles
+                # (4) Number of Ensembles
                 temp = len(self.transects[n].boat_vel.bt_vel.u_processed_mps)
                 ETree.SubElement(
                     t_other, "NumberofEnsembles", type="integer"
@@ -5491,8 +5491,8 @@ class Measurement(object):
 
         Parameters
         ----------
-        mmt: MMT_TRDI
-            Object of MMT_TRDI
+        mmt: MMTtrdi
+            Object of MMTtrdi
         transect_type: str
             Type of transect (Q: discharge or MB: moving-bed test)
         checked: bool
@@ -5688,7 +5688,6 @@ class Measurement(object):
 
         return df
 
-        # final_array = np.vstack((vel_e, vel_n, vel_up, mag, az, lat, lon)).T
 
 if __name__ == "__main__":
     pass

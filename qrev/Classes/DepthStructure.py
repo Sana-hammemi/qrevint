@@ -17,7 +17,7 @@ class DepthStructure(object):
     ds_depths: DepthData
         Object of DepthData for depth sounder based depths.
     composite: str
-        Indicates use of composite depths ("On" or "Off".
+        Indicates use of composite depths ("On" or "Off").
     """
 
     def __init__(self):
@@ -122,14 +122,14 @@ class DepthStructure(object):
         """Depth composite is based on the following assumptions
 
         1. If a depth sounder is available the user must have assumed the
-        ADCP beams (BT or vertical) might have problems
+        ADCP beams (BT or vertical) might have problems,
         and it will be the second alternative if not selected as the preferred source
 
         2. For 4-beam BT depths, if 3 beams are valid the average is
         considered valid. It may be based on interpolation of the invalid beam.
         However, if only 2 beams are valid even though the other two beams may be
-        interpolated and included in the average the average will be replaced by an
-        alternative if available.  If no alternative is available the multi-beam average
+        interpolated and included in the average, the average will be replaced by an
+        alternative if available.  If no alternative is available the multibeam average
         based on available beams and interpolation will be used.
 
         Parameters

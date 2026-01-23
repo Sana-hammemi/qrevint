@@ -5,6 +5,7 @@ import struct
 from qrev.MiscLibs.common_functions import pol2cart, valid_number, nans
 
 
+# noinspection PyUnusedLocal
 class Pd0TRDI(object):
     """Class to read data from PD0 files
 
@@ -33,7 +34,7 @@ class Pd0TRDI(object):
     Surface: Surface
         Object of Surface to hold surface cell data
     AutoMode: AutoMode
-        Object of AutoMode to hold auto configuration settings
+        Object of AutoMode to hold autoconfiguration settings
     Nmea: Nmea
         Object of Nmea to hold Nmea data
     """
@@ -136,7 +137,7 @@ class Pd0TRDI(object):
         self.Wt = Wt(n_bins, n_ensembles, n_velocities)
         self.Bt = Bt(n_ensembles, n_velocities)
         self.Gps = Gps(n_ensembles)
-        self.Gps2 = Gps2(n_ensembles, wr2)
+        self.Gps2 = Gps2(n_ensembles)
         self.GeoRef = GeoRef(n_ensembles)
         self.Surface = Surface(n_ensembles, n_velocities, max_surface_bins)
         self.AutoMode = AutoMode(n_ensembles)
@@ -313,7 +314,7 @@ class Pd0TRDI(object):
         max_data_types: int
             Maximum number of data types in file
         max_beams: int
-            Maximum number of beamse
+            Maximum number of beams
         max_bins: int
             Maximum number of regular bins
         """
@@ -324,7 +325,7 @@ class Pd0TRDI(object):
             0x0080: ("variable_leader", self.preload_variable_leader),
         }
 
-        # Intitialize variables
+        # Initialize variables
         start_byte = 0
         n_beams = []
         n_bins = []
@@ -377,11 +378,11 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
-            Not used, included for compatibilty with other decoders
+            Not used, included for compatibility with other decoders
 
         Returns
         -------
@@ -402,7 +403,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -473,13 +474,13 @@ class Pd0TRDI(object):
 
     @staticmethod
     def unpack_bytes(pd0_bytes, data_format_tuples, offset=0):
-        """Unpackes the data based on the supplied data format tuples and
+        """Unpacks the data based on the supplied data format tuples and
         offset.
 
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         data_format_tuples: tuple
             A tuple of tuples providing the data name, format, and byte
             location
@@ -514,7 +515,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
 
@@ -549,7 +550,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         num_data_types: int
             Number of data types for which to find offsets
         offset: int
@@ -558,7 +559,7 @@ class Pd0TRDI(object):
         Returns
         -------
         address_data: list
-            List of offsets to each data type
+            Offsets to each data type
         """
 
         address_data = []
@@ -577,7 +578,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
 
         Returns
         -------
@@ -603,7 +604,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -661,12 +662,12 @@ class Pd0TRDI(object):
 
     @staticmethod
     def decode_variable_leader(pd0_bytes, offset, data):
-        """Decodes variabl leader data
+        """Decodes variable leader data
 
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -742,7 +743,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         number_of_cells: int
@@ -781,7 +782,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -818,7 +819,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -853,7 +854,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -890,7 +891,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -925,7 +926,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -960,7 +961,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1013,7 +1014,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1048,7 +1049,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1103,7 +1104,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1149,7 +1150,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1189,7 +1190,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1226,7 +1227,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1282,7 +1283,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1329,7 +1330,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1370,7 +1371,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1413,7 +1414,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1554,7 +1555,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1616,7 +1617,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1680,7 +1681,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1738,7 +1739,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1788,7 +1789,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1809,7 +1810,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1830,7 +1831,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1851,7 +1852,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1872,7 +1873,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1925,7 +1926,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1955,7 +1956,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -1983,7 +1984,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2011,7 +2012,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2037,7 +2038,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2065,7 +2066,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2093,7 +2094,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2140,7 +2141,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2171,7 +2172,7 @@ class Pd0TRDI(object):
         Parameters
         ----------
         pd0_bytes: bytearray
-            Bytearray of all pd0 data
+            All pd0 data
         offset: int
             Pointer into pd0_bytes
         data: dict
@@ -2410,7 +2411,7 @@ class Inst(object):
 
 
 class AutoMode(object):
-    """Class to hold auto configuration mode settings for each beam.
+    """Class to hold autoconfiguration mode settings for each beam.
 
     Attributes
     ----------
@@ -2455,14 +2456,14 @@ class AutoMode(object):
 
         if "auto_configuration" in data:
             self.beam_count[i_ens] = data["auto_configuration"]["leader"]["beam_count"]
-            self.Beam1.populate_data(i_ens, data["auto_configuration"]["beam_1"])
-            self.Beam2.populate_data(i_ens, data["auto_configuration"]["beam_2"])
-            self.Beam3.populate_data(i_ens, data["auto_configuration"]["beam_3"])
-            self.Beam4.populate_data(i_ens, data["auto_configuration"]["beam_4"])
+            self.Beam1.populate_data(data["auto_configuration"]["beam_1"])
+            self.Beam2.populate_data(data["auto_configuration"]["beam_2"])
+            self.Beam3.populate_data(data["auto_configuration"]["beam_3"])
+            self.Beam4.populate_data(data["auto_configuration"]["beam_4"])
 
 
 class Beam(object):
-    """Class to hold auto configuration settings for a beam.
+    """Class to hold autoconfiguration settings for a beam.
 
     Attributes
     ----------
@@ -2517,13 +2518,11 @@ class Beam(object):
         self.receive_bw = nans((n_ensembles,))
         self.ping_interval_ms = nans((n_ensembles,))
 
-    def populate_data(self, i_ens, beam_data):
+    def populate_data(self, beam_data):
         """Populates the class with data for an ensemble.
 
         Parameters
         ----------
-        i_ens: int
-            Ensemble index
         beam_data: dict
             Dictionary of all data for this ensemble
         """
@@ -2844,7 +2843,7 @@ class Cfg(object):
             self.ea_deg[i_ens] = data["fixed_leader"]["heading_alignment"] * 0.01
             self.eb_deg[i_ens] = data["fixed_leader"]["heading_bias"] * 0.01
 
-            # Convert sensour_source to individual bits
+            # Convert sensor_source to individual bits
             self.ez[i_ens] = "{0:08b}".format(data["fixed_leader"]["sensor_source"])
 
             val = int(self.ez[i_ens][:2], 2)
@@ -3085,7 +3084,7 @@ class Gps2(object):
         Velocity in north direction in m/s from VTG for WR
     """
 
-    def __init__(self, n_ensembles, wr2):
+    def __init__(self, n_ensembles):
         """Initialize instance variables.
 
         Parameters
@@ -3505,6 +3504,8 @@ class GeoRef(object):
         self.lat_ref = np.tile("", [n_ensembles])
         self.lon_deg = np.zeros([n_ensembles])
         self.lon_ref = np.tile("", [n_ensembles])
+        self.gga_delta_time = np.zeros([n_ensembles])
+        self.vtg_delta_time = np.zeros([n_ensembles])
         self.corr_qual = np.full([n_ensembles], np.nan)
         self.num_sats = np.full([n_ensembles], np.nan)
         self.hdop = np.full([n_ensembles], np.nan)
@@ -3522,6 +3523,7 @@ class GeoRef(object):
         self.speed_kph = np.zeros([n_ensembles])
         self.kph_indicator = np.tile("", [n_ensembles])
         self.mode_indicator = np.tile("", [n_ensembles])
+
 
     def populate_data(self, i_ens, data):
         """Populates the class with data for an ensemble.
@@ -3698,13 +3700,13 @@ class Nmea(object):
     Attributes
     ----------
     gga: list
-        List of GGA sentences
+        GGA sentences
     gsa: list
-        List of GSA sentences
+        GSA sentences
     vtg: list
-        List of VTG sentences
+        VTG sentences
     dbt: list
-        List of DBT sentences
+        DBT sentences
     """
 
     def __init__(self, n_ensembles):
@@ -3718,7 +3720,6 @@ class Nmea(object):
         self.gga = [""] * n_ensembles
         self.gsa = [""] * n_ensembles
         self.vtg = [""] * n_ensembles
-        # self.raw = ['']*n_ensembles DSM: not sure this was used
         self.dbt = [""] * n_ensembles
 
     def populate_data(self, i_ens, data):
@@ -3801,11 +3802,11 @@ class Sensor(object):
     roll_deg: np.array(float)
         Roll in degrees
     salinity_ppt: np.array(int)
-        Salinit in parts per thousand
+        Salinity in parts per thousand
     sos_mps: np.array(int)
         Speed of sound in m/s
     temperature_deg_c: np.array(float)
-        Water temperatuer in degrees C
+        Water temperature in degrees C
     time: np.array(int)
         Time
     time_y2k: np.array(int)
@@ -3819,7 +3820,7 @@ class Sensor(object):
     self.vert_beam_eval_amp: np.array(int)
         Vertical beam amplitude
     self.vert_beam_RSSI_amp: np.array(int)
-        Vertical beam return signal stength indicator
+        Vertical beam return signal strength indicator
     self.vert_beam_range_m: np.array(float)
         Vertical beam range in m
     self.vert_beam_gain: list

@@ -24,7 +24,7 @@ class SelectFit(object):
     z: np.array(float)
         Distance from the streambed for fit variable
     z_auto: np.array(float)
-        z values for automtic fit
+        z values for automatic fit
     residuals: np.array(float)
         Residuals from fit
     coef: float
@@ -270,7 +270,7 @@ class SelectFit(object):
 
                 # 4) The profile is C-shaped. This is determined by
                 # (a) the sign of the top and bottom difference from
-                # the best selected power fit being different than the
+                # the best selected power fit being different from the
                 # sign of the middle difference from the best selected
                 # power fit and (b) the combined difference of the top
                 # and bottom difference from the best selected power
@@ -379,7 +379,7 @@ class SelectFit(object):
         Returns
         -------
         norm_data: list
-            List of NormData objects
+            NormData objects
         """
         fit_data = []
         if hasattr(mat_data, "selFit"):

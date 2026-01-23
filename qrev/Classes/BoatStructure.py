@@ -12,11 +12,11 @@ class BoatStructure(object):
     selected: str
         Name of BoatData object to be used for discharge computations.
     bt_vel: BoatData
-        BoatData object for bottom track velocity
+        Object for bottom track velocity
     gga_vel: BoatData
-        BoatData object for gga velocity
+        Object for gga velocity
     vtg_vel: BoatData
-        BoatData object for vtg velocity
+        Object for vtg velocity
     composite: str
         Setting to use ("On") or not ("Off") composite tracks.
     """
@@ -270,7 +270,7 @@ class BoatStructure(object):
                 v_comp[np.isnan(v_comp)] = v_vtg[np.isnan(v_comp)]
                 v_comp[np.isnan(v_comp)] = v_gga[np.isnan(v_comp)]
 
-                # Apply the composite settings to the bottom track Boatdata
+                # Apply the composite settings to the bottom track BoatData
                 # objects
                 self.bt_vel.apply_composite(u_comp, v_comp, comp_source)
                 self.bt_vel.interpolate_composite(transect)
@@ -497,10 +497,10 @@ class BoatStructure(object):
 
         # Initialize dictionary
         boat_track = {
-            "track_x_m": np.nan,
-            "track_y_m": np.nan,
-            "distance_m": np.nan,
-            "dmg_m": np.nan,
+            "track_x_m": np.array([]),
+            "track_y_m": np.array([]),
+            "distance_m": np.array([]),
+            "dmg_m": np.array([]),
         }
 
         # Compute incremental track coordinates

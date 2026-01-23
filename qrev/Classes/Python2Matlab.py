@@ -107,7 +107,7 @@ class Python2Matlab(object):
         Parameters
         ----------
         list_in: list
-            List of objects
+            objects
         new_key_dict: dict
             Dictionary to translate python variable names to Matlab variable
             names
@@ -165,7 +165,7 @@ class Python2Matlab(object):
         dict_in: dict
             Dictionary with keys that need a name change
         new_key_dict: dict
-            Dictionary to cross reference existing key to new key names
+            Dictionary to cross-reference existing key to new key names
         """
 
         dict_out = dict()
@@ -204,7 +204,7 @@ class Python2Matlab(object):
         Parameters
         ----------
         obj: object
-            Object of some class
+            Any object of some class
         new_key_dict: dict
             Dictionary to translate python variable names to Matlab variable
             names
@@ -261,7 +261,7 @@ class Python2Matlab(object):
         Parameters
         ----------
         comments: list
-            List of comments
+            Comments
 
         Returns
         -------
@@ -284,7 +284,7 @@ class Python2Matlab(object):
         Parameters
         ----------
         list_in: list
-            List of objects of some class
+            Objects of some class
         new_key_dict: dict
             Dictionary to translate python variable names to Matlab variable
             names
@@ -292,7 +292,7 @@ class Python2Matlab(object):
         Returns
         -------
         new_list: list
-            List of dictionaries
+            Dictionaries
         """
         new_list = []
         for obj in list_in:
@@ -301,7 +301,7 @@ class Python2Matlab(object):
 
     @staticmethod
     def create_py_2_mat_dict():
-        """Creates a dictionary to cross reference Python names with Matlab
+        """Creates a dictionary to cross-reference Python names with Matlab
         names
 
         Returns
@@ -677,6 +677,7 @@ class Python2Matlab(object):
         
         # Process changes for each transect
         for transect in meas_mat.transects:
+            # noinspection PyUnusedLocal
             transect = Python2Matlab.reconfigure_transect(transect)
 
         # Process changes for each moving-bed test transect

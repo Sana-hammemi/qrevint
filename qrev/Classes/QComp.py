@@ -103,7 +103,7 @@ class QComp(object):
         data_in: TransectData
             Object TransectData
         moving_bed_data: list
-            List of MovingBedTests objects
+            MovingBedTests objects
         top_method: str
             Top extrapolation method
         bot_method: str
@@ -324,7 +324,7 @@ class QComp(object):
         Returns
         -------
         discharge: list
-            List of QComp data objects
+            QComp data objects
         """
 
         discharge = []
@@ -528,7 +528,7 @@ class QComp(object):
         b_vel_x: np.array(float)
             Vector of navigation velocity in x-direction
         b_vel_y: np.array(float)
-            Vector of naviagation velocity in y-direction
+            Vector of navigation velocity in y-direction
         start_edge: str
             Starting edge of transect (Left or Right)
 
@@ -630,7 +630,7 @@ class QComp(object):
         edge_q: float
             Computed edge discharge
         edge_idx: list
-            List of valid edge ensembles
+            Valid edge ensemble indices
         """
 
         # Determine what ensembles to use for edge computation.
@@ -704,7 +704,7 @@ class QComp(object):
         else:
             # Determine the indices of the edge ensembles as collected by
             # RiverSurveyor.  There
-            # is no check as to whether the ensembles contain valid data
+            # is no check as to if the ensembles contain valid data
             trans_select = getattr(transect.depths, transect.depths.selected)
             n_ensembles = len(trans_select.depth_processed_m)
             if num_edge_ens > n_ensembles:
@@ -1324,7 +1324,7 @@ class QComp(object):
         elif edge_select.type == "Rectangular":
             # Rectangular edge coefficient depends on the rec_edge_method.
             # 'Fixed' is compatible with the method used by TRDI.
-            # 'Variable is compatible with the method used by SonTek
+            # 'Variable' is compatible with the method used by SonTek
 
             if transect.edges.rec_edge_method == "Fixed":
                 # Fixed Method
@@ -1527,7 +1527,7 @@ class QComp(object):
             x = np.vstack(near_bed_speed)
             corr_coef = np.linalg.lstsq(x, mb_speed, rcond=None)[0]
 
-            # Assing object properties to local variables
+            # Assign object properties to local variables
             in_transect_idx = trans_data.in_transect_idx
             cells_above_sl = trans_data.w_vel.cells_above_sl[:, in_transect_idx]
             u = trans_data.w_vel.u_processed_mps[:, in_transect_idx] * cells_above_sl
@@ -1612,6 +1612,8 @@ class QComp(object):
                 correction_factor = 1.0
 
             return correction_factor
+        else:
+            return 1.0
 
     @staticmethod
     def near_bed_velocity(u, v, depth, bin_depth):
@@ -2077,7 +2079,7 @@ class QComp(object):
     # The methods below are not being used in the discharge computations.
     # The methods for extrapolating the top and bottom discharge have been
     # moved to separate files and compiled using Numba AOT. The methods below
-    # are included here forhistorical purposes and may provide an easier approach
+    # are included here for historical purposes and may provide an easier approach
     # to adding new features/algorithms prior to recoding them in a manner that
     # can be compiled using Numba AOT.
     # ========================================================================
@@ -2612,7 +2614,7 @@ class QComp(object):
                                         denominator_valid = True
                                         denominator = denominator + denominator_temp
 
-                    # If there are not cells below the cutoff, use the last valid depth cell
+                    # If there are no cells below the cutoff, use the last valid depth cell
                     if np.logical_not(cells_below_cutoff):
                         if np.logical_not(np.isnan(last_cell_depth)):
                             # Compute numerator

@@ -39,7 +39,7 @@ def run_iqr(half_width, data):
         if n == 0:
             sample = data[1 : 1 + half_width]
 
-        # Sample selection a end of data set
+        # Sample selection at end of data set
         elif n + half_width > npts:
             sample = np.hstack((data[n - half_width - 1 : n - 1], data[n:npts]))
 
@@ -65,7 +65,7 @@ def iqr(data_1d):
 
     Parameters
     ----------
-    data: np.ndarray
+    data_1d: np.ndarray
         Data for which the statistic is required
 
     Returns
@@ -95,7 +95,7 @@ def compute_quantile(data_1d, q):
 
     sorted_data = np.sort(data_1d)
     n_samples = len(sorted_data)
-    sample_idx = q * (n_samples) - 0.5
+    sample_idx = q * n_samples - 0.5
     x1 = int(np.floor(sample_idx))
     x2 = int(np.ceil(sample_idx))
     if x1 != x2:

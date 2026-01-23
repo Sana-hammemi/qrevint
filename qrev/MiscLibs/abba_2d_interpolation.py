@@ -9,7 +9,7 @@ The interpolation algorithm searches for the all valid cells above, below,
 before, and after that touch the cell to be interpolated. Bathymetry is honored
 by checking to see if the depth of the streambed of the cell before or after is
 greater than the bottom of the target cell. When searching before or after,
-if thestreambed is encountered before a valid cell then no valid cell is used
+if the streambed is encountered before a valid cell then no valid cell is used
 in that direction.
 
 The methods provide the flexibility to determine neighbors based on either
@@ -74,7 +74,7 @@ def find_neighbors(
     Returns
     -------
     neighbors: list
-        List of dictionaries providing the indices of the above, below,
+        Dictionaries providing the indices of the above, below,
         before, and after valid cells.
     """
 
@@ -212,7 +212,7 @@ def find_before(target, y_match, y_depth, y_bottom):
     Returns
     -------
     before_idx: list
-        List of tuples of indices of all cells in the nearest ensemble before
+        Tuples of indices of all cells in the nearest ensemble before
         that target that are within the vertical range of the target cell
     """
 
@@ -265,7 +265,7 @@ def find_after(target, y_match, y_depth, y_bottom):
     Returns
     -------
     after_idx: list
-        List of tuples of indices of all cells in the nearest ensemble after
+        Tuples of indices of all cells in the nearest ensemble after
         that target that are within the vertical range of the target cell
     """
 
@@ -308,7 +308,7 @@ def compute_distances(target, neighbors, x, y):
     target: tuple
         Indices of target cell
     neighbors: list
-        List of indices of target's neighboring cells
+        Indices of target's neighboring cells
     x: np.array(float)
         1-D array of distances between ensembles
     y: np.array(float)
@@ -317,7 +317,7 @@ def compute_distances(target, neighbors, x, y):
     Returns
     -------
     distances: list
-        List of distances from target to each neighbor
+        Distances from target to each neighbor
     """
 
     # Intialize target location
@@ -342,9 +342,9 @@ def idw_interpolation(data, neighbor_indices, distances):
     data: np.array(float)
         2-D array containing data to interpolate
     neighbor_indices: list
-        List of tuples defining the indices of the target's neighbors
+        Tuples defining the indices of the target's neighbors
     distances: list
-        List of distances from target to each neighbor
+        Distances from target to each neighbor
 
     Returns
     -------
@@ -381,12 +381,12 @@ def abba_idw_interpolation(
     search_loc=("above", "below", "before", "after"),
 ):
     """Interpolates values for invalid cells using the neighboring cells above,
-    below, before, and after and and inverse distance averaging.
+    below, before, and after and inverse distance averaging.
 
     Parameters
     ----------
     data_list: list
-        List of np.array(float) data to used for interpolation
+        Arrays(float) of data to use for interpolation
     valid_data: np.array(logical)
         Logical array of valid data
     cells_above_sl: np.array(logical)

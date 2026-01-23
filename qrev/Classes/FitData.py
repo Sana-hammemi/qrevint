@@ -29,7 +29,7 @@ class FitData(object):
     u_auto: np.array(float)
         Fit values from automatic fit
     z_auto: np.array(float)
-        z values for automtic fit
+        z values for automatic fit
     z: np.array(float)
         Distance from the streambed for fit variable
     exp_method: str
@@ -72,7 +72,7 @@ class FitData(object):
         top: str
             Top extrapolation method
         bot: str
-            Bottom extrapolation method
+            Bottom extrapolation method.
         method:
             Method used to define the exponent (default, optimize, or manual),
             default is 1/6.

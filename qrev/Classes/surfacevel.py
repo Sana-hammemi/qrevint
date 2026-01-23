@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-import numba
 
 from scipy import integrate
 
@@ -119,7 +118,7 @@ class SurfaceVelocity(object):
             #     high_coef, extrap_fit.z_units, extrap_fit.exponent_95_ci[1]
             # )
             #
-            # # Compute stderr for alhpa coef
+            # # Compute stderr for alpha coef
             # results['alpha_coef_from_extrap_stderr'] = self.compute_alpha_std(
             #     extrap_fit.exponent_95_ci[0], extrap_fit.exponent_95_ci[1])
             #
@@ -281,33 +280,33 @@ class SurfaceVelocity(object):
                 composite["meas_depths_all"].append(data["meas_depths_all"])
                 data_summary[transect.file_name] = copy.deepcopy(data)
 
-        # combine transect lists to create composite dataset.
-        composite["velocities_all"] = self.prep_hstack(composite["velocities_all"])
-        composite["umag_mps"] = self.prep_hstack(composite["umag_mps"])
-        composite["max_velocity"] = np.concatenate(composite["max_velocity"], axis=0)
-        composite["depth_ens"] = np.concatenate(composite["depth_ens"], axis=0)
-        composite["meas_depths_all"] = self.prep_hstack(composite["meas_depths_all"])
-        composite["yaxis_max"] = y_axis_max
-        composite["yaxis_min"] = y_axis_min
+                # combine transect lists to create composite dataset.
+                composite["velocities_all"] = self.prep_hstack(composite["velocities_all"])
+                composite["umag_mps"] = self.prep_hstack(composite["umag_mps"])
+                composite["max_velocity"] = np.concatenate(composite["max_velocity"], axis=0)
+                composite["depth_ens"] = np.concatenate(composite["depth_ens"], axis=0)
+                composite["meas_depths_all"] = self.prep_hstack(composite["meas_depths_all"])
+                composite["yaxis_max"] = y_axis_max
+                composite["yaxis_min"] = y_axis_min
 
-        point_data, meas_max_velocity, meas_total_depth, depth_all = self.prepare_data(
-            composite["depth_ens"],
-            composite["meas_depths_all"],
-            composite["velocities_all"],
-        )
+                point_data, meas_max_velocity, meas_total_depth, depth_all = self.prepare_data(
+                    composite["depth_ens"],
+                    composite["meas_depths_all"],
+                    composite["velocities_all"],
+                )
 
-        composite.update(
-            {
-                "point_data": point_data,
-                "meas_max_velocity": meas_max_velocity,
-                "meas_total_depth": meas_total_depth,
-                "depth_all": depth_all,
-            }
-        )
+                composite.update(
+                    {
+                        "point_data": point_data,
+                        "meas_max_velocity": meas_max_velocity,
+                        "meas_total_depth": meas_total_depth,
+                        "depth_all": depth_all,
+                    }
+                )
 
-        composite.update({"results": self.compute_alpha(transect.extrap, composite)})
+                composite.update({"results": self.compute_alpha(transect.extrap, composite)})
 
-        data_summary["Measurment"] = copy.deepcopy(composite)
+                data_summary["Measurment"] = copy.deepcopy(composite)
 
         # if len(measurement.mb_tests) > 0:
         #     for test in measurement.mb_tests:

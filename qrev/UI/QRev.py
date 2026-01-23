@@ -87,6 +87,7 @@ except:
     pass
 
 
+# noinspection PyTypeChecker
 class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     """This the primary class controlling the user interface which then
      controls the computational code.
@@ -16351,7 +16352,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                         node_vertical_user=self.map_settings["ed_map_cell_height"],
                         extrap_option=self.map_settings["cb_map_top_bottom"],
                         edges_option=self.map_settings["cb_map_edges"],
-                        # interp_option=self.map_settings["cb_map_interpolation"],
                     )
                     self.map_table(update=True)
                 if change_plot:

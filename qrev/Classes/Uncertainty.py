@@ -231,7 +231,7 @@ class Uncertainty(object):
         Returns
         -------
         u_contribution: DataFrame
-            DataFrame containing contributions
+            Uncertainty contributions
         """
 
         u_contribution = pd.DataFrame(
@@ -285,7 +285,7 @@ class Uncertainty(object):
         Parameters
         ----------
         list_in: list
-            List of objects
+            Objects
         prop: str
             Attribute requested
 
@@ -310,7 +310,7 @@ class Uncertainty(object):
         Parameters
         ----------
         discharges: list
-            List of Discharge objects
+            Discharge objects
         prop: str
             Attribute of Discharge objects
 
@@ -353,7 +353,7 @@ class Uncertainty(object):
         Parameters
         ----------
         discharges: list
-            List of Discharge objects
+            Discharge objects
 
         Returns
         -------
@@ -381,7 +381,7 @@ class Uncertainty(object):
         meas: Measurement
             Object of class Measurement
         discharges: list
-            List of Discharge objects
+            Discharge objects
 
         Returns
         -------
@@ -425,7 +425,7 @@ class Uncertainty(object):
         Parameters
         ----------
         discharges: list
-            List of Discharge objects
+            Discharge objects
 
         Returns
         -------

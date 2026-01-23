@@ -1,5 +1,5 @@
 import os
-import qrev_docs
+import docs
 from qrev import translation
 
 __author__ = "David S Mueller"

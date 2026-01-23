@@ -49,10 +49,12 @@ def non_uniform_savgol(x, y, window, polynom):
     polynom += 1
 
     # Initialize variables
-    A = np.empty((window, polynom))  # Matrix
-    tA = np.empty((polynom, window))  # Transposed matrix
+    a = np.empty((window, polynom))  # Matrix
+    t_a = np.empty((polynom, window))  # Transposed matrix
     t = np.empty(window)  # Local x variables
     y_smoothed = np.full(len(y), np.nan)
+    first_coeffs = None
+    last_coeffs = None
 
     # Start smoothing
     for i in range(half_window, len(x) - half_window, 1):
@@ -64,18 +66,18 @@ def non_uniform_savgol(x, y, window, polynom):
         for j in range(0, window, 1):
             r = 1.0
             for k in range(0, polynom, 1):
-                A[j, k] = r
-                tA[k, j] = r
+                a[j, k] = r
+                t_a[k, j] = r
                 r *= t[j]
         try:
             # Multiply the two matrices
-            tAA = np.matmul(tA, A)
+            t_aa = np.matmul(t_a, a)
 
             # Invert the product of the matrices
-            tAA = np.linalg.inv(tAA)
+            t_aa = np.linalg.inv(t_aa)
 
             # Calculate the pseudoinverse of the design matrix
-            coeffs = np.matmul(tAA, tA)
+            coeffs = np.matmul(t_aa, t_a)
 
             # Calculate c0 which is also the y value for y[i]
             y_smoothed[i] = 0

@@ -61,7 +61,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of transects of TransectData
+            Transects of TransectData
         compute_sensitivity: bool
             Determines is sensitivity should be computed.
         use_weighted: bool
@@ -256,7 +256,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         """
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects, self.sel_fit)
@@ -276,7 +276,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         new_fit_method: str
             Identifies fit method automatic or manual
         idx: int
@@ -307,7 +307,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         data_type: str
             Specifies the data type (discharge or velocity)
         threshold: float
@@ -323,16 +323,16 @@ class ComputeExtrap(object):
     def change_extents(self, transects, data_type, extents, use_q, sub_from_left):
         """Function allows the data to be subsection by specifying the
         percent cumulative discharge for the start and end points.
-        Currently this function does not consider transect direction.
+        Currently, this function does not consider transect direction.
 
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         data_type: str
             Specifies the data type (discharge or velocity)
         extents: list
-            List containing two values, the minimum and maximum discharge
+            Contains two values, the minimum and maximum discharge
             percentages to subsectioning
         sub_from_left: bool
             Specifies if when subsectioning the subsection should start from
@@ -359,7 +359,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         data_type: str
             Specifies the data type (discharge or velocity)
         """
@@ -380,7 +380,7 @@ class ComputeExtrap(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         """
         self.threshold = 20
         self.subsection = [0, 100]

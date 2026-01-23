@@ -8,7 +8,7 @@ class Sensors(object):
     Attributes
     ----------
     battery_voltage: SensorStructure
-        Battery voltage suppling power to ADCP
+        Battery voltage supplying power to ADCP
     heading_deg: HeadingData
         Object of HeadingData.
     pitch_deg: SensorStructure
@@ -134,7 +134,7 @@ class Sensors(object):
         Parameters
         ----------
         transects: list
-            List of TransectData objects
+            TransectData objects
         """
 
         temps = np.array([])

@@ -43,8 +43,12 @@ class Config:
     def export_config(config, output_path=None):
         """Export default configuration files.
 
-        Parameters:
-            output_path: str
+        Parameters
+        ----------
+        config: dict
+            Configuration settings
+        output_path: str
+            Path to save configuration settings
         """
 
         if output_path is None:
@@ -84,4 +88,4 @@ class Config:
         #
         # with open(path, "w") as file:
         #     json.dump(int_config, file, indent=4)
-        self.export_config(int_config, None)
+        self.export_config(int_config)

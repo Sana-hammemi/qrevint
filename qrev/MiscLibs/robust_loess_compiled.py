@@ -93,7 +93,7 @@ def tricube_weights(distance):
 @njit
 @cc.export("bisquare", "f8[:](f8[:])")
 def bisquare(data):
-    """Bisqure weight function which for values greater than are equal
+    """Bisquare weight function which for values greater than are equal
     to 1 are set to zero.
 
     Parameters
@@ -196,7 +196,7 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
         )
         neighbors_y = weights * neighbors_y
 
-        # Solve using least squares
+        # Solve using the least squares
         smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T, neighbors_y.T)
         smoothed_value = smoothed_values[0]
     else:

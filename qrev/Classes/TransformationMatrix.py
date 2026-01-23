@@ -230,7 +230,7 @@ class TransformationMatrix(object):
         Parameters
         ----------
         data_in: tuple
-            Tuple containing beam elevation and beam azimuth
+            Contains beam elevation and beam azimuth
         """
 
         beam_elev = data_in[0]

@@ -32,6 +32,8 @@ from qrev.MiscLibs.common_functions import (
 )
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
+
+# noinspection PyProtectedMember
 class TransectData(object):
     """Class to hold Transect properties.
 
@@ -52,7 +54,7 @@ class TransectData(object):
         Object of SensorData
     depths: DepthStructure
         Object of DepthStructure containing objects of Depth data for
-        bt_depths, vb_depths, ds_depths)
+        bt_depths, vb_depths, ds_depths
     edges: Edges
         Object of Edges (left and right object of clsEdgeData)
     extrap: ExtrapData
@@ -108,7 +110,7 @@ class TransectData(object):
         # Get the active configuration data for the transect
         mmt_config = getattr(mmt_transect, "active_config")
 
-        # If the pd0 file has water track data process all of the data
+        # If the pd0 file has water track data process all the data
         if pd0_data.Wt is not None:
             # Ensemble times
             # Compute time for each ensemble in seconds
@@ -934,13 +936,13 @@ class TransectData(object):
             # ref_coord = "Beam"
             raise CoordError(
                 "Beam Coordinates are not supported for all "
-                "RiverSuveyor firmware releases, " + "use Earth coordinates."
+                "RiverSurveyor firmware releases, " + "use Earth coordinates."
             )
         elif rsdata.Setup.coordinateSystem == 1:
             # ref_coord = "Inst"
             raise CoordError(
                 "Instrument Coordinates are not supported for all"
-                " RiverSuveyor firmware releases, " + "use Earth coordinates."
+                " RiverSurveyor firmware releases, " + "use Earth coordinates."
             )
         elif rsdata.Setup.coordinateSystem == 2:
             ref_coord = "Earth"
@@ -1309,7 +1311,7 @@ class TransectData(object):
         ref_water = "None"
 
         # Compute side lobe cutoff using Transmit Length information if
-        # availalbe, if not it is assumed to be equal
+        # available, if not it is assumed to be equal
         # to 1/2 depth_cell_size_m. The percent method is use for the side
         # lobe cutoff computation.
         sl_cutoff_percent = rsdata.Setup.extrapolation_dDiscardPercent
@@ -1641,6 +1643,19 @@ class TransectData(object):
         return ping_type
 
     def rsq(self, transect_data, utc_time_offset, date_format, snr_3beam_comp):
+        """Process rsq data.
+
+        Parameters
+        ----------
+        transect_data: dict
+            All data for a transect
+        utc_time_offset: str
+            Time offset for utc to local time
+        date_format: str
+            Agency selected date format
+        snr_3beam_comp: bool
+            Indicates if 3 beam solutions should be used for snr errors
+        """
 
         system_configuration = transect_data["config_json"]["Setup"]["SystemConfiguration"]
 
@@ -1664,7 +1679,7 @@ class TransectData(object):
         self.rsqmb_boat(bt, system_configuration)
 
         # GPS
-        self.rsqmb_gps(gps_ens, gps_raw_ens2, utc_time_offset)
+        self.rsqmb_gps(gps_ens, gps_raw_ens2)
 
         # Depths
         self.rsqmb_depths(bt, vb, wt, transect_data, system_configuration)
@@ -1695,7 +1710,7 @@ class TransectData(object):
         Returns
         -------
         ens_time: list
-            List of ensemble times
+            Ensemble times
         bt: dict
             Dictionary of bottom track sample data
         gps: dict
@@ -1857,7 +1872,7 @@ class TransectData(object):
                                     if raw_gga[3] == "S":
                                         raw_gps2["gga_latitude"][sample_n, record_n] = raw_gps2["gga_latitude"][sample_n, record_n] * -1
                                     raw_gps2["gga_longitude"][sample_n, record_n] = deg_min_2_deg(float(raw_gga[4]))
-                                    # Determing correct sign for longitude
+                                    # Determine correct sign for longitude
                                     if raw_gga[5] == "W":
                                         raw_gps2["gga_longitude"][sample_n, record_n] = raw_gps2["gga_longitude"][sample_n, record_n] * -1
                                     raw_gps2["gga_quality"][sample_n, record_n] = float(raw_gga[6])
@@ -1919,6 +1934,7 @@ class TransectData(object):
             compass["mag_error"].append(sample["Compass"]["MagneticError"])
 
             # Water Track
+            n_cells = 0
             for beam_n, beam in enumerate(sample["ProfileBeams"]):
                 n_cells = len(beam["CellVelocity (m/s)"])
                 if n_cells > 0:
@@ -1948,7 +1964,7 @@ class TransectData(object):
         Parameters
         ----------
         ens_time: list
-            List of ensemble times
+            Ensemble times
         utc_time_offset: str
             String containing time offset to get to local time.
         date_format: str
@@ -2022,7 +2038,7 @@ class TransectData(object):
         elif system_configuration["TrackReference"] == "Vtg":
             self.boat_vel.selected = "vtg_vel"
 
-    def rsqmb_gps(self, ext_gps, raw_gps, utc_time_offset):
+    def rsqmb_gps(self, ext_gps, raw_gps):
         """Create gps object.
 
         Parameters
@@ -2031,8 +2047,6 @@ class TransectData(object):
             Dictionary of gps sample data assigned by RSQ
         raw_gps: dict
             Dictionary of raw gps data for the sample decoded from NMEA strings
-        utc_time_offset: str
-            Offset from utc to local time
         """
 
         self.gps = GPSData()
@@ -2097,8 +2111,6 @@ class TransectData(object):
 
         # Determine array rows and cols
         max_cells = 128
-
-        num_ens = len(wt["vel"])
 
         # Compute cell sizes
         cell_size = np.array(wt["cell_size"])
@@ -2322,6 +2334,7 @@ class TransectData(object):
         ----------
         wt: dict
             Dictionary of water track sample data
+        adcp_data:
         system_configuration: dict
             General measurement configuration
         snr_3beam_comp: bool
@@ -2338,22 +2351,15 @@ class TransectData(object):
             "NumberOfCells"
         ]
 
-        min_depth = np.nanmin(self.depths.bt_depths.depth_beams_m, axis=0)
-
-        blanking_plus_pulse_length = wt["blanking_dist"] + wt["pulse_length"]
-
-        valid_cells = (min_depth * (1 - sl_cutoff_percent) - (wt["blanking_dist"] + wt["pulse_length"])) / wt["cell_size"][0, :]
-
         # Compute processing lag
         processing_lag = np.copy(wt["corr_lag"])
         idx = np.logical_and(wt["code_length"] > 1, wt["pulse_lag"] < 0)
         processing_lag[idx] = 2 * wt["corr_lag"][idx]
         processing_lag[wt["pulse_lag"] > 0] = 0
 
-        # Account for rare occurance of None in pulse_length
+        # Account for rare occurrence of None in pulse_length
         pulse_length = np.array(wt["pulse_length"])
         pulse_length[np.equal(pulse_length, None)] = np.nan
-        pulse_length = pulse_length.astype(float)
 
         # Compute sidelobe cutoff
         sl_lag_effect_m = (processing_lag + wt["pulse_length"] + wt["cell_size"][0, :]) / 2
@@ -2374,7 +2380,7 @@ class TransectData(object):
         excluded_top = (
             system_configuration["ScreeningDistance (m)"] - system_configuration["TransducerDepth (m)"]
         )
-        excluded_top_type = "Distance"
+
         if excluded_top < 0:
             excluded_top = 0
 
@@ -2419,8 +2425,6 @@ class TransectData(object):
             ping_type=np.array(ping_type),
             snr_3beam_comp=snr_3beam_comp,
             excluded_dist_in=excluded_top,
-            source="rsq"
-
         )
 
     def rsqmb_edges(self, setup, sample_cfg):
@@ -2498,7 +2502,7 @@ class TransectData(object):
 
         Parameters
         ----------
-        system_configuration: dict
+        setup: dict
             General measurement configuration
         """
 
@@ -2531,7 +2535,7 @@ class TransectData(object):
         self.extrap.populate_data(top=method[top], bot=method[bot], exp=exp)
 
     @staticmethod
-    def qrev_mat_in(meas_struct, time_zone=None):
+    def qrev_mat_in(meas_struct):
         """Processes the Matlab data structure to obtain a list of
          TransectData objects containing transect
             data from the Matlab data structure.
@@ -2540,8 +2544,6 @@ class TransectData(object):
         ----------
         meas_struct: mat_struct
             Matlab data structure obtained from sio.loadmat
-        time_zone: str
-            user specified time zone.
 
         Returns
         -------
@@ -2578,6 +2580,8 @@ class TransectData(object):
         ----------
         transect: mat_struct
            Matlab data structure obtained from sio.loadmat
+        meas_struct: mat_struct
+            All measurement data in matlab structure
         """
 
         self.adcp = InstrumentData()
@@ -3014,7 +3018,7 @@ class TransectData(object):
             # Process transect using saved setting
             self.boat_vel.composite_tracks(transect=self)
         else:
-            # Process transect usin new setting
+            # Process transect using new setting
             self.boat_vel.composite_tracks(transect=self, setting=setting)
 
         # Update water data to reflect changes in boatvel
@@ -3293,7 +3297,7 @@ class TransectData(object):
         elif selected is None and source is None:
             self.sensors.speed_of_sound_mps.set_selected("internal")
             # If temperature or salinity is set by the user the speed of
-            # sound is computed otherwise it is consider calculated by the ADCP.
+            # sound is computed otherwise it is considered calculated by the ADCP.
             if (self.sensors.temperature_deg_c.selected == "user") or (
                 self.sensors.salinity_ppt.selected == "user"
             ):
@@ -3437,7 +3441,7 @@ class TransectData(object):
         Returns
         -------
         lag_gga: float
-            Lag in seconds betweeen bottom track and gga
+            Lag in seconds between bottom track and gga
         lag_vtg: float
             Lag in seconds between bottom track and vtg
         """
@@ -3514,7 +3518,7 @@ class TransectData(object):
         Returns
         -------
         lag_gga: float
-            Lag in seconds betweeen bottom track and gga
+            Lag in seconds between bottom track and gga
         lag_vtg: float
             Lag in seconds between bottom track and vtg
         """

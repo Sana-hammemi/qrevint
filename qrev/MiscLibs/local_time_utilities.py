@@ -14,7 +14,6 @@ def local_time_from_iso(time_str, utc_offset):
 
 def utc_offset_to_tz(utc_time_offset):
 
-    tz = None  # Default to UTC if no offset provided
     if utc_time_offset is None:
         utc_time_offset = "00:00:00"
     offset = utc_time_offset
@@ -34,7 +33,7 @@ def utc_offset_to_tz(utc_time_offset):
     tz = datetime.strptime(offset, "%z").tzinfo
     return tz
 
-def tz_formatted_string(serial_time, utc_time_offset, format):
+def tz_formatted_string(serial_time, utc_time_offset, fmt):
     tz = utc_offset_to_tz(utc_time_offset)
-    formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(format)
+    formatted_string = datetime.fromtimestamp(serial_time, tz=tz).strftime(fmt)
     return formatted_string

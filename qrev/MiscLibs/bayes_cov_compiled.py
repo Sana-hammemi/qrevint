@@ -1,6 +1,6 @@
 """bayes_cov_compiled
 Computes the coefficient of variation using a Bayesian approach and an assumed posterior
-log-normal distribution..
+log-normal distribution.
 
 Example
 -------
@@ -220,7 +220,7 @@ def log_post(param, measures, cov_prior, cov_prior_u):
         )
     )
 
-    # Prior on true_value - flat prior used here but you may change this
+    # Prior on true_value - flat prior used here, but you may change this
     # if you have prior knowledge
     log_prior_1 = 0
 

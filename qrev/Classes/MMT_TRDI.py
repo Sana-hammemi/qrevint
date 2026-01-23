@@ -14,7 +14,7 @@ class MMTtrdi(object):
     site_info: dict
         Dictionary of site information
     transects: list
-        List of Transect objects containing information for each discharge
+        Transect objects containing information for each discharge
         transect
     summary: dict
         Dictionary of measurement summary for each available boat velocity
@@ -22,7 +22,7 @@ class MMTtrdi(object):
     qaqc: dict
         Dictionary of premeasurement tests, calibrations, and evaluations
     mbt_transects: list
-        List of Transect objects containing information for each moving-bed
+        Transect objects containing information for each moving-bed
         test transect
     path: str
         Path for mmt file and associated files
@@ -84,7 +84,7 @@ class MMTtrdi(object):
         # Process site information
         siteinfo_keys = win_river["Project"]["Site_Information"].keys()
 
-        # Iterate through all of the keys and values of site info
+        # Iterate through all the keys and values of site info
         for x in siteinfo_keys:
             site_data = win_river["Project"]["Site_Information"][x]
             if site_data is not None:

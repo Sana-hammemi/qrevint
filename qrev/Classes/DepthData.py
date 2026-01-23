@@ -1,6 +1,6 @@
 import copy
 import numpy as np
-from numpy.matlib import repmat
+from numpy import repmat
 from qrev.MiscLibs.common_functions import iqr, nan_less, nan_greater
 from qrev.MiscLibs.robust_loess_compiled import rloess
 from qrev.MiscLibs.non_uniform_savgol import non_uniform_savgol
@@ -14,7 +14,7 @@ class DepthData(object):
     Attributes
     ----------
         depth_orig_m: np.array
-            Original multi-beam depth data from transect file (includes
+            Original multibeam depth data from transect file (includes
             draft_orig) in meters.
         depth_beams_m: np.array
             Depth data from transect file adjusted for any draft changes,
@@ -853,7 +853,7 @@ class DepthData(object):
                 self.depth_processed_m[n] = self.depth_processed_m[n - 1]
 
     def interpolate_next(self):
-        """This function back fills with the next valid value."""
+        """This function backfills with the next valid value."""
 
         # Get number of ensembles
         n_ens = len(self.depth_processed_m)
@@ -997,8 +997,7 @@ class DepthData(object):
         Parameters
         ----------
         depth: np.array(float)
-            Individual beam depths for each beam in each ensemble including
-            the draft
+            Individual beam depths, including the draft, for each beam in each ensemble
         draft: float
             Draft of ADCP
         method: str
@@ -1063,7 +1062,7 @@ class DepthData(object):
         after the target data point, but no including the target data point.
         Near the ends of the series the number of points before or after are
         reduced.  Nan in the data are counted as points.
-        The IQR is computed on the slected subset of points.
+        The IQR is computed on the selected subset of points.
         The process occurs for each point in the provided column vector.
         A column vector with the computed IQR at each point is returned.
 
@@ -1089,7 +1088,7 @@ class DepthData(object):
             if n == 0:
                 sample = data[1 : 1 + half_width]
 
-            # Sample selection a end of data set
+            # Sample selection at end of data set
             elif n + half_width > npts:
                 sample = np.hstack([data[n - half_width - 1 : n - 1], data[n:npts]])
 

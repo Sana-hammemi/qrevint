@@ -1,6 +1,5 @@
 import pytest
 import os
-import sys
 from qrev.Classes.stickysettings import StickySettings as ss
 
 # Todo Move this to the test package...

@@ -1,5 +1,3 @@
-import time
-
 import pandas as pd
 import copy
 from qrev.Classes.QComp import QComp
@@ -237,38 +235,38 @@ class Oursin(object):
         Dictionary of user specified uncertainties as standard deviation in
         percent
         u_syst_mean_user: float
-            User specified uncertianty (bias) due to the system, in percent
+            User specified uncertainty (bias) due to the system, in percent
         u_movbed_user: float
-            User specified uncertianty (bias) due to the moving-bed
+            User specified uncertainty (bias) due to the moving-bed
             conditions, in percent
         u_compass_user: float
-            User specified uncertianty (bias) due to the compass error,
+            User specified uncertainty (bias) due to the compass error,
             in percent
         u_ens_user: float
-            User specified uncertianty (bias) due to the number of ensembles
+            User specified uncertainty (bias) due to the number of ensembles
             collected, in percent
         u_meas_mean_user: float
-            User specified uncertianty (random) of the measured portion of
+            User specified uncertainty (random) of the measured portion of
             the cross section, in percent
         u_top_mean_user: float
-            User specified uncertianty (bias) due to the top extrapolation,
+            User specified uncertainty (bias) due to the top extrapolation,
             in percent
         u_bot_mean_user: float
-            User specified uncertianty (bias) due to the bottom
+            User specified uncertainty (bias) due to the bottom
             extrapolation, in percent
         u_right_mean_user: float
-            User specified uncertianty (bias) due to the right edge
+            User specified uncertainty (bias) due to the right edge
             discharge estimate, in percent
         u_left_mean_user: float
-            User specified uncertianty (bias) due to the left edge discharge
+            User specified uncertainty (bias) due to the left edge discharge
             estimate, in percent
         u_invalid_boat_user: float
-            User specified uncertianty (bias) due to invalid boat
+            User specified uncertainty (bias) due to invalid boat
             velocities, in percent
         u_invalid_depth_user
-            User specified uncertianty (bias) due to invalid depths, in percent
+            User specified uncertainty (bias) due to invalid depths, in percent
         u_invalid_water_user: float
-            User specified uncertianty (bias) due to invalid water
+            User specified uncertainty (bias) due to invalid water
             velocities, in percent
     u: DataFrame
         DataFrame containing standard deviations in percent for each
@@ -1148,52 +1146,52 @@ class Oursin(object):
         Parameters
         ----------
         u_syst: list
-            List of system uncertainties for each transect
+            System uncertainties for each transect
         u_compass: list
-            List of uncertainties due to heading error
+            Uncertainties due to heading error
         u_movbed: list
-            List of moving-bed uncertainties for each transect
+            Moving-bed uncertainties for each transect
         u_meas: list
-            List of uncertainties for the measured portion for each transect
+            Uncertainties for the measured portion for each transect
         u_ens: list
-            List of uncertainties due to number of ensembles in each transect
+            Uncertainties due to number of ensembles in each transect
         u_top: list
-            List of uncertainties due to top extrapolation in each transect
+            Uncertainties due to top extrapolation in each transect
         u_bot: list
-            List of uncertainties due to the bottom extrapolation in each
+            Uncertainties due to the bottom extrapolation in each
             transect
         u_left: list
-            List of uncertainties due to the left edge discharge in each
+            Uncertainties due to the left edge discharge in each
             transect
         u_right: list
-            List of uncertainties due to the right edge discharge in each
+            Uncertainties due to the right edge discharge in each
             transect
         u_boat: list
-            List of uncertainties due to invalid boat velocities
+            Uncertainties due to invalid boat velocities
         u_depth: list
-            List of uncertainties due to invalid depth velocities
+            Uncertainties due to invalid depth velocities
         u_water: list
-            List of uncertainties due to invalid water data in each transect
+            Uncertainties due to invalid water data in each transect
         cov_68: float
             Coefficient of variation for all transects
 
         Returns
         -------
         u_contribution_meas: DataFrame
-            DataFrame containing measured discharge uncertainty contribution
+            Contains measured discharge uncertainty contribution
             from: boat, water, depth, and dzi
         u: DataFrame
-            DataFrame containing standard deviations in percent for each
+            Contains standard deviations in percent for each
             transect: u_syst, u_compass, u_movbed, u_ens,
             u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth, u_water,
             u_cov, total, and total_95
         u_measurement: DataFrame
-            DataFrame containing standard deviations in percent for the
+            Contains standard deviations in percent for the
             whole measurement: u_syst, u_compass, u_movbed,
             u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth,
             u_water, u_cov, total, and total_95
         u_contribution_measurement: DataFrame
-            DataFrame containing uncertainty contribution in percent from:
+            Contains uncertainty contribution in percent from:
             u_syst, u_compass, u_movbed,
             u_ens, u_meas, u_top, u_bot, u_left, u_right, u_boat, u_depth,
             u_water, u_cov, and total
@@ -1267,7 +1265,7 @@ class Oursin(object):
         u_measurement = u_measurement * 100
 
         # Compute relative contributions from each source
-        u_contribution_measurement = u2_measurement.copy()
+        u_contribution_measurement = copy.copy(u2_measurement)
 
         # Adjust contribution of u_meas and u_cov to account for number of
         # transects
@@ -1279,7 +1277,7 @@ class Oursin(object):
 
         # Adjust contribution of u_meas and u_cov to account for number of
         # transects
-        u_contribution = u2.copy()
+        u_contribution = copy.copy(u2)
         u_contribution["u_meas"] = u2["u_meas"].div(n_transects, axis=0)
         u_contribution["u_cov"] = u2["u_cov"].div(n_transects, axis=0)
         u_contribution["total"] = u_contribution.sum(axis=1)
@@ -1347,7 +1345,7 @@ class Oursin(object):
             Object of class Measurement
         """
 
-        # If list have not be saved recompute q_sensitivity
+        # If list have not been saved recompute q_sensitivity
         if not hasattr(meas.extrap_fit.q_sensitivity, "q_pp_list"):
             meas.extrap_fit.q_sensitivity.populate_data(
                 meas.transects, meas.extrap_fit.sel_fit
@@ -1484,7 +1482,7 @@ class Oursin(object):
             )  # number of cells by ens
             n_cell_ens = np.where(n_cell_ens == 0, np.nan, n_cell_ens)
 
-            # Variance for each ensembles
+            # Variance for each ensemble
             u_2_meas = q_2_ens * (
                 u_boat**2 + (1 / n_cell_ens) * (std_ev_wt_ens**2 + u_dzi**2)
             )
@@ -1640,7 +1638,7 @@ class Oursin(object):
         """Compute the potential bias in the measurement due to dynamic
         compass errors when using GPS as
         the navigation reference. The method is based on Mueller (2018,
-        https://doi.org/10.1016/j.flowmeasinst.2018.10.004, equation 41.
+        https://doi.org/10.1016/j.flowmeasinst.2018.10.004, equation 41).
 
         Parameters
         ----------
@@ -1737,7 +1735,7 @@ class Oursin(object):
             ] * self.nb_transects
 
     def uncertainty_left_discharge(self):
-        """Computes the uncertianty of the left edge discharge using
+        """Computes the uncertainty of the left edge discharge using
         simulations and the rectangular law.
         """
 
@@ -1794,7 +1792,7 @@ class Oursin(object):
             right_dist_u = (
                 self.user_advanced_settings["right_edge_dist_prct_user"] / 100.0
             )
-        u_right_dist_random = np.sqrt((left_dist_u**2) / 2.0)
+        u_right_dist_random = np.sqrt((right_dist_u**2) / 2.0)
         u_right_dist_sys = u_right_dist_random
 
         # Compute the uncertainty and associated components for each transect
@@ -1916,8 +1914,8 @@ class Oursin(object):
         print(u_left)
         # return u_right_list, u_left_list
 
+    @staticmethod
     def dsm_compute_edge_u(
-        self,
         u_coef,
         u_draft,
         depths,
@@ -2111,17 +2109,20 @@ class Oursin(object):
             Object of MeasurementData
         """
         self.sim_original = self.sim_original.iloc[0:0]
-        transect_q = dict()
         for trans_id in self.checked_idx:
-            transect_q["q_total"] = meas.discharge[trans_id].total
-            transect_q["q_top"] = meas.discharge[trans_id].top
-            transect_q["q_bot"] = meas.discharge[trans_id].bottom
-            transect_q["q_right"] = meas.discharge[trans_id].right
-            transect_q["q_left"] = meas.discharge[trans_id].left
-            transect_q["q_middle"] = meas.discharge[trans_id].middle
-            self.sim_original = self.sim_original.append(
-                transect_q, ignore_index=True, sort=False
+            transect_q = pd.DataFrame(
+                {
+                    "q_total": meas.discharge[trans_id].total,
+                    "q_top": meas.discharge[trans_id].top,
+                    "q_bot": meas.discharge[trans_id].bottom,
+                    "q_right": meas.discharge[trans_id].right,
+                    "q_left": meas.discharge[trans_id].left,
+                    "q_middle": meas.discharge[trans_id].middle
+                },
+            index = [0],
             )
+                    
+            self.sim_original = pd.concat([self.sim_original, transect_q], ignore_index=True)
 
     def sim_cns_min_max_opt(self, meas):
         """Computes simulations resulting in the min and max discharges
@@ -2210,8 +2211,8 @@ class Oursin(object):
                 ]
 
     def sim_pp_min_max_opt(self, meas):
-        """Computes simulations resulting in the the min and max discharges
-        for a power power extrapolation fit.
+        """Computes simulations resulting in the min and max discharges
+        for a power extrapolation fit.
 
         Parameters
         ----------
@@ -2219,7 +2220,7 @@ class Oursin(object):
             Object of MeasurementData
         """
 
-        # A power fit is not applicable to bi-directional flow
+        # A power fit is not applicable to bidirectional flow
         mean_q = meas.mean_discharges(meas)
         if np.sign(mean_q["top_mean"]) != np.sign(mean_q["bot_mean"]):
             self.sim_extrap_pp_min = self.sim_original[["q_total", "q_top", "q_bot"]]
@@ -2441,7 +2442,7 @@ class Oursin(object):
 
         # Simulations for invalid cells and ensembles
         meas_temp = copy.deepcopy(meas)
-        total = {"initial": 0, "isovel": 0, "isoveln": 0, "froude":0, "tps": 0, "kriging": 0 , "total": 0}
+        # total = {"initial": 0, "isovel": 0, "isoveln": 0, "froude":0, "tps": 0, "kriging": 0 , "total": 0}
         for trans_n, trans_id in enumerate(self.checked_idx):
             # TRDI method
             meas_temp.transects[trans_id].w_vel.interpolate_cells_trdi(
@@ -2787,7 +2788,7 @@ class Oursin(object):
                 mean_pp = np.nanmean(pp_exp)
 
             # If all transects have confidence intervals, use the mean of
-            # the confidence interval min/max. Otherwise adjust average +/- 0.2
+            # the confidence interval min/max. Otherwise, adjust average +/- 0.2
             if np.isnan(exp_95ic_min).any():
                 min_pp = mean_pp - 0.2
             else:
@@ -2834,7 +2835,7 @@ class Oursin(object):
         meas: MeasurementData
             Object of MeasurementData
         ns_exp: list
-            List of maximum and minimum no slip exponents.
+            Maximum and minimum no slip exponents.
         exp_ns_min_user: float
             User supplied minimum no slip exponent
         exp_ns_max_user: float
@@ -2875,7 +2876,7 @@ class Oursin(object):
             if max_ns >= 1:
                 max_ns = 0.99
 
-        # Apply user overides
+        # Apply user overrides
         if np.isnan(exp_ns_min_user):
             exp_ns_min = min_ns
         else:
@@ -2991,12 +2992,12 @@ class Oursin(object):
     @staticmethod
     def apply_u_rect(list_sims, col_name):
         """Compute the uncertainty using list of simulated discharges
-        following a ranctangular law
+        following a rectangular law
 
         Parameters
         ----------
         list_sims: list
-            List of simulation data frames to be used in the computation
+            Simulation data frames to be used in the computation
         col_name: str
             Name of column in the data frames to be used in the computation
 
@@ -3027,7 +3028,7 @@ class Oursin(object):
         Parameters
         ----------
         transects_total_q: list
-            List of total discharge for each transect
+            Total discharge for each transect
         cov_prior: float
             Expected COV (68%) based on prior knowledge. Assumed to be 3% by
             default.
@@ -3072,7 +3073,7 @@ class Oursin(object):
         theta0: list
             Starting value of parameters (mean and cov_prior)
         obs_data: list
-            List of total discharge for each transect
+            Total discharge for each transect
         cov_prior: float
             Expected COV (68%) based on prior knowledge.
         cov_prior_u: float
@@ -3213,7 +3214,7 @@ class Oursin(object):
         # sigma) ** 2) / 2)
         #                                / (np.sqrt(2 * np.pi) * sigma)))
 
-        # Prior on true_value - flat prior used here but you may change this
+        # Prior on true_value - flat prior used here, but you may change this
         # if you have prior knowledge
         log_prior_1 = 0
 
@@ -3232,7 +3233,8 @@ class Oursin(object):
         # Return (unnormalized) log-posterior
         logp = log_likelihood + log_prior
         if np.isnan(logp):
-            logp = -math.inf  # returns -Inf rather than NaN's (required by
+            logp = -math.inf
+            # returns -Inf rather than NaN's (required by
             # the MCMC sampler used subsequently)
         return logp
 
@@ -3271,7 +3273,7 @@ class Oursin(object):
         Returns
         -------
             random_u: list
-                List of random uncertainty for each checked transect.
+                Random uncertainty for each checked transect.
         """
         random_u = []
         for idx in meas.checked_transect_idx:

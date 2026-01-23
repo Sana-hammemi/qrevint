@@ -81,7 +81,7 @@ class PreMeasurement(object):
         Returns
         -------
         cc: list
-            List of Premeasurement data objects
+            Premeasurement data objects
         """
         cc = []
         if hasattr(meas_struct, "compassCal"):
@@ -191,7 +191,7 @@ class PreMeasurement(object):
            Returns
            -------
            system_tst: list
-               List of Premeasurement data objects
+               Premeasurement data objects
         """
         system_tst = []
         if hasattr(meas_struct, "sysTest"):
@@ -410,10 +410,9 @@ class PreMeasurement(object):
                     numbers[(bm_count * 4) : (bm_count * 44)], dtype=int
                 ).reshape([8, (bm_count * 4) + 1])[:, 1::]
 
-                # Only one pt3 test. Typical of Rio Grande and Streampro
+                # Only one pt3 test. Typical of a Rio Grande or Streampro
                 if bm_count == 1:
                     # Assign matrix slices to corresponding variables
-                    # corr_hlimit_hgain_wband = corr_data
                     pt3["hard_limit"]["high_wide"]["corr_table"] = corr_data
                     pt3["hard_limit"]["high_wide"]["sdc"] = sin_array[0:4]
                     pt3["hard_limit"]["high_wide"]["cdc"] = cos_array[0:4]

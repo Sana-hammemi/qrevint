@@ -141,7 +141,7 @@ class ExtrapQSensitivity(object):
         Parameters
         ----------
         transects: list
-            List of objects of TransectData
+            Objects of TransectData
         extrap_fits: SelectFit
             Object of SelectFit
         """
@@ -359,7 +359,7 @@ class ExtrapQSensitivity(object):
         extrap_fits: SelectFit
             Object of SelectFit
         transects: list
-            List of TransectData objects
+            TransectData objects
         """
         # Determine which mean is the reference
         if extrap_fits[-1].fit_method == "Manual":

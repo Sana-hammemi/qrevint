@@ -12,7 +12,7 @@ from qrev.MiscLibs.matlab_rloess import rloess
 smooth_fit = rloess(x, y, span)
 """
 import numpy as np
-from numba import jit, njit
+from numba import njit
 
 # Set constants used in multiple functions
 eps = np.finfo("float").eps
@@ -89,7 +89,7 @@ def tricube_weights(distance):
 # @jit(cache=True, nopython=True)
 @njit
 def bisquare(data):
-    """Bisqure weight function which for values greater than are equal
+    """Bisquare weight function which for values greater than are equal
     to 1 are set to zero.
 
     Parameters
@@ -191,7 +191,7 @@ def compute_loess(x, y, neighbors_idx, idx, r_weights=None):
         )
         neighbors_y = weights * neighbors_y
 
-        # Solve using least squares
+        # Solve using the least squares
         smoothed_values, _, _, _ = np.linalg.lstsq(weighted_x_matrix.T, neighbors_y.T)
         smoothed_value = smoothed_values[0]
     else:

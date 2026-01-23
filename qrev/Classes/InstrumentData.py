@@ -47,7 +47,7 @@ class InstrumentData(object):
         ----------
         manufacturer: str
             Name of manufacturer.
-        raw_data: object
+        raw_data: object or dict
             Object of Pd0TRDI for TRDI or Object of MatSonTek for SonTek
         mmt_transect: MMT_Transect
             Object of Transect (mmt object)
@@ -495,6 +495,7 @@ class InstrumentData(object):
         coord_sys_code: int
             Integer representing the coordinate system
         """
+        coord_sys_code = 0
         if coord_sys == "Beam":
             coord_sys_code = 1
         elif coord_sys == "Inst":
@@ -530,6 +531,7 @@ class InstrumentData(object):
 
     @staticmethod
     def transform_instrument_coordinates(manufacturer, inst_coordinates, h, p, r, new_coord_sys):
+        hpr_matrix = None
         if new_coord_sys == "Earth":
             # Generate matrix to compute earth coordinates
             hpr_matrix = InstrumentData.create_hpr_matrix(

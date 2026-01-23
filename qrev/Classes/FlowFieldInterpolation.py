@@ -139,6 +139,8 @@ class FlowFieldInterpolation(object):
             Shape of right edge
         right_edge_distance: float
             Distance to right edge
+        normalize: bool
+            Data is normalized
         """
 
         # Set start and end edge characteristics
@@ -267,6 +269,10 @@ class FlowFieldInterpolation(object):
             Distance from last ensemble to end edge
         end_edge_shape: str
             Shape of end edge
+        normalize: bool
+            Normalize the velocity field
+        n_top: int
+            Number of top cells
 
         Returns
         -------
@@ -416,6 +422,7 @@ class FlowFieldInterpolation(object):
         ensemble_widths_iso = np.concatenate((np.zeros(1), ensemble_widths_iso))
 
         # Find first valid depth
+        start = 0
         for start in range(len(depth)):
             if not np.isnan(depth[start]):
                 break
@@ -431,6 +438,7 @@ class FlowFieldInterpolation(object):
             )
 
         # Find last valid depth
+        end = -1
         for end in range(len(depth) - 1, -1, -1):
             if not np.isnan(depth[end]):
                 break
@@ -667,8 +675,7 @@ class FlowFieldInterpolation(object):
             #     boat_v=self.boat_v[idx],
             #     depth_cell_size=self.depth_cell_size[:, idx],
             #     dt=self.dt[idx],
-            #     start_edge=self.start_edge,
-            # )
+            #     start_edge=self.start_edge,            # )
 
             # Compute discharge ratio
             q_ratio = dq / q
@@ -759,7 +766,7 @@ class FlowFieldInterpolation(object):
         )
         ensemble_idx[0] = valid_start_ensembles[0]
 
-        # Compute fround number near end bank
+        # Compute froude number near end bank
         valid_end_ensembles = []
         for n in range(self.u.shape[1] - 1, -1, -1):
             if n not in self.invalid_ensembles:
@@ -786,7 +793,7 @@ class FlowFieldInterpolation(object):
         -------
         u_froude_number: float
             Mean froude number for u velocity component.
-        v_fround_number: float
+        v_froude_number: float
             Mean froude number for v velocity component.
         ensemble_idx: int
             Ensemble id for froude numbers.
@@ -808,7 +815,7 @@ class FlowFieldInterpolation(object):
         u_froude_number = np.nanmean(
             u_mean_ens / np.sqrt(self.depths[ensembles] * 9.81)
         )
-        v_fround_number = np.nanmean(
+        v_froude_number = np.nanmean(
             v_mean_ens / np.sqrt(self.depths[ensembles] * 9.81)
         )
 
@@ -822,7 +829,7 @@ class FlowFieldInterpolation(object):
         # Project the ensemble_idx into the flow field based on cs ranges
         ensemble_idx = np.where(self.cs_sorted_idx == idx)[0][0]
 
-        return u_froude_number, v_fround_number, ensemble_idx
+        return u_froude_number, v_froude_number, ensemble_idx
 
     def froude_linear_interpolation(self, u_froude, v_froude, ensemble_idx):
         """Linear interpolation using multiple froude numbers with associated

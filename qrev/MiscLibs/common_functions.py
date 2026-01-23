@@ -177,11 +177,13 @@ def azdeg2rad(angle):
     direction = np.deg2rad(90 - angle)
 
     # Create postive angle
-    idx = np.where(direction < 0)[0]
-    if len(idx) > 1:
-        direction[idx] = direction[idx] + 2 * np.pi
+    if type(direction) == np.ndarray:
+        idx = np.where(direction < 0)[0]
+        if len(idx) > 1:
+            direction[idx] = direction[idx] + 2 * np.pi
     else:
-        direction = direction + 2 * np.pi
+        if direction < 0:
+            direction = direction + 2 * np.pi
 
     return direction
 
@@ -276,7 +278,7 @@ def nans(shape, dtype=float):
     shape: tuple
         Shape of array to be filled with nans
     dtype: type
-        Type of array
+        Array type
 
     Returns
     -------
@@ -294,12 +296,12 @@ def checked_idx(transects):
     Parameters
     ----------
     transects: list
-        List of TransectData objects
+        TransectData objects
 
     Returns
     -------
     checked: list
-        List of indices
+        Indices of checked transects
 
     """
     checked = []
@@ -394,9 +396,9 @@ def nan_less_equal(data1, data2) -> bool:
     Parameters
     ----------
     data1: np.array()
-        Data arrray.
+        Data array.
     data2: np.array()
-        Data arrray.
+        Data array.
 
     Returns
     -------
@@ -415,9 +417,9 @@ def nan_less(data1, data2) -> bool:
     Parameters
     ----------
     data1: np.array()
-        Data arrray.
+        Data array.
     data2: np.array()
-        Data arrray.
+        Data array.
 
     Returns
     -------
@@ -436,9 +438,9 @@ def nan_greater_equal(data1, data2) -> bool:
     Parameters
     ----------
     data1: np.array()
-        Data arrray.
+        Data array.
     data2: np.array()
-        Data arrray.
+        Data array.
 
     Returns
     -------
@@ -457,9 +459,9 @@ def nan_greater(data1, data2) -> bool:
     Parameters
     ----------
     data1: np.array()
-        Data arrray.
+        Data array.
     data2: np.array()
-        Data arrray.
+        Data array.
 
     Returns
     -------
@@ -531,11 +533,11 @@ def rotate_coordinates(x, y, angle_d):
 def dateformat (input_str):
     datedict = {"m": "%m", "d": "%d", "y": "%Y"}
     date_format = ""
-    for chr in input_str:
-        if chr in datedict:
-            date_format = date_format + datedict[chr]
+    for item in input_str:
+        if item in datedict:
+            date_format = date_format + datedict[item]
         else:
-            date_format = date_format + chr
+            date_format = date_format + item
     return date_format
 
 def deg_min_2_deg(angle_deg_min):
@@ -547,6 +549,7 @@ def deg_min_2_deg(angle_deg_min):
         Angle in ddmm.mmmmm format
 
     Returns
+    -------
     angle_deg: float
         Angle in dd.ddddd format
     """

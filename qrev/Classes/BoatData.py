@@ -26,7 +26,7 @@ class BoatData(object):
         raw_vel_mps: np.array
             Contains the raw unfiltered velocity data in m/s.
 
-            First index is 1-4 are beams 1,2,3,3 if if beam or u,v,w,d if
+            First index is 1-4 are beams 1,2,3,3 if beam or u,v,w,d if
              otherwise.
         frequency_khz: np.array or float
             Defines ADCP frequency used for velocity Measurement.
@@ -151,6 +151,7 @@ class BoatData(object):
         # Processed data
         self.u_processed_mps = None
         self.v_processed_mps = None
+        self.w_processed_mps = None
         self.processed_source = None
 
         # Filter and interpolation properties
@@ -504,7 +505,6 @@ class BoatData(object):
         """
 
         # Initialize variables
-        inst_coordinates = None
         if type(self.orig_coord_sys) is list or type(self.orig_coord_sys) is np.ndarray:
             orig_coord_sys = self.orig_coord_sys[0].strip()
         else:
@@ -542,7 +542,7 @@ class BoatData(object):
                     )
 
                     # Set error velocity to nan for 3-beam solutions
-                    if len(idx_3_beam[0] == 1):
+                    if len(idx_3_beam[0]) == 1:
                         inst_coordinates[3] = np.nan
 
                     # Compute new coordinates
@@ -594,13 +594,13 @@ class BoatData(object):
                             roll=0,
                         )
 
-                    # Compute coordinates
-                    (
-                        self.u_mps[ii],
-                        self.v_mps[ii],
-                        self.w_mps[ii],
-                        self.d_mps[ii],
-                    ) = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
+                        # Compute coordinates
+                        (
+                            self.u_mps[ii],
+                            self.v_mps[ii],
+                            self.w_mps[ii],
+                            self.d_mps[ii],
+                        ) = adcp.compute_new_coordinates(hpr_matrix, ship_coordinates)
 
             # Convert boat coordinates relative to stable streambed
             self.u_mps = -1 * self.u_mps
@@ -792,7 +792,7 @@ class BoatData(object):
                     self.v_processed_mps[n] = self.v_processed_mps[n - 1]
 
     def interpolate_next(self):
-        """This function uses the next valid data to back fill for invalid"""
+        """This function uses the next valid data to backfill for invalid"""
 
         # Get valid ensembles
         valid_ens = self.valid_data[0, :]
@@ -1001,7 +1001,7 @@ class BoatData(object):
     def filter_beam(self, setting):
         """Applies beam filter.
 
-        The determination of invalid data depends on the whether
+        The determination of invalid data depends on whether
         3-beam or 4-beam solutions are acceptable. This function can be
         applied by specifying 3 or 4 beam solutions are setting
         obj.beamFilter to -1 which will trigger an automatic mode. The
@@ -1009,7 +1009,7 @@ class BoatData(object):
         the velocity of the 3 beam solutions to nearest 4 beam solution
         before and after the 3 beam solution. If the 3 beam solution is
         within 50% of the average of the neighboring 3 beam solutions the
-        data are deemed valid if not invalid. Thus in automatic mode only
+        data are deemed valid if not invalid. Thus, in automatic mode only
         those data from 3 beam solutions that appear sufficiently
         than the 4 beam solutions are marked invalid. The process happens
         for each ensemble. If the number of beams is specified manually
@@ -1111,7 +1111,7 @@ class BoatData(object):
         The automatic mode is based on the following:
         This filter is based on the assumption that the water error velocity
         should follow a gaussian distribution. Therefore, 5 iqr
-        should encompass all of the valid data. The standard deviation and
+        should encompass all the valid data. The standard deviation and
         limits (multiplier*standard deviation) are computed in an iterative
         process until filtering out additional data does not change the
         computed standard deviation.
@@ -1361,7 +1361,7 @@ class BoatData(object):
         with the highest and lowest values are removed from the subset, and the
         standard deviation of the trimmed subset is computed. The filter
         criteria are determined by multiplying the standard deviation by a user
-        specified multiplier. This criteria defines a maximum and minimum
+        specified multiplier. These criteria define a maximum and minimum
         acceptable residual. Data falling outside the criteria are set to nan.
 
         Recommended filter setting are:
@@ -1791,7 +1791,7 @@ class BoatData(object):
         after the target data point, but not including the target data point.
         Near the ends of the series the number of points before or after are
         reduced. nan in the data are counted as points. The selected subset of
-        points are sorted and the points with the highest and lowest values are
+        points is sorted and the points with the highest and lowest values are
         removed from the subset and the standard deviation computed on the
         remaining points in the subset.
         The process occurs for each point in the
@@ -1840,7 +1840,7 @@ class BoatData(object):
                     (my_data[n - half_width : n], my_data[n + 1 : n + half_width + 1])
                 )
 
-            # Sort and compute trummed standard deviation
+            # Sort and compute trimmed standard deviation
             sample = np.sort(sample)
             filter_array.append(np.nanstd(sample[1 : sample.shape[0] - 1], ddof=1))
 

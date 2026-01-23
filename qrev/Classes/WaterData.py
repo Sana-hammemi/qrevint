@@ -1,6 +1,6 @@
 import copy
 import numpy as np
-from numpy.matlib import repmat
+from numpy import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
 from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less, rotate_coordinates
@@ -23,7 +23,7 @@ class WaterData(object):
             Defines the original raw velocity coordinate system "Beam",
             "Inst", "Ship", "Earth".
         orig_nav_ref: str
-            Defines the original taw data naviagation reference: "None", "BT",
+            Defines the original taw data navigation reference: "None", "BT",
              "GGA", "VTG".
         corr: np.array(float)
             Correlation values for WT, if available.
@@ -97,10 +97,10 @@ class WaterData(object):
         w_filter_thresholds: float, dict, tuple
             Threshold(s) for vertical velocity filter.
         excluded_dist_m: float
-            Distance below transucer for which data are excluded or marked
+            Distance below transducer for which data are excluded or marked
             invalid, in m.
         orig_excluded_dist_m: float
-            Original distance below transucer for which data are excluded or
+            Original distance below transducer for which data are excluded or
             marked invalid, in m.
         smooth_filter: str
             Set filter based on smoothing function "On", "Off".
@@ -109,7 +109,7 @@ class WaterData(object):
         smooth_upper_limit: np.array(float)
             Smooth function upper limit of window, in m/s.
         smooth_lower_limit: np.array(float)
-            Smooth funciton lower limit of window, in m/s.
+            Smooth function lower limit of window, in m/s.
         snr_filter: str
             Set SNR filter for SonTek data "On", "Off".
         snr_rng: np.array(float)
@@ -168,6 +168,7 @@ class WaterData(object):
         # Data computed in this class
         self.u_earth_no_ref_mps = None
         self.v_earth_no_ref_mps = None
+        self.w_earth_no_ref_mps = None
         self.u_mps = None
         self.v_mps = None
         self.u_processed_mps = None
@@ -237,7 +238,6 @@ class WaterData(object):
         use_measurement_thresholds=False,
         snr_3beam_comp=True,
         excluded_dist_in=0,
-        source=None
     ):
         """Populates the variables with input, computed, or default values.
 
@@ -275,7 +275,7 @@ class WaterData(object):
         snr_3beam_comp: bool
             Indicates the use of 3-beam velocity computations when invalid SNR is found
         wm_in: str
-            Watermode for TRDI or 'Variable' for SonTek.
+            Water mode for TRDI or 'Variable' for SonTek.
         blank_in: float
             Blanking distance, in m.
         corr_in: np.array(float)
@@ -283,7 +283,7 @@ class WaterData(object):
         surface_vel_in: np.array(float)
             Surface velocity data for RiverRay, RiverPro, RioPro. Optional.
         surface_rssi_in: np.array(float)
-            Returned acoust signal strength for RiverRay, RiverPro, RioPro.
+            Returned acoustic signal strength for RiverRay, RiverPro, RioPro.
             Optional.
         surface_corr_in: np.array(float)
             Surface velocity correlations for RiverRay, RiverPro, RioPro.
@@ -808,7 +808,7 @@ class WaterData(object):
         new_sys_code = adcp.get_coordinate_system_code(coord_sys=new_coord_sys)
         orig_sys_code = adcp.get_coordinate_system_code(coord_sys= o_coord_sys)
 
-
+        hpr_matrix = None
         if new_sys_code - orig_sys_code > 0:
             # Transform coordinates to a higher order
 
@@ -1398,7 +1398,7 @@ class WaterData(object):
         all 3 beam solutions and them compare the velocity of the 3 beam
         solutions to nearest 4 beam solutions.  If the 3 beam solution is
         within 50% of the average of the neighboring 4 beam solutions the
-        data are deemed valid, if not they are marked invalid.  Thus in
+        data are deemed valid, if not they are marked invalid.  Thus, in
         automatic mode only those data from 3 beam solutions that are
         sufficiently different from  the 4 beam solutions are marked
         invalid. If the number of beams is specified manually, it is applied
@@ -1527,7 +1527,7 @@ class WaterData(object):
         velocity.  The automatic mode is based on the following:
         This filter is based on the assumption that the water error velocity
         should follow a gaussian distribution.  Therefore, 5 standard
-        deviations should encompass all of the valid data.
+        deviations should encompass all the valid data.
         The standard deviation and limits (multiplier*std dev) are computed
         in an iterative process until filtering out additional data does not
         change the computed standard deviation.
@@ -1640,7 +1640,7 @@ class WaterData(object):
         # TODO Seems like if the difference velocity doesn't exist due to a
         #  3-beam solution it shouldn't be
         #  flagged as invalid however this is the way it was in Matlab.
-        #  May change this in future.
+        #  May change this in the future.
         # valid[np.isnan(self.d_mps)] = True
         self.valid_data[2, :, :] = valid
 
@@ -1786,8 +1786,8 @@ class WaterData(object):
         velocity.  The automatic mode is based on the following: This filter
         is based on the assumption that the water error velocity should follow a
         gaussian distribution.  Therefore, 4 standard deviations should
-        encompass all of the valid data.  The standard deviation and limits
-        (multplier * standard deviation) are computed in an iterative process
+        encompass all the valid data.  The standard deviation and limits
+        (multiplier * standard deviation) are computed in an iterative process
         until filtering out additional data does not change the
         computed standard deviation.
 
@@ -1915,13 +1915,13 @@ class WaterData(object):
         identify and mark spikes in the water speed. First a robust Loess
         smooth is fitted to the water speed time series and residuals between
         the raw data and the smoothed line are computed. The trimmed standard
-        eviation is computed by selecting the number of residuals specified by
+        deviation is computed by selecting the number of residuals specified by
         "halfwidth" before the target point and after the target point, but not
         including the target point. These values are then sorted, and the
         points with the highest and lowest values are removed from the subset,
         and the standard deviation of the trimmed subset is computed.
         The filter criteria are determined by multiplying the standard
-        deviation by a user specified multiplier. This criteria defines a
+        deviation by a user specified multiplier. These criteria define a
         maximum and minimum acceptable residual. Data falling outside the
         criteria are set to nan.
 
@@ -2203,7 +2203,7 @@ class WaterData(object):
         wt_data: WaterData
             Object of WaterData
         data_list: list
-            List of np.array(float) data to used for interpolation
+            Arrays(float) of data to used for interpolation
         valid: np.ndarray(bool)
             Array indicating valid to be used for interpolation
         transect: TransectData
@@ -2292,7 +2292,7 @@ class WaterData(object):
                 self.v_processed_mps[:, n] = self.v_processed_mps[:, n + 1]
 
     def interpolate_ens_hold_last(self):
-        """Interpolates velocity data for invalid ensembles by repeating the
+        """Interpolates velocity data for invalid ensembles by repeating
         the last valid data until new valid data is found
         """
 

@@ -13,7 +13,7 @@ from qrev.MiscLibs.common_functions import (
 class NormData(object):
     """Class creates normalized depth and unit discharge or velocity.
 
-    The constuctor method allows an object to be formed without any data.
+    The constructor method allows an object to be formed without any data.
     populate_data method creates normalized data for a single transect.
     create_composite method creates normalized data for all check transects.
     also allows only a portion of the data to be used in the
@@ -197,9 +197,6 @@ class NormData(object):
             w_vel_y[invalid_data] = np.nan
 
             # Compute mean velocity components in each ensemble
-            if len(w_vel_x) < 1:
-                x = 1
-
             w_vel_mean_1 = np.nanmean(w_vel_x, 0)
             w_vel_mean_2 = np.nanmean(w_vel_y, 0)
 
@@ -294,7 +291,7 @@ class NormData(object):
         Returns
         -------
         norm_data: list
-            List of NormData objects
+            NormData objects
         """
         norm_data = []
         if hasattr(mat_data, "normData"):
@@ -408,14 +405,14 @@ class NormData(object):
         values: ndarray(float)
             Array of normalized values
         quantiles: list
-            List of quantiles to be computed
+            Quantiles to be computed
         sample_weight: ndarray(float)
             Weights for each value`
 
         Returns
         -------
         results: list
-            List of values at specified quantiles
+            Values at specified quantiles
 
         """
 
@@ -438,9 +435,9 @@ class NormData(object):
         Parameters
         ----------
         transects: list
-            List of objects of TransectData
+            Objects of TransectData
         norm_data: list
-            List of objects of NormData
+            Objects of NormData
         threshold: int
             Number of data points in an increment for the increment to be
             valid.
