@@ -3548,7 +3548,7 @@ class AdvGraphs(object):
 
         try:
             # Generate color contour
-            c = ax.pcolormesh(
+            ax.cc = ax.pcolormesh(
                 x_plt,
                 cell_plt,
                 data_plt,
@@ -3558,7 +3558,7 @@ class AdvGraphs(object):
                 zorder=0,
             )
         except ValueError:
-            c = None
+            ax.cc = None
             warnings.warn("Zero sized array. Contour not created.")
 
         # Create data plotted for annotation use
@@ -3581,11 +3581,11 @@ class AdvGraphs(object):
         self.annot[-1].set_visible(False)
 
         # Add color bar and axis labels in separate subplot
-        if c is not None:
+        if ax.cc is not None:
             self.ax.append(self.fig.add_subplot(self.gs[self.fig_no + 1]))
             self.data_plotted.append({"type": "colorbar"})
             self.annot.append("")
-            cb = self.fig.colorbar(c, self.ax[-1])
+            cb = self.fig.colorbar(ax.cc, self.ax[-1])
             cb.ax.set_ylabel(self.canvas.tr(data_units[1]))
             cb.ax.yaxis.label.set_fontsize(12)
             cb.ax.tick_params(labelsize=12)

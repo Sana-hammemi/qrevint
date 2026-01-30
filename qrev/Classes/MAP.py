@@ -1402,9 +1402,9 @@ class MAP(object):
             for i in range(len(border_depths) - 1):
                 sub_index = next(
                     x[0]
-                    for x in cells_borders_depths_1[:, i]
-                    if x[1] >= int(1000 * border_depths[i + 1]) / 1000.
-                )
+                    for x in enumerate(cells_borders_depths_1[:, i])
+                        if x[1] >= int(1000 * border_depths[i + 1]) / 1000.
+                    )
                 cells_borders_depths_1[sub_index, i] = border_depths[i + 1]
                 cells_borders_depths_1[sub_index + 1 :, i] = np.nan
                 cells_borders_depths_2[sub_index - 1, i + 1] = border_depths[i + 1]

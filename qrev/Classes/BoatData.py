@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-from numpy.matlib import repmat
 from qrev.MiscLibs.common_functions import (
     cosd,
     sind,
@@ -276,7 +275,7 @@ class BoatData(object):
 
         # Preallocate arrays
         n_ensembles = vel_in.shape[1]
-        self.valid_data = repmat([True], 6, n_ensembles)
+        self.valid_data = np.tile([True], (6, n_ensembles))
         self.smooth_speed = np.nan
         self.smooth_upper_limit = np.nan
         self.smooth_lower_limit = np.nan
@@ -1390,9 +1389,9 @@ class BoatData(object):
         # Determine if smooth filter should be applied
         if self.smooth_filter == "On":
             # Initialize arrays
-            self.smooth_speed = repmat([np.nan], 1, n_ensembles)
-            self.smooth_upper_limit = repmat([np.nan], 1, n_ensembles)
-            self.smooth_lower_limit = repmat([np.nan], 1, n_ensembles)
+            self.smooth_speed = np.tile([np.nan], (1, n_ensembles))
+            self.smooth_upper_limit = np.tile([np.nan], (1, n_ensembles))
+            self.smooth_lower_limit = np.tile([np.nan], (1, n_ensembles))
 
             # Boat velocity components
             b_vele = np.copy(self.u_mps)

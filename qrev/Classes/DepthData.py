@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-from numpy import repmat
 from qrev.MiscLibs.common_functions import iqr, nan_less, nan_greater
 from qrev.MiscLibs.robust_loess_compiled import rloess
 from qrev.MiscLibs.non_uniform_savgol import non_uniform_savgol
@@ -507,12 +506,12 @@ class DepthData(object):
                 depth_raw = np.copy(np.reshape(self.depth_orig_m, (1, n_ensembles)))
 
             # Set bad depths to nan
-            depth = repmat([np.nan], n_beams, n_ensembles)
+            depth = np.tile([np.nan], (n_beams, n_ensembles))
 
             # Arrays initialized
-            depth_smooth = repmat([np.nan], n_beams, n_ensembles)
-            upper_limit = repmat([np.nan], n_beams, n_ensembles)
-            lower_limit = repmat([np.nan], n_beams, n_ensembles)
+            depth_smooth =np.tile([np.nan], (n_beams, n_ensembles))
+            upper_limit = np.tile([np.nan], (n_beams, n_ensembles))
+            lower_limit = np.tile([np.nan], (n_beams, n_ensembles))
             depth_filtered = depth
             depth[nan_greater(depth_raw, 0)] = depth_raw[nan_greater(depth_raw, 0)]
 
@@ -566,10 +565,10 @@ class DepthData(object):
             n_ensembles = self.depth_orig_m.shape[0]
             depth_raw = np.reshape(self.depth_orig_m, (1, n_ensembles))
 
-        depth_res = repmat([np.nan], n_beams, n_ensembles)
+        depth_res = np.tile([np.nan], (n_beams, n_ensembles))
 
         # Set bad depths to nan
-        depth = repmat(np.nan, depth_raw.shape[0], depth_raw.shape[1])
+        depth = np.tile(np.nan, (depth_raw.shape[0], depth_raw.shape[1]))
         depth[nan_greater(depth_raw, 0)] = depth_raw[nan_greater(depth_raw, 0)]
 
         # Apply filter
@@ -709,7 +708,7 @@ class DepthData(object):
             depth_raw = np.copy(np.reshape(self.depth_orig_m, (1, n_ensembles)))
 
         # Set bad depths to nan
-        depth = repmat([np.nan], n_beams, n_ensembles)
+        depth = np.tile([np.nan], (n_beams, n_ensembles))
         depth[depth_raw > 0] = depth_raw[depth_raw > 0]
 
         # If the smoothed depth has not been computed
@@ -721,10 +720,10 @@ class DepthData(object):
             multiplier = 15
 
             # Arrays initialized
-            depth_smooth = repmat([np.nan], n_beams, n_ensembles)
-            depth_res = repmat([np.nan], n_beams, n_ensembles)
-            upper_limit = repmat([np.nan], n_beams, n_ensembles)
-            lower_limit = repmat([np.nan], n_beams, n_ensembles)
+            depth_smooth = np.tile([np.nan], (n_beams, n_ensembles))
+            depth_res = np.tile([np.nan], (n_beams, n_ensembles))
+            upper_limit = np.tile([np.nan], (n_beams, n_ensembles))
+            lower_limit = np.tile([np.nan], (n_beams, n_ensembles))
 
             # Create position array. If there are insufficient track data
             # use elapsed time

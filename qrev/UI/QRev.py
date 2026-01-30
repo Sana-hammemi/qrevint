@@ -1060,7 +1060,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         # Save figure menu with Right click
         self.figsMenu = QtWidgets.QMenu(self)
         self.figsMenu.addAction("Save figure", self.save_fig)
-        self.figsMenu.addAction("Set Axes Limits", self.set_axes)
+        self.figsMenu.addAction("Set Graph Limits", self.set_axes)
 
         # Connect a change in selected tab to the tab manager
         self.tab_all.currentChanged.connect(self.tab_manager)
@@ -1381,7 +1381,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         else:
             self.agreement = True
 
-        self.config_gui()
+        self.setWindowTitle(self.window_title)
+        # self.config_gui()
 
     @staticmethod
     def check_legacy():
@@ -16895,7 +16896,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 )[0]
                 if len(ax) > 0:
                     self.current_axis = self.current_fig.fig.axes[ax[-1]]
-
                 # Context menu
                 self.figsMenu.exec_(event.globalPos())
                 return True
@@ -17022,6 +17022,11 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         scale = AxesScale()
 
+        # Identify if current axis is a color bar and change to parent axis
+        axis_idx = self.current_fig.ax.index(self.current_axis)
+        if self.current_fig.data_plotted[axis_idx]["type"] == "colorbar":
+            self.current_axis = self.current_fig.ax[axis_idx - 1]
+
         # Get current axes limits
         x_limits = self.current_axis.get_xlim()
         y_limits = self.current_axis.get_ylim()
@@ -17031,6 +17036,15 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
         scale.ed_x_right.setText("%.2f" % x_limits[1])
         scale.ed_y_bottom.setText("%.2f" % y_limits[0])
         scale.ed_y_top.setText("%.2f" % y_limits[1])
+
+        # Check if axis has associated colorbar
+        if hasattr(self.current_axis, "cc"):
+            scale.gb_color_scale.show()
+            scale.ed_color_min.setText("%.2f" % self.current_axis.cc.colorbar.vmin)
+            scale.ed_color_max.setText("%.2f" % self.current_axis.cc.colorbar.vmax)
+        else:
+            scale.gb_color_scale.hide()
+
 
         rsp = scale.exec_()
 
@@ -17054,14 +17068,24 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                     x_right = self.check_numeric_input(scale.ed_x_right, block=False)
                     y_bottom = self.check_numeric_input(scale.ed_y_bottom, block=False)
                     y_top = self.check_numeric_input(scale.ed_y_top, block=False)
-                    new_x_limits = [x_left, x_right]
-                    new_y_limits = [y_bottom, y_top]
+                    new_ax_limits = [x_left, x_right, y_bottom, y_top]
+
+                    # Color bar limits, if available
+                    new_color_limits = []
+                    if hasattr(self.current_axis, "cc"):
+                        vmin = self.check_numeric_input(scale.ed_color_min, block=False)
+                        vmax = self.check_numeric_input(scale.ed_color_max, block=False)
+                        new_color_limits = [vmin, vmax]
 
                 # Set new limits
-                if not any(new_x_limits) is None and not any(new_y_limits) is None:
+                if not any(new_ax_limits) is None and not any(new_color_limits) is None:
                     self.current_axis.set_xlim(left=x_left, right=x_right)
                     self.current_axis.set_ylim(bottom=y_bottom, top=y_top)
                     self.current_axis.yaxis.set_major_locator(AutoLocator())
+
+                    # Set colorbar limits, if available
+                    if hasattr(self.current_axis, "cc"):
+                        self.current_axis.cc.set_clim(vmin=vmin, vmax=vmax)
                     self.current_fig.canvas.draw()
 
     def x_axis_time(self):
@@ -17893,8 +17917,6 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
     def config_gui(self):
         """Configure the user interface based on the available data."""
-
-        self.setWindowTitle(self.window_title)
 
         # After data is loaded enable GUI and buttons on toolbar
         self.tab_all.setEnabled(True)

@@ -12,7 +12,7 @@ from PyQt5 import QtWidgets
 from qrev.UI import Axes_Scale
 
 
-class AxesScale(QtWidgets.QDialog, Axes_Scale.Ui_Axes_Scale):
+class AxesScale(QtWidgets.QDialog, Axes_Scale.Ui_Dialog):
     """Dialog to allow users to change heading offset.
 
     Parameters

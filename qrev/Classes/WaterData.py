@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-from numpy import repmat
 from scipy import interpolate
 from qrev.Classes.BoatData import BoatData
 from qrev.MiscLibs.common_functions import cart2pol, pol2cart, iqr, nan_greater, nan_less, rotate_coordinates
@@ -1013,15 +1012,15 @@ class WaterData(object):
             #     self.d_mps = np.add(self.d_mps, boat_select.d_mps)
             self.nav_ref = boat_select.nav_ref
         else:
-            self.u_mps = repmat(
+            self.u_mps = np.tile(
                 [np.nan],
-                self.u_earth_no_ref_mps.shape[0],
-                self.u_earth_no_ref_mps.shape[1],
+                (self.u_earth_no_ref_mps.shape[0],
+                self.u_earth_no_ref_mps.shape[1])
             )
-            self.v_mps = repmat(
+            self.v_mps = np.tile(
                 [np.nan],
-                self.v_earth_no_ref_mps.shape[0],
-                self.v_earth_no_ref_mps.shape[1],
+                (self.v_earth_no_ref_mps.shape[0],
+                self.v_earth_no_ref_mps.shape[1])
             )
             if boat_vel.selected == "bt_vel":
                 self.nav_ref = "BT"
@@ -1077,7 +1076,7 @@ class WaterData(object):
         v_nr = self.v_earth_no_ref_mps
         direction, mag = cart2pol(u_nr, v_nr)
         u_nr_rotated, v_nr_rotated = pol2cart(
-            direction - np.deg2rad(repmat(heading, len(mag), 1)), mag
+            direction - np.deg2rad(np.tile(heading, (len(mag), 1))), mag
         )
         self.u_earth_no_ref_mps = u_nr_rotated
         self.v_earth_no_ref_mps = v_nr_rotated
