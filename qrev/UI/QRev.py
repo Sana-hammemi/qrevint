@@ -17918,6 +17918,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
     def config_gui(self):
         """Configure the user interface based on the available data."""
 
+        self.setWindowTitle(self.window_title)
+
         # After data is loaded enable GUI and buttons on toolbar
         self.tab_all.setEnabled(True)
         self.actionSave.setEnabled(True)

@@ -456,11 +456,11 @@ class InstrumentData(object):
                     [
                         ((ch * cr) + (sh * sp * sr)),
                         (sh * cp),
-                        ((ch * sr) - sh * sp * cr),
+                        ((ch * sr) - (sh * sp * cr)),
                     ],
                     [
                         (-1 * sh * cr) + (ch * sp * sr),
-                        ch * cp,
+                        (ch * cp),
                         (-1 * sh * sr) - (ch * sp * cr),
                     ],
                     [(-1.0 * cp * sr), sp, cp * cr],

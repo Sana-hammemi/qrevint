@@ -436,7 +436,7 @@ def abba_idw_interpolation(
                 x=x_shiptrack,
                 y=y_centers,
             )
-            dist.append(dist)
+            dist.append(distances)
             # Interpolate target for each data set in data_list
             for n, data in enumerate(data_list):
                 interpolated_value = idw_interpolation(

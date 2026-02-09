@@ -13,7 +13,8 @@ def cosd(angle):
         Angle in degrees
     """
 
-    return np.cos(np.pi * angle / 180)
+    # return np.cos(np.pi * angle / 180)
+    return np.cos(np.deg2rad(angle))
 
 
 def sind(angle):
@@ -25,7 +26,8 @@ def sind(angle):
         Angle in degrees
     """
 
-    return np.sin(np.pi * angle / 180)
+    # return np.sin(np.pi * angle / 180)
+    return np.sin(np.deg2rad(angle))
 
 
 def tand(angle):
@@ -37,7 +39,8 @@ def tand(angle):
         Angle in degrees
     """
 
-    return np.tan(np.pi * angle / 180)
+    # return np.tan(np.pi * angle / 180)
+    return np.tan(np.deg2rad(angle))
 
 
 def arctand(angle):

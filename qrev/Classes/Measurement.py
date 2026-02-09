@@ -336,6 +336,11 @@ class Measurement(object):
 
                         self.discharge.append(q)
 
+                # for transect in self.transects: 
+                #     if (transect.sensors.heading_deg.selected == "internal" and
+                #     transect.sensors.heading_deg.internal.mag_var_deg != 0):
+                #         self.change_magvar(transect.sensors.heading_deg.internal.mag_var_deg)
+                #     break
                 self.qa = QAData(self, tr=self.tr)
 
         if run_map:
