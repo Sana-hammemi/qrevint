@@ -2374,7 +2374,7 @@ class MAP(object):
         vel_norm = np.sqrt(u_mean**2 + v_mean**2)
 
         if lat is None or lon is None:
-            if meas is not None:
+            if meas is not None and len(meas.checked_transect_idx) > 0:
                 transect_idx = meas.checked_transect_idx[0]
                 lon = meas.transects[transect_idx].gps.gga_lon_ens_deg
                 lon = lon[np.logical_not(np.isnan(lon))]

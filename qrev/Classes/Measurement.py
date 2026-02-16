@@ -343,7 +343,7 @@ class Measurement(object):
                 #     break
                 self.qa = QAData(self, tr=self.tr)
 
-        if run_map:
+        if run_map and len(self.checked_transect_idx) > 0:
             self.compute_map()
 
     @staticmethod

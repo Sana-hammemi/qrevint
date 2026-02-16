@@ -10,7 +10,7 @@ from matplotlib import gridspec
 from matplotlib.dates import DateFormatter, num2date
 from matplotlib.patches import Polygon
 
-from qrev.MiscLibs.common_functions import sind, cosd
+from qrev.MiscLibs.common_functions import sind, cosd, cart2pol, rad2azdeg
 from qrev.MiscLibs.compute_edge_cd import compute_edge_cd
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
@@ -252,6 +252,8 @@ class AdvGraphs(object):
             "cb_wt_vert_ts": self.wt_vertical_ts,
             "cb_wt_snr_ts": self.wt_snr_ts,
             "cb_bt_boat_speed_ts": self.bt_speed_ts,
+            "cb_b2w_speed_ts": self.boat2water_speed_ts,
+            "cb_boat_course_ts": self.boat_course_ts,
             "cb_bt_3beam_ts": self.bt_3beam_ts,
             "cb_bt_error_ts": self.bt_error_ts,
             "cb_bt_vertical_ts": self.bt_vertical_ts,
@@ -2485,6 +2487,71 @@ class AdvGraphs(object):
             else:
                 self.ax[-1].plot(x_coords, speed * self.units["V"], data_color)
             self.ax[-1].set_ylabel(self.canvas.tr("Speed " + self.units["label_V"]))
+
+    def boat2water_speed_ts(self, lbl="Boat/Water Speed"):
+        """Create time series plot of BT speed / Water speed."""
+
+        # Prepare data
+        boat_selected = getattr(self.transect.boat_vel, self.transect.boat_vel.selected)
+        boat_speed = np.sqrt(
+            boat_selected.u_processed_mps**2
+            + boat_selected.v_processed_mps**2
+        )
+
+        water_u = self.transect.w_vel.u_processed_mps[:, self.transect.in_transect_idx]
+        water_v = self.transect.w_vel.v_processed_mps[:, self.transect.in_transect_idx]
+
+        depth_selected = getattr(self.transect.depths, self.transect.depths.selected)
+
+        weight = depth_selected.depth_cell_size_m[:, self.transect.in_transect_idx]
+        weight[np.isnan(water_u)] = np.nan
+
+        mean_u = np.nansum(water_u * weight, axis=0) / np.nansum(weight, axis=0)
+        mean_v = np.nansum(water_v * weight, axis=0) / np.nansum(weight, axis=0)
+        water_speed = np.sqrt(mean_u ** 2 + mean_v ** 2)
+
+        data = boat_speed / water_speed
+
+        # Specify format
+        fmt = [
+            {"color": "b", "linestyle": "-"},
+        ]
+
+        data_units = (1, lbl)
+        self.plt_timeseries(
+            data=data,
+            data_units=data_units,
+            ax=self.ax[-1],
+            data_2=None,
+            data_mask=None,
+            fmt=fmt,
+            min_y=0,
+        )
+
+    def boat_course_ts(self, lbl="Boat Course"):
+        # Prepare data
+        boat_track = self.transect.boat_vel.compute_boat_track(self.transect)
+        [course_radians, dmg] = cart2pol(
+            boat_track["track_x_m"], boat_track["track_y_m"]
+        )
+        data = rad2azdeg(course_radians)
+
+        # Specify format
+        fmt = [
+            {"color": "b", "linestyle": "-"},
+        ]
+
+        data_units = (1, lbl + " (deg)")
+        self.plt_timeseries(
+            data=data,
+            data_units=data_units,
+            ax=self.ax[-1],
+            data_2=None,
+            data_mask=None,
+            fmt=fmt,
+            min_y=0,
+        )
+        self.ax[-1].set_ylim(top=360, bottom=0)
 
     def gga_source_ts(self):
         """Plot source for GGA data."""

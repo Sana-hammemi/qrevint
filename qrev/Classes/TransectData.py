@@ -1307,6 +1307,8 @@ class TransectData(object):
         vel[1, :, :] = vel[1, :, :] + boat_vel[1, :]
         vel[2, :, :] = vel[2, :, :] + boat_vel[2, :]
         vel[3, :, :] = vel[3, :, :] + boat_vel[3, :]
+        u_earth_no_ref_mps = np.copy(vel[0, :, :])
+        v_earth_no_ref_mps = np.copy(vel[1, :, :])
 
         ref_water = "None"
 
@@ -3601,7 +3603,7 @@ class TransectData(object):
                     bt_track["track_x_m"][-1], bt_track["track_y_m"][-1]
                 )
                 bt_course = rad2azdeg(bt_course)
-            except TypeError:
+            except (TypeError, IndexError):
                 bt_course = np.nan
 
             gps_track = BoatStructure.compute_boat_track(transect, ref=gps_ref)
@@ -3618,18 +3620,18 @@ class TransectData(object):
             # Compute ratio
             try:
                 gps_bt["ratio"] = bt_track["dmg_m"][-1] / gps_track["dmg_m"][-1]
-            except TypeError:
+            except (TypeError, IndexError):
                 gps_bt["ratio"] = np.nan
 
             # Compute closure vector
             try:
                 x_diff = bt_track["track_x_m"][-1] - gps_track["track_x_m"][-1]
-            except TypeError:
+            except (TypeError, IndexError):
                 x_diff = np.nan
 
             try:
                 y_diff = bt_track["track_y_m"][-1] - gps_track["track_y_m"][-1]
-            except TypeError:
+            except (TypeError, IndexError):
                 y_diff = np.nan
 
             try:

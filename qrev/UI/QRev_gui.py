@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'QRev_gui.ui'
+# Form implementation generated from reading ui file 'qrev_gui.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -3921,6 +3921,18 @@ class Ui_MainWindow(object):
         self.cb_adv_graph_bt_boat_speed.setFont(font)
         self.cb_adv_graph_bt_boat_speed.setObjectName("cb_adv_graph_bt_boat_speed")
         self.verticalLayout_94.addWidget(self.cb_adv_graph_bt_boat_speed)
+        self.cb_adv_graph_boat_course = QtWidgets.QCheckBox(self.groupBox_2)
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.cb_adv_graph_boat_course.setFont(font)
+        self.cb_adv_graph_boat_course.setObjectName("cb_adv_graph_boat_course")
+        self.verticalLayout_94.addWidget(self.cb_adv_graph_boat_course)
+        self.cb_adv_graph_b2w = QtWidgets.QCheckBox(self.groupBox_2)
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.cb_adv_graph_b2w.setFont(font)
+        self.cb_adv_graph_b2w.setObjectName("cb_adv_graph_b2w")
+        self.verticalLayout_94.addWidget(self.cb_adv_graph_b2w)
         self.cb_adv_graph_bt_3beam = QtWidgets.QCheckBox(self.groupBox_2)
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -5209,6 +5221,8 @@ class Ui_MainWindow(object):
         self.gb_adv_graph_controls.setTitle(_translate("MainWindow", "Plot Controls"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Bottom Track"))
         self.cb_adv_graph_bt_boat_speed.setText(_translate("MainWindow", "Boat Speed (BT)"))
+        self.cb_adv_graph_boat_course.setText(_translate("MainWindow", "Boat Course (Direction)"))
+        self.cb_adv_graph_b2w.setText(_translate("MainWindow", "Boat Speed / Water Speed"))
         self.cb_adv_graph_bt_3beam.setText(_translate("MainWindow", "3 Beam Solutions"))
         self.cb_adv_graph_bt_error.setText(_translate("MainWindow", "Error Velocity"))
         self.cb_adv_graph_bt_vertical.setText(_translate("MainWindow", "Vertical Velocity"))

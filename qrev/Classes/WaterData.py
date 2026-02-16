@@ -380,6 +380,10 @@ class WaterData(object):
         self.v_mps = np.copy(self.raw_vel_mps)[1, :, :]
         self.w_mps = np.copy(self.raw_vel_mps)[2, :, :]
         self.d_mps = np.copy(self.raw_vel_mps)[3, :, :]
+        
+        if coord_sys_in == "Earth" and nav_ref_in == "None":
+            self.u_earth_no_ref_mps = np.copy(self.u_mps)
+            self.v_earth_no_ref_mps = np.copy(self.v_mps)
 
         self.water_mode = wm_in
         self.excluded_dist_m = excluded_dist_in

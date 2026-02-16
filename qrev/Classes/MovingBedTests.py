@@ -152,8 +152,6 @@ class MovingBedTests(object):
         elif source == "rsq":
             self.mb_rsq(file, test_type, utc_time_offset, date_format, snr_3beam_comp)
 
-        self.process_mb_test(source)
-
     def process_mb_test(self, source):
         # Convert to earth coordinates and set the navigation reference to BT
         # for both boat and water data

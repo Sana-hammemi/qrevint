@@ -61,7 +61,7 @@ class TemperatureTS(object):
 
         # Create list from time stamps
         time_stamp = []
-        tz_local = utc_offset_to_tz(meas.transects[meas.checked[0]].date_time.utc_time_offset)
+        tz_local = utc_offset_to_tz(meas.transects[meas.checked_transect_idx[0]].date_time.utc_time_offset)
         for t in serial_time:
             time_stamp.append(datetime.fromtimestamp(t, tz=tz_local))
 

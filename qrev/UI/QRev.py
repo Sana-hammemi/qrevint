@@ -15769,6 +15769,8 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_wt_vert_ts", self.cb_adv_graph_wt_vert_ts),
                 ("cb_wt_snr_ts", self.cb_adv_graph_wt_snr_ts),
                 ("cb_bt_boat_speed_ts", self.cb_adv_graph_bt_boat_speed),
+                ("cb_boat_course_ts", self.cb_adv_graph_boat_course),
+                ("cb_b2w_speed_ts", self.cb_adv_graph_b2w),
                 ("cb_bt_3beam_ts", self.cb_adv_graph_bt_3beam),
                 ("cb_bt_error_ts", self.cb_adv_graph_bt_error),
                 ("cb_bt_vertical_ts", self.cb_adv_graph_bt_vertical),
@@ -17533,7 +17535,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
 
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Critical)
-        msg.setText(mgs_type)
+        msg.setText(msg_type)
         msg.setInformativeText(text)
         msg.setWindowTitle(msg_type)
         msg.exec_()
