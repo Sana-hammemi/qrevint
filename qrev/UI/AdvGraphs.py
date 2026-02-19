@@ -10,7 +10,7 @@ from matplotlib import gridspec
 from matplotlib.dates import DateFormatter, num2date
 from matplotlib.patches import Polygon
 
-from qrev.MiscLibs.common_functions import sind, cosd, cart2pol, rad2azdeg
+from qrev.MiscLibs.common_functions import sind, cosd, cart2pol, rad2azdeg, azdeg2rad
 from qrev.MiscLibs.compute_edge_cd import compute_edge_cd
 from qrev.MiscLibs.local_time_utilities import local_time_from_iso, utc_offset_to_tz
 
@@ -270,6 +270,7 @@ class AdvGraphs(object):
             "cb_vtg_source_ts": self.vtg_source_ts,
             "cb_adcp_heading_ts": self.heading_adcp_ts,
             "cb_ext_heading_ts": self.heading_external_ts,
+            "cb_heading_polar": self.heading_polar_plot,
             "cb_mag_error_ts": self.heading_mag_error_ts,
             "cb_pitch_ts": self.pitch_ts,
             "cb_roll_ts": self.roll_ts,
@@ -363,58 +364,69 @@ class AdvGraphs(object):
                 self.gs = gridspec.GridSpec(self.n_subplots, 2, width_ratios=[50, 1])
 
                 # Create first subplot
-                self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
-                self.wt_advanced_type_methods[selected_types[0]]()
-                # Share the y-axis between color contour plots
-                if selected_types[0][-3:] == "_cc":
-                    share_y = True
-
-                # Create additional subplots as specified, sharing x-axis for
-                # all plots and  y-axis for contour plots
-                if len(selected_types) > 1:
-                    for n in range(1, len(selected_types)):
-                        # Figure number increased by two to account for the
-                        # second column in the grid space
-                        # for the colorbar
-                        self.fig_no += 2
-                        if share_y and selected_types[n][-3:] == "_cc":
-                            self.ax.append(
-                                self.fig.add_subplot(
-                                    self.gs[self.fig_no],
-                                    sharex=self.ax[0],
-                                    sharey=self.ax[0],
-                                )
-                            )
-                        else:
-                            self.ax.append(
-                                self.fig.add_subplot(
-                                    self.gs[self.fig_no], sharex=self.ax[0]
-                                )
-                            )
-
-                        # Call method based on link in dictionary
-                        self.wt_advanced_type_methods[selected_types[n]]()
-
-                # Adjust the spacing of the subplots
-                self.fig.subplots_adjust(
-                    left=0.05,
-                    bottom=0.05,
-                    right=0.92,
-                    top=0.95,
-                    wspace=0.02,
-                    hspace=0.08,
-                )
-
-                # Apply the x-axis label to the bottom x-axis
-                if selected_types[-1][-3:] == "_cc":
-                    idx = -2
+                if len(selected_types) == 1 and "cb_heading_polar" in selected_types:
+                    self.heading_polar_plot()
                 else:
-                    idx = -1
+                    self.ax.append(self.fig.add_subplot(self.gs[self.fig_no]))
+                    self.wt_advanced_type_methods[selected_types[0]]()
+                    # Share the y-axis between color contour plots
+                    if selected_types[0][-3:] == "_cc":
+                        share_y = True
 
-                self.ax[idx].xaxis.label.set_fontsize(12)
+                    # Create additional subplots as specified, sharing x-axis for
+                    # all plots and  y-axis for contour plots
+                    if len(selected_types) > 1:
+                        for n in range(1, len(selected_types)):
+                            # Figure number increased by two to account for the
+                            # second column in the grid space
+                            # for the colorbar
+                            self.fig_no += 2
+                            if share_y and selected_types[n][-3:] == "_cc":
+                                self.ax.append(
+                                    self.fig.add_subplot(
+                                        self.gs[self.fig_no],
+                                        sharex=self.ax[0],
+                                        sharey=self.ax[0],
+                                    )
+                                )
+                                # Call method based on link in dictionary
+                                self.wt_advanced_type_methods[selected_types[n]]()
+                            elif selected_types[n] != "cb_heading_polar":
+                                self.ax.append(
+                                    self.fig.add_subplot(
+                                        self.gs[self.fig_no], sharex=self.ax[0]
+                                    )
+                                )
+                                # Call method based on link in dictionary
+                                self.wt_advanced_type_methods[selected_types[n]]()
+                            else:
+                                pass
 
-                self.set_x_axis(idx)
+                            # # Call method based on link in dictionary
+                            # self.wt_advanced_type_methods[selected_types[n]]()
 
+                    # Adjust the spacing of the subplots
+                    self.fig.subplots_adjust(
+                        left=0.05,
+                        bottom=0.05,
+                        right=0.92,
+                        top=0.95,
+                        wspace=0.02,
+                        hspace=0.08,
+                    )
+
+                    # Apply the x-axis label to the bottom x-axis
+                    if selected_types[-1][-3:] == "_cc":
+                        idx = -2
+                    else:
+                        idx = -1
+
+                    self.ax[idx].xaxis.label.set_fontsize(12)
+
+                    self.set_x_axis(idx)
+
+                    if "cb_heading_polar" in selected_types:
+                        self.heading_polar_plot()
         else:
             # Clear the plot
             self.fig.clear()
@@ -2854,6 +2866,45 @@ class AdvGraphs(object):
         fmt = [{"color": "b", "linestyle": "-"}]
         data_units = (1, "Mag Error")
         self.plt_timeseries(data=data, data_units=data_units, ax=self.ax[-1], fmt=fmt)
+
+    def heading_polar_plot(self):
+        """Plot heading vs time on polar plot."""
+        heading_selected = getattr(self.transect.sensors.heading_deg, self.transect.sensors.heading_deg.selected)
+        heading_int_rad = np.deg2rad(self.transect.sensors.heading_deg.internal.data)
+
+        # Redefine axis
+        self.ax.append(self.fig.add_subplot(self.gs[self.fig_no], projection="polar"))
+        if self.x_axis_type == "E":
+            r_label = self.canvas.tr("Ensembles")
+            r = self.x
+        elif self.x_axis_type == "L":
+            r_label = self.canvas.tr("Length") + " " + self.units["label_L"]
+            r = self.x * self.units["L"]
+        elif self.x_axis_type == "T":
+            r_label = self.canvas.tr("Time (sec)")
+            r = np.nancumsum(self.transect.date_time.ens_duration_sec)
+
+        ax = self.ax[-1]
+        ax.plot(heading_int_rad, r , label=self.canvas.tr("Internal"))
+
+        if self.transect.sensors.heading_deg.external is not None:
+            heading_ext_rad = np.deg2rad(self.transect.sensors.heading_deg.external.data)
+            ax.plot(heading_ext_rad, r, label=self.canvas.tr("External"))
+
+        angle = np.deg2rad(67.5)
+        ax.legend(loc="right",
+                  bbox_to_anchor=(1.3, 0.5))
+        ax.set_theta_zero_location('N')
+        ax.set_theta_direction(-1)
+        ax.set_rmax(np.nanmax(r))
+        ax.set_rlabel_position(0)
+        ax.grid(True)
+        label_position = ax.get_rlabel_position()
+        ax.text(np.radians(label_position - 5), ax.get_rmax() / 2., r_label,
+                rotation=label_position + 90, ha='center', va='center')
+        pos1 = ax.get_position()
+        new_pos = [pos1.x0, pos1.y0, pos1.width, pos1.height * 0.8]
+        ax.set_position(new_pos)
 
     def pitch_ts(self):
         """Plot pitch data."""

@@ -8028,6 +8028,18 @@
                      </widget>
                     </item>
                     <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_polar">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Heading Polar Plot</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QCheckBox" name="cb_adv_graph_mag_error">
                       <property name="font">
                        <font>

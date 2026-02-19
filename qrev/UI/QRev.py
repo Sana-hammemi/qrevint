@@ -15787,6 +15787,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
                 ("cb_vtg_source_ts", self.cb_adv_graph_vtg_source),
                 ("cb_adcp_heading_ts", self.cb_adv_graph_adcp_heading),
                 ("cb_ext_heading_ts", self.cb_adv_graph_ext_heading),
+                ("cb_heading_polar", self.cb_adv_graph_polar),
                 ("cb_mag_error_ts", self.cb_adv_graph_mag_error),
                 ("cb_pitch_ts", self.cb_adv_graph_pitch),
                 ("cb_roll_ts", self.cb_adv_graph_roll),
