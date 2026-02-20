@@ -393,7 +393,3 @@ class ComputeExtrap(object):
         # extrapolation methods
         self.q_sensitivity = ExtrapQSensitivity()
         self.q_sensitivity.populate_data(transects=transects, extrap_fits=self.sel_fit)
-
-    def compute_alpha(self, discharge):
-
-        alpha_norm = copy.copy(norm_data)
