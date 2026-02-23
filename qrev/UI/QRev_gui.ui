@@ -7673,30 +7673,6 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QCheckBox" name="cb_adv_graph_boat_course">
-                      <property name="font">
-                       <font>
-                        <pointsize>10</pointsize>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Boat Course (Direction)</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QCheckBox" name="cb_adv_graph_b2w">
-                      <property name="font">
-                       <font>
-                        <pointsize>10</pointsize>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Boat Speed / Water Speed</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
                      <widget class="QCheckBox" name="cb_adv_graph_bt_3beam">
                       <property name="font">
                        <font>
@@ -7905,6 +7881,39 @@
                       </property>
                       <property name="text">
                        <string>Source (VTG)</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_13">
+                   <property name="title">
+                    <string>Boat (Selected)</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_76">
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_b2w">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Boat Speed / Water Speed</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cb_adv_graph_boat_course">
+                      <property name="font">
+                       <font>
+                        <pointsize>10</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Boat Course (Direction)</string>
                       </property>
                      </widget>
                     </item>
@@ -9513,8 +9522,8 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
