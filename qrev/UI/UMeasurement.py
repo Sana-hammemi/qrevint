@@ -1,3 +1,5 @@
+import pandas as pd
+
 class UMeasurement(object):
     """Class to generate stacked bar graph of contributions to uncertainty.
 
@@ -62,8 +64,8 @@ class UMeasurement(object):
 
         # Create dataframe to plot
         self.plot_df = oursin.u_contribution_measurement_user.drop(["total"], axis=1)
-        self.plot_df = self.plot_df.append(
-            oursin.u_contribution_user.drop(["total"], axis=1), ignore_index=True
+        self.plot_df = pd.concat([self.plot_df, 
+            oursin.u_contribution_user.drop(["total"], axis=1)], ignore_index=True
         )
         self.plot_df = self.plot_df.mul(100)
         self.plot_df = self.plot_df[

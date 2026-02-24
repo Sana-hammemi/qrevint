@@ -1,4 +1,15 @@
 # QRevInt Change Log
+### Changes QRevInt 1.43 to 1.44
+1. Fixed bug when opening the Uncertainty tab
+### Changes QRevInt 1.42 to 1.43
+1. Updated to Python 3.13
+2. Modified check for profiling to bottom to use actual side lobe cutoff
+3. Fixed issue with utc offset in Premeasurement being applied to data
+4. Fixed utc time on graphs and pdf output
+5. Fixed bug handling time for compass calibration/evaluation
+6. Added ability to change the color contour color scale
+7. Added boat course and boat to water speed plots to Adv Graphs
+8. Added heading polar plot to Adv Graphs
 ### Changes QRevInt 1.41 to 1.42
 1. Fixed crash if RSQ GPSRecords exceed 20
 2. Fixed code in messages tab preventing tooltips from working

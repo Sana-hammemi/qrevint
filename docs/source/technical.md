@@ -328,10 +328,12 @@ Use of differentiated position requires accurate position solutions. The accurac
 position data is affected by the differential correction applied to the data, the configuration of the
 satellites, and the path of the signal from the satellite to the GPS antenna (multipath).
 
-#####Differential Correction Quality
+##### Differential Correction Quality
+
 The GGA sentence contains a variable that indicates the quality or type of differential
 correction associated with the position. Although GPS receiver manufacturers have some
 differences, generally the quality is defined as follows:
+
 - 0, no position fix
 - 1, autonomous
 - 2, differential correction
