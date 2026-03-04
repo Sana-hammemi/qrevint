@@ -148,9 +148,9 @@ class ExtrapPlot(object):
 
             # Display the use weighted setting on the figure
             if meas.extrap_fit.norm_data[-1].use_weighted:
-                self.fig.ax.text(0.1, 0.95, "Q Weighted = True", fontweight="bold")
+                self.fig.ax.text(0.1, 0.95, self.canvas.tr("Q Weighted = True"), fontweight="bold")
             else:
-                self.fig.ax.text(0.1, 0.95, "Q Weighted = False", fontweight="bold")
+                self.fig.ax.text(0.1, 0.95, self.canvas.tr("Q Weighted = False"), fontweight="bold")
 
             # Scale axes
             if np.any(
