@@ -70,7 +70,7 @@ setup(
         'scikit-learn==1.3.2',
         'setuptools~=80.9.0',
         'sigfig==1.3.3',
-        'simplekml',',
+        'simplekml',
         'sip',
         'six==1.12.0',
         'utm',
