@@ -7,8 +7,8 @@ these guidelines will facilitate efficient merging of your contributions
 into the project and keep the project style and documentation consistent.
 
 ## Code
-All code and/or libraries used should be compatible with Python 3.8 and 
-PyInstaller 3.5 and be licensed for free open-source use.
+All code and/or libraries used should be compatible with Python 3.13.11 and 
+PyInstaller 6.17 or later and be licensed for free open-source use.
 
 ### General
 It is important that the code be readable and well documented. [PEP8](https://www.python.org/dev/peps/pep-0008/) 
@@ -20,8 +20,7 @@ readability perspective the 120 character length fits well on most monitors
 and enhances the readability of the code. However, a 79 character PEP8 
 compatible line length is also acceptable. A good reference that covers 
 common PEP8 coding style can be found at https://realpython.
-com/python-pep8/. The use of a PEP8 linter or autoformatter such as found 
-in PyCharm is encouraged.
+com/python-pep8/. The use of a PEP8 linter or autoformatter such as Black or Ruff is encouraged.
 
 ### Organization
 The code is stored in three folders: Classes, MiscLibs, and UI. The Classes 
