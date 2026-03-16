@@ -12669,6 +12669,7 @@ class QRev(QtWidgets.QMainWindow, QRev_gui.Ui_MainWindow):
             self.data_cursor()
 
         self.extrap_canvas.draw()
+        print (self.meas.extrap_fit.sel_fit[-1].compute_surface_alpha())
 
     def extrap_set_data(self):
         """Sets UI for data panel"""

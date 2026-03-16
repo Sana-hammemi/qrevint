@@ -461,7 +461,6 @@ class NormData(object):
         self.unit_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
         self.cell_depth_normalized = np.tile([np.nan], (max_cells, sum_ens[-1]))
         self.weights = np.tile([np.nan], (max_cells, sum_ens[-1]))
-        self.weights = np.tile([np.nan], (max_cells, sum_ens[-1]))
 
         # Process each transect using data from only the checked transects
         for n in range(len(transects)):

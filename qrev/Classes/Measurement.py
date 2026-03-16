@@ -1216,7 +1216,7 @@ class Measurement(object):
                 self.mb_tests.append(MovingBedTests(tr=self.tr))
                 self.mb_tests[-1].populate_data(source="rsq", file=test, test_type="Stationary",
                                                 utc_time_offset=utc_time_offset, date_format=self.date_format, snr_3beam_comp=snr_3beam_comp)
-
+            self.mb_tests[-1].process_mb_test(source="SonTek")
     def load_qrev_mat(self, mat_data):
         """Loads and coordinates the mapping of existing QRev Matlab files
         into Python instance variables.

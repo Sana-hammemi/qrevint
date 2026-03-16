@@ -1,8 +1,8 @@
 # About QRevInt
 
-**Version:** 1.44
+**Version:** 1.45
 
-**Date:** 02/24/2026
+**Date:** 03/16/2026
 
 **Support:** dave@genesishydrotech.com
 

@@ -2260,7 +2260,7 @@ class TransectData(object):
             ])
 
             if np.any(np.logical_not(np.isnan(ext_heading))):
-                ext_heading[ext_heading < 0] = 360 + ext_heading
+                ext_heading[ext_heading < 0] = 360 + ext_heading[ext_heading < 0]
                 self.sensors.heading_deg.external = HeadingData()
                 self.sensors.heading_deg.external.populate_data(
                     data_in=ext_heading,

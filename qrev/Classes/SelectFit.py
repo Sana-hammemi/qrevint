@@ -426,3 +426,16 @@ class SelectFit(object):
         self.rsqr = mat_data.rsqr
         self.exponent_95_ci = mat_data.exponent95confint
         self.data_type = norm_data.dataType
+
+    def compute_surface_alpha(self):
+        """Computes the surface alpha from the data provided by the extrapolation method.
+
+        Returns
+        -------
+        alpha: float
+            Surface alpha computed from selected extrapolation method
+        """
+
+        alpha = np.nanmean(self.u) / self.u[-1]
+
+        return alpha

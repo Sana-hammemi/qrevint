@@ -1,4 +1,6 @@
 # QRevInt Change Log
+### Changes QRevInt 1.44 to 1.45
+1. Fixed bug processing moving bed test from RSQ data, introduced in 1.43
 ### Changes QRevInt 1.43 to 1.44
 1. Fixed bug when opening the Uncertainty tab
 ### Changes QRevInt 1.42 to 1.43
