@@ -6,12 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "qrev"
 version = "1.45"
 description = "QRev - Python package for hydrologic data analysis"
-readme = "README.md"
 requires-python = ">=3.8"
 authors = [
     {name = "David S Mueller", email = "david@genesishydrotech.com"}
 ]
-license = {text = "LICENSE"}
+license = {text = "MIT"}
 keywords = ["hydrology", "data-analysis", "measurement"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -38,7 +37,4 @@ Homepage = "https://github.com/Sana-hammemi/qrevint"
 Repository = "https://github.com/Sana-hammemi/qrevint.git"
 
 [tool.setuptools]
-packages = ["qrev"]
-
-[tool.setuptools.package-data]
-qrev = ["**/*"]
+packages = ["."]
