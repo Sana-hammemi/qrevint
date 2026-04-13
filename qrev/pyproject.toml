@@ -1,7 +1,6 @@
 [build-system]
 requires = ["setuptools>=61"]
-build-backend = "setuptools.build"
-
+build-backend = "setuptools.build_meta"
 [project]
 name = "qrev"
 version = "1.45"
