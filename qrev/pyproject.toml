@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build"
+
+[project]
+name = "qrev"
+version = "1.45"
+requires-python = ">=3.8"
+dependencies = [
+    "numba>=0.56",
+    "numpy>=1.23",
+    "scipy>=1.10",
+    "pandas>=1.5",
+    "matplotlib>=3.7",
+    "scikit-learn>=1.2",
+    "statsmodels>=0.13",
+    "seaborn>=0.12",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

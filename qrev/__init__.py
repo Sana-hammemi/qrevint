@@ -16,7 +16,9 @@ __icon_path__ = os.path.abspath(
         os.path.dirname(__file__), "..", "docs", "source", "assets", "files", "*"
     )
 )
-
+__sphinx_path__ = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "docs", "source")
+)
 __translation_files__ = os.path.abspath(os.path.join(os.path.dirname(
     translation.__file__)))
 
