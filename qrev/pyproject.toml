@@ -36,8 +36,10 @@ dependencies = [
 Homepage = "https://github.com/Sana-hammemi/qrevint"
 Repository = "https://github.com/Sana-hammemi/qrevint.git"
 
-[tool.setuptools]
-packages = ["qrev"]
-
 [tool.setuptools.package-dir]
-qrev = "."
+"" = ".."
+
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["qrev*"]
+namespaces = true
