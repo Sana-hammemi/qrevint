@@ -49,7 +49,7 @@ setup(
         'more-itertools==7.2.0',
         'statsmodels~=0.13.5',
         'numpy==1.26.2',
-        'numba~=0.61.0',
+        'numba~=0.60.0',
         'pandas==1.4.0',
         'pefile==2019.4.18',
         'pluggy==0.13.0',
