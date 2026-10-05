@@ -56,3 +56,9 @@ lib64
 ehthumbs.db
 Thumbs.db
 /qrev/Classes/__pycache__
+
+# Venv #
+########
+.venv/
+venv/
+

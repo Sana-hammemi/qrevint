@@ -13,7 +13,7 @@ class StickySettings(object):
 
     Data are stored a dictionary which is then written to a json file having
     the filename provided by the user and stored in the folder defined by the
-    APPDATA environment variable.
+    APPDATA environment variable (XDG config folder on other systems).
 
     Note
     ----
@@ -44,7 +44,11 @@ class StickySettings(object):
 
         """
         # Construct filename from user input.
-        self.settings_file = os.path.join(os.getenv("APPDATA"), arg + ".json")
+        # APPDATA only exists on Windows, use the XDG config folder elsewhere
+        settings_dir = os.getenv("APPDATA") or os.getenv("XDG_CONFIG_HOME") or \
+            os.path.join(os.path.expanduser("~"), ".config")
+        os.makedirs(settings_dir, exist_ok=True)
+        self.settings_file = os.path.join(settings_dir, arg + ".json")
         if os.path.isfile(self.settings_file):
             # Read json into dictionary
             with open(self.settings_file, "r") as f:

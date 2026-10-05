@@ -77,7 +77,8 @@ from qrev.UI.UMeasurement import UMeasurement
 # from qrev.UI.WTContour import WTContour
 from qrev.UI.selectFile import SaveDialog
 
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+if sys.platform == "win32":
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 # if there is a splash screen close it
 try:

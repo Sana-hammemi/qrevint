@@ -2,6 +2,8 @@ import ctypes
 import datetime
 import os
 import shutil
+import sys
+import tempfile
 import json
 import re
 import xml.etree.ElementTree as ETree
@@ -39,7 +41,8 @@ from qrev.MiscLibs.local_time_utilities import local_time_from_iso
 
 # from profilehooks import profile
 
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+if sys.platform == "win32":
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
 class Measurement(object):
@@ -894,7 +897,7 @@ class Measurement(object):
             )
 
     def load_rsq(self, filename, snr_3beam_comp):
-        temp_path = os.path.join(os.getenv("APPDATA"), "QRev_Data")
+        temp_path = tempfile.mkdtemp(prefix="QRev_Data_")
         shutil.unpack_archive(filename[0], temp_path, "zip")
 
         sontek_data = {"transects":[], "mb_tests":[], "data_properties": None, "transect_setup": None}
